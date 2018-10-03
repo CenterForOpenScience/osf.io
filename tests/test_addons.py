@@ -35,6 +35,7 @@ from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import Session, RegistrationSchema, QuickFilesNode
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFile, TrashedFileNode, FileVersion
+from osf.features import STORAGE_USAGE
 from website.ember_osf_web.decorators import storage_usage_flag_active
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
@@ -42,6 +43,7 @@ from website.project.views.node import serialize_addons, collect_node_config_js
 from website.util import api_url_for, rubeus
 from dateutil.parser import parse as parse_date
 from framework import sentry
+from waffle.testutils import override_flag
 
 class SetEnvironMiddleware(object):
 
@@ -380,16 +382,18 @@ class TestAddonLogs(OsfTestCase):
         nlogs = self.node.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
 
-    @mock.patch('addons.base.views.storage_usage_flag_active', return_value=True)
-    def test_add_file_updates_cache(self, mock_flag):
+    def test_add_file_updates_cache(self):
         self.configure_osf_addon()
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': self.file.materialized_path, 'kind': 'file', 'path': self.file.path})
-        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        with override_flag(STORAGE_USAGE, active=True):
+            self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
 
         assert cache.get('storage_usage:' + self.node.get_addon('osfstorage')._id) == 1024
 
-        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})  # add new version
+        with override_flag(STORAGE_USAGE, active=True):
+            self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})  # add new version
 
         assert cache.get('storage_usage:' + self.node.get_addon('osfstorage')._id) == 2048
 
@@ -404,8 +408,7 @@ class TestAddonLogs(OsfTestCase):
         assert_equal(self.node.logs.count(), nlogs + 1)
         assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
-    @mock.patch('addons.base.views.storage_usage_flag_active', return_value=True)
-    def test_remove_file_updates_cache(self, mock_flag):
+    def test_remove_file_updates_cache(self):
         self.configure_osf_addon()
         url = self.node.api_url_for('create_waterbutler_log')
         trashed_file = TrashedFile(
@@ -423,7 +426,9 @@ class TestAddonLogs(OsfTestCase):
         trashed_file.versions.add(first_version)
         trashed_file.save()
         payload = self.build_payload(metadata={'materialized': self.file.materialized_path, 'kind': 'file', 'path': trashed_file.path}, action='delete')
-        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        with override_flag(STORAGE_USAGE, active=True):
+            self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
 
         assert cache.get('storage_usage:' + self.node.get_addon('osfstorage')._id) == 0
 
