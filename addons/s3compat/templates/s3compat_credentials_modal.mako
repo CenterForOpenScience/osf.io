@@ -19,11 +19,11 @@
                             </div>
                             <div class="form-group">
                                 <label for="s3compatAddon">Access Key</label>
-                                <input class="form-control" data-bind="value: accessKey" id="access_key" name="access_key" ${'disabled' if disabled else ''} />
+                                <input class="form-control" data-bind="value: accessKey" name="access_key" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
                                 <label for="s3compatAddon">Secret Key</label>
-                                <input type="password" class="form-control" data-bind="value: secretKey" id="secret_key" name="secret_key" ${'disabled' if disabled else ''} />
+                                <input type="password" class="form-control" data-bind="value: secretKey" name="secret_key" ${'disabled' if disabled else ''} />
                             </div>
                         </div>
                     </div><!-- end row -->
