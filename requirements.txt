@@ -7,7 +7,7 @@
 
 invoke==0.15.0
 Werkzeug==0.10.4  # pyup: ignore # newer versions break local development
-Flask==0.10.1
+Flask==0.12.4
 gevent==1.2.2
 Mako==1.0.7
 Markdown==2.6.9
@@ -64,6 +64,7 @@ Django==1.11.13  # pyup: <2.0 # Remove this when we're on Py3
 djangorestframework==3.6.3
 django-cors-headers==2.1.0
 djangorestframework-bulk==0.2.1
+hashids==1.2.0
 pyjwt==1.5.3
 # django-celery-beat==1.0.1  # BSD 3 Clause
 # Contains a fix for handling disabled tasks that still has not been release

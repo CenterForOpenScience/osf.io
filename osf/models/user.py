@@ -325,7 +325,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     social = DateTimeAwareJSONField(default=dict, blank=True, validators=[validate_social])
     # Format: {
     #     'profileWebsites': <list of profile websites>
-    #     'twitter': <twitter id>,
+    #     'twitter': <list of twitter usernames>,
+    #     'github': <list of github usernames>,
+    #     'linkedIn': <list of linkedin profiles>,
+    #     'orcid': <orcid for user>,
+    #     'researcherID': <researcherID>,
+    #     'impactStory': <impactStory identifier>,
+    #     'scholar': <google scholar identifier>,
+    #     'ssrn': <SSRN username>,
+    #     'researchGate': <researchGate username>,
+    #     'baiduScholar': <bauduScholar username>,
+    #     'academiaProfileID': <profile identifier for academia.edu>
     # }
 
     # date the user last sent a request

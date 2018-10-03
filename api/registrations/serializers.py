@@ -73,6 +73,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     date_withdrawn = VersionedDateTimeField(source='retraction.date_retracted', read_only=True, help_text='Date time of when this registration was retracted.')
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
+    custom_citation = HideIfWithdrawal(ser.CharField(allow_blank=True, required=False))
 
     withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
     template_from = HideIfWithdrawal(ser.CharField(
@@ -352,7 +353,8 @@ class BaseRegistrationSerializer(NodeSerializer):
                 registration.update_tags(new_tags, auth=auth)
             except NodeStateError as err:
                 raise Conflict(err.message)
-
+        if 'custom_citation' in validated_data:
+            registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
         is_public = validated_data.get('is_public', None)
         if is_public is not None:
             if is_public:

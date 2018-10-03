@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "/social_fields",
+  "title": "Social Fields",
+  "description": "Social fields for the user serializer",
+  "type": "object",
+  "properties": {
+    "researcherId": {
+      "description": "The researcherId for the given user",
+      "type": "string"
+    },
+    "baiduScholar": {
+      "description": "The baiduScholar for the given user",
+      "type": "string"
+    },
+    "twitter": {
+      "description": "The twitter for the given user",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 1
+    },
+    "ssrn": {
+      "description": "The ssrn for the given user",
+      "type": "string"
+    },
+    "impactStory": {
+      "description": "The impactStory for the given user",
+      "type": "string"
+    },
+    "researchGate": {
+      "description": "The researchGate for the given user",
+      "type": "string"
+    },
+    "github": {
+      "description": "The github for the given user",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 1
+    },
+    "scholar": {
+      "description": "The google scholar ID for the given user",
+      "type": "string"
+    },
+    "profileWebsites": {
+      "description": "The profileWebsites for the given user",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "linkedIn": {
+      "description": "The linkedIn for the given user",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 1
+    },
+    "academiaProfileID": {
+      "description": "The academiaProfileID for the given user",
+      "type": "string"
+    },
+    "orcid": {
+      "description": "The orcid for the given user",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

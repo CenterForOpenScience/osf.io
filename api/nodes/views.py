@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError, NotFoun
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
+from addons.base.exceptions import InvalidAuthError
 from addons.osfstorage.models import OsfStorageFolder
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
@@ -107,6 +108,7 @@ from api.requests.views import NodeRequestMixin
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
+from framework.exceptions import HTTPError
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
@@ -121,6 +123,13 @@ from website import mails
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 
+# This is used to rethrow v1 exceptions as v2
+HTTP_CODE_MAP = {
+    400: ValidationError(detail='This add-on has made a bad request.'),
+    401: NotAuthenticated('This add-on could not be authenticated.'),
+    403: PermissionDenied('This add-on\'s credentials could not be validated.'),
+    404: NotFound('This add-on\'s resources could not be found.'),
+}
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -673,7 +682,7 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
 
     serializer_class = NodeCitationSerializer
     view_category = 'nodes'
@@ -685,7 +694,6 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
         if not node.is_public and not node.can_view(auth):
             raise PermissionDenied if auth.user else NotAuthenticated
         return node.csl
-
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_read).
@@ -1241,7 +1249,13 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         if not hasattr(node_addon, 'get_folders'):
             raise EndpointNotImplementedError('Endpoint not yet implemented for this addon')
 
-        return node_addon.get_folders(path=path, folder_id=folder_id)
+        #  Convert v1 errors to v2 as much as possible.
+        try:
+            return node_addon.get_folders(path=path, folder_id=folder_id)
+        except InvalidAuthError:
+            raise NotAuthenticated('This add-on could not be authenticated.')
+        except HTTPError as exc:
+            raise HTTP_CODE_MAP.get(exc.code, exc)
 
 
 class NodeStorageProvider(object):

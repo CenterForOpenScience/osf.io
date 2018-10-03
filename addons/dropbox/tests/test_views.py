@@ -100,8 +100,8 @@ class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
             if isinstance(each, MockFolderMetadata)
         ]
 
-        mock_list_folder.assert_called_once()
-        mock_list_folder_continue.assert_called_once()
+        mock_list_folder.assert_called_once_with('')
+        mock_list_folder_continue.assert_called_once_with('ZtkX9_EHj3x7PMkVuFIhwKYXEpwpLwyxp9vMKomUhllil9q7eWiAu')
 
         assert len(res.json) == 2
         assert len(res.json) == len(contents)
