@@ -447,7 +447,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = self.get_node()
+        node = self.get_resource()
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError('Must have at least one visible contributor')
         if not node.contributor_set.filter(user=instance).exists():
@@ -504,7 +504,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        node = self.get_node()
+        node = self.get_resource()
         auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
