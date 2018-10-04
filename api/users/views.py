@@ -769,7 +769,7 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin):
+class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -784,8 +784,7 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
 
     serializer_class = UserEmailsSerializer
 
-    # overrides ListAPIViewa
-    def get_queryset(self):
+    def get_default_queryset(self):
         user = self.get_user()
         serialized_emails = []
         for email in user.emails.all():
@@ -800,6 +799,10 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
             serialized_emails.append(serialized_unconfirmed_email)
 
         return serialized_emails
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):

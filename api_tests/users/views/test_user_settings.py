@@ -20,6 +20,11 @@ def user_two():
     return AuthUserFactory()
 
 
+@pytest.fixture()
+def unconfirmed_address():
+    return 'save@thewhales.test'
+
+
 @pytest.mark.django_db
 class TestUserRequestExport:
 
@@ -229,10 +234,13 @@ class TestUserChangePassword:
 class TestUserEmailsList:
 
     @pytest.fixture(autouse=True)
-    def user_with_emails(self, user_one):
+    def user_with_emails(self, user_one, unconfirmed_address):
         new_addresses = ['new_one@test.test, new_two@test.test']
         for address in new_addresses:
             Email.objects.create(address=address, user=user_one)
+
+        user_one.add_unconfirmed_email(unconfirmed_address)
+        user_one.save()
 
     @pytest.fixture()
     def url(self, user_one):
@@ -247,27 +255,29 @@ class TestUserEmailsList:
             }
         }
 
-    def test_get_emails_current_user_no_unconfirmed(self, app, url, user_one):
+    def test_get_emails_current_user(self, app, url, user_one):
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == user_one.emails.count()
+        assert len(res.json['data']) == user_one.emails.count() + len(user_one.unconfirmed_emails)
 
     def test_get_emails_not_current_user(self, app, url, user_one, user_two):
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
-    def test_unconfirmed_email_included(self, app, url, payload, user_one):
-        unconfirmed = 'notyet@unconfirmed.test'
-        user_one.add_unconfirmed_email(unconfirmed)
-        user_one.save()
+    def test_unconfirmed_email_included(self, app, url, payload, user_one, unconfirmed_address):
+        # unconfirmed = 'notyet@unconfirmed.test'
+        # user_one.add_unconfirmed_email(unconfirmed)
+        # user_one.save()
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        assert unconfirmed in [result['attributes']['email_address'] for result in res.json['data']]
+        assert unconfirmed_address in [result['attributes']['email_address'] for result in res.json['data']]
 
     @mock.patch('api.users.serializers.send_confirm_email')
-    def test_create_new_email_current_user(self, mock_send_confirm_mail, user_one, app, url, payload):
+    def test_create_new_email_current_user(self, mock_send_confirm_mail, user_one, user_two, app, url, payload):
         new_email = 'hhh@wwe.test'
         payload['data']['attributes']['email_address'] = new_email
+
+        # post from current user
         res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['email_address'] == new_email
@@ -330,6 +340,43 @@ class TestUserEmailsList:
         assert new_token in returned_ids
         assert old_token not in returned_ids
 
+    def test_filter_by_attributes(self, app, url, user_one):
+        confirmed_not_verified = 'notyet@unconfirmed.test'
+        token = user_one.add_unconfirmed_email(confirmed_not_verified)
+        user_one.email_verifications[token]['confirmed'] = True
+        user_one.save()
+
+        # test filter by confirmed
+        confirmed_tokens = [key for key, value in user_one.email_verifications.iteritems() if value['confirmed']]
+        confirmed_count = user_one.emails.count() + len(confirmed_tokens)
+        filtered_url = '{}?filter[confirmed]=True'.format(url)
+        res = app.get(filtered_url, auth=user_one.auth)
+        assert confirmed_count > 0
+        assert len(res.json['data']) == confirmed_count
+        for result in res.json['data']:
+            assert result['attributes']['confirmed'] is True
+
+        filtered_url = '{}?filter[confirmed]=False'.format(url)
+        res = app.get(filtered_url, auth=user_one.auth)
+        assert len(res.json['data']) > 0
+        for result in res.json['data']:
+            assert result['attributes']['confirmed'] is False
+
+        # test filter by verified
+        verified_count = user_one.emails.count()
+        filtered_url = '{}?filter[verified]=True'.format(url)
+        res = app.get(filtered_url, auth=user_one.auth)
+        assert verified_count > 0
+        assert len(res.json['data']) == verified_count
+        for result in res.json['data']:
+            assert result['attributes']['verified'] is True
+
+        filtered_url = '{}?filter[verified]=False'.format(url)
+        res = app.get(filtered_url, auth=user_one.auth)
+        assert len(res.json['data']) > 0
+        for result in res.json['data']:
+            assert result['attributes']['verified'] is False
+
 
 @pytest.mark.django_db
 class TestUserEmailDetail:
@@ -340,10 +387,6 @@ class TestUserEmailDetail:
     @pytest.fixture()
     def confirmed_email(self, user_one):
         return Email.objects.create(address='new@test.test', user=user_one)
-
-    @pytest.fixture()
-    def unconfirmed_address(self):
-        return 'save@thewhales.test'
 
     @pytest.fixture()
     def unconfirmed_token(self, unconfirmed_address, user_one):

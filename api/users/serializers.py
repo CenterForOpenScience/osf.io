@@ -475,6 +475,12 @@ class UserEmail(object):
 
 
 class UserEmailsSerializer(JSONAPISerializer):
+
+    filterable_fields = frozenset([
+        'confirmed',
+        'verified',
+    ])
+
     id = IDField(read_only=True)
     type = TypeField()
     email_address = ser.CharField(source='address')
