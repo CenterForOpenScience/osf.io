@@ -69,8 +69,11 @@ class CollectionProviderForm(forms.ModelForm):
                     )
         else:
             # if this is creating a CollectionProvider
-            type_choices_added = json.loads(self.data.get('collected_type_choices'))
+            type_choices_added = []
             type_choices_removed = []
+            choices = self.data.get('collected_type_choices')
+            if choices:
+                type_choices_added = json.loads(choices)
 
         return {
             'added': type_choices_added,
@@ -93,8 +96,11 @@ class CollectionProviderForm(forms.ModelForm):
                     )
         else:
             # if this is creating a CollectionProvider
-            status_choices_added = json.loads(self.data.get('status_choices'))
+            status_choices_added = []
             status_choices_removed = []
+            choices = self.data.get('status_choices')
+            if choices:
+                status_choices_added = json.loads(choices)
 
         return {
             'added': status_choices_added,
@@ -117,8 +123,11 @@ class CollectionProviderForm(forms.ModelForm):
                     )
         else:
             # if this is creating a CollectionProvider
-            volume_choices_added = json.loads(self.data.get('volume_choices'))
+            volume_choices_added = []
             volume_choices_removed = []
+            choices = self.data.get('volume_choices')
+            if choices:
+                volume_choices_added = json.loads(choices)
 
         return {
             'added': volume_choices_added,
@@ -141,8 +150,11 @@ class CollectionProviderForm(forms.ModelForm):
                     )
         else:
             # if this is creating a CollectionProvider
-            issue_choices_added = json.loads(self.data.get('issue_choices'))
+            issue_choices_added = []
             issue_choices_removed = []
+            choices = self.data.get('issue_choices')
+            if choices:
+                issue_choices_added = json.loads(choices)
 
         return {
             'added': issue_choices_added,
@@ -165,8 +177,11 @@ class CollectionProviderForm(forms.ModelForm):
                     )
         else:
             # if this is creating a CollectionProvider
-            program_area_choices_added = json.loads(self.data.get('program_area_choices'))
+            program_area_choices_added = []
             program_area_choices_removed = []
+            choices = self.data.get('program_area_choices')
+            if choices:
+                program_area_choices_added = json.loads(choices)
 
         return {
             'added': program_area_choices_added,
