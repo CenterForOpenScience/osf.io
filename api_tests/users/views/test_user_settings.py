@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
+
 from api.base.settings.defaults import API_BASE
 from api.base.utils import hashids
 from osf_tests.factories import (
@@ -8,6 +9,7 @@ from osf_tests.factories import (
     UserFactory,
 )
 from osf.models import Email
+from framework.auth.views import auth_email_logout
 
 @pytest.fixture()
 def user_one():
@@ -336,8 +338,22 @@ class TestUserEmailDetail:
         return hashids.encode(id_to_hash)
 
     @pytest.fixture()
-    def new_email(self, user_one):
+    def confirmed_email(self, user_one):
         return Email.objects.create(address='new@test.test', user=user_one)
+
+    @pytest.fixture()
+    def unconfirmed_address(self):
+        return 'save@thewhales.test'
+
+    @pytest.fixture()
+    def unconfirmed_token(self, unconfirmed_address, user_one):
+        token = user_one.add_unconfirmed_email(unconfirmed_address)
+        user_one.save()
+        return token
+
+    @pytest.fixture()
+    def unconfirmed_url(self, user_one, unconfirmed_token):
+        return '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, unconfirmed_token)
 
     @pytest.fixture()
     def payload(self):
@@ -349,33 +365,30 @@ class TestUserEmailDetail:
         }
 
     @pytest.fixture()
-    def url(self, user_one, new_email):
-        new_email_hash = self.get_hashid(new_email.id)
-        return '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, new_email_hash)
+    def confirmed_url(self, user_one, confirmed_email):
+        confirmed_email_hash = self.get_hashid(confirmed_email.id)
+        return '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, confirmed_email_hash)
 
-    def test_get_email_detail(self, app, url, user_one, user_two):
+    def test_get_email_detail(self, app, confirmed_url, user_one, user_two, unconfirmed_url):
         # logged in and authorized
-        res = app.get(url, auth=user_one.auth)
+        res = app.get(confirmed_url, auth=user_one.auth)
         assert res.status_code == 200
 
         # not logged in
-        res = app.get(url, expect_errors=True)
+        res = app.get(confirmed_url, expect_errors=True)
         assert res.status_code == 401
 
         # logged in as different user
-        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        res = app.get(confirmed_url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
         # token for unconfirmed email
-        token = user_one.add_unconfirmed_email('hello@fake.test')
-        user_one.save()
-        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, token)
-        res = app.get(url, auth=user_one.auth)
+        res = app.get(unconfirmed_url, auth=user_one.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['confirmed'] is False
 
         # token for unconfirmed email different user
-        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        res = app.get(unconfirmed_url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
         # id does not exist
@@ -397,62 +410,56 @@ class TestUserEmailDetail:
         assert res.status_code == 200
         assert res.json['data']['attributes']['primary'] is True
 
-    def test_adding_new_token_for_unconfirmed_email(self, app, user_one):
-        new_email = 'save@thewhales.test'
-        first_token = user_one.add_unconfirmed_email(new_email)
-        user_one.save()
-        first_token_url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, first_token)
-        res = app.get(first_token_url, auth=user_one.auth)
+    def test_adding_new_token_for_unconfirmed_email(self, app, user_one, unconfirmed_address,
+                                                    unconfirmed_token, unconfirmed_url):
+        res = app.get(unconfirmed_url, auth=user_one.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == first_token
+        assert res.json['data']['id'] == unconfirmed_token
 
         # add the same unconfirmed email again, refreshing the token
-        second_token = user_one.add_unconfirmed_email(new_email)
+        second_token = user_one.add_unconfirmed_email(unconfirmed_address)
         user_one.save()
-        assert first_token != second_token
+        assert unconfirmed_token != second_token
         second_token_url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, second_token)
         res = app.get(second_token_url, auth=user_one.auth)
         assert res.status_code == 200
         assert res.json['data']['id'] == second_token
 
         # make sure the old route no longer resolves
-        res = app.get(first_token_url, auth=user_one.auth, expect_errors=True)
+        res = app.get(unconfirmed_url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
 
-    def test_set_primary_email(self, app, url, payload, new_email, user_one, user_two):
+    def test_set_primary_email(self, app, confirmed_url, payload, confirmed_email, user_one, user_two, unconfirmed_url):
         payload['data']['attributes'] = {'primary': True}
 
         # test_set_email_primary_not_logged_in
-        res = app.patch_json_api(url, payload, expect_errors=True)
+        res = app.patch_json_api(confirmed_url, payload, expect_errors=True)
         assert res.status_code == 401
 
         # test_set_primary_email_current_user
-        res = app.patch_json_api(url, payload, auth=user_one.auth)
+        res = app.patch_json_api(confirmed_url, payload, auth=user_one.auth)
         assert res.status_code == 200
         user_one.reload()
-        assert user_one.username == new_email.address
+        assert user_one.username == confirmed_email.address
 
         # test set primary not current user
-        res = app.patch_json_api(url, payload, auth=user_two.auth, expect_errors=True)
+        res = app.patch_json_api(confirmed_url, payload, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test set primary not confirmed fails
-        unconfirmed_id = user_one.add_unconfirmed_email('unconfirmed@nope.test')
-        user_one.save()
-        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, unconfirmed_id)
-        res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        res = app.patch_json_api(unconfirmed_url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You cannot set an unconfirmed email address as your primary email address.'
 
-    def test_delete_email(self, app, url, payload, user_one, user_two, new_email):
+    def test_delete_email(self, app, payload, user_one, user_two, confirmed_email, confirmed_url, unconfirmed_url, unconfirmed_address):
         # test delete email logged in as another user fails
-        res = app.delete_json_api(url, payload, auth=user_two.auth, expect_errors=True)
+        res = app.delete_json_api(confirmed_url, payload, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test delete confirmed email
-        res = app.delete_json_api(url, payload, auth=user_one.auth)
+        res = app.delete_json_api(confirmed_url, payload, auth=user_one.auth)
         assert res.status_code == 204
-        assert new_email not in user_one.emails.all()
+        assert confirmed_email not in user_one.emails.all()
 
         # test delete primary email fails
         username_email = user_one.emails.get(address=user_one.username)
@@ -463,11 +470,55 @@ class TestUserEmailDetail:
         assert res.json['errors'][0]['detail'] == "Can't remove primary email"
 
         # test delete unconfirmed email
-        unconfirmed_address = 'test@hello.nope'
-        unconfirmed_token = user_one.add_unconfirmed_email(unconfirmed_address)
-        user_one.save()
-        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, unconfirmed_token)
-        res = app.delete_json_api(url, payload, auth=user_one.auth)
+        res = app.delete_json_api(unconfirmed_url, payload, auth=user_one.auth)
         assert res.status_code == 204
         user_one.reload()
         assert unconfirmed_address not in user_one.unconfirmed_emails
+
+    @mock.patch('framework.auth.views.cas.get_logout_url')
+    @mock.patch('framework.auth.views.web_url_for')
+    def test_verified(self, mock_get_logout_url, mock_web_url_for, app, user_one, unconfirmed_token,
+                        unconfirmed_url, unconfirmed_address):
+        # clicking the link in the email to set confirm calls
+        # auth_email_logout which does the correct attribute setting
+        with mock.patch('framework.auth.views.redirect'):
+            auth_email_logout(unconfirmed_token, user_one)
+        user_one.reload()
+        res = app.get(unconfirmed_url, auth=user_one.auth)
+        assert res.json['data']['attributes']['confirmed'] is True
+        assert res.json['data']['attributes']['verified'] is False
+
+        # confirm email OSF side to set verified
+        user_one.confirm_email(token=unconfirmed_token)
+        user_one.reload()
+        email = Email.objects.get(address=unconfirmed_address)
+        email_hash = self.get_hashid(email.id)
+        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, email_hash)
+        res = app.get(url, auth=user_one.auth)
+        assert res.json['data']['attributes']['confirmed'] is True
+        assert res.json['data']['attributes']['verified'] is True
+
+    def test_update_confirmed_email_to_verified(self, app, user_one, unconfirmed_address,
+                                                unconfirmed_url, payload, unconfirmed_token):
+        payload['data']['attributes'] = {'verified': True}
+
+        # setting verified on unconfirmed email fails
+        res = app.patch_json_api(unconfirmed_url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot verify an email address that has not been confirmed by a user.'
+
+        # manually set the email to confirmed
+        user_one.email_verifications[unconfirmed_token]['confirmed'] = True
+        user_one.save()
+
+        # setting verified on confirmed email
+        res = app.patch_json(unconfirmed_url, payload, auth=user_one.auth)
+        assert res.json['data']['attributes']['confirmed'] is True
+        assert res.json['data']['attributes']['verified'] is True
+        new_email = Email.objects.get(address=unconfirmed_address)
+        assert new_email in user_one.emails.all()
+        assert res.json['data']['id'] == self.get_hashid(new_email.id)
+
+        # old URL no longer resolves
+        res_original = app.get(unconfirmed_url, auth=user_one.auth, expect_errors=True)
+        assert res_original.status_code == 404
