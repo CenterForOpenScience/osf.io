@@ -791,12 +791,12 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
         for email in user.emails.all():
             primary = email.address == user.username
             hashed_id = hashids.encode(email.id)
-            serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, primary=primary)
+            serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, verified=True, primary=primary)
             serialized_emails.append(serialized_email)
         email_verifications = user.email_verifications or []
         for token in email_verifications:
             detail = user.email_verifications[token]
-            serialized_unconfirmed_email = UserEmail(email_id=token, address=detail['email'], confirmed=detail['confirmed'], primary=False)
+            serialized_unconfirmed_email = UserEmail(email_id=token, address=detail['email'], confirmed=detail['confirmed'], verified=False, primary=False)
             serialized_emails.append(serialized_unconfirmed_email)
 
         return serialized_emails
@@ -821,6 +821,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
     def get_object(self):
         email_id = self.kwargs['email_id']
         user = self.get_user()
+        email = None
 
         # check to see if it's a confirmed email with hashed id
         decoded_id = hashids.decode(email_id)
@@ -833,6 +834,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
                 primary = email.address == user.username
                 address = email.address
                 confirmed = True
+                verified = True
 
         # check to see if it's an unconfirmed email with a token
         elif user.unconfirmed_emails:
@@ -840,6 +842,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
                 email = user.email_verifications[email_id]
                 address = email['email']
                 confirmed = email['confirmed']
+                verified = False
                 primary = False
             except KeyError:
                 email = None
@@ -847,7 +850,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
         if not email:
             raise NotFound
 
-        return UserEmail(email_id=email_id, address=address, confirmed=confirmed, primary=primary)
+        return UserEmail(email_id=email_id, address=address, confirmed=confirmed, verified=verified, primary=primary)
 
     # Overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):

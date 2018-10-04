@@ -11,10 +11,10 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
-from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated
+from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
-from osf.models import OSFUser, QuickFilesNode
+from osf.models import OSFUser, QuickFilesNode, Email
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
@@ -466,10 +466,11 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
 
 class UserEmail(object):
-    def __init__(self, email_id, address, confirmed, primary):
+    def __init__(self, email_id, address, confirmed, verified, primary):
         self.id = email_id
         self.address = address
         self.confirmed = confirmed
+        self.verified = verified
         self.primary = primary
 
 
@@ -477,7 +478,8 @@ class UserEmailsSerializer(JSONAPISerializer):
     id = IDField(read_only=True)
     type = TypeField()
     email_address = ser.CharField(source='address')
-    confirmed = ser.BooleanField(read_only=True)
+    confirmed = ser.BooleanField(read_only=True, help_text='User has clicked the confirmation link in an email.')
+    verified = ser.BooleanField(required=False, help_text='User has verified adding the email on the OSF side.')
     primary = ser.BooleanField(required=False)
     links = LinksField({
         'self': 'get_absolute_url',
@@ -510,14 +512,26 @@ class UserEmailsSerializer(JSONAPISerializer):
         except ValidationError as e:
             raise exceptions.ValidationError(e.args[0])
 
-        return UserEmail(email_id=token, address=address, confirmed=False, primary=False)
+        return UserEmail(email_id=token, address=address, confirmed=False, verified=False, primary=False)
 
     def update(self, instance, validated_data):
         user = self.context['request'].user
         primary = validated_data.get('primary', None)
+        verified = validated_data.get('verified', None)
         if primary and instance.confirmed:
             user.username = instance.address
             user.save()
         elif primary and not instance.confirmed:
             raise exceptions.ValidationError('You cannot set an unconfirmed email address as your primary email address.')
+
+        if verified and not instance.verified:
+            if not instance.confirmed:
+                raise exceptions.ValidationError('You cannot verify an email address that has not been confirmed by a user.')
+            user.confirm_email(token=instance.id)
+            # verifying an email creates a new Email instance, use that for the id
+            instance.verified = True
+            new_email = Email.objects.get(address=instance.address, user=user)
+            instance.id = hashids.encode(new_email.id)
+            user.save()
+
         return instance
