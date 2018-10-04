@@ -223,6 +223,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'contributors',
         'preprint',
         'subjects',
+        'child_of',
     ])
 
     non_anonymized_fields = [
@@ -284,6 +285,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'for the current user on this node.',
     )
 
+    child_of = ser.HiddenField(default=None)  # This needs to be a declared field to be filtered on.
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(
         source='is_public', required=False,

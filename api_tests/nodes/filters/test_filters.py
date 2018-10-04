@@ -93,6 +93,10 @@ class NodesListFilteringMixin(object):
         return '{}filter[root][ne]='.format(url)
 
     @pytest.fixture()
+    def child_of_url(self, url):
+        return '{}filter[child_of]='.format(url)
+
+    @pytest.fixture()
     def tags_url(self, url):
         return '{}filter[tags]='.format(url)
 
@@ -108,7 +112,7 @@ class NodesListFilteringMixin(object):
             great_grandchild_node_two,
             root_ne_url, parent_url, root_url,
             contributors_url, parent_project_one,
-            child_project_one
+            child_project_one, child_of_url
     ):
 
         #   test_parent_filter_null
@@ -231,6 +235,18 @@ class NodesListFilteringMixin(object):
         assert project._id in ids
         assert child_node_one._id not in ids
         assert parent_project._id not in ids
+
+    #   test_child_of
+        url = '{}{}'.format(
+            child_of_url,
+            child_node_two._id
+        )
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+        ids = [node_['id'] for node_ in res.json['data']]
+        assert grandchild_node_two._id in ids
+        assert great_grandchild_node_two._id in ids
 
     def test_parent_filter_excludes_linked_nodes(
             self, app, user, parent_project,

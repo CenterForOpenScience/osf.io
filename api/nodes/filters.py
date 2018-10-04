@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from django.db.models import Q
+from rest_framework.exceptions import NotFound
 
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
 from api.base.filters import ListFilterMixin
@@ -58,6 +59,20 @@ class NodesFilterMixin(ListFilterMixin):
                 raise InvalidFilterValue(value=operation['value'])
             with_as_root_query = Q(root__guids___id__in=operation['value'])
             return ~with_as_root_query if operation['op'] == 'ne' else with_as_root_query
+
+        if field_name == 'child_of':
+            if None is operation['value']:
+                raise InvalidFilterValue(value=operation['value'])
+            if ',' in operation['value']:
+                raise InvalidFilterValue(detail='Filtering on "child_of" does not allow lists.')
+            try:
+                node = AbstractNode.objects.get(guids___id=operation['value'])
+            except AbstractNode.DoesNotExist:
+                raise NotFound
+
+            children = AbstractNode.objects.get_children(node, active=True)
+            with_as_children_query = Q(guids___id__in=children.values_list('guids___id', flat=True))
+            return ~with_as_children_query if operation['op'] == 'ne' else with_as_children_query
 
         if field_name == 'preprint':
             not_preprint_query = (
