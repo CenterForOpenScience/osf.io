@@ -382,7 +382,8 @@ class TestRegistrationUpdate:
             'registration_choice',
             'lift_embargo',
             'tags',
-            'custom_citation']
+            'custom_citation',
+            'child_of']
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:
@@ -396,7 +397,8 @@ class TestRegistrationUpdate:
             'registration_choice',
             'lift_embargo',
             'tags',
-            'custom_citation']
+            'custom_citation',
+            'child_of']
         for field in RegistrationDetailSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:
