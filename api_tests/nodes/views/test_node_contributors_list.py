@@ -1248,10 +1248,18 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             url_public, payload,
             auth=user.auth, expect_errors=True)
         assert res.status_code == 404
+        # if adding unregistered contrib by guid, fullname must be supplied
         assert (
             res.json['errors'][0]['detail'] ==
-            'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
+            'Cannot add unconfirmed user {} to resource {}. You need to provide a full_name.'
             .format(unconfirmed_user._id, project_public._id))
+
+        payload['data']['attributes']['full_name'] = 'Susan B. Anthony'
+        res = app.post_json_api(
+            url_public, payload,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['unregistered_contributor'] == 'Susan B. Anthony'
 
 
 @pytest.mark.django_db

@@ -1037,15 +1037,25 @@ class ContributorMixin(models.Model):
             contributor = OSFUser.load(user_id)
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
-            if not contributor.is_registered:
-                raise ValueError(
-                    'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
-                    .format(user_id, self._id)
-                )
+
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-            contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                 permissions=permissions, send_email=send_email, save=True)
+
+            if contributor.is_registered:
+                contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                     permissions=permissions, send_email=send_email, save=True)
+            else:
+                if not full_name:
+                    raise ValueError(
+                        'Cannot add unconfirmed user {} to resource {}. You need to provide a full_name.'
+                        .format(user_id, self._id)
+                    )
+                contributor = self.add_unregistered_contributor(
+                    fullname=full_name, email=contributor.username, auth=auth,
+                    send_email=send_email, permissions=permissions,
+                    visible=bibliographic, existing_user=contributor, save=True
+                )
+
         else:
             contributor = get_user(email=email)
             if contributor and self.contributor_set.filter(user=contributor).exists():

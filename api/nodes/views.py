@@ -139,7 +139,7 @@ class NodeMixin(object):
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self, check_object_permissions=True, ignore_404=False):
+    def get_node(self, check_object_permissions=True):
         node = None
 
         if self.kwargs.get('is_embedded') is True:
@@ -148,8 +148,6 @@ class NodeMixin(object):
 
         node_id = self.kwargs[self.node_lookup_url_kwarg]
         if node is None:
-            if ignore_404:
-                return Node.load(node_id)
             node = get_object_or_error(
                 Node.objects.filter(guids___id=node_id).annotate(region=F('addons_osfstorage_node_settings__region___id')).exclude(region=None),
                 request=self.request,
@@ -399,7 +397,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     ordering = ('_order',)  # default ordering
 
     def get_resource(self):
-        return self.get_node(ignore_404=True)
+        return self.get_node()
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
@@ -500,7 +498,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     view_name = 'node-contributor-detail'
 
     def get_resource(self):
-        return self.get_node(ignore_404=True)
+        return self.get_node()
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):

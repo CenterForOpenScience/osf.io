@@ -1062,8 +1062,6 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         return osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
-        if user_id and (full_name or email):
-            raise Conflict(detail='Full name and/or email should not be included with a user ID.')
         if not user_id and not full_name:
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
         if index > len(node.contributors):

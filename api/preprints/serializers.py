@@ -8,7 +8,7 @@ from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
     JSONAPISerializer, IDField, TypeField, HideIfNotWithdrawal, NoneIfWithdrawal,
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField,
-    ShowIfVersion, NodeFileHyperLinkField, WaterbutlerLink, HideIfPreprint,
+    NodeFileHyperLinkField, WaterbutlerLink, HideIfPreprint,
     LinkedNodesRelationshipSerializer,
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -95,7 +95,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     is_preprint_orphan = NoneIfWithdrawal(ser.BooleanField(read_only=True))
     license_record = NodeLicenseSerializer(required=False, source='license')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
-    node_is_public = ShowIfVersion(NoneIfWithdrawal(ser.BooleanField(read_only=True, source='node__is_public')), min_version=2.0, max_version=2.10)
+    node_is_public = ser.BooleanField(read_only=True, source='node__is_public', help_text='Is supplementary project public?')
     preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
     withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
