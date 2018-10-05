@@ -87,7 +87,7 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
         resource_type = record.metadata.get('resource_type', '(:unas)')
         doc['resourceType'] = {
             'resourceType': resource_type,
-            'resourceTypeGeneral': utils.RESOURCE_TYPE_MAP.get(resource_type)
+            'resourceTypeGeneral': utils.DATACITE_RESOURCE_TYPE_MAP.get(resource_type)
         }
 
         doc['publicationYear'] = str(osfstorage_file.created.year)

@@ -3,7 +3,7 @@ from website import settings
 
 SUBJECT_SCHEME = 'bepress Digital Commons Three-Tiered Taxonomy'
 
-RESOURCE_TYPE_MAP = {
+DATACITE_RESOURCE_TYPE_MAP = {
     'Audio/Video': 'Audiovisual',
     'Dataset': 'Dataset',
     'Image': 'Image',
@@ -24,10 +24,10 @@ RESOURCE_TYPE_MAP = {
 
 
 def datacite_format_contributors(contributors):
-    """
-    contributors_list: list of OSFUsers to format
+    """ Format a list of contributors to match the datacite schema
 
-    returns: formatted json for datacite
+    :param contributors_list: list of OSFUsers to format
+    :return: formatted json for datacite
     """
     creators = []
     for contributor in contributors:
