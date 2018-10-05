@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
+from website.settings import DOI_FORMAT, DATACITE_PREFIX
 from website.project.licenses import set_license
 from osf.models import FileMetadataSchema, NodeLicense, Guid, NodeLog
 from osf_tests.factories import ProjectFactory, SubjectFactory, AuthUserFactory
@@ -104,9 +105,13 @@ class TestFileMetadataRecordSerializer:
         assert serialized_record['version'] == osf_file.versions.first().identifier
 
     def test_validate(self, node, osf_file):
-        # check a record validates
         record = osf_file.records.get(schema___id='datacite')
-        assert record.validate() is None
+        json_data = json.loads(record.serialize())
+        # the OSF cannot currently issue DOIs for a file, which is required for datacite schema validation.
+        # Manually add a placeholder in this test for validation until we handle this better.
+        placeholder = DOI_FORMAT.format(prefix=DATACITE_PREFIX, guid='placeholder')
+        json_data['identifier'] = {'identifierType': 'DOI', 'identifier': placeholder}
+        assert jsonschema.validate(json_data, record.schema.schema) is None
 
 
 @pytest.mark.django_db

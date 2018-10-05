@@ -44,16 +44,12 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
     def serialize(self, format='json'):
         return self.serializer.serialize(self, format)
 
-    def validate(self):
-        # causes model level validation to run
-        self.clean_fields()
-        return self.serializer.validate(self)
-
     def update(self, proposed_metadata, user=None):
         auth = Auth(user) if user else None
         if auth and self.file.target.has_permission(user, osf_permissions.WRITE):
             self.metadata = proposed_metadata
-            self.validate()
+            # causes model level validation to run
+            self.clean_fields()
             self.save()
 
             target = self.file.target

@@ -1,9 +1,8 @@
 import json
-import jsonschema
 from datacite import schema40
 
 from osf.metadata import utils
-from website.settings import DOMAIN, DOI_FORMAT, DATACITE_PREFIX
+from website.settings import DOMAIN
 
 serializer_registry = {}
 
@@ -30,12 +29,6 @@ class MetadataRecordSerializer(object):
         if format == 'xml':
             return cls.serialize_xml(metadata_record)
         raise ValueError('Format "{}" is not supported.'.format(format))
-
-    @classmethod
-    def validate(cls, record):
-        # note: this is not used at the moment, because it is overridden by the datacite subclass.
-        # Future subclasses should not need to override validate.
-        return jsonschema.validate(cls.serialize(record), record.schema.schema)
 
 
 @register(schema_id='datacite')
@@ -140,13 +133,3 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
     def serialize_xml(cls, record):
         data = json.loads(cls.serialize_json(record))
         return schema40.tostring(data)
-
-    @classmethod
-    def validate(cls, record):
-        # This method needs to be overridden because the OSF cannot currently
-        # issue DOIs for a file, which is required for datacite schema validation.
-        # Manually add a placeholder for validation until we handle this better.
-        json_data = json.loads(cls.serialize_json(record))
-        placeholder = DOI_FORMAT.format(prefix=DATACITE_PREFIX, guid='placeholder')
-        json_data['identifier'] = {'identifierType': 'DOI', 'identifier': placeholder}
-        return jsonschema.validate(json_data, record.schema.schema)
