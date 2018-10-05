@@ -69,16 +69,6 @@ class TestMetaSchemaDetail:
         assert res.json['data']['attributes']['name'] == 'Election Research Preacceptance Competition'
         assert res.json['data']['attributes']['active'] is False
 
-        # test_non_latest_version_metaschema_returned
-        old_schema = RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=1)
-        url = '/{}schemas/registrations/{}/'.format(API_BASE, old_schema._id)
-        res = app.get(url)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['name'] == 'OSF-Standard Pre-Data Collection Registration'
-        assert res.json['data']['attributes']['schema_version'] == 1
-
         # test_invalid_metaschema_not_found
         url = '/{}schemas/registrations/garbage/'.format(API_BASE)
         res = app.get(url, auth=user.auth, expect_errors=True)
