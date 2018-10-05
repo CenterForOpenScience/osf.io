@@ -1,11 +1,11 @@
 # Config file for automatic testing at travis-ci.org
+sudo: false
 
 language: python
 
 python:
     - "2.7"
 
-sudo: false
 
 # TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
 # addons:
@@ -39,6 +39,7 @@ env:
     - TEST_BUILD="api3_and_osf"
 
 before_install:
+
     # cache directories
     - |
       mkdir -p $HOME/.cache/downloads
@@ -118,6 +119,10 @@ install:
     # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
     - pip uninstall uritemplate.py --yes
     - pip install uritemplate.py==0.3.0
+# timestamp Key assign
+    - mkdir -p ./user_key_info
+    - cp root_cert_verifycate.pem ./user_key_info
+    - netstat -an|grep tcp.*LISTEN
 
 # Run Python tests (core and addon) and JS tests
 script:

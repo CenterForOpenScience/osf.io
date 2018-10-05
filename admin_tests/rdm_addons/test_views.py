@@ -23,6 +23,8 @@ from admin.rdm.utils import MAGIC_INSTITUTION_ID
 
 from admin_tests.rdm_addons import factories as rdm_addon_factories
 
+import logging
+logging.getLogger('website.project.model').setLevel(logging.DEBUG)
 
 class TestInstitutionListView(AdminTestCase):
     def setUp(self):
@@ -35,9 +37,9 @@ class TestInstitutionListView(AdminTestCase):
 
     def tearDown(self):
         super(TestInstitutionListView, self).tearDown()
-        self.user.remove()
+        self.user.delete()
         for institution in self.institutions:
-            institution.remove()
+            institution.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
         """統合管理者のログインテスト"""
@@ -97,9 +99,9 @@ class TestAddonListView(AdminTestCase):
     def tearDown(self):
         super(TestAddonListView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
-        self.institution1.remove()
-        self.institution2.remove()
+        self.user.delete()
+        self.institution1.delete()
+        self.institution2.delete()
 
     def test_super_admin_login(self):
         """統合管理者のログインテスト"""
@@ -155,7 +157,7 @@ class TestIconView(AdminTestCase):
 
     def tearDown(self):
         super(TestIconView, self).tearDown()
-        self.user.remove()
+        self.user.delete()
 
     def test_login_user(self):
         nt.assert_true(self.view.test_func())
@@ -202,12 +204,12 @@ class TestAddonAllowView(AdminTestCase):
         self.user.affiliated_institutions.remove(institution)
         if self.user.external_accounts.filter(pk=self.external_account.id).exists():
             self.user.external_accounts.remove(self.external_account)
-        self.user.remove()
-        self.institution1.remove()
+        self.user.delete()
+        self.institution1.delete()
         self.rdm_addon_option.external_accounts.remove(self.external_account)
-        self.rdm_addon_option.remove()
-        institution.remove()
-        self.external_account.remove()
+        self.rdm_addon_option.delete()
+        institution.delete()
+        self.external_account.delete()
 
     def test_super_admin_login(self):
         """統合管理者のログインテスト"""
@@ -244,7 +246,7 @@ class TestAddonAllowView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_get(self, *args, **kwargs):
-        #res = self.view.get(self.request, *args, **self.view.kwargs)
+        self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(self.rdm_addon_option.institution.id, self.view.kwargs['addon_name'])
         nt.assert_true(rdm_addon_option.is_allowed)
         nt.assert_equal(rdm_addon_option.provider, self.view.kwargs['addon_name'])
@@ -252,7 +254,7 @@ class TestAddonAllowView(AdminTestCase):
 
     def test_get_disallowed(self, *args, **kwargs):
         self.view.kwargs['allowed'] = False
-        #res = self.view.get(self.request, *args, **self.view.kwargs)
+        self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(self.rdm_addon_option.institution.id, self.view.kwargs['addon_name'])
         nt.assert_equal(rdm_addon_option.is_allowed, False)
         nt.assert_equal(rdm_addon_option.provider, self.view.kwargs['addon_name'])
@@ -285,10 +287,10 @@ class TestNoInstitutionAddonAllowView(AdminTestCase):
         super(TestNoInstitutionAddonAllowView, self).tearDown()
         if self.user.external_accounts.filter(pk=self.external_account.id).exists():
             self.user.external_accounts.remove(self.external_account)
-        self.user.remove()
+        self.user.delete()
         self.rdm_addon_option.external_accounts.remove(self.external_account)
-        self.rdm_addon_option.remove()
-        self.external_account.remove()
+        self.rdm_addon_option.delete()
+        self.external_account.delete()
 
     def test_super_admin_login(self):
         """統合管理者のログインテスト"""
@@ -305,7 +307,7 @@ class TestNoInstitutionAddonAllowView(AdminTestCase):
 
     def test_get_disallowed(self, *args, **kwargs):
         self.view.kwargs['allowed'] = False
-        #res = self.view.get(self.request, *args, **self.view.kwargs)
+        self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(MAGIC_INSTITUTION_ID, self.view.kwargs['addon_name'])
         nt.assert_equal(rdm_addon_option.is_allowed, False)
         nt.assert_equal(rdm_addon_option.provider, self.view.kwargs['addon_name'])
@@ -340,11 +342,11 @@ class TestAddonForceView(AdminTestCase):
         self.user.affiliated_institutions.remove(institution)
         if self.user.external_accounts.filter(pk=self.external_account.id).exists():
             self.user.external_accounts.remove(self.external_account)
-        self.user.remove()
+        self.user.delete()
         self.rdm_addon_option.external_accounts.remove(self.external_account)
-        self.rdm_addon_option.remove()
-        institution.remove()
-        self.external_account.remove()
+        self.rdm_addon_option.delete()
+        institution.delete()
+        self.external_account.delete()
 
     def test_super_admin_login(self):
         """統合管理者のログインテスト"""
@@ -381,14 +383,14 @@ class TestAddonForceView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_get(self, *args, **kwargs):
-        #res = self.view.get(self.request, *args, **self.view.kwargs)
+        self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(self.rdm_addon_option.institution.id, self.view.kwargs['addon_name'])
         nt.assert_true(rdm_addon_option.is_forced)
         nt.assert_equal(rdm_addon_option.provider, self.view.kwargs['addon_name'])
 
     def test_get_not_forced(self, *args, **kwargs):
         self.view.kwargs['forced'] = False
-        #res = self.view.get(self.request, *args, **self.view.kwargs)
+        self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(self.rdm_addon_option.institution.id, self.view.kwargs['addon_name'])
         nt.assert_equal(rdm_addon_option.is_forced, False)
         nt.assert_equal(rdm_addon_option.provider, self.view.kwargs['addon_name'])
@@ -421,20 +423,21 @@ class TestNoInstitutionAddonForceView(AdminTestCase):
         super(TestNoInstitutionAddonForceView, self).tearDown()
         if self.user.external_accounts.filter(pk=self.external_account.id).exists():
             self.user.external_accounts.remove(self.external_account)
-        self.user.remove()
+        self.user.delete()
         self.rdm_addon_option.external_accounts.remove(self.external_account)
-        self.rdm_addon_option.remove()
-        self.external_account.remove()
+        self.rdm_addon_option.delete()
+        self.external_account.delete()
 
     def test_get(self, *args, **kwargs):
-        #res = self.view.get(self.request, *args, **self.view.kwargs)
+        self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(MAGIC_INSTITUTION_ID, self.view.kwargs['addon_name'])
+        logging.debug(rdm_addon_option)
         nt.assert_true(rdm_addon_option.is_forced)
         nt.assert_equal(rdm_addon_option.provider, self.view.kwargs['addon_name'])
 
     def test_get_not_forced(self, *args, **kwargs):
         self.view.kwargs['forced'] = False
-        #res = self.view.get(self.request, *args, **self.view.kwargs)
+        self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(MAGIC_INSTITUTION_ID, self.view.kwargs['addon_name'])
         nt.assert_equal(rdm_addon_option.is_forced, False)
         nt.assert_equal(rdm_addon_option.provider, self.view.kwargs['addon_name'])

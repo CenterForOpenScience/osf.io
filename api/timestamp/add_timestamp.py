@@ -9,7 +9,7 @@ import subprocess
 #from StringIO import StringIO
 from api.base import settings as api_settings
 from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
-
+from django.core.exceptions import ObjectDoesNotExist
 import logging
 
 logger = logging.getLogger(__name__)
@@ -60,8 +60,8 @@ class AddTimestamp:
         try:
             res = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_id)
 
-        except Exception as ex:
-            logger.exception(ex)
+        except ObjectDoesNotExist:
+            #logger.exception(ex)
             res = None
 
         return res

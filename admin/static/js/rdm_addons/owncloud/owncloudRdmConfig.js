@@ -2,7 +2,6 @@
 
 var ko = require('knockout');
 var $ = require('jquery');
-var bootstrap = require('bootstrap');
 var Raven = require('raven-js');
 var OAuthAddonSettingsViewModel = require('../rdmAddonSettings.js').OAuthAddonSettingsViewModel;
 var language = require('js/osfLanguage').Addons.owncloud;

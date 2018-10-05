@@ -2,7 +2,6 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-var bootstrap = require('bootstrap');
 var bootbox = require('bootbox');
 require('js/osfToggleHeight');
 
@@ -189,7 +188,7 @@ $('.is_allowed input').on('change', function() {
                     label: 'Cancel'
                 },
                 confirm: {
-                    label: 'Delete',
+                    label: 'Disallow',
                     className: 'btn-danger'
                 }
             },

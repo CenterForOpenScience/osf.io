@@ -5,7 +5,7 @@ from nose import tools as nt
 from django.test import RequestFactory
 #from django.contrib.auth.models import Permission
 #from django.core.exceptions import PermissionDenied
-#from django.http import Http404
+from django.http import Http404
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -54,12 +54,12 @@ class TestOAuthView(AdminTestCase):
         self.user.affiliated_institutions.remove(institution)
         if self.user.external_accounts.filter(pk=self.external_account.id).exists():
             self.user.external_accounts.remove(self.external_account)
-        self.user.remove()
+        self.user.delete()
         if self.rdm_addon_option.external_accounts.filter(pk=self.external_account.id).exists():
             self.rdm_addon_option.external_accounts.remove(self.external_account)
-        self.rdm_addon_option.remove()
-        institution.remove()
-        self.external_account.remove()
+        self.rdm_addon_option.delete()
+        institution.delete()
+        self.external_account.delete()
 
     def test_super_admin_login(self):
         """統合管理者のログインテスト"""
@@ -101,24 +101,22 @@ class TestOAuthView(AdminTestCase):
         self.request.user.is_staff = True
         nt.assert_equal(self.user.external_accounts.count(), 1)
         nt.assert_equal(self.rdm_addon_option.external_accounts.count(), 1)
-        #res = self.view.delete(self.request, *args, **self.view.kwargs)
+        self.view.delete(self.request, *args, **self.view.kwargs)
         nt.assert_equal(self.user.external_accounts.count(), 0)
         nt.assert_equal(self.rdm_addon_option.external_accounts.count(), 0)
 
-
-'''
     def test_delete_dummy(self, *args, **kwargs):
         self.view.kwargs['external_account_id'] = self.external_account._id + 'dummy'
         with self.assertRaises(Http404):
-            res = self.view.delete(self.request, *args, **self.view.kwargs)
+            self.view.delete(self.request, *args, **self.view.kwargs)
         self.view.kwargs['external_account_id'] = self.external_account._id
 
     def test_delete_empty(self, *args, **kwargs):
         self.rdm_addon_option.external_accounts.remove(self.external_account)
         with self.assertRaises(Http404):
-            res = self.view.delete(self.request, *args, **self.view.kwargs)
+            self.view.delete(self.request, *args, **self.view.kwargs)
 
-'''
+
 class TestSettingsView(AdminTestCase):
     def setUp(self):
         super(TestSettingsView, self).setUp()
@@ -137,8 +135,8 @@ class TestSettingsView(AdminTestCase):
     def tearDown(self):
         super(TestSettingsView, self).tearDown()
         self.user.affiliated_institutions.remove()
-        self.user.remove()
-        self.institution.remove()
+        self.user.delete()
+        self.institution.delete()
 
     def test_super_admin_login(self):
         """統合管理者のログインテスト"""
@@ -219,12 +217,12 @@ class TestAccountsView(AdminTestCase):
         self.user.affiliated_institutions.remove(institution)
         if self.user.external_accounts.filter(pk=self.external_account.id).exists():
             self.user.external_accounts.remove(self.external_account)
-        self.user.remove()
+        self.user.delete()
         if self.rdm_addon_option.external_accounts.filter(pk=self.external_account.id).exists():
             self.rdm_addon_option.external_accounts.remove(self.external_account)
-        self.rdm_addon_option.remove()
-        institution.remove()
-        self.external_account.remove()
+        self.rdm_addon_option.delete()
+        institution.delete()
+        self.external_account.delete()
 
     def test_super_admin_login(self):
         """統合管理者のログインテスト"""

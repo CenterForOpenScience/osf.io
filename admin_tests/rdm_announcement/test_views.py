@@ -36,7 +36,7 @@ class TestIndexView(AdminTestCase):
 
     def tearDown(self):
         super(TestIndexView, self).tearDown()
-        self.user.remove()
+        self.user.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
         """統合管理者のログインテスト"""
@@ -148,7 +148,7 @@ class TestSettingsView(AdminTestCase):
 
     def tearDown(self):
         super(TestSettingsView, self).tearDown()
-        self.user.remove()
+        self.user.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
         """統合管理者のログインテスト"""
@@ -279,7 +279,7 @@ class TestSettingsUpdateView(AdminTestCase):
 
     def tearDown(self):
         super(TestSettingsUpdateView, self).tearDown()
-        self.user.remove()
+        self.user.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
         """統合管理者のログインテスト"""
@@ -330,7 +330,7 @@ class TestSendView(AdminTestCase):
 
     def tearDown(self):
         super(TestSendView, self).tearDown()
-        self.user.remove()
+        self.user.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
         """統合管理者のログインテスト"""

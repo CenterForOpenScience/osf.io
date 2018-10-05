@@ -18,3 +18,4 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
 }
 
 ALLOWED_HOSTS.append('localhost')
+KEY_SAVE_PATH = './user_key_info/'

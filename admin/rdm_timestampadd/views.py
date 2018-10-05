@@ -245,9 +245,9 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
         headers = {'content-type': 'application/json'}
-        guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
+        #guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
-        web_url = self.web_api_url(guid._id)
+        #web_url = self.web_api_url(guid._id)
 
         # Node Admin
         admin_osfuser_list = list(absNodeData.get_admin_contributors(absNodeData.contributors))
@@ -255,20 +255,28 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         self.request.user = admin_osfuser_list[0]
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
-
+        """
         web_api_response = requests.post(web_url + 'timestamp/timestamp_error_data/',
                                          headers=headers, cookies=cookies,
                                          data=json.dumps(request_data))
 
+        """
+        from website.project.views.timestamp import do_get_timestamp_error_data
+        data = {}
+        for key in request_data.keys():
+            data.update({key: request_data[key][0]})
+        response = do_get_timestamp_error_data(self.request, absNodeData, headers, cookies, data)
         # Admin User
         self.request.user = source_user
-
-        response_json = web_api_response.json()
-        web_api_response.close()
-        response = response_json
+        #response_json = web_api_response.json()
+        #web_api_response.close()
+        #response = response_json
         return HttpResponse(json.dumps(response), content_type='application/json')
 
     def web_api_url(self, node_id):
+        import sys
+        if 'pytest' in sys.modules:
+            return settings.osf_settings.INTERNAL_DOMAIN + 'api/v1/project/' + node_id + '/'
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
 
 class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
@@ -358,11 +366,11 @@ class AddTimestampData(RdmPermissionMixin, View):
                                                 download_file_path, tmp_dir)
             shutil.rmtree(tmp_dir)
         except Exception as err:
-            if os.path.exists(tmp_dir):
-                shutil.rmtree(tmp_dir)
-            raise ValueError('Exception:{}'.format(err))
-
-        request_data.update({'result': result})
+            if tmp_dir:
+                if os.path.exists(tmp_dir):
+                    shutil.rmtree(tmp_dir)
+        if 'result' in locals():
+            request_data.update({'result': result})
         return HttpResponse(json.dumps(request_data), content_type='application/json')
 
     def web_api_url(self, node_id):
