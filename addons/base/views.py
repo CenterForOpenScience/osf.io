@@ -892,6 +892,7 @@ def adding_timestamp(auth, node, file_node, version):
                                             tmp_file, tmp_dir)
 
         shutil.rmtree(tmp_dir)
+        return result
 
     except Exception as err:
         if tmp_dir:
@@ -899,7 +900,7 @@ def adding_timestamp(auth, node, file_node, version):
                 shutil.rmtree(tmp_dir)
         logger.exception(err)
 
-    return result
+#    return result
 
 def timestamptoken_verify(auth, node, file_node, version, guid):
     from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
@@ -913,6 +914,7 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
     current_datetime = timezone.now()
     current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
     tmp_dir = 'tmp_{}_{}_{}'.format(guid, file_node._id, current_datetime_str)
+    tmp_file = None
     try:
         ret = serialize_node(node, auth, primary=True)
         user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
@@ -927,15 +929,16 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
         with open(tmp_file, 'wb') as fout:
             fout.write(res.content)
             res.close()
-        verifyCheck = TimeStampTokenVerifyCheck()
-        result = verifyCheck.timestamp_check(ret['user']['id'], file_node._id, node._id,
-                                             file_node.provider, file_node._path,
-                                             tmp_file, tmp_dir)
-        shutil.rmtree(tmp_dir)
     except Exception as err:
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
         logger.exception(err)
-        raise err
+
+    verifyCheck = TimeStampTokenVerifyCheck()
+    result = verifyCheck.timestamp_check(ret['user']['id'], file_node._id, node._id,
+                                         file_node.provider, file_node._path,
+                                         tmp_file, tmp_dir)
+    if os.path.exists(tmp_dir):
+        shutil.rmtree(tmp_dir)
 
     return result

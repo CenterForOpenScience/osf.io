@@ -84,6 +84,20 @@ def resend_confirmation(auth):
 
     return _profile_view(user, is_profile=True)
 
+@must_be_logged_in
+def extend_profile_view(auth, **kwargs):
+    user = auth.user
+    user_addons = addon_utils.get_addons_by_config_type('user', user)
+
+    return {
+        'user_id': user._id,
+        'addons': user_addons,
+        'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
+        'addons_css': [],
+        'requested_deactivation': user.requested_deactivation,
+        'external_identity': user.external_identity
+    }
+
 @must_be_logged_in_without_checking_email
 def update_user(auth):
     """Update the logged-in user's profile."""
@@ -157,9 +171,9 @@ def update_user(auth):
             (
                 each for each in data['emails']
                 # email is primary
-                if each.get('primary') and each.get('confirmed')
+                if each.get('primary') and each.get('confirmed') and
                 # an address is specified (can't trust those sneaky users!)
-                and each.get('address')
+                each.get('address')
             )
         )
 

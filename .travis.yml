@@ -1,11 +1,11 @@
 # Config file for automatic testing at travis-ci.org
+sudo: false
 
 language: python
 
 python:
     - "2.7"
 
-sudo: false
 
 # TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
 # addons:
@@ -40,6 +40,7 @@ env:
     # - TEST_BUILD="varnish"
 
 before_install:
+
     # cache directories
     - |
       mkdir -p $HOME/.cache/downloads
@@ -120,6 +121,7 @@ before_install:
     #     /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null & export VARNISH_PID=$!
     #   fi
 install:
+
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
     - cp api/base/settings/local-travis.py api/base/settings/local.py
@@ -141,11 +143,14 @@ install:
     - pip uninstall uritemplate.py --yes
     - pip install uritemplate.py==0.3.0
     - travis_retry invoke assets --dev
+# timestamp Key assign
+    - mkdir -p ./user_key_info
+    - cp root_cert_verifycate.pem ./user_key_info
+    - netstat -an|grep tcp.*LISTEN
 
 # Run Python tests (core and addon) and JS tests
 script:
     - invoke test_travis_$TEST_BUILD -n 4
-
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
   - rm -f $HOME/.cache/pip/log/debug.log

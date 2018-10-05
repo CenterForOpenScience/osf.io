@@ -1,5 +1,4 @@
 var $ = require('jquery');
-var bootstrap = require('bootstrap');
 var bootbox = require('bootbox');
 var language = require('js/osfLanguage').Addons.figshare;
 require('js/osfToggleHeight')

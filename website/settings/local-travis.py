@@ -101,3 +101,6 @@ EZID_USERNAME = 'testfortravisnotreal'
 EZID_PASSWORD = 'testfortravisnotreal'
 
 logging.getLogger('celery.app.trace').setLevel(logging.FATAL)
+
+ADMIN_URL='http://localhost:8001/'
+ADMIN_INTERNAL_DOCKER_URL='http://192.168.168.167:8001/'

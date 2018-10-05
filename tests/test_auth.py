@@ -58,6 +58,9 @@ class TestAuthUtils(OsfTestCase):
     def test_unreg_user_can_register(self):
         user = UnregUserFactory()
 
+        # Add user parameter "have_email" for testing RDM repair part.(#656,#2593)
+        user.have_email = True
+
         auth.register_unconfirmed(
             username=user.username,
             password='gattaca',

@@ -48,8 +48,10 @@ from website.util import waterbutler_api_url_for
 #from addons.base import utils as addon_utils
 #from framework.exceptions import HTTPError
 # for graph image and pdf
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+import matplotlib as mpl           # noqa
+mpl.use('Agg')                     # noqa
+import matplotlib.pyplot as plt    # noqa
+import matplotlib.ticker as ticker  # noqa
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import seaborn as sns
 #from reportlab.pdfgen import canvas
@@ -59,8 +61,6 @@ from admin.base import settings
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 from admin.rdm_addons import utils
 
-#import matplotlib as mpl
-#mpl.use('Agg')
 
 # DEBUG = True
 # constant
@@ -331,6 +331,7 @@ def create_image_string(provider, statistics_data):
     ax.tick_params(labelsize=9)
     # ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True))
     ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+    plt.legend(loc='upper right', bbox_to_anchor=(1.1255555, 1), ncol=1, borderaxespad=1, shadow=True)
     # ax.yaxis.set_major_locator(ticker.MultipleLocator(integer=True))
     canvas = FigureCanvasAgg(fig)
     png_output = BytesIO()
@@ -552,6 +553,7 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
         ax.set_title(statistics_data.title + ' in ' + provider)
         ax.tick_params(labelsize=9)
         ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+        plt.legend(loc='upper right', bbox_to_anchor=(1.1255555, 1), ncol=1, borderaxespad=1, shadow=True)
         # ax.yaxis.set_minor_locator(ticker.MaxNLocator(integer=True))
         response = HttpResponse(content_type='image/png')
         canvas = FigureCanvasAgg(fig)
@@ -572,6 +574,7 @@ class GatherView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         # simple authentication
+        print '---- GatherView.get'
         access_token = self.kwargs.get('access_token')
         if not simple_auth(access_token):
             response_hash = {'state': 'fail', 'error': 'access forbidden'}
@@ -589,6 +592,7 @@ class GatherView(TemplateView):
             self.adapter = requests.adapters.HTTPAdapter(max_retries=WB_MAX_RETRY)
             # user crawling
             for user in self.get_users():
+                print user
                 if user.affiliated_institutions.first():
                     institution = user.affiliated_institutions.first()
                 else:
@@ -684,7 +688,7 @@ class GatherView(TemplateView):
     def count_project_files(self, node_id, provider, path, cookies):
         """recursive count"""
         # print ('path : ' + path)
-        url_api = self.get_wb_url(node_id=node_id, provider=provider, path=path, cookie=cookies)
+        url_api = self.get_wb_url(node_id=node_id, provider=provider, path=re.sub(r'^//', '/', path), cookie=cookies)
         # print(url_api)
         self.session.mount('http://', self.adapter)
         headers = {'content-type': 'application/json'}
@@ -703,7 +707,10 @@ class GatherView(TemplateView):
         # parse response json
         if 'data' in response_json.keys():
             for obj in response_json['data']:
-                root, ext = os.path.splitext(obj['id'])
+                if provider != 'osfstorage':
+                    root, ext = os.path.splitext(obj['id'])
+                else:
+                    root, ext = os.path.splitext(obj['attributes']['materialized'])
                 if not ext:
                     ext = 'none'
                 if obj['attributes']['kind'] == 'file':
@@ -756,7 +763,6 @@ def send_stat_mail(request, **kwargs):
         }
         response_hash[institution.name] = send_email(to_list=to_list, cc_list=cc_list, data=mail_data, user=user)
     response_json = json.dumps(response_hash)
-    # response_json = json.dumps(mail_data)
     response = HttpResponse(response_json, content_type='application/json')
     return response
 
@@ -794,7 +800,7 @@ def send_email(to_list, cc_list, data, user, backend='smtp'):
         if 'attach_data' in data:
             message.attach(data['attach_file'], data['attach_data'], 'application/pdf')
         # message.send()
-        connection.send_messages([message])
+#        connection.send_messages([message])
         connection.close()
     except Exception as e:
         ret['is_success'] = False
@@ -922,10 +928,7 @@ def approximate_size(size, a_kilobyte_is_1024_bytes=True):
 
 class IndexView(TemplateView):
     """index view of statistics module."""
-    # model = RdmAnnouncement
-    # form_class = PreviewForm
     template_name = 'rdm_statistics/index.html'
-    # permission_required = 'rdm.view_statistics'
     raise_exception = True
 
     def find_bookmark_collection(self, user):
@@ -934,59 +937,15 @@ class IndexView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         user = self.request.user
-        # user = OSFUser.objects.filter(username=request.user)
-        # pprint(user)
-        # user_addons = addon_utils.get_addons_by_config_type('users', user)
-        # user_addons = addon_utils.get_addons_by_config_type('accounts', user)
         user_addons = utils.get_addons_by_config_type('users', self.request.user)
-        # user_addons = utils.get_addons_by_config_type('accounts', self.request.user)
         accounts_addons = [addon for addon in website_settings.ADDONS_AVAILABLE
                            if 'accounts' in addon.configs]
-        print([addon.short_name for addon in accounts_addons])
-        # addon_settings = utils.get_addons_by_config_type('accounts', self.request.user)
-        for accounts_addon in accounts_addons:
-            print(accounts_addon)
-            print(dir(accounts_addon))
-            print(accounts_addon.short_name)
-            # settings = accounts_addon.user_settings()
-            # print(type(settings))
-            # print(dir(settings))
-            # pprint(settings)
-        # user_addons = addon_utils.get_addons_by_config_type('accounts', user)
-        # for account_addon in accounts_addons:
-        #     print(vars(account_addon.node_settings))
         js = []
-        #filename = 'files.js'
-        # config_entry='files'
-        # # for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
-        # for addon_config in accounts_addons:
-        #     # JS modules configured in each addon's __init__ file
-        #     js.extend(addon_config.include_js.get(config_entry, []))
-        #     # Webpack bundle
-        #     js_path = paths.resolve_addon_path(addon_config, filename)
-        #     if js_path:
-        #         js.append(js_path)
         bookmark_collection = self.find_bookmark_collection(user)
         my_projects_id = bookmark_collection._id
-        print(bookmark_collection)
-        print(vars(bookmark_collection))
-        print(dir(bookmark_collection))
-        # nodes = AbstractNode.objects.all().filter(creator_id=user, category='project')
         nodes = AbstractNode.objects.all().select_related().filter(creator_id=user, category='project')
-        for node in nodes:
-            print(node)
-            print(node.creator)
-            print(node.get_addons())
-            # print(dir(node))
-            # print(node.guids.all())
-            # print(dir(node.guids))
-            # print(vars(node))
-            # pprint(node)
-        # print(nodes)
         data = {
             'test': 'test',
-            # 'my_projects': my_projects
-            # 'addon': addon.to_json(user)
             'user': user,
             'addon': user_addons,
             'accounts_addons': accounts_addons,
@@ -1037,32 +996,20 @@ class DummyCreateView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
         accounts_addons = [addon for addon in website_settings.ADDONS_AVAILABLE
                            if 'accounts' in addon.configs]
         addon_list = [addon.short_name for addon in accounts_addons]
-        # print([addon.short_name for addon in accounts_addons])
-        # print(addon_list)
         provider_list = np.random.choice(addon_list, 3, replace=False)
-        # provider = 'S3'
         TEST_TIMES = 2
         TEST_RANGE = RANGE_STATISTICS * TEST_TIMES
-        # RdmStatistics.objects.all().delete()
-        # RdmStatistics.objects.filter(owner=user).delete()
         RdmStatistics.objects.filter(institution=institution).delete()
         for provider in provider_list:
-            # print(provider)
-            # print(size_list)
-            # print(count_list)
             current_date = get_current_date()
             ext_list = ['jpg', 'png', 'docx', 'xlsx']
             for ext_type in ext_list:
-                # print(ext_type)
                 x = np.random.randint(1000 * TEST_RANGE / 10, size=TEST_RANGE)
                 y = np.random.randint(100 * TEST_RANGE / 10, size=TEST_RANGE)
                 count_list = np.sort(y)
                 size_list = np.sort(x)
                 for i in range(TEST_RANGE):
-                    # print(i)
                     date = current_date - datetime.timedelta(weeks=(TEST_RANGE - 1 - i))
-                    # print(date)
-                    # RdmStatistics.objects.update_or_create(project_id=7,owner_id=user.id,institution_id=institution.id,
                     RdmStatistics.objects.create(project_id=7,
                                                  owner=user,
                                                  institution=institution,
