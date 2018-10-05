@@ -236,12 +236,12 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin):
             project=project_public,
             is_published=False)
 
-    def test_unpublished_visible_to_admins(
+    def test_unpublished_invisible_to_admins(
             self, app, user_admin_contrib, preprint_unpublished,
             preprint_published, url):
         res = app.get(url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 2
-        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
 
     def test_unpublished_invisible_to_write_contribs(
             self, app, user_write_contrib, preprint_unpublished,
@@ -304,3 +304,22 @@ class TestUserPreprintIsValidList(PreprintIsValidListMixin):
         preprint.save()
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
+
+    # test override, abandoned don't show up for anyone under UserPreprints
+    def test_preprint_has_abandoned_preprint(
+            self, app, user_admin_contrib, user_write_contrib, user_non_contrib,
+            preprint, url):
+        preprint.machine_state = 'initial'
+        preprint.save()
+        # unauth
+        res = app.get(url)
+        assert len(res.json['data']) == 0
+        # non_contrib
+        res = app.get(url, auth=user_non_contrib.auth)
+        assert len(res.json['data']) == 0
+        # write_contrib
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 0
+        # admin
+        res = app.get(url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 1
