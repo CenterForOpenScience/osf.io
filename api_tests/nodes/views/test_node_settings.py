@@ -114,7 +114,7 @@ class TestNodeSettingsGet:
         view_only_link.nodes.add(project)
         view_only_link.save()
         res = app.get(url, auth=admin_contrib.auth)
-        assert 'view_only_links' in res.json['data']['relationships'].keys()
+        assert 'view_only_links' in list(res.json['data']['relationships'].keys())
 
 
 @pytest.mark.django_db

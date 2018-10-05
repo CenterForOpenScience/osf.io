@@ -162,7 +162,7 @@ class TestFileView:
         res = app.get(file_url, auth=user.auth)
         file.versions.first().reload()
         assert res.status_code == 200
-        assert res.json.keys() == ['meta', 'data']
+        assert list(res.json.keys()) == ['meta', 'data']
         attributes = res.json['data']['attributes']
         assert attributes['path'] == file.path
         assert attributes['kind'] == file.kind
@@ -189,7 +189,7 @@ class TestFileView:
             self, app, user, file_url, node):
         res = app.get(file_url, auth=user.auth)
         assert res.status_code == 200
-        assert 'target' in res.json['data']['relationships'].keys()
+        assert 'target' in list(res.json['data']['relationships'].keys())
         expected_url = node.api_v2_url
         actual_url = res.json['data']['relationships']['target']['links']['related']['href']
         assert expected_url in actual_url
@@ -198,7 +198,7 @@ class TestFileView:
         file.get_guid(create=True)
         res = app.get(file_url, auth=user.auth)
         assert res.status_code == 200
-        assert 'comments' in res.json['data']['relationships'].keys()
+        assert 'comments' in list(res.json['data']['relationships'].keys())
         url = res.json['data']['relationships']['comments']['links']['related']['href']
         assert app.get(url, auth=user.auth).status_code == 200
         assert res.json['data']['type'] == 'files'
@@ -566,7 +566,7 @@ class TestFileView:
         url = '/{}files/{}/'.format(API_BASE, guid._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json.keys() == ['meta', 'data']
+        assert list(res.json.keys()) == ['meta', 'data']
         assert res.json['data']['attributes']['path'] == file.path
 
         # test_get_file_invalid_guid_gives_404

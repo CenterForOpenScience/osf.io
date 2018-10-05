@@ -21,6 +21,7 @@ from osf.utils.fields import EncryptedTextField
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
 from website.util import api_v2_url
+from functools import reduce
 
 
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):

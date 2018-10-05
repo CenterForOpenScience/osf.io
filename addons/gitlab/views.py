@@ -228,7 +228,7 @@ def gitlab_download_starball(node_addon, **kwargs):
     )
 
     resp = make_response(data)
-    for key, value in headers.iteritems():
+    for key, value in headers.items():
         resp.headers[key] = value
 
     return resp
@@ -326,7 +326,7 @@ def gitlab_hook_callback(node_addon, **kwargs):
         # TODO: Look up OSF user by commit
 
         # Skip if pushed by OSF
-        if commit['message'] and commit['message'] in MESSAGES.values():
+        if commit['message'] and commit['message'] in list(MESSAGES.values()):
             continue
 
         _id = commit['id']

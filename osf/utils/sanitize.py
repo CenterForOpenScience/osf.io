@@ -60,7 +60,7 @@ def unescape_entities(value, safe=None):
     if isinstance(value, dict):
         return {
             key: unescape_entities(value, safe=safe_characters)
-            for (key, value) in value.iteritems()
+            for (key, value) in value.items()
         }
 
     if is_iterable_but_not_string(value):
@@ -69,7 +69,7 @@ def unescape_entities(value, safe=None):
             for each in value
         ]
     if isinstance(value, basestring):
-        for escape_sequence, character in safe_characters.items():
+        for escape_sequence, character in list(safe_characters.items()):
             value = value.replace(escape_sequence, character)
         return value
     return value

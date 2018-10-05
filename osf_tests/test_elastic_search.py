@@ -475,7 +475,7 @@ class TestRegistrationRetractions(OsfTestCase):
     def test_pending_retraction_wiki_content_is_searchable(self):
         # Add unique string to wiki
         wiki_content = {'home': 'public retraction test'}
-        for key, value in wiki_content.items():
+        for key, value in list(wiki_content.items()):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
@@ -506,7 +506,7 @@ class TestRegistrationRetractions(OsfTestCase):
     def test_retraction_wiki_content_is_not_searchable(self):
         # Add unique string to wiki
         wiki_content = {'home': 'public retraction test'}
-        for key, value in wiki_content.items():
+        for key, value in list(wiki_content.items()):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
@@ -679,7 +679,7 @@ class TestPublicNodes(OsfTestCase):
             'home': 'Hammer to fall',
             'swag': '#YOLO'
         }
-        for key, value in wiki_content.items():
+        for key, value in list(wiki_content.items()):
             docs = query(value)['results']
             assert_equal(len(docs), 0)
             with run_celery_tasks():
@@ -1049,28 +1049,28 @@ class TestSearchMigration(OsfTestCase):
     def test_first_migration_no_remove(self):
         migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
-        assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+        assert_equal(list(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_no_remove(self):
-        for n in xrange(1, 21):
+        for n in range(1, 21):
             migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
     def test_first_migration_with_remove(self):
         migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
-        assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
+        assert_equal(list(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_with_remove(self):
-        for n in xrange(1, 21, 2):
+        for n in range(1, 21, 2):
             migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
             migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
 
     def test_migration_institutions(self):

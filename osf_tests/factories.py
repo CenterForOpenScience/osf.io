@@ -92,7 +92,7 @@ class UserFactory(DjangoModelFactory):
     @factory.post_generation
     def set_names(self, create, extracted):
         parsed = impute_names_model(self.fullname)
-        for key, value in parsed.items():
+        for key, value in list(parsed.items()):
             setattr(self, key, value)
 
     @factory.post_generation
@@ -136,14 +136,14 @@ class UnregUserFactory(DjangoModelFactory):
     def _build(cls, target_class, *args, **kwargs):
         """Build an object without saving it."""
         ret = target_class.create_unregistered(email=kwargs.pop('email'), fullname=kwargs.pop('fullname'))
-        for key, val in kwargs.items():
+        for key, val in list(kwargs.items()):
             setattr(ret, key, val)
         return ret
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         ret = target_class.create_unregistered(email=kwargs.pop('email'), fullname=kwargs.pop('fullname'))
-        for key, val in kwargs.items():
+        for key, val in list(kwargs.items()):
             setattr(ret, key, val)
         ret.save()
         return ret
@@ -407,7 +407,7 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
 
         registration.retract_registration(user)
         withdrawal = registration.retraction
-        token = withdrawal.approval_state.values()[0]['approval_token']
+        token = list(withdrawal.approval_state.values())[0]['approval_token']
         with patch('osf.models.AbstractNode.update_search'):
             withdrawal.approve_retraction(user, token)
         withdrawal.save()
@@ -820,7 +820,7 @@ class NotificationDigestFactory(DjangoModelFactory):
     timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
     node_lineage = FuzzyAttribute(fuzzer=make_node_lineage)
     user = factory.SubFactory(UserFactory)
-    send_type = FuzzyChoice(choices=NOTIFICATION_TYPES.keys())
+    send_type = FuzzyChoice(choices=list(NOTIFICATION_TYPES.keys()))
     message = fake.text(max_nb_chars=2048)
     event = fake.text(max_nb_chars=50)
     class Meta:
@@ -873,10 +873,10 @@ class ReviewActionFactory(DjangoModelFactory):
     class Meta:
         model = models.ReviewAction
 
-    trigger = FuzzyChoice(choices=DefaultTriggers.values())
+    trigger = FuzzyChoice(choices=list(DefaultTriggers.values()))
     comment = factory.Faker('text')
-    from_state = FuzzyChoice(choices=DefaultStates.values())
-    to_state = FuzzyChoice(choices=DefaultStates.values())
+    from_state = FuzzyChoice(choices=list(DefaultStates.values()))
+    to_state = FuzzyChoice(choices=list(DefaultStates.values()))
 
     target = factory.SubFactory(PreprintFactory)
     creator = factory.SubFactory(AuthUserFactory)

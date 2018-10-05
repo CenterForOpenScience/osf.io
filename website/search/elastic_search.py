@@ -153,7 +153,7 @@ def get_aggregations(query, doc_type):
             item['key']: item['doc_count']
             for item in agg['buckets']
         }
-        for doc_type, agg in res['aggregations'].iteritems()
+        for doc_type, agg in res['aggregations'].items()
     }
     ret['total'] = res['hits']['total']
     return ret
@@ -170,9 +170,9 @@ def get_counts(count_query, clean=True):
     }
 
     res = client().search(index=INDEX, doc_type=None, search_type='count', body=count_query)
-    counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
+    counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in list(ALIASES.keys())}
 
-    counts['total'] = sum([val for val in counts.values()])
+    counts['total'] = sum([val for val in list(counts.values())])
     return counts
 
 
@@ -523,7 +523,7 @@ def update_user(user, index=None):
     )
 
     normalized_names = {}
-    for key, val in names.items():
+    for key, val in list(names.items()):
         if val is not None:
             try:
                 val = six.u(val)

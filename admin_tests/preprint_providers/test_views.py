@@ -190,7 +190,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
         for field in views.FIELDS_TO_NOT_IMPORT_EXPORT:
-            nt.assert_not_in(field, content_dict['fields'].keys())
+            nt.assert_not_in(field, list(content_dict['fields'].keys()))
 
     def test_export_to_import_new_provider(self):
         update_taxonomies('test_bepress_taxonomy.json')

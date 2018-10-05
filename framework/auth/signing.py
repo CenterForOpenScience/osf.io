@@ -19,7 +19,7 @@ def order_recursive(data):
             sorted(
                 (
                     (key, order_recursive(value))
-                    for key, value in data.items()
+                    for key, value in list(data.items())
                 ),
                 key=lambda item: item[0]
             )

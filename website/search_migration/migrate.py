@@ -197,7 +197,7 @@ def migrate(delete, remove=False, index=None, app=None):
 def set_up_index(idx):
     alias = es_client().indices.get_aliases(index=idx)
 
-    if not alias or not alias.keys() or idx in alias.keys():
+    if not alias or not list(alias.keys()) or idx in list(alias.keys()):
         # Deal with empty indices or the first migration
         index = '{}_v1'.format(idx)
         search.create_index(index=index)
@@ -208,7 +208,7 @@ def set_up_index(idx):
         es_client().indices.put_alias(index=index, name=idx)
     else:
         # Increment version
-        version = int(alias.keys()[0].split('_v')[1]) + 1
+        version = int(list(alias.keys())[0].split('_v')[1]) + 1
         logger.info('Incrementing index version to {}'.format(version))
         index = '{0}_v{1}'.format(idx, version)
         search.create_index(index=index)

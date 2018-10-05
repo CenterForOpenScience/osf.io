@@ -80,7 +80,7 @@ def get_institutions_to_add_remove(institutions, new_institutions):
             raise exceptions.NotFound(detail='Institution with id "{}" was not found'.format(inst_id))
         insts_to_add.append(inst)
 
-    return insts_to_add, diff['remove'].values()
+    return insts_to_add, list(diff['remove'].values())
 
 
 def update_institutions(node, new_institutions, user, post=False):
@@ -252,7 +252,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
-    category_choices = settings.NODE_CATEGORY_MAP.items()
+    category_choices = list(settings.NODE_CATEGORY_MAP.items())
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=True)
@@ -925,7 +925,7 @@ class NodeDetailSerializer(NodeSerializer):
 
 class NodeForksSerializer(NodeSerializer):
 
-    category_choices = settings.NODE_CATEGORY_MAP.items()
+    category_choices = list(settings.NODE_CATEGORY_MAP.items())
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=False)

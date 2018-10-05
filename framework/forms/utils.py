@@ -11,7 +11,7 @@ def process_data(data, func):
     if isinstance(data, dict):
         return {
             key: process_data(value, func)
-            for key, value in data.items()
+            for key, value in list(data.items())
         }
     elif isinstance(data, list):
         return [

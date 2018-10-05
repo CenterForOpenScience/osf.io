@@ -516,8 +516,8 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http.BAD_REQUEST)
     verification = user.email_verifications[token]
     email = verification['email']
-    provider = verification['external_identity'].keys()[0]
-    provider_id = verification['external_identity'][provider].keys()[0]
+    provider = list(verification['external_identity'].keys())[0]
+    provider_id = list(verification['external_identity'][provider].keys())[0]
     # wrong provider
     if provider not in user.external_identity:
         raise HTTPError(http.BAD_REQUEST)

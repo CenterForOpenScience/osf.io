@@ -28,7 +28,7 @@ class GroupHelper(object):
 
     def update_provider_auth_groups(self):
         from osf.models.mixins import ReviewProviderMixin
-        for group_name, group_permissions in ReviewProviderMixin.groups.items():
+        for group_name, group_permissions in list(ReviewProviderMixin.groups.items()):
             group, created = Group.objects.get_or_create(name=self.format_group(group_name))
             to_remove = set(get_perms(group, self.provider)).difference(group_permissions)
             for p in to_remove:

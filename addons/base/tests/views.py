@@ -30,7 +30,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         redirect_params = urlparse.parse_qs(redirect_url.query)
         provider_url = urlparse.urlparse(self.Provider().auth_url)
         provider_params = urlparse.parse_qs(provider_url.query)
-        for param, value in redirect_params.items():
+        for param, value in list(redirect_params.items()):
             if param == 'state':  # state may change between calls
                 continue
             assert value == provider_params[param]

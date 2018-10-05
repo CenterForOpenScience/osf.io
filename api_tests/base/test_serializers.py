@@ -36,7 +36,7 @@ for loader, name, _ in pkgutil.iter_modules(['api']):
 
 SER_CLASSES = []
 for mod in SER_MODULES:
-    for name, val in mod.__dict__.iteritems():
+    for name, val in mod.__dict__.items():
         try:
             if issubclass(val, BaseAPISerializer):
                 if 'JSONAPI' in name or 'BaseAPI' in name:
@@ -214,16 +214,16 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url)
         relationships = res.json['data']['relationships']
-        for relation in relationships.values():
+        for relation in list(relationships.values()):
             if relation == {'data': None}:
                 continue
             if isinstance(relation, list):
                 for item in relation:
-                    link = item['links'].values()[0]
+                    link = list(item['links'].values())[0]
                     link_meta = link.get('meta', {})
                     assert_not_in('count', link_meta)
             else:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 link_meta = link.get('meta', {})
                 assert_not_in('count', link_meta)
 
@@ -232,7 +232,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': True})
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -240,23 +240,23 @@ class TestApiBaseSerializers(ApiTestCase):
                 field = field.field
             related_meta = getattr(field, 'related_meta', {})
             if related_meta and related_meta.get('count', False):
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 assert_in('count', link['meta'], field)
 
     def test_related_counts_excluded_query_param_false(self):
 
         res = self.app.get(self.url, params={'related_counts': False})
         relationships = res.json['data']['relationships']
-        for relation in relationships.values():
+        for relation in list(relationships.values()):
             if relation == {'data': None}:
                 continue
             if isinstance(relation, list):
                 for item in relation:
-                    link = item['links'].values()[0]
+                    link = list(item['links'].values())[0]
                     link_meta = link.get('meta', {})
                     assert_not_in('count', link_meta)
             else:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 link_meta = link.get('meta', {})
                 assert_not_in('count', link_meta)
 
@@ -294,7 +294,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': 'children'})
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -302,14 +302,14 @@ class TestApiBaseSerializers(ApiTestCase):
                 field = field.field
             if isinstance(relation, list):
                 for item in relation:
-                    link = item['links'].values()[0]
+                    link = list(item['links'].values())[0]
                     related_meta = getattr(field, 'related_meta', {})
                     if related_meta and related_meta.get('count', False) and key == 'children':
                         assert_in('count', link['meta'])
                     else:
                         assert_not_in('count', link.get('meta', {}))
             elif relation != {'data': None}:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children':
                     assert_in('count', link['meta'])
@@ -324,7 +324,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'children,contributors'}
         )
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -332,14 +332,14 @@ class TestApiBaseSerializers(ApiTestCase):
                 field = field.field
             if isinstance(relation, list):
                 for item in relation:
-                    link = item['links'].values()[0]
+                    link = list(item['links'].values())[0]
                     related_meta = getattr(field, 'related_meta', {})
                     if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
                         assert_in('count', link['meta'])
                     else:
                         assert_not_in('count', link.get('meta', {}))
             elif relation != {'data': None}:
-                link = relation['links'].values()[0]
+                link = list(relation['links'].values())[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
                     assert_in('count', link['meta'])

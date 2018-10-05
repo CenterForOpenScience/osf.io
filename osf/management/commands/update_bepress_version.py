@@ -61,7 +61,7 @@ def update(dry_run=False):
                 if custom_parent.provider._id not in created_dict:
                     created_dict[custom_parent.provider._id] = []
                 created_dict[custom_parent.provider._id].append(new_text)
-    for old, new in BEPRESS_CHANGES['rename'].items():
+    for old, new in list(BEPRESS_CHANGES['rename'].items()):
         logger.info('Renaming `{}`->`{}`'.format(old, new))
         to_update = Subject.objects.filter(text=old)
         affected_preprints = set(to_update.exclude(preprint_services__isnull=True).values_list('preprint_services__guids___id', flat=True))
@@ -70,7 +70,7 @@ def update(dry_run=False):
             logger.info('Notifying SHARE about preprint {} change'.format(preprint_id))
             if not dry_run:
                 on_preprint_updated(preprint_id)
-    for provider_id, list_of_subjs in created_dict.iteritems():
+    for provider_id, list_of_subjs in created_dict.items():
         logger.info('Created {} new subjects on {}: "{}"'.format(len(list_of_subjs), provider_id, ', '.join(list_of_subjs)))
 
 

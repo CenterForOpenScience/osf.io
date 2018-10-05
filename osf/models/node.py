@@ -282,7 +282,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
     category = models.CharField(max_length=255,
-                                choices=CATEGORY_MAP.items(),
+                                choices=list(CATEGORY_MAP.items()),
                                 blank=True,
                                 default='')
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
@@ -393,7 +393,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         filter_kwargs = {}
         if 'is_node_link' in kwargs:
             filter_kwargs['is_node_link'] = kwargs.pop('is_node_link')
-        for key, val in kwargs.items():
+        for key, val in list(kwargs.items()):
             filter_kwargs['child__{}'.format(key)] = val
         node_relations = (NodeRelation.objects.filter(parent=self, **filter_kwargs)
                         .select_related('child')
@@ -2124,7 +2124,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.custom_citation = ''
 
         # apply `changes`
-        for attr, val in attributes.iteritems():
+        for attr, val in attributes.items():
             setattr(new, attr, val)
 
         # set attributes which may NOT be overridden by `changes`
@@ -2364,7 +2364,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save_node_preprints()
 
         with transaction.atomic():
-            if to_remove or permissions_changed and ['read'] in permissions_changed.values():
+            if to_remove or permissions_changed and ['read'] in list(permissions_changed.values()):
                 project_signals.write_permissions_revoked.send(self)
 
     # TODO: optimize me
@@ -2406,7 +2406,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     save=save
                 )
                 with transaction.atomic():
-                    if ['read'] in permissions_changed.values():
+                    if ['read'] in list(permissions_changed.values()):
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
@@ -2442,10 +2442,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
-        if 'old_subjects' in kwargs.keys():
+        if 'old_subjects' in list(kwargs.keys()):
             # TODO: send this data to SHARE
             kwargs.pop('old_subjects')
-        if 'suppress_log' in kwargs.keys():
+        if 'suppress_log' in list(kwargs.keys()):
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
         else:
@@ -2486,7 +2486,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not isinstance(request, DummyRequest):
             request_headers = {
                 k: v
-                for k, v in get_headers_from_request(request).items()
+                for k, v in list(get_headers_from_request(request).items())
                 if isinstance(v, basestring)
             }
         self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
@@ -2675,7 +2675,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not fields:  # Bail out early if there are no fields to update
             return False
         values = {}
-        for key, value in fields.iteritems():
+        for key, value in fields.items():
             if key not in self.WRITABLE_WHITELIST:
                 continue
             if self.is_registration and key != 'is_public':

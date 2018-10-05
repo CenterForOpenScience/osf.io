@@ -20,7 +20,7 @@ def coerce_nonnaive_datetimes(json_data):
         coerced_data = [coerce_nonnaive_datetimes(data) for data in json_data]
     elif isinstance(json_data, dict):
         coerced_data = dict()
-        for key, value in json_data.iteritems():
+        for key, value in json_data.items():
             coerced_data[key] = coerce_nonnaive_datetimes(value)
     elif isinstance(json_data, dt.datetime):
         try:
@@ -56,8 +56,8 @@ def decode_datetime_objects(nested_value):
     if isinstance(nested_value, list):
         return [decode_datetime_objects(item) for item in nested_value]
     elif isinstance(nested_value, dict):
-        for key, value in nested_value.iteritems():
-            if isinstance(value, dict) and 'type' in value.keys():
+        for key, value in nested_value.items():
+            if isinstance(value, dict) and 'type' in list(value.keys()):
                 if value['type'] == 'encoded_datetime':
                     nested_value[key] = ciso8601.parse_datetime(value['value'])
                 if value['type'] == 'encoded_date':

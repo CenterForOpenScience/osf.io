@@ -45,7 +45,7 @@ class JSONAPIParser(JSONParser):
             raise ParseError()
 
         # Can only create one type of relationship.
-        related_resource = relationships.keys()[0]
+        related_resource = list(relationships.keys())[0]
         if not isinstance(relationships[related_resource], dict) or related_resource == 'data':
             raise ParseError()
         data = relationships[related_resource].get('data')
@@ -100,7 +100,7 @@ class JSONAPIParser(JSONParser):
                 relationship_values = []
                 relationship_key = None
                 for relationship in relationships:
-                    for key, value in relationship.iteritems():
+                    for key, value in relationship.items():
                         relationship_values.append(value)
                         relationship_key = key
                 relationship = {relationship_key: relationship_values}
@@ -240,7 +240,7 @@ class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
 class JSONAPIMultipleRelationshipsParserForRegularJSON(JSONAPIParserForRegularJSON):
     def flatten_relationships(self, relationships):
         ret = super(JSONAPIMultipleRelationshipsParserForRegularJSON, self).flatten_relationships(relationships)
-        related_resource = relationships.keys()[0]
+        related_resource = list(relationships.keys())[0]
         if ret.get('target_type') and ret.get('id'):
             return {related_resource: ret['id']}
         return ret
@@ -302,7 +302,7 @@ class SearchParser(JSONAPIParser):
 
         if any(data.values()):
             res['query']['bool'].update({'filter': []})
-            for key, val in data.iteritems():
+            for key, val in data.items():
                 if val is not None:
                     if isinstance(val, list):
                         res['query']['bool']['filter'].append({'terms': {key: val}})

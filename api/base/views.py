@@ -153,7 +153,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
             # Check only requested and mandatory fields
             sparse_fields = self.request.query_params['fields[{}]'.format(self.serializer_class.Meta.type_)]
-            for field in fields_check.copy().keys():
+            for field in list(fields_check.copy().keys()):
                 if field not in ('type', 'id', 'links') and field not in sparse_fields:
                     fields_check.pop(field)
 

@@ -298,7 +298,7 @@ class BaseFileSerializer(JSONAPISerializer):
         for deleted_tag in (old_tags - current_tags):
             instance.remove_tag(deleted_tag, auth=auth)
 
-        for attr, value in validated_data.items():
+        for attr, value in list(validated_data.items()):
             if attr == 'checkout':
                 user = self.context['request'].user
                 instance.check_in_or_out(user, value)

@@ -182,7 +182,7 @@ class TestReviewActionCreateRoot(object):
                 ('withdrawn', 'withdraw'),
             ]
         }
-        for workflow, transitions in invalid_transitions.items():
+        for workflow, transitions in list(invalid_transitions.items()):
             provider.reviews_workflow = workflow
             provider.save()
             for state, trigger in transitions:
@@ -248,7 +248,7 @@ class TestReviewActionCreateRoot(object):
                 ('rejected', 'submit', 'pending'),
             ],
         }
-        for workflow, transitions in valid_transitions.items():
+        for workflow, transitions in list(valid_transitions.items()):
             provider.reviews_workflow = workflow
             provider.save()
             for from_state, trigger, to_state in transitions:

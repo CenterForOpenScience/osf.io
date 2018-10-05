@@ -228,7 +228,7 @@ def ember_app(path=None):
 
     ember_app = None
 
-    for k in EXTERNAL_EMBER_APPS.keys():
+    for k in list(EXTERNAL_EMBER_APPS.keys()):
         if request.path.strip('/').startswith(k):
             ember_app = EXTERNAL_EMBER_APPS[k]
             break
@@ -241,7 +241,7 @@ def ember_app(path=None):
         url = urlparse.urljoin(ember_app['server'], path)
         resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-        headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
+        headers = [(name, value) for (name, value) in list(resp.raw.headers.items()) if name.lower() not in excluded_headers]
         return Response(resp.content, resp.status_code, headers)
 
     ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), ember_app['path']))
@@ -323,7 +323,7 @@ def make_url_map(app):
     # Ember Applications
     if settings.USE_EXTERNAL_EMBER:
         # Routes that serve up the Ember application. Hide behind feature flag.
-        for prefix in EXTERNAL_EMBER_APPS.keys():
+        for prefix in list(EXTERNAL_EMBER_APPS.keys()):
             process_rules(app, [
                 Rule(
                     [

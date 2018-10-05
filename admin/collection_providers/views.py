@@ -145,7 +145,7 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
     def form_invalid(self, form):
         super(CollectionProviderChangeForm, self).form_invalid(form)
         err_message = ''
-        for item in form.errors.values():
+        for item in list(form.errors.values()):
             err_message = err_message + item + '\n'
         return HttpResponse(err_message, status=409)
 
@@ -224,7 +224,7 @@ class ImportCollectionProvider(PermissionRequiredMixin, View):
         provider_data.pop('additional_providers')
 
         if provider:
-            for key, val in provider_data.iteritems():
+            for key, val in provider_data.items():
                 setattr(provider, key, val)
             provider.save()
         else:

@@ -108,7 +108,7 @@ class PageCounter(BaseModel):
                 # if they haven't visited this page today
                 if cleaned_page not in visited_by_date['pages']:
                     # if the model_instance has today in it
-                    if date_string in model_instance.date.keys():
+                    if date_string in list(model_instance.date.keys()):
                         # increment the number of unique visitors for today
                         model_instance.date[date_string]['unique'] += 1
                     else:
@@ -120,7 +120,7 @@ class PageCounter(BaseModel):
                 visited_by_date['date'] = date_string
                 visited_by_date['pages'] = []
                 # if the model_instance has today in it
-                if date_string in model_instance.date.keys():
+                if date_string in list(model_instance.date.keys()):
                     # increment the number of unique visitors for today
                     model_instance.date[date_string]['unique'] += 1
                 else:
@@ -131,8 +131,8 @@ class PageCounter(BaseModel):
             visited_by_date['pages'].append(cleaned_page)
             session.data['visited_by_date'] = visited_by_date
 
-            if date_string in model_instance.date.keys():
-                if 'total' not in model_instance.date[date_string].keys():
+            if date_string in list(model_instance.date.keys()):
+                if 'total' not in list(model_instance.date[date_string].keys()):
                     model_instance.date[date_string].update(total=0)
                 model_instance.date[date_string]['total'] += 1
             else:

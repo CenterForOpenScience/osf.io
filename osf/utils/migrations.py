@@ -93,7 +93,7 @@ def ensure_licenses(*args, **kwargs):
             )
     ) as fp:
         licenses = json.loads(fp.read())
-        for id, info in licenses.items():
+        for id, info in list(licenses.items()):
             name = info['name']
             text = info['text']
             properties = info.get('properties', [])

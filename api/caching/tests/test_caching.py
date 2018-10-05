@@ -37,7 +37,7 @@ class TestVarnish(DbTestCase):
         small = 5
         large = 10
 
-        components = [[[range(small, random.randint(small, large))
+        components = [[[list(range(small, random.randint(small, large)))
                         for x in range(small, random.randint(small, large))]
                        for y in range(small, random.randint(small, large))]
                       for z in range(small, random.randint(small, large))]
@@ -96,7 +96,7 @@ class TestVarnish(DbTestCase):
         varnish_data = copy.deepcopy(data_dict)
         varnish_authed_data = copy.deepcopy(data_dict)
 
-        for key, embed_values in querystrings.items():
+        for key, embed_values in list(querystrings.items()):
             embed_values.sort()
             original_embed_values = embed_values
             while len(embed_values) > 0:
@@ -170,12 +170,12 @@ class TestVarnish(DbTestCase):
         if embed_keys is None:
             embed_keys = list()
 
-        if 'errors' in data.keys():
+        if 'errors' in list(data.keys()):
             print json.dumps(data, indent=4)
             return
         for item in data['data']:  # all these should be lists.
-            if 'embeds' in item.keys():
-                item__embed_keys = item['embeds'].keys()
+            if 'embeds' in list(item.keys()):
+                item__embed_keys = list(item['embeds'].keys())
                 item__embed_keys.sort()
                 embed_keys.sort()
                 assert item__embed_keys == embed_keys, 'Embed key mismatch: \n{}\n{}'.format(
