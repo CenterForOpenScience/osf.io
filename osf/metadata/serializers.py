@@ -34,7 +34,7 @@ class MetadataRecordSerializer(object):
 @register(schema_id='datacite')
 class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
 
-    osf_schema = 'user_entered_datacite.json'
+    osf_schema = 'osf_datacite.json'
 
     @classmethod
     def serialize_json(cls, record):

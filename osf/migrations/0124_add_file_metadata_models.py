@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
-                ('metadata', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, validators=[osf.models.metadata.validate_user_entered_metadata])),
+                ('metadata', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder)),
                 ('file', models.ForeignKey(null=True, on_delete=models.deletion.SET_NULL, related_name='records', to='osf.OsfStorageFile')),
                 ('schema', models.ForeignKey(null=True, on_delete=models.deletion.SET_NULL, related_name='records', to='osf.FileMetadataSchema')),
             ],

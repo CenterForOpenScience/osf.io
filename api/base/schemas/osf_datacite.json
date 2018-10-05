@@ -1,8 +1,8 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "/user_entered_datacite",
-    "title": "User Entered Fields for the Datacite Schema",
-    "description": "User Entered Fields for the Datacite Schema",
+    "$id": "/osf_datacite",
+    "title": "OSF Specific Fields for the Datacite Schema",
+    "description": "This is validation for file metadata fields that the OSF allows to be edited by the user. These fields will match the fields presented to the user on a file metadata form on the OSF.",
     "type": "object",
     "properties": {
         "resource_type": {

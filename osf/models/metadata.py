@@ -15,13 +15,9 @@ from osf.metadata.serializers import serializer_registry
 from website.util import api_v2_url
 
 
-def validate_user_entered_metadata(value):
-    return jsonschema.validate(value, from_json('user_entered_datacite.json'))
-
-
 class FileMetadataRecord(ObjectIDMixin, BaseModel):
 
-    metadata = DateTimeAwareJSONField(default=dict, blank=True, validators=[validate_user_entered_metadata])
+    metadata = DateTimeAwareJSONField(default=dict, blank=True)
 
     file = models.ForeignKey(OsfStorageFile, related_name='records', on_delete=models.SET_NULL, null=True)
     schema = models.ForeignKey(FileMetadataSchema, related_name='records', on_delete=models.SET_NULL, null=True)
@@ -44,12 +40,14 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
     def serialize(self, format='json'):
         return self.serializer.serialize(self, format)
 
+    def validate_metadata(self, proposed_metadata):
+        return jsonschema.validate(proposed_metadata, from_json(self.serializer.osf_schema))
+
     def update(self, proposed_metadata, user=None):
         auth = Auth(user) if user else None
         if auth and self.file.target.has_permission(user, osf_permissions.WRITE):
+            self.validate_metadata(proposed_metadata)
             self.metadata = proposed_metadata
-            # causes model level validation to run
-            self.clean_fields()
             self.save()
 
             target = self.file.target
