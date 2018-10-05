@@ -111,16 +111,23 @@ def divorce_preprints_from_nodes_sql(state, schema):
             SET title = N.title,
                 description = N.description,
                 article_doi = N.preprint_article_doi,
-                is_public = N.is_public,
-                spam_status= N.spam_status,
+                is_public = N.is_public
+            FROM osf_abstractnode as N
+            WHERE P.node_id = N.id
+            AND P.node_id IS NOT NULL;
+
+            UPDATE osf_preprint P -- Copies node spam to preprint spam as long as preprint hasn't been confirmed as spam or ham
+            SET spam_status= N.spam_status,
                 spam_pro_tip= N.spam_pro_tip,
                 spam_data = N.spam_data,
                 date_last_reported = N.date_last_reported,
                 reports = N.reports
-
             FROM osf_abstractnode as N
             WHERE P.node_id = N.id
-            AND P.node_id IS NOT NULL;
+            AND P.node_id IS NOT NULL
+            AND (P.spam_status is NULL
+            OR (P.spam_status != 4
+            AND P.spam_status != 2));
 
             -- Creates PreprintContributor records from NodeContributors, except permissions
             -- since preprints use django guardian
@@ -129,6 +136,37 @@ def divorce_preprints_from_nodes_sql(state, schema):
                FROM osf_preprint as P
                JOIN osf_abstractnode as N on P.node_id = N.id
                JOIN osf_contributor as C on N.id = C.node_id);
+
+            -- Copy the unclaimed record for the node and add it to the user using the preprint guid as the key
+            -- This is for preserving unregistered contributor info
+            CREATE OR REPLACE FUNCTION update_unclaimed_records_for_preprints()
+              RETURNS SETOF varchar AS
+            $func$
+            DECLARE
+              rec record;
+            BEGIN
+              FOR rec IN
+                SELECT jsonb_build_object(PG._id, unclaimed_records::jsonb-> NG._id) as newkeyvalue, U.id as user_id
+                FROM osf_osfuser U, osf_contributor C, osf_abstractnode N, osf_preprint P, django_content_type NCT, django_content_type PCT, osf_guid NG, osf_guid PG
+                WHERE C.user_id = U.id
+                AND N.id = C.node_id
+                AND P.node_id = N.id
+                AND NCT.model = 'abstractnode'
+                AND PCT.model = 'preprint'
+                AND NG.object_id = N.id AND NG.content_type_id = NCT.id
+                AND PG.object_id = P.id AND PG.content_type_id = PCT.id
+                AND unclaimed_records::jsonb ? NG._id
+
+              LOOP
+                -- Loops through every row in temporary table above, and adding a new key/value pair to unclaimed_records, copying the node -> preprint
+                -- Looping instead of joining to osf_user table because temporary table above has multiple rows with the same user
+                UPDATE osf_osfuser
+                SET unclaimed_records = unclaimed_records || rec.newkeyvalue
+                WHERE osf_osfuser.id = rec.user_id;
+              END LOOP;
+            END
+            $func$ LANGUAGE plpgsql;
+            SELECT update_unclaimed_records_for_preprints();
 
             -- Creates Read, Write, and Admin groups for each preprint
             INSERT INTO auth_group (name)
