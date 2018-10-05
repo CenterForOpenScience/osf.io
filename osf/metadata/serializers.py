@@ -110,15 +110,17 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
                 }
             ]
 
-        funder_name = record.metadata.get('funding_agency')
-        award_number = record.metadata.get('grant_number')
-        if funder_name:
-            funding_info = {
-                'funderName': funder_name
-            }
-            if award_number:
-                funding_info['awardNumber'] = award_number
-            doc['fundingReferences'] = [funding_info]
+        funders = record.metadata.get('funders')
+        if funders:
+            doc['fundingReferences'] = []
+            for funder in funders:
+                funder_info = {
+                    'funderName': funder['funding_agency'],
+                }
+                if funder.get('grant_number'):
+                    funder_info['awardNumber'] = {'awardNumber': funder['grant_number']}
+
+                doc['fundingReferences'].append(funder_info)
 
         if getattr(target, 'node_license', None):
             doc['rightsList'] = [utils.datacite_format_rights(target.node_license)]

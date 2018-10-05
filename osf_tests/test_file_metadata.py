@@ -20,6 +20,14 @@ def node():
 def osf_file(node):
     return create_test_file(target=node, user=node.creator)
 
+def inject_placeholder_doi(json_data):
+    # the OSF cannot currently issue DOIs for a file, which is required for datacite schema validation.
+    # Manually add a placeholder in tests for validation until we handle this better.
+    placeholder = DOI_FORMAT.format(prefix=DATACITE_PREFIX, guid='placeholder')
+    json_data['identifier'] = {'identifierType': 'DOI', 'identifier': placeholder}
+    return json_data
+
+
 @pytest.mark.django_db
 class TestFileMetadataRecordSerializer:
 
@@ -107,11 +115,11 @@ class TestFileMetadataRecordSerializer:
     def test_validate(self, node, osf_file):
         record = osf_file.records.get(schema___id='datacite')
         json_data = json.loads(record.serialize())
-        # the OSF cannot currently issue DOIs for a file, which is required for datacite schema validation.
-        # Manually add a placeholder in this test for validation until we handle this better.
-        placeholder = DOI_FORMAT.format(prefix=DATACITE_PREFIX, guid='placeholder')
-        json_data['identifier'] = {'identifierType': 'DOI', 'identifier': placeholder}
-        assert jsonschema.validate(json_data, record.schema.schema) is None
+
+        assert jsonschema.validate(
+            inject_placeholder_doi(json_data),
+            record.schema.schema
+        ) is None
 
 
 @pytest.mark.django_db
@@ -133,19 +141,41 @@ class TestFileMetadataRecord:
         record.metadata = initial_metadata
         record.save()
 
-        new_metadata = {
+        partial_metadata = {
             'funders': [
                 {'funding_agency': 'Hello'},
                 {'funding_agency': 'Ric Flair', 'grant_number': 'Woooooo'},
             ]
         }
-        record.update(new_metadata, user=node.creator)
+        record.update(partial_metadata, user=node.creator)
 
         # Make sure an update creates a node log
         assert node.logs.latest().action == NodeLog.FILE_METADATA_UPDATED
 
         # Make sure old fields are cleared
         assert initial_metadata.keys() not in record.metadata.keys()
+
+        full_metadata = {
+            'funders': [
+                {'funding_agency': 'Hello'},
+                {'funding_agency': 'Ric Flair', 'grant_number': 'Woooooo'},
+            ],
+            'file_description': 'Hey this is a great interesting important file',
+            'resource_type': 'Funding Submission',
+            'related_publication_doi': '10.12345/fk2osf.io/hello/'
+        }
+        record.update(full_metadata, user=node.creator)
+
+        json_data = json.loads(record.serialize())
+        datacite_user_entered_fields = ['fundingReferences', 'resourceType', 'descriptions', 'relatedIdentifiers']
+        for field in datacite_user_entered_fields:
+            assert field in json_data.keys()
+
+        # validate record with all user entered metadata
+        assert jsonschema.validate(
+            inject_placeholder_doi(json_data),
+            record.schema.schema
+        ) is None
 
     def test_update_fails_with_incorrect_metadata(self, node, record):
         # metadata not in schema fails
@@ -164,9 +194,13 @@ class TestFileMetadataRecord:
         }
         with pytest.raises(jsonschema.ValidationError):
             record.update(wrong_doi, user=node.creator)
-        record.reload()
-        assert record.metadata == {}
-        assert node.logs.latest().action != NodeLog.FILE_METADATA_UPDATED
+
+        # resource_type not in specified options fails
+        wrong_resource_type = {
+            'resource_type': 'Scrap Book'
+        }
+        with pytest.raises(jsonschema.ValidationError):
+            record.update(wrong_resource_type, user=node.creator)
 
     def test_update_permissions(self, node, record, initial_metadata):
         # Can't update with non-contributor auth
