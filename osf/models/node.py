@@ -1815,9 +1815,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
             if child_ids and node_contained._id not in child_ids:
-                children = node_contained.node_relations.filter(child__is_deleted=False, child__guids___id__in=child_ids)
-                if children:  # We can't skip a node with children that we have to register.
-                    raise NodeStateError('The parent of node {} must be registered.'.format(children.first().child._id))
+                if node_contained.node_relations.filter(child__is_deleted=False, child__guids___id__in=child_ids).exists():
+                    # We can't skip a node with children that we have to register.
+                    raise NodeStateError('The parents of all child nodes being registered must be registered.')
                 continue
 
             # Register child nodes
