@@ -49,7 +49,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 from framework.auth.core import get_user
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, HTTPError
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
@@ -696,14 +696,21 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
 
         if claimer.is_anonymous and email:
             claimer = get_user(email=email)
-            if claimer and claimer.is_registered:
-                self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
-            else:
-                self._send_claim_email(email, claimed_user, record_referent, notify=True, registered=False)
+            try:
+                if claimer and claimer.is_registered:
+                    self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+                else:
+                    self._send_claim_email(email, claimed_user, record_referent, notify=True, registered=False)
+            except HTTPError as e:
+                raise ValidationError(e.data['message_long'])
         elif isinstance(claimer, OSFUser):
             if unclaimed_record.get('referrer_id', '') == claimer._id:
                 raise ValidationError('Referrer cannot claim user.')
-            self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+            try:
+                self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+            except HTTPError as e:
+                raise ValidationError(e.data['message_long'])
+
         else:
             raise ValidationError('Must either be logged in or specify claim email.')
 
