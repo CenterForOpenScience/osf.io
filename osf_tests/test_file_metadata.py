@@ -1,13 +1,12 @@
 import json
 import pytest
 import jsonschema
-from django.contrib.contenttypes.models import ContentType
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from website.settings import DOI_FORMAT, DATACITE_PREFIX
 from website.project.licenses import set_license
-from osf.models import FileMetadataSchema, NodeLicense, Guid, NodeLog
+from osf.models import FileMetadataSchema, NodeLicense, NodeLog
 from osf_tests.factories import ProjectFactory, SubjectFactory, AuthUserFactory
 from api_tests.utils import create_test_file
 
@@ -68,12 +67,6 @@ class TestFileMetadataRecordSerializer:
         set_license(node, license_detail, Auth(node.creator))
         osf_file.save()
         node.save()
-
-        # create a guid
-        Guid.objects.create(
-            object_id=osf_file.id,
-            content_type_id=ContentType.objects.get_for_model(osf_file).id
-        )
 
         record = osf_file.records.get(schema___id='datacite')
         serialized_record = json.loads(record.serialize())
