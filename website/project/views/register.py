@@ -53,7 +53,7 @@ def node_register_page(auth, node, **kwargs):
             trust=False,
             id='redirected_to_registrations',
         )
-        return redirect(node.web_url_for('node_registrations', view='draft'))
+        return redirect(node.web_url_for('node_registrations', view='draft', _guid=True))
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -155,7 +155,7 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
             trust=False,
             id='redirected_to_registrations',
         )
-        return redirect(node.web_url_for('node_registrations', view=kwargs.get('template')))
+        return redirect(node.web_url_for('node_registrations', view=kwargs.get('template'), _guid=True))
 
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)

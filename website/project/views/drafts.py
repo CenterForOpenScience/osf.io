@@ -223,7 +223,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     return {
         'status': 'initiated',
         'urls': {
-            'registrations': node.web_url_for('node_registrations')
+            'registrations': node.web_url_for('node_registrations', _guid=True)
         }
     }, http.ACCEPTED
 
@@ -290,7 +290,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
         schema=meta_schema,
         data={}
     )
-    return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id))
+    return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id, _guid=True))
 
 
 @must_have_permission(ADMIN)

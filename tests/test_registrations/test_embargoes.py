@@ -870,7 +870,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         self.project.reload()
         assert_equal(res.status_code, 202)
-        assert_equal(res.json['urls']['registrations'], self.project.web_url_for('node_registrations'))
+        assert_equal(res.json['urls']['registrations'], self.project.web_url_for('node_registrations', _guid=True))
 
         # Last node directly registered from self.project
         registration = AbstractNode.objects.filter(registered_from=self.project).order_by('-registered_date')[0]
@@ -961,7 +961,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         self.project.reload()
         assert_equal(res.status_code, 202)
-        assert_equal(res.json['urls']['registrations'], self.project.web_url_for('node_registrations'))
+        assert_equal(res.json['urls']['registrations'], self.project.web_url_for('node_registrations', _guid=True))
 
         # Last node directly registered from self.project
         registration = AbstractNode.objects.filter(registered_from=self.project).order_by('-registered_date')[0]
