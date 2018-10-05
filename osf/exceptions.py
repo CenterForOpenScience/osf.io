@@ -111,6 +111,7 @@ class InvalidTriggerError(Exception):
         self.state = state
         self.valid_triggers = valid_triggers
         self.message = 'Cannot trigger "{}" from state "{}". Valid triggers: {}'.format(trigger, state, valid_triggers)
+        super(Exception, self).__init__(self.message)
 
 class InvalidTransitionError(Exception):
     def __init__(self, machine, transition):

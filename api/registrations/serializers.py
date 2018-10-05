@@ -342,7 +342,7 @@ class BaseRegistrationSerializer(NodeSerializer):
             try:
                 registration.update_tags(new_tags, auth=auth)
             except NodeStateError as err:
-                raise Conflict(err.message)
+                raise Conflict(str(err))
         if 'custom_citation' in validated_data:
             registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
         is_public = validated_data.get('is_public', None)
@@ -353,7 +353,7 @@ class BaseRegistrationSerializer(NodeSerializer):
                 except NodeUpdateError as err:
                     raise exceptions.ValidationError(err.reason)
                 except NodeStateError as err:
-                    raise exceptions.ValidationError(err.message)
+                    raise exceptions.ValidationError(str(err))
             else:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration

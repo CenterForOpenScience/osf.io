@@ -544,7 +544,7 @@ def project_set_privacy(auth, node, **kwargs):
     except NodeStateError as e:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_short="Can't change privacy",
-            message_long=e.message
+            message_long=str(e)
         ))
 
     return {
@@ -590,7 +590,7 @@ def component_remove(auth, node, **kwargs):
             http.BAD_REQUEST,
             data={
                 'message_short': 'Error',
-                'message_long': 'Could not delete component: ' + e.message
+                'message_long': 'Could not delete component: ' + str(e)
             },
         )
     node.save()
