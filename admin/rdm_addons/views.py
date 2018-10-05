@@ -25,7 +25,10 @@ from website.app import init_addons, attach_handlers
 
 def init_app():
     from framework.flask import app
-    make_url_map(app)
+    try:
+        make_url_map(app)
+    except AssertionError:
+        pass
     init_addons(website_settings)
     attach_handlers(app, website_settings)
     for addon in website_settings.ADDONS_AVAILABLE:

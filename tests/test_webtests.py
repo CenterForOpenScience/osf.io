@@ -39,7 +39,7 @@ from website.util import web_url_for, api_url_for, permissions
 from api_tests import utils as test_utils
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
-
+logger = logging.getLogger(__name__)
 
 def assert_in_html(member, container, **kwargs):
     """Looks for the specified member in markupsafe-escaped HTML output"""
@@ -136,7 +136,7 @@ class TestAUser(OsfTestCase):
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
-        assert_not_in('OSF Storage', res)
+        assert_not_in('NII Storage', res)
 
     def test_sees_osffiles_in_project_addon_settings(self):
         project = ProjectFactory(creator=self.user)
@@ -145,7 +145,7 @@ class TestAUser(OsfTestCase):
             permissions=['read', 'write', 'admin'],
             save=True)
         res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
-        assert_in('OSF Storage', res)
+        assert_in('NII Storage', res)
 
     def test_sees_correct_title_home_page(self):
         # User goes to homepage

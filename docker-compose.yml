@@ -443,7 +443,13 @@ services:
 
   admin:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke adminserver -h 0.0.0.0
+    command: 
+    - /bin/bash 
+    - -c
+    - apt-get update && apt-get install -y libtk8.6 wkhtmltopdf xvfb cron &&
+      /etc/init.d/cron start &&
+      cat ./admin/rdm_statistics/cron.sh | crontab - &&
+      invoke adminserver -h 0.0.0.0
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
@@ -462,6 +468,7 @@ services:
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_admin_node_modules_vol:/code/admin/node_modules
+      - /host_server/user_key_info:/user_key_info
 
   api:
     image: quay.io/centerforopenscience/osf:develop
@@ -506,4 +513,5 @@ services:
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
       - reviews_dist_vol:/reviews
+      - /host_server/user_key_info:/user_key_info
     stdin_open: true

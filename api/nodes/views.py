@@ -109,6 +109,7 @@ from website import mails
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN, PERMISSIONS
 from osf.models import RdmTimestampGrantPattern
+from django.core.exceptions import ObjectDoesNotExist
 
 import logging
 logger = logging.getLogger(__name__)
@@ -128,11 +129,12 @@ class NodeMixin(object):
             # If this is an embedded request, the node might be cached somewhere
             node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
 
-#        if 'timestampPattern' in self.request.data.keys():
-#            timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=self.kwargs['node_id'])
-#            timestamp_pattern.timestamp_pattern_division = int(self.request.data['timestampPattern'])
-#            timestamp_pattern.save()
-
+        try:
+            timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=self.kwargs['node_id'])
+            timestamp_pattern.timestamp_pattern_division = int(self.request.data['timestampPattern'])
+            timestamp_pattern.save()
+        except ObjectDoesNotExist:
+            pass
         if node is None:
             node = get_object_or_error(
                 Node,

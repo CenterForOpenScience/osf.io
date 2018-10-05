@@ -305,7 +305,7 @@ class TestUsersCreate:
     def tearDown(self, app):
         super(TestUsersCreate, self).tearDown()
         app.reset()  # clears cookies
-        OSFUser.remove()
+        OSFUser.delete()
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(

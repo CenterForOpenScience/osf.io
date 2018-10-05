@@ -80,17 +80,40 @@ class Loggable(models.Model):
             action=action, user=user, foreign_user=foreign_user,
             params=params, node=self, original_node=original_node
         )
-        if ('file' in action) or ('check' in action) or ('osf_storage' in action):
-            filelog = FileLog(
-                action=action, user=user, path=params['path'],
-                project_id=self._id
-            )
-            if log_date:
-                filelog.date = log_date
-            filelog.save()
-            ## RDM Logger ##
-            rdmlogger = RdmLogger(rdmlog, {})
-            rdmlogger.info('RDM Project', RDMINFO='FileLog', action=action, user=user._id, project=original_node.title, file_path=params['path'])
+
+        if user:
+            try:
+                if (('file' in action) or ('check' in action) or ('osf_storage' in action)) and user._id:
+                    if action not in 'rename':
+                        filelog = FileLog(
+                            action=action, user=user, path=params['path'],
+                            project_id=self._id
+                        )
+                        if log_date:
+                            filelog.date = log_date
+                        filelog.save()
+                        ## RDM Logger ##
+                        if user._id and original_node.title and params['path']:
+                            rdmlogger = RdmLogger(rdmlog, {})
+                            rdmlogger.info('RDM Project', RDMINFO='FileLog', action=action, user=user._id, project=original_node.title, file_path=params['path'])
+                    else:
+                        if 'osfstorage' in params['source']['provider']:
+                            source_path = params['source']['materialized']
+                        else:
+                            source_path = params['source']['path']
+                        filelog = FileLog(
+                            action=action, user=user, path=source_path,
+                            project_id=self._id
+                        )
+                        if log_date:
+                            filelog.date = log_date
+                        filelog.save()
+                        ## RDM Logger ##
+                        if user._id and original_node.title and source_path:
+                            rdmlogger = RdmLogger(rdmlog, {})
+                            rdmlogger.info('RDM Project', RDMINFO='FileLog', action=action, user=user._id, project=original_node.title, file_path=source_path)
+            except KeyError:
+                print('KeyError')
 
         if log_date:
             log.date = log_date
