@@ -645,7 +645,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         res = app.post_json_api(url_registrations, payload_with_grandchildren_but_no_children, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The parent of node {} must be registered.'.format(project_public_grandchild._id)
+        assert res.json['errors'][0]['detail'] == 'The parents of all child nodes being registered must be registered.'
 
     def test_cannot_create_registration(
             self, app, user_write_contrib, user_read_contrib,
