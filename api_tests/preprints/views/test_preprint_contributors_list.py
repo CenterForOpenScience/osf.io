@@ -5,7 +5,6 @@ import pytest
 import random
 from django.utils import timezone
 
-from api.base.exceptions import Conflict
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
@@ -1327,26 +1326,25 @@ class TestPreprintContributorCreateValidation(NodeCRUDTestCase):
             user_id='abcde')
 
     #   test_add_contributor_validation_user_id_fullname
-        with pytest.raises(Conflict):
-            validate_data(
-                NodeContributorsCreateSerializer(),
-                'fake',
-                user_id='abcde',
-                full_name='Kanye')
+        validate_data(
+            NodeContributorsCreateSerializer(),
+            preprint_published,
+            user_id='abcde',
+            full_name='Kanye')
 
     #   test_add_contributor_validation_user_id_email
-        with pytest.raises(Conflict):
+        with pytest.raises(exceptions.ValidationError):
             validate_data(
                 NodeContributorsCreateSerializer(),
-                'fake',
+                preprint_published,
                 user_id='abcde',
                 email='kanye@west.com')
 
     #   test_add_contributor_validation_user_id_fullname_email
-        with pytest.raises(Conflict):
+        with pytest.raises(exceptions.ValidationError):
             validate_data(
                 NodeContributorsCreateSerializer(),
-                'fake',
+                preprint_published,
                 user_id='abcde',
                 full_name='Kanye',
                 email='kanye@west.com')
@@ -1361,7 +1359,7 @@ class TestPreprintContributorCreateValidation(NodeCRUDTestCase):
         with pytest.raises(exceptions.ValidationError):
             validate_data(
                 NodeContributorsCreateSerializer(),
-                'fake',
+                preprint_published,
                 email='kanye@west.com')
 
     #   test_add_contributor_validation_fullname_email

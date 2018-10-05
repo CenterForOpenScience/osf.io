@@ -88,6 +88,14 @@ class TestUserPreprints:
         assert project_public._id not in ids
         assert project_private._id not in ids
 
+        abandoned_preprint = PreprintFactory(creator=user_one, finish=False)
+        abandoned_preprint.machine_state = 'initial'
+        abandoned_preprint.save()
+        url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one.auth)
+        actual = [result['id'] for result in res.json['data']]
+        assert abandoned_preprint._id not in actual
+
 
 class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
 

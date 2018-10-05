@@ -382,7 +382,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         target_user = self.get_user(check_permissions=False)
 
         # Permissions on the list objects are handled by the query
-        default_qs = Preprint.objects.filter(_contributors__guids___id=target_user._id)
+        default_qs = Preprint.objects.filter(_contributors__guids___id=target_user._id).exclude(machine_state='initial')
         return self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
 
     def get_queryset(self):
