@@ -1698,3 +1698,9 @@ class MaintenanceStateSerializer(ser.ModelSerializer):
     class Meta:
         model = MaintenanceState
         fields = ('level', 'message', 'start', 'end')
+
+
+class FilterOnlyField(ser.SerializerMethodField):
+
+    def bind(self, field_name, parent):
+        return None

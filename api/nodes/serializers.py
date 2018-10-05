@@ -12,7 +12,7 @@ from api.base.serializers import (
     NodeFileHyperLinkField, RelationshipField,
     ShowIfVersion, TargetTypeField, TypeField,
     WaterbutlerLink, relationship_diff, BaseAPISerializer,
-    HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
+    HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous, FilterOnlyField,
 )
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (
@@ -285,7 +285,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'for the current user on this node.',
     )
 
-    child_of = ser.HiddenField(default=None)  # This needs to be a declared field to be filtered on.
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(
         source='is_public', required=False,
@@ -464,6 +463,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-preprints',
         related_view_kwargs={'node_id': '<_id>'},
     ))
+
+    child_of = FilterOnlyField()
 
     def get_current_user_permissions(self, obj):
         if hasattr(obj, 'contrib_admin'):
