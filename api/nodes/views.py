@@ -123,6 +123,7 @@ from website import mails
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import RdmTimestampGrantPattern
+from django.core.exceptions import ObjectDoesNotExist
 
 import logging
 logger = logging.getLogger(__name__)
