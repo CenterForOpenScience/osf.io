@@ -138,14 +138,14 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         approval_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
         self.registration.registration_approval.approve(self.user, approval_token)
         assert_true(self.registration.is_pending_registration)
-        num_of_approvals = sum([val['has_approved'] for val in list(self.registration.registration_approval.approval_state.values())])
+        num_of_approvals = sum([val['has_approved'] for val in self.registration.registration_approval.approval_state.values()])
         assert_equal(num_of_approvals, 1)
 
         # Second admin approves
         approval_token = self.registration.registration_approval.approval_state[admin2._id]['approval_token']
         self.registration.registration_approval.approve(admin2, approval_token)
         assert_false(self.registration.is_pending_registration)
-        num_of_approvals = sum([val['has_approved'] for val in list(self.registration.registration_approval.approval_state.values())])
+        num_of_approvals = sum([val['has_approved'] for val in self.registration.registration_approval.approval_state.values()])
         assert_equal(num_of_approvals, 2)
 
     def test_invalid_rejection_token_raises_InvalidSanctionRejectionToken(self):

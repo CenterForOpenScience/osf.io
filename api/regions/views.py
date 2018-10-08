@@ -23,7 +23,7 @@ class RegionMixin(object):
     def get_region(self):
         region_id = self.kwargs[self.region_lookup_url_kwarg]
         if self.kwargs.get('is_embedded') is True:
-            node_id, node = list(self.request.parents[Node].items())[0]
+            node_id, node = self.request.parents[Node].items()[0]
             try:
                 # use the annotated value if possible
                 region_id = node.region

@@ -248,7 +248,7 @@ class TestDeleteNodeLink:
     def test_deletes_public_node_pointer_logged_out(self, app, public_url):
         res = app.delete(public_url, expect_errors=True)
         assert res.status_code == 401
-        assert 'detail' in list(res.json['errors'][0].keys())
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_deletes_public_node_pointer_fails_if_bad_auth(
             self, app, user_two, public_project, public_url):

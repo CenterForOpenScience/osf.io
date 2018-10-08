@@ -196,9 +196,9 @@ class UserSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         assert isinstance(instance, OSFUser), 'instance must be a User'
-        for attr, value in list(validated_data.items()):
+        for attr, value in validated_data.items():
             if 'social' == attr:
-                for key, val in list(value.items()):
+                for key, val in value.items():
                     instance.social[key] = val
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
@@ -452,14 +452,14 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
     def update(self, instance, validated_data):
 
-        for attr, value in list(validated_data.items()):
+        for attr, value in validated_data.items():
             if 'two_factor_enabled' == attr:
                 two_factor_addon = instance.get_addon('twofactor')
                 self.update_two_factor(instance, value, two_factor_addon)
             elif 'two_factor_verification' == attr:
                 two_factor_addon = instance.get_addon('twofactor')
                 self.verify_two_factor(instance, value, two_factor_addon)
-            elif attr in list(self.MAP_MAIL.keys()):
+            elif attr in self.MAP_MAIL.keys():
                 self.update_email_preferences(instance, attr, value)
 
         return instance

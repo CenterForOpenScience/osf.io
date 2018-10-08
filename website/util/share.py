@@ -13,7 +13,7 @@ class GraphNode(object):
         self.attrs = attrs
 
     def get_related(self):
-        for value in list(self.attrs.values()):
+        for value in self.attrs.values():
             if isinstance(value, GraphNode):
                 yield value
             elif isinstance(value, list):
@@ -22,7 +22,7 @@ class GraphNode(object):
 
     def serialize(self):
         ser = {}
-        for key, value in list(self.attrs.items()):
+        for key, value in self.attrs.items():
             if isinstance(value, GraphNode):
                 ser[key] = value.ref
             elif isinstance(value, list) or value in {None, ''}:
@@ -44,8 +44,8 @@ def format_user(user):
     person.attrs['identifiers'] = [GraphNode('agentidentifier', agent=person, uri='mailto:{}'.format(uri)) for uri in user.emails.values_list('address', flat=True)]
     person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=user.absolute_url))
 
-    if user.external_identity.get('ORCID') and list(user.external_identity['ORCID'].values())[0] == 'VERIFIED':
-        person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=list(user.external_identity['ORCID'].keys())[0]))
+    if user.external_identity.get('ORCID') and user.external_identity['ORCID'].values()[0] == 'VERIFIED':
+        person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=user.external_identity['ORCID'].keys()[0]))
 
     if user.is_registered:
         person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=user.profile_image_url()))

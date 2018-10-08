@@ -343,12 +343,12 @@ class CaptureSignals(object):
         self._records[signal].append((args, kwargs))
 
     def __enter__(self):
-        for signal, receiver in list(self._receivers.items()):
+        for signal, receiver in self._receivers.items():
             signal.connect(receiver)
         return self
 
     def __exit__(self, type, value, traceback):
-        for signal, receiver in list(self._receivers.items()):
+        for signal, receiver in self._receivers.items():
             signal.disconnect(receiver)
 
     def signals_sent(self):
@@ -356,7 +356,7 @@ class CaptureSignals(object):
         :rtype: list of blinker `NamedSignals`.
 
         """
-        return set([signal for signal, _ in list(self._records.items()) if self._records[signal]])
+        return set([signal for signal, _ in self._records.items() if self._records[signal]])
 
 
 def capture_signals():

@@ -157,7 +157,7 @@ class TestNodeWikiList:
         private_registration.is_public = True
         withdrawal = private_registration.retract_registration(
             user=user, save=True)
-        token = list(withdrawal.approval_state.values())[0]['approval_token']
+        token = withdrawal.approval_state.values()[0]['approval_token']
         # TODO: Remove mocking when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
             withdrawal.approve_retraction(user, token)

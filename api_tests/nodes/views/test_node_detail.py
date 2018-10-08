@@ -219,7 +219,7 @@ class TestNodeDetail:
         CommentFactory(node=project_public, user=user)
         res = app.get(url_public)
         assert res.status_code == 200
-        assert 'comments' in list(res.json['data']['relationships'].keys())
+        assert 'comments' in res.json['data']['relationships'].keys()
         url = res.json['data']['relationships']['comments']['links']['related']['href']
         res = app.get(url)
         assert res.status_code == 200

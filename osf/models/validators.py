@@ -85,7 +85,7 @@ def validate_profile_websites(profile_websites):
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
     from osf.models import OSFUser
-    for soc_key in list(value.keys()):
+    for soc_key in value.keys():
         if soc_key not in OSFUser.SOCIAL_FIELDS:
             raise ValidationError('{} is not a valid key for social.'.format(soc_key))
 

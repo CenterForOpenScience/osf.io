@@ -125,13 +125,13 @@ class TestUserDetail:
     def test_nodes_relationship_is_absent(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
-        assert 'node' not in list(res.json['data']['relationships'].keys())
+        assert 'node' not in res.json['data']['relationships'].keys()
 
     def test_emails_relationship(self, app, user_one):
         # test relationship does not show for anonymous request
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url)
-        assert 'emails' not in list(res.json['data']['relationships'].keys())
+        assert 'emails' not in res.json['data']['relationships'].keys()
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-8966
     def test_browsable_api_for_user_detail(self, app, user_one):
@@ -149,7 +149,7 @@ class TestUserDetail:
 
         assert user_social_json['twitter'] == socialname
         assert user_social_json['github'] == ''
-        assert 'linkedIn' not in list(user_social_json.keys())
+        assert 'linkedIn' not in user_social_json.keys()
 
         url = '/{}users/{}/?version=2.10'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
@@ -157,7 +157,7 @@ class TestUserDetail:
 
         assert user_social_json['twitter'] == [socialname]
         assert user_social_json['github'] == []
-        assert 'linkedIn' not in list(user_social_json.keys())
+        assert 'linkedIn' not in user_social_json.keys()
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation

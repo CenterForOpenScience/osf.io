@@ -205,7 +205,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_true(self.registration.is_pending_retraction)
         self.registration.retraction.approve_retraction(self.user, approval_token)
         assert_true(self.registration.is_retracted)
-        num_of_approvals = sum([val['has_approved'] for val in list(self.registration.retraction.approval_state.values())])
+        num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 1)
 
     def test_approval_adds_to_parent_projects_log(self):
@@ -297,13 +297,13 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
         assert_true(self.registration.is_pending_retraction)
-        num_of_approvals = sum([val['has_approved'] for val in list(self.registration.retraction.approval_state.values())])
+        num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 1)
 
         # Second admin approves
         approval_token = self.registration.retraction.approval_state[self.admin2._id]['approval_token']
         self.registration.retraction.approve_retraction(self.admin2, approval_token)
-        num_of_approvals = sum([val['has_approved'] for val in list(self.registration.retraction.approval_state.values())])
+        num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 2)
         assert_true(self.registration.is_retracted)
 
@@ -320,7 +320,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
         self.registration.retraction.approve_retraction(self.user, approval_token)
         assert_true(self.registration.is_pending_retraction)
-        num_of_approvals = sum([val['has_approved'] for val in list(self.registration.retraction.approval_state.values())])
+        num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 1)
 
     # Retraction#disapprove_retraction tests

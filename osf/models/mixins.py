@@ -640,7 +640,7 @@ class GuardianMixin(models.Model):
         return Group.objects.get(name=self.format_group(name))
 
     def update_group_permissions(self):
-        for group_name, group_permissions in list(self.groups.items()):
+        for group_name, group_permissions in self.groups.items():
             group, created = Group.objects.get_or_create(name=self.format_group(group_name))
             to_remove = set(get_perms(group, self)).difference(group_permissions)
             for p in to_remove:

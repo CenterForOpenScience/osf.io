@@ -81,7 +81,7 @@ class TestWelcomeToApi(ApiTestCase):
     def test_basic_auth_does_not_have_admin(self):
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_not_in('admin', list(res.json['meta'].keys()))
+        assert_not_in('admin', res.json['meta'].keys())
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
@@ -140,4 +140,4 @@ class TestWelcomeToApi(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_not_in('admin', list(res.json['meta'].keys()))
+        assert_not_in('admin', res.json['meta'].keys())

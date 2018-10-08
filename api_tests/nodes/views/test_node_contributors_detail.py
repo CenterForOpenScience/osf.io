@@ -157,7 +157,7 @@ class TestContributorDetail:
             url_public):
         res = app.get(url_public)
         data = res.json['data']
-        assert 'index' in list(data['attributes'].keys())
+        assert 'index' in data['attributes'].keys()
         assert data['attributes']['index'] == 0
 
         other_contributor = AuthUserFactory()

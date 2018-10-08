@@ -214,16 +214,16 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url)
         relationships = res.json['data']['relationships']
-        for relation in list(relationships.values()):
+        for relation in relationships.values():
             if relation == {'data': None}:
                 continue
             if isinstance(relation, list):
                 for item in relation:
-                    link = list(item['links'].values())[0]
+                    link = item['links'].values()[0]
                     link_meta = link.get('meta', {})
                     assert_not_in('count', link_meta)
             else:
-                link = list(relation['links'].values())[0]
+                link = relation['links'].values()[0]
                 link_meta = link.get('meta', {})
                 assert_not_in('count', link_meta)
 
@@ -240,23 +240,23 @@ class TestApiBaseSerializers(ApiTestCase):
                 field = field.field
             related_meta = getattr(field, 'related_meta', {})
             if related_meta and related_meta.get('count', False):
-                link = list(relation['links'].values())[0]
+                link = relation['links'].values()[0]
                 assert_in('count', link['meta'], field)
 
     def test_related_counts_excluded_query_param_false(self):
 
         res = self.app.get(self.url, params={'related_counts': False})
         relationships = res.json['data']['relationships']
-        for relation in list(relationships.values()):
+        for relation in relationships.values():
             if relation == {'data': None}:
                 continue
             if isinstance(relation, list):
                 for item in relation:
-                    link = list(item['links'].values())[0]
+                    link = item['links'].values()[0]
                     link_meta = link.get('meta', {})
                     assert_not_in('count', link_meta)
             else:
-                link = list(relation['links'].values())[0]
+                link = relation['links'].values()[0]
                 link_meta = link.get('meta', {})
                 assert_not_in('count', link_meta)
 
@@ -302,14 +302,14 @@ class TestApiBaseSerializers(ApiTestCase):
                 field = field.field
             if isinstance(relation, list):
                 for item in relation:
-                    link = list(item['links'].values())[0]
+                    link = item['links'].values()[0]
                     related_meta = getattr(field, 'related_meta', {})
                     if related_meta and related_meta.get('count', False) and key == 'children':
                         assert_in('count', link['meta'])
                     else:
                         assert_not_in('count', link.get('meta', {}))
             elif relation != {'data': None}:
-                link = list(relation['links'].values())[0]
+                link = relation['links'].values()[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children':
                     assert_in('count', link['meta'])
@@ -332,14 +332,14 @@ class TestApiBaseSerializers(ApiTestCase):
                 field = field.field
             if isinstance(relation, list):
                 for item in relation:
-                    link = list(item['links'].values())[0]
+                    link = item['links'].values()[0]
                     related_meta = getattr(field, 'related_meta', {})
                     if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
                         assert_in('count', link['meta'])
                     else:
                         assert_not_in('count', link.get('meta', {}))
             elif relation != {'data': None}:
-                link = list(relation['links'].values())[0]
+                link = relation['links'].values()[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
                     assert_in('count', link['meta'])

@@ -40,7 +40,7 @@ class BaseClient(object):
         defaults.update(kwargs)
         return {
             key: value
-            for key, value in list(defaults.items())
+            for key, value in defaults.items()
             if value is not None
         }
 

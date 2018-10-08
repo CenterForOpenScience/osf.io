@@ -36,7 +36,7 @@ class TestEncryptedExternalAccountFields(object):
             SELECT %s FROM osf_externalaccount WHERE id = %s;
         """
         with connection.cursor() as cursor:
-            cursor.execute(sql, [AsIs(', '.join(list(self.encrypted_field_dict.keys()))), ea.id])
+            cursor.execute(sql, [AsIs(', '.join(self.encrypted_field_dict.keys())), ea.id])
             row = cursor.fetchone()
             for blicky in row:
                 assert jwe.decrypt(bytes(blicky[len(EncryptedTextField.prefix):]), SENSITIVE_DATA_KEY) == self.magic_string

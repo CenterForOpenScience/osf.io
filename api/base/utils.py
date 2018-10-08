@@ -169,7 +169,7 @@ def extend_querystring_params(url, params):
     return urlparse.urlunsplit([scheme, netloc, path, query, ''])
 
 def extend_querystring_if_key_exists(url, request, key):
-    if key in list(request.query_params.keys()):
+    if key in request.query_params.keys():
         return extend_querystring_params(url, {key: request.query_params.get(key)})
     return url
 

@@ -52,7 +52,7 @@ def from_anvl(data):
 
 
 def merge_dicts(*dicts):
-    return dict(sum((list(each.items()) for each in dicts), []))
+    return dict(sum((each.items() for each in dicts), []))
 
 
 def request_identifiers(target_object):

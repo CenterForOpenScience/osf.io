@@ -436,13 +436,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return [
             each['email']
             for each
-            in list(email_verifications.values())
+            in email_verifications.values()
         ]
 
     @property
     def social_links(self):
         social_user_fields = {}
-        for key, val in list(self.social.items()):
+        for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
                 if not isinstance(val, basestring):
                     social_user_fields[key] = val
@@ -822,7 +822,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # The user can log in if they have set a password OR
         # have a verified external ID, e.g an ORCID
         can_login = self.has_usable_password() or (
-            'VERIFIED' in sum([list(each.values()) for each in list(self.external_identity.values())], [])
+            'VERIFIED' in sum([each.values() for each in self.external_identity.values()], [])
         )
         self.is_active = (
             self.is_registered and
@@ -1105,7 +1105,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :raises: KeyError if there no token for the email.
         """
         # TODO: Refactor "force" flag into User.get_or_add_confirmation_token
-        for token, info in list(self.email_verifications.items()):
+        for token, info in self.email_verifications.items():
             if info['email'].lower() == email.lower():
                 # Old records will not have an expiration key. If it's missing,
                 # assume the token is expired

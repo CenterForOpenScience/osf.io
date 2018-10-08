@@ -183,7 +183,7 @@ class TestMeetingMisc(AdminTestCase):
         res1, res2 = get_custom_fields(data)
         nt.assert_is_instance(res1, dict)
         nt.assert_is_instance(res2, dict)
-        for key in list(res1.keys()):
+        for key in res1.keys():
             nt.assert_not_in('field', key)
 
     def test_get_admin_users(self):

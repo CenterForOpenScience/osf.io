@@ -147,9 +147,9 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
     def post(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.change_preprintrequest'):
             raise PermissionDenied('You do not have permission to approve or reject withdrawal requests.')
-        is_approve_action = 'approveRequest' in list(request.POST.keys())
+        is_approve_action = 'approveRequest' in request.POST.keys()
         request_ids = [
-            id_ for id_ in list(request.POST.keys())
+            id_ for id_ in request.POST.keys()
             if id_ not in ['csrfmiddlewaretoken', 'approveRequest', 'rejectRequest']
         ]
         for id_ in request_ids:
@@ -210,7 +210,7 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
         if not request.user.has_perm('auth.mark_spam'):
             raise PermissionDenied('You do not have permission to update a preprint flagged as spam.')
         preprint_ids = [
-            pid for pid in list(request.POST.keys())
+            pid for pid in request.POST.keys()
             if pid != 'csrfmiddlewaretoken'
         ]
         for pid in preprint_ids:

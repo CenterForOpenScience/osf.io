@@ -274,7 +274,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
         # Generator of nodes which have grants for this external account
         for node_id, grants in self.oauth_grants.items():
             node = AbstractNode.load(node_id)
-            if external_account._id in list(grants.keys()) and not node.is_deleted:
+            if external_account._id in grants.keys() and not node.is_deleted:
                 yield node
 
     def get_attached_nodes(self, external_account):
@@ -298,7 +298,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
             if node_id not in self.oauth_grants:
                 self.oauth_grants[node_id] = data
             else:
-                node_grants = iter(user_settings.oauth_grants[node_id].items())
+                node_grants = user_settings.oauth_grants[node_id].items()
                 for ext_acct, meta in node_grants:
                     if ext_acct not in self.oauth_grants[node_id]:
                         self.oauth_grants[node_id][ext_acct] = meta
@@ -339,7 +339,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
         """When the user deactivates the addon, clear auth for connected nodes.
         """
         super(BaseOAuthUserSettings, self).on_delete()
-        nodes = [AbstractNode.load(node_id) for node_id in list(self.oauth_grants.keys())]
+        nodes = [AbstractNode.load(node_id) for node_id in self.oauth_grants.keys()]
         for node in nodes:
             node_addon = node.get_addon(self.oauth_provider.short_name)
             if node_addon and node_addon.user_settings == self:

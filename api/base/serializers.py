@@ -568,7 +568,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if callable(lookup_url_kwarg):
             lookup_url_kwarg = lookup_url_kwarg(getattr(resource, field_name))
 
-        kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in list(lookup_url_kwarg.items())}
+        kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in lookup_url_kwarg.items()}
         kwargs.update({'version': request.parser_context['kwargs']['version']})
 
         view = self.view_name
@@ -672,7 +672,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         kwargs_retrieval = {}
 
-        for lookup_url_kwarg, lookup_field in list(kwargs_dict.items()):
+        for lookup_url_kwarg, lookup_field in kwargs_dict.items():
 
             if _tpl(lookup_field):
                 try:
@@ -690,7 +690,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     # Overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
         urls = {}
-        for view_name, view in list(self.views.items()):
+        for view_name, view in self.views.items():
             if view is None:
                 urls[view_name] = {}
             else:
@@ -735,7 +735,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 if self.always_embed:
                     envelope = 'data'
                 query_dict = dict(format=['jsonapi', ], envelope=[envelope, ])
-                if 'view_only' in list(self.parent.context['request'].query_params.keys()):
+                if 'view_only' in self.parent.context['request'].query_params.keys():
                     query_dict.update(view_only=[self.parent.context['request'].query_params['view_only']])
                 esi_url = utils.extend_querystring_params(href, query_dict)
                 return '<esi:include src="{}"/>'.format(esi_url)
@@ -746,7 +746,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         :param obj: RelationshipField object
         :return: list of dictionaries with 'field_name' and 'value' for each filter
         """
-        filter_fields = list(self.filter.keys())
+        filter_fields = self.filter.keys()
         filters = []
         for field_name in filter_fields:
             try:
@@ -855,7 +855,7 @@ class TypedRelationshipField(RelationshipField):
                 # List Serializer, use the child's type
                 view_parts.insert(1, self.root.child.Meta.type_.replace('_', '-'))
             self.view_name = view_name = ':'.join(view_parts)
-            for k, v in list(self.views.items()):
+            for k, v in self.views.items():
                 if v == untyped_view:
                     self.views[k] = view_name
         return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
@@ -1053,10 +1053,10 @@ class Link(object):
         self.query_kwargs = query_kwargs or {}
 
     def resolve_url(self, obj, request):
-        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in list(self.kwargs.items())}
+        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
         kwarg_values.update({'version': request.parser_context['kwargs']['version']})
         arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
-        query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in list(self.query_kwargs.items())}
+        query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.query_kwargs.items()}
         # Presumably, if you have are expecting a value but the value is empty, then the link is invalid.
         for item in kwarg_values:
             if kwarg_values[item] is None:
@@ -1165,13 +1165,13 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
         ret = {'data': []}
 
-        for resource_id, resource in list(instance_mapping.items()):
+        for resource_id, resource in instance_mapping.items():
             data = data_mapping.pop(resource_id, None)
             ret['data'].append(self.child.update(resource, data))
 
         # If skip_uneditable in request, add validated_data for nodes in which the user did not have edit permissions to errors
         if data_mapping and bulk_skip_uneditable:
-            ret.update({'errors': list(data_mapping.values())})
+            ret.update({'errors': data_mapping.values()})
         return ret
 
     # overrides ListSerializer
@@ -1215,7 +1215,7 @@ class SparseFieldsetMixin(object):
             sparse_fieldset_query_param = 'fields[{}]'.format(self.Meta.type_)
             if sparse_fieldset_query_param in request.query_params:
                 fieldset = request.query_params[sparse_fieldset_query_param].split(',')
-                for field_name in list(self.fields.fields.copy().keys()):
+                for field_name in self.fields.fields.copy().keys():
                     if field_name in ('id', 'links', 'type'):
                         # MUST return these fields
                         continue
@@ -1321,7 +1321,7 @@ class JSONAPISerializer(BaseAPISerializer):
             to_be_removed = existing - allowed
 
         fields = [
-            field for field in list(self.fields.values()) if
+            field for field in self.fields.values() if
             not field.write_only and field.field_name not in to_be_removed
         ]
 
@@ -1484,7 +1484,7 @@ def DevOnly(field):
 class RestrictedDictSerializer(ser.Serializer):
     def to_representation(self, obj):
         data = {}
-        fields = [field for field in list(self.fields.values()) if not field.write_only]
+        fields = [field for field in self.fields.values() if not field.write_only]
 
         for field in fields:
             try:
@@ -1584,7 +1584,7 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
             nodes_to_add.append(node)
 
-        return nodes_to_add, list(diff['remove'].values())
+        return nodes_to_add, diff['remove'].values()
 
     def make_instance_obj(self, obj):
         # Convenience method to format instance based on view's get_object
@@ -1653,7 +1653,7 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
             nodes_to_add.append(node)
 
-        return nodes_to_add, list(diff['remove'].values())
+        return nodes_to_add, diff['remove'].values()
 
     def make_instance_obj(self, obj):
         # Convenience method to format instance based on view's get_object

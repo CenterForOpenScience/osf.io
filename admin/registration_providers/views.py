@@ -152,7 +152,7 @@ class RegistrationProviderChangeForm(PermissionRequiredMixin, UpdateView):
     def form_invalid(self, form):
         super(RegistrationProviderChangeForm, self).form_invalid(form)
         err_message = ''
-        for item in list(form.errors.values()):
+        for item in form.errors.values():
             err_message = err_message + item + '\n'
         return HttpResponse(err_message, status=409)
 

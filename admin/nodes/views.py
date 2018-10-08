@@ -340,7 +340,7 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
         if not request.user.has_perm('auth.mark_spam'):
             raise PermissionDenied('You do not have permission to update a node flagged as spam.')
         node_ids = [
-            nid for nid in list(request.POST.keys())
+            nid for nid in request.POST.keys()
             if nid != 'csrfmiddlewaretoken'
         ]
         for nid in node_ids:

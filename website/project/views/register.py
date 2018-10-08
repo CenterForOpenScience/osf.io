@@ -195,11 +195,11 @@ def project_before_register(auth, node, **kwargs):
             messages[settings.ADDONS_ARCHIVABLE[name]]['addons'].add(addon.config.full_name)
         else:
             messages['none']['addons'].add(addon.config.full_name)
-    error_messages = list(errors.values())
+    error_messages = errors.values()
 
     prompts = [
         m['message'].format(util.conjunct(m['addons']))
-        for m in list(messages.values()) if m['addons']
+        for m in messages.values() if m['addons']
     ]
 
     if node.has_pointers_recursive:

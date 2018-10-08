@@ -26,7 +26,7 @@ def generate_prereg_csv():
     drafts = list(map(serializers.serialize_draft_registration,
                    utils.get_submitted_preregistrations()))
 
-    keys = list(drafts[0].keys())
+    keys = drafts[0].keys()
     keys.remove('registration_schema')
     output = io.BytesIO()
     writer = csv.DictWriter(output, fieldnames=keys)
@@ -36,7 +36,7 @@ def generate_prereg_csv():
         draft.update({'initiator': draft['initiator']['username']})
         writer.writerow(
             {k: v.encode('utf8') if isinstance(v, unicode) else v
-             for k, v in list(draft.items())}
+             for k, v in draft.items()}
         )
     return output
 

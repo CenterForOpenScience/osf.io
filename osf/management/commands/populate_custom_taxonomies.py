@@ -56,12 +56,12 @@ def validate_input(custom_provider, data, provider_type='osf.preprintprovider', 
             # TODO: hierarchy length validation? Probably more trouble than worth here, done on .save
 
     logger.info('Successfully validated `custom`')
-    included_subjects = included_subjects | Subject.objects.filter(text__in=[map_dict['bepress'] for map_dict in list(customs.values())])
+    included_subjects = included_subjects | Subject.objects.filter(text__in=[map_dict['bepress'] for map_dict in customs.values()])
 
     for merged_from, merged_into in merges.items():
         assert not included_subjects.filter(text=merged_from).exists(), 'Cannot merge subject "{}" that will be included'.format(merged_from)
         assert merged_into in set(included_subjects.values_list('text', flat=True)) | set(customs.keys()), 'Unable to determine merge target for "{}"'.format(merged_into)
-    included_subjects = included_subjects | Subject.objects.filter(text__in=list(merges.keys()))
+    included_subjects = included_subjects | Subject.objects.filter(text__in=merges.keys())
     missing_subjects = Subject.objects.filter(id__in=set([hier[-1].id for ps in PreprintService.objects.filter(provider=custom_provider) for hier in ps.subject_hierarchy])).exclude(id__in=included_subjects.values_list('id', flat=True))
 
     if not add_missing:
@@ -163,7 +163,7 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False)
         old_hier = preprint.subject_hierarchy
         subjects_to_map = [hier[-1] for hier in old_hier]
         merged_subject_ids = set(Subject.objects.filter(provider=custom_provider, text__in=[merge_dict[k] for k in set(merge_dict.keys()) & set([s.text for s in subjects_to_map])]).values_list('id', flat=True))
-        subject_ids_to_map = set(s.id for s in subjects_to_map if s.text not in list(merge_dict.keys()))
+        subject_ids_to_map = set(s.id for s in subjects_to_map if s.text not in merge_dict.keys())
         aliased_subject_ids = set(Subject.objects.filter(bepress_subject__id__in=subject_ids_to_map, provider=custom_provider).values_list('id', flat=True)) | merged_subject_ids
         aliased_hiers = [s.object_hierarchy for s in Subject.objects.filter(id__in=aliased_subject_ids)]
         old_subjects = list(preprint.subjects.values_list('id', flat=True))

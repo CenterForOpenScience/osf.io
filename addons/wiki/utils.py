@@ -21,7 +21,7 @@ mongo_map = {
 }
 
 def to_mongo(item):
-    for key, value in list(mongo_map.items()):
+    for key, value in mongo_map.items():
         item = item.replace(key, value)
     return item
 

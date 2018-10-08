@@ -61,7 +61,7 @@ def update(dry_run=False):
                 if custom_parent.provider._id not in created_dict:
                     created_dict[custom_parent.provider._id] = []
                 created_dict[custom_parent.provider._id].append(new_text)
-    for old, new in list(BEPRESS_CHANGES['rename'].items()):
+    for old, new in BEPRESS_CHANGES['rename'].items():
         logger.info('Renaming `{}`->`{}`'.format(old, new))
         to_update = Subject.objects.filter(text=old)
         affected_preprints = set(to_update.exclude(preprint_services__isnull=True).values_list('preprint_services__guids___id', flat=True))

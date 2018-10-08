@@ -45,7 +45,7 @@ class JSONAPIParser(JSONParser):
             raise ParseError()
 
         # Can only create one type of relationship.
-        related_resource = list(relationships.keys())[0]
+        related_resource = relationships.keys()[0]
         if not isinstance(relationships[related_resource], dict) or related_resource == 'data':
             raise ParseError()
         data = relationships[related_resource].get('data')
@@ -240,7 +240,7 @@ class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
 class JSONAPIMultipleRelationshipsParserForRegularJSON(JSONAPIParserForRegularJSON):
     def flatten_relationships(self, relationships):
         ret = super(JSONAPIMultipleRelationshipsParserForRegularJSON, self).flatten_relationships(relationships)
-        related_resource = list(relationships.keys())[0]
+        related_resource = relationships.keys()[0]
         if ret.get('target_type') and ret.get('id'):
             return {related_resource: ret['id']}
         return ret

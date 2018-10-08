@@ -124,7 +124,7 @@ class TestNodeRegistrationSerializer:
         # Relationships with data
         relationship_urls = {
             k: v['links']['related']['href'] for k, v
-            in list(relationships.items())}
+            in relationships.items()}
 
         assert 'registered_by' in relationships
         registered_by = relationships['registered_by']['links']['related']['href']

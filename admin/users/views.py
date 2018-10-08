@@ -199,7 +199,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
         if not request.user.get_perms('osf.mark_spam'):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
         user_ids = [
-            uid for uid in list(request.POST.keys())
+            uid for uid in request.POST.keys()
             if uid != 'csrfmiddlewaretoken'
         ]
         for uid in user_ids:

@@ -564,7 +564,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
                     }
                     old_comments.update(new_comments)
                     metadata[question_id]['comments'] = sorted(
-                        list(old_comments.values()),
+                        old_comments.values(),
                         key=lambda c: c['created']
                     )
                     if old_value.get('value') != value.get('value'):

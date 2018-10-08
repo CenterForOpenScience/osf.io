@@ -84,7 +84,7 @@ class SpamMixin(models.Model):
     def remove_flag(self, save=False):
         if self.spam_status != SpamStatus.FLAGGED:
             return
-        for report in list(self.reports.values()):
+        for report in self.reports.values():
             if not report.get('retracted', True):
                 return
         self.spam_status = SpamStatus.UNKNOWN

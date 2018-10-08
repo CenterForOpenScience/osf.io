@@ -419,8 +419,8 @@ def format_event(event, analytics_type):
     template_to_use['keen']['timestamp'] = parse(event['timestamp']).replace(hour=12, tzinfo=pytz.UTC).isoformat()
     template_to_use['imported'] = True
 
-    formatted_event = {key: value for key, value in list(template_to_use.items()) if value}
-    if len(list(formatted_event.items())) > 2:  # if there's more than just the auto-added timestamp for keen
+    formatted_event = {key: value for key, value in template_to_use.items() if value}
+    if len(formatted_event.items()) > 2:  # if there's more than just the auto-added timestamp for keen
         return template_to_use
 
 

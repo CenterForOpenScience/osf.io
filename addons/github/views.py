@@ -283,7 +283,7 @@ def github_hook_callback(node_addon, **kwargs):
         # TODO: Look up OSF user by commit
 
         # Skip if pushed by OSF
-        if commit['message'] and commit['message'] in list(MESSAGES.values()):
+        if commit['message'] and commit['message'] in MESSAGES.values():
             continue
 
         _id = commit['id']

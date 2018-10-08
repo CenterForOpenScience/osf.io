@@ -161,7 +161,7 @@ class TestGuidAutoInclude:
     @pytest.mark.django_assert_num_queries
     def test_bulk_update_objects(self, Factory, django_assert_num_queries):
         objects = []
-        ids = list(range(0, 5))
+        ids = range(0, 5)
         for id in ids:
             objects.append(Factory())
         try:

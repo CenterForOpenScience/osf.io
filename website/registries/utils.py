@@ -6,7 +6,7 @@ REG_CAMPAIGNS = {
 def get_campaign_schema(campaign):
     from osf.models import RegistrationSchema
     if campaign not in REG_CAMPAIGNS:
-        raise ValueError('campaign must be one of: {}'.format(', '.join(list(REG_CAMPAIGNS.keys()))))
+        raise ValueError('campaign must be one of: {}'.format(', '.join(REG_CAMPAIGNS.keys())))
     schema_name = REG_CAMPAIGNS[campaign]
 
     return RegistrationSchema.objects.get(name=schema_name, schema_version=2)

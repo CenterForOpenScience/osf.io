@@ -92,7 +92,7 @@ class TestOSFUser:
             username=email, password='foobar', fullname=name
         )
         assert user.is_registered is False
-        assert len(list(user.email_verifications.keys())) == 1
+        assert len(user.email_verifications.keys()) == 1
         assert user.emails.count() == 0, 'primary email has not been added to emails list'
 
     def test_create_unconfirmed_with_campaign(self):
@@ -118,7 +118,7 @@ class TestOSFUser:
         )
         user.save()
         assert user.is_registered is False
-        assert len(list(user.email_verifications.keys())) == 1
+        assert len(user.email_verifications.keys()) == 1
         assert user.email_verifications.popitem()[1]['external_identity'] == external_identity
         assert user.emails.count() == 0, 'primary email has not been added to emails list'
 
@@ -343,7 +343,7 @@ class TestOSFUser:
         confirmed = u.confirm_email(token)
         u.save()
         assert bool(confirmed) is True
-        assert len(list(u.email_verifications.keys())) == 0
+        assert len(u.email_verifications.keys()) == 0
         assert u.emails.filter(address=u.username).exists()
         assert bool(u.is_registered) is True
         assert bool(u.is_claimed) is True
@@ -790,7 +790,7 @@ class TestIsActive:
                 date_confirmed=timezone.now(),
             )
             user.set_password('secret')
-            for attr, value in list(attrs.items()):
+            for attr, value in attrs.items():
                 setattr(user, attr, value)
             return user
         return func
@@ -844,9 +844,9 @@ class TestAddUnconfirmedEmail:
         token = fake.lexify('???????')
         random_string.return_value = token
         u = UserFactory()
-        assert len(list(u.email_verifications.keys())) == 0
+        assert len(u.email_verifications.keys()) == 0
         u.add_unconfirmed_email('foo@bar.com')
-        assert len(list(u.email_verifications.keys())) == 1
+        assert len(u.email_verifications.keys()) == 1
         assert u.email_verifications[token]['email'] == 'foo@bar.com'
 
     @mock.patch('website.security.random_string')
@@ -918,7 +918,7 @@ class TestUnregisteredUser:
         assert bool(u.username) is True
         assert bool(u.fullname) is True
         assert bool(u.password) is True
-        assert len(list(u.email_verifications.keys())) == 1
+        assert len(u.email_verifications.keys()) == 1
 
     def test_add_unclaimed_record(self, unreg_user, unreg_moderator, email, referrer, provider, project):
         # test_unreg_contrib
@@ -1758,7 +1758,7 @@ class TestUserMerging(OsfTestCase):
         assert self.unconfirmed.password[0] == '!'
         assert self.unconfirmed.verification_key is None
         # The mergee's email no longer needs to be confirmed by merger
-        unconfirmed_emails = [record['email'] for record in list(self.user.email_verifications.values())]
+        unconfirmed_emails = [record['email'] for record in self.user.email_verifications.values()]
         assert unconfirmed_username not in unconfirmed_emails
 
     def test_merge_preserves_external_identity(self):

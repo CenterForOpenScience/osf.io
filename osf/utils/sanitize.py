@@ -69,7 +69,7 @@ def unescape_entities(value, safe=None):
             for each in value
         ]
     if isinstance(value, basestring):
-        for escape_sequence, character in list(safe_characters.items()):
+        for escape_sequence, character in safe_characters.items():
             value = value.replace(escape_sequence, character)
         return value
     return value

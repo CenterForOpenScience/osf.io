@@ -2569,7 +2569,7 @@ class TestClaimViews(OsfTestCase):
 
         assert_not_in(
             self.project._primary_key,
-            list(self.user.unclaimed_records.keys())
+            self.user.unclaimed_records.keys()
         )
 
     def test_user_with_claim_url_cannot_claim_twice(self):
@@ -2582,7 +2582,7 @@ class TestClaimViews(OsfTestCase):
 
         assert_not_in(
             self.project._primary_key,
-            list(self.user.unclaimed_records.keys())
+            self.user.unclaimed_records.keys()
         )
 
     def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
@@ -2639,7 +2639,7 @@ class TestClaimViews(OsfTestCase):
         self.user.add_unclaimed_record(p2, referrer=self.referrer,
                                        given_name=fake.name())
         self.user.save()
-        assert_true(len(list(self.user.unclaimed_records.keys())) > 1)  # sanity check
+        assert_true(len(self.user.unclaimed_records.keys()) > 1)  # sanity check
         url = self.user.get_claim_url(self.project._primary_key)
         self.app.post(url, {
             'username': self.given_email,
@@ -3561,7 +3561,7 @@ class TestAuthViews(OsfTestCase):
         unclaimed_user.save()
 
         # sanity check
-        assert_equal(len(list(unclaimed_user.email_verifications.keys())), 1)
+        assert_equal(len(unclaimed_user.email_verifications.keys()), 1)
 
         # user goes to email confirmation link
         token = unclaimed_user.get_confirmation_token(unclaimed_user.username)
@@ -3572,7 +3572,7 @@ class TestAuthViews(OsfTestCase):
         # unclaimed records and token are cleared
         unclaimed_user.reload()
         assert_equal(unclaimed_user.unclaimed_records, {})
-        assert_equal(len(list(unclaimed_user.email_verifications.keys())), 0)
+        assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
 
     def test_confirmation_link_registers_user(self):
         user = OSFUser.create_unconfirmed('brian@queen.com', 'bicycle123', 'Brian May')
@@ -4092,7 +4092,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
     def test_get_notifications(self):
         user = AuthUserFactory()
-        mailing_lists = dict(list(user.osf_mailing_lists.items()) + list(user.mailchimp_mailing_lists.items()))
+        mailing_lists = dict(user.osf_mailing_lists.items() + user.mailchimp_mailing_lists.items())
         url = api_url_for('user_notifications')
         res = self.app.get(url, auth=user.auth)
         assert_equal(mailing_lists, res.json['mailing_lists'])

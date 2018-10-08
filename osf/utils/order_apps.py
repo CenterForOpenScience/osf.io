@@ -94,7 +94,7 @@ def get_ordered_models():
         if not ('osf' in app_label or 'addons' in app_label):
             continue
         for model_name, model_class in model_tuples.items():
-            if app_label not in list(model_mapping.keys()):
+            if app_label not in model_mapping.keys():
                 model_mapping[app_label] = []
             model_mapping[app_label].append(model_class)
 

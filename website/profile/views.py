@@ -360,7 +360,7 @@ def user_addons(auth, **kwargs):
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
-        'mailing_lists': dict(list(auth.user.mailchimp_mailing_lists.items()) + list(auth.user.osf_mailing_lists.items()))
+        'mailing_lists': dict(auth.user.mailchimp_mailing_lists.items() + auth.user.osf_mailing_lists.items())
     }
 
 @must_be_logged_in
@@ -493,7 +493,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
     if json_data:
-        for list_name, subscribe in list(json_data.items()):
+        for list_name, subscribe in json_data.items():
             # TO DO: change this to take in any potential non-mailchimp, something like try: update_subscription(), except IndexNotFound: update_mailchimp_subscription()
             if list_name == settings.OSF_HELP_LIST:
                 update_osf_help_mails_subscription(user=user, subscribe=subscribe)
@@ -713,7 +713,7 @@ def unserialize_social(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
 
-    for soc in list(user.SOCIAL_FIELDS.keys()):
+    for soc in user.SOCIAL_FIELDS.keys():
         user.social[soc] = json_data.get(soc)
 
     try:

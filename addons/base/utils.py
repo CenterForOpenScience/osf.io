@@ -46,7 +46,7 @@ def format_last_known_metadata(auth, node, file, error_type):
             """last seen with a file size of {} bytes""".format(size) if size and not (last_seen or path) else '',
             """.</br></br>""" if last_seen or hashes or path or size else '',
             """Hashes of last seen version:</br><p>{}</p>""".format(
-                '</br>'.join(['{}: {}'.format(k, v) for k, v in list(hashes.items())])
+                '</br>'.join(['{}: {}'.format(k, v) for k, v in hashes.items()])
             ) if hashes else '',  # TODO: Format better for UI
             msg
         ]

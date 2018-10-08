@@ -229,7 +229,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve_embargo(self.user, approval_token)
         assert_true(self.registration.is_pending_embargo)
-        num_of_approvals = sum([val['has_approved'] for val in list(self.registration.embargo.approval_state.values())])
+        num_of_approvals = sum([val['has_approved'] for val in self.registration.embargo.approval_state.values()])
         assert_equal(num_of_approvals, 1)
 
         # Second admin approves
@@ -237,7 +237,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.embargo.approve_embargo(admin2, approval_token)
         assert_true(self.registration.embargo_end_date)
         assert_false(self.registration.is_pending_embargo)
-        num_of_approvals = sum([val['has_approved'] for val in list(self.registration.embargo.approval_state.values())])
+        num_of_approvals = sum([val['has_approved'] for val in self.registration.embargo.approval_state.values()])
         assert_equal(num_of_approvals, 2)
 
     # Embargo#disapprove_embargo tests
