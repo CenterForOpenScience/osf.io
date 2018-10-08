@@ -40,6 +40,7 @@ def populate_preprint_downloads(n):
         preprint = PreprintService.objects.select_related('provider').all()[random_idx]
         print('Creating random download for {} ({})'.format(preprint._id, preprint.provider._id))
         PreprintDownload.record(
+            count=1,
             timestamp=fake.date_this_year(before_today=True, after_today=False),
             provider_id=preprint.provider._id,
             user_id=fake.lexify('?????'),
@@ -57,6 +58,7 @@ def populate_preprint_views(n):
         preprint = PreprintService.objects.select_related('provider').all()[random_idx]
         print('Creating random download for {} ({})'.format(preprint._id, preprint.provider._id))
         PreprintView.record(
+            count=1,
             timestamp=fake.date_this_year(before_today=True, after_today=False),
             provider_id=preprint.provider._id,
             user_id=fake.lexify('?????'),
@@ -73,6 +75,7 @@ def populate(n):
         provider_id = random.choice(provider_ids)
         print('Creating random view for {}'.format(provider_id))
         PreprintDownload.record(
+            count=1,
             timestamp=fake.date_this_year(before_today=True, after_today=False),
             provider_id=provider_id,
             user_id=fake.lexify('?????'),

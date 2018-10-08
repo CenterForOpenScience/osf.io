@@ -6,6 +6,7 @@ class MetricMixin(object):
     @classmethod
     def get_top_by_count(cls, qs, model_field, metric_field,
                          size=None, order_by=None,
+                         count_field='count',
                          annotation='metric_count', after=None):
         """Return a queryset annotated with the metric counts for each item.
 
@@ -35,21 +36,25 @@ class MetricMixin(object):
         :param str order_by: Field to order queryset by. If `None`, orders by
             the metric, descending.
         :param datetime after: Minimum datetime to narrow the search (inclusive).
+        :param str count_field: Name of the field where count values are stored.
         :param str annotation: Name of the annotation.
         """
         search = cls.search()
         size = size or qs.count()
         if after:
             search = search.filter('range', timestamp={'gte': after})
-        search.aggs.bucket('by_id', 'terms', field=metric_field, size=size)
-        response = search.execute()
+        search.aggs.\
+            bucket('by_id', 'terms', field=metric_field, order={'sum_count': 'desc'}).\
+            metric('sum_count', 'sum', field=count_field)
+        # Optimization: set size to 0 so that hits aren't returns (we only care about the aggregation)
+        response = search.extra(size=0).execute()
         # No indexed data
         if not hasattr(response.aggregations, 'by_id'):
             return qs.annotate(**{annotation: models.Value(0, models.IntegerField())})
         buckets = response.aggregations.by_id.buckets
         # Map _id => count
         id_to_count = {
-            bucket.key: bucket.doc_count
+            bucket.key: int(bucket.sum_count.value)
             for bucket in buckets
         }
         # Annotate the queryset with the counts for each id
@@ -68,6 +73,7 @@ class MetricMixin(object):
 
 
 class BasePreprintMetric(MetricMixin, metrics.Metric):
+    count = metrics.Integer(doc_values=True, index=True, required=True)
     provider_id = metrics.Keyword(index=True, doc_values=True, required=True)
     user_id = metrics.Keyword(index=True, doc_values=True, required=False)
     preprint_id = metrics.Keyword(index=True, doc_values=True, required=True)
@@ -85,7 +91,9 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
 
     @classmethod
     def record_for_preprint(cls, preprint, user=None, **kwargs):
+        count = kwargs.pop('count', 1)
         return cls.record(
+            count=count,
             preprint_id=preprint._id,
             user_id=getattr(user, '_id', None),
             provider_id=preprint.provider._id,
