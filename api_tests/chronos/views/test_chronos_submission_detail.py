@@ -65,11 +65,11 @@ class TestChronosSubmissionDetail:
         mock_update.return_value = submission
         payload = self.update_payload(submission)
         res = app.patch_json_api(url, payload, auth=preprint_contributor.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 403
         res = app.patch_json_api(url, payload, auth=moderator.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 403
         res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 403
         res = app.patch_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
         assert not mock_update.called

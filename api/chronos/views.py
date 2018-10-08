@@ -95,7 +95,7 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
         node = preprint.node
         queryset = ChronosSubmission.objects.filter(preprint__guids___id=preprint._id)
 
-        # TODO: refactor the ChronosClient to use async requests
+        # TODO: [IN-478] Use celery to update Chronos submission status
         # If the user is a contributor, return all submissions of this preprint
         if node.is_contributor(user):
             for submission in queryset:

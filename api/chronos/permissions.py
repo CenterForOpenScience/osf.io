@@ -37,18 +37,15 @@ class SubmissionAcceptedOrPublishedOrPreprintAdmin(permissions.BasePermission):
             if request.method == 'GET':
                 is_preprint_contributor = node.is_contributor(auth.user)
                 user_has_perm = is_preprint_contributor or is_submission_published or is_submission_accepted
+                if not user_has_perm:
+                    raise exceptions.NotFound
+
             # However if the request is a PATCH or PUT, check whether the user is an ADMIN of this preprint
             # Because only preprint admins can create/update a submission
             if request.method in ['PATCH', 'PUT']:
                 is_preprint_admin = node.has_permission(auth.user, osf_permissions.ADMIN)
                 user_has_perm = is_preprint_admin
+                if not user_has_perm:
+                    raise exceptions.PermissionDenied
 
-            # If the user has no permission to view this submission
-            # raise NotFound instead of PermissionDenied
-            # so that malicious users can't sniff out whether a preprint has Chronos submission or not
-            if not user_has_perm:
-                raise exceptions.NotFound
-            else:
-                return user_has_perm
-        else:
-            raise exceptions.NotFound
+            return user_has_perm
