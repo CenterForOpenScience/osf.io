@@ -28,11 +28,12 @@ from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
-from website.ember_osf_web.decorators import storage_i18n_flag_active
+from website.ember_osf_web.decorators import storage_i18n_flag_active, ember_flag_is_active
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlacklistedEmailError
 from osf.models.provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
+from osf import features
 
 @block_bing_preview
 @collect_auth
@@ -320,6 +321,7 @@ def auth_login(auth):
 
 
 @collect_auth
+@ember_flag_is_active(features.EMBER_AUTH_REGISTER)
 def auth_register(auth):
     """
     View for OSF register. Land on the register page, redirect or go to `auth_logout`
