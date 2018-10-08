@@ -247,7 +247,7 @@ public_scopes = {
                                         'private projects.',
                             is_public=True),
     'osf.users.profile_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
-                                description='Read your profile data',
+                                description='Read your profile data.',
                                 is_public=True),
     'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
                                         description='Read your primary email address.',
@@ -257,18 +257,18 @@ public_scopes = {
 if settings.DEV_MODE:
     public_scopes.update({
         'osf.users.profile_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
-                                     description='Read and edit your profile data',
+                                     description='Read and edit your profile data.',
                                      is_public=True),
 
         'osf.nodes.metadata_read': scope(parts_=frozenset(ComposedScopes.NODE_METADATA_READ),
                                          description='Read a list of all public and private nodes accessible to this '
                                                      'account, and view associated metadata such as project descriptions '
-                                                     'and titles',
+                                                     'and titles.',
                                          is_public=True),
         'osf.nodes.metadata_write': scope(parts_=frozenset(ComposedScopes.NODE_METADATA_WRITE),
                                           description='Read a list of all public and private nodes accessible to this '
                                                       'account, and view and edit associated metadata such as project '
-                                                      'descriptions and titles',
+                                                      'descriptions and titles.',
                                           is_public=True),
 
         'osf.nodes.data_read': scope(parts_=frozenset(ComposedScopes.NODE_DATA_READ),
@@ -282,7 +282,7 @@ if settings.DEV_MODE:
 
         'osf.nodes.access_read': scope(parts_=frozenset(ComposedScopes.NODE_ACCESS_READ),
                                        description='View the contributors list and any established registrations '
-                                                   'associated with public or private projects',
+                                                   'associated with public or private projects.',
                                        is_public=True),
         'osf.nodes.access_write': scope(parts_=frozenset(ComposedScopes.NODE_ACCESS_WRITE),
                                         description='View and edit the contributors list associated with public or '
