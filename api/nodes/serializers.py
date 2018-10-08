@@ -1,4 +1,6 @@
 from django.db import connection
+from django.contrib.auth.models import AnonymousUser
+from distutils.version import StrictVersion
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -281,7 +283,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
-        'for the current user on this node.',
+        'for the current user on this node. As of version 2.11, this field will only return the permissions '
+        'explicitly assigned to the current user, and will not automatically return read for all public nodes',
     )
 
     # Public is only write-able by admins--see update method
@@ -464,6 +467,19 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
+        request = self.context.get('request')
+        if StrictVersion(request.version) < StrictVersion('2.10'):
+            return self.get_current_user_permissions_legacy(obj)
+        user = self.context['request'].user
+        if isinstance(user, AnonymousUser):
+            perms = []
+        else:
+            perms = obj.get_permissions(user)
+            if user in obj.parent_admin_contributors:
+                perms += ['read']
+        return perms
+
+    def get_current_user_permissions_legacy(self, obj):
         if hasattr(obj, 'contrib_admin'):
             if obj.contrib_admin:
                 return ['admin', 'write', 'read']
