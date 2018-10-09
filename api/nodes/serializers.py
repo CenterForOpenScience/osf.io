@@ -283,6 +283,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         help_text='List of strings representing the permissions '
         'for the current user on this node.',
     )
+    wiki_enabled = ser.SerializerMethodField(help_text='Whether the wiki addon is enabled')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(
@@ -599,6 +600,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             # i.e. after creating a node
             region_id = obj.osfstorage_region._id
         return region_id
+
+    def get_wiki_enabled(self, obj):
+        return obj.has_addon('wiki')
 
     def create(self, validated_data):
         request = self.context['request']
