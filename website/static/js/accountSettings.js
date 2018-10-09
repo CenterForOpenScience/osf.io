@@ -350,31 +350,30 @@ var ExternalIdentityViewModel = oop.defclass({
 
 var UpdateDefaultStorageLocation = oop.defclass({
     constructor: function() {
+        var self = this;
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
         this.locationSelected = ko.observable({'name': ''});
-
-        this.locationSelectedName = ko.computed(function () {
-            return this.locationSelected().name;
-        }, this);
-
+        this.locations = ko.observableArray([]);
 
         this.client.fetch().done(
             function(profile) {
                 this.profile(profile);
-                this.locationSelected(this.profile().defaultRegion());
+                // Ensure defaultRegion is at top of region list
+                this.profile().availableRegions.remove(function (item) { return item._id === self.profile().defaultRegion()._id; });
+                this.profile().availableRegions.unshift(this.profile().defaultRegion());
+                this.locations(this.profile().availableRegions());
+                this.locationSelected(this.profile().defaultRegion);
             }.bind(this)
         );
-
-
     },
     urls: {
         'update': '/api/v1/profile/region/'
     },
     updateDefaultStorageLocation: function() {
-        var request = $osf.ajaxJSON('PUT', this.urls.update, {'data': {'region_id': this.locationSelected()._id}});
+        var request = $osf.ajaxJSON('PUT', this.urls.update, {'data': {'region_id': this.locationSelected()()._id}});
         request.done(function() {
-            $osf.growl('Success', 'You have successfully changed your default storage location to <b>' + this.locationSelected().name + '</b>.', 'success');
+            $osf.growl('Success', 'You have successfully changed your default storage location to <b>' + this.locationSelected()().name + '</b>.', 'success');
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
@@ -390,10 +389,6 @@ var UpdateDefaultStorageLocation = oop.defclass({
             });
         }.bind(this));
         return request;
-    },
-    setLocation: function(location) {
-        this.locationSelected(location);
-
     }
 });
 

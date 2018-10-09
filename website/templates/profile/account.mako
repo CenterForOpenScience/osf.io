@@ -82,33 +82,21 @@
                         </table>
                     </div>
                 </div>
-                % if storage_flag_is_active:
-                    <div id="updateDefaultStorageLocation" class="panel panel-default">
+                % if True:
+                    <div class="panel panel-default">
                         <div class="panel-heading clearfix"><h3 class="panel-title">Default Storage Location</h3></div>
                         <div class="panel-body">
                             <form id="updateDefaultStorageLocation" role="form">
                                 <div class="form-group">
-                                    <label for="default_storage_location">Default storage location:</label>
-                                    <span class="p-l-sm dropdown generic-dropdown category-list">
-                                        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
-                                            <span data-bind="text: locationSelectedName" class="text-capitalize"></span>
-                                            <i class="fa fa-sort"></i>
-                                        </button>
-                                        <ul class="dropdown-menu" data-bind="foreach: {data: profile().availableRegions, as: 'location'}">
-                                            <li>
-                                                  <a href="#" data-bind="click: $root.setLocation.bind($root, location)">
-                                                      <span data-bind="text: location.name"></span>
-                                                  </a>
-                                            </li>
-                                        </ul>
-                                        <div class="help-block">
-                                                <p>
-                                                    This location will be applied to new projects and components. It will not affect existing projects and components.
-                                                </p>
-                                        </div>
-                                    </span>
+                                    <select class="form-control" data-bind="options: locations, value: locationSelected(), optionsText: function(item) { return item.name }">
+                                    </select>
+                                    <div class="help-block">
+                                        <p>
+                                            This location will be applied to new projects and components. It will not affect existing projects and components.
+                                        </p>
+                                    </div>
                                 </div>
-                                <button class="btn btn-primary" data-bind="click: $root.updateDefaultStorageLocation.bind($root)">Update location</button>
+                                <a class="btn btn-primary" data-bind="click: $root.updateDefaultStorageLocation.bind($root)">Update location</a>
                                 <p class="text-muted"></p>
                             </form>
                         </div>
