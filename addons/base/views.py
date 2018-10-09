@@ -15,7 +15,7 @@ import jwt
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 
-from api.base.settings import ENABLE_ELASTICSEARCH_METRICS
+from django.conf import settings as api_settings
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
@@ -317,7 +317,7 @@ def get_auth(auth, **kwargs):
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if ENABLE_ELASTICSEARCH_METRICS:
+    if api_settings.ENABLE_ELASTICSEARCH_METRICS:
         # TODO: Add a signal here?
         user = auth.user
         linked_preprint = node.linked_preprint

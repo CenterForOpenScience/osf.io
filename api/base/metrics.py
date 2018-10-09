@@ -2,8 +2,8 @@ import re
 from datetime import timedelta
 
 from django.utils import timezone
+from django.conf import settings
 from api.base.exceptions import InvalidQueryStringError
-from api.base.settings import ENABLE_ELASTICSEARCH_METRICS
 
 
 class MetricMixin(object):
@@ -37,7 +37,7 @@ class MetricMixin(object):
 
     @property
     def metrics_requested(self):
-        return bool(self.parse_metric_query_params(self.request.query_params)) and ENABLE_ELASTICSEARCH_METRICS
+        return settings.ENABLE_ELASTICSEARCH_METRICS and bool(self.parse_metric_query_params(self.request.query_params))
 
     # Adapted from FilterMixin.parse_query_params
     # TODO: Should we get rid of query_params argument and use self.request.query_params instead?
