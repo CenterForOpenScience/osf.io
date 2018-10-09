@@ -829,7 +829,7 @@ def _view_project(node, auth, primary=False,
         'addon_widget_css': css,
         'node_categories': [
             {'value': key, 'display_name': value}
-            for key, value in settings.NODE_CATEGORY_MAP.iteritems()
+            for key, value in settings.NODE_CATEGORY_MAP.items()
         ]
     }
 

@@ -1011,7 +1011,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.user,
             timezone.now() + datetime.timedelta(days=10)
         )
-        for user_id, embargo_tokens in self.registration.embargo.approval_state.iteritems():
+        for user_id, embargo_tokens in self.registration.embargo.approval_state.items():
             approval_token = embargo_tokens['approval_token']
             self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.save()
@@ -1045,7 +1045,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.user,
             timezone.now() + datetime.timedelta(days=10)
         )
-        for user_id, embargo_tokens in self.registration.embargo.approval_state.iteritems():
+        for user_id, embargo_tokens in self.registration.embargo.approval_state.items():
             approval_token = embargo_tokens['approval_token']
             self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.save()
@@ -1068,7 +1068,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.user,
             timezone.now() + datetime.timedelta(days=10)
         )
-        for user_id, embargo_tokens in registration.embargo.approval_state.iteritems():
+        for user_id, embargo_tokens in registration.embargo.approval_state.items():
             approval_token = embargo_tokens['approval_token']
             registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.save()

@@ -15,7 +15,7 @@ def escape_html(data):
     if isinstance(data, dict):
         return {
             key: escape_html(value)
-            for (key, value) in data.iteritems()
+            for (key, value) in data.items()
         }
     if is_iterable_but_not_string(data):
         return [

@@ -1721,7 +1721,7 @@ class TestUserMerging(OsfTestCase):
         self.user.reload()
 
         # check each field/value pair
-        for k, v in expected.iteritems():
+        for k, v in expected.items():
             if is_mrm_field(getattr(self.user, k)):
                 assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, '{} doesn\'t match expectations'.format(k)
             else:

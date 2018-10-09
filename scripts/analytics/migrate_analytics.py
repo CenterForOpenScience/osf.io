@@ -306,7 +306,7 @@ def import_old_events_from_spreadsheet():
 
     with open(spreadsheet_path) as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
-        col_names = reader.next()
+        col_names = next(reader)
 
     dictReader = csv.DictReader(open(spreadsheet_path, 'rb'), fieldnames=col_names, delimiter=',')
 
@@ -330,7 +330,7 @@ def import_old_events_from_spreadsheet():
         node_event = {}
         user_event = {}
         addon_event = {}
-        for key, value in event.iteritems():
+        for key, value in event.items():
             if key in node_summary_cols:
                 node_event[key] = value
             if key in user_summary_cols:
@@ -432,7 +432,7 @@ def remove_event_from_keen(client, source_collection, event_id):
 def parse_and_send_old_events_to_keen(client, dry, reverse):
     old_events = import_old_events_from_spreadsheet()
 
-    for key, value in old_events.iteritems():
+    for key, value in old_events.items():
         if reverse:
             remove_events_from_keen(client, key, value, dry)
         else:

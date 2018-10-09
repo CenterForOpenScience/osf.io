@@ -784,7 +784,7 @@ class TestSearchInstitutions(ApiSearchTestCase):
 class TestSearchCollections(ApiSearchTestCase):
 
     def get_ids(self, data):
-        return map(lambda s: s['id'], data)
+        return [s['id'] for s in data]
 
     def post_payload(self, *args, **kwargs):
         return {

@@ -2124,7 +2124,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.custom_citation = ''
 
         # apply `changes`
-        for attr, val in attributes.iteritems():
+        for attr, val in attributes.items():
             setattr(new, attr, val)
 
         # set attributes which may NOT be overridden by `changes`
@@ -2675,7 +2675,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not fields:  # Bail out early if there are no fields to update
             return False
         values = {}
-        for key, value in fields.iteritems():
+        for key, value in fields.items():
             if key not in self.WRITABLE_WHITELIST:
                 continue
             if self.is_registration and key != 'is_public':

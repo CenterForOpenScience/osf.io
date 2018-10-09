@@ -153,7 +153,7 @@ def get_aggregations(query, doc_type):
             item['key']: item['doc_count']
             for item in agg['buckets']
         }
-        for doc_type, agg in res['aggregations'].iteritems()
+        for doc_type, agg in res['aggregations'].items()
     }
     ret['total'] = res['hits']['total']
     return ret
