@@ -75,14 +75,14 @@ class TestUserSettingsModel(unittest.TestCase):
 
         assert_equal(url.scheme, 'otpauth')
         assert_equal(url.netloc, 'totp')
-        assert_equal(url.path, '/OSF:{}'.format(self.user.username))
+        assert_equal(url.path, '/RDM:{}'.format(self.user.username))
         assert_equal(
             parse_qs(url.query),
             {'secret': [self.TOTP_SECRET_B32]}
         )
 
     def test_json(self):
-        # url = 'otpauth://totp/OSF:{}?secret=' + self.TOTP_SECRET_B32
+        # url = 'otpauth://totp/RDM:{}?secret=' + self.TOTP_SECRET_B32
 
         settings = self.user_settings.to_json(user=None)
         assert_equal(
