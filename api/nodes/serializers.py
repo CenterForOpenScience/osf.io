@@ -467,8 +467,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
-        request = self.context.get('request')
-        if StrictVersion(request.version) < StrictVersion('2.10'):
+        request = self.context['request']
+        if StrictVersion(request.version) < StrictVersion('2.11'):
             return self.get_current_user_permissions_legacy(obj)
         user = self.context['request'].user
         if isinstance(user, AnonymousUser):
