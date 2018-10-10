@@ -746,9 +746,13 @@ Draft.prototype.register = function(url, data) {
     }
 
     $osf.block();
-    var request = $osf.postJSON(
+    var request = $osf.ajaxJSON(
+        'POST',
         url,
-        payload
+        {
+            isCors: true,
+            data: payload
+         }
     ).done(function(response) {
         window.location.assign(response.data.links.html);
     }).fail(function(response) {
