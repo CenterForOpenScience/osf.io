@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import redirect
-from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView
+from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 
@@ -210,8 +210,29 @@ class DeleteCollectionProvider(PermissionRequiredMixin, DeleteView):
     template_name = 'collection_providers/confirm_delete.html'
     success_url = reverse_lazy('collection_providers:list')
 
+    def delete(self, request, *args, **kwargs):
+        provider = CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
+        if provider.primary_collection.collectionsubmission_set.count() > 0:
+            return redirect('collection_providers:cannot_delete', collection_provider_id=provider.pk)
+        return super(DeleteCollectionProvider, self).delete(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        provider = CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
+        if provider.primary_collection.collectionsubmission_set.count() > 0:
+            return redirect('preprint_providers:cannot_delete', collection_provider_id=provider.pk)
+        return super(DeleteCollectionProvider, self).get(request, *args, **kwargs)
+
     def get_object(self, queryset=None):
         return CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
+
+
+class CannotDeleteProvider(TemplateView):
+    template_name = 'collection_providers/cannot_delete.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CannotDeleteProvider, self).get_context_data(**kwargs)
+        context['provider'] = CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
+        return context
 
 
 class ExportColectionProvider(PermissionRequiredMixin, View):
