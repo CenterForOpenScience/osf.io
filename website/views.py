@@ -20,14 +20,13 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
-from framework.auth.core import _get_current_user
 from website import settings
 
 from addons.osfstorage.models import Region
 from osf import features
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node, Registration
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
-from website.ember_osf_web.decorators import ember_flag_is_active, MockUser, storage_i18n_flag_active
+from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
