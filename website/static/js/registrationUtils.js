@@ -746,10 +746,14 @@ Draft.prototype.register = function(url, data) {
     }
 
     $osf.block();
-    var request = $osf.postJSON(
-        url,
-        payload
-    ).done(function(response) {
+    var request = $.ajax({
+        type: 'POST',
+        url: url,
+        data: JSON.stringify(payload),
+        contentType: 'application/json',
+        dataType: 'json',
+        xhrFields: {withCredentials: true},
+    }).done(function(response) {
         window.location.assign(response.data.links.html);
     }).fail(function(response) {
         bootbox.alert({
