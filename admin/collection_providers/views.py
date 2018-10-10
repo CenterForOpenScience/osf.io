@@ -219,7 +219,7 @@ class DeleteCollectionProvider(PermissionRequiredMixin, DeleteView):
     def get(self, request, *args, **kwargs):
         provider = CollectionProvider.objects.get(id=self.kwargs['collection_provider_id'])
         if provider.primary_collection.collectionsubmission_set.count() > 0:
-            return redirect('preprint_providers:cannot_delete', collection_provider_id=provider.pk)
+            return redirect('collection_providers:cannot_delete', collection_provider_id=provider.pk)
         return super(DeleteCollectionProvider, self).get(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
