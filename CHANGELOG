@@ -1,6 +1,27 @@
-*********
-Changelog
-*********
+# Changelog
+
+We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
+
+18.2.0 (2018-10-02)
+===================
+
+- APIv2: Add email account management.
+- APIv2: Add password reset functionality.
+
+18.1.0 (2018-09-25)
+===================
+
+- Add custom citations to projects
+
+18.0.0 (2018-09-20)
+===================
+
+- Switch to CalVer.
+- APIv2: Allow social fields on users to be updated.
+- APIv2: Fix bug that caused 500 responses to be returned
+  for addon folder endpoints.
+- Add waffle switch to disable engagement emails.
+- Fix for removing self from projects and nested components.
 
 0.157.0 (2018-09-18)
 ====================
