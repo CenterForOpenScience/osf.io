@@ -4335,7 +4335,8 @@ class TestCollectionProperties:
 
     @pytest.fixture()
     def collection_public(self, provider, collector):
-        return CollectionFactory(creator=collector, provider=provider, is_public=True)
+        return CollectionFactory(creator=collector, provider=provider, is_public=True,
+                                 status_choices=['', 'Complete'], collected_type_choices=['', 'Dataset'])
 
     @pytest.fixture()
     def public_non_provided_collection(self, collector):

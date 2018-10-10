@@ -24,6 +24,7 @@ from osf.models.archive import ArchiveJob
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
+from osf.models.provider import RegistrationProvider
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 class Registration(AbstractNode):
 
+    provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
@@ -427,6 +429,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
                                       null=True, on_delete=models.CASCADE)
 
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
+    provider = models.ForeignKey('RegistrationProvider', related_name='draft_registrations', null=True)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -537,12 +540,15 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         return self.logs.all().order_by('date')
 
     @classmethod
-    def create_from_node(cls, node, user, schema, data=None):
+    def create_from_node(cls, node, user, schema, data=None, provider=None):
+        if not provider:
+            provider = RegistrationProvider.load('osf')
         draft = cls(
             initiator=user,
             branched_from=node,
             registration_schema=schema,
             registration_metadata=data or {},
+            provider=provider,
         )
         draft.save()
         return draft
@@ -591,7 +597,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         register = node.register_node(
             schema=self.registration_schema,
             auth=auth,
-            data=self.registration_metadata
+            data=self.registration_metadata,
+            provider=self.provider,
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)

@@ -1,7 +1,7 @@
 import pytz
 
 from django.apps import apps
-from django.db.models import F
+from django.db.models import Exists, F, OuterRef, Q
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -23,7 +23,7 @@ from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin
-from api.nodes.serializers import NodeSerializer
+from api.nodes.serializers import NodeSerializer, DraftRegistrationSerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -65,6 +65,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled
 from osf.models import (
     Contributor,
+    DraftRegistration,
     ExternalAccount,
     Guid,
     QuickFilesNode,
@@ -443,6 +444,33 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10)
+
+class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
+
+    serializer_class = DraftRegistrationSerializer
+    view_category = 'users'
+    view_name = 'user-draft-registrations'
+
+    ordering = ('-modified',)
+
+    def get_queryset(self):
+        user = self.get_user()
+        contrib_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, admin=True)
+        node_qs = Node.objects.annotate(admin=Exists(contrib_qs)).filter(admin=True).exclude(is_deleted=True)
+        return DraftRegistration.objects.filter(
+            Q(registered_node__isnull=True) |
+            Q(registered_node__is_deleted=True),
+            branched_from__in=list(node_qs),
+            deleted__isnull=True,
+        )
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
