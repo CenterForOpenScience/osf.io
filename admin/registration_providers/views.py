@@ -5,7 +5,7 @@ from django.core import serializers
 from django.core.management import call_command
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import redirect
-from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView
+from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
@@ -175,6 +175,18 @@ class DeleteRegistrationProvider(PermissionRequiredMixin, DeleteView):
     template_name = 'registration_providers/confirm_delete.html'
     success_url = reverse_lazy('registration_providers:list')
 
+    def delete(self, request, *args, **kwargs):
+        provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        if provider.registrations.count() > 0:
+            return redirect('registration_providers:cannot_delete', registration_provider_id=provider.pk)
+        return super(DeleteRegistrationProvider, self).delete(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        if provider.registrations.count() > 0:
+            return redirect('registration_providers:cannot_delete', registration_provider_id=provider.pk)
+        return super(DeleteRegistrationProvider, self).get(request, *args, **kwargs)
+
     def get_object(self, queryset=None):
         return RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
 
@@ -185,6 +197,16 @@ class DeleteRegistrationProvider(PermissionRequiredMixin, DeleteView):
         kwargs['collected_submissions_count'] = registration_provider.primary_collection.collectionsubmission_set.count()
         kwargs['provider_id'] = registration_provider.id
         return super(DeleteRegistrationProvider, self).get_context_data(*args, **kwargs)
+
+
+class CannotDeleteProvider(TemplateView):
+    template_name = 'registration_providers/cannot_delete.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CannotDeleteProvider, self).get_context_data(**kwargs)
+        context['provider'] = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        return context
+
 
 class ExportRegistrationProvider(PermissionRequiredMixin, View):
     permission_required = 'osf.change_registrationprovider'

@@ -7,6 +7,7 @@ from osf.models import RegistrationSchema
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
+    RegistrationProviderFactory,
     AuthUserFactory,
     CollectionFactory,
     DraftRegistrationFactory,
@@ -173,13 +174,17 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
+    def provider(self):
+        return RegistrationProviderFactory(_id='osf')
+
+    @pytest.fixture()
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
     @pytest.fixture()
-    def payload(self, metaschema_open_ended):
+    def payload(self, metaschema_open_ended, provider):
         return {
             'data': {
                 'type': 'draft_registrations',
@@ -190,7 +195,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': metaschema_open_ended._id
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
@@ -277,7 +287,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 403
 
     def test_registration_supplement_errors(
-            self, app, user, url_draft_registrations):
+            self, app, user, provider, url_draft_registrations):
 
         #   test_registration_supplement_not_found
         draft_data = {
@@ -290,7 +300,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': 'Invalid schema'
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
@@ -314,7 +329,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': schema._id
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
@@ -339,7 +359,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': schema._id
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
@@ -386,7 +411,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     def test_required_metaschema_questions_not_required_on_post(
-            self, app, user, project_public, prereg_metadata):
+            self, app, user, provider, project_public, prereg_metadata):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
@@ -417,7 +442,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': prereg_schema._id
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
