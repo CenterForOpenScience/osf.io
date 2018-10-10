@@ -86,7 +86,7 @@
                     <div class="panel panel-default">
                         <div class="panel-heading clearfix"><h3 class="panel-title">Default Storage Location</h3></div>
                         <div class="panel-body">
-                            <form id="updateDefaultStorageLocation" role="form">
+                            <form id="updateDefaultStorageLocation" data-bind="submit: $root.updateDefaultStorageLocation.bind($root)" role="form">
                                 <div class="form-group">
                                     <select class="form-control" data-bind="options: locations, value: locationSelected(), optionsText: function(item) { return item.name }">
                                     </select>
@@ -95,9 +95,9 @@
                                             This location will be applied to new projects and components. It will not affect existing projects and components.
                                         </p>
                                     </div>
-                                    <input type="submit" class="btn btn-primary" data-bind="click: $root.updateDefaultStorageLocation.bind($root)" value="Update location" />
                                 </div>
                                 <p class="text-muted"></p>
+                                <button class="btn btn-primary" type="submit">Update location</button>
                             </form>
                         </div>
                     </div>
