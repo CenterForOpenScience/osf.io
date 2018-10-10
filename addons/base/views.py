@@ -317,7 +317,8 @@ def get_auth(auth, **kwargs):
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if api_settings.ENABLE_ELASTICSEARCH_METRICS:
+    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
+    if api_settings.ENABLE_ELASTICSEARCH_METRICS and not download_is_from_mfr:
         # TODO: Add a signal here?
         user = auth.user
         linked_preprint = node.linked_preprint
