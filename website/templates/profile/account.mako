@@ -82,7 +82,7 @@
                         </table>
                     </div>
                 </div>
-                % if True:
+                % if storage_flag_is_active:
                     <div class="panel panel-default">
                         <div class="panel-heading clearfix"><h3 class="panel-title">Default Storage Location</h3></div>
                         <div class="panel-body">
@@ -95,8 +95,8 @@
                                             This location will be applied to new projects and components. It will not affect existing projects and components.
                                         </p>
                                     </div>
+                                    <input type="submit" class="btn btn-primary" data-bind="click: $root.updateDefaultStorageLocation.bind($root)" value="Update location" />
                                 </div>
-                                <a class="btn btn-primary" data-bind="click: $root.updateDefaultStorageLocation.bind($root)">Update location</a>
                                 <p class="text-muted"></p>
                             </form>
                         </div>
