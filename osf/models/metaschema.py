@@ -115,3 +115,8 @@ class RegistrationFormBlock(ObjectIDMixin, BaseModel):
     size = models.CharField(max_length=2, null=True, choices=FORMBLOCK_SIZES)
     choices = ArrayField(models.TextField(), default=list)  # Longest on prod: >511 chars
     required = models.BooleanField(default=True)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '{}form_blocks/{}/'.format(self.schema.absolute_api_v2_url, self._id)
+        return api_v2_url(path)
