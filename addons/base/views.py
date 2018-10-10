@@ -14,6 +14,7 @@ import jwe
 import jwt
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
+from elasticsearch import exceptions as es_exceptions
 
 from django.conf import settings as api_settings
 
@@ -340,7 +341,7 @@ def get_auth(auth, **kwargs):
                             version=version,
                             path=path
                         )
-                    except Exception:  # TODO: Catch a specific exception
+                    except es_exceptions.ConnectionError:
                         log_exception()
 
     return {'payload': jwe.encrypt(jwt.encode({
