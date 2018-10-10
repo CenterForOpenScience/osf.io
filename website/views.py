@@ -301,14 +301,6 @@ def resolve_guid(guid, suffix=None):
 
                 return send_from_directory(registries_dir, 'index.html')
 
-        if isinstance(referent, Node) and not referent.is_registration and suffix:
-            page = suffix.strip('/').split('/')[0]
-            flag_name = 'ember_project_{}_page'.format(page)
-            request.user = _get_current_user() or MockUser()
-
-            if waffle.flag_is_active(request, flag_name):
-                return use_ember_app()
-
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 
