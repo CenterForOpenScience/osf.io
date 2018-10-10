@@ -602,7 +602,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return region_id
 
     def get_wiki_enabled(self, obj):
-        return obj.has_addon('wiki')
+        return obj.has_wiki_addon if hasattr(obj, 'has_wiki_addon') else obj.has_addon('wiki')
 
     def create(self, validated_data):
         request = self.context['request']
