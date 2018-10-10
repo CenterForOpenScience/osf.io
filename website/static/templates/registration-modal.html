@@ -1,28 +1,110 @@
 <script type="text/html" id="registrationChoiceModal">
-<ul data-bind="foreach: preRegisterPrompts">
-  <li data-bind="html: $data"></li>
-</ul>
-<div class="form-group">
-  <label class="control-label">Registration choice</label>
-  <select class="form-control" data-bind="options: registrationOptions,
-                                          value: registrationChoice,
-                                          optionsText: 'message',
-                                          optionsValue: 'value'"></select>
-</div>
-<span data-bind="visible: showEmbargoDatePicker">
-  <div class="form-group">
-    <label class="control-label">
-      Embargo End Date
-    </label>
-    <input type="text" class="form-control"
-           data-bind="datePicker: {value: $root.pikaday, valid: $root.embargoEndDate.isValid}">
-  </div>
-</span>
-<em class="text-danger" data-bind="validationMessage: $root.embargoEndDate"></em>
-<div class="modal-footer">
-  <button class="btn btn-default" data-bind="click: close">Cancel</button>
-  <button class="btn btn-success" data-bind="click: register, enable: canRegister">
-    Submit
-  </button>
-</div>
+    <div class="modal-header">
+        <h4 class="modal-title" data-bind="text:pageTitle" ></h4>
+    </div><!-- end modal-header -->
+    <!-- select projects page -->
+    <div data-bind="visible:page() === SELECT">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="p-sm">
+                    <span data-bind="html:nodesMessage"></span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="p-sm">
+                    <div>
+                        Select:&nbsp;
+                        <a class="text-bigger" data-bind="click:selectAll">Select All</a>
+                        &nbsp;|&nbsp;
+                        <a class="text-bigger" data-bind="click:selectNone">Clear All</a>
+                    </div>
+                    <div class="tb-row-titles">
+                        <div style="width: 100%" data-tb-th-col="0" class="tb-th">
+                            <span class="m-r-sm"></span>
+                        </div>
+                    </div>
+                    <div class="osf-treebeard-minimal">
+                        <div id="nodesRegisterTreebeard">
+                            <div class="spinner-loading-wrapper">
+                                <div class="ball-scale ball-scale-blue">
+                                    <div></div>
+                                </div>
+                                <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
+                            </div>
+                        </div>
+                    </div>
+                    <span data-bind="html:validationWarning"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end select projects page -->
+
+    <!-- confirm projects page -->
+    <div data-bind="if: page() === CONFIRM">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="m-b-md box p-sm">
+                    <span>The following nodes will be registered:</span>
+                </div>
+            </div>
+        </div>
+        <div data-bind="if: nodesSelected()">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <ul data-bind="foreach: { data: nodesSelected, as: 'item' }">
+                        <li>
+                            <h4 class="f-w-lg" data-bind="text: item.title"></h4>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- embargo projects page -->
+    <div data-bind="visible:page() === EMBARGO">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="m-b-md box p-sm">
+                    <ul data-bind="foreach: preRegisterPrompts">
+                        <li data-bind="html: $data"></li>
+                    </ul>
+                    <div class="form-group">
+                        <label class="control-label">Registration choice</label>
+                        <select class="form-control" data-bind="options: registrationOptions,
+                                                                              value: registrationChoice,
+                                                                              optionsText: 'message',
+                                                                              optionsValue: 'value'"></select>
+                    </div>
+                    <span data-bind="visible: showEmbargoDatePicker">
+                        <div class="form-group">
+                            <label class="control-label">
+                                Embargo End Date
+                            </label>
+                            <input type="text" class="form-control" data-bind="datePicker: {value: $root.pikaday, valid: $root.embargoEndDate.isValid}">
+                        </div>
+                    </span>
+                    <em class="text-danger" data-bind="validationMessage: $root.embargoEndDate"></em>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <!--ordering puts back button before cancel -->
+        <span data-bind="if: page() == SELECT">
+            <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
+            <button class="btn btn-primary" data-bind="click:confirmPage, disable:invalidSelection">Continue</button>
+        </span>
+        <span data-bind="if: page() == CONFIRM">
+            <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
+            <button class="btn btn-primary" data-bind="click:embargoPage, disable:invalidSelection">Continue</button>
+        </span>
+        <span data-bind="if: page() == EMBARGO">
+            <a href="#" class="btn btn-default" data-bind="click: confirmPage, visible: !noComponents()" data-dismiss="modal">Back</a>
+            <button class="btn btn-success" data-bind="click: register, enable: canRegister">Register</button>
+        </span>
+
+    </div><!-- end modal-footer -->
 </script>

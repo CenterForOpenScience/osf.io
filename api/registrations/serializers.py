@@ -1,6 +1,7 @@
 import pytz
 import json
 
+
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -22,7 +23,7 @@ from api.base.serializers import (
 )
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError
-
+from osf.models import Node
 
 class BaseRegistrationSerializer(NodeSerializer):
 
@@ -279,13 +280,22 @@ class BaseRegistrationSerializer(NodeSerializer):
         registration_choice = validated_data.pop('registration_choice', 'immediate')
         embargo_lifted = validated_data.pop('lift_embargo', None)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+        children = validated_data.pop('children', None)
+        if children:
+            # First check that all children are valid
+            child_nodes = Node.objects.filter(guids___id__in=children)
+            if child_nodes.count() != len(children):
+                raise exceptions.ValidationError('Some child nodes could not be found.')
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
         except ValidationValueError as e:
             raise exceptions.ValidationError(e.message)
 
-        registration = draft.register(auth, save=True)
+        try:
+            registration = draft.register(auth, save=True, child_ids=children)
+        except NodeStateError as err:
+            raise exceptions.ValidationError(err)
 
         if registration_choice == 'embargo':
             if not embargo_lifted:
@@ -369,6 +379,7 @@ class RegistrationSerializer(BaseRegistrationSerializer):
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
+    children = ser.ListField(write_only=True, required=False)
 
 
 class RegistrationDetailSerializer(BaseRegistrationSerializer):

@@ -726,34 +726,51 @@ Draft.prototype.registerWithoutReview = function() {
 Draft.prototype.register = function(url, data) {
     var self = this;
 
-    $osf.block();
-    var request = $osf.postJSON(url, data);
-    request
-        .done(function(response) {
-            if (response.status === 'initiated') {
-                window.location.assign(response.urls.registrations);
+    var nodeIds = data.nodesToRegister.map(function (node) {
+        return node.id;
+    });
+
+    var payload = {
+        'data': {
+            'type': 'registrations',
+            'attributes': {
+                'draft_registration': window.contextVars.draft.pk,
+                'registration_choice': data.registrationChoice,
+                'children': nodeIds
             }
-        })
-        .fail(function() {
-            bootbox.alert({
-                title: 'Registration failed',
-                message: language.registerFail,
-                callback: function() {
-                    $osf.unblock();
-                    if (self.urls.registrations) {
-                        window.location.assign(self.urls.registrations);
-                    }
-                },
-                buttons: {
-                    ok: {
-                        label: 'Back to project',
-                    }
+        }
+    };
+
+    if(data.embargoEndDate){
+        payload.data.attributes.lift_embargo = data.embargoEndDate.format('YYYY-MM-DDThh:mm:ss');
+    }
+
+    $osf.block();
+    var request = $osf.postJSON(
+        url,
+        payload
+    ).done(function(response) {
+        window.location.assign(response.data.links.html);
+    }).fail(function(response) {
+        bootbox.alert({
+            title: 'Registration failed',
+            message: language.registerFail,
+            callback: function() {
+                $osf.unblock();
+                if (self.urls.registrations) {
+                    window.location.assign(self.urls.registrations);
                 }
-            });
-        })
-        .always(function() {
-            $osf.unblock();
+            },
+            buttons: {
+                ok: {
+                    label: 'Back to project',
+                }
+            }
         });
+    }).always(function(){
+        $osf.unblock();
+    });
+
     return request;
 };
 Draft.prototype.submitForReview = function() {
