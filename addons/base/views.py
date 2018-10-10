@@ -716,7 +716,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             if file_node.kind == 'folder':
                 raise HTTPError(httplib.BAD_REQUEST, data={
                     'message_short': 'Bad Request',
-                    'message_long': 'File not associated with required object.'
+                    'message_long': 'You cannot request a folder from this endpoint.'
                 })
 
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
