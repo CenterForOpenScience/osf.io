@@ -591,7 +591,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
         deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
         if getattr(file_node, 'suspended', False):
             error_type = 'FILE_SUSPENDED'
-        elif file_node.deleted_by is None or (auth.private_key and auth.private_key.anonymous):
+        elif file_node.deleted_by is None or (auth.private_key and auth.private_link.anonymous):
             if file_node.provider == 'osfstorage':
                 error_type = 'FILE_GONE_ACTOR_UNKNOWN'
             else:
