@@ -31,7 +31,7 @@ def add_records_to_files_sql(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0133_merge_20180919_1852'),
+        ('osf', '0136_add_datacite_file_metadata_schema'),
     ]
 
     operations = [
