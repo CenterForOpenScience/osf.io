@@ -353,7 +353,7 @@ var UpdateDefaultStorageLocation = oop.defclass({
         var self = this;
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
-        this.locationSelected = ko.observable({'name': ''});
+        this.locationSelected = ko.observable();
         this.locations = ko.observableArray([]);
 
         this.client.fetch().done(
@@ -371,9 +371,9 @@ var UpdateDefaultStorageLocation = oop.defclass({
         'update': '/api/v1/profile/region/'
     },
     updateDefaultStorageLocation: function() {
-        var request = $osf.ajaxJSON('PUT', this.urls.update, {'data': {'region_id': this.locationSelected()()._id}});
+        var request = $osf.ajaxJSON('PUT', this.urls.update, {'data': {'region_id': this.locationSelected()._id}});
         request.done(function() {
-            $osf.growl('Success', 'You have successfully changed your default storage location to <b>' + this.locationSelected()().name + '</b>.', 'success');
+            $osf.growl('Success', 'You have successfully changed your default storage location to <b>' + this.locationSelected().name + '</b>.', 'success');
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',

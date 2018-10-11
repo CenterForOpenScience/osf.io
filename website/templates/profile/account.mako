@@ -88,7 +88,7 @@
                         <div class="panel-body">
                             <form id="updateDefaultStorageLocation" data-bind="submit: $root.updateDefaultStorageLocation.bind($root)" role="form">
                                 <div class="form-group">
-                                    <select class="form-control" data-bind="options: locations, value: locationSelected(), optionsText: function(item) { return item.name }">
+                                    <select class="form-control" data-bind="options: locations, value: locationSelected, optionsText: function(item) { return item.name }">
                                     </select>
                                     <div class="help-block">
                                         <p>
