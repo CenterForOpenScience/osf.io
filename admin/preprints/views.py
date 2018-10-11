@@ -78,7 +78,7 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         kwargs['serialized_preprint'] = serialize_preprint(preprint)
         kwargs['change_provider_form'] = ChangeProviderForm(instance=preprint)
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
-        kwargs.update({'message': kwargs.get('message')})  # Pass spam status in to check against
+        kwargs.update({'message': kwargs.get('message')})
         return super(PreprintView, self).get_context_data(**kwargs)
 
 
@@ -101,7 +101,7 @@ class PreprintSpamList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'preprints': map(serialize_preprint, query_set),
+            'preprints': list(map(serialize_preprint, query_set)),
             'page': page,
         }
 
@@ -296,7 +296,7 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'requests': map(serialize_withdrawal_request, query_set),
+            'requests': list(map(serialize_withdrawal_request, query_set)),
             'page': page,
         }
 

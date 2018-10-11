@@ -587,7 +587,7 @@ def has(data, sub_data):
     # :param sub_data: subset being checked for
     # :return: True or False
     try:
-        (item for item in data if item == sub_data).next()
+        next((item for item in data if item == sub_data))
         return True
     except StopIteration:
         lists_and_dicts = list_or_dict(data)

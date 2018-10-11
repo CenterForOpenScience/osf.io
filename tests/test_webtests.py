@@ -1059,23 +1059,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
     def test_public_project_abandoned_preprint(self):
         self.preprint.machine_state = 'initial'
@@ -1085,23 +1085,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
     def test_public_project_deleted_preprint(self):
         self.preprint.deleted = timezone.now()
@@ -1111,23 +1111,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
     def test_public_project_private_preprint(self):
         self.preprint.is_public = False
@@ -1137,23 +1137,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
     def test_public_project_orphaned_preprint(self):
         self.preprint.primary_file = None
@@ -1163,23 +1163,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
     def test_public_project_unpublished_preprint(self):
         self.preprint.is_published = False
@@ -1189,23 +1189,23 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('Has supplemental material for', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_not_in('Has supplemental material for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
     def test_public_project_pending_preprint_post_moderation(self):
         self.preprint.machine_state = 'pending'

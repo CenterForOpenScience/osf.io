@@ -202,10 +202,10 @@ class AddonModelMixin(models.Model):
         return self.get_addons()
 
     def get_addons(self):
-        return filter(None, [
+        return [_f for _f in [
             self.get_addon(config.short_name)
             for config in self.ADDONS_AVAILABLE
-        ])
+        ] if _f]
 
     def get_oauth_addons(self):
         # TODO: Using hasattr is a dirty hack - we should be using issubclass().
@@ -280,7 +280,7 @@ class AddonModelMixin(models.Model):
         :param dict config: Mapping between add-on names and enabled / disabled
             statuses
         """
-        for addon_name, enabled in config.iteritems():
+        for addon_name, enabled in config.items():
             if enabled:
                 self.add_addon(addon_name, auth)
             else:
@@ -950,7 +950,7 @@ class ContributorMixin(models.Model):
             # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
             if self.get_identifier_value('doi'):
                 request, user_id = get_request_and_user_id()
-                self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields={'contributors'})
+                self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
             return contrib_to_add
 
     def add_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1037,15 +1037,25 @@ class ContributorMixin(models.Model):
             contributor = OSFUser.load(user_id)
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
-            if not contributor.is_registered:
-                raise ValueError(
-                    'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
-                    .format(user_id, self._id)
-                )
+
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-            contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                 permissions=permissions, send_email=send_email, save=True)
+
+            if contributor.is_registered:
+                contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                     permissions=permissions, send_email=send_email, save=True)
+            else:
+                if not full_name:
+                    raise ValueError(
+                        'Cannot add unconfirmed user {} to resource {}. You need to provide a full_name.'
+                        .format(user_id, self._id)
+                    )
+                contributor = self.add_unregistered_contributor(
+                    fullname=full_name, email=contributor.username, auth=auth,
+                    send_email=send_email, permissions=permissions,
+                    visible=bibliographic, existing_user=contributor, save=True
+                )
+
         else:
             contributor = get_user(email=email)
             if contributor and self.contributor_set.filter(user=contributor).exists():
@@ -1190,7 +1200,7 @@ class ContributorMixin(models.Model):
         # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is removed
         if self.get_identifier_value('doi'):
             request, user_id = get_request_and_user_id()
-            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields={'contributors'})
+            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1242,7 +1252,7 @@ class ContributorMixin(models.Model):
         # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is moved
         if self.get_identifier_value('doi'):
             request, user_id = get_request_and_user_id()
-            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields={'contributors'})
+            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
 
     # TODO: Optimize me
     def manage_contributors(self, user_dicts, auth, save=False):
@@ -1400,7 +1410,7 @@ class ContributorMixin(models.Model):
         # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is hidden/made visible
         if self.get_identifier_value('doi'):
             request, user_id = get_request_and_user_id()
-            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields={'contributors'})
+            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
 
     def has_permission(self, user, permission, check_parent=True):
         """Check whether user has permission.
@@ -1519,6 +1529,8 @@ class SpamOverrideMixin(SpamMixin):
         content = []
         for field in spam_fields:
             content.append((getattr(self, field, None) or '').encode('utf-8'))
+        if self.all_tags.exists():
+            content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
         if not content:
             return None
         return ' '.join(content)

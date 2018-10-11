@@ -3587,7 +3587,7 @@ class TestCollectedMetaList:
 
     @pytest.fixture()
     def collection_with_three_cgm(self, user_one, project_one, project_two, project_three):
-        c = CollectionFactory(creator=user_one)
+        c = CollectionFactory(creator=user_one, status_choices=['', 'two', 'asdf'], collected_type_choices=['', 'asdf'])
         c.collect_object(project_one, user_one)
         c.collect_object(project_two, user_one, status='two')
         c.collect_object(project_three, user_one)
@@ -3742,7 +3742,7 @@ class TestCollectedMetaDetail:
 
     @pytest.fixture()
     def collection(self, user_one):
-        return CollectionFactory(creator=user_one)
+        return CollectionFactory(creator=user_one, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
 
     @pytest.fixture()
     def cgm(self, user_one, collection, project_one, subject_one):

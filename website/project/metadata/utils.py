@@ -40,12 +40,12 @@ def serialize_draft_registration(draft, auth=None):
         'updated': utils.iso8601format(draft.datetime_updated),
         'flags': draft.flags,
         'urls': {
-            'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id),
+            'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id, _guid=True),
             'submit': node.api_url_for('submit_draft_for_review', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),
             'register': node.api_url_for('register_draft_registration', draft_id=draft._id),
-            'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id),
-            'registrations': node.web_url_for('node_registrations')
+            'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id, _guid=True),
+            'registrations': node.web_url_for('node_registrations', _guid=True)
         },
         'requires_approval': draft.requires_approval,
         'is_pending_approval': draft.is_pending_review,

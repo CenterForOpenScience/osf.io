@@ -155,7 +155,7 @@ def get_aggregations(query, doc_type):
             item['key']: item['doc_count']
             for item in agg['buckets']
         }
-        for doc_type, agg in res['aggregations'].iteritems()
+        for doc_type, agg in res['aggregations'].items()
     }
     ret['total'] = res['hits']['total']
     return ret
@@ -533,10 +533,13 @@ def serialize_cgm(cgm):
     return {
         'id': cgm._id,
         'abstract': getattr(obj, 'description', ''),
-        'collectedType': getattr(cgm, 'collected_type'),
         'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
         'provider': getattr(cgm.collection.provider, '_id', None),
+        'collectedType': cgm.collected_type,
         'status': cgm.status,
+        'volume': cgm.volume,
+        'issue': cgm.issue,
+        'programArea': cgm.program_area,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),
@@ -692,7 +695,8 @@ def update_file(file_, index=None, delete=False):
     file_guid = file_.get_guid(create=False)
     if file_guid:
         guid_url = '/{file_guid}/'.format(file_guid=file_guid._id)
-    # File URL's not provided for preprint files, because the File Detail Page is blocked
+    # File URL's not provided for preprint files, because the File Detail Page will
+    # just reroute to preprints detail
     file_doc = {
         'id': file_._id,
         'deep_url': None if isinstance(target, Preprint) else file_deep_url,
@@ -804,6 +808,9 @@ def create_index(index=None):
                     'collectedType': NOT_ANALYZED_PROPERTY,
                     'subjects': NOT_ANALYZED_PROPERTY,
                     'status': NOT_ANALYZED_PROPERTY,
+                    'issue': NOT_ANALYZED_PROPERTY,
+                    'volume': NOT_ANALYZED_PROPERTY,
+                    'programArea': NOT_ANALYZED_PROPERTY,
                     'provider': NOT_ANALYZED_PROPERTY,
                     'title': ENGLISH_ANALYZER_PROPERTY,
                     'abstract': ENGLISH_ANALYZER_PROPERTY

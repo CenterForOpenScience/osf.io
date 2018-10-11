@@ -67,7 +67,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     def test_api_not_cached(self, mock_odp):
         # The first call to .api returns a new object
         api = self.node_settings.api
-        mock_odp.assert_called_once()
+        mock_odp.assert_called_once_with(self.external_account)
         assert api == mock_odp()
 
     @mock.patch('addons.onedrive.models.OneDriveProvider')

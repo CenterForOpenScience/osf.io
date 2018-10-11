@@ -48,7 +48,7 @@ def validate_input(custom_provider, data, provider_type='osf.preprintprovider', 
         included_subjects = included_subjects.exclude(text__in=excludes)
         logger.info('Successfully validated `exclude`')
 
-    for cust_name, map_dict in customs.iteritems():
+    for cust_name, map_dict in customs.items():
         assert not included_subjects.filter(text=cust_name).exists(), 'Custom text {} already exists in mapped set'.format(cust_name)
         assert Subject.objects.filter(provider=BEPRESS_PROVIDER, text=map_dict.get('bepress')).exists(), 'Unable to find specified BePress subject with text {}'.format(map_dict.get('bepress'))
         if map_dict.get('parent'):  # Null parent possible
@@ -58,7 +58,7 @@ def validate_input(custom_provider, data, provider_type='osf.preprintprovider', 
     logger.info('Successfully validated `custom`')
     included_subjects = included_subjects | Subject.objects.filter(text__in=[map_dict['bepress'] for map_dict in customs.values()])
 
-    for merged_from, merged_into in merges.iteritems():
+    for merged_from, merged_into in merges.items():
         assert not included_subjects.filter(text=merged_from).exists(), 'Cannot merge subject "{}" that will be included'.format(merged_from)
         assert merged_into in set(included_subjects.values_list('text', flat=True)) | set(customs.keys()), 'Unable to determine merge target for "{}"'.format(merged_into)
     included_subjects = included_subjects | Subject.objects.filter(text__in=merges.keys())
@@ -147,7 +147,7 @@ def do_custom_mapping(custom_provider, customs):
         if tries == 10:
             raise RuntimeError('Unable to map custom subjects with 10 iterations -- invalid input')
         successes = []
-        for cust_name, map_dict in unmapped_customs.iteritems():
+        for cust_name, map_dict in unmapped_customs.items():
             if map_custom_subject(custom_provider, cust_name, map_dict.get('parent'), map_dict.get('bepress')):
                 successes.append(cust_name)
             else:

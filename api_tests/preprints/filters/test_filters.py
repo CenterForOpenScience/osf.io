@@ -361,26 +361,6 @@ class PreprintsListFilteringMixin(object):
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert expected == actual
 
-    def test_node_is_public_deprecated_filter(
-            self, app, user, preprint_one, preprint_two,
-            preprint_three, node_is_public_url):
-        node_is_public_url = node_is_public_url
-
-        preprint_one.node.is_public = False
-        preprint_one.node.save()
-        preprint_two.node.is_public = True
-        preprint_two.node.save()
-        preprint_three.node.is_public = True
-        preprint_three.node.save()
-
-        res = app.get(
-            '{}{}'.format(
-                node_is_public_url,
-                'true' + '&version=2.8'),
-            auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "Value 'node_is_public' is not a filterable field."
-
     @pytest.mark.parametrize('group_name', ['admin', 'moderator'])
     def test_permissions(
             self, app, url, preprint_one, preprint_two,

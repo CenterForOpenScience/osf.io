@@ -1272,13 +1272,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contribs.append(contrib)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None):
+    def register_node(self, schema, auth, data, parent=None, provider=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
         :param data: Form data
         :param parent Node: parent registration of registration to be created
+        :param provider RegistrationProvider: provider to submit the registration to
         """
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
@@ -1295,6 +1296,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if original.is_deleted:
             raise NodeStateError('Cannot register deleted node.')
 
+        if not provider:
+            # Avoid circular import
+            from osf.models.provider import RegistrationProvider
+            provider = RegistrationProvider.load('osf')
+
         registered = original.clone()
         registered.recast('osf.registration')
 
@@ -1302,6 +1308,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_date = timezone.now()
         registered.registered_user = auth.user
         registered.registered_from = original
+        registered.provider = provider
         if not registered.registered_meta:
             registered.registered_meta = {}
         registered.registered_meta[schema._id] = data
@@ -1346,6 +1353,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     schema=schema,
                     auth=auth,
                     data=data,
+                    provider=provider,
                     parent=registered,
                 )
             else:
@@ -1542,8 +1550,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             forked.title = title
 
-        if len(forked.title) > 200:
-            forked.title = forked.title[:200]
+        if len(forked.title) > 512:
+            forked.title = forked.title[:512]
 
         forked.add_contributor(
             contributor=user,
@@ -1650,7 +1658,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.custom_citation = ''
 
         # apply `changes`
-        for attr, val in attributes.iteritems():
+        for attr, val in attributes.items():
             setattr(new, attr, val)
 
         # set attributes which may NOT be overridden by `changes`
@@ -1669,8 +1677,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ):
             new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title,))
 
-        if len(new.title) > 200:
-            new.title = new.title[:200]
+        if len(new.title) > 512:
+            new.title = new.title[:512]
 
         # Slight hack - created is a read-only field.
         new.created = timezone.now()
@@ -1932,7 +1940,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not fields:  # Bail out early if there are no fields to update
             return False
         values = {}
-        for key, value in fields.iteritems():
+        for key, value in fields.items():
             if key not in self.WRITABLE_WHITELIST:
                 continue
             if self.is_registration and key != 'is_public':

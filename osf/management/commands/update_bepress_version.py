@@ -70,7 +70,7 @@ def update(dry_run=False):
             logger.info('Notifying SHARE about preprint {} change'.format(preprint_id))
             if not dry_run:
                 on_preprint_updated(preprint_id)
-    for provider_id, list_of_subjs in created_dict.iteritems():
+    for provider_id, list_of_subjs in created_dict.items():
         logger.info('Created {} new subjects on {}: "{}"'.format(len(list_of_subjs), provider_id, ', '.join(list_of_subjs)))
 
 

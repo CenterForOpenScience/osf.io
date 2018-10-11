@@ -4,7 +4,6 @@ import mock
 import pytest
 import random
 
-from api.base.exceptions import Conflict
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
@@ -1248,10 +1247,18 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             url_public, payload,
             auth=user.auth, expect_errors=True)
         assert res.status_code == 404
+        # if adding unregistered contrib by guid, fullname must be supplied
         assert (
             res.json['errors'][0]['detail'] ==
-            'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
+            'Cannot add unconfirmed user {} to resource {}. You need to provide a full_name.'
             .format(unconfirmed_user._id, project_public._id))
+
+        payload['data']['attributes']['full_name'] = 'Susan B. Anthony'
+        res = app.post_json_api(
+            url_public, payload,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['unregistered_contributor'] == 'Susan B. Anthony'
 
 
 @pytest.mark.django_db
@@ -1272,26 +1279,25 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
             user_id='abcde')
 
     #   test_add_contributor_validation_user_id_fullname
-        with pytest.raises(Conflict):
-            validate_data(
-                NodeContributorsCreateSerializer(),
-                'fake',
-                user_id='abcde',
-                full_name='Kanye')
+        validate_data(
+            NodeContributorsCreateSerializer(),
+            project_public,
+            user_id='abcde',
+            full_name='Kanye')
 
     #   test_add_contributor_validation_user_id_email
-        with pytest.raises(Conflict):
+        with pytest.raises(exceptions.ValidationError):
             validate_data(
                 NodeContributorsCreateSerializer(),
-                'fake',
+                project_public,
                 user_id='abcde',
                 email='kanye@west.com')
 
     #   test_add_contributor_validation_user_id_fullname_email
-        with pytest.raises(Conflict):
+        with pytest.raises(exceptions.ValidationError):
             validate_data(
                 NodeContributorsCreateSerializer(),
-                'fake',
+                project_public,
                 user_id='abcde',
                 full_name='Kanye',
                 email='kanye@west.com')
@@ -1306,7 +1312,7 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
         with pytest.raises(exceptions.ValidationError):
             validate_data(
                 NodeContributorsCreateSerializer(),
-                'fake',
+                project_public,
                 email='kanye@west.com')
 
     #   test_add_contributor_validation_fullname_email

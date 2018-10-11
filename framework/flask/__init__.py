@@ -39,7 +39,7 @@ def rm_handlers(app, handlers, key=None):
     :param app: Flask application
     :param handlers: Mapping from handler names to handler functions
     """
-    for handler_name, func in handlers.iteritems():
+    for handler_name, func in handlers.items():
         rm_handler(app, handler_name, func, key=key)
 
 
@@ -69,7 +69,7 @@ def add_handlers(app, handlers, key=None):
     :param handlers: Mapping from handler names to handler functions
 
     """
-    for handler_name, func in handlers.iteritems():
+    for handler_name, func in handlers.items():
         add_handler(app, handler_name, func, key=key)
 
 def redirect(location, code=302):

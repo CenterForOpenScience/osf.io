@@ -33,6 +33,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     creator = models.ForeignKey('OSFUser')
     collected_type = models.CharField(blank=True, max_length=31)
     status = models.CharField(blank=True, max_length=31)
+    volume = models.CharField(blank=True, max_length=31)
+    issue = models.CharField(blank=True, max_length=31)
+    program_area = models.CharField(blank=True, max_length=31)
 
     @cached_property
     def _id(self):
@@ -104,6 +107,9 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     title = models.CharField(max_length=200, validators=[validate_title])
     collected_type_choices = ArrayField(models.CharField(max_length=31), blank=True, default=list)
     status_choices = ArrayField(models.CharField(max_length=31), blank=True, default=list)
+    volume_choices = ArrayField(models.CharField(max_length=31), blank=True, default=list)
+    issue_choices = ArrayField(models.CharField(max_length=31), blank=True, default=list)
+    program_area_choices = ArrayField(models.CharField(max_length=31), blank=True, default=list)
     is_public = models.BooleanField(default=False, db_index=True)
     is_promoted = models.BooleanField(default=False, db_index=True)
     is_bookmark_collection = models.BooleanField(default=False, db_index=True)
@@ -174,7 +180,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     def has_permission(self, user, perm):
         return user.has_perms(self.groups[perm], self)
 
-    def collect_object(self, obj, collector, collected_type=None, status=None):
+    def collect_object(self, obj, collector, collected_type=None, status=None, volume=None, issue=None, program_area=None):
         """ Adds object to collection, creates CollectionSubmission reference
             Performs type / metadata validation. User permissions checked in view.
 
@@ -186,12 +192,39 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         """
         collected_type = collected_type or ''
         status = status or ''
+        volume = volume or ''
+        issue = issue or ''
+        program_area = program_area or ''
+
+        if not self.collected_type_choices and collected_type:
+            raise ValidationError('May not specify "type" for this collection')
+
+        if not self.status_choices and status:
+            raise ValidationError('May not specify "status" for this collection')
+
+        if not self.volume_choices and volume:
+            raise ValidationError('May not specify "volume" for this collection')
+
+        if not self.issue_choices and issue:
+            raise ValidationError('May not specify "issue" for this collection')
+
+        if not self.program_area_choices and program_area:
+            raise ValidationError('May not specify "program_area" for this collection')
 
         if self.collected_type_choices and collected_type not in self.collected_type_choices:
             raise ValidationError('"{}" is not an acceptable "type" for this collection'.format(collected_type))
 
         if self.status_choices and status not in self.status_choices:
             raise ValidationError('"{}" is not an acceptable "status" for this collection'.format(status))
+
+        if self.volume_choices and volume not in self.volume_choices:
+            raise ValidationError('"{}" is not an acceptable "volume" for this collection'.format(volume))
+
+        if self.issue_choices and issue not in self.issue_choices:
+            raise ValidationError('"{}" is not an acceptable "issue" for this collection'.format(issue))
+
+        if self.program_area_choices and program_area not in self.program_area_choices:
+            raise ValidationError('"{}" is not an acceptable "program_area" for this collection'.format(program_area))
 
         if not any([isinstance(obj, t.model_class()) for t in self.collected_types.all()]):
             # Not all objects have a content_type_pk, have to look the other way.
@@ -206,6 +239,9 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         cgm = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
         cgm.collected_type = collected_type
         cgm.status = status
+        cgm.volume = volume
+        cgm.issue = issue
+        cgm.program_area = program_area
         cgm.save()
 
         return cgm
