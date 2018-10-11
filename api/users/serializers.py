@@ -486,7 +486,7 @@ class UserEmailsSerializer(JSONAPISerializer):
     type = TypeField()
     email_address = ser.CharField(source='address')
     confirmed = ser.BooleanField(read_only=True, help_text='User has clicked the confirmation link in an email.')
-    verified = ser.BooleanField(required=False, help_text='User has verified adding the email on the OSF side.')
+    verified = ser.BooleanField(required=False, help_text='User has verified adding the email on the OSF, i.e. via a modal.')
     primary = ser.BooleanField(required=False)
     is_merge = ser.BooleanField(required=False, help_text='This unconfirmed email is already confirmed to another user.')
     links = LinksField({

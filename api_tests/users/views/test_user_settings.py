@@ -258,7 +258,12 @@ class TestUserEmailsList:
     def test_get_emails_current_user(self, app, url, user_one):
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == user_one.emails.count() + len(user_one.unconfirmed_emails)
+        confirmed_count = user_one.emails.count()
+        unconfirmed_count = len(user_one.unconfirmed_emails)
+        data = res.json['data']
+        assert len(data) == confirmed_count + unconfirmed_count
+        assert len([email for email in data if email['attributes']['confirmed']]) == confirmed_count
+        assert len([email for email in data if email['attributes']['confirmed'] is False]) == unconfirmed_count
 
     def test_get_emails_not_current_user(self, app, url, user_one, user_two):
         res = app.get(url, auth=user_two.auth, expect_errors=True)
