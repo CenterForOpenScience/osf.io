@@ -439,7 +439,7 @@ class TestNodeDetail:
         assert not project_public.has_permission(user_two, permissions.READ)
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
 
-        # est read perm older versions for anon user
+        # check read permission is included with older versions for anon user
         res = app.get(url_public)
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
 
