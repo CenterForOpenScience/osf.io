@@ -75,7 +75,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_confirm_email(self, mock_mail):
         user = UnregUserFactory()
-       
+
         auth.register_unconfirmed(
             username=user.username,
             password='gattaca',
