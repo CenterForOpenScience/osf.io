@@ -19,6 +19,9 @@ var MESSAGES = {
     makeProjectPrivateWarning:
     '<ul><li>Public forks and registrations of this project will remain public.</li>' +
     '<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>',
+    makeSupplementalProjectPrivateWarning:
+    '<ul><li>Preprints will remain public.</li><li>Public forks and registrations of this project will remain public.</li>' +
+    '<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>',
     makeEmbargoPublicWarning: 'By clicking confirm, an email will be sent to project administrator(s) to approve ending the embargo. If approved, this registration, including any components, will be made public immediately. This action is irreversible.',
     makeEmbargoPublicTitle: 'End embargo early',
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
@@ -159,7 +162,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
         }
 
         if (self.page() === self.WARNING &&  self.isSupplementalProject) {
-              return MESSAGES.preprintPrivateWarning + MESSAGES.makeProjectPrivateWarning;
+              return MESSAGES.preprintPrivateWarning + MESSAGES.makeSupplementalProjectPrivateWarning;
         }
 
         return {

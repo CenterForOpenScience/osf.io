@@ -34,11 +34,12 @@ var QuickDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl
     self.nodeApiUrl = nodeApiUrl;
     self.isSupplementalProject = isSupplementalProject;
     self.preprintMessage = 'This ' + self.nodeType +
-     ' also contains supplemental materials for a <strong>preprint</strong>.';
+     ' also contains supplemental materials for a <strong>preprint</strong>.  It will' +
+     ' no longer be available to contributors or connected to the preprint.';
 
     self.message = ko.computed(function () {
-        return (self.isSupplementalProject ? self.preprintMessage : '') +
-            ' It will no longer be available to other contributors on the project.';
+        return (self.isSupplementalProject ? self.preprintMessage :
+            'It will no longer be available to other contributors on the project.');
 
     });
     self.atMaxLength = ko.observable(false);
@@ -165,9 +166,10 @@ var NodesDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl
     });
 
     self.warning = ko.computed(function () {
-        return 'Please note that deleting your ' + self.nodeType + ' will erase all your ' +
-          self.nodeType + ' data and this process is IRREVERSIBLE. Deleted '+ self.nodeType +  ' and ' +
-          self.termForChildren() + ' will no longer be available to other contributors on the ' + self.nodeType + '.';
+        var message = 'Please note that deleting your ' + self.nodeType + ' will erase all your ' +
+            self.nodeType + ' data and this process is IRREVERSIBLE. Deleted '+ self.nodeType +  ' and ' +
+            self.termForChildren() + ' will no longer be available to other contributors on the ' + self.nodeType;
+        return self.hasSupplementalProjects() ? message + ' and will be disconnected from your preprints.' : message + '.';
     });
 };
 
