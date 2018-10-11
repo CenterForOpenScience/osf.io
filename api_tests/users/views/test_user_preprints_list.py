@@ -258,6 +258,14 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin):
             auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
 
+    def test_filter_published_false_admin(
+            self, app, user_admin_contrib, preprint_unpublished, url):
+        res = app.get(
+            '{}filter[is_published]=false'.format(url),
+            auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 0
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
+
 
 class TestUserPreprintIsValidList(PreprintIsValidListMixin):
 
@@ -322,4 +330,4 @@ class TestUserPreprintIsValidList(PreprintIsValidListMixin):
         assert len(res.json['data']) == 0
         # admin
         res = app.get(url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 0
