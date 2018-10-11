@@ -71,10 +71,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_confirm_email(self, mock_mail):
         user = UnregUserFactory()
-        
-        # Add user parameter "have_email" for testing RDM repair part.(#656,#2593)
-        user.have_email = True
-        
+       
         auth.register_unconfirmed(
             username=user.username,
             password='gattaca',
