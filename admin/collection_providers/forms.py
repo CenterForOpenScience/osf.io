@@ -4,7 +4,7 @@ import json
 from django import forms
 
 from osf.models import CollectionProvider, CollectionSubmission
-from admin.base.utils import get_nodelicense_choices, get_defaultlicense_choices
+from admin.base.utils import get_nodelicense_choices, get_defaultlicense_choices, validate_slug
 
 
 class CollectionProviderForm(forms.ModelForm):
@@ -13,6 +13,11 @@ class CollectionProviderForm(forms.ModelForm):
     volume_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     issue_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     program_area_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
+    _id = forms.SlugField(
+        required=True,
+        help_text='URL Slug',
+        validators=[validate_slug]
+    )
 
     class Meta:
         model = CollectionProvider
