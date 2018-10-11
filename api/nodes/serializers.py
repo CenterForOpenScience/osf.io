@@ -466,6 +466,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
+    def check_contrib_admin_optimization(self, obj):
+        if hasattr(obj, 'contrib_admin'):
+            if obj.contrib_admin:
+                return ['admin', 'write', 'read']
+            elif obj.contrib_write:
+                return ['write', 'read']
+
     def get_current_user_permissions(self, obj):
         request = self.context['request']
         if StrictVersion(request.version) < StrictVersion('2.11'):
@@ -474,19 +481,15 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if isinstance(user, AnonymousUser):
             perms = []
         else:
-            perms = obj.get_permissions(user)
-            if user in obj.parent_admin_contributors:
-                perms += ['read']
+            perms = self.check_contrib_admin_optimization(obj) or obj.get_permissions(user)
+            if not perms:
+                if user in obj.parent_admin_contributors:
+                    perms += ['read']
         return perms
 
     def get_current_user_permissions_legacy(self, obj):
         if hasattr(obj, 'contrib_admin'):
-            if obj.contrib_admin:
-                return ['admin', 'write', 'read']
-            elif obj.contrib_write:
-                return ['write', 'read']
-            else:
-                return ['read']
+            return self.check_contrib_admin_optimization(obj) or ['read']
         else:
             user = self.context['request'].user
             if user.is_anonymous:
