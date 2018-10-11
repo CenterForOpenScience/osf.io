@@ -112,7 +112,10 @@ class RegistrationSerializer(NodeSerializer):
     comments = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
+        related_meta={
+            'unread': 'get_unread_comments_count',
+            'total': 'get_total_comments_count',  # total count of top_level, undeleted comments on the registration (node)
+        },
         filter={'target': '<_id>'},
     ))
 
@@ -313,6 +316,11 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_view_only_links_count(self, obj):
         return obj.private_links.filter(is_deleted=False).count()
+
+    def get_total_comments_count(self, obj):
+        return {
+            'node': obj.comment_set.filter(page='node', target___id=obj._id, is_deleted=False).count(),
+        }
 
     def update(self, registration, validated_data):
         # TODO - when withdrawal is added, make sure to restrict to admin only here
