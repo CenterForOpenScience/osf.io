@@ -794,8 +794,16 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
             serialized_emails.append(serialized_email)
         email_verifications = user.email_verifications or []
         for token in email_verifications:
+            is_merge = Email.objects.filter(address=email.address).exists()
             detail = user.email_verifications[token]
-            serialized_unconfirmed_email = UserEmail(email_id=token, address=detail['email'], confirmed=detail['confirmed'], verified=False, primary=False)
+            serialized_unconfirmed_email = UserEmail(
+                email_id=token,
+                address=detail['email'],
+                confirmed=detail['confirmed'],
+                verified=False,
+                primary=False,
+                is_merge=is_merge,
+            )
             serialized_emails.append(serialized_unconfirmed_email)
 
         return serialized_emails
@@ -838,6 +846,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
                 address = email.address
                 confirmed = True
                 verified = True
+                is_merge = False
 
         # check to see if it's an unconfirmed email with a token
         elif user.unconfirmed_emails:
@@ -847,13 +856,14 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
                 confirmed = email['confirmed']
                 verified = False
                 primary = False
+                is_merge = Email.objects.filter(address=address).exists()
             except KeyError:
                 email = None
 
         if not email:
             raise NotFound
 
-        return UserEmail(email_id=email_id, address=address, confirmed=confirmed, verified=verified, primary=primary)
+        return UserEmail(email_id=email_id, address=address, confirmed=confirmed, verified=verified, primary=primary, is_merge=is_merge)
 
     # Overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):

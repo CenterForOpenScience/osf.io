@@ -265,9 +265,6 @@ class TestUserEmailsList:
         assert res.status_code == 403
 
     def test_unconfirmed_email_included(self, app, url, payload, user_one, unconfirmed_address):
-        # unconfirmed = 'notyet@unconfirmed.test'
-        # user_one.add_unconfirmed_email(unconfirmed)
-        # user_one.save()
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
         assert unconfirmed_address in [result['attributes']['email_address'] for result in res.json['data']]
@@ -426,9 +423,9 @@ class TestUserEmailDetail:
         assert res.status_code == 403
 
         # token for unconfirmed email
-        res = app.get(unconfirmed_url, auth=user_one.auth)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['confirmed'] is False
+        res_unconfirmed = app.get(unconfirmed_url, auth=user_one.auth)
+        assert res_unconfirmed.status_code == 200
+        assert res_unconfirmed.json['data']['attributes']['confirmed'] is False
 
         # token for unconfirmed email different user
         res = app.get(unconfirmed_url, auth=user_two.auth, expect_errors=True)
@@ -449,9 +446,18 @@ class TestUserEmailDetail:
         primary_email = Email.objects.get(address=user_one.username)
         primary_hash = self.get_hashid(primary_email.id)
         url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, primary_hash)
-        res = app.get(url, auth=user_one.auth)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['primary'] is True
+        res_primary = app.get(url, auth=user_one.auth)
+        assert res_primary.status_code == 200
+        assert res_primary.json['data']['attributes']['primary'] is True
+
+        # is_merge field
+        token = user_one.add_unconfirmed_email(user_two.username)
+        user_one.save()
+        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, token)
+        res_merge = app.get(url, auth=user_one.auth)
+        assert res_merge.json['data']['attributes']['is_merge'] is True
+        assert res_unconfirmed.json['data']['attributes']['is_merge'] is False
+        assert res_primary.json['data']['attributes']['is_merge'] is False
 
     def test_adding_new_token_for_unconfirmed_email(self, app, user_one, unconfirmed_address,
                                                     unconfirmed_token, unconfirmed_url):

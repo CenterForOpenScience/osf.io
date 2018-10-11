@@ -466,12 +466,13 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
 
 class UserEmail(object):
-    def __init__(self, email_id, address, confirmed, verified, primary):
+    def __init__(self, email_id, address, confirmed, verified, primary, is_merge=False):
         self.id = email_id
         self.address = address
         self.confirmed = confirmed
         self.verified = verified
         self.primary = primary
+        self.is_merge = is_merge
 
 
 class UserEmailsSerializer(JSONAPISerializer):
@@ -487,6 +488,7 @@ class UserEmailsSerializer(JSONAPISerializer):
     confirmed = ser.BooleanField(read_only=True, help_text='User has clicked the confirmation link in an email.')
     verified = ser.BooleanField(required=False, help_text='User has verified adding the email on the OSF side.')
     primary = ser.BooleanField(required=False)
+    is_merge = ser.BooleanField(required=False, help_text='This unconfirmed email is already confirmed to another user.')
     links = LinksField({
         'self': 'get_absolute_url',
     })
@@ -508,6 +510,7 @@ class UserEmailsSerializer(JSONAPISerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         address = validated_data['address']
+        is_merge = Email.objects.filter(address=address).exists()
         if address in user.unconfirmed_emails or address in user.emails.all().values_list('address', flat=True):
             raise Conflict('This user already has registered with the email address {}'.format(address))
         try:
@@ -518,7 +521,7 @@ class UserEmailsSerializer(JSONAPISerializer):
         except ValidationError as e:
             raise exceptions.ValidationError(e.args[0])
 
-        return UserEmail(email_id=token, address=address, confirmed=False, verified=False, primary=False)
+        return UserEmail(email_id=token, address=address, confirmed=False, verified=False, primary=False, is_merge=is_merge)
 
     def update(self, instance, validated_data):
         user = self.context['request'].user
