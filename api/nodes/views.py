@@ -325,7 +325,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         try:
             instance.remove_node(auth=auth)
         except NodeStateError as err:
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
         instance.save()
 
 
@@ -360,7 +360,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         try:
             node.remove_node(auth=auth)
         except NodeStateError as err:
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
         node.save()
 
     def get_renderer_context(self):
@@ -561,6 +561,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
     serializer_class = DraftRegistrationSerializer
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON, )
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
@@ -738,7 +739,7 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
         try:
             citation = render_citation(node=node, style=style)
         except ValueError as err:  # style requested could not be found
-            csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
+            csl_name = re.findall('[a-zA-Z]+\.csl', str(err))[0]
             raise NotFound('{} is not a known style.'.format(csl_name))
 
         return {'citation': citation, 'id': style}
@@ -835,7 +836,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         try:
             node.rm_pointer(instance, auth=auth)
         except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
         node.save()
 
     # overrides ListCreateAPIView
@@ -922,7 +923,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         try:
             node.rm_pointer(pointer, auth=auth)
         except ValueError as err:  # pointer doesn't belong to node
-            raise NotFound(err.message)
+            raise NotFound(str(err))
         node.save()
 
 

@@ -20,7 +20,6 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
-from framework.auth.core import _get_current_user
 from website import settings
 
 from osf import features
@@ -28,7 +27,7 @@ from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, 
 from addons.osfstorage.models import Region
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
-from website.ember_osf_web.decorators import ember_flag_is_active, MockUser, storage_i18n_flag_active
+from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
@@ -301,14 +300,6 @@ def resolve_guid(guid, suffix=None):
                     return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
                 return send_from_directory(registries_dir, 'index.html')
-
-        if isinstance(referent, Node) and not referent.is_registration and suffix:
-            page = suffix.strip('/').split('/')[0]
-            flag_name = 'ember_project_{}_page'.format(page)
-            request.user = _get_current_user() or MockUser()
-
-            if waffle.flag_is_active(request, flag_name):
-                return use_ember_app()
 
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)

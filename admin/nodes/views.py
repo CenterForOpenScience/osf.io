@@ -249,7 +249,7 @@ class AdminNodeLogView(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'logs': map(serialize_log, query_set),
+            'logs': list(map(serialize_log, query_set)),
             'page': page,
         }
 
@@ -276,7 +276,7 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'nodes': map(serialize_node, query_set),
+            'nodes': list(map(serialize_node, query_set)),
             'page': page,
         }
 
@@ -340,7 +340,7 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'nodes': map(serialize_node, query_set),
+            'nodes': list(map(serialize_node, query_set)),
             'page': page,
         }
 

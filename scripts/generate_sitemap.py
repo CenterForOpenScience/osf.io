@@ -76,7 +76,7 @@ class Sitemap(object):
         self.url = self.doc.createElement('url')
         self.urlset.appendChild(self.url)
 
-        for k, v in config.iteritems():
+        for k, v in config.items():
             self.add_tag(k, v)
         self.url_count += 1
 

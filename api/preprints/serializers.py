@@ -299,7 +299,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         try:
             func(val, auth)
         except PermissionsError as e:
-            raise exceptions.PermissionDenied(detail=e.message)
+            raise exceptions.PermissionDenied(detail=str(e))
         except (ValueError, ValidationError, NodeStateError) as e:
             raise exceptions.ValidationError(detail=e.message)
 

@@ -61,7 +61,7 @@ def postcommit_after_request(response, base_status_error_code=500):
 
 def get_task_from_postcommit_queue(name, predicate, celery=True):
     queue = postcommit_celery_queue() if celery else postcommit_queue()
-    matches = [task for key, task in queue.iteritems() if task.type.name == name and predicate(task)]
+    matches = [task for key, task in queue.items() if task.type.name == name and predicate(task)]
     if len(matches) == 1:
         return matches[0]
     elif len(matches) > 1:

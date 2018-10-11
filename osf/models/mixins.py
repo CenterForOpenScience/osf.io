@@ -202,10 +202,10 @@ class AddonModelMixin(models.Model):
         return self.get_addons()
 
     def get_addons(self):
-        return filter(None, [
+        return [_f for _f in [
             self.get_addon(config.short_name)
             for config in self.ADDONS_AVAILABLE
-        ])
+        ] if _f]
 
     def get_oauth_addons(self):
         # TODO: Using hasattr is a dirty hack - we should be using issubclass().
@@ -280,7 +280,7 @@ class AddonModelMixin(models.Model):
         :param dict config: Mapping between add-on names and enabled / disabled
             statuses
         """
-        for addon_name, enabled in config.iteritems():
+        for addon_name, enabled in config.items():
             if enabled:
                 self.add_addon(addon_name, auth)
             else:
@@ -1525,6 +1525,8 @@ class SpamOverrideMixin(SpamMixin):
         content = []
         for field in spam_fields:
             content.append((getattr(self, field, None) or '').encode('utf-8'))
+        if self.all_tags.exists():
+            content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
         if not content:
             return None
         return ' '.join(content)

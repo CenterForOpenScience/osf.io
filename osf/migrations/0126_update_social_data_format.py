@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
         users_updated = 0
         for user in users_with_social:
             old_social = {}
-            for key, value in user.social.iteritems():
+            for key, value in user.social.items():
                 if key in FIELDS_TO_MIGRATE:
                     if len(value) > 1:
                         raise ValueError('Current social list field has more than one value, cannot reset to just one value.')

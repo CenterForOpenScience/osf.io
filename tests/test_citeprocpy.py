@@ -31,7 +31,7 @@ class TestCiteprocpy(OsfTestCase):
         with open(url_data_path) as url_test_data:
             data = json.load(url_test_data)['fails']
         matches = []
-        for k, v in data.iteritems():
+        for k, v in data.items():
             try:
                 citeprocpy = render_citation(node, k)
             except (TypeError, AttributeError):
@@ -49,7 +49,7 @@ class TestCiteprocpy(OsfTestCase):
             data = json.load(url_test_data)['passes']
         not_matches = []
         citation = []
-        for k, v in data.iteritems():
+        for k, v in data.items():
             try:
                 citeprocpy = render_citation(node, k)
             except (TypeError, AttributeError):

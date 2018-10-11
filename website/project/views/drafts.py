@@ -213,7 +213,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
         try:
             register.require_approval(auth.user)
         except NodeStateError as err:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=str(err)))
 
     register.save()
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
