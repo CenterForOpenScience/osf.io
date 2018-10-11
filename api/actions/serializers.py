@@ -138,7 +138,7 @@ class BaseActionSerializer(JSONAPISerializer):
                 return target.run_submit(user)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
-            raise Conflict(e.message)
+            raise Conflict(str(e))
         else:
             raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
 
@@ -201,7 +201,7 @@ class ReviewActionSerializer(BaseActionSerializer):
             return target.run_withdraw(user=user, comment=comment)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
-            raise Conflict(e.message)
+            raise Conflict(str(e))
         else:
             raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
 

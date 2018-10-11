@@ -65,7 +65,7 @@ class RegistrationProviderCustomTaxonomyForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(RegistrationProviderCustomTaxonomyForm, self).__init__(*args, **kwargs)
         subject_choices = [(x, x) for x in Subject.objects.filter(bepress_subject__isnull=True).values_list('text', flat=True)]
-        for name, field in self.fields.iteritems():
+        for name, field in self.fields.items():
             if hasattr(field, 'choices'):
                 if field.choices == []:
                     field.choices = subject_choices

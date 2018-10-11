@@ -53,7 +53,7 @@ def node_register_page(auth, node, **kwargs):
             trust=False,
             id='redirected_to_registrations',
         )
-        return redirect(node.web_url_for('node_registrations', view='draft'))
+        return redirect(node.web_url_for('node_registrations', view='draft', _guid=True))
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -114,7 +114,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
         node.save()
         node.retraction.ask(node.get_active_contributors_recursive(unique_users=True))
     except NodeStateError as err:
-        raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
+        raise HTTPError(http.FORBIDDEN, data=dict(message_long=str(err)))
 
     return {'redirectUrl': node.web_url_for('view_project')}
 
@@ -155,7 +155,7 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
             trust=False,
             id='redirected_to_registrations',
         )
-        return redirect(node.web_url_for('node_registrations', view=kwargs.get('template')))
+        return redirect(node.web_url_for('node_registrations', view=kwargs.get('template'), _guid=True))
 
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)

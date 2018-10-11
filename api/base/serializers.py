@@ -987,7 +987,7 @@ class LinksField(ser.Field):
 
     def to_representation(self, obj):
         ret = {}
-        for name, value in self.links.iteritems():
+        for name, value in self.links.items():
             try:
                 url = _url_val(value, obj=obj, serializer=self.parent, request=self.context['request'])
             except SkipField:
@@ -1229,7 +1229,7 @@ class BaseAPISerializer(ser.Serializer, SparseFieldsetMixin):
         super(BaseAPISerializer, self).__init__(*args, **kwargs)
         self.model_field_names = [
             name if field.source == '*' else field.source
-            for name, field in self.fields.iteritems()
+            for name, field in self.fields.items()
         ]
 
 

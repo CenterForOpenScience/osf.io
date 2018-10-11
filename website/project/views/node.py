@@ -544,7 +544,7 @@ def project_set_privacy(auth, node, **kwargs):
     except NodeStateError as e:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_short="Can't change privacy",
-            message_long=e.message
+            message_long=str(e)
         ))
 
     return {
@@ -590,7 +590,7 @@ def component_remove(auth, node, **kwargs):
             http.BAD_REQUEST,
             data={
                 'message_short': 'Error',
-                'message_long': 'Could not delete component: ' + e.message
+                'message_long': 'Could not delete component: ' + str(e)
             },
         )
     node.save()
@@ -800,7 +800,7 @@ def _view_project(node, auth, primary=False,
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
             'absolute_url': parent.absolute_url if parent else '',
-            'registrations_url': parent.web_url_for('node_registrations') if parent else '',
+            'registrations_url': parent.web_url_for('node_registrations', _guid=True) if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
             'can_view': parent.can_view(auth) if parent else False,
@@ -829,7 +829,7 @@ def _view_project(node, auth, primary=False,
         'addon_widget_css': css,
         'node_categories': [
             {'value': key, 'display_name': value}
-            for key, value in settings.NODE_CATEGORY_MAP.iteritems()
+            for key, value in settings.NODE_CATEGORY_MAP.items()
         ]
     }
 
@@ -881,6 +881,9 @@ def serialize_collections(cgms, auth):
         'url': '/collections/{}/'.format(cgm.collection.provider._id),
         'status': cgm.status,
         'type': cgm.collected_type,
+        'issue': cgm.issue,
+        'volume': cgm.volume,
+        'program_area': cgm.program_area,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
         'logo': cgm.collection.provider.get_asset_url('favicon')

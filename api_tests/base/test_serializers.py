@@ -36,7 +36,7 @@ for loader, name, _ in pkgutil.iter_modules(['api']):
 
 SER_CLASSES = []
 for mod in SER_MODULES:
-    for name, val in mod.__dict__.iteritems():
+    for name, val in mod.__dict__.items():
         try:
             if issubclass(val, BaseAPISerializer):
                 if 'JSONAPI' in name or 'BaseAPI' in name:
@@ -232,7 +232,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': True})
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -294,7 +294,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': 'children'})
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -324,7 +324,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'children,contributors'}
         )
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]

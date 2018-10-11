@@ -3576,7 +3576,7 @@ class TestOnNodeUpdate:
             assert registration.is_registration
             kwargs = requests.post.call_args[1]
             graph = kwargs['json']['data']['attributes']['data']['@graph']
-            payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+            payload = next((item for item in graph if 'is_deleted' in item.keys()))
             assert payload['is_deleted'] == case['is_deleted']
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3602,14 +3602,14 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         node.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3621,14 +3621,14 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3640,7 +3640,7 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         node.title = 'Not a qa title'
@@ -3649,7 +3649,7 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3662,7 +3662,7 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         registration.title = 'Not a qa title'
@@ -3671,7 +3671,7 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', None)
@@ -3965,10 +3965,7 @@ class TestTemplateNode:
         admin.save()
 
         # filter down self.nodes to only include projects the user can see
-        visible_nodes = filter(
-            lambda x: x.can_view(other_user_auth),
-            project.nodes
-        )
+        visible_nodes = [x for x in project.nodes if x.can_view(other_user_auth)]
 
         # create templated node
         new = project.use_as_template(auth=other_user_auth)
@@ -4152,7 +4149,7 @@ class TestAddonCallbacks:
         # Mock addon callbacks
         for addon in node.addons:
             mock_settings = mock.create_autospec(addon.__class__)
-            for callback, return_value in self.callbacks.iteritems():
+            for callback, return_value in self.callbacks.items():
                 mock_callback = getattr(mock_settings, callback)
                 mock_callback.return_value = return_value
                 patch = mock.patch.object(
@@ -4333,7 +4330,8 @@ class TestCollectionProperties:
 
     @pytest.fixture()
     def collection_public(self, provider, collector):
-        return CollectionFactory(creator=collector, provider=provider, is_public=True)
+        return CollectionFactory(creator=collector, provider=provider, is_public=True,
+                                 status_choices=['', 'Complete'], collected_type_choices=['', 'Dataset'])
 
     @pytest.fixture()
     def public_non_provided_collection(self, collector):
@@ -4349,7 +4347,7 @@ class TestCollectionProperties:
 
     @pytest.fixture()
     def subjects(self):
-        return [[SubjectFactory()._id] for i in xrange(0, 5)]
+        return [[SubjectFactory()._id] for i in range(0, 5)]
 
     def _collection_url(self, collection):
         try:

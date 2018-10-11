@@ -18,7 +18,7 @@ class TestScopeList:
         # test_license_list_count_correct
         total = res_scopes.json['links']['meta']['total']
         count = 0
-        for key, value in public_scopes.iteritems():
+        for key, value in public_scopes.items():
             if value.is_public:
                 count += 1
         assert total == count
