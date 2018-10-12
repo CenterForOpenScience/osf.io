@@ -54,7 +54,7 @@ class SpamList(PermissionRequiredMixin, ListView):
         page_size = self.get_paginate_by(queryset)
         paginator, page, queryset, is_paginated = self.paginate_queryset(
             queryset, page_size)
-        kwargs.setdefault('spam', map(serialize_comment, queryset))
+        kwargs.setdefault('spam', list(map(serialize_comment, queryset)))
         kwargs.setdefault('page', page)
         kwargs.setdefault('status', self.request.GET.get('status', '1'))
         kwargs.setdefault('page_number', page.number)

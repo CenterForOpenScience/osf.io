@@ -86,6 +86,7 @@ from osf_tests.factories import (
     ProjectFactory,
     ProjectWithAddonFactory,
     RegistrationFactory,
+    RegistrationProviderFactory,
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
@@ -1054,7 +1055,7 @@ class TestGetNodeTree(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json, [])
 
-    # Parent node should show because of user2 read access, the children should not
+    # Parent node should show because of user2 read access, and only child3
     def test_get_node_parent_not_admin(self):
         project = ProjectFactory(creator=self.user)
         project.add_contributor(self.user2, auth=Auth(self.user))
@@ -1062,13 +1063,15 @@ class TestGetNodeTree(OsfTestCase):
         child1 = NodeFactory(parent=project, creator=self.user)
         child2 = NodeFactory(parent=project, creator=self.user)
         child3 = NodeFactory(parent=project, creator=self.user)
+        child3.add_contributor(self.user2, auth=Auth(self.user))
         url = project.api_url_for('get_node_tree')
         res = self.app.get(url, auth=self.user2.auth)
         tree = res.json[0]
         parent_node_id = tree['node']['id']
         children = tree['children']
         assert_equal(parent_node_id, project._primary_key)
-        assert_equal(children, [])
+        assert_equal(len(children), 1)
+        assert_equal(children[0]['node']['id'], child3._primary_key)
 
 
 @pytest.mark.enable_enqueue_task
@@ -1100,7 +1103,7 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         self.user.reload()
-        for key, value in payload.iteritems():
+        for key, value in payload.items():
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
 
@@ -2096,7 +2099,8 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
-        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None)
+        provider = RegistrationProviderFactory()
+        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None, provider=provider)
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
@@ -2766,7 +2770,7 @@ class TestPointerViews(OsfTestCase):
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
-        for i in xrange(3):
+        for i in range(3):
             self.project.add_pointer(ProjectFactory(creator=self.user),
                                      auth=Auth(user=self.user))
         self.project.save()
@@ -4410,7 +4414,7 @@ class TestProjectCreation(OsfTestCase):
 
     def test_title_must_be_less_than_200(self):
         payload = {
-            'title': ''.join([str(x) for x in xrange(0, 250)])
+            'title': ''.join([str(x) for x in range(0, 250)])
         }
         res = self.app.post_json(
             self.url, payload, auth=self.creator.auth, expect_errors=True)

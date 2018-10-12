@@ -1052,7 +1052,7 @@ class TestSearchMigration(OsfTestCase):
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_no_remove(self):
-        for n in xrange(1, 21):
+        for n in range(1, 21):
             migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
@@ -1063,7 +1063,7 @@ class TestSearchMigration(OsfTestCase):
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_with_remove(self):
-        for n in xrange(1, 21, 2):
+        for n in range(1, 21, 2):
             migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)

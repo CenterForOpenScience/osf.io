@@ -27,7 +27,7 @@ def modify_user_settings(state, add, library_name):
     user_settings_pending_save = []
 
     for user_setting in ZoteroUserSettings.objects.all():
-        for node, ext_accounts in user_setting.oauth_grants.iteritems():
+        for node, ext_accounts in user_setting.oauth_grants.items():
             for ext_account in ext_accounts.keys():
                 if add:
                     user_setting.oauth_grants[node][ext_account]['library'] = library_name

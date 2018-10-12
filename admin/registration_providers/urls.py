@@ -12,4 +12,5 @@ urlpatterns = [
     url(r'^(?P<registration_provider_id>[a-z0-9]+)/delete/$', views.DeleteRegistrationProvider.as_view(), name='delete'),
     url(r'^(?P<registration_provider_id>[a-z0-9]+)/export/$', views.ExportRegistrationProvider.as_view(), name='export'),
     url(r'^(?P<registration_provider_id>[a-z0-9]+)/import/$', views.ImportRegistrationProvider.as_view(), name='import'),
+    url(r'^(?P<registration_provider_id>[a-z0-9]+)/cannot_delete/$', views.CannotDeleteProvider.as_view(), name='cannot_delete'),
 ]

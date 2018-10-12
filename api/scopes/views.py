@@ -60,7 +60,7 @@ class ScopeList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_default_queryset(self):
         scopes = []
-        for key, value in public_scopes.iteritems():
+        for key, value in public_scopes.items():
             if value.is_public:
                 scopes.append(Scope(id=key, scope=value))
         return scopes

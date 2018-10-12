@@ -24,12 +24,12 @@ class TestTokenList:
     @pytest.fixture()
     def tokens_user_one(self, user_one):
         return [ApiOAuth2PersonalTokenFactory(
-            owner=user_one) for i in xrange(3)]
+            owner=user_one) for i in range(3)]
 
     @pytest.fixture()
     def tokens_user_two(self, user_two):
         return [ApiOAuth2PersonalTokenFactory(
-            owner=user_two) for i in xrange(3)]
+            owner=user_two) for i in range(3)]
 
     @pytest.fixture()
     def url_token_list(self):

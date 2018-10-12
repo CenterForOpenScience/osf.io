@@ -36,7 +36,7 @@ for loader, name, _ in pkgutil.iter_modules(['api']):
 
 SER_CLASSES = []
 for mod in SER_MODULES:
-    for name, val in mod.__dict__.iteritems():
+    for name, val in mod.__dict__.items():
         try:
             if issubclass(val, BaseAPISerializer):
                 if 'JSONAPI' in name or 'BaseAPI' in name:
@@ -173,8 +173,7 @@ class TestNullLinks(ApiTestCase):
 
         assert_not_in('null_field', rep['links'])
         assert_in('valued_field', rep['links'])
-        assert_equals(rep['relationships']['null_link_field']['data'], None)
-        assert_in('valued_link_field', rep['relationships'])
+        assert_not_in('null_link_field', rep['relationships'])
 
 
 class TestApiBaseSerializers(ApiTestCase):
@@ -233,7 +232,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': True})
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -295,7 +294,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': 'children'})
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -325,7 +324,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'children,contributors'}
         )
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -502,7 +501,7 @@ class TestRelationshipField:
         data = self.BasicNodeSerializer(
             node, context={'request': req}
         ).data['data']
-        assert_equal(data['relationships']['registered_from']['data'], None)
+        assert_not_in('registered_from', data['relationships'])
 
         registration = factories.RegistrationFactory(project=node)
         data = self.BasicNodeSerializer(
