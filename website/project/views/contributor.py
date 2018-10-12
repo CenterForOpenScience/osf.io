@@ -643,17 +643,16 @@ def claim_user_registered(auth, node, **kwargs):
 
     current_user = auth.user
 
-    sign_out_url = cas.get_login_url(service_url=request.url)
+    sign_out_url = cas.get_logout_url(service_url=cas.get_login_url(service_url=request.url))
     if not current_user:
         return redirect(sign_out_url)
 
     # Logged in user should not be a contributor the project
     if node.is_contributor(current_user):
-        logout_url = web_url_for('auth_logout', redirect_url=request.url)
         data = {
             'message_short': 'Already a contributor',
             'message_long': ('The logged-in user is already a contributor to this '
-                'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
+                'project. Would you like to <a href="{}">log out</a>?').format(sign_out_url)
         }
         raise HTTPError(http.BAD_REQUEST, data=data)
 
