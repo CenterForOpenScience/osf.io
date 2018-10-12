@@ -100,7 +100,7 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
                 Q(preprint__node__contributor__user__id=user.id if user else None) |
                 Q(status__in=[3, 4])
             )
-        )
+        ).distinct()
         update_list_id = queryset.filter(modified__lt=timezone.now() - settings.CHRONOS_SUBMISSION_UPDATE_TIME).values_list('id',flat=True)
         if len(update_list_id) > 0:
             enqueue_task(update_submissions_status_async.s(list(update_list_id)))
