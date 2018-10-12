@@ -18,7 +18,7 @@ class FileMetadataView(APIView):
     parser_classes = (HMACSignedParser,)
     serializer_class = WaterbutlerMetadataSerializer
     view_category = 'wb'
-    target_lookup_url_kwarg = 'target_id'
+    target_lookup_url_kwarg = 'node_id'
 
     def get_object(self):
         return self.get_target(self.kwargs[self.target_lookup_url_kwarg])

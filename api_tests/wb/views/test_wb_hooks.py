@@ -72,11 +72,11 @@ def sign_payload(payload):
 class TestMove():
     @pytest.fixture()
     def move_url(self, node):
-        return '/_/wb/hooks/{}/move/'.format(node._id)
+        return '/_/wb/hooks/{}/move/?version=2.10'.format(node._id)
 
     @pytest.fixture()
     def quickfiles_move_url(self, quickfiles_node):
-        return '/_/wb/hooks/{}/move/'.format(quickfiles_node._id)
+        return '/_/wb/hooks/{}/move/?version=2.10'.format(quickfiles_node._id)
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):
@@ -136,7 +136,7 @@ class TestMove():
             'user': user._id,
             'destination': {
                 'parent': folder_two._id,
-                'node': folder_two.target._id,
+                'target': folder_two.target._id,
                 'name': folder_two.name,
             }
         })
@@ -156,7 +156,7 @@ class TestMove():
             'user': user._id,
             'destination': {
                 'parent': folder_two._id,
-                'node': folder_two.target._id,
+                'target': folder_two.target._id,
                 'name': folder_two.name,
             }
         })
@@ -223,7 +223,7 @@ class TestMove():
             'name': quickfiles_file.name,
             'destination': {
                 'parent': quickfiles_folder._id,
-                'node': quickfiles_node._id,
+                'target': quickfiles_node._id,
                 'name': new_name,
             }
         })
@@ -363,7 +363,7 @@ class TestMove():
         assert res.status_code == 404
 
     def test_node_in_params_does_not_exist(self, app, file, root_node, user, folder):
-        move_url = '/_/wb/hooks/{}/move/'.format('12345')
+        move_url = '/_/wb/hooks/{}/move/?version=2.10'.format('12345')
         signed_payload = sign_payload(
             {
                 'source': file._id,
@@ -386,11 +386,11 @@ class TestMove():
 class TestCopy():
     @pytest.fixture()
     def copy_url(self, node):
-        return '/_/wb/hooks/{}/copy/'.format(node._id)
+        return '/_/wb/hooks/{}/copy/?version=2.10'.format(node._id)
 
     @pytest.fixture()
     def quickfiles_copy_url(self, quickfiles_node):
-        return '/_/wb/hooks/{}/copy/'.format(quickfiles_node._id)
+        return '/_/wb/hooks/{}/copy/?version=2.10'.format(quickfiles_node._id)
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):
