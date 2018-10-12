@@ -41,7 +41,7 @@ class SubmissionAcceptedOrPublishedOrPreprintAdmin(permissions.BasePermission):
                     raise exceptions.NotFound
 
             # However if the request is a PATCH or PUT, check whether the user is an ADMIN of this preprint
-            # Because only preprint admins can create/update a submission
+            # Because only preprint admins can update a submission
             if request.method in ['PATCH', 'PUT']:
                 is_preprint_admin = node.has_permission(auth.user, osf_permissions.ADMIN)
                 user_has_perm = is_preprint_admin
