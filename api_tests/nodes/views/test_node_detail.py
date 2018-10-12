@@ -413,7 +413,7 @@ class TestNodeDetail:
         assert not project_public.has_permission(user_two, permissions.READ)
         assert permissions.READ not in res.json['data']['attributes']['current_user_permissions']
 
-        # test read perm older versions for anon user
+        # ensure read is not included for an anonymous user
         res = app.get(url)
         assert permissions.READ not in res.json['data']['attributes']['current_user_permissions']
 
