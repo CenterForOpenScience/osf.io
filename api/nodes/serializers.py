@@ -1,5 +1,4 @@
 from django.db import connection
-from django.contrib.auth.models import AnonymousUser
 from distutils.version import StrictVersion
 
 from api.base.exceptions import (
@@ -466,37 +465,21 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
-    def check_contrib_admin_optimization(self, obj):
+    def get_current_user_permissions(self, obj):
+        request_version = self.context['request'].version
+        default_perm = ['read'] if StrictVersion(request_version) < StrictVersion('2.11') else []
         if hasattr(obj, 'contrib_admin'):
             if obj.contrib_admin:
                 return ['admin', 'write', 'read']
-            elif obj.contrib_write:
+            if obj.contrib_write:
                 return ['write', 'read']
-
-    def get_current_user_permissions(self, obj):
-        request = self.context['request']
-        if StrictVersion(request.version) < StrictVersion('2.11'):
-            return self.get_current_user_permissions_legacy(obj)
-        user = self.context['request'].user
-        if isinstance(user, AnonymousUser):
-            perms = []
-        else:
-            perms = self.check_contrib_admin_optimization(obj) or obj.get_permissions(user)
-            if not perms:
-                if user in obj.parent_admin_contributors:
-                    perms += ['read']
-        return perms
-
-    def get_current_user_permissions_legacy(self, obj):
-        if hasattr(obj, 'contrib_admin'):
-            return self.check_contrib_admin_optimization(obj) or ['read']
         else:
             user = self.context['request'].user
             if user.is_anonymous:
-                return ['read']
-            permissions = obj.get_permissions(user=user)
-            if not permissions:
-                permissions = ['read']
+                return default_perm
+            permissions = obj.get_permissions(user=user) or default_perm
+            if not permissions and user in obj.parent_admin_contributors:
+                permissions += ['read']
             return permissions
 
     def get_current_user_can_comment(self, obj):
