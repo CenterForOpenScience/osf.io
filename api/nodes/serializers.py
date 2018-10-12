@@ -357,6 +357,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     wikis = HideIfWikiDisabled(RelationshipField(
         related_view='nodes:node-wikis',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_wiki_page_count'},
     ))
 
     forked_from = RelationshipField(
@@ -590,6 +591,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return obj.linked_nodes.count()
+
+    def get_wiki_page_count(self, obj):
+        return obj.wikis.filter(deleted__isnull=True).count()
 
     def get_node_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
