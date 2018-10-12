@@ -40,7 +40,6 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
     def serialize_json(cls, record):
         osfstorage_file = record.file
         target = osfstorage_file.target
-        target.reload()
         doc = {
             'creators': utils.datacite_format_contributors(target.visible_contributors),
             'titles': [

@@ -64,9 +64,12 @@ class TestFileMetadataRecordSerializer:
             'year': '2018',
             'copyrightHolders': ['Woop', 'Yeah']
         }
+
         set_license(node, license_detail, Auth(node.creator))
+
         osf_file.save()
         node.save()
+        osf_file.target.reload()
 
         record = osf_file.records.get(schema___id='datacite')
         serialized_record = json.loads(record.serialize())
