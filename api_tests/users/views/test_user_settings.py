@@ -576,3 +576,24 @@ class TestUserEmailDetail:
         # old URL no longer resolves
         res_original = app.get(unconfirmed_url, auth=user_one.auth, expect_errors=True)
         assert res_original.status_code == 404
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_updating_verified_for_merge(self, app, user_one, user_two, payload):
+        payload['data']['attributes'] = {'verified': True}
+        token = user_one.add_unconfirmed_email(user_two.username)
+        user_one.save()
+        url = '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, token)
+
+        # test unconfirmed merge attempt fails
+        res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'You cannot verify an email address that has not been confirmed by a user.'
+
+        # test confirmed merge
+        user_one.email_verifications[token]['confirmed'] = True
+        user_one.save()
+        res = app.patch_json_api(url, payload, auth=user_one.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['verified'] is True
+        assert res.json['data']['attributes']['confirmed'] is True
+        assert res.json['data']['attributes']['is_merge'] is False

@@ -488,7 +488,7 @@ class UserEmailsSerializer(JSONAPISerializer):
     confirmed = ser.BooleanField(read_only=True, help_text='User has clicked the confirmation link in an email.')
     verified = ser.BooleanField(required=False, help_text='User has verified adding the email on the OSF, i.e. via a modal.')
     primary = ser.BooleanField(required=False)
-    is_merge = ser.BooleanField(required=False, help_text='This unconfirmed email is already confirmed to another user.')
+    is_merge = ser.BooleanField(read_only=True, required=False, help_text='This unconfirmed email is already confirmed to another user.')
     links = LinksField({
         'self': 'get_absolute_url',
     })
@@ -536,9 +536,9 @@ class UserEmailsSerializer(JSONAPISerializer):
         if verified and not instance.verified:
             if not instance.confirmed:
                 raise exceptions.ValidationError('You cannot verify an email address that has not been confirmed by a user.')
-            user.confirm_email(token=instance.id)
-            # verifying an email creates a new Email instance, use that for the id
+            user.confirm_email(token=instance.id, merge=instance.is_merge)
             instance.verified = True
+            instance.is_merge = False
             new_email = Email.objects.get(address=instance.address, user=user)
             instance.id = hashids.encode(new_email.id)
             user.save()
