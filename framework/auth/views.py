@@ -191,7 +191,7 @@ def forgot_password_post():
     return {}
 
 
-def login_and_register_handler(auth, login=True, campaign=None, next_url=None):
+def login_and_register_handler(auth, login=True, campaign=None, next_url=None, logout=None):
     """
     Non-view helper to handle `login` and `register` requests.
 
@@ -199,6 +199,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None):
     :param login: `True` if `GET /login`, `False` if `GET /register`
     :param campaign: a target campaign defined in `auth.campaigns`
     :param next_url: the service url for CAS login or redirect url for OSF
+    :param logout: used only for `claim_user_registered`
     :return: data object that contains actions for `auth_register` and `auth_login`
     :raises: http.BAD_REQUEST
     """
@@ -261,7 +262,18 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None):
             )
     # login or register with next parameter
     elif next_url:
-        if auth.logged_in:
+        # TODO - logout is no longer used by claim_user_registered, see [#PLAT-1151]
+        if logout:
+            # handle `claim_user_registered`
+            data['next_url'] = next_url
+            if auth.logged_in:
+                # log user out and come back
+                data['status_code'] = 'auth_logout'
+            else:
+                # after logout, land on the register page with "must_login" warning
+                data['status_code'] = http.OK
+                data['must_login_warning'] = True
+        elif auth.logged_in:
             # if user is already logged in, redirect to `next_url`
             data['status_code'] = http.FOUND
             data['next_url'] = next_url
@@ -314,12 +326,13 @@ def auth_register(auth):
     View for OSF register. Land on the register page, redirect or go to `auth_logout`
     depending on `data` returned by `login_and_register_handler`.
 
-    `/register` only takes a valid campaign, a valid next, or no query parameter
+    `/register` only takes a valid campaign, a valid next, the logout flag or no query parameter
     `login_and_register_handler()` handles the following cases:
         if campaign and logged in, go to campaign landing page (or valid next_url if presents)
         if campaign and logged out, go to campaign register page (with next_url if presents)
         if next_url and logged in, go to next url
         if next_url and logged out, go to cas login page with current request url as service parameter
+        if next_url and logout flag, log user out first and then go to the next_url
         if none, go to `/dashboard` which is decorated by `@must_be_logged_in`
 
     :param auth: the auth context
@@ -332,8 +345,14 @@ def auth_register(auth):
     campaign = request.args.get('campaign')
     # the service url for CAS login or redirect url for OSF
     next_url = request.args.get('next')
+    # TODO: no longer used for `claim_user_registered`, see [#PLAT-1151]
+    logout = request.args.get('logout')
 
-    data = login_and_register_handler(auth, login=False, campaign=campaign, next_url=next_url)
+    # logout must have next_url
+    if logout and not next_url:
+        raise HTTPError(http.BAD_REQUEST)
+
+    data = login_and_register_handler(auth, login=False, campaign=campaign, next_url=next_url, logout=logout)
 
     # land on register page
     if data['status_code'] == http.OK:

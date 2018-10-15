@@ -2613,7 +2613,8 @@ class TestClaimViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 302
         res = res.follow()
-        expected = cas.get_login_url(service_url='http://localhost:80{}'.format(url))
+        service_url = 'http://localhost:80{}'.format(url)
+        expected = cas.get_logout_url(service_url=cas.get_login_url(service_url=service_url))
         assert res.request.url == expected
 
         # user logged in with orcid automatically becomes a contributor
