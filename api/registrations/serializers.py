@@ -22,6 +22,7 @@ from api.base.serializers import (
 )
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError
+from osf.utils import permissions
 
 
 class BaseRegistrationSerializer(NodeSerializer):
@@ -341,7 +342,8 @@ class BaseRegistrationSerializer(NodeSerializer):
         return obj.private_links.filter(is_deleted=False).count()
 
     def update(self, registration, validated_data):
-        auth = Auth(self.context['request'].user)
+        user = self.context['request'].user
+        auth = Auth(user)
         # Update tags
         if 'tags' in validated_data:
             new_tags = validated_data.pop('tags', [])
@@ -354,12 +356,15 @@ class BaseRegistrationSerializer(NodeSerializer):
         is_public = validated_data.get('is_public', None)
         if is_public is not None:
             if is_public:
-                try:
-                    registration.update(validated_data, auth=auth)
-                except NodeUpdateError as err:
-                    raise exceptions.ValidationError(err.reason)
-                except NodeStateError as err:
-                    raise exceptions.ValidationError(err.message)
+                if registration.has_permission(user, permissions.ADMIN):
+                    try:
+                        registration.update(validated_data, auth=auth)
+                    except NodeUpdateError as err:
+                        raise exceptions.ValidationError(err.reason)
+                    except NodeStateError as err:
+                        raise exceptions.ValidationError(err.message)
+                else:
+                    raise exceptions.PermissionDenied()
             else:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration
