@@ -43,7 +43,7 @@ from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin
-from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode
+from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
 
 
 from framework.sentry import log_exception
@@ -278,8 +278,17 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @property
     def is_preprint_orphan(self):
-        if not self.primary_file_id or self.primary_file.deleted_on or self.primary_file.target != self:
+        if not self.primary_file_id:
             return True
+
+        try:
+            primary_file = self.primary_file
+        except OsfStorageFile.DoesNotExist:
+            primary_file = None
+
+        if not primary_file or primary_file.deleted_on or primary_file.target != self:
+            return True
+
         return False
 
     @property
