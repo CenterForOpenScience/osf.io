@@ -83,7 +83,7 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
 
     class Index:
         settings = {
-            'number_of_shards': 2,
+            'number_of_shards': 1,
         }
 
     class Meta:
