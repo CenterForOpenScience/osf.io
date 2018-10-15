@@ -161,7 +161,7 @@ class PageCounter(BaseModel):
     def _get_file_counter(cls, counter_type, file_id, version=None):
         """
         Pulls the total file count for views or downloads across different nodes.
-        :param info_type: String
+        :param counter_type: String
         :param file_id: String
         :param version: Int the version number
         :return: Int the total count
