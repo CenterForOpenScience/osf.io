@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 import os
-from urlparse import urlparse, urlsplit
+from urlparse import urlparse
 from website import settings as osf_settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -295,7 +295,7 @@ HASHIDS_SALT = 'pinkhimalayan'
 # django-elasticsearch-metrics
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': urlsplit(os.environ.get('ELASTIC6_URI', '127.0.0.1:9201')).netloc,
+        'hosts': os.environ.get('ELASTIC6_URI', '127.0.0.1:9201'),
     },
 }
 ENABLE_ELASTICSEARCH_METRICS = True
