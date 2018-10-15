@@ -109,4 +109,4 @@ enum34==1.1.6
 datacite==1.0.1
 
 # Metrics
-django-elasticsearch-metrics==4.0.1
+django-elasticsearch-metrics==4.0.3
