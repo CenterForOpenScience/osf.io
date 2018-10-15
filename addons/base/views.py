@@ -228,6 +228,15 @@ def make_auth(user):
         }
     return {}
 
+def get_metric_class_for_action(action):
+    metric_class = None
+    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
+    if action == 'render':
+        metric_class = PreprintView
+    elif action == 'download' and not download_is_from_mfr:
+        metric_class = PreprintDownload
+    return metric_class
+
 
 @collect_auth
 def get_auth(auth, **kwargs):
@@ -318,31 +327,22 @@ def get_auth(auth, **kwargs):
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
-    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
-    if api_settings.ENABLE_ELASTICSEARCH_METRICS and not download_is_from_mfr:
-        # TODO: Add a signal here?
+    # TODO: Add a signal here?
+    if api_settings.ENABLE_ELASTICSEARCH_METRICS:
         user = auth.user
         linked_preprint = node.linked_preprint
-        path = data.get('path')
-        version = data.get('version')
-        if linked_preprint and path and version:
-            if not node.is_contributor(user):
-                # action => metric class
-                metric_map = {
-                    'render': PreprintView,
-                    'download': PreprintDownload,
-                }
-                metric_class = metric_map.get(action, None)
-                if metric_class:
-                    try:
-                        metric_class.record_for_preprint(
-                            preprint=linked_preprint,
-                            user=user,
-                            version=version,
-                            path=path
-                        )
-                    except es_exceptions.ConnectionError:
-                        log_exception()
+        if linked_preprint and not node.is_contributor(user):
+            metric_class = get_metric_class_for_action(action)
+            if metric_class:
+                try:
+                    metric_class.record_for_preprint(
+                        preprint=linked_preprint,
+                        user=user,
+                        version=fileversion.identifier if fileversion else None,
+                        path=path
+                    )
+                except es_exceptions.ConnectionError:
+                    log_exception()
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
