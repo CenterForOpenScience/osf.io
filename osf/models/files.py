@@ -18,6 +18,7 @@ from include import IncludeManager
 from framework import sentry
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
+from osf.models.analytics import PageCounter
 from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -336,12 +337,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def get_download_count(self, version=None):
         """Pull the download count from the pagecounter collection"""
-        from osf.models import PageCounter
         return PageCounter.get_file_downloads(self._id, version)
 
     def get_view_count(self, version=None):
         """Pull the mfr view count from the pagecounter collection"""
-        from osf.models import PageCounter
         return PageCounter.get_file_views(self._id, version)
 
     def copy_under(self, destination_parent, name=None):
