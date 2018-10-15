@@ -498,8 +498,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             return obj.can_comment(auth)
 
     def get_current_user_is_contributor(self, obj):
+        if hasattr(obj, 'user_is_contrib'):
+            return obj.user_is_contrib
+
         user = self.context['request'].user
-        user = None if user.is_anonymous else user
+        if user.is_anonymous:
+            return False
         return obj.is_contributor(user)
 
     class Meta:
