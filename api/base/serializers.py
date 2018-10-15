@@ -5,7 +5,7 @@ from urlparse import urlparse
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
-from django.utils import six
+from distutils.version import StrictVersion
 
 from rest_framework import exceptions, permissions
 from rest_framework import serializers as ser
@@ -807,7 +807,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             raise ImproperlyConfigured(msg % self.view_name)
 
         if url is None:
-            return {'data': None}
+            # Prior to 2.9, empty relationships were omitted from the response.
+            # This conflicts with the JSON-API spec and was fixed in 2.9.
+            if StrictVersion(request.version) < StrictVersion('2.9'):
+                raise SkipField
+            else:
+                return {'data': None}
 
         related_url = url['related']
         related_path = urlparse(related_url).path
@@ -982,7 +987,7 @@ class LinksField(ser.Field):
 
     def to_representation(self, obj):
         ret = {}
-        for name, value in self.links.iteritems():
+        for name, value in self.links.items():
             try:
                 url = _url_val(value, obj=obj, serializer=self.parent, request=self.context['request'])
             except SkipField:
@@ -999,27 +1004,6 @@ class LinksField(ser.Field):
                 ret['info'] = utils.extend_querystring_if_key_exists(ret['info'], self.context['request'], 'view_only')
 
         return ret
-
-
-class ListDictField(ser.DictField):
-
-    def __init__(self, **kwargs):
-        super(ListDictField, self).__init__(**kwargs)
-
-    def to_representation(self, value):
-        """
-        Ensure the value of each key in the Dict to be a list
-        """
-        res = {}
-        for key, val in value.items():
-            if isinstance(self.child.to_representation(val), list):
-                res[six.text_type(key)] = self.child.to_representation(val)
-            else:
-                if self.child.to_representation(val):
-                    res[six.text_type(key)] = [self.child.to_representation(val)]
-                else:
-                    res[six.text_type(key)] = []
-        return res
 
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
@@ -1245,7 +1229,7 @@ class BaseAPISerializer(ser.Serializer, SparseFieldsetMixin):
         super(BaseAPISerializer, self).__init__(*args, **kwargs)
         self.model_field_names = [
             name if field.source == '*' else field.source
-            for name, field in self.fields.iteritems()
+            for name, field in self.fields.items()
         ]
 
 

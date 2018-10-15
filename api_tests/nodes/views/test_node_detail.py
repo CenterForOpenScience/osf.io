@@ -167,7 +167,7 @@ class TestNodeDetail:
     def test_top_level_project_has_no_parent(self, app, url_public):
         res = app.get(url_public)
         assert res.status_code == 200
-        assert res.json['data']['relationships']['parent']['data'] is None
+        assert 'parent' not in res.json['data']['relationships']
         assert 'id' in res.json['data']
         assert res.content_type == 'application/vnd.api+json'
 

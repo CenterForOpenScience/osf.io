@@ -14,7 +14,7 @@ from website.project.model import NodeUpdateError
 from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
-from api.nodes.serializers import NodeContributorsSerializer
+from api.nodes.serializers import NodeContributorsSerializer, RegistrationProviderRelationshipField
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
@@ -72,6 +72,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     date_withdrawn = VersionedDateTimeField(source='retraction.date_retracted', read_only=True, help_text='Date time of when this registration was retracted.')
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
+    custom_citation = HideIfWithdrawal(ser.CharField(allow_blank=True, required=False))
 
     withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
     template_from = HideIfWithdrawal(ser.CharField(
@@ -259,6 +260,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
+    provider = RegistrationProviderRelationshipField(
+        related_view='providers:registration-providers:registration-provider-detail',
+        related_view_kwargs={'provider_id': '<provider._id>'},
+        read_only=True,
+    )
+
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):
@@ -341,8 +348,9 @@ class BaseRegistrationSerializer(NodeSerializer):
             try:
                 registration.update_tags(new_tags, auth=auth)
             except NodeStateError as err:
-                raise Conflict(err.message)
-
+                raise Conflict(str(err))
+        if 'custom_citation' in validated_data:
+            registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
         is_public = validated_data.get('is_public', None)
         if is_public is not None:
             if is_public:
@@ -351,7 +359,7 @@ class BaseRegistrationSerializer(NodeSerializer):
                 except NodeUpdateError as err:
                     raise exceptions.ValidationError(err.reason)
                 except NodeStateError as err:
-                    raise exceptions.ValidationError(err.message)
+                    raise exceptions.ValidationError(str(err))
             else:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration

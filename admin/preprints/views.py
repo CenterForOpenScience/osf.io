@@ -84,7 +84,7 @@ class PreprintSpamList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'preprints': map(serialize_preprint, query_set),
+            'preprints': list(map(serialize_preprint, query_set)),
             'page': page,
         }
 
@@ -140,7 +140,7 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'requests': map(serialize_withdrawal_request, query_set),
+            'requests': list(map(serialize_withdrawal_request, query_set)),
             'page': page,
         }
 

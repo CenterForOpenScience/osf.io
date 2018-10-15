@@ -7,6 +7,8 @@ from website import settings
 from osf.models import MailRecord
 from api.base.utils import waterbutler_api_url_for
 from website.exceptions import NodeStateError
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 
 
 def record_message(message, node_created, user_created):
@@ -75,3 +77,11 @@ def upload_attachment(user, node, attachment):
 def upload_attachments(user, node, attachments):
     for attachment in attachments:
         upload_attachment(user, node, attachment)
+
+
+def is_valid_email(email):
+    try:
+        validate_email(email)
+        return True
+    except ValidationError:
+        return False

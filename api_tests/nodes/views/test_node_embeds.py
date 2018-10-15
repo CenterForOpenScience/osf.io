@@ -102,7 +102,8 @@ class TestNodeEmbeds:
         url = '/{}nodes/{}/?embed=parent'.format(API_BASE, root_node._id)
 
         res = app.get(url, auth=user.auth)
-        assert res.json['data']['embeds']['parent']['errors'][0]['detail'] == 'Not found.'
+        data = res.json['data']
+        assert 'embeds' not in data
 
     #   test_embed_contributors
         url = '/{}nodes/{}/?embed=contributors'.format(API_BASE, child_one._id)
