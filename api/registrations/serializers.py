@@ -15,7 +15,7 @@ from website.project.model import NodeUpdateError
 from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
-from api.nodes.serializers import NodeContributorsSerializer
+from api.nodes.serializers import NodeContributorsSerializer, RegistrationProviderRelationshipField
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
@@ -260,6 +260,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-citation',
         related_view_kwargs={'node_id': '<_id>'},
     ))
+
+    provider = RegistrationProviderRelationshipField(
+        related_view='providers:registration-providers:registration-provider-detail',
+        related_view_kwargs={'provider_id': '<provider._id>'},
+        read_only=True,
+    )
 
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 

@@ -321,7 +321,7 @@ class RegistrationProviderFactory(DjangoModelFactory):
     def _create(cls, *args, **kwargs):
         user = kwargs.pop('creator', None)
         obj = cls._build(*args, **kwargs)
-        obj._creator = user or UserFactory()  # Generates primary_collection
+        obj._creator = user or models.OSFUser.objects.first() or UserFactory()  # Generates primary_collection
         obj.save()
         return obj
 
@@ -340,12 +340,14 @@ class RegistrationFactory(BaseNodeFactory):
     def _create(cls, target_class, project=None, is_public=False,
                 schema=None, data=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
+                provider=None,
                 *args, **kwargs):
         user = None
         if project:
             user = project.creator
         user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
+        provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
         if project.has_permission(user, 'admin'):
@@ -364,7 +366,8 @@ class RegistrationFactory(BaseNodeFactory):
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            data=data
+            data=data,
+            provider=provider,
         )
 
         def add_approval_step(reg):
@@ -477,6 +480,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
         initiator = kwargs.get('initiator')
         registration_schema = kwargs.get('registration_schema')
         registration_metadata = kwargs.get('registration_metadata')
+        provider = kwargs.get('provider')
         if not branched_from:
             project_params = {}
             if initiator:
@@ -485,11 +489,13 @@ class DraftRegistrationFactory(DjangoModelFactory):
         initiator = branched_from.creator
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
+        provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         draft = models.DraftRegistration.create_from_node(
             branched_from,
             user=initiator,
             schema=registration_schema,
             data=registration_metadata,
+            provider=provider,
         )
         return draft
 

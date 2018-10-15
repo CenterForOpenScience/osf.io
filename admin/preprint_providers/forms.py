@@ -3,12 +3,18 @@ import bleach
 from django import forms
 
 from osf.models import PreprintProvider, Subject
-from admin.base.utils import get_subject_rules, get_toplevel_subjects, get_nodelicense_choices, get_defaultlicense_choices
+from admin.base.utils import (get_subject_rules, get_toplevel_subjects,
+    get_nodelicense_choices, get_defaultlicense_choices, validate_slug)
 
 
 class PreprintProviderForm(forms.ModelForm):
     toplevel_subjects = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(), required=False)
     subjects_chosen = forms.CharField(widget=forms.HiddenInput(), required=False)
+    _id = forms.SlugField(
+        required=True,
+        help_text='URL Slug',
+        validators=[validate_slug]
+    )
 
     class Meta:
         model = PreprintProvider
