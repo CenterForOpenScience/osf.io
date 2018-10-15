@@ -5,47 +5,27 @@ version: "3.4"
 
 #  wb:
 #    volumes:
-#      - ../waterbutler:/code
+#      - ../waterbutler:/code:cached
 
 #  wb_worker:
 #    volumes:
-#      - ../waterbutler:/code
+#      - ../waterbutler:/code:cached
 
 #  wb_requirements:
 #    volumes:
-#      - ../waterbutler:/code
+#      - ../waterbutler:/code:cached
 
 #  mfr:
 #    volumes:
-#      - ../modular-file-renderer:/code
+#      - ../modular-file-renderer:/code:cached
 
 #  mfr_requirements:
 #    volumes:
-#      - ../modular-file-renderer:/code
-
-#  ember_osf_web:
-#    volumes:
-#      - ../ember-osf-web:/code
-#
-##      # Use this for ember-osf linked development:
-##      - ember_osf_web_dist_vol:/code/dist
-##      - ../ember-osf:/ember-osf
-##    depends_on:
-##      - emberosf
-##    command:
-##      - /bin/bash
-##      - -c
-##      - cd /ember-osf &&
-##        yarn link &&
-##        cd /code &&
-##        (rm -r node_modules || true) &&
-##        yarn --frozen-lockfile &&
-##        yarn link @centerforopenscience/ember-osf &&
-##        yarn start --host 0.0.0.0 --port 4200 --live-reload-port 41953
+#      - ../modular-file-renderer:/code:cached
 
 #  preprints:
 #    volumes:
-#      - ../ember-osf-preprints:/code
+#      - ../ember-osf-preprints:/code:cached
 #
 ##      # Use this for ember-osf linked development:
 ##      - preprints_dist_vol:/code/dist
@@ -67,7 +47,7 @@ version: "3.4"
 
 #  registries:
 #    volumes:
-#      - ../ember-osf-registries:/code
+#      - ../ember-osf-registries:/code:cached
 #
 ##      # Use this for ember-osf linked development:
 ##      - registries_dist_vol:/code/dist
@@ -87,7 +67,7 @@ version: "3.4"
 
 #  reviews:
 #    volumes:
-#      - ../ember-osf-reviews:/code
+#      - ../ember-osf-reviews:/code:cached
 #
 ##      # Use this for ember-osf linked development:
 ##      - reviews_dist_vol:/code/dist

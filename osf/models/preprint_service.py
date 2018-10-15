@@ -117,6 +117,10 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
         return api_v2_url(path)
 
     @property
+    def should_request_identifiers(self):
+        return not self.node.all_tags.filter(name='qatest').exists()
+
+    @property
     def has_pending_withdrawal_request(self):
         return self.requests.filter(request_type='withdrawal', machine_state='pending').exists()
 

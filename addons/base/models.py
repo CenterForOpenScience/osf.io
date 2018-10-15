@@ -577,6 +577,7 @@ class BaseStorageAddon(object):
             user=user,
             view_only=True,
             _internal=True,
+            base_url=self.owner.osfstorage_region.waterbutler_url,
             **kwargs
         )
 

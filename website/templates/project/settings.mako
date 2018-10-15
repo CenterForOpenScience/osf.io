@@ -16,7 +16,13 @@
 
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">${node['node_type'].capitalize()}</a></li>
+                    % endif
 
+                    % if storage_flag_is_active:
+                        <li><a href="#nodeStorageLocation">Storage Location</a></li>
+                    % endif
+
+                    % if not node['is_registration']:
                         % if 'admin' in user['permissions']:
                             <li><a href="#createVolsAnchor">View-only Links</a></li>
                             <li><a href="#enableRequestAccessAnchor">Access Requests</a></li>
@@ -121,6 +127,24 @@
                 </div>
 
             % endif
+
+        % if storage_flag_is_active:
+            <div class="panel panel-default">
+                <span id="nodeStorageLocation" class="anchor"></span>
+                <div class="panel-heading clearfix">
+                    <h3 id="nodeStorageLocation" class="panel-title">Storage Location</h3>
+                </div>
+                <div class="panel-body">
+                    <p>
+                        <b>Storage location:</b> ${node['storage_location']}
+                    </p>
+                    <div class="help-block">
+                        <p class="text-muted">Storage location cannot be changed after project is created.</p>
+                    </div>
+
+                </div>
+            </div>
+        % endif
 
         % endif  ## End Configure Project
 
@@ -332,46 +356,8 @@
 
                         <div data-bind="visible: enabled" style="display: none">
 
-                            <div class="forward-settings">
+                            ${ render_node_settings(addon_settings['forward']) }
 
-                                <form class="form" data-bind="submit: submitSettings">
-
-                                    <div class="form-group">
-                                        <label for="forwardUrl">URL</label>
-                                        <input
-                                            id="forwardUrl"
-                                            class="form-control"
-                                            data-bind="value: url"
-                                            placeholder="Send people who visit your OSF project page to this link instead"
-                                        />
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="forwardLabel">Label</label>
-                                        <input
-                                            id="forwardLabel"
-                                            class="form-control"
-                                            data-bind="value: label"
-                                            placeholder="Optional"
-                                        />
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-10 overflow">
-                                            <p data-bind="html: message, attr: {class: messageClass}"></p>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input
-                                                type="submit"
-                                               class="btn btn-success pull-right"
-                                               value="Save"
-                                            />
-                                        </div>
-                                    </div>
-
-                                </form>
-
-                            </div><!-- end .forward-settings -->
                         </div><!-- end #configureForward -->
 
                     </div>
@@ -456,7 +442,7 @@
                          <tbody>
                              <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
                              <tr>
-                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
+                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
                                  <td><span data-bind="text: item.name"></span></td>
                                  <td>
                                      % if 'admin' in user['permissions']:
@@ -478,7 +464,7 @@
                          <tbody>
                              <!-- ko foreach: {data: availableInstitutions, as: 'item'} -->
                              <tr>
-                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
+                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
                                  <td><span data-bind="text: item.name"></span></td>
                                  % if 'write' in user['permissions']:
                                      <td><button
@@ -499,6 +485,14 @@
     <!-- End right column -->
 
 </div>
+
+<%def name="render_node_settings(data)">
+    <%
+       template_name = data['node_settings_template']
+       tpl = data['template_lookup'].get_template(template_name).render(**data)
+    %>
+    ${ tpl | n }
+</%def>
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}

@@ -422,6 +422,7 @@ class TestStorageAddonBase(ArchiverTestCase):
                 user=self.user,
                 view_only=True,
                 _internal=True,
+                base_url=self.src.osfstorage_region.waterbutler_url
             )
             responses.add(
                 responses.Response(

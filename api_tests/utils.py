@@ -39,3 +39,9 @@ def disconnected_from_listeners(signal):
     yield
     for listener in listeners:
         signal.connect(listener)
+
+def only_supports_methods(view, expected_methods):
+    if isinstance(view.__class__, type):
+        view = view()
+    expected_methods.append('OPTIONS')
+    return set(expected_methods) == set(view.allowed_methods)

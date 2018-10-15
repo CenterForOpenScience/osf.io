@@ -37,7 +37,9 @@ def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
         # DOI didn't just get created
         not (saved_fields and 'preprint_doi_created' in saved_fields) and
         # subjects aren't being set
-        not old_subjects
+        not old_subjects and
+        # preprint isn't QA test
+        preprint.should_request_identifiers
     )
 
 def update_or_create_preprint_identifiers(preprint):

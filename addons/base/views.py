@@ -32,17 +32,16 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
-from addons.base.utils import format_last_known_metadata
+from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, RegistrationSchema,
-                        Guid, FileVersionUserMetadata)
+                        Guid, FileVersionUserMetadata, FileVersion)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
-from website.settings import MFR_SERVER_URL
 from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
@@ -275,8 +274,41 @@ def get_auth(auth, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     try:
-        credentials = provider_settings.serialize_waterbutler_credentials()
-        waterbutler_settings = provider_settings.serialize_waterbutler_settings()
+        path = data.get('path')
+        version = data.get('version')
+        credentials = None
+        waterbutler_settings = None
+        fileversion = None
+        if provider_name == 'osfstorage':
+            if path and version:
+                # check to see if this is a file or a folder
+                filenode = OsfStorageFileNode.load(path.strip('/'))
+                if filenode and filenode.is_file:
+                    try:
+                        fileversion = FileVersion.objects.filter(
+                            basefilenode___id=path.strip('/'),
+                            identifier=version
+                        ).select_related('region').get()
+                    except FileVersion.DoesNotExist:
+                        raise HTTPError(httplib.BAD_REQUEST)
+            # path and no version, use most recent version
+            elif path:
+                filenode = OsfStorageFileNode.load(path.strip('/'))
+                if filenode and filenode.is_file:
+                    fileversion = FileVersion.objects.filter(
+                        basefilenode=filenode
+                    ).select_related('region').order_by('-created').first()
+            if fileversion:
+                region = fileversion.region
+                credentials = region.waterbutler_credentials
+                waterbutler_settings = fileversion.serialize_waterbutler_settings(
+                    node_id=provider_settings.owner._id,
+                    root_id=provider_settings.root_node._id,
+                )
+        # If they haven't been set by version region, use the NodeSettings region
+        if not (credentials and waterbutler_settings):
+            credentials = provider_settings.serialize_waterbutler_credentials()
+            waterbutler_settings = provider_settings.serialize_waterbutler_settings()
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
@@ -559,7 +591,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
         deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
         if getattr(file_node, 'suspended', False):
             error_type = 'FILE_SUSPENDED'
-        elif file_node.deleted_by is None or (auth.private_key and auth.private_key.anonymous):
+        elif file_node.deleted_by is None or (auth.private_key and auth.private_link.anonymous):
             if file_node.provider == 'osfstorage':
                 error_type = 'FILE_GONE_ACTOR_UNKNOWN'
             else:
@@ -597,7 +629,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
             'urls': {
                 'render': None,
                 'sharejs': None,
-                'mfr': settings.MFR_SERVER_URL,
+                'mfr': get_mfr_url(target, file_node.provider),
                 'profile_image': get_profile_image_url(auth.user, 25),
                 'files': target.web_url_for('collect_file_trees'),
             },
@@ -700,7 +732,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
         if format and '.{}'.format(format.lower()) != extension.lower():
-            return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
+            return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
@@ -797,7 +829,8 @@ def addon_view_file(auth, node, file_node, version):
         })
     )
 
-    render_url = furl.furl(settings.MFR_SERVER_URL).set(
+    mfr_url = get_mfr_url(node, file_node.provider)
+    render_url = furl.furl(mfr_url).set(
         path=['render'],
         args={'url': download_url.url}
     )
@@ -805,7 +838,7 @@ def addon_view_file(auth, node, file_node, version):
     ret.update({
         'urls': {
             'render': render_url.url,
-            'mfr': settings.MFR_SERVER_URL,
+            'mfr': mfr_url,
             'sharejs': wiki_settings.SHAREJS_URL,
             'profile_image': get_profile_image_url(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),

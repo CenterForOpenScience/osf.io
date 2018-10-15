@@ -49,12 +49,24 @@ class CollectionSerializer(JSONAPISerializer):
     is_promoted = ser.BooleanField(read_only=True, default=False)
     is_public = ser.BooleanField(read_only=False, default=False)
     status_choices = ser.ListField(
-        child=ser.CharField(max_length=31),
-        default=list()
+        child=ser.CharField(max_length=127),
+        default=list(),
     )
     collected_type_choices = ser.ListField(
-        child=ser.CharField(max_length=31),
-        default=list()
+        child=ser.CharField(max_length=127),
+        default=list(),
+    )
+    volume_choices = ser.ListField(
+        child=ser.CharField(max_length=127),
+        default=list(),
+    )
+    issue_choices = ser.ListField(
+        child=ser.CharField(max_length=127),
+        default=list(),
+    )
+    program_area_choices = ser.ListField(
+        child=ser.CharField(max_length=127),
+        default=list(),
     )
 
     links = LinksField({})
@@ -62,13 +74,13 @@ class CollectionSerializer(JSONAPISerializer):
     provider = CollectionProviderRelationshipField(
         related_view='providers:collection-providers:collection-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
-        read_only=True
+        read_only=True,
     )
 
     node_links = RelationshipField(
         related_view='collections:node-pointers',
         related_view_kwargs={'collection_id': '<_id>'},
-        related_meta={'count': 'get_node_links_count'}
+        related_meta={'count': 'get_node_links_count'},
     )
 
     # TODO: Add a self link to this when it's available
@@ -77,7 +89,7 @@ class CollectionSerializer(JSONAPISerializer):
         related_view_kwargs={'collection_id': '<_id>'},
         related_meta={'count': 'get_node_links_count'},
         self_view='collections:collection-node-pointer-relationship',
-        self_view_kwargs={'collection_id': '<_id>'}
+        self_view_kwargs={'collection_id': '<_id>'},
     )
 
     linked_registrations = RelationshipField(
@@ -85,17 +97,19 @@ class CollectionSerializer(JSONAPISerializer):
         related_view_kwargs={'collection_id': '<_id>'},
         related_meta={'count': 'get_registration_links_count'},
         self_view='collections:collection-registration-pointer-relationship',
-        self_view_kwargs={'collection_id': '<_id>'}
+        self_view_kwargs={'collection_id': '<_id>'},
     )
 
     class Meta:
         type_ = 'collections'
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('collections:collection-detail', kwargs={
-            'collection_id': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'collections:collection-detail', kwargs={
+                'collection_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_node_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
@@ -139,7 +153,7 @@ class CollectionDetailSerializer(CollectionSerializer):
     id = IDField(source='_id', required=True)
 
 
-class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
+class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     class Meta:
         type_ = 'collected-metadata'
@@ -170,6 +184,9 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     )
     collected_type = ser.CharField(required=False)
     status = ser.CharField(required=False)
+    volume = ser.CharField(required=False)
+    issue = ser.CharField(required=False)
+    program_area = ser.CharField(required=False)
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -177,8 +194,8 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             kwargs={
                 'collection_id': obj.collection._id,
                 'cgm_id': obj.guid._id,
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     def update(self, obj, validated_data):
@@ -198,7 +215,7 @@ class CollectedMetaSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         obj.save()
         return obj
 
-class CollectedMetaCreateSerializer(CollectedMetaSerializer):
+class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
     # Makes guid writeable only on create
     guid = GuidRelationshipField(
         related_view='guids:guid-detail',
@@ -238,7 +255,7 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
     target_node = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<guid.referent._id>'},
-        always_embed=True
+        always_embed=True,
     )
 
     def get_absolute_url(self, obj):
@@ -247,8 +264,8 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
             kwargs={
                 'collection_id': self.context['request'].parser_context['kwargs']['collection_id'],
                 'node_link_id': obj.guid._id,
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     # Override NodeLinksSerializer
@@ -261,14 +278,14 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
         if not pointer_node:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
-                detail='Target Node \'{}\' not found.'.format(target_node_id)
+                detail='Target Node \'{}\' not found.'.format(target_node_id),
             )
         try:
             pointer = collection.collect_object(pointer_node, user)
         except ValidationError:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
-                detail='Target Node \'{}\' already pointed to by \'{}\'.'.format(target_node_id, collection._id)
+                detail='Target Node \'{}\' already pointed to by \'{}\'.'.format(target_node_id, collection._id),
             )
         return pointer
 
@@ -277,11 +294,13 @@ class CollectedAbstractNodeRelationshipSerializer(object):
 
     def make_instance_obj(self, obj):
         # Convenience method to format instance based on view's get_object
-        return {'data':
+        return {
+            'data':
             list(self._abstract_node_subclass.objects.filter(
-                guids__in=obj.guid_links.all(), is_deleted=False
+                guids__in=obj.guid_links.all(), is_deleted=False,
             )),
-            'self': obj}
+            'self': obj,
+        }
 
     def update(self, instance, validated_data):
         collection = instance['self']
@@ -312,7 +331,7 @@ class CollectedAbstractNodeRelationshipSerializer(object):
             except ValidationError as e:
                 raise InvalidModelValueError(
                     source={'pointer': '/data/relationships/node_links/data/id'},
-                    detail='Target Node {} generated error: {}.'.format(node._id, e.message)
+                    detail='Target Node {} generated error: {}.'.format(node._id, e.message),
                 )
 
         return self.make_instance_obj(collection)

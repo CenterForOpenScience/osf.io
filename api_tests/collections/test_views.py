@@ -201,8 +201,8 @@ class TestCollectionCreate:
             auth=user_one.auth, expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/title'
 
         # test_create_bookmark_collection_with_no_title
         collection = {
@@ -768,11 +768,11 @@ class TestCollectionUpdate(CollectionCRUDTestCase):
         res = app.patch_json_api(url_collection_detail, {
             'data': {
                 'id': collection._id,
-                'type': 'nodes',
+                'type': 'collections',
                 'title': new_title_collection,
             }
         }, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 200
 
         # test_update_collection_invalid_title
         project = {
@@ -1769,7 +1769,7 @@ class TestCollectionBulkCreate:
             expect_errors=True, bulk=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/title'
 
         res = app.get(url_collections, auth=user_one.auth)
         assert len(res.json['data']) == 0
@@ -3587,7 +3587,7 @@ class TestCollectedMetaList:
 
     @pytest.fixture()
     def collection_with_three_cgm(self, user_one, project_one, project_two, project_three):
-        c = CollectionFactory(creator=user_one)
+        c = CollectionFactory(creator=user_one, status_choices=['', 'two', 'asdf'], collected_type_choices=['', 'asdf'])
         c.collect_object(project_one, user_one)
         c.collect_object(project_two, user_one, status='two')
         c.collect_object(project_three, user_one)
@@ -3742,7 +3742,7 @@ class TestCollectedMetaDetail:
 
     @pytest.fixture()
     def collection(self, user_one):
-        return CollectionFactory(creator=user_one)
+        return CollectionFactory(creator=user_one, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
 
     @pytest.fixture()
     def cgm(self, user_one, collection, project_one, subject_one):

@@ -6,7 +6,7 @@
                 data-bind="click: onClear, visible: hasItemSelected()"
                 class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
             <input class="osf-typeahead typeahead form-control"
-                    data-bind="attr:{ 
+                    data-bind="attr:{
                                readonly: hasItemSelected(),
                                placeholder: placeholder || ''
                                }"/>

@@ -7,7 +7,7 @@
 2. Enter any name for the application name, e.g. “OSF Zotero Addon (local)”
 3. In the "Website" field, enter `http://localhost:5000/callback/`
 4. In the Authorization Callback URL field, enter `http://localhost:5000/oauth/callback/zotero/`.
-5. Submit the form. 
+5. Submit the form.
 6. On the next page, make a note of your Client Key and Client Secret.
 
 ### Enable on OSF

@@ -7,6 +7,7 @@ from osf.models import RegistrationSchema
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
+    RegistrationProviderFactory,
     AuthUserFactory,
     CollectionFactory,
     DraftRegistrationFactory,
@@ -96,7 +97,8 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 1
-        assert data[0]['attributes']['registration_supplement'] == schema._id
+
+        assert schema._id in data[0]['relationships']['registration_schema']['links']['related']['href']
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
@@ -162,7 +164,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 1
-        assert data[0]['attributes']['registration_supplement'] == schema._id
+        assert schema._id in data[0]['relationships']['registration_schema']['links']['related']['href']
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
@@ -172,18 +174,34 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
+    def provider(self):
+        return RegistrationProviderFactory(_id='osf')
+
+    @pytest.fixture()
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
     @pytest.fixture()
-    def payload(self, metaschema_open_ended):
+    def payload(self, metaschema_open_ended, provider):
         return {
             'data': {
                 'type': 'draft_registrations',
-                'attributes': {
-                    'registration_supplement': metaschema_open_ended._id
+                'attributes': {},
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'type': 'registration_schema',
+                            'id': metaschema_open_ended._id
+                        }
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
+                    }
                 }
             }
         }
@@ -199,8 +217,15 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         draft_data = {
             'data': {
                 'type': 'nodes',
-                'attributes': {
-                    'registration_supplement': metaschema_open_ended._id
+                'attributes': {},
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'type': 'registration_schema',
+                            'id': metaschema_open_ended._id
+                        }
+
+                    }
                 }
             }
         }
@@ -218,7 +243,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']
-        assert data['attributes']['registration_supplement'] == metaschema_open_ended._id
+        assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == {}
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
@@ -262,14 +287,26 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 403
 
     def test_registration_supplement_errors(
-            self, app, user, url_draft_registrations):
+            self, app, user, provider, url_draft_registrations):
 
         #   test_registration_supplement_not_found
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
-                'attributes': {
-                    'registration_supplement': 'Invalid schema'
+                'attributes': {},
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'type': 'registration_schema',
+                            'id': 'Invalid schema'
+                        }
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
+                    }
                 }
             }
         }
@@ -285,8 +322,20 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
-                'attributes': {
-                    'registration_supplement': schema._id
+                'attributes': {},
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'type': 'registration_schema',
+                            'id': schema._id
+                        }
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
+                    }
                 }
             }
         }
@@ -303,8 +352,20 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
-                'attributes': {
-                    'registration_supplement': schema._id
+                'attributes': {},
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'type': 'registration_schema',
+                            'id': schema._id
+                        }
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
+                    }
                 }
             }
         }
@@ -350,7 +411,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     def test_required_metaschema_questions_not_required_on_post(
-            self, app, user, project_public, prereg_metadata):
+            self, app, user, provider, project_public, prereg_metadata):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
@@ -373,8 +434,21 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             'data': {
                 'type': 'draft_registrations',
                 'attributes': {
-                    'registration_supplement': prereg_schema._id,
                     'registration_metadata': registration_metadata
+                },
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'type': 'registration_schema',
+                            'id': prereg_schema._id
+                        }
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
+                    }
                 }
             }
         }
@@ -384,7 +458,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 201
         data = res.json['data']
         assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'Test response'
-        assert data['attributes']['registration_supplement'] == prereg_schema._id
+        assert prereg_schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
@@ -404,7 +478,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['detail'] == 'This field is required.'
-        assert errors['source']['pointer'] == '/data/attributes/registration_supplement'
+        assert errors['source']['pointer'] == '/data/relationships/registration_schema'
 
     def test_registration_metadata_must_be_a_dictionary(
             self, app, user, payload, url_draft_registrations):
@@ -424,7 +498,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
-        payload['data']['attributes']['registration_supplement'] = schema._id
+        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['datacompletion'] = 'No, data collection has not begun'
 
@@ -442,7 +516,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
-        payload['data']['attributes']['registration_supplement'] = schema._id
+        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['datacompletion'] = {
             'incorrect_key': 'No, data collection has not begun'}
@@ -461,7 +535,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
-        payload['data']['attributes']['registration_supplement'] = schema._id
+        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['q11'] = {
             'value': 'No, data collection has not begun'
@@ -481,7 +555,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             name='OSF-Standard Pre-Data Collection Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
-        payload['data']['attributes']['registration_supplement'] = schema._id
+        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['datacompletion'] = {
             'value': 'Nope, data collection has not begun'}

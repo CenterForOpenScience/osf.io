@@ -31,7 +31,7 @@ var bootstrapTable = function(md) {
 var oldMarkdownList = function(md) {
     md.block.ruler.after('hr', 'pyMarkdownList', pymarkdownList);
 };
-var mfrURL = window.contextVars.mfrURL;
+var mfrURL = window.contextVars.node.urls.mfr;
 var osfURL = window.contextVars.osfURL;
 
 var getMfrUrl = function (guid) {

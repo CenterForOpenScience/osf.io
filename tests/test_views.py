@@ -23,6 +23,7 @@ from django.test import TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 
 from addons.github.tests.factories import GitHubAccountFactory
+from addons.wiki.models import WikiPage
 from framework.auth import cas
 from framework.auth.core import generate_verification_key
 from framework import auth
@@ -52,7 +53,6 @@ from website.project.views.contributor import (
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
-from website.views import index
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
@@ -86,9 +86,11 @@ from osf_tests.factories import (
     ProjectFactory,
     ProjectWithAddonFactory,
     RegistrationFactory,
+    RegistrationProviderFactory,
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
+    RegionFactory
 )
 
 @mock_app.route('/errorexc')
@@ -1053,7 +1055,7 @@ class TestGetNodeTree(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json, [])
 
-    # Parent node should show because of user2 read access, the children should not
+    # Parent node should show because of user2 read access, and only child3
     def test_get_node_parent_not_admin(self):
         project = ProjectFactory(creator=self.user)
         project.add_contributor(self.user2, auth=Auth(self.user))
@@ -1061,13 +1063,15 @@ class TestGetNodeTree(OsfTestCase):
         child1 = NodeFactory(parent=project, creator=self.user)
         child2 = NodeFactory(parent=project, creator=self.user)
         child3 = NodeFactory(parent=project, creator=self.user)
+        child3.add_contributor(self.user2, auth=Auth(self.user))
         url = project.api_url_for('get_node_tree')
         res = self.app.get(url, auth=self.user2.auth)
         tree = res.json[0]
         parent_node_id = tree['node']['id']
         children = tree['children']
         assert_equal(parent_node_id, project._primary_key)
-        assert_equal(children, [])
+        assert_equal(len(children), 1)
+        assert_equal(children[0]['node']['id'], child3._primary_key)
 
 
 @pytest.mark.enable_enqueue_task
@@ -1489,6 +1493,35 @@ class TestUserProfile(OsfTestCase):
 
         assert_not_in('Quick files', res.body)
 
+    def test_user_update_region(self):
+        user_settings = self.user.get_addon('osfstorage')
+        assert user_settings.default_region_id == 1
+
+        url = '/api/v1/profile/region/'
+        auth = self.user.auth
+        region = RegionFactory(name='Frankfort', _id='eu-central-1')
+        payload = {'region_id': 'eu-central-1'}
+
+        res = self.app.put_json(url, payload, auth=auth)
+        user_settings.reload()
+        assert user_settings.default_region_id == region.id
+
+    def test_user_update_region_missing_region_id_key(self):
+        url = '/api/v1/profile/region/'
+        auth = self.user.auth
+        region = RegionFactory(name='Frankfort', _id='eu-central-1')
+        payload = {'bad_key': 'eu-central-1'}
+
+        res = self.app.put_json(url, payload, auth=auth, expect_errors=True)
+        assert res.status_code == 400
+
+    def test_user_update_region_missing_bad_region(self):
+        url = '/api/v1/profile/region/'
+        auth = self.user.auth
+        payload = {'region_id': 'bad-region-1'}
+
+        res = self.app.put_json(url, payload, auth=auth, expect_errors=True)
+        assert res.status_code == 404
 
 class TestUserProfileApplicationsPage(OsfTestCase):
 
@@ -2066,7 +2099,8 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
-        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None)
+        provider = RegistrationProviderFactory()
+        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None, provider=provider)
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
@@ -4306,7 +4340,7 @@ class TestWikiWidgetViews(OsfTestCase):
         # project with no home wiki content
         self.project2 = ProjectFactory(creator=self.project.creator)
         self.project2.add_contributor(self.read_only_contrib, permissions='read')
-        self.project2.update_node_wiki(name='home', content='', auth=Auth(self.project.creator))
+        WikiPage.objects.create_for_node(self.project2, 'home', '', Auth(self.project.creator))
 
     def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
         contrib = self.project.contributor_set.get(user=self.project.creator)
@@ -4773,58 +4807,6 @@ class TestResetPassword(OsfTestCase):
         assert_in('logout?service=', location)
         assert_in('resetpassword', location)
 
-class TestIndexView(OsfTestCase):
-
-    def setUp(self):
-        super(TestIndexView, self).setUp()
-
-        self.inst_one = InstitutionFactory()
-        self.inst_two = InstitutionFactory()
-        self.inst_three = InstitutionFactory()
-        self.inst_four = InstitutionFactory()
-        self.inst_five = InstitutionFactory()
-
-        self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.inst_one)
-        self.user.affiliated_institutions.add(self.inst_two)
-
-        # tests 5 affiliated, non-registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            node = ProjectFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.add(self.inst_one)
-
-        # tests 4 affiliated, non-registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
-            node = ProjectFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.add(self.inst_two)
-
-        # tests 5 affiliated, registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            registration = RegistrationFactory(creator=self.user, is_public=True)
-            registration.affiliated_institutions.add(self.inst_three)
-
-        # tests 5 affiliated, non-registered public components
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            node = NodeFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.add(self.inst_four)
-
-        # tests 5 affiliated, non-registered, private projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
-            node = ProjectFactory(creator=self.user)
-            node.affiliated_institutions.add(self.inst_five)
-
-    def test_dashboard_institutions(self):
-        with mock.patch('website.views.get_current_user_id', return_value=self.user._id):
-            institution_ids = [
-                institution['id']
-                for institution in index()['dashboard_institutions']
-            ]
-            assert_equal(len(institution_ids), 2)
-            assert_in(self.inst_one._id, institution_ids)
-            assert_not_in(self.inst_two._id, institution_ids)
-            assert_not_in(self.inst_three._id, institution_ids)
-            assert_in(self.inst_four._id, institution_ids)
-            assert_not_in(self.inst_five._id, institution_ids)
 
 @pytest.mark.enable_quickfiles_creation
 @mock.patch('website.views.PROXY_EMBER_APPS', False)
