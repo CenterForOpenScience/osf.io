@@ -169,11 +169,8 @@ class PageCounter(BaseModel):
         if version is not None:
             file_id += ':' + str(version)
 
-        try:
-            return PageCounter.objects.filter(_id__startswith=counter_type,
-                                              _id__endswith=':' + file_id).aggregate(total=models.Sum('total'))['total'] or 0
-        except cls.DoesNotExist:
-            return 0
+        return PageCounter.objects.filter(_id__startswith=counter_type,
+                                          _id__endswith=':' + file_id).aggregate(total=models.Sum('total'))['total'] or 0
 
     @classmethod
     def get_file_downloads(cls, file_id, version=None):
