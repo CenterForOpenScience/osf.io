@@ -1700,7 +1700,18 @@ class MaintenanceStateSerializer(ser.ModelSerializer):
         fields = ('level', 'message', 'start', 'end')
 
 
-class FilterOnlyField(ser.SerializerMethodField):
+class FilterOnlyField(ser.Field):
+    """
+    Filtering things in the OSF is usually done more abstractly through RelationshipFields, but there are some things
+    that want to filter on that aren't RelationshipFields, these custom filters need a "hidden" field so they can be
+    treated like RelationshipFields, while not being displayed or serialized as such.
+    """
+
+    def __init__(self):
+        super(FilterOnlyField, self).__init__(read_only=True)
 
     def bind(self, field_name, parent):
         return None
+
+    def to_internal_value(self, data):
+        return data
