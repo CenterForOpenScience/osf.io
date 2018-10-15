@@ -77,6 +77,9 @@ def add_poster_by_email(conference, message):
             is_spam=message.is_spam,
         )
         if user_created:
+            if utils.is_valid_email(user.fullname):
+                user.fullname = user._id  # Users cannot use an email as their full name
+
             user.save()  # need to save in order to access m2m fields (e.g. tags)
             user.add_system_tag('osf4m')
             user.update_date_last_login()
