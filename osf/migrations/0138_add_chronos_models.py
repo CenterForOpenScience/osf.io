@@ -12,7 +12,7 @@ import osf.utils.datetime_aware_jsonfield
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0134_abstractnode_custom_citation'),
+        ('osf', '0137_auto_20181012_1756'),
     ]
 
     operations = [
