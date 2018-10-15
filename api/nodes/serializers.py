@@ -1318,7 +1318,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         related_view='providers:registration-providers:registration-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False,
-        required=True,
+        required=False,
     )
 
     links = LinksField({
@@ -1334,7 +1334,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
         schema = validated_data.pop('registration_schema')
 
-        provider = validated_data.pop('provider')
+        provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
         # TODO: this
         # if not provider.schemas_acceptable.filter(id=schema.id).exists():
         #     raise exceptions.ValidationError('Invalid schema for provider.')
