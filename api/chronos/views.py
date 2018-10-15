@@ -21,7 +21,6 @@ from api.chronos.permissions import SubmissionOnPreprintPublishedOrAdmin, Submis
 from api.chronos.serializers import ChronosJournalSerializer, ChronosSubmissionSerializer, ChronosSubmissionCreateSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import ChronosJournal, ChronosSubmission, PreprintService
-from osf.external.chronos import ChronosClient
 from osf.external.tasks import update_submissions_status_async
 
 
@@ -101,7 +100,7 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
                 Q(status__in=[3, 4])
             ),
         ).distinct()
-        update_list_id = queryset.filter(modified__lt=timezone.now() - settings.CHRONOS_SUBMISSION_UPDATE_TIME).values_list('id',flat=True)
+        update_list_id = queryset.filter(modified__lt=timezone.now() - settings.CHRONOS_SUBMISSION_UPDATE_TIME).values_list('id', flat=True)
         if len(update_list_id) > 0:
             enqueue_task(update_submissions_status_async.s(list(update_list_id)))
         return queryset

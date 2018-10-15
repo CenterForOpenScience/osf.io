@@ -1,8 +1,13 @@
 import mock
 import pytest
 
-from osf_tests.factories import AuthUserFactory, ChronosJournalFactory, ChronosSubmissionFactory, PreprintFactory
+from datetime import timedelta
+from django.utils import timezone
 
+from osf_tests.factories import AuthUserFactory, ChronosJournalFactory, ChronosSubmissionFactory, PreprintFactory
+from osf.utils.migrations import disable_auto_now_fields
+from osf.models.chronos import ChronosSubmission
+from website import settings
 
 @pytest.mark.django_db
 class TestChronosSubmissionList:
@@ -156,3 +161,63 @@ class TestChronosSubmissionList:
         submission_ids = [submission_accepted.publication_id, submission_published.publication_id]
         assert res.json['data'][0]['id'] in submission_ids
         assert res.json['data'][1]['id'] in submission_ids
+
+
+@pytest.mark.django_db
+class TestChronosSubmissionAutomaticUpdate:
+
+    @pytest.fixture()
+    def submitter(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def journal_one(self):
+        return ChronosJournalFactory()
+
+    @pytest.fixture()
+    def journal_two(self):
+        return ChronosJournalFactory()
+
+    @pytest.fixture()
+    def preprint(self, submitter):
+        return PreprintFactory(creator=submitter)
+
+    @pytest.fixture()
+    def submission_stale(self, preprint, journal_one, submitter):
+        with disable_auto_now_fields(models=[ChronosSubmission]):
+            submission = ChronosSubmission(submitter=submitter, journal=journal_one, preprint=preprint, status=2,
+                                           raw_response='',)
+            submission.modified = timezone.now() - settings.CHRONOS_SUBMISSION_UPDATE_TIME - timedelta(days=1)
+            submission.save()
+            return submission
+
+    @pytest.fixture()
+    def submission_fresh(self, preprint, journal_two, submitter):
+        return ChronosSubmissionFactory(submitter=submitter, journal=journal_two, preprint=preprint, status=2)
+
+    @pytest.fixture()
+    def url(self, preprint):
+        return '/_/chronos/{}/submissions/'.format(preprint._id)
+
+    @mock.patch('api.chronos.views.enqueue_task')
+    def test_enqueue_is_called_with_submission_is_stale(self, mock_enqueue, app, url, submission_stale, submitter):
+        res = app.get(url, auth=submitter.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        mock_enqueue.assert_called()
+
+    @mock.patch('api.chronos.views.enqueue_task')
+    def test_enqueue_is_not_called_with_submission_is_fresh(self, mock_enqueue, app, url, submission_fresh, submitter):
+        res = app.get(url, auth=submitter.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        mock_enqueue.assert_not_called()
+
+    # @pytest.mark.enable_enqueue_task
+    @mock.patch('api.chronos.views.enqueue_task')
+    def test_mix_enqueue(self, mock_enqueue, app, url, submission_fresh, submission_stale, submitter):
+        res = app.get(url, auth=submitter.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+        from osf.external.tasks import update_submissions_status_async
+        mock_enqueue.assert_called_with(update_submissions_status_async.s([submission_stale.id]))
