@@ -80,6 +80,7 @@ class NodeOptimizationMixin(object):
         wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
         contribs = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
         return queryset.prefetch_related('root').prefetch_related('subjects').annotate(
+            user_is_contrib=Exists(contribs),
             contrib_read=Subquery(contribs.values('read')[:1]),
             contrib_write=Subquery(contribs.values('write')[:1]),
             contrib_admin=Subquery(contribs.values('admin')[:1]),

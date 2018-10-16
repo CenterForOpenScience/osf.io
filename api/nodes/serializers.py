@@ -293,6 +293,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         help_text='List of strings representing the permissions '
         'for the current user on this node.',
     )
+    current_user_is_contributor = ser.SerializerMethodField(
+        help_text='Whether the current user is a contributor on this node.',
+    )
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(
@@ -508,6 +511,15 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         # Whether the node has supplemental material for a preprint the user can view
         user = self.context['request'].user if not self.context['request'].user.is_anonymous else None
         return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
+
+    def get_current_user_is_contributor(self, obj):
+        if hasattr(obj, 'user_is_contrib'):
+            return obj.user_is_contrib
+
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return obj.is_contributor(user)
 
     class Meta:
         type_ = 'nodes'
@@ -930,12 +942,6 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
-    current_user_is_contributor = ser.SerializerMethodField(help_text='Whether the current user is a contributor on this node.')
-
-    def get_current_user_is_contributor(self, obj):
-        user = self.context['request'].user
-        user = None if user.is_anonymous else user
-        return obj.is_contributor(user)
 
 
 class NodeForksSerializer(NodeSerializer):
@@ -1334,7 +1340,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         related_view='providers:registration-providers:registration-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False,
-        required=True,
+        required=False,
     )
 
     links = LinksField({
@@ -1350,7 +1356,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
         schema = validated_data.pop('registration_schema')
 
-        provider = validated_data.pop('provider')
+        provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
         # TODO: this
         # if not provider.schemas_acceptable.filter(id=schema.id).exists():
         #     raise exceptions.ValidationError('Invalid schema for provider.')
