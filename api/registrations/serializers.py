@@ -342,6 +342,7 @@ class BaseRegistrationSerializer(NodeSerializer):
         return obj.private_links.filter(is_deleted=False).count()
 
     def update(self, registration, validated_data):
+        # TODO - when withdrawl is added, make sure to restrict to admin only here
         user = self.context['request'].user
         auth = Auth(user)
         # Update tags
