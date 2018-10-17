@@ -3,6 +3,8 @@ Files views.
 """
 from flask import request
 
+from osf import features
+
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public, must_not_be_retracted_registration
 from website.project.views.node import _view_project
@@ -10,7 +12,7 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 
 @must_not_be_retracted_registration
 @must_be_contributor_or_public
-@ember_flag_is_active('ember_project_files_page')
+@ember_flag_is_active(features.EMBER_PROJECT_FILES)
 def collect_file_trees(auth, node, **kwargs):
     """Collect file trees for all add-ons implementing HGrid views, then
     format data as appropriate.

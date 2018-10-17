@@ -46,7 +46,7 @@ class TestCrossRefEmailResponse:
         data.update(mailgun_payload)
         data = {
             key: value
-            for key, value in data.iteritems()
+            for key, value in data.items()
             if value is not None
         }
         return data

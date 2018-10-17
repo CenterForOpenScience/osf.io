@@ -102,7 +102,7 @@ class TestPreprintView:
         response = views.PreprintFlaggedSpamList.as_view()(request)
         assert response.status_code == 200
 
-        response_ids = map(lambda res: res['id'], response.context_data['preprints'])
+        response_ids = [res['id'] for res in response.context_data['preprints']]
         assert preprint._id not in response.context_data['preprints'][0]['id']
         assert len(response.context_data['preprints']) == 1
         assert flagged_preprint._id in response_ids
@@ -116,7 +116,7 @@ class TestPreprintView:
         response = views.PreprintKnownSpamList.as_view()(request)
         assert response.status_code == 200
 
-        response_ids = map(lambda res: res['id'], response.context_data['preprints'])
+        response_ids = [res['id'] for res in response.context_data['preprints']]
         assert preprint._id not in response.context_data['preprints'][0]['id']
         assert len(response.context_data['preprints']) == 1
         assert flagged_preprint._id not in response_ids
@@ -130,7 +130,7 @@ class TestPreprintView:
         response = views.PreprintKnownHamList.as_view()(request)
         assert response.status_code == 200
 
-        response_ids = map(lambda res: res['id'], response.context_data['preprints'])
+        response_ids = [res['id'] for res in response.context_data['preprints']]
         assert preprint._id not in response.context_data['preprints'][0]['id']
         assert len(response.context_data['preprints']) == 1
         assert flagged_preprint._id not in response_ids

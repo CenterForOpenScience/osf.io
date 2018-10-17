@@ -71,6 +71,7 @@ class TestRegistrationDetail:
             data['relationships']['registered_from']['links']['related']['href']
         ).path
         assert data['attributes']['registration'] is True
+        assert data['attributes']['current_user_is_contributor'] is False
         assert registered_from == '/{}nodes/{}/'.format(
             API_BASE, public_project._id)
 
@@ -82,6 +83,7 @@ class TestRegistrationDetail:
         registered_from = urlparse(
             data['relationships']['registered_from']['links']['related']['href']).path
         assert data['attributes']['registration'] is True
+        assert data['attributes']['current_user_is_contributor'] is True
         assert registered_from == '/{}nodes/{}/'.format(
             API_BASE, public_project._id)
 
@@ -98,6 +100,7 @@ class TestRegistrationDetail:
         registered_from = urlparse(
             data['relationships']['registered_from']['links']['related']['href']).path
         assert data['attributes']['registration'] is True
+        assert data['attributes']['current_user_is_contributor'] is True
         assert registered_from == '/{}nodes/{}/'.format(
             API_BASE, private_project._id)
 

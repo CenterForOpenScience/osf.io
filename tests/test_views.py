@@ -86,6 +86,7 @@ from osf_tests.factories import (
     ProjectFactory,
     ProjectWithAddonFactory,
     RegistrationFactory,
+    RegistrationProviderFactory,
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
@@ -1102,7 +1103,7 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         self.user.reload()
-        for key, value in payload.iteritems():
+        for key, value in payload.items():
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
 
@@ -2098,7 +2099,8 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
-        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None)
+        provider = RegistrationProviderFactory()
+        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None, provider=provider)
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
@@ -2768,7 +2770,7 @@ class TestPointerViews(OsfTestCase):
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
 
-        for i in xrange(3):
+        for i in range(3):
             self.project.add_pointer(ProjectFactory(creator=self.user),
                                      auth=Auth(user=self.user))
         self.project.save()
@@ -4412,7 +4414,7 @@ class TestProjectCreation(OsfTestCase):
 
     def test_title_must_be_less_than_200(self):
         payload = {
-            'title': ''.join([str(x) for x in xrange(0, 250)])
+            'title': ''.join([str(x) for x in range(0, 250)])
         }
         res = self.app.post_json(
             self.url, payload, auth=self.creator.auth, expect_errors=True)

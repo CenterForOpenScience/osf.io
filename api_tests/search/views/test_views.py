@@ -47,11 +47,15 @@ class ApiSearchTestCase:
 
     @pytest.fixture()
     def collection_public(self, user):
-        return CollectionFactory(creator=user, provider=CollectionProviderFactory(), is_public=True)
+        return CollectionFactory(creator=user, provider=CollectionProviderFactory(), is_public=True,
+                                 status_choices=['', 'asdf', 'lkjh'], collected_type_choices=['', 'asdf', 'lkjh'],
+                                 issue_choices=['', '0', '1', '2'], volume_choices=['', '0', '1', '2'],
+                                 program_area_choices=['', 'asdf', 'lkjh'])
 
     @pytest.fixture()
     def registration_collection(self, user):
-        return CollectionFactory(creator=user, provider=RegistrationProviderFactory(), is_public=True)
+        return CollectionFactory(creator=user, provider=RegistrationProviderFactory(), is_public=True,
+                                 status_choices=['', 'asdf', 'lkjh'], collected_type_choices=['', 'asdf', 'lkjh'])
 
     @pytest.fixture()
     def user_one(self):
@@ -784,7 +788,7 @@ class TestSearchInstitutions(ApiSearchTestCase):
 class TestSearchCollections(ApiSearchTestCase):
 
     def get_ids(self, data):
-        return map(lambda s: s['id'], data)
+        return [s['id'] for s in data]
 
     def post_payload(self, *args, **kwargs):
         return {
@@ -900,7 +904,7 @@ class TestSearchCollections(ApiSearchTestCase):
             self, app, url_collection_search, user, node_one, node_two, collection_public,
             node_with_abstract, node_private, registration_collection, registration_one,
             registration_two, registration_private, reg_with_abstract):
-        collection_public.collect_object(node_one, user, status='asdf')
+        collection_public.collect_object(node_one, user, status='asdf', issue='0', volume='1', program_area='asdf')
         collection_public.collect_object(node_two, user, collected_type='asdf', status='lkjh')
         collection_public.collect_object(node_with_abstract, user, status='asdf')
         collection_public.collect_object(node_private, user, status='asdf', collected_type='asdf')
@@ -968,6 +972,15 @@ class TestSearchCollections(ApiSearchTestCase):
         actual_ids = self.get_ids(res.json['data'])
         assert node_two._id in actual_ids
         assert registration_two._id in actual_ids
+
+        payload = self.post_payload(status='asdf', issue='0', volume='1', programArea='asdf', collectedType='')
+        res = app.post_json_api(url_collection_search, payload)
+
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+        assert len(res.json['data']) == 1
+        actual_ids = self.get_ids(res.json['data'])
+        assert node_one._id in actual_ids
 
         # test_search_abstract_keyword_and_filter
         payload = self.post_payload(q='Khadja', status='asdf')
