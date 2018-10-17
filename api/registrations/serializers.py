@@ -352,7 +352,10 @@ class BaseRegistrationSerializer(NodeSerializer):
             except NodeStateError as err:
                 raise Conflict(err.message)
         if 'custom_citation' in validated_data:
-            registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
+            if registration.has_permission(user, permissions.ADMIN):
+                registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
+            else:
+                raise exceptions.PermissionDenied()
         is_public = validated_data.get('is_public', None)
         if is_public is not None:
             if is_public:

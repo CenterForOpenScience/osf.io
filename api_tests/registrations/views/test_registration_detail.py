@@ -426,6 +426,15 @@ class TestRegistrationUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'An unapproved registration cannot be made public.'
 
+    def test_read_write_contributor_cannot_update_custom_citation(
+            self, app, read_write_contributor, private_registration, private_url, make_payload):
+        payload = make_payload(
+            id=private_registration._id,
+            attributes={'custom_citation': 'This is a custom citation yay'}
+        )
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
 
 @pytest.mark.django_db
 class TestRegistrationTags:
