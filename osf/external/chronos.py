@@ -127,7 +127,7 @@ class ChronosSerializer(object):
         if CHRONOS_USE_FAKE_FILE:
             file_url = CHRONOS_FAKE_FILE_URL
         else:
-            file_url = '/'.join([DOMAIN.strip('/'), file_node.get_guid(create=True)._id, 'download'])
+            file_url = '/'.join([DOMAIN.strip('/'), 'download', file_node._id])
 
         return {
             'FILE_DOWNLOAD_URL': file_url,
