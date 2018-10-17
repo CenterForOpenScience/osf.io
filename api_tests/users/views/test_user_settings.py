@@ -379,6 +379,16 @@ class TestUserEmailsList:
         for result in res.json['data']:
             assert result['attributes']['verified'] is False
 
+        primary_filter_url = '{}?filter[primary]=True'.format(url)
+        res = app.get(primary_filter_url, auth=user_one.auth)
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['primary'] is True
+        not_primary_url = '{}?filter[primary]=False'.format(url)
+        res = app.get(not_primary_url, auth=user_one.auth)
+        assert len(res.json['data']) > 0
+        for result in res.json['data']:
+            assert result['attributes']['primary'] is False
+
 
 @pytest.mark.django_db
 class TestUserEmailDetail:

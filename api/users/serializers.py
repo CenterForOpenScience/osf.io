@@ -480,6 +480,7 @@ class UserEmailsSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'confirmed',
         'verified',
+        'primary',
     ])
 
     id = IDField(read_only=True)
