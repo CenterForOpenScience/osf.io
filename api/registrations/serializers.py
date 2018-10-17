@@ -342,9 +342,10 @@ class BaseRegistrationSerializer(NodeSerializer):
         return obj.private_links.filter(is_deleted=False).count()
 
     def update(self, registration, validated_data):
-        # TODO - when withdrawl is added, make sure to restrict to admin only here
+        # TODO - when withdrawal is added, make sure to restrict to admin only here
         user = self.context['request'].user
         auth = Auth(user)
+        user_is_admin = registration.has_permission(user, permissions.ADMIN)
         # Update tags
         if 'tags' in validated_data:
             new_tags = validated_data.pop('tags', [])
@@ -353,14 +354,14 @@ class BaseRegistrationSerializer(NodeSerializer):
             except NodeStateError as err:
                 raise Conflict(err.message)
         if 'custom_citation' in validated_data:
-            if registration.has_permission(user, permissions.ADMIN):
+            if user_is_admin:
                 registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
             else:
                 raise exceptions.PermissionDenied()
         is_public = validated_data.get('is_public', None)
         if is_public is not None:
             if is_public:
-                if registration.has_permission(user, permissions.ADMIN):
+                if user_is_admin:
                     try:
                         registration.update(validated_data, auth=auth)
                     except NodeUpdateError as err:
