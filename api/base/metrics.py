@@ -73,9 +73,9 @@ class MetricMixin(object):
             metric_map = self.metric_map
             for metric, period in metrics_requested.items():
                 if metric not in metric_map:
-                    raise InvalidQueryStringError("Invalid metric in query string: '{}'".format(metric))
+                    raise InvalidQueryStringError("Invalid metric in query string: '{}'".format(metric), parameter='metrics')
                 if period not in self.VALID_METRIC_PERIODS:
-                    raise InvalidQueryStringError("Invalid period for metric: '{}'".format(period))
+                    raise InvalidQueryStringError("Invalid period for metric: '{}'".format(period), parameter='metrics')
                 metric_class = metric_map[metric]
                 if period == 'total':
                     after = None
