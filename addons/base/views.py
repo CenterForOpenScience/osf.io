@@ -12,11 +12,11 @@ from flask import request
 import furl
 import jwe
 import jwt
+import waffle
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from elasticsearch import exceptions as es_exceptions
 
-from django.conf import settings as api_settings
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
@@ -328,7 +328,7 @@ def get_auth(auth, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     # TODO: Add a signal here?
-    if api_settings.ENABLE_ELASTICSEARCH_METRICS:
+    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
         user = auth.user
         linked_preprint = node.linked_preprint
         if linked_preprint and not node.is_contributor(user):

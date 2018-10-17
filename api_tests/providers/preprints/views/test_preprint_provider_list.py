@@ -1,6 +1,8 @@
 import mock
 import pytest
+from waffle.testutils import override_switch
 
+from osf import features
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
@@ -68,8 +70,13 @@ class TestPreprintProviderList:
 @pytest.mark.django_db
 class TestPreprintProviderListWithMetrics:
 
-    def test_preprint_provider_list_with_metrics(self, app, url, provider_one, provider_two, settings):
-        settings.ENABLE_ELASTICSEARCH_METRICS = True
+    # enable the ELASTICSEARCH_METRICS switch for all tests
+    @pytest.fixture(autouse=True)
+    def enable_elasticsearch_metrics(self):
+        with override_switch(features.ELASTICSEARCH_METRICS, active=True):
+            yield
+
+    def test_preprint_provider_list_with_metrics(self, app, url, provider_one, provider_two):
         provider_one.downloads = 41
         provider_two.downloads = 42
         with mock.patch('api.preprints.views.PreprintDownload.get_top_by_count') as mock_get_top_by_count:

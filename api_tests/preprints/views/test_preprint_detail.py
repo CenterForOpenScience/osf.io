@@ -3,7 +3,9 @@ import pytest
 
 from rest_framework import exceptions
 from django.utils import timezone
+from waffle.testutils import override_switch
 
+from osf import features
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from framework.auth.core import Auth
@@ -1481,6 +1483,11 @@ class TestReviewsPreprintDetailPermissions:
 
 @pytest.mark.django_db
 class TestPreprintDetailWithMetrics:
+    # enable the ELASTICSEARCH_METRICS switch for all tests
+    @pytest.fixture(autouse=True)
+    def enable_elasticsearch_metrics(self):
+        with override_switch(features.ELASTICSEARCH_METRICS, active=True):
+            yield
 
     @pytest.mark.parametrize(('metric_name', 'metric_class_name'),
     [
@@ -1488,7 +1495,6 @@ class TestPreprintDetailWithMetrics:
         ('views', 'PreprintView'),
     ])
     def test_preprint_detail_with_downloads(self, app, settings, metric_name, metric_class_name):
-        settings.ENABLE_ELASTICSEARCH_METRICS = True
         preprint = PreprintFactory()
         url = '/{}preprints/{}/?metrics[{}]=total'.format(API_BASE, preprint._id, metric_name)
 

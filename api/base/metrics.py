@@ -1,9 +1,11 @@
 import re
 from datetime import timedelta
 
+import waffle
 from django.utils import timezone
-from django.conf import settings
+
 from api.base.exceptions import InvalidQueryStringError
+from osf import features
 
 
 class MetricMixin(object):
@@ -37,7 +39,10 @@ class MetricMixin(object):
 
     @property
     def metrics_requested(self):
-        return settings.ENABLE_ELASTICSEARCH_METRICS and bool(self.parse_metric_query_params(self.request.query_params))
+        return (
+            waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and
+            bool(self.parse_metric_query_params(self.request.query_params))
+        )
 
     # Adapted from FilterMixin.parse_query_params
     # TODO: Should we get rid of query_params argument and use self.request.query_params instead?

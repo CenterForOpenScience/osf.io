@@ -5,6 +5,7 @@ import datetime as dt
 import pytest
 from django.utils import timezone
 from django.conf import settings
+from waffle.testutils import override_switch
 
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
@@ -16,6 +17,7 @@ from api_tests.preprints.views.test_preprint_list_mixin import (
     PreprintIsValidListMixin,
 )
 from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
+from osf import features
 from osf.models import PreprintService, Node
 from osf.utils.workflows import DefaultStates
 from osf.utils import permissions
@@ -1130,14 +1132,18 @@ class TestPreprintIsValidList(PreprintIsValidListMixin):
 @pytest.mark.django_db
 class TestPreprintListWithMetrics:
 
+    # enable the ELASTICSEARCH_METRICS switch for all tests
+    @pytest.fixture(autouse=True)
+    def enable_elasticsearch_metrics(self):
+        with override_switch(features.ELASTICSEARCH_METRICS, active=True):
+            yield
+
     @pytest.mark.parametrize(('metric_name', 'metric_class_name'),
     [
         ('downloads', 'PreprintDownload'),
         ('views', 'PreprintView'),
     ])
-    def test_preprint_list_with_metrics(self, app, settings, metric_name, metric_class_name):
-        settings.ENABLE_ELASTICSEARCH_METRICS = True
-
+    def test_preprint_list_with_metrics(self, app, metric_name, metric_class_name):
         url = '/{}preprints/?metrics[{}]=total'.format(API_BASE, metric_name)
         preprint1 = PreprintFactory()
         preprint1.downloads = 41
@@ -1163,8 +1169,6 @@ class TestPreprintListWithMetrics:
         ('yearly', dt.timedelta(days=365)),
     ])
     def test_preprint_list_filter_metric_by_time_period(self, mock_timezone_now, app, settings, query_value, timedelta):
-        settings.ENABLE_ELASTICSEARCH_METRICS = True
-
         url = '/{}preprints/?metrics[views]={}'.format(API_BASE, query_value)
         mock_now = dt.datetime.utcnow().replace(tzinfo=timezone.utc)
         mock_timezone_now.return_value = mock_now

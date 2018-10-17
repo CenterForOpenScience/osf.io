@@ -298,4 +298,3 @@ ELASTICSEARCH_DSL = {
         'hosts': os.environ.get('ELASTIC6_URI', '127.0.0.1:9201'),
     },
 }
-ENABLE_ELASTICSEARCH_METRICS = True
