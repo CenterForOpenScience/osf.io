@@ -4,6 +4,29 @@ from django.db import models
 class MetricMixin(object):
 
     @classmethod
+    def _get_id_to_count(cls, size, metric_field, count_field, after=None):
+        """Performs the elasticsearch aggregation for get_top_by_count. Return a
+        dict mapping ids to summed counts. If there's no data in the ES index, return None.
+        """
+        search = cls.search()
+        if after:
+            search = search.filter('range', timestamp={'gte': after})
+        search.aggs.\
+            bucket('by_id', 'terms', field=metric_field, order={'sum_count': 'desc'}).\
+            metric('sum_count', 'sum', field=count_field)
+        # Optimization: set size to 0 so that hits aren't returned (we only care about the aggregation)
+        response = search.extra(size=0).execute()
+        # No indexed data
+        if not hasattr(response.aggregations, 'by_id'):
+            return None
+        buckets = response.aggregations.by_id.buckets
+        # Map _id => count
+        return {
+            bucket.key: int(bucket.sum_count.value)
+            for bucket in buckets
+        }
+
+    @classmethod
     def get_top_by_count(cls, qs, model_field, metric_field,
                          size=None, order_by=None,
                          count_field='count',
@@ -39,24 +62,14 @@ class MetricMixin(object):
         :param str count_field: Name of the field where count values are stored.
         :param str annotation: Name of the annotation.
         """
-        search = cls.search()
-        size = size or qs.count()
-        if after:
-            search = search.filter('range', timestamp={'gte': after})
-        search.aggs.\
-            bucket('by_id', 'terms', field=metric_field, order={'sum_count': 'desc'}).\
-            metric('sum_count', 'sum', field=count_field)
-        # Optimization: set size to 0 so that hits aren't returns (we only care about the aggregation)
-        response = search.extra(size=0).execute()
-        # No indexed data
-        if not hasattr(response.aggregations, 'by_id'):
+        id_to_count = cls._get_id_to_count(
+            size=size or qs.count(),
+            metric_field=metric_field,
+            count_field=count_field,
+            after=after,
+        )
+        if id_to_count is None:
             return qs.annotate(**{annotation: models.Value(0, models.IntegerField())})
-        buckets = response.aggregations.by_id.buckets
-        # Map _id => count
-        id_to_count = {
-            bucket.key: int(bucket.sum_count.value)
-            for bucket in buckets
-        }
         # Annotate the queryset with the counts for each id
         # https://stackoverflow.com/a/48187723/1157536
         whens = [
