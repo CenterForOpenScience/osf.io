@@ -1,15 +1,10 @@
+import mock
 import pytest
-from django.conf import settings
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
-    PreprintFactory,
-)
-from osf_tests.metrics_factories import (
-    PreprintDownloadFactory,
-    PreprintViewFactory,
 )
 
 @pytest.fixture(params=['/{}preprint_providers/?version=2.2&', '/{}providers/preprints/?version=2.2&'])
@@ -70,51 +65,21 @@ class TestPreprintProviderList:
         assert len(res.json['data']) == 1
 
 
-# FIXME: Throwaway test
-@pytest.mark.skipif(not settings.ENABLE_ELASTICSEARCH_METRICS, reason='elasticsearch_metrics disabled')
 @pytest.mark.django_db
 class TestPreprintProviderListWithMetrics:
 
-    def test_preprint_provider_list_with_metrics_downloads(
-            self, app, url, user, provider_one, provider_two):
+    def test_preprint_provider_list_with_metrics(self, app, url, provider_one, provider_two, settings):
+        settings.ENABLE_ELASTICSEARCH_METRICS = True
+        provider_one.downloads = 41
+        provider_two.downloads = 42
+        with mock.patch('api.preprints.views.PreprintDownload.get_top_by_count') as mock_get_top_by_count:
+            mock_get_top_by_count.return_value = [provider_one, provider_two]
+            res = app.get(url + 'metrics[downloads]=total')
 
-        preprint_one = PreprintFactory(provider=provider_one)
-        preprint_two = PreprintFactory(provider=provider_two)
-
-        # Set up fake metric data
-        # provider_one's preprint was downloaded 1 times
-        PreprintDownloadFactory(preprint=preprint_one)
-        # provider_two's preprint was downloaded 2 times
-        PreprintDownloadFactory(preprint=preprint_two)
-        PreprintDownloadFactory(preprint=preprint_two)
-
-        res = app.get(url + 'metrics[downloads]=total')
         assert res.status_code == 200
 
         provider_2_data = res.json['data'][0]
-        provider_2_data['meta']['metrics']['downloads'] == 2
+        provider_2_data['meta']['metrics']['downloads'] == 42
 
         provider_1_data = res.json['data'][1]
-        provider_1_data['meta']['metrics']['downloads'] == 1
-
-    def test_preprint_provider_list_with_metrics_views(
-            self, app, url, user, provider_one, provider_two):
-
-        preprint_one = PreprintFactory(provider=provider_one)
-        preprint_two = PreprintFactory(provider=provider_two)
-
-        # Set up fake metric data
-        # provider_one's preprint was viewed 1 times
-        PreprintViewFactory(preprint=preprint_one)
-        # provider_two's preprint was viewed 2 times
-        PreprintViewFactory(preprint=preprint_two)
-        PreprintViewFactory(preprint=preprint_two)
-
-        res = app.get(url + 'metrics[views]=total')
-        assert res.status_code == 200
-
-        provider_2_data = res.json['data'][0]
-        provider_2_data['meta']['metrics']['views'] == 2
-
-        provider_1_data = res.json['data'][1]
-        provider_1_data['meta']['metrics']['views'] == 1
+        provider_1_data['meta']['metrics']['downloads'] == 41
