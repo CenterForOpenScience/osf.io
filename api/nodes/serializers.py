@@ -34,6 +34,7 @@ from website.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, Institution,
     RegistrationSchema, AbstractNode, PrivateLink,
+    RegistrationProvider,
 )
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
@@ -43,6 +44,15 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+
+
+class RegistrationProviderRelationshipField(RelationshipField):
+    def get_object(self, _id):
+        return RegistrationProvider.load(_id)
+
+    def to_internal_value(self, data):
+        provider = self.get_object(data)
+        return {'provider': provider}
 
 
 def get_or_add_license_to_serializer_context(serializer, node):
@@ -283,6 +293,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         help_text='List of strings representing the permissions '
         'for the current user on this node.',
     )
+    current_user_is_contributor = ser.SerializerMethodField(
+        help_text='Whether the current user is a contributor on this node.',
+    )
     wiki_enabled = ser.SerializerMethodField(help_text='Whether the wiki addon is enabled')
 
     # Public is only write-able by admins--see update method
@@ -494,6 +507,15 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             return obj.contrib_read or False
         else:
             return obj.can_comment(auth)
+
+    def get_current_user_is_contributor(self, obj):
+        if hasattr(obj, 'user_is_contrib'):
+            return obj.user_is_contrib
+
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return obj.is_contributor(user)
 
     class Meta:
         type_ = 'nodes'
@@ -919,12 +941,6 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
-    current_user_is_contributor = ser.SerializerMethodField(help_text='Whether the current user is a contributor on this node.')
-
-    def get_current_user_is_contributor(self, obj):
-        user = self.context['request'].user
-        user = None if user.is_anonymous else user
-        return obj.is_contributor(user)
 
 
 class NodeForksSerializer(NodeSerializer):
@@ -1308,6 +1324,13 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         read_only=False,
     )
 
+    provider = RegistrationProviderRelationshipField(
+        related_view='providers:registration-providers:registration-provider-detail',
+        related_view_kwargs={'provider_id': '<provider._id>'},
+        read_only=False,
+        required=False,
+    )
+
     links = LinksField({
         'html': 'get_absolute_url',
     })
@@ -1321,7 +1344,12 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
         schema = validated_data.pop('registration_schema')
 
-        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
+        provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
+        # TODO: this
+        # if not provider.schemas_acceptable.filter(id=schema.id).exists():
+        #     raise exceptions.ValidationError('Invalid schema for provider.')
+
+        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
 
         if metadata:
@@ -1351,6 +1379,12 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
         related_view_kwargs={'schema_id': '<registration_schema._id>'},
+    )
+
+    provider = RegistrationProviderRelationshipField(
+        related_view='providers:registration-providers:registration-provider-detail',
+        related_view_kwargs={'provider_id': '<provider._id>'},
+        read_only=True,
     )
 
     def update(self, draft, validated_data):

@@ -32,7 +32,7 @@ def to_anvl(data):
     if isinstance(data, dict):
         return FIELD_SEPARATOR.join(
             PAIR_SEPARATOR.join([escape(key), escape(to_anvl(value))])
-            for key, value in data.iteritems()
+            for key, value in data.items()
         )
     return data
 

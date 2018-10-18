@@ -46,12 +46,6 @@ class BaseClient(object):
 
     def _build_url(self, base, *segments):
         url = furl.furl(base)
-        segments = filter(
-            lambda segment: segment,
-            map(
-                lambda segment: str(segment).strip('/'),
-                itertools.chain(url.path.segments, segments)
-            )
-        )
+        segments = [segment for segment in [str(segment).strip('/') for segment in itertools.chain(url.path.segments, segments)] if segment]
         url.path = os.path.join(*segments)
         return url.url

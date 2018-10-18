@@ -7,7 +7,7 @@ from furl import furl
 def serialize_comment(comment):
     reports = [
         serialize_report(user, report)
-        for user, report in comment.reports.iteritems()
+        for user, report in comment.reports.items()
     ]
     author_abs_url = furl(OSF_DOMAIN)
     author_abs_url.path.add(comment.user.url)

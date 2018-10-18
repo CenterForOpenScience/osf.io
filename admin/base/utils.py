@@ -6,7 +6,9 @@ from website.prereg.utils import get_prereg_schema
 
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.core.urlresolvers import reverse
+from django.core.validators import RegexValidator, _lazy_re_compile
 from django.utils.http import urlencode
+from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 
 from osf.models.admin_log_entry import (
@@ -15,6 +17,12 @@ from osf.models.admin_log_entry import (
 )
 
 from website import settings
+
+validate_slug = RegexValidator(
+    _lazy_re_compile(r'^[a-z]+\Z'),
+    _("Enter a valid 'slug' consisting only of lowercase letters."),
+    'invalid'
+)
 
 def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, query_kwargs=None):
     base_url = reverse(view, urlconf=urlconf, args=args, kwargs=kwargs, current_app=current_app)

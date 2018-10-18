@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+18.3.0 (2018-10-10)
+===================
+
+- Migrate registrations into OSFRegistries
+- Update registries API and models
+- Update elastic mapping for collection submissions
+- Add additional CollectionProvider fields
+
 18.2.0 (2018-10-02)
 ===================
 

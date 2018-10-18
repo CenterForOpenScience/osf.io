@@ -108,7 +108,8 @@ class TestNodeRegistrationSerializer:
             'registered_from',
             'registered_by',
             'registration_schema',
-            'region'
+            'region',
+            'provider',
         ]
 
         # Attributes

@@ -336,4 +336,4 @@ if __name__ == '__main__':
     # Although represented internally as a set, print as a sorted list for readability.
     from pprint import pprint as pp
     pp({k: sorted(v.parts)
-        for k, v in public_scopes.iteritems()})
+        for k, v in public_scopes.items()})

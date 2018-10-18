@@ -54,7 +54,7 @@ def serialize_draft_registration(draft, json_safe=True):
         'embargo': embargo,
         'registered_node': node_url,
         'status': get_approval_status(draft),
-        'logs': map(serialize_draft_logs, draft.status_logs),
+        'logs': list(map(serialize_draft_logs, draft.status_logs)),
     }
 
 

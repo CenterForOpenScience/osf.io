@@ -214,7 +214,7 @@ class TestAddonLogs(OsfTestCase):
         options.update(kwargs)
         options = {
             key: value
-            for key, value in options.iteritems()
+            for key, value in options.items()
             if value is not None
         }
         message, signature = signing.default_signer.sign_payload(options)
