@@ -47,7 +47,9 @@ class MetricsViewMixin(object):
         raise NotImplementedError('MetricsViewMixin subclasses must define get_annotated_queryset_with_metrics().')
 
     def add_metric_to_object(self, obj, metric_class, metric_name, after):
-        """Set an attribute for a metric on obj. Use for detail endpoints that expose metrics."""
+        """Set an attribute for a metric on obj. Use for detail endpoints that expose metrics.
+        Return the modified object.
+        """
         raise NotImplementedError('MetricsViewMixin subclasses must define add_metric_to_object().')
 
     @property
@@ -78,9 +80,12 @@ class MetricsViewMixin(object):
                 query[metric_name] = value
         return query
 
-    # TODO: DRY up this and get_metrics_queryset
-    def add_metrics_to_object(self, obj):
-        """Helper method used for detail views."""
+    def _add_metrics(self, queryset_or_obj, method):
+        """Parse the ?metric[METRIC]=PERIOD query param, validate it, and
+        run ``method`` for each each requested object.
+
+        This is used to share code between add_metric_to_object and get_metrics_queryset.
+        """
         metrics_requested = self.parse_metric_query_params(self.request.query_params)
         if metrics_requested:
             metric_map = self.metric_map
@@ -94,26 +99,16 @@ class MetricsViewMixin(object):
                     after = None
                 else:
                     after = timezone.now() - self.TIMEDELTA_MAP[period]
-                self.add_metric_to_object(obj, metric_class, metric, after=after)
-        return obj
+                queryset_or_obj = method(queryset_or_obj, metric_class, metric, after)
+        return queryset_or_obj
+
+    def add_metrics_to_object(self, obj):
+        """Helper method used for detail views."""
+        return self._add_metrics(obj, method=self.add_metric_to_object)
 
     def get_metrics_queryset(self, queryset):
         """Helper method used for list views."""
-        metrics_requested = self.parse_metric_query_params(self.request.query_params)
-        if metrics_requested:
-            metric_map = self.metric_map
-            for metric, period in metrics_requested.items():
-                if metric not in metric_map:
-                    raise InvalidQueryStringError("Invalid metric in query string: '{}'".format(metric))
-                if period not in self.VALID_METRIC_PERIODS:
-                    raise InvalidQueryStringError("Invalid period for metric: '{}'".format(period))
-                metric_class = metric_map[metric]
-                if period == 'total':
-                    after = None
-                else:
-                    after = timezone.now() - self.TIMEDELTA_MAP[period]
-                queryset = self.get_annotated_queryset_with_metrics(queryset, metric_class, metric, after)
-        return queryset
+        return self._add_metrics(queryset, method=self.get_annotated_queryset_with_metrics)
 
     # Override get_default_queryset for convenience
     def get_default_queryset(self):

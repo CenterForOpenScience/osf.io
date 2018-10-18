@@ -153,6 +153,7 @@ class PreprintDetail(MetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateD
     def add_metric_to_object(self, obj, metric_class, metric_name, after):
         count = metric_class.get_count_for_preprint(obj, after=after)
         setattr(obj, metric_name, count)
+        return obj
 
     def get_object(self):
         preprint = self.get_preprint()
