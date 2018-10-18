@@ -53,6 +53,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
 from django.utils import timezone
 from framework.auth.core import get_user
+from framework.auth.views import send_confirm_email
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
 from framework.utils import throttle_period_expired
@@ -890,6 +891,14 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
 
         if not email:
             raise NotFound
+
+        # check for resend confirmation email query parameter in a GET request
+        resend_confirmation = self.request.query_params.get('resend_confirmation')
+        if self.request.method == 'GET' and resend_confirmation:
+            if not confirmed and settings.CONFIRM_REGISTRATIONS_BY_EMAIL and resend_confirmation.lower() == 'true':
+                send_confirm_email(user, email=address)
+                user.email_last_sent = timezone.now()
+                user.save()
 
         return UserEmail(email_id=email_id, address=address, confirmed=confirmed, verified=verified, primary=primary, is_merge=is_merge)
 
