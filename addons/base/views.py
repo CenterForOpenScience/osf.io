@@ -27,11 +27,9 @@ from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
 from framework.routing import json_renderer, proxy_url
-from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
-from addons.base import exceptions
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
@@ -48,7 +46,6 @@ from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
-
 ERROR_MESSAGES = {'FILE_GONE': u"""
 <style>
 #toggleBar{{display: none;}}
@@ -278,49 +275,45 @@ def get_auth(auth, **kwargs):
     path = data.get('path')
     version = data.get('version')
 
-    try:
-        credentials = None
-        waterbutler_settings = None
-        fileversion = None
-        if provider_name == 'osfstorage':
-            if path:
-                file_id = path.strip('/')
-                # check to see if this is a file or a folder
-                filenode = OsfStorageFileNode.load(path.strip('/'))
-                if filenode and filenode.is_file:
-                    # default to most recent version if none is provided in the response
-                    version = version or filenode.versions.count()
-                    if auth.user:
-                        mark_file_version_as_seen(auth.user, filenode, version)
-                    if not node.is_contributor(auth.user):
-                        download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
-                        # version index is 0 based
-                        version_index = version - 1
-                        if action == 'render':
-                            update_analytics(node, file_id, version_index, 'view')
-                        elif action == 'download' and not download_is_from_mfr:
-                            update_analytics(node, file_id, version_index, 'download')
-                    try:
-                        fileversion = FileVersion.objects.filter(
-                            basefilenode___id=file_id,
-                            identifier=version
-                        ).select_related('region').get()
-                    except FileVersion.DoesNotExist:
-                        raise HTTPError(httplib.BAD_REQUEST)
-            if fileversion:
-                region = fileversion.region
-                credentials = region.waterbutler_credentials
-                waterbutler_settings = fileversion.serialize_waterbutler_settings(
-                    node_id=provider_settings.owner._id,
-                    root_id=provider_settings.root_node._id,
-                )
-        # If they haven't been set by version region, use the NodeSettings region
-        if not (credentials and waterbutler_settings):
-            credentials = provider_settings.serialize_waterbutler_credentials()
-            waterbutler_settings = provider_settings.serialize_waterbutler_settings()
-    except exceptions.AddonError:
-        log_exception()
-        raise HTTPError(httplib.BAD_REQUEST)
+    credentials = None
+    waterbutler_settings = None
+    fileversion = None
+    if provider_name == 'osfstorage':
+        if path:
+            file_id = path.strip('/')
+            # check to see if this is a file or a folder
+            filenode = OsfStorageFileNode.load(path.strip('/'))
+            if filenode and filenode.is_file:
+                # default to most recent version if none is provided in the response
+                version = version or filenode.versions.count()
+                if auth.user:
+                    mark_file_version_as_seen(auth.user, filenode, version)
+                if not node.is_contributor(auth.user):
+                    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
+                    # version index is 0 based
+                    version_index = version - 1
+                    if action == 'render':
+                        update_analytics(node, file_id, version_index, 'view')
+                    elif action == 'download' and not download_is_from_mfr:
+                        update_analytics(node, file_id, version_index, 'download')
+                try:
+                    fileversion = FileVersion.objects.filter(
+                        basefilenode___id=file_id,
+                        identifier=version
+                    ).select_related('region').get()
+                except FileVersion.DoesNotExist:
+                    raise HTTPError(httplib.BAD_REQUEST)
+        if fileversion:
+            region = fileversion.region
+            credentials = region.waterbutler_credentials
+            waterbutler_settings = fileversion.serialize_waterbutler_settings(
+                node_id=provider_settings.owner._id,
+                root_id=provider_settings.root_node._id,
+            )
+    # If they haven't been set by version region, use the NodeSettings region
+    if not (credentials and waterbutler_settings):
+        credentials = provider_settings.serialize_waterbutler_credentials()
+        waterbutler_settings = provider_settings.serialize_waterbutler_settings()
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
