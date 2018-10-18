@@ -126,8 +126,8 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
     owner = models.ForeignKey('OSFUser', db_index=True, blank=True, null=True, on_delete=models.SET_NULL)
     name = models.CharField(max_length=100, blank=False, null=False, db_index=True)
 
-    # This field is a space delimited list of scopes, e.g. "osf.full_read osf.full_write"
-    scopes = models.CharField(blank=False, null=False, max_length=300)
+    # Temporary field so scopes can be properly related to tokens
+    scopes = models.ManyToManyField('ApiOAuth2Scope', related_name='tokens', blank=False)
 
     is_active = models.BooleanField(default=True, db_index=True)
 
