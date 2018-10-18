@@ -8,7 +8,20 @@ from api.base.exceptions import InvalidQueryStringError
 from osf import features
 
 
-class MetricMixin(object):
+class MetricsViewMixin(object):
+    """Mixin for views that expose metrics via django-elasticsearch-metrics.
+    Enables metrics to be requested with a query parameter, like so: ::
+
+        /v2/myview?metrics[downloads]=monthly
+
+    Any subclass of this mixin MUST do the following:
+
+    * Use a serializer_class that subclasses MetricsSerializerMixin
+    * Define metric_map as a class variable. It should be dict mapping metric name
+    ("downloads") to a Metric class (PreprintDownload)
+    * For list views: implement `get_annotated_queryset_with_metrics`
+    * For detail views: implement `add_metric_to_object`
+    """
     # Adapted from FilterMixin.QUERY_PATTERN
     METRICS_QUERY_PATTERN = re.compile(r'^metrics\[(?P<metric_name>((?:,*\s*\w+)*))\]$')
     TIMEDELTA_MAP = {
@@ -27,15 +40,15 @@ class MetricMixin(object):
 
     @property
     def metric_map(self):
-        raise NotImplementedError('MetricMixin sublcasses must define a metric_map class variable.')
+        raise NotImplementedError('MetricsViewMixin sublcasses must define a metric_map class variable.')
 
     def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
         """Return a queryset annotated with metrics. Use for list endpoints that expose metrics."""
-        raise NotImplementedError('MetricMixin subclasses must define get_annotated_queryset_with_metrics().')
+        raise NotImplementedError('MetricsViewMixin subclasses must define get_annotated_queryset_with_metrics().')
 
     def add_metric_to_object(self, obj, metric_class, metric_name, after):
         """Set an attribute for a metric on obj. Use for detail endpoints that expose metrics."""
-        raise NotImplementedError('MetricMixin subclasses must define add_metric_to_object().')
+        raise NotImplementedError('MetricsViewMixin subclasses must define add_metric_to_object().')
 
     @property
     def metrics_requested(self):
@@ -104,7 +117,7 @@ class MetricMixin(object):
 
     # Override get_default_queryset for convenience
     def get_default_queryset(self):
-        queryset = super(MetricMixin, self).get_default_queryset()
+        queryset = super(MetricsViewMixin, self).get_default_queryset()
         return self.get_metrics_queryset(queryset)
 
 class MetricsSerializerMixin(object):

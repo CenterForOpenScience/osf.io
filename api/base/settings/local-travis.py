@@ -18,4 +18,3 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
 }
 
 ALLOWED_HOSTS.append('localhost')
-# TODO: Remove this when we're using Elasticsearch 6 for everything

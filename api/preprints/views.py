@@ -38,7 +38,7 @@ from api.preprints.permissions import PreprintPublishedOrAdmin, ModeratorIfNever
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
-from api.base.metrics import MetricMixin
+from api.base.metrics import MetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
 
 class PreprintMixin(NodeMixin):
@@ -62,7 +62,7 @@ class PreprintMixin(NodeMixin):
         return preprint
 
 
-class PreprintList(MetricMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
+class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_list).
     """
     # These permissions are not checked for the list of preprints, permissions handled by the query
@@ -112,7 +112,7 @@ class PreprintList(MetricMixin, JSONAPIBaseView, generics.ListCreateAPIView, Pre
     def get_queryset(self):
         return self.get_queryset_from_request()
 
-    # overrides MetricMixin
+    # overrides MetricsViewMixin
     def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
         return metric_class.get_top_by_count(
             qs=queryset,
@@ -123,7 +123,7 @@ class PreprintList(MetricMixin, JSONAPIBaseView, generics.ListCreateAPIView, Pre
         )
 
 
-class PreprintDetail(MetricMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(MetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
     permission_classes = (
