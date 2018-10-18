@@ -13,6 +13,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
     ProjectFactory,
+    ApiOAuth2ScopeFactory,
     Auth,
 )
 from osf.utils.permissions import CREATOR_PERMISSIONS
@@ -367,15 +368,18 @@ class TestUsersCreate:
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
-            scopes='osf.users.create'
         )
+        scope = ApiOAuth2ScopeFactory()
+        scope.name = 'osf.users.create'
+        scope.save()
+        token.scopes.add(scope)
 
         mock_cas_resp = CasResponse(
             authenticated=True,
             user=user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
+                'accessTokenScope': [s.name for s in token.scopes.all()]
             }
         )
         mock_auth.return_value = user, mock_cas_resp
@@ -404,15 +408,19 @@ class TestUsersCreate:
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
-            scopes='osf.users.create'
+
         )
+        scope = ApiOAuth2ScopeFactory()
+        scope.name = 'osf.users.create'
+        scope.save()
+        token.scopes.add(scope)
 
         mock_cas_resp = CasResponse(
             authenticated=True,
             user=user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
+                'accessTokenScope': [s.name for s in token.scopes.all()]
             }
         )
         mock_auth.return_value = user, mock_cas_resp
@@ -442,15 +450,18 @@ class TestUsersCreate:
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
-            scopes='osf.users.create'
         )
+        scope = ApiOAuth2ScopeFactory()
+        scope.name = 'osf.users.create'
+        scope.save()
+        token.scopes.add(scope)
 
         mock_cas_resp = CasResponse(
             authenticated=True,
             user=user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
+                'accessTokenScope': [s.name for s in token.scopes.all()]
             }
         )
         mock_auth.return_value = user, mock_cas_resp
@@ -480,15 +491,20 @@ class TestUsersCreate:
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Unauthorized Token',
-            scopes='osf.full_write'
         )
+        token.save()
+
+        scope = ApiOAuth2ScopeFactory()
+        scope.name = 'unauthorized scope'
+        scope.save()
+        token.scopes.add(scope)
 
         mock_cas_resp = CasResponse(
             authenticated=True,
             user=user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
+                'accessTokenScope': [s.name for s in token.scopes.all()]
             }
         )
         mock_auth.return_value = user, mock_cas_resp
@@ -517,15 +533,18 @@ class TestUsersCreate:
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Admin Token',
-            scopes='osf.admin'
         )
+        scope = ApiOAuth2ScopeFactory()
+        scope.name = 'osf.admin'
+        scope.save()
+        token.scopes.add(scope)
 
         mock_cas_resp = CasResponse(
             authenticated=True,
             user=user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
+                'accessTokenScope': [s.name for s in token.scopes.all()]
             }
         )
         mock_auth.return_value = user, mock_cas_resp

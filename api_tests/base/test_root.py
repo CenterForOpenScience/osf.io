@@ -8,7 +8,8 @@ from django.utils import timezone
 import pytest
 from tests.base import ApiTestCase
 from osf_tests.factories import (
-    AuthUserFactory
+    AuthUserFactory,
+    ApiOAuth2ScopeFactory,
 )
 
 from api.base.settings.defaults import API_BASE
@@ -93,15 +94,19 @@ class TestWelcomeToApi(ApiTestCase):
         token = ApiOAuth2PersonalToken(
             owner=self.user,
             name='Admin Token',
-            scopes='osf.admin'
         )
+        token.save()
+        scope = ApiOAuth2ScopeFactory()
+        scope.name = 'osf.admin'
+        scope.save()
+        token.scopes.add(scope)
 
         mock_cas_resp = CasResponse(
             authenticated=True,
             user=self.user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
+                'accessTokenScope': [s.name for s in token.scopes.all()]
             }
         )
         mock_auth.return_value = self.user, mock_cas_resp
@@ -120,15 +125,19 @@ class TestWelcomeToApi(ApiTestCase):
         token = ApiOAuth2PersonalToken(
             owner=self.user,
             name='Admin Token',
-            scopes=' '.join([key for key in public_scopes if key != 'osf.admin'])
         )
+        token.save()
+        scope = ApiOAuth2ScopeFactory()
+        scope.name = 'osf.full_write'
+        scope.save()
+        token.scopes.add(scope)
 
         mock_cas_resp = CasResponse(
             authenticated=True,
             user=self.user._id,
             attributes={
                 'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
+                'accessTokenScope': [s.name for s in token.scopes.all()]
             }
         )
         mock_auth.return_value = self.user, mock_cas_resp
