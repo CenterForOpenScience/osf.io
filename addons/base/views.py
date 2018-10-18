@@ -278,45 +278,35 @@ def get_auth(auth, **kwargs):
     path = data.get('path')
     version = data.get('version')
 
-    if path and auth.user:
-        mark_file_version_as_seen(auth.user, path, version)
-
-    if path:
-        if not node.is_contributor(auth.user):
-            download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
-            file_id = path.strip('/')
-
-            # When no version is provided we default to the most recent indexed at 0
-            version_num = version if version is not None else OsfStorageFile.objects.get(_id=file_id).versions.count() - 1
-
-            if action == 'render':
-                update_analytics(node, file_id, version_num, 'view')
-            elif action == 'download' and not download_is_from_mfr:
-                update_analytics(node, file_id, version_num, 'download')
-
     try:
         credentials = None
         waterbutler_settings = None
         fileversion = None
         if provider_name == 'osfstorage':
-            if path and version:
+            if path:
+                file_id = path.strip('/')
                 # check to see if this is a file or a folder
                 filenode = OsfStorageFileNode.load(path.strip('/'))
                 if filenode and filenode.is_file:
+                    # default to most recent version if none is provided in the response
+                    version = version or filenode.versions.count()
+                    if auth.user:
+                        mark_file_version_as_seen(auth.user, filenode, version)
+                    if not node.is_contributor(auth.user):
+                        download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
+                        # version index is 0 based
+                        version_index = version - 1
+                        if action == 'render':
+                            update_analytics(node, file_id, version_index, 'view')
+                        elif action == 'download' and not download_is_from_mfr:
+                            update_analytics(node, file_id, version_index, 'download')
                     try:
                         fileversion = FileVersion.objects.filter(
-                            basefilenode___id=path.strip('/'),
+                            basefilenode___id=file_id,
                             identifier=version
                         ).select_related('region').get()
                     except FileVersion.DoesNotExist:
                         raise HTTPError(httplib.BAD_REQUEST)
-            # path and no version, use most recent version
-            elif path:
-                filenode = OsfStorageFileNode.load(path.strip('/'))
-                if filenode and filenode.is_file:
-                    fileversion = FileVersion.objects.filter(
-                        basefilenode=filenode
-                    ).select_related('region').order_by('-created').first()
             if fileversion:
                 region = fileversion.region
                 credentials = region.waterbutler_credentials
@@ -363,18 +353,12 @@ DOWNLOAD_ACTIONS = set([
 ])
 
 
-def mark_file_version_as_seen(user, path, version):
+def mark_file_version_as_seen(user, file_to_update, version):
     """
     Mark a file version as seen by the given user.
-    If no version is included, default to the most recent version.
     """
-    file_to_update = OsfStorageFileNode.load(path.strip('/'))
-    if file_to_update and file_to_update.is_file:
-        if version:
-            file_version = file_to_update.versions.get(identifier=version)
-        else:
-            file_version = file_to_update.versions.order_by('-created').first()
-        FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
+    file_version = file_to_update.versions.get(identifier=version)
+    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
 
 
 @must_be_signed
