@@ -4,8 +4,10 @@ import pytest
 
 from osf_tests.factories import (
     ApiOAuth2PersonalTokenFactory,
+    ApiOAuth2ScopeFactory,
     AuthUserFactory,
 )
+from osf.models.oauth import ApiOAuth2PersonalToken
 from website.util import api_v2_url
 from osf.utils import sanitize
 
@@ -36,7 +38,11 @@ class TestTokenList:
         return api_v2_url('tokens/', base_route='/')
 
     @pytest.fixture()
-    def data_sample(self):
+    def read_scope(self):
+        return ApiOAuth2ScopeFactory()
+
+    @pytest.fixture()
+    def data_sample(self, read_scope):
         return {
             'data': {
                 'type': 'tokens',
@@ -45,6 +51,14 @@ class TestTokenList:
                     'scopes': 'osf.full_write',
                     'owner': 'Value discarded',
                     'token_id': 'Value discarded',
+                },
+                'relationships': {
+                    'scopes': {
+                        'data': [{
+                            'type': 'scopes',
+                            'id': read_scope.name
+                        }]
+                    }
                 }
             }
         }
@@ -72,16 +86,18 @@ class TestTokenList:
         res = app.get(url_token_list, auth=user_one.auth)
         assert res.status_code == 200
         assert (len(res.json['data']) == len(tokens_user_one) - 1)
-
+    #
     def test_created_tokens_are_tied_to_request_user_with_data_specified(
-            self, app, url_token_list, data_sample, user_one):
+            self, app, url_token_list, data_sample, user_one, read_scope):
         res = app.post_json_api(
             url_token_list,
             data_sample,
             auth=user_one.auth)
         assert res.status_code == 201
 
-        assert res.json['data']['attributes']['owner'] == user_one._id
+        assert res.json['data']['relationships']['owner']['data']['id'] == user_one._id
+        assert len(res.json['data']['embeds']['scopes']['data']) == 1
+        assert res.json['data']['embeds']['scopes']['data'][0]['id'] == read_scope.name
         # Some fields aren't writable; make sure user can't set these
         assert (res.json['data']['attributes']['token_id'] !=
                 data_sample['data']['attributes']['token_id'])
@@ -122,9 +138,23 @@ class TestTokenList:
         res = app.get(url_token_list, expect_errors=True)
         assert res.status_code == 401
 
-    def test_cannot_create_admin_token(
+    def test_cannot_create_token_with_nonexistant_scope(
             self, app, url_token_list, data_sample, user_one):
-        data_sample['data']['attributes']['scopes'] = 'osf.admin'
+        data_sample['data']['relationships']['scopes']['data'][0]['id'] = 'osf.admin'
+        res = app.post_json_api(
+            url_token_list,
+            data_sample,
+            auth=user_one.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 404
+
+    def test_cannot_create_token_with_private_scope(
+            self, app, url_token_list, data_sample, user_one):
+        scope = ApiOAuth2ScopeFactory()
+        scope.is_public = False
+        scope.save()
+        data_sample['data']['relationships']['scopes']['data'][0]['id'] = scope.name
         res = app.post_json_api(
             url_token_list,
             data_sample,
@@ -134,14 +164,27 @@ class TestTokenList:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User requested invalid scope'
 
-    def test_cannot_create_usercreate_token(
-            self, app, url_token_list, data_sample, user_one):
-        data_sample['data']['attributes']['scopes'] = 'osf.users.create'
+    def test_add_multiple_scopes_when_creating_token(
+            self, app, url_token_list, data_sample, user_one, read_scope):
+        write_scope = ApiOAuth2ScopeFactory()
+        data_sample['data']['relationships']['scopes']['data'].append(
+            {
+                'type': 'scopes',
+                'id': write_scope.name
+            }
+        )
         res = app.post_json_api(
             url_token_list,
             data_sample,
             auth=user_one.auth,
             expect_errors=True
         )
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'User requested invalid scope'
+        assert res.status_code == 201
+        assert len(res.json['data']['embeds']['scopes']['data']) == 2
+        assert res.json['data']['embeds']['scopes']['data'][0]['id'] == read_scope.name
+        assert res.json['data']['embeds']['scopes']['data'][1]['id'] == write_scope.name
+        token = ApiOAuth2PersonalToken.objects.get(_id=res.json['data']['id'])
+        assert len(token.scopes.all()) == 2
+        token_scope_names = [scope.name for scope in token.scopes.all()]
+        assert read_scope.name in token_scope_names
+        assert write_scope.name in token_scope_names

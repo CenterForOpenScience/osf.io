@@ -3,22 +3,35 @@ import pytest
 
 from osf_tests.factories import (
     ApiOAuth2PersonalTokenFactory,
+    ApiOAuth2ScopeFactory,
     AuthUserFactory,
 )
 from tests.base import assert_dict_contains_subset
 from website.util import api_v2_url
 
-
+@pytest.mark.django_db
 def post_payload(
         type_payload='tokens',
-        scopes='osf.full_write',
+        scopes=None,
         name='A shiny updated token'):
+    if not scopes:
+        scopes = ApiOAuth2ScopeFactory().name
     return {
         'data': {
             'type': type_payload,
             'attributes': {
                 'name': name,
-                'scopes': scopes,
+            },
+            'relationships': {
+                'scopes': {
+                    'data': [
+                        {
+                            'type': 'scopes',
+                            'id': scopes
+                        }
+                    ]
+
+                }
             }
         }
     }
@@ -47,6 +60,10 @@ class TestTokenDetail:
     @pytest.fixture()
     def url_token_list(self):
         return api_v2_url('tokens/', base_route='/')
+
+    @pytest.fixture()
+    def read_scope(self):
+        return ApiOAuth2ScopeFactory()
 
     def test_token_detail_who_can_view(
             self, app, url_token_detail, user_one,
@@ -82,7 +99,7 @@ class TestTokenDetail:
 
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_updating_one_field_should_not_blank_others_on_patch_update(
-            self, mock_revoke, app, token_user_one, url_token_detail, user_one):
+            self, mock_revoke, app, token_user_one, url_token_detail, user_one, read_scope):
         mock_revoke.return_value = True
         user_one_token = token_user_one
         new_name = 'The token formerly known as Prince'
@@ -92,10 +109,20 @@ class TestTokenDetail:
                 'data': {
                     'attributes': {
                         'name': new_name,
-                        'scopes': 'osf.full_write'
                     },
                     'id': token_user_one._id,
-                    'type': 'tokens'
+                    'type': 'tokens',
+                    'relationships': {
+                        'scopes': {
+                            'data': [
+                                {
+                                    'type': 'scopes',
+                                    'id': read_scope.name
+                                }
+                            ]
+
+                        }
+                    }
                 }
             },
             auth=user_one.auth)
@@ -104,16 +131,17 @@ class TestTokenDetail:
 
         assert_dict_contains_subset(
             {
-                'owner': user_one_token.owner._id,
                 'name': new_name,
-                'scopes': '{}'.format(user_one_token.scopes),
             },
             res.json['data']['attributes'])
         assert res.json['data']['id'] == user_one_token._id
+        assert res.json['data']['relationships']['owner']['data']['id'] == user_one_token.owner._id
+        assert len(res.json['data']['embeds']['scopes']['data']) == 1
+        assert res.json['data']['embeds']['scopes']['data'][0]['id'] == read_scope.name
 
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_updating_an_instance_does_not_change_the_number_of_instances(
-            self, mock_revoke, app, url_token_detail, url_token_list, token_user_one, user_one):
+            self, mock_revoke, app, url_token_detail, url_token_list, token_user_one, user_one, read_scope):
         mock_revoke.return_value = True
         new_name = 'The token formerly known as Prince'
         res = app.patch_json_api(
@@ -121,7 +149,17 @@ class TestTokenDetail:
             {'data': {
                 'attributes': {
                     'name': new_name,
-                    'scopes': 'osf.full_write'
+                },
+                'relationships': {
+                    'scopes': {
+                        'data': [
+                            {
+                                'type': 'scopes',
+                                'id': read_scope.name
+                            }
+                        ]
+
+                    }
                 },
                 'id': token_user_one._id,
                 'type': 'tokens'}},
@@ -181,7 +219,7 @@ class TestTokenDetail:
             expect_errors=True)
         assert res.status_code == 403
 
-        # test_create_with_admin_scope_fails
+        # test_create_with_nonexistant_scope_fails
         injected_scope = post_payload(
             name='A shiny invalid token',
             scopes='osf.admin')
@@ -190,12 +228,15 @@ class TestTokenDetail:
             injected_scope,
             auth=user_one.auth,
             expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 404
 
-        # test_create_with_fake_scope_fails
+        # test_create_with_private_scope_fails
+        fake_scope = ApiOAuth2ScopeFactory()
+        fake_scope.is_public = False
+        fake_scope.save()
         nonsense_scope = post_payload(
             name='A shiny invalid token',
-            scopes='osf.nonsense')
+            scopes=fake_scope.name)
         res = app.post_json_api(
             url_token_list,
             nonsense_scope,
@@ -203,7 +244,7 @@ class TestTokenDetail:
             expect_errors=True)
         assert res.status_code == 400
 
-        # test_update_with_admin_scope_fails
+        # test_update_with_nonexistant_scope_fails
         injected_scope = post_payload(
             name='A shiny invalid token',
             scopes='osf.admin')
@@ -212,12 +253,12 @@ class TestTokenDetail:
             injected_scope,
             auth=user_one.auth,
             expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 404
 
-        # test_update_with_fake_scope_fails
+        # test_update_with_private_scope_fails
         nonsense_scope = post_payload(
             name='A shiny invalid token',
-            scopes='osf.nonsense')
+            scopes=fake_scope.name)
         res = app.put_json_api(
             url_token_detail,
             nonsense_scope,
@@ -270,21 +311,6 @@ class TestTokenDetail:
         res = app.patch_json_api(
             url_token_detail,
             missing_type,
-            auth=user_one.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-
-        # test_partial_update_token_no_attributes
-        payload = {
-            'data':
-                {'id': token_user_one._id,
-                 'type': 'tokens',
-                 'name': 'The token formerly known as Prince'
-                 }
-        }
-        res = app.patch_json_api(
-            url_token_detail,
-            payload,
             auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400

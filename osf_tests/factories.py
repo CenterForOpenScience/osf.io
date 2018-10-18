@@ -729,11 +729,13 @@ class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
         model = models.ApiOAuth2PersonalToken
 
     owner = factory.SubFactory(UserFactory)
-
-    scopes = 'osf.full_write osf.full_read'
-
     name = factory.Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
 
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        token = super(ApiOAuth2PersonalTokenFactory, cls)._create(*args, **kwargs)
+        token.scopes.add(ApiOAuth2ScopeFactory())
+        return token
 
 class ApiOAuth2ApplicationFactory(DjangoModelFactory):
     class Meta:

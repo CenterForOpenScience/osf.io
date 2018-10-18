@@ -1,10 +1,15 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from framework.auth.oauth_scopes import public_scopes
-from osf.models import ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2PersonalToken, ApiOAuth2Scope
 
-from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField, RelationshipField
+
+
+class TokenScopesRelationshipField(RelationshipField):
+
+    def to_internal_value(self, data):
+        return {'scopes': data}
 
 
 class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
@@ -18,16 +23,18 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         required=True,
     )
 
-    owner = ser.CharField(
-        help_text='The user who owns this token',
-        read_only=True,  # Don't let user register a token in someone else's name
-        source='owner._id',
-    )
+    # TODO VERSION
+    # owner = ser.CharField(
+    #     help_text='The user who owns this token',
+    #     read_only=True,  # Don't let user register a token in someone else's name
+    #     source='owner._id',
+    # )
 
-    scopes = ser.CharField(
-        help_text='Governs permissions associated with this token',
-        required=True,
-    )
+    # TODO VERSION w/ serializer method field
+    # scopes = ser.CharField(
+    #     help_text='Governs permissions associated with this token',
+    #     required=True,
+    # )
 
     token_id = ser.CharField(read_only=True, allow_blank=True)
 
@@ -37,6 +44,18 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     links = LinksField({
         'html': 'absolute_url',
     })
+
+    owner = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<owner._id>'},
+    )
+
+    scopes = TokenScopesRelationshipField(
+        related_view='tokens:token-scopes-list',
+        related_view_kwargs={'_id': '<_id>'},
+        always_embed=True,
+        read_only=False,
+    )
 
     def absolute_url(self, obj):
         return obj.absolute_url
@@ -56,13 +75,15 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         return data
 
     def create(self, validated_data):
-        validate_requested_scopes(validated_data)
+        scopes = validate_requested_scopes(validated_data.pop('scopes', None))
         instance = ApiOAuth2PersonalToken(**validated_data)
         instance.save()
+        for scope in scopes:
+            instance.scopes.add(scope)
         return instance
 
     def update(self, instance, validated_data):
-        validate_requested_scopes(validated_data)
+        scopes = validate_requested_scopes(validated_data.pop('scopes', None))
         assert isinstance(instance, ApiOAuth2PersonalToken), 'instance must be an ApiOAuth2PersonalToken'
 
         instance.deactivate(save=False)  # This will cause CAS to revoke the existing token but still allow it to be used in the future, new scopes will be updated properly at that time.
@@ -73,11 +94,28 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
                 continue
             else:
                 setattr(instance, attr, value)
+        if scopes:
+            update_scopes(instance, scopes)
+
         instance.save()
         return instance
 
-def validate_requested_scopes(validated_data):
-    scopes_set = set(validated_data.get('scopes', '').split(' '))
-    for scope in scopes_set:
-        if scope not in public_scopes or not public_scopes[scope].is_public:
-            raise exceptions.ValidationError('User requested invalid scope')
+def update_scopes(token, scopes):
+    to_remove = token.scopes.difference(scopes)
+    to_add = scopes.difference(token.scopes.all())
+    for scope in to_remove:
+        token.scopes.remove(scope)
+    for scope in to_add:
+        token.scopes.add(scope)
+    return
+
+def validate_requested_scopes(data):
+    if not data:
+        return []
+    scopes = ApiOAuth2Scope.objects.filter(name__in=data)
+    if len(scopes) != len(data):
+        raise exceptions.NotFound
+
+    if scopes.filter(is_public=False):
+        raise exceptions.ValidationError('User requested invalid scope')
+    return scopes
