@@ -42,11 +42,11 @@ class ReviewActionPermission(drf_permissions.BasePermission):
 
         if request.method in drf_permissions.SAFE_METHODS:
             # Moderators and node contributors can view actions
-            is_node_contributor = target is not None and target.node.has_permission(auth.user, osf_permissions.READ)
+            is_node_contributor = target is not None and target.has_permission(auth.user, osf_permissions.READ)
             return is_node_contributor or auth.user.has_perm('view_actions', provider)
         else:
             # Moderators and node admins can trigger state changes.
-            is_node_admin = target is not None and target.node.has_permission(auth.user, osf_permissions.ADMIN)
+            is_node_admin = target is not None and target.has_permission(auth.user, osf_permissions.ADMIN)
             if not (is_node_admin or auth.user.has_perm('view_submissions', provider)):
                 return False
 

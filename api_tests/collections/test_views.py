@@ -224,7 +224,7 @@ class TestCollectionCreate:
             'data': {
                 'type': 'collections',
                 'attributes': {
-                    'title': 'A' * 201,
+                    'title': 'A' * 513,
                 }
             }
         }
@@ -233,7 +233,7 @@ class TestCollectionCreate:
             auth=user_one.auth, expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
     def test_create_bookmark_collection(
             self, app, bookmark_user_one,
@@ -780,7 +780,7 @@ class TestCollectionUpdate(CollectionCRUDTestCase):
                 'type': 'collections',
                 'id': collection._id,
                 'attributes': {
-                    'title': 'A' * 201,
+                    'title': 'A' * 513,
                     'category': 'project',
                 }
             }
@@ -790,7 +790,7 @@ class TestCollectionUpdate(CollectionCRUDTestCase):
             auth=user_one.auth, expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
 
 @pytest.mark.django_db

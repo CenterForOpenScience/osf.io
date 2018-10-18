@@ -13,7 +13,7 @@ from api.requests.permissions import NodeRequestPermission, PreprintRequestPermi
 from api.requests.serializers import NodeRequestSerializer, PreprintRequestSerializer
 from api.providers.permissions import MustBeModerator
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Node, NodeRequest, PreprintRequest, PreprintService
+from osf.models import Node, NodeRequest, PreprintRequest, Preprint
 
 
 class RequestMixin(object):
@@ -60,7 +60,7 @@ class PreprintRequestMixin(RequestMixin):
     serializer_class = PreprintRequestSerializer
     request_class = PreprintRequest
     request_display_name = 'preprint request'
-    target_class = PreprintService
+    target_class = Preprint
     target_display_name = 'preprint'
     target_lookup_url_kwarg = 'preprint_id'
     request_lookup_url_kwarg = 'request_id'

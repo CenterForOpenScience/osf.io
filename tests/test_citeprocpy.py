@@ -86,8 +86,7 @@ class TestCiteprocpyMLA(OsfTestCase):
         self.user = UserFactory(fullname='John Tordoff')
         self.second_contrib = UserFactory(fullname='Carson Wentz')
         self.third_contrib = UserFactory(fullname='Nick Foles')
-        self.preprint = PreprintFactory(creator=self.user)
-        self.preprint.node.title = 'My Preprint'
+        self.preprint = PreprintFactory(creator=self.user, title='My Preprint')
         date = timezone.now().date()
         self.formated_date = date.strftime(self.MLA_DATE_FORMAT).format(month=self.MLA_MONTH_MAP[date.month])
 
@@ -95,7 +94,7 @@ class TestCiteprocpyMLA(OsfTestCase):
     def test_render_citations_mla_one_author(self):
         citation = render_citation(self.preprint, 'modern-language-association')
         assert_equal(citation, u'Tordoff, John. “{}.” {}, {}. Web.'.format(
-            self.preprint.node.title,
+            self.preprint.title,
             self.preprint.provider.name,
             self.formated_date)
         )
@@ -105,7 +104,7 @@ class TestCiteprocpyMLA(OsfTestCase):
         self.user.save()
         citation = render_citation(self.preprint, 'modern-language-association')
         assert_equal(citation, u'Tordoff, John, Junior. “{}.” {}, {}. Web.'.format(
-            self.preprint.node.title,
+            self.preprint.title,
             self.preprint.provider.name,
             self.formated_date)
         )
@@ -116,50 +115,50 @@ class TestCiteprocpyMLA(OsfTestCase):
         self.user.save()
         citation = render_citation(self.preprint, 'modern-language-association')
         assert_equal(citation, u'Tordoff, John. “{}.” {}, {}. Web.'.format(
-            self.preprint.node.title,
+            self.preprint.title,
             self.preprint.provider.name,
             self.formated_date)
         )
 
     def test_citation_no_repeated_periods(self):
-        self.preprint.node.title = 'A Study of Coffee.'
-        self.preprint.node.save()
+        self.preprint.title = 'A Study of Coffee.'
+        self.preprint.save()
         citation = render_citation(self.preprint, 'modern-language-association')
         assert_equal(citation, u'Tordoff, John. “{}” {}, {}. Web.'.format(
-                self.preprint.node.title,
+                self.preprint.title,
                 self.preprint.provider.name,
                 self.formated_date)
         )
 
     def test_citation_osf_provider(self):
-        self.preprint.node.title = 'A Study of Coffee.'
-        self.preprint.node.save()
+        self.preprint.title = 'A Study of Coffee.'
+        self.preprint.save()
         self.preprint.provider.name = 'Open Science Framework'
         self.preprint.provider.save()
         citation = render_citation(self.preprint, 'modern-language-association')
         assert_equal(citation, u'Tordoff, John. “{}” {}, {}. Web.'.format(
-                self.preprint.node.title,
+                self.preprint.title,
                 'OSF Preprints',
                 self.formated_date)
         )
 
     def test_two_authors(self):
-        self.preprint.node.add_contributor(self.second_contrib)
-        self.preprint.node.save()
+        self.preprint.add_contributor(self.second_contrib)
+        self.preprint.save()
         citation = render_citation(self.preprint, 'modern-language-association')
         assert_equal(citation, u'Tordoff, John, and Carson Wentz. “{}.” {}, {}. Web.'.format(
-                self.preprint.node.title,
+                self.preprint.title,
                 self.preprint.provider.name,
                 self.formated_date)
         )
 
     def test_three_authors(self):
-        self.preprint.node.add_contributor(self.second_contrib)
-        self.preprint.node.add_contributor(self.third_contrib)
-        self.preprint.node.save()
+        self.preprint.add_contributor(self.second_contrib)
+        self.preprint.add_contributor(self.third_contrib)
+        self.preprint.save()
         citation = render_citation(self.preprint, 'modern-language-association')
         assert_equal(citation, u'Tordoff, John, et al. “{}.” {}, {}. Web.'.format(
-                self.preprint.node.title,
+                self.preprint.title,
                 self.preprint.provider.name,
                 self.formated_date)
         )
@@ -169,8 +168,7 @@ class TestCiteprocpyMLA(OsfTestCase):
         self.user.save()
         citation = render_citation(self.preprint, 'modern-language-association')
         assert_equal(citation, u'Tordoff, John, Jr., et al. “{}.” {}, {}. Web.'.format(
-                self.preprint.node.title,
+                self.preprint.title,
                 self.preprint.provider.name,
                 self.formated_date)
         )
-

@@ -45,7 +45,7 @@
                     {{ request.preprint.id }}
                 </a>
             </td>
-            <td> {{ request.preprint.node.title|truncatewords:10 }} </td>
+            <td> {{ request.preprint.title|truncatewords:10 }} </td>
             <td> {{ request.creator.fullname }} </td>
             <td> {{ request.created }} </td>
             <td style="max-width:500px;">

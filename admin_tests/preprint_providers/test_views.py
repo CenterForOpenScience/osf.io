@@ -80,6 +80,7 @@ class TestShareSourcePreprintProvider(AdminTestCase):
         assert self.preprint_provider.access_token == token
         assert self.preprint_provider.share_source == label
 
+
 class TestPreprintProviderChangeForm(AdminTestCase):
     def setUp(self):
         super(TestPreprintProviderChangeForm, self).setUp()
@@ -341,7 +342,7 @@ class TestDeletePreprintProvider(DeleteProviderMixinBase):
 
     @pytest.fixture()
     def provider_with_preprint(self, preprint, provider):
-        provider.preprint_services.add(preprint)
+        provider.preprints.add(preprint)
         provider.save()
         return provider
 

@@ -22,9 +22,10 @@ from framework.forms import utils as form_utils
 from framework.routing import proxy_url
 from website import settings
 
-from addons.osfstorage.models import Region
 from osf import features
-from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node, Registration
+from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, Registration
+from addons.osfstorage.models import Region
+
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from website.ember_osf_web.views import use_ember_app
@@ -98,7 +99,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'api_url': node.api_url,
             'title': node.title,
             'category': node.category,
-            'isPreprint': bool(node.preprint_file_id),
+            'is_supplemental_project': node.has_linked_published_preprints,
             'childExists': Node.objects.get_children(node, active=True).exists(),
             'is_admin': node.has_permission(user, permissions.ADMIN),
             'is_contributor': node.is_contributor(user),
@@ -245,7 +246,7 @@ def resolve_guid(guid, suffix=None):
         # Handle file `/download` shortcut with supported types.
         if suffix and suffix.rstrip('/').lower() == 'download':
             file_referent = None
-            if isinstance(referent, PreprintService) and referent.primary_file:
+            if isinstance(referent, Preprint) and referent.primary_file:
                 if not referent.is_published:
                     # TODO: Ideally, permissions wouldn't be checked here.
                     # This is necessary to prevent a logical inconsistency with
@@ -254,7 +255,7 @@ def resolve_guid(guid, suffix=None):
                     auth = Auth.from_kwargs(request.args.to_dict(), {})
                     # Check if user isn't a nonetype or that the user has admin/moderator/superuser permissions
                     if auth.user is None or not (auth.user.has_perm('view_submissions', referent.provider) or
-                            referent.node.has_permission(auth.user, permissions.ADMIN)):
+                            referent.has_permission(auth.user, permissions.ADMIN)):
                         raise HTTPError(http.NOT_FOUND)
 
                 file_referent = referent.primary_file
@@ -270,7 +271,7 @@ def resolve_guid(guid, suffix=None):
                 return proxy_url(url)
 
         # Handle Ember Applications
-        if isinstance(referent, PreprintService):
+        if isinstance(referent, Preprint):
             if referent.provider.domain_redirect_enabled:
                 # This route should always be intercepted by nginx for the branded domain,
                 # w/ the exception of `<guid>/download` handled above.
@@ -282,7 +283,7 @@ def resolve_guid(guid, suffix=None):
 
             return send_from_directory(preprints_dir, 'index.html')
 
-        if isinstance(referent, BaseFileNode) and referent.is_file and referent.target.is_quickfiles:
+        if isinstance(referent, BaseFileNode) and referent.is_file and (getattr(referent.target, 'is_quickfiles', False)):
             if referent.is_deleted:
                 raise HTTPError(http.GONE)
             if PROXY_EMBER_APPS:

@@ -5,31 +5,31 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from osf.models import Guid, PreprintService
+from osf.models import Guid, Preprint
 
 logger = logging.getLogger(__name__)
 
 def confirm_spam(guid):
-    is_preprint = isinstance(guid.referent, PreprintService)
-    node, referent_type = (guid.referent.node, 'preprint') if is_preprint else (guid.referent, 'node')
+    node = guid.referent
+    referent_type = 'preprint' if isinstance(node, Preprint) else 'node'
 
-    logger.info('Marking {} {} as spam...'.format(referent_type, guid.referent._id))
-    content = node._get_spam_content(saved_fields={'is_public', } | node.SPAM_CHECK_FIELDS)[:300]
+    logger.info('Marking {} {} as spam...'.format(referent_type, node._id))
+
+    saved_fields = {'is_public', } if referent_type == 'node' else {'is_published', }
+
+    content = node._get_spam_content(saved_fields | node.SPAM_CHECK_FIELDS)[:300]
     # spam_data must be populated in order for confirm_spam to work
-    guid.referent.spam_data['headers'] = {
+    node.spam_data['headers'] = {
         'Remote-Addr': '',
         'User-Agent': '',
         'Referer': '',
     }
-    guid.referent.spam_data['content'] = content
-    guid.referent.spam_data['author'] = node.creator.fullname
-    guid.referent.spam_data['author_email'] = node.creator.username
-    guid.referent.confirm_spam()
-    guid.referent.save()
-    if not is_preprint:
-        for preprint in guid.referent.preprints.get_queryset():
-            logger.info('Marked preprint {} of node {} as spam...'.format(preprint._id, guid.referent._id))
-            preprint.confirm_spam(save=True)
+    node.spam_data['content'] = content
+    node.spam_data['author'] = node.creator.fullname
+    node.spam_data['author_email'] = node.creator.username
+    node.confirm_spam()
+    node.save()
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):

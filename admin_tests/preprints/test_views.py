@@ -6,7 +6,8 @@ from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission, Group, AnonymousUser
 
-from osf.models import PreprintService
+from tests.base import AdminTestCase
+from osf.models import Preprint, OSFUser, PreprintLog
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
@@ -87,7 +88,7 @@ class TestPreprintView:
     def test_get_object(self, req, preprint, plain_view):
         view = setup_view(plain_view(), req, guid=preprint._id)
         res = view.get_object()
-        assert isinstance(res, PreprintService)
+        assert isinstance(res, Preprint)
 
     def test_no_user_permissions_raises_error(self, user, preprint, plain_view):
         request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
@@ -146,14 +147,14 @@ class TestPreprintView:
         view = setup_view(view, request, guid=flagged_preprint._id)
         view.delete(request)
 
-        assert flagged_preprint.node.is_public
+        assert flagged_preprint.is_public
 
         flagged_preprint.refresh_from_db()
-        flagged_preprint.node.refresh_from_db()
+        flagged_preprint.refresh_from_db()
 
         assert flagged_preprint.is_spam
-        assert flagged_preprint.node.is_spam
-        assert not flagged_preprint.node.is_public
+        assert flagged_preprint.is_spam
+        assert not flagged_preprint.is_public
 
     def test_confirm_ham(self, preprint, superuser):
         request = RequestFactory().post('/fake_path')
@@ -164,14 +165,14 @@ class TestPreprintView:
         view.delete(request)
 
         preprint.refresh_from_db()
-        preprint.node.refresh_from_db()
+        preprint.refresh_from_db()
 
         assert preprint.spam_status == SpamStatus.HAM
-        assert preprint.node.spam_status == SpamStatus.HAM
-        assert preprint.node.is_public
+        assert preprint.spam_status == SpamStatus.HAM
+        assert preprint.is_public
 
     def test_correct_view_permissions(self, user, preprint, plain_view):
-        view_permission = Permission.objects.get(codename='view_preprintservice')
+        view_permission = Permission.objects.get(codename='view_preprint')
         user.user_permissions.add(view_permission)
         user.save()
 
@@ -189,8 +190,8 @@ class TestPreprintView:
             plain_view.as_view()(request, guid=preprint._id)
 
     def test_change_preprint_provider_correct_permission(self, user, preprint, plain_view):
-        change_permission = Permission.objects.get(codename='change_preprintservice')
-        view_permission = Permission.objects.get(codename='view_preprintservice')
+        change_permission = Permission.objects.get(codename='change_preprint')
+        view_permission = Permission.objects.get(codename='view_preprint')
         user.user_permissions.add(change_permission)
         user.user_permissions.add(view_permission)
         user.save()
@@ -231,7 +232,7 @@ class TestPreprintFormView:
 
     def test_correct_view_permissions(self, url, user, view):
 
-        view_permission = Permission.objects.get(codename='view_preprintservice')
+        view_permission = Permission.objects.get(codename='view_preprint')
         user.user_permissions.add(view_permission)
         user.save()
 
@@ -242,10 +243,13 @@ class TestPreprintFormView:
         assert response.status_code == 200
 
 @pytest.mark.urls('admin.base.urls')
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+@pytest.mark.enable_implicit_clean
 class TestPreprintReindex:
-
     @mock.patch('website.preprints.tasks.send_share_preprint_data')
     @mock.patch('website.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
     def test_reindex_preprint_share(self, mock_reindex_preprint, preprint, req):
         preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
         preprint.provider.save()
@@ -257,6 +261,179 @@ class TestPreprintReindex:
 
         assert mock_reindex_preprint.called
         assert AdminLogEntry.objects.count() == count + 1
+
+    @mock.patch('website.search.search.update_preprint')
+    def test_reindex_preprint_elastic(self, mock_update_search, preprint, req):
+        count = AdminLogEntry.objects.count()
+        view = views.PreprintReindexElastic()
+        view = setup_log_view(view, req, guid=preprint._id)
+        view.delete(req)
+
+        assert mock_update_search.called
+        assert AdminLogEntry.objects.count() == count + 1
+
+
+class TestPreprintDeleteView(AdminTestCase):
+    def setUp(self):
+        super(TestPreprintDeleteView, self).setUp()
+        self.user = AuthUserFactory()
+        self.preprint = PreprintFactory(creator=self.user)
+        self.request = RequestFactory().post('/fake_path')
+        self.plain_view = views.PreprintDeleteView
+        self.view = setup_log_view(self.plain_view(), self.request,
+                                   guid=self.preprint._id)
+
+        self.url = reverse('preprints:remove', kwargs={'guid': self.preprint._id})
+
+    def test_get_object(self):
+        obj = self.view.get_object()
+        assert isinstance(obj, Preprint)
+
+    def test_get_context(self):
+        res = self.view.get_context_data(object=self.preprint)
+        assert 'guid' in res
+        assert res.get('guid') == self.preprint._id
+
+    def test_remove_preprint(self):
+        count = AdminLogEntry.objects.count()
+        self.view.delete(self.request)
+        self.preprint.refresh_from_db()
+        assert self.preprint.deleted is not None
+        assert AdminLogEntry.objects.count() == count + 1
+
+    def test_restore_preprint(self):
+        self.view.delete(self.request)
+        self.preprint.refresh_from_db()
+        assert self.preprint.deleted is not None
+        count = AdminLogEntry.objects.count()
+        self.view.delete(self.request)
+        self.preprint.reload()
+        assert self.preprint.deleted is None
+        assert AdminLogEntry.objects.count() == count + 1
+
+    def test_no_user_permissions_raises_error(self):
+        guid = self.preprint._id
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with pytest.raises(PermissionDenied):
+            self.plain_view.as_view()(request, guid=guid, user_id=self.user)
+
+    def test_correct_view_permissions(self):
+        user = AuthUserFactory()
+        guid = self.preprint._id
+        change_permission = Permission.objects.get(codename='delete_preprint')
+        view_permission = Permission.objects.get(codename='view_preprint')
+        user.user_permissions.add(change_permission)
+        user.user_permissions.add(view_permission)
+        user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = user
+
+        response = self.plain_view.as_view()(request, guid=guid)
+        assert response.status_code == 200
+
+
+class TestRemoveContributor(AdminTestCase):
+    def setUp(self):
+        super(TestRemoveContributor, self).setUp()
+        self.user = AuthUserFactory()
+        self.preprint = PreprintFactory(creator=self.user)
+        self.user_2 = AuthUserFactory()
+        self.preprint.add_contributor(self.user_2)
+        self.preprint.save()
+        self.view = views.PreprintRemoveContributorView
+        self.request = RequestFactory().post('/fake_path')
+        self.url = reverse('preprints:remove_user', kwargs={'guid': self.preprint._id, 'user_id': self.user._id})
+
+    def test_get_object(self):
+        view = setup_log_view(self.view(), self.request, guid=self.preprint._id,
+                              user_id=self.user._id)
+        preprint, user = view.get_object()
+        assert isinstance(preprint, Preprint)
+        assert isinstance(user, OSFUser)
+
+    @mock.patch('admin.preprints.views.Preprint.remove_contributor')
+    def test_remove_contributor(self, mock_remove_contributor):
+        user_id = self.user_2._id
+        preprint_id = self.preprint._id
+        view = setup_log_view(self.view(), self.request, guid=preprint_id,
+                              user_id=user_id)
+        view.delete(self.request)
+        mock_remove_contributor.assert_called_with(self.user_2, None, log=False)
+
+    def test_integration_remove_contributor(self):
+        assert self.user_2 in self.preprint.contributors
+        view = setup_log_view(self.view(), self.request, guid=self.preprint._id,
+                              user_id=self.user_2._id)
+        count = AdminLogEntry.objects.count()
+        view.delete(self.request)
+        assert self.user_2 not in self.preprint.contributors
+        assert AdminLogEntry.objects.count() == count + 1
+
+    def test_do_not_remove_last_admin(self):
+        assert len(list(self.preprint.get_admin_contributors(self.preprint.contributors))) == 1
+        view = setup_log_view(self.view(), self.request, guid=self.preprint._id,
+                              user_id=self.user._id)
+        count = AdminLogEntry.objects.count()
+        view.delete(self.request)
+        self.preprint.reload()  # Reloads instance to show that nothing was removed
+        assert len(list(self.preprint.contributors)) == 2
+        assert len(list(self.preprint.get_admin_contributors(self.preprint.contributors))) == 1
+        assert AdminLogEntry.objects.count() == count
+
+    def test_no_log(self):
+        view = setup_log_view(self.view(), self.request, guid=self.preprint._id,
+                              user_id=self.user_2._id)
+        view.delete(self.request)
+        assert self.preprint.logs.latest().action != PreprintLog.CONTRIB_REMOVED
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with pytest.raises(PermissionDenied):
+            self.view.as_view()(request, guid=self.preprint._id, user_id=self.user)
+
+    def test_correct_view_permissions(self):
+        change_permission = Permission.objects.get(codename='change_preprint')
+        view_permission = Permission.objects.get(codename='view_preprint')
+        self.user.user_permissions.add(change_permission)
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.view.as_view()(request, guid=self.preprint._id, user_id=self.user._id)
+        assert response.status_code == 200
+
+
+class TestPreprintConfirmHamSpamViews(AdminTestCase):
+    def setUp(self):
+        super(TestPreprintConfirmHamSpamViews, self).setUp()
+        self.request = RequestFactory().post('/fake_path')
+        self.user = AuthUserFactory()
+        self.preprint = PreprintFactory(creator=self.user)
+
+    def test_confirm_preprint_as_ham(self):
+        view = views.PreprintConfirmHamView()
+        view = setup_log_view(view, self.request, guid=self.preprint._id)
+        view.delete(self.request)
+
+        self.preprint.refresh_from_db()
+        assert self.preprint.spam_status == 4
+
+    def test_confirm_preprint_as_spam(self):
+        assert self.preprint.is_public
+        view = views.PreprintConfirmSpamView()
+        view = setup_log_view(view, self.request, guid=self.preprint._id)
+        view.delete(self.request)
+
+        self.preprint.refresh_from_db()
+        assert self.preprint.spam_status == 2
+        assert not self.preprint.is_public
 
 @pytest.mark.urls('admin.base.urls')
 class TestPreprintWithdrawalRequests:

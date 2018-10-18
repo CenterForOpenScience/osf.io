@@ -174,8 +174,8 @@
 
     % endif  ## End registration undismissable labels
 
-    % if node['preprint_file_id'] and user['is_contributor'] and not node['is_public'] and node['has_published_preprint']:
-        <div class="alert alert-info">This ${node['node_type']} has a preprint, but has been made Private. Make your preprint discoverable by making this ${node['node_type']} Public.</div>
+    % if node['is_supplemental_project'] and user['is_contributor'] and not node['is_public']:
+        <div class="alert alert-info">This ${node['node_type']} contains supplemental materials for a preprint, but has been made Private. Make your supplemental materials discoverable by making this ${node['node_type']} Public.</div>
     % endif
 
     % if node['anonymous'] and user['is_contributor']:

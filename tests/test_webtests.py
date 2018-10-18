@@ -12,6 +12,7 @@ import pytest
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import re
 
+from django.utils import timezone
 from addons.wiki.utils import to_mongo_key
 from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
@@ -1042,58 +1043,245 @@ class TestPreprintBannerView(OsfTestCase):
         super(TestPreprintBannerView, self).setUp()
 
         self.admin = AuthUserFactory()
+        self.write_contrib = AuthUserFactory()
+        self.read_contrib = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
         self.provider_one = PreprintProviderFactory()
-        self.provider_two = PreprintProviderFactory()
         self.project_one = ProjectFactory(creator=self.admin, is_public=True)
-        self.project_two = ProjectFactory(creator=self.admin, is_public=True)
-        self.project_three = ProjectFactory(creator=self.admin, is_public=True)
 
         self.subject_one = SubjectFactory()
-        self.subject_two = SubjectFactory()
-
-        self.file_one = test_utils.create_test_file(self.project_one, self.admin, 'mgla.pdf')
-        self.file_two = test_utils.create_test_file(self.project_two, self.admin, 'saor.pdf')
-
-        self.published_preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=self.project_one, is_published=True)
-        self.unpublished_preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider_two, subjects=[[self.subject_two._id]], project=self.project_two, is_published=False)
+        self.preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=self.project_one, is_published=True)
+        self.preprint.add_contributor(self.write_contrib, 'write')
+        self.preprint.add_contributor(self.read_contrib, 'read')
 
     def test_public_project_published_preprint(self):
         url = self.project_one.web_url_for('view_project')
-        res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
 
-    def test_private_project_published_preprint(self):
-        self.project_one.is_public = False
-        self.project_one.save()
-        url = self.project_one.web_url_for('view_project')
+        # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_in('Has supplemental materials for', res.body)
+
+    def test_public_project_abandoned_preprint(self):
+        self.preprint.machine_state = 'initial'
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_not_in('Has supplemental materials for', res.body)
+
+    def test_public_project_deleted_preprint(self):
+        self.preprint.deleted = timezone.now()
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_not_in('Has supplemental materials for', res.body)
+
+    def test_public_project_private_preprint(self):
+        self.preprint.is_public = False
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_not_in('Has supplemental materials for', res.body)
+
+    def test_public_project_orphaned_preprint(self):
+        self.preprint.primary_file = None
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_not_in('Has supplemental materials for', res.body)
 
     def test_public_project_unpublished_preprint(self):
-        url = self.project_two.web_url_for('view_project')
-        res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        self.preprint.is_published = False
+        self.preprint.save()
 
-    def test_private_project_unpublished_preprint(self):
-        # Do not show banner on unpublished preprints
-        self.project_two.is_public = False
-        self.project_two.save()
-        url = self.project_two.web_url_for('view_project')
-        res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        url = self.project_one.web_url_for('view_project')
 
-    def test_public_project_no_preprint(self):
-        url = self.project_three.web_url_for('view_project')
+        # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
-    def test_private_project_no_preprint(self):
-        self.project_three.is_public = False
-        self.project_three.save()
-        url = self.project_three.web_url_for('view_project')
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_not_in('Has supplemental materials for', res.body)
+
+    def test_public_project_pending_preprint_post_moderation(self):
+        self.preprint.machine_state = 'pending'
+        provider = PreprintProviderFactory(reviews_workflow='post-moderation')
+        self.preprint.provider = provider
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending', res.body)
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending', res.body)
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending', res.body)
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_in('on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending', res.body)
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_in('on {}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending', res.body)
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+
+    def test_public_project_pending_preprint_pre_moderation(self):
+        self.preprint.machine_state = 'pending'
+        provider = PreprintProviderFactory(reviews_workflow='pre-moderation')
+        self.preprint.provider = provider
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending', res.body)
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending', res.body)
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending', res.body)
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending', res.body)
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending', res.body)
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
 if __name__ == '__main__':
     unittest.main()

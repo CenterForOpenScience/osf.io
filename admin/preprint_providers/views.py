@@ -253,13 +253,13 @@ class DeletePreprintProvider(PermissionRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
-        if preprint_provider.preprint_services.count() > 0:
+        if preprint_provider.preprints.count() > 0:
             return redirect('preprint_providers:cannot_delete', preprint_provider_id=preprint_provider.pk)
         return super(DeletePreprintProvider, self).delete(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
-        if preprint_provider.preprint_services.count() > 0:
+        if preprint_provider.preprints.count() > 0:
             return redirect('preprint_providers:cannot_delete', preprint_provider_id=preprint_provider.pk)
         return super(DeletePreprintProvider, self).get(request, *args, **kwargs)
 

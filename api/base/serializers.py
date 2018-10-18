@@ -20,7 +20,7 @@ from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
-from osf.models import AbstractNode, MaintenanceState
+from osf.models import AbstractNode, MaintenanceState, Preprint
 from website import settings
 from website.project.model import has_anonymous_link
 
@@ -118,7 +118,7 @@ class ShowIfVersion(ConditionalField):
     or not before the feature's latest supported version.
     """
 
-    def __init__(self, field, min_version, max_version, **kwargs):
+    def __init__(self, field, min_version=None, max_version=None, **kwargs):
         super(ShowIfVersion, self).__init__(field, **kwargs)
         self.min_version = min_version
         self.max_version = max_version
@@ -169,6 +169,24 @@ class HideIfDisabled(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class HideIfPreprint(ConditionalField):
+    """
+    If object is a preprint or related to a preprint, hide the field.
+    """
+
+    def should_hide(self, instance):
+        if getattr(instance, 'node', False) and isinstance(getattr(instance, 'node', False), Preprint):
+            # Sometimes a "node" might be a preprint object where node/preprint code is shared
+            return True
+
+        return isinstance(instance, Preprint) \
+            or isinstance(getattr(instance, 'target', None), Preprint) \
+            or isinstance(getattr(instance, 'preprint', False), Preprint)
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
+
+
 class NoneIfWithdrawal(ConditionalField):
     """
     If preprint is withdrawn, this field (attribute or relationship) should return None instead of hidden.
@@ -192,10 +210,12 @@ class HideIfWithdrawal(ConditionalField):
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
 
+
 class HideIfNotWithdrawal(ConditionalField):
 
     def should_hide(self, instance):
         return not instance.is_retracted
+
 
 class HideIfWikiDisabled(ConditionalField):
     """
@@ -815,7 +835,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 return {'data': None}
 
         related_url = url['related']
-        related_path = urlparse(related_url).path
+        related_path = urlparse(related_url).path if related_url else None
         related_meta = self.get_meta_information(self.related_meta, value)
         self_url = url['self']
         self_meta = self.get_meta_information(self.self_meta, value)

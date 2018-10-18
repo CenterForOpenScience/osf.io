@@ -8,6 +8,7 @@ ValidationError = DjangoValidationError
 ValidationValueError = DjangoValidationError
 ValidationTypeError = DjangoValidationError
 
+
 class TokenError(Exception):
     pass
 
@@ -102,8 +103,10 @@ def reraise_django_validation_errors():
     except DjangoValidationError as err:
         raise ValidationError(*err.args)
 
+
 class NaiveDatetimeException(Exception):
     pass
+
 
 class InvalidTriggerError(Exception):
     def __init__(self, trigger, state, valid_triggers):
@@ -113,9 +116,25 @@ class InvalidTriggerError(Exception):
         self.message = 'Cannot trigger "{}" from state "{}". Valid triggers: {}'.format(trigger, state, valid_triggers)
         super(Exception, self).__init__(self.message)
 
+
 class InvalidTransitionError(Exception):
     def __init__(self, machine, transition):
         self.message = 'Machine "{}" received invalid transitions: "{}" expected but not defined'.format(machine, transition)
+
+
+class PreprintError(OSFError):
+    """Raised when an action cannot be performed on a Preprint model"""
+    pass
+
+
+class PreprintStateError(PreprintError):
+    """Raised when the Preprint's state is not suitable for the requested action"""
+    pass
+
+
+class PreprintProviderError(PreprintError):
+    """Raised when there is an error with the preprint provider"""
+    pass
 
 
 class BlacklistedEmailError(OSFError):

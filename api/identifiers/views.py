@@ -1,8 +1,10 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
+from api.preprints.permissions import PreprintIdentifierDetailPermissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
 from api.base.serializers import JSONAPISerializer
@@ -14,7 +16,7 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
 )
 
-from osf.models import Node, Registration, PreprintService, Identifier
+from osf.models import Node, Registration, Preprint, Identifier
 
 
 class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -108,6 +110,7 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        PreprintIdentifierDetailPermissions,
     )
 
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
@@ -124,9 +127,13 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
                 return NodeIdentifierSerializer
             if isinstance(referent, Registration):
                 return RegistrationIdentifierSerializer
-            if isinstance(referent, PreprintService):
+            if isinstance(referent, Preprint):
                 return PreprintIdentifierSerializer
         return JSONAPISerializer
 
     def get_object(self):
-        return Identifier.load(self.kwargs['identifier_id'])
+        identifier = Identifier.load(self.kwargs['identifier_id'])
+        if not identifier or getattr(identifier.referent, 'deleted', False) or getattr(identifier.referent, 'is_deleted', False):
+            raise NotFound
+        self.check_object_permissions(self.request, identifier)
+        return identifier

@@ -1,5 +1,6 @@
 import pytest
 from urlparse import urlparse
+from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -9,6 +10,7 @@ from osf_tests.factories import (
     NodeFactory,
     PreprintFactory
 )
+from osf.utils.workflows import DefaultStates
 
 
 @pytest.mark.django_db
@@ -41,6 +43,10 @@ class TestIdentifierDetail:
         return NodeFactory(creator=user, is_public=True)
 
     @pytest.fixture()
+    def noncontrib(self, user):
+        return AuthUserFactory()
+
+    @pytest.fixture()
     def identifier_node(self, node):
         return IdentifierFactory(referent=node)
 
@@ -52,6 +58,15 @@ class TestIdentifierDetail:
     @pytest.fixture()
     def data_node(self, res_node):
         return res_node.json['data']
+
+    @pytest.fixture()
+    def preprint(self, user):
+        preprint = PreprintFactory(creator=user)
+        return preprint
+
+    @pytest.fixture()
+    def identifier_preprint(self, user, preprint):
+        return IdentifierFactory(referent=preprint)
 
     def test_identifier_registration_detail(
             self, registration, identifier_registration,
@@ -95,6 +110,170 @@ class TestIdentifierDetail:
 
         # test_identifier_detail_returns_correct_value_node
         assert data_node['attributes']['value'] == identifier_node.value
+
+    def test_identifier_preprint_detail(
+            self, app, preprint, identifier_preprint,
+            user
+    ):
+        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+
+        res = app.get(url, expect_errors=True)
+
+        # test_identifier_detail_success_preprint
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        data = res.json['data']
+
+        # test_identifier_detail_returns_correct_referent_preprint
+        path = urlparse(
+            data['relationships']['referent']['links']['related']['href']
+        ).path
+        assert '/{}preprints/{}/'.format(API_BASE, preprint._id) == path
+
+        # test_identifier_detail_returns_correct_category_preprint
+        assert data['attributes']['category'] == identifier_preprint.category
+
+        # test_identifier_detail_returns_correct_value_preprint
+        assert data['attributes']['value'] == identifier_preprint.value
+
+    def test_identifier_preprint_detail_unpublished(
+            self, app, preprint, user, identifier_preprint, noncontrib
+    ):
+        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+        preprint.is_published = False
+        preprint.save()
+
+        # test_unpublished_preprint_identifier_unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_unpublished_preprint_identifier_noncontrib_authenticated
+        read_user = AuthUserFactory()
+        res = app.get(url, auth=noncontrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_unpublished_preprint_identifier_readcontrib_authenticated
+        read_user = AuthUserFactory()
+        preprint.add_contributor(read_user, 'read', save=True)
+        res = app.get(url, auth=read_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # test_unpublished_preprint_identifier_admin_authenticated
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+
+    def test_identifier_preprint_detail_deleted(
+            self, app, preprint, user, identifier_preprint, noncontrib
+    ):
+        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+        preprint.deleted = timezone.now()
+        preprint.save()
+
+        # test_deleted_preprint_identifier_unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 404
+
+        # test_deleted_preprint_identifier_noncontrib_authenticated
+        read_user = AuthUserFactory()
+        res = app.get(url, auth=noncontrib.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        # test_deleted_preprint_identifier_readcontrib_authenticated
+        read_user = AuthUserFactory()
+        preprint.add_contributor(read_user, 'read', save=True)
+        res = app.get(url, auth=read_user.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        # test_deleted_preprint_identifier_admin_authenticated
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_identifier_preprint_detail_private(
+            self, app, preprint, user, identifier_preprint, noncontrib
+    ):
+        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+        preprint.is_public = False
+        preprint.save()
+
+        # test_private_preprint_identifier_unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_private_preprint_identifier_noncontrib_authenticated
+        read_user = AuthUserFactory()
+        res = app.get(url, auth=noncontrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_private_preprint_identifier_readcontrib_authenticated
+        read_user = AuthUserFactory()
+        preprint.add_contributor(read_user, 'read', save=True)
+        res = app.get(url, auth=read_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # test_private_preprint_identifier_admin_authenticated
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_identifier_preprint_detail_abandoned(
+            self, app, preprint, user, identifier_preprint, noncontrib
+    ):
+        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.save()
+
+        # test_abandoned_preprint_identifier_unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_abandoned_preprint_identifier_noncontrib_authenticated
+        read_user = AuthUserFactory()
+        res = app.get(url, auth=noncontrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_abandoned_preprint_identifier_readcontrib_authenticated
+        read_user = AuthUserFactory()
+        preprint.add_contributor(read_user, 'read', save=True)
+        res = app.get(url, auth=read_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_abandoned_preprint_identifier_admin_authenticated
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_identifier_preprint_detail_orphaned(
+            self, app, preprint, user, identifier_preprint, noncontrib
+    ):
+        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
+        preprint.primary_file = None
+        preprint.save()
+
+        # test_orphaned_preprint_identifier_unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_orphaned_preprint_identifier_noncontrib_authenticated
+        read_user = AuthUserFactory()
+        res = app.get(url, auth=noncontrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_orphaned_preprint_identifier_readcontrib_authenticated
+        read_user = AuthUserFactory()
+        preprint.add_contributor(read_user, 'read', save=True)
+        res = app.get(url, auth=read_user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # test_orphaned_preprint_identifier_admin_authenticated
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_invalid_identifier(
+            self, app, user
+    ):
+        url = '/{}identifiers/{}/'.format(API_BASE, 'invalid_id')
+
+        # test_unpublished_preprint_identifier_unauthenticated
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
 
     def test_identifier_preprint_detail_datacite_doi(self, app, user):
         """ Make sure dois with the temporary category legacy_doi show up

@@ -27,6 +27,9 @@ REINDEX_ELASTIC = 51
 APPROVE_WITHDRAWAL = 60
 REJECT_WITHDRAWAL = 61
 
+PREPRINT_REMOVED = 70
+PREPRINT_RESTORED = 71
+
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     AdminLogEntry.objects.log_action(
         user_id=user_id,

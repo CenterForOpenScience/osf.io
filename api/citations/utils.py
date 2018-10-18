@@ -9,8 +9,7 @@ from citeproc.source.json import CiteProcJSON
 
 from framework.exceptions import HTTPError
 from framework.auth import utils
-from osf.models import PreprintService, CitationStyle
-from website.citations.utils import datetime_to_csl
+from osf.models.citation import CitationStyle
 from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
 
 
@@ -18,36 +17,6 @@ def clean_up_common_errors(cit):
     cit = re.sub(r'\.+', '.', cit)
     cit = re.sub(r' +', ' ', cit)
     return cit
-
-
-def display_absolute_url(node):
-    url = node.absolute_url
-    if url is not None:
-        return re.sub(r'https?:', '', url).strip('/')
-
-
-def preprint_csl(preprint, node):
-    csl = node.csl
-
-    csl['id'] = preprint._id
-    csl['publisher'] = 'OSF Preprints' if preprint.provider.name == 'Open Science Framework' else preprint.provider.name
-    csl['URL'] = display_absolute_url(preprint)
-
-    if preprint.original_publication_date:
-        csl['issued'] = datetime_to_csl(preprint.original_publication_date)
-
-    if csl.get('DOI'):
-        csl.pop('DOI')
-
-    article_doi = preprint.article_doi
-    preprint_doi = preprint.preprint_doi
-
-    if article_doi:
-        csl['DOI'] = article_doi
-    elif preprint_doi and preprint.is_published and preprint.preprint_doi_created:
-        csl['DOI'] = preprint_doi
-    return csl
-
 
 def process_name(node, user):
     # If the user has a family and given name, use those
@@ -76,12 +45,8 @@ def process_name(node, user):
 def render_citation(node, style='apa'):
     """Given a node, return a citation"""
     reformat_styles = ['apa', 'chicago-author-date', 'modern-language-association']
-    csl = None
-    if isinstance(node, PreprintService):
-        csl = preprint_csl(node, node.node)
-        data = [csl, ]
-    else:
-        data = [node.csl, ]
+    csl = node.csl
+    data = [csl, ]
 
     bib_source = CiteProcJSON(data)
 
@@ -125,17 +90,12 @@ def render_citation(node, style='apa'):
         if (style in reformat_styles):
             cit = add_period_to_title(cit)
 
-    if isinstance(node, PreprintService):
-        cit_node = node.node
-    else:
-        cit_node = node
-
     if style == 'apa':
-        cit = apa_reformat(cit_node, cit)
+        cit = apa_reformat(node, cit)
     if style == 'chicago-author-date':
-        cit = chicago_reformat(cit_node, cit)
+        cit = chicago_reformat(node, cit)
     if style == 'modern-language-association':
-        cit = mla_reformat(cit_node, cit)
+        cit = mla_reformat(node, cit)
 
     return cit
 
@@ -221,7 +181,8 @@ def remove_extra_period_after_right_quotation(cit):
 
 def chicago_reformat(node, cit):
     cit = remove_extra_period_after_right_quotation(cit)
-    new_csl = cit.split(str(node.csl['issued']['date-parts'][0][0]), 1)
+    issued = node.csl.get('issued')
+    new_csl = cit.split(str(issued['date-parts'][0][0]) if issued else 'n.d.', 1)
     contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
     # throw error if there is no visible contributor
@@ -249,12 +210,12 @@ def chicago_reformat(node, cit):
         rest = ', '.join(name_list)
         rest = rest.rstrip(',') + ', et al.'
         new_chi += ', ' + rest
-
     if new_chi[-1] != '.':
         new_chi += '.'
     cit = new_chi
     for x in new_csl[1:]:
-        cit += ' ' + str(node.csl['issued']['date-parts'][0][0]) + x
+        year = str(issued['date-parts'][0][0]) if issued else 'n.d.'
+        cit += ' ' + year + x
     return cit
 
 def mla_name(name, initial=False):

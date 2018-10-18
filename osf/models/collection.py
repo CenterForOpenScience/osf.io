@@ -102,7 +102,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         'contenttypes.ContentType',
         related_name='+',
         limit_choices_to={
-            'model__in': ['abstractnode', 'basefilenode', 'collection', 'preprintservice']
+            'model__in': ['abstractnode', 'basefilenode', 'collection', 'preprint']
         })
     title = models.CharField(max_length=200, validators=[validate_title])
     collected_type_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)

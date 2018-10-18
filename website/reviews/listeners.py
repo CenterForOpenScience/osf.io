@@ -10,9 +10,9 @@ from website.reviews import signals as reviews_signals
 def reviews_notification(self, creator, template, context, action):
     # Avoid AppRegistryNotReady error
     from website.notifications.emails import notify_global_event
-    recipients = list(action.target.node.contributors)
+    recipients = list(action.target.contributors)
     time_now = action.created if action is not None else timezone.now()
-    node = action.target.node
+    node = action.target
     notify_global_event(
         event='global_reviews',
         sender_user=creator,
@@ -39,7 +39,7 @@ def reviews_submit_notification(self, recipients, context):
     for recipient in recipients:
         user_subscriptions = get_user_subscriptions(recipient, event_type)
         context['no_future_emails'] = user_subscriptions['none']
-        context['is_creator'] = recipient == context['reviewable'].node.creator
+        context['is_creator'] = recipient == context['reviewable'].creator
         context['provider_name'] = context['reviewable'].provider.name
         mails.send_mail(
             recipient.username,
@@ -62,7 +62,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     # Get NotificationSubscription instance, which contains reference to all subscribers
     provider_subscription = NotificationSubscription.load('{}_new_pending_submissions'.format(context['reviewable'].provider._id))
     # Set message
-    context['message'] = u'submitted "{}".'.format(context['reviewable'].node.title)
+    context['message'] = u'submitted "{}".'.format(context['reviewable'].title)
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['referrer'])
     # Set submission url
@@ -72,7 +72,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
                         'email_transactional',
                         'new_pending_submissions',
                         context['referrer'],
-                        context['reviewable'].node,
+                        context['reviewable'],
                         timestamp,
                         abstract_provider=context['reviewable'].provider,
                         **context)
@@ -82,7 +82,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
                         'email_digest',
                         'new_pending_submissions',
                         context['referrer'],
-                        context['reviewable'].node,
+                        context['reviewable'],
                         timestamp,
                         abstract_provider=context['reviewable'].provider,
                         **context)
@@ -104,7 +104,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
     preprint_word = preprint.provider.preprint_word
 
     # Set message
-    context['message'] = u'has requested withdrawal of the {} "{}".'.format(preprint_word, preprint.node.title)
+    context['message'] = u'has requested withdrawal of the {} "{}".'.format(preprint_word, preprint.title)
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['requester'])
     # Set submission url
@@ -116,7 +116,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
                         'email_transactional',
                         'new_pending_submissions',
                         context['requester'],
-                        preprint.node,
+                        preprint,
                         timestamp,
                         abstract_provider=preprint.provider,
                         **context)
@@ -126,7 +126,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
                         'email_digest',
                         'new_pending_submissions',
                         context['requester'],
-                        preprint.node,
+                        preprint,
                         timestamp,
                         abstract_provider=preprint.provider,
                         **context)

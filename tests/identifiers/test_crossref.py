@@ -34,13 +34,12 @@ def preprint():
     provider = PreprintProviderFactory()
     provider.doi_prefix = '10.31219'
     provider.save()
-    node = ProjectFactory(creator=user, preprint_article_doi='10.31219/FK2osf.io/test!')
     license_details = {
         'id': node_license.license_id,
         'year': '2017',
         'copyrightHolders': ['Jeff Hardy', 'Matt Hardy']
     }
-    preprint = PreprintFactory(provider=provider, project=node, is_published=True, license_details=license_details)
+    preprint = PreprintFactory(provider=provider, article_doi='10.31219/FK2osf.io/test!', is_published=True, license_details=license_details)
     preprint.license.node_license.url = 'https://creativecommons.org/licenses/by/4.0/legalcode'
     return preprint
 
@@ -105,16 +104,16 @@ class TestCrossRefClient:
 
         # body
         contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
-        assert len(contributors.getchildren()) == len(preprint.node.visible_contributors)
+        assert len(contributors.getchildren()) == len(preprint.visible_contributors)
 
         assert root.find('.//{%s}group_title' % crossref.CROSSREF_NAMESPACE).text == preprint.provider.name
-        assert root.find('.//{%s}title' % crossref.CROSSREF_NAMESPACE).text == preprint.node.title
+        assert root.find('.//{%s}title' % crossref.CROSSREF_NAMESPACE).text == preprint.title
         assert root.find('.//{%s}item_number' % crossref.CROSSREF_NAMESPACE).text == 'osf.io/{}'.format(preprint._id)
-        assert root.find('.//{%s}abstract/' % crossref.JATS_NAMESPACE).text == preprint.node.description
+        assert root.find('.//{%s}abstract/' % crossref.JATS_NAMESPACE).text == preprint.description
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).text == 'https://creativecommons.org/licenses/by/4.0/legalcode'
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).get('start_date') == preprint.date_published.strftime('%Y-%m-%d')
 
-        assert root.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS).text == preprint.node.preprint_article_doi
+        assert root.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS).text == preprint.article_doi
         assert root.find('.//{%s}doi' % crossref.CROSSREF_NAMESPACE).text == settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
         assert root.find('.//{%s}resource' % crossref.CROSSREF_NAMESPACE).text == settings.DOMAIN + preprint._id
 
@@ -134,10 +133,10 @@ class TestCrossRefClient:
             )
         )
 
-        with mock.patch('osf.models.PreprintService.get_doi_client') as mock_get_doi_client:
+        with mock.patch('osf.models.Preprint.get_doi_client') as mock_get_doi_client:
             mock_get_doi_client.return_value = crossref_client
-            preprint.node.is_public = False
-            preprint.node.save()
+            preprint.is_public = False
+            preprint.save()
 
         crossref_xml = crossref_client.build_metadata(preprint, status='unavailable')
         root = lxml.etree.fromstring(crossref_xml)
@@ -211,7 +210,7 @@ class TestCrossRefClient:
         assert meta == {'surname': unparsable_fullname[:crossref.CROSSREF_SURNAME_LIMIT]}
 
     def test_metadata_for_single_name_contributor_only_has_surname(self, crossref_client, preprint):
-        contributor = preprint.node.creator
+        contributor = preprint.creator
         contributor.fullname = 'Madonna'
         contributor.given_name = ''
         contributor.family_name = ''
@@ -228,7 +227,7 @@ class TestCrossRefClient:
         ORCID = '1234-5678-2345-6789'
 
         # verified ORCID
-        contributor = preprint.node.creator
+        contributor = preprint.creator
         contributor.external_identity = {
             'ORCID': {
                 ORCID: 'VERIFIED'
@@ -269,7 +268,7 @@ class TestCrossRefClient:
             'year': '2018'
         }
 
-        preprint.set_preprint_license(license_detail, Auth(preprint.node.creator), save=True)
+        preprint.set_preprint_license(license_detail, Auth(preprint.creator), save=True)
 
         crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
         root = lxml.etree.fromstring(crossref_xml)
@@ -280,7 +279,7 @@ class TestCrossRefClient:
     def test_metadata_for_non_included_relation(self, crossref_client, preprint):
         crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
-        assert root.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS).text == preprint.node.preprint_article_doi
+        assert root.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS).text == preprint.article_doi
 
         xml_without_relation = crossref_client.build_metadata(preprint, include_relation=False)
         root_without_relation = lxml.etree.fromstring(xml_without_relation)

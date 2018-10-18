@@ -58,7 +58,7 @@ class TestMetadataGeneration(OsfTestCase):
         assert identifier.text == preprint.get_identifier('doi').value
 
         creators = root.find('{%s}creators' % metadata.NAMESPACE)
-        assert len(creators.getchildren()) == len(self.node.visible_contributors)
+        assert len(creators.getchildren()) == len(preprint.visible_contributors)
 
         subjects = root.find('{%s}subjects' % metadata.NAMESPACE)
         assert subjects.getchildren()
@@ -78,7 +78,7 @@ class TestMetadataGeneration(OsfTestCase):
         assert alternate_identifier.attrib['alternateIdentifierType'] == 'URL'
 
         descriptions = root.find('{%s}descriptions' % metadata.NAMESPACE).getchildren()[0]
-        assert descriptions.text == preprint.node.description
+        assert descriptions.text == preprint.description
 
         rights = root.find('{%s}rightsList' % metadata.NAMESPACE).getchildren()[0]
         assert rights.text == preprint.license.name
@@ -89,9 +89,9 @@ class TestMetadataGeneration(OsfTestCase):
 
         verified_user = AuthUserFactory(external_identity={'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}})
         linked_user = AuthUserFactory(external_identity={'ORCID': {'1234-nope-1234-nope': 'LINK'}})
-        self.node.add_contributor(verified_user, visible=True)
-        self.node.add_contributor(linked_user, visible=True)
-        self.node.save()
+        preprint.add_contributor(verified_user, visible=True)
+        preprint.add_contributor(linked_user, visible=True)
+        preprint.save()
 
         formatted_creators = metadata.format_creators(preprint)
 
@@ -113,7 +113,7 @@ class TestMetadataGeneration(OsfTestCase):
 
         assert contributors_with_orcids >= 1
         assert len(formatted_creators) == len(self.node.visible_contributors)
-        assert sorted(guid_identifiers) == sorted([contrib.absolute_url for contrib in self.node.visible_contributors])
+        assert sorted(guid_identifiers) == sorted([contrib.absolute_url for contrib in preprint.visible_contributors])
 
     # This test is not used as datacite is currently used for nodes, leaving here for future reference
     def test_datacite_format_subjects_for_preprint(self):

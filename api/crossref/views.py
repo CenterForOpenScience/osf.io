@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from api.crossref.permissions import RequestComesFromMailgun
 from framework.auth.views import mails
-from osf.models import PreprintService
+from osf.models import Preprint
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class ParseCrossRefConfirmation(APIView):
                 doi = getattr(record.find('doi'), 'text', None)
                 guid = doi.split('/')[-1] if doi else None
                 guids.append(guid)
-                preprint = PreprintService.load(guid) if guid else None
+                preprint = Preprint.load(guid) if guid else None
                 if record.get('status').lower() == 'success' and doi:
                     msg = record.find('msg').text
                     created = bool(msg == 'Successfully added')

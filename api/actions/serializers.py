@@ -14,7 +14,7 @@ from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
 from api.requests.serializers import PreprintRequestSerializer
 from osf.exceptions import InvalidTriggerError
-from osf.models import PreprintService, NodeRequest, PreprintRequest
+from osf.models import Preprint, NodeRequest, PreprintRequest
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils import permissions
 
@@ -182,7 +182,7 @@ class ReviewActionSerializer(BaseActionSerializer):
     ))
 
     target = TargetRelationshipField(
-        target_class=PreprintService,
+        target_class=Preprint,
         read_only=False,
         required=True,
         related_view='preprints:preprint-detail',

@@ -9,6 +9,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
+from django.utils import timezone
 from osf.utils import permissions
 
 
@@ -87,6 +88,14 @@ class TestUserPreprints:
         assert project_public._id not in ids
         assert project_private._id not in ids
 
+        abandoned_preprint = PreprintFactory(creator=user_one, finish=False)
+        abandoned_preprint.machine_state = 'initial'
+        abandoned_preprint.save()
+        url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one.auth)
+        actual = [result['id'] for result in res.json['data']]
+        assert abandoned_preprint._id not in actual
+
 
 class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
 
@@ -132,6 +141,54 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
             auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
+
+    def test_filter_withdrawn_preprint(self, app, url, user):
+        preprint_one = PreprintFactory(is_published=False, creator=user)
+        preprint_one.date_withdrawn = timezone.now()
+        preprint_one.is_public = True
+        preprint_one.is_published = True
+        preprint_one.date_published = timezone.now()
+        preprint_one.machine_state = 'accepted'
+        assert preprint_one.ever_public is False
+        # Putting this preprint in a weird state, is verified_publishable, but has been
+        # withdrawn and ever_public is False.  This is to isolate withdrawal portion of query
+        preprint_one.save()
+
+        preprint_two = PreprintFactory(creator=user)
+        preprint_two.date_withdrawn = timezone.now()
+        preprint_two.ever_public = True
+        preprint_two.save()
+
+        # Unauthenticated users cannot see users/me/preprints
+        url = '/{}users/me/preprints/?version=2.2&'.format(API_BASE)
+        expected = [preprint_two._id]
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        # Noncontribs cannot see withdrawn preprints
+        user2 = AuthUserFactory()
+        url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user2._id)
+        expected = []
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Read contribs - contrib=False on UserPreprints filter so read contribs can only see
+        # withdrawn preprints that were once public
+        user2 = AuthUserFactory()
+        preprint_one.add_contributor(user2, 'read', save=True)
+        preprint_two.add_contributor(user2, 'read', save=True)
+        url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user2._id)
+        expected = [preprint_two._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        expected = [preprint_two._id]
+        # Admin contribs can only see withdrawn preprints that were once public
+        res = app.get(url, auth=user.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
 
 
 class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin):
@@ -179,12 +236,12 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin):
             project=project_public,
             is_published=False)
 
-    def test_unpublished_visible_to_admins(
+    def test_unpublished_invisible_to_admins(
             self, app, user_admin_contrib, preprint_unpublished,
             preprint_published, url):
         res = app.get(url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 2
-        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
 
     def test_unpublished_invisible_to_write_contribs(
             self, app, user_write_contrib, preprint_unpublished,
@@ -200,6 +257,14 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin):
             '{}filter[is_published]=false'.format(url),
             auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
+
+    def test_filter_published_false_admin(
+            self, app, user_admin_contrib, preprint_unpublished, url):
+        res = app.get(
+            '{}filter[is_published]=false'.format(url),
+            auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 0
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
 
 
 class TestUserPreprintIsValidList(PreprintIsValidListMixin):
@@ -226,13 +291,43 @@ class TestUserPreprintIsValidList(PreprintIsValidListMixin):
         return '/{}users/{}/preprints/?version=2.2&'.format(
             API_BASE, user_admin_contrib._id)
 
-    # test override: user nodes/preprints routes do not show private nodes to
+    # test override: user nodes/preprints routes do not show private preprints to
     # anyone but the self
     def test_preprint_private_visible_write(
             self, app, user_write_contrib, project, preprint, url):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
-        project.is_public = False
-        project.save()
+        preprint.is_public = False
+        preprint.save()
         res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 0
+
+    # test override: user preprints routes do not show orphaned preprints to
+    # anyone but the self
+    def test_preprint_is_preprint_orphan_visible_write(
+            self, app, project, preprint, url, user_write_contrib):
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 1
+        preprint.primary_file = None
+        preprint.save()
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 0
+
+    # test override, abandoned don't show up for anyone under UserPreprints
+    def test_preprint_has_abandoned_preprint(
+            self, app, user_admin_contrib, user_write_contrib, user_non_contrib,
+            preprint, url):
+        preprint.machine_state = 'initial'
+        preprint.save()
+        # unauth
+        res = app.get(url)
+        assert len(res.json['data']) == 0
+        # non_contrib
+        res = app.get(url, auth=user_non_contrib.auth)
+        assert len(res.json['data']) == 0
+        # write_contrib
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 0
+        # admin
+        res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 0

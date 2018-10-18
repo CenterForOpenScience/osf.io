@@ -69,7 +69,7 @@
                             <li>
                                 <a tabindex="-1"
                                     data-toggle="modal" data-target="#nodesDelete"
-                                    data-bind="click: $root.delete.bind($root, ${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n}, '${summary['api_url']}')"
+                                    data-bind="click: $root.delete.bind($root, ${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['is_supplemental_project'] | sjson, n},  '${summary['api_url']}')"
                                     type="button">
                                     Delete
                                 </a>

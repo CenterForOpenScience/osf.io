@@ -1374,7 +1374,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
 
-        :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider`
+        :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider` or `Preprint`
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
@@ -1382,10 +1382,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
 
         from osf.models.provider import AbstractProvider
+        from osf.models import Preprint
         if isinstance(claim_origin, AbstractProvider):
             if not bool(get_perms(referrer, claim_origin)):
                 raise PermissionsError(
                     'Referrer does not have permission to add a moderator to provider {0}'.format(claim_origin._id)
+                )
+
+        elif isinstance(claim_origin, Preprint):
+            if not claim_origin.has_permission(referrer, 'admin'):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a contributor to preprint {0}'.format(claim_origin._id)
                 )
         else:
             if not claim_origin.can_edit(user=referrer):
@@ -1535,14 +1542,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         https://openscience.atlassian.net/wiki/spaces/PRODUC/pages/482803755/GDPR-Related+protocols
 
         """
-        from osf.models import PreprintService, AbstractNode
+        from osf.models import Preprint, AbstractNode
 
         user_nodes = self.nodes.exclude(is_deleted=True)
         #  Validates the user isn't trying to delete things they deliberately made public.
         if user_nodes.filter(type='osf.registration').exists():
             raise UserStateError('You cannot delete this user because they have one or more registrations.')
 
-        if PreprintService.objects.filter(node___contributors=self, ever_public=True, node__is_deleted=False).exists():
+        if Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists():
             raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
         # Validates that the user isn't trying to delete things nodes they are the only admin on.

@@ -16,12 +16,14 @@ from website.notifications.events.base import (
     register, Event, event_registry, RegistryError
 )
 from website.notifications.events import utils as event_utils
-from osf.models import AbstractNode, NodeLog
+from osf.models import AbstractNode, NodeLog, Preprint
 from addons.base.signals import file_updated as signal
 
 
 @signal.connect
 def file_updated(self, target=None, user=None, event_type=None, payload=None):
+    if isinstance(target, Preprint):
+        return
     if event_type not in event_registry:
         raise RegistryError
     event = event_registry[event_type](user, target, event_type, payload=payload)
@@ -117,7 +119,8 @@ class ComplexFileEvent(FileEvent):
     def __init__(self, user, node, event, payload=None):
         super(ComplexFileEvent, self).__init__(user, node, event, payload=payload)
 
-        self.source_node = AbstractNode.load(self.payload['source']['node']['_id'])
+        source_nid = self.payload['source']['node']['_id']
+        self.source_node = AbstractNode.load(source_nid) or Preprint.load(source_nid)
         self.addon = self.node.get_addon(self.payload['destination']['provider'])
 
     def _build_message(self, html=False):

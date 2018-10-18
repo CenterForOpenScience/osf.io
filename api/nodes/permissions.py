@@ -11,24 +11,28 @@ from osf.models import (
     Node,
     NodeRelation,
     OSFUser,
-    PreprintService,
+    Preprint,
     PrivateLink,
 )
 from osf.utils import permissions as osf_permissions
 from website.project.metadata.utils import is_prereg_admin
 
-from api.base.utils import get_user_auth, is_deprecated
+from api.base.utils import get_user_auth, is_deprecated, assert_resource_type
 
 
 class ContributorOrPublic(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode, NodeRelation, Preprint)
 
     def has_object_permission(self, request, view, obj):
         from api.nodes.views import NodeStorageProvider
         if isinstance(obj, BaseAddonSettings):
             obj = obj.owner
-        if isinstance(obj, (NodeStorageProvider, PreprintService)):
+        if isinstance(obj, (NodeStorageProvider)):
             obj = obj.node
-        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an Node, NodeStorageProvider, NodeRelation, PreprintService, or AddonSettings; got {}'.format(obj)
+        if isinstance(obj, dict):
+            obj = obj.get('self', None)
+        assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
@@ -38,15 +42,19 @@ class ContributorOrPublic(permissions.BasePermission):
 
 class IsPublic(permissions.BasePermission):
 
+    acceptable_models = (AbstractNode,)
+
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, AbstractNode), 'obj must be an Node got {}'.format(obj)
+        assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         return obj.is_public or obj.can_view(auth)
 
 
 class IsAdmin(permissions.BasePermission):
+    acceptable_models = (AbstractNode, PrivateLink)
+
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, PrivateLink)), 'obj must be an Node or PrivateLink, got {}'.format(obj)
+        assert_resource_type(obj, self.acceptable_models)
         if isinstance(obj, PrivateLink):
             obj = view.get_node()
         auth = get_user_auth(request)
@@ -67,8 +75,9 @@ class IsAdminOrReviewer(permissions.BasePermission):
     """
     Prereg admins can update draft registrations.
     """
+    acceptable_models = (AbstractNode, DraftRegistration,)
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, DraftRegistration)), 'obj must be a Node or Draft Registration, got {}'.format(obj)
+        assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method != 'DELETE' and is_prereg_admin(auth.user):
             return True
@@ -79,8 +88,10 @@ class IsAdminOrReviewer(permissions.BasePermission):
 
 class AdminOrPublic(permissions.BasePermission):
 
+    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings,)
+
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, OSFUser, Institution, BaseAddonSettings)), 'obj must be an Node, User, Institution, or AddonSettings; got {}'.format(obj)
+        assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
@@ -104,11 +115,16 @@ class ExcludeWithdrawals(permissions.BasePermission):
 class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
 
+    acceptable_models = (AbstractNode, OSFUser, Contributor)
+
+    def load_resource(self, context, view):
+        return AbstractNode.load(context[view.node_lookup_url_kwarg])
+
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, OSFUser, Contributor)), 'obj must be User, Contributor, or Node, got {}'.format(obj)
+        assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         context = request.parser_context['kwargs']
-        node = AbstractNode.load(context[view.node_lookup_url_kwarg])
+        node = self.load_resource(context, view)
         user = OSFUser.load(context['user_id'])
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
@@ -120,8 +136,10 @@ class ContributorDetailPermissions(permissions.BasePermission):
 
 class ContributorOrPublicForPointers(permissions.BasePermission):
 
+    acceptable_models = (AbstractNode, NodeRelation)
+
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an Node or NodeRelation, got {}'.format(obj)
+        assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         parent_node = AbstractNode.load(request.parser_context['kwargs']['node_id'])
         pointer_node = NodeRelation.load(request.parser_context['kwargs']['node_link_id']).child
@@ -197,10 +215,16 @@ class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
 
+    acceptable_models = (AbstractNode,)
+
     def has_object_permission(self, request, view, obj):
+        # Preprints cannot be registrations
+        if isinstance(obj, Preprint):
+            return True
+
         if not isinstance(obj, AbstractNode):
             obj = AbstractNode.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
-        assert isinstance(obj, AbstractNode), 'obj must be an Node'
+        assert_resource_type(obj, self.acceptable_models)
         if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
         return True

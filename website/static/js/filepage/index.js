@@ -502,12 +502,10 @@ var FileViewPage = {
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in') : null
             ]) : '',
             // Special case whether or not to show the delete button for published Dataverse files
-            // Special case to not show delete if file is preprint primary file
             // Special case to not show delete for public figshare files
             // Special case to not show force check-in for read-only providers
             (
                 ctrl.canEdit() &&
-                (ctrl.node.preprintFileId !== ctrl.file.id) &&
                     !(ctrl.file.provider === 'figshare' && ctrl.file.extra.status === 'public') &&
                 (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) &&
                 (document.URL.indexOf('version=latest-published') < 0)
