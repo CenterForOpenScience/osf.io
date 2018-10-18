@@ -492,6 +492,7 @@ class UserEmailsSerializer(JSONAPISerializer):
     is_merge = ser.BooleanField(read_only=True, required=False, help_text='This unconfirmed email is already confirmed to another user.')
     links = LinksField({
         'self': 'get_absolute_url',
+        'resend_confirmation': 'get_resend_confirmation_url',
     })
 
     def get_absolute_url(self, obj):
@@ -504,6 +505,11 @@ class UserEmailsSerializer(JSONAPISerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+    def get_resend_confirmation_url(self, obj):
+        if not obj.confirmed:
+            url = self.get_absolute_url(obj)
+            return '{}?resend_confirmation=true'.format(url)
 
     class Meta:
         type_ = 'user_emails'

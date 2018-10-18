@@ -425,9 +425,10 @@ class TestUserEmailDetail:
         return '/{}users/{}/settings/emails/{}/'.format(API_BASE, user_one._id, confirmed_email_hash)
 
     def test_get_email_detail(self, app, confirmed_url, user_one, user_two, unconfirmed_url):
-        # logged in and authorized
+        # logged in and authorized and confirmed
         res = app.get(confirmed_url, auth=user_one.auth)
         assert res.status_code == 200
+        assert 'resend_confirmation' not in res.json['data']['links'].keys()
 
         # not logged in
         res = app.get(confirmed_url, expect_errors=True)
@@ -437,10 +438,12 @@ class TestUserEmailDetail:
         res = app.get(confirmed_url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # token for unconfirmed email
+        # unconfirmed email detail
         res_unconfirmed = app.get(unconfirmed_url, auth=user_one.auth)
         assert res_unconfirmed.status_code == 200
         assert res_unconfirmed.json['data']['attributes']['confirmed'] is False
+        assert 'resend_confirmation' in res_unconfirmed.json['data']['links'].keys()
+        assert '{}?resend_confirmation=true'.format(unconfirmed_url) in res_unconfirmed.json['data']['links']['resend_confirmation']
 
         # token for unconfirmed email different user
         res = app.get(unconfirmed_url, auth=user_two.auth, expect_errors=True)
