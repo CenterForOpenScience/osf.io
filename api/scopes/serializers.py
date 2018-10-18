@@ -22,7 +22,7 @@ class ScopeSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset(['id'])
 
-    id = ser.CharField(read_only=True)
+    id = ser.CharField(read_only=True, source='name')
     description = ser.CharField(read_only=True)
     links = LinksField({'self': 'get_absolute_url'})
 

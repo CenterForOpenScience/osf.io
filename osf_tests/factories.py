@@ -715,6 +715,15 @@ class DismissedAlertFactory(DjangoModelFactory):
 
         return super(DismissedAlertFactory, cls)._create(*args, **kwargs)
 
+class ApiOAuth2ScopeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ApiOAuth2Scope
+
+    name = factory.Faker('word')
+    is_public = True
+    is_active = True
+    description = factory.Faker('text')
+
 class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
     class Meta:
         model = models.ApiOAuth2PersonalToken

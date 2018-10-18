@@ -10,6 +10,7 @@ from website.security import random_string
 from framework.auth import cas
 
 from website import settings
+from urlparse import urljoin
 
 
 def generate_client_secret():
@@ -24,6 +25,10 @@ class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
     name = models.CharField(max_length=50, unique=True, db_index=True, null=False, blank=False)
     description = models.CharField(max_length=255, null=False, blank=False)
     is_active = models.BooleanField(default=True, db_index=True)  # TODO: Add mechanism to deactivate a scope?
+    is_public = models.BooleanField(default=True, db_index=True)
+
+    def absolute_url(self):
+        return urljoin(settings.API_DOMAIN, '/v2/scopes/{}/'.format(self.name))
 
 
 def generate_client_id():
