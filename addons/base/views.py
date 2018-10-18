@@ -363,7 +363,6 @@ def create_waterbutler_log(payload, **kwargs):
             auth = payload['auth']
             # Don't log download actions
             if payload['action'] in DOWNLOAD_ACTIONS:
-                node = AbstractNode.load(payload['metadata']['nid'])
                 return {'status': 'success'}
 
             user = OSFUser.load(auth['id'])
