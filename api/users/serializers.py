@@ -519,6 +519,8 @@ class UserEmailsSerializer(JSONAPISerializer):
             user.save()
             if CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=address)
+                user.email_last_sent = timezone.now()
+                user.save()
         except ValidationError as e:
             raise exceptions.ValidationError(e.args[0])
 
