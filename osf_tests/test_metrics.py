@@ -27,6 +27,7 @@ def test_get_top_by_count(mock_get_id_to_count):
         model_field='guids___id',
         metric_field='user_id',
         annotation='dummies',
+        size=None,
     )
 
     annotated_user = metric_qs.first()

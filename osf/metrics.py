@@ -28,7 +28,7 @@ class MetricMixin(object):
 
     @classmethod
     def get_top_by_count(cls, qs, model_field, metric_field,
-                         size=None, order_by=None,
+                         size, order_by=None,
                          count_field='count',
                          annotation='metric_count', after=None):
         """Return a queryset annotated with the metric counts for each item.

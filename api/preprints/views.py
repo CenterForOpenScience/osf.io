@@ -120,6 +120,7 @@ class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView
             metric_field='preprint_id',
             annotation=metric_name,
             after=after,
+            size=None,
         )
 
 

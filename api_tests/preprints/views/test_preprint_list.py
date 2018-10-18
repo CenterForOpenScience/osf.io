@@ -28,10 +28,6 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
-from osf_tests.metrics_factories import (
-    PreprintDownloadFactory,
-    PreprintViewFactory,
-)
 from tests.base import ApiTestCase, capture_signals
 from website.project import signals as project_signals
 

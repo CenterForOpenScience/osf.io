@@ -84,6 +84,7 @@ class PreprintProviderList(MetricsViewMixin, GenericProviderList):
             metric_field='provider_id',
             annotation=metric_name,
             after=after,
+            size=None,
         )
 
     def get_renderer_context(self):
