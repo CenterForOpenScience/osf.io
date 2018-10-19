@@ -15,7 +15,8 @@ from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 from osf.models.user import OSFUser
 from osf.models import AdminProfile
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
-
+import logging
+logger = logging.getLogger(__name__)
 
 class LoginView(FormView):
     form_class = LoginForm
@@ -48,6 +49,36 @@ class LoginView(FormView):
             redirect_to = reverse('home')
         return redirect_to
 
+class ShibLoginView(FormView):
+    form_class = LoginForm
+    redirect_field_name = REDIRECT_FIELD_NAME
+    template_name = 'shib-login.html'
+
+    @method_decorator(csrf_protect)
+    @method_decorator(never_cache)
+    def dispatch(self, request, *args, **kwargs):
+        return super(ShibLoginView, self).dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        user = authenticate(
+            username=form.cleaned_data.get('email').strip(),
+            password=form.cleaned_data.get('password').strip()
+        )
+        if user is not None:
+            login(self.request, user)
+        else:
+            messages.error(
+                self.request,
+                'Email and/or Password incorrect. Please try again.'
+            )
+            return redirect('auth:shib-login')
+        return super(ShibLoginView, self).form_valid(form)
+
+    def get_success_url(self):
+        redirect_to = self.request.GET.get(self.redirect_field_name, '')
+        if not redirect_to or redirect_to == '/':
+            redirect_to = reverse('home')
+        return redirect_to
 
 def logout_user(request):
     logout(request)
