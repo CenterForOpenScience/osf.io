@@ -19,3 +19,5 @@ SITE_ID = 1
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
+
+TEST_ENV = True
