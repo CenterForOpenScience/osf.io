@@ -32,8 +32,11 @@ var TokenData = oop.defclass({
         this.name = ko.observable(attributes.name)
             .extend({required: true, maxLength:200});
 
-        this.scopes = ko.observableArray(attributes.scopes ? attributes.scopes.split(' ') : undefined)
-            .extend({required: true});
+        this.scopes = ko.observableArray(Object.keys(data).length !==0 && data.embeds.scopes.data ? data.embeds.scopes.data.map(
+            function(scope) {
+                return scope.id;
+            }) : undefined
+        ).extend({required: true});
 
         this.token_id = ko.observable(attributes.token_id);
 
@@ -59,8 +62,14 @@ var TokenData = oop.defclass({
                 type: 'tokens',
                 attributes: {
                     name: this.name(),
-                    scopes: this.scopes().toString().replace(/,/g, ' ') || '',
                     user_id: this.owner
+                },
+                relationships: {
+                    'scopes': {
+                        'data': this.scopes().map(function(scope) {
+                            return {id: scope, type: 'scopes'};
+                        })
+                    }
                 }
             }
         };
@@ -102,7 +111,7 @@ var TokenDataClient = oop.defclass({
         var ret = $.Deferred();
 
         var payload = tokenData.serialize();
-        var request = $osf.ajaxJSON(method, url, {isCors: true, data: payload});
+        var request = $osf.ajaxJSON(method, url, {isCors: true, data: payload, fields: {contentType: 'application/vnd.api+json'}});
 
         request.done(function (data) { // The server response will contain the newly created/updated record
             ret.resolve(this.unserialize(data));

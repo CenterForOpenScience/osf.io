@@ -208,6 +208,23 @@ class TestTokenDetail:
             expect_errors=True)
         assert res.status_code == 200
 
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
+    def test_update_token_add_scope(self, mock_revoke, app, user_one, token_user_one, url_token_detail):
+        mock_revoke.return_value = True
+        original_scope = token_user_one.scopes.first()
+        scope = ApiOAuth2ScopeFactory()
+        correct = post_payload(scopes=scope.name)
+        res = app.put_json_api(
+            url_token_detail,
+            correct,
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+        scopes_data = res.json['data']['embeds']['scopes']['data']
+        assert len(scopes_data) == 1
+        assert scopes_data[0]['id'] == scope.name
+        assert scope.name != original_scope.name
+
     def test_token_detail_crud_with_wrong_payload(
             self, app, url_token_list, url_token_detail,
             token_user_one, user_one, user_two):
