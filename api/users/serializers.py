@@ -509,7 +509,7 @@ class UserEmailsSerializer(JSONAPISerializer):
                 send_confirm_email(user, email=address)
         except ValidationError as e:
             raise exceptions.ValidationError(e.args[0])
-        except BlacklistedEmailError as e:
+        except BlacklistedEmailError:
             raise exceptions.ValidationError('This email address is blacklisted.')
 
         return UserEmail(email_id=token, address=address, confirmed=False, primary=False)
