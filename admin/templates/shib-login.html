@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}
+<title>OSFAdmin | Log in</title>
+{% endblock %}
+
+<!-- hide navbar, sidebar, and User account menu -->
+{% block navbar %}
+{% endblock %}
+{% block sidebar %}
+{% endblock %}
+
+{% block content %}
+
+<div class="login-page">
+    <div class="login-box">
+        <div class="login-logo">
+            <b>OSF</b>Admin</a>
+        </div><!-- /.login-logo -->
+        <div class="login-box-body">
+            <p class="login-box-msg">Sign in to start your session</p>
+            <form action="" method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                <ul>
+                {% for error in form.non_field_errors %}
+                <li class="errorclass">{{ error }}</li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+                <div class="row">
+                       <div class="col-xs-4"></div>
+                    <div class="col-xs-4">
+                        <a class="btn btn-primary btn-block btn-flat" href="https://idp.rdm.nii.ac.jp/idp/profile/SAML2/Redirect/SSO;" role="button">Sign In</a>
+{%comment%}
+<!-- embedded DS -->
+<script type="text/javascript" charset="UTF-8"><!--
+  var li = document.createElement('li');
+  li.innerHTML = '<a id="shibbolethDS" href="#" class="user-item login-link" onclick="return toggleDs()">DS</a>';
+  document.getElementById('login-link').parentNode.parentNode.appendChild(li);
+    //-->
+</script>
+<script type="text/javascript" src="/static/public/js/cas.js"></script>
+<script type="text/javascript" src="/static/public/js/embedded-wayf_disp.js"></script>
+<script type="text/javascript" src="/static/public/js/embedded-wayf_config.js"></script>
+<div id="wayfInMenu" style="float: right; clear: right; position: relative;">
+<script type="text/javascript" charset="UTF-8"><!--
+  document.write('<script type="text/javascript" src="https://test-ds.gakunin.nii.ac.jp/WAYF/embedded-wayf.js?' + (new Date().getTime()) + '"></scr'+'ipt>');
+    //-->
+</script>
+<!-- embbeded DS -->
+{%endcomment%}
+                        <!-- <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button> -->
+                    </div><!-- /.col -->
+                    <div class="col-xs-4"></div>
+                </div>
+                <div>
+                    {% if messages %}
+                        <ul class="register_page_messages">
+                        {% for message in messages %}
+                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </form>
+        </div><!-- /.login-box-body -->
+      <br><!-- refactor  -->
+    </div><!-- /.login-box -->
+</div>
+{% endblock %}
