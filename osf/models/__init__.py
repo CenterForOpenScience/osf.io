@@ -1,4 +1,4 @@
-from osf.models.metaschema import RegistrationSchema  # noqa
+from osf.models.metaschema import RegistrationFormBlock, RegistrationSchema  # noqa
 from osf.models.base import Guid, BlackListGuid  # noqa
 from osf.models.user import OSFUser, Email  # noqa
 from osf.models.contributor import Contributor, RecentlyAddedContributor  # noqa
