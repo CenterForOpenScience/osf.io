@@ -22,22 +22,20 @@ SESSION_AGE_THRESHOLD = 30
 
 def main(dry_run=True):
     old_sessions = Session.objects.filter(modified__lt=timezone.now() - datetime.timedelta(days=SESSION_AGE_THRESHOLD))
-    initial_count = old_sessions.count()
 
     if dry_run:
-        logger.warn('Dry run mode, will delete files and then abort the transaction')
-    logger.info('Preparing to Delete {} Sessions older than {} days'.format(initial_count, SESSION_AGE_THRESHOLD))
+        logger.warn('Dry run mode, will delete sessions and then abort the transaction')
+    logger.info('Preparing to delete Session objects older than {} days'.format(SESSION_AGE_THRESHOLD))
 
     with transaction.atomic():
         start = time.time()
-        old_sessions.delete()
+        sessions_deleted = old_sessions.delete()[1]['osf.Session']
         end = time.time()
 
-        logger.info('Deleting {} Session objects took {} seconds'.format(initial_count, end - start))
+        logger.info('Deleting {} Session objects took {} seconds'.format(sessions_deleted, end - start))
 
         if dry_run:
             raise Exception('Dry run, aborting the transaction!')
-
 
 
 @celery_app.task(name='scripts.clear_sessions')
