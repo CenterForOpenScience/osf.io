@@ -12,7 +12,10 @@ from django.core.management import call_command
 
 
 COMMANDS = [
+    # Sync Postgres
     ['migrate'],
+    # Sync Elasticsearch index templates
+    ['sync_metrics'],
 ]
 
 class Command(BaseCommand):
