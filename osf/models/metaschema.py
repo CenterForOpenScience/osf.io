@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 import jsonschema
 
 from website.util import api_v2_url
@@ -9,6 +10,22 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import ValidationValueError
 
 from website.project.metadata.utils import create_jsonschema_from_metaschema
+
+FORMBLOCK_TYPES = [
+    ('string', 'string'),
+    ('singleselect', 'singleselect'),
+    ('multiselect', 'multiselect'),
+    ('osf-author-import', 'osf-author-import'),
+    ('osf-upload', 'osf-upload'),
+    ('header', 'header'),
+]
+
+FORMBLOCK_SIZES = [
+    ('sm', 'sm'),
+    ('md', 'md'),
+    ('lg', 'lg'),
+    ('xl', 'xl'),
+]
 
 
 class AbstractSchema(ObjectIDMixin, BaseModel):
@@ -29,6 +46,8 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
 
 
 class RegistrationSchema(AbstractSchema):
+    config = DateTimeAwareJSONField(blank=True, default=dict)
+
     @property
     def _config(self):
         return self.schema.get('config', {})
@@ -79,3 +98,20 @@ class RegistrationSchema(AbstractSchema):
         except jsonschema.SchemaError as e:
             raise ValidationValueError(e.message)
         return
+
+
+class RegistrationFormBlock(ObjectIDMixin, BaseModel):
+    class Meta:
+        unique_together = ('schema', 'block_id')
+        order_with_respect_to = 'schema'
+
+    schema = models.ForeignKey('RegistrationSchema', related_name='form_blocks', on_delete=models.CASCADE)
+    page = models.CharField(max_length=255)
+    section = models.CharField(max_length=255, null=True)
+    help_text = models.TextField()
+    block_id = models.CharField(max_length=255, db_index=True)
+    block_type = models.CharField(max_length=31, db_index=True, choices=FORMBLOCK_TYPES)
+    block_text = models.TextField()
+    size = models.CharField(max_length=2, null=True, choices=FORMBLOCK_SIZES)
+    choices = ArrayField(models.TextField(), default=list)  # Longest on prod: >511 chars
+    required = models.BooleanField(default=True)

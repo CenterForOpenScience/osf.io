@@ -23,13 +23,9 @@ def from_json(fname):
         return json.load(f)
 
 OSF_META_SCHEMAS = [
-    ensure_schema_structure(from_json('osf-open-ended-1.json')),
     ensure_schema_structure(from_json('osf-open-ended-2.json')),
-    ensure_schema_structure(from_json('osf-standard-1.json')),
     ensure_schema_structure(from_json('osf-standard-2.json')),
-    ensure_schema_structure(from_json('brandt-prereg-1.json')),
     ensure_schema_structure(from_json('brandt-prereg-2.json')),
-    ensure_schema_structure(from_json('brandt-postcomp-1.json')),
     ensure_schema_structure(from_json('brandt-postcomp-2.json')),
     ensure_schema_structure(from_json('prereg-prize.json')),
     ensure_schema_structure(from_json('erpc-prize.json')),

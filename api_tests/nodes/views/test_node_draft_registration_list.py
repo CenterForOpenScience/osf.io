@@ -346,9 +346,9 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
 
-    #   test_registration_supplement_must_be_most_recent_metaschema
+    #   test_registration_supplement_must_be_active
         schema = RegistrationSchema.objects.get(
-            name='Open-Ended Registration', schema_version=1)
+            name='Election Research Preacceptance Competition', schema_version=2)
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
