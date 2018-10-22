@@ -177,6 +177,8 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
                         'properties': {
                             'downloads': {'type': 'integer'},
                             'version': {'type': 'integer'},
+                            'latestVersionSeen': {'type': 'string'},
+                            'guid': {'type': 'string'},
                             'checkout': {'type': 'string'},
                             'hashes': {
                                 'type': 'object',
@@ -194,9 +196,46 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
                     'etag': {'type': 'string'},
                     'provider': {'type': 'string'},
                     'path': {'type': 'string'},
-                    'size': {'type': 'integer'}
+                    'nodeUrl': {'type': 'string'},
+                    'waterbutlerURL': {'type': 'string'},
+                    'resource': {'type': 'string'},
+                    'nodeApiUrl': {'type': 'string'},
+                    'type': {'type': 'string'},
+                    'accept': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'acceptedFiles': {'type': 'boolean'},
+                            'maxSize': {'type': 'integer'},
+                        }
+                    },
+                    'links': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'download': {'type': 'string'},
+                            'move': {'type': 'string'},
+                            'upload': {'type': 'string'},
+                            'delete': {'type': 'string'}
+                        }
+                    },
+                    'permissions': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'edit': {'type': 'boolean'},
+                            'view': {'type': 'boolean'}
+                        }
+                    },
+                    'created_utc': {'type': 'string'},
+                    'id': {'type': 'string'},
+                    'modified_utc': {'type': 'string'},
+                    'size': {'type': 'integer'},
+                    'sizeInt': {'type': 'integer'},
                 }
             },
+            'fileId': {'type': 'string'},
+            'descriptionValue': {'type': 'string'},
             'sha256': {'type': 'string'},
             'selectedFileName': {'type': 'string'},
             'nodeId': {'type': 'string'},
@@ -204,6 +243,7 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
         }
     }
 }
+
 
 COMMENTS_SCHEMA = {
     'type': 'array',
