@@ -18,6 +18,7 @@ from api.base.utils import (
     get_object_or_error,
     get_user_auth,
     hashids,
+    is_truthy,
 )
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle
@@ -893,12 +894,12 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
             raise NotFound
 
         # check for resend confirmation email query parameter in a GET request
-        resend_confirmation = self.request.query_params.get('resend_confirmation')
-        if self.request.method == 'GET' and resend_confirmation:
-            if not confirmed and settings.CONFIRM_REGISTRATIONS_BY_EMAIL and resend_confirmation.lower() == 'true':
-                send_confirm_email(user, email=address)
-                user.email_last_sent = timezone.now()
-                user.save()
+        if self.request.method == 'GET' and is_truthy(self.request.query_params.get('resend_confirmation')):
+            if not confirmed and settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+                if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                    send_confirm_email(user, email=address, renew=True)
+                    user.email_last_sent = timezone.now()
+                    user.save()
 
         return UserEmail(email_id=email_id, address=address, confirmed=confirmed, verified=verified, primary=primary, is_merge=is_merge)
 
