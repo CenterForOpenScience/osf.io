@@ -286,8 +286,15 @@ def get_auth(auth, **kwargs):
             if filenode and filenode.is_file:
                 # default to most recent version if none is provided in the response
                 version = version or filenode.versions.count()
+                try:
+                    fileversion = FileVersion.objects.filter(
+                        basefilenode___id=file_id,
+                        identifier=version
+                    ).select_related('region').get()
+                except FileVersion.DoesNotExist:
+                    raise HTTPError(httplib.BAD_REQUEST)
                 if auth.user:
-                    mark_file_version_as_seen(auth.user, filenode, version)
+                    mark_file_version_as_seen(auth.user, filenode, fileversion)
                 if not node.is_contributor(auth.user):
                     download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
                     # version index is 0 based
@@ -296,13 +303,6 @@ def get_auth(auth, **kwargs):
                         update_analytics(node, file_id, version_index, 'view')
                     elif action == 'download' and not download_is_from_mfr:
                         update_analytics(node, file_id, version_index, 'download')
-                try:
-                    fileversion = FileVersion.objects.filter(
-                        basefilenode___id=file_id,
-                        identifier=version
-                    ).select_related('region').get()
-                except FileVersion.DoesNotExist:
-                    raise HTTPError(httplib.BAD_REQUEST)
         if fileversion:
             region = fileversion.region
             credentials = region.waterbutler_credentials
@@ -346,12 +346,11 @@ DOWNLOAD_ACTIONS = set([
 ])
 
 
-def mark_file_version_as_seen(user, file_to_update, version):
+def mark_file_version_as_seen(user, file_to_update, fileversion):
     """
     Mark a file version as seen by the given user.
     """
-    file_version = file_to_update.versions.get(identifier=version)
-    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
+    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=fileversion)
 
 
 @must_be_signed
