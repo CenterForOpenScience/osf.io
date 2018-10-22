@@ -10,11 +10,13 @@ from flask import request
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db.models import Q, OuterRef, Exists, Subquery
+import waffle
 
 from framework import status
 from framework.utils import iso8601format
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
+from framework.flask import redirect  # VOL-aware redirect
 from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
@@ -269,7 +271,9 @@ def node_forks(auth, node, **kwargs):
 @must_have_permission(READ)
 @ember_flag_is_active(features.EMBER_PROJECT_SETTINGS)
 def node_setting(auth, node, **kwargs):
-
+    if node.is_registration and waffle.flag_is_active(request, 'ember_registries_detail_page'):
+        # Registration settings page obviated during redesign
+        return redirect(node.url)
     auth.user.update_affiliated_institutions_by_email_domain()
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
