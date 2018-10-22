@@ -599,7 +599,6 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
             auth=auth,
             data=self.registration_metadata,
             child_ids=child_ids,
-            draft_root=node,
             provider=self.provider,
         )
         self.registered_node = register

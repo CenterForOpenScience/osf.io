@@ -1277,7 +1277,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contribs.append(contrib)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None, child_ids=None, draft_root=None, provider=None):
+    def register_node(self, schema, auth, data, parent=None, child_ids=None, provider=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1367,7 +1367,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     provider=provider,
                     parent=registered,
                     child_ids=child_ids,
-                    draft_root=draft_root
                 )
             else:
                 # Copy linked nodes
