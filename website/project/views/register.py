@@ -3,6 +3,7 @@ import httplib as http
 import itertools
 
 from flask import request
+import waffle
 
 from framework import status
 from framework.exceptions import HTTPError
@@ -120,6 +121,9 @@ def node_registration_retraction_post(auth, node, **kwargs):
 @must_be_contributor_or_public
 @ember_flag_is_active('ember_registration_form_detail_page')
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
+    if waffle.flag_is_active(request, 'ember_registries_detail_page'):
+        # Registration meta page obviated during redesign
+        return redirect(node.url)
     if node.is_registration and bool(node.registered_schema):
         try:
             meta_schema = RegistrationSchema.objects.get(_id=metaschema_id)
