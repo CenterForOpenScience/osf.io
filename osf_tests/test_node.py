@@ -17,7 +17,7 @@ from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
-from website.project.tasks import on_node_updated
+from website.project.tasks import on_node_updated, format_registration
 from website.project.views.node import serialize_collections
 from website.views import find_bookmark_collection
 
@@ -37,6 +37,8 @@ from osf.models import (
     DraftRegistration,
     DraftRegistrationApproval,
 )
+
+from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
@@ -2905,7 +2907,7 @@ class TestForkNode:
     def test_fork_project_with_no_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user)
         fork = project.fork_node(auth)
-        assert fork.get_wiki_pages_latest().exists() is False
+        assert WikiPage.objects.get_wiki_pages_latest(fork).exists() is False
         assert fork.wikis.all().exists() is False
         assert fork.wiki_private_uuids == {}
 
@@ -2924,12 +2926,12 @@ class TestForkNode:
         fork = project.fork_node(auth)
         assert fork.wiki_private_uuids == {}
 
-        fork_wiki_current = fork.get_wiki_version(current_wiki.wiki_page.page_name)
+        fork_wiki_current = WikiVersion.objects.get_for_node(fork, current_wiki.wiki_page.page_name)
         assert fork_wiki_current.wiki_page.node == fork
         assert fork_wiki_current._id != current_wiki._id
         assert fork_wiki_current.identifier == 2
 
-        fork_wiki_version = fork.get_wiki_version(wiki.wiki_page.page_name, version=1)
+        fork_wiki_version = WikiVersion.objects.get_for_node(fork, wiki.wiki_page.page_name, version=1)
         assert fork_wiki_version.wiki_page.node == fork
         assert fork_wiki_version._id != wiki._id
         assert fork_wiki_version.identifier == 1
@@ -3448,6 +3450,17 @@ class TestOnNodeUpdate:
     def registration(self, node):
         return RegistrationFactory(is_public=True)
 
+    @pytest.fixture()
+    def component_registration(self, node):
+        NodeFactory(
+            creator=node.creator,
+            parent=node,
+            title='Title1',
+        )
+        registration = RegistrationFactory(project=node)
+        registration.refresh_from_db()
+        return registration.get_nodes()[0]
+
     def teardown_method(self, method):
         handlers.celery_before_request()
 
@@ -3463,8 +3476,7 @@ class TestOnNodeUpdate:
         assert task.kwargs['first_save'] is False
         assert 'title' in task.kwargs['saved_fields']
 
-    @mock.patch('osf.models.identifiers.IdentifierMixin.request_identifier_update')
-    def test_queueing_on_node_updated(self, mock_request_update, node, user):
+    def test_queueing_on_node_updated(self, node, user):
         node.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id))
         node.title = 'Something New'
         node.save()
@@ -3492,7 +3504,6 @@ class TestOnNodeUpdate:
         task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
         assert 'contributors' in task.kwargs['saved_fields']
         assert 'node_license' in task.kwargs['saved_fields']
-        mock_request_update.assert_called_once()
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
@@ -3565,8 +3576,23 @@ class TestOnNodeUpdate:
             assert registration.is_registration
             kwargs = requests.post.call_args[1]
             graph = kwargs['json']['data']['attributes']['data']['@graph']
-            payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+            payload = next((item for item in graph if 'is_deleted' in item.keys()))
             assert payload['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_format_registration_gets_parent_hierarchy_for_component_registrations(self, requests, project, component_registration, user, request_context):
+
+        graph = format_registration(component_registration)
+
+        parent_relation = [i for i in graph if i['@type'] == 'ispartof'][0]
+        parent_work_identifier = [i for i in graph if 'creative_work' in i and i['creative_work']['@id'] == parent_relation['subject']['@id']][0]
+
+        # Both must exist to be valid
+        assert parent_relation
+        assert parent_work_identifier
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
@@ -3576,14 +3602,14 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         node.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3595,14 +3621,14 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3614,7 +3640,7 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         node.title = 'Not a qa title'
@@ -3623,7 +3649,7 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3636,7 +3662,7 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         registration.title = 'Not a qa title'
@@ -3645,7 +3671,7 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', None)
@@ -3890,20 +3916,17 @@ class TestTemplateNode:
                 )
 
     def test_template_wiki_pages_not_copied(self, project, auth):
-        project.update_node_wiki(
-            'template', 'lol',
-            auth=auth
-        )
+        WikiPage.objects.create_for_node(project, 'template', 'lol', auth)
         new = project.use_as_template(
             auth=auth
         )
-        assert project.get_wiki_page('template').page_name == 'template'
-        latest_version = project.get_wiki_version('template')
+        assert WikiPage.objects.get_for_node(project, 'template').page_name == 'template'
+        latest_version = WikiVersion.objects.get_for_node(project, 'template')
         assert latest_version.identifier == 1
         assert latest_version.is_current is True
 
-        assert new.get_wiki_page('template') is None
-        assert new.get_wiki_version('template') is None
+        assert WikiPage.objects.get_for_node(new, 'template') is None
+        assert WikiVersion.objects.get_for_node(new, 'template') is None
 
     def test_user_who_makes_node_from_template_has_creator_permission(self):
         project = ProjectFactory(is_public=True)
@@ -3942,10 +3965,7 @@ class TestTemplateNode:
         admin.save()
 
         # filter down self.nodes to only include projects the user can see
-        visible_nodes = filter(
-            lambda x: x.can_view(other_user_auth),
-            project.nodes
-        )
+        visible_nodes = [x for x in project.nodes if x.can_view(other_user_auth)]
 
         # create templated node
         new = project.use_as_template(auth=other_user_auth)
@@ -4129,7 +4149,7 @@ class TestAddonCallbacks:
         # Mock addon callbacks
         for addon in node.addons:
             mock_settings = mock.create_autospec(addon.__class__)
-            for callback, return_value in self.callbacks.iteritems():
+            for callback, return_value in self.callbacks.items():
                 mock_callback = getattr(mock_settings, callback)
                 mock_callback.return_value = return_value
                 patch = mock.patch.object(
@@ -4310,7 +4330,8 @@ class TestCollectionProperties:
 
     @pytest.fixture()
     def collection_public(self, provider, collector):
-        return CollectionFactory(creator=collector, provider=provider, is_public=True)
+        return CollectionFactory(creator=collector, provider=provider, is_public=True,
+                                 status_choices=['', 'Complete'], collected_type_choices=['', 'Dataset'])
 
     @pytest.fixture()
     def public_non_provided_collection(self, collector):
@@ -4326,7 +4347,14 @@ class TestCollectionProperties:
 
     @pytest.fixture()
     def subjects(self):
-        return [[SubjectFactory()._id] for i in xrange(0, 5)]
+        return [[SubjectFactory()._id] for i in range(0, 5)]
+
+    def _collection_url(self, collection):
+        try:
+            return '/collections/{}/'.format(collection.provider._id)
+        except AttributeError:
+            # Non-provided collection
+            pass
 
     def test_collection_project_views(
             self, user, node, collection_one, collection_two, collection_public,
@@ -4373,7 +4401,7 @@ class TestCollectionProperties:
         assert len(collection_summary[0]['subjects']) == len(subjects)
 
         assert len(collection_summary) == 1
-        assert collection_public._id == collection_summary[0]['url'].strip('/')
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
 
         ## test_node_contrib_or_admin_no_collections_permissions_only_sees_public_collection_info
         node.add_contributor(contributor=contrib, auth=Auth(user))
@@ -4381,11 +4409,11 @@ class TestCollectionProperties:
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
         assert len(collection_summary) == 1
-        assert collection_public._id == collection_summary[0]['url'].strip('/')
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
         assert len(collection_summary) == 1
-        assert collection_public._id == collection_summary[0]['url'].strip('/')
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
 
         ## test_node_contrib_with_collection_permissions_sees_private_and_public_collection_info
         node.add_contributor(contributor=collector, auth=Auth(user))
@@ -4393,9 +4421,13 @@ class TestCollectionProperties:
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
         assert len(collection_summary) == 3
-        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
-        ids_expected = {collection_public._id, collection_one._id, collection_two._id}
-        assert ids_actual == ids_expected
+        urls_actual = {summary['url'] for summary in collection_summary}
+        urls_expected = {
+            self._collection_url(collection_public),
+            self._collection_url(collection_one),
+            self._collection_url(collection_two),
+        }
+        assert urls_actual == urls_expected
 
         ## test_node_contrib_cannot_see_public_bookmark_collections
         bookmark_collection_public = bookmark_collection
@@ -4404,5 +4436,5 @@ class TestCollectionProperties:
 
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
         assert len(collection_summary) == 3
-        ids_actual = {summary['url'].strip('/') for summary in collection_summary}
-        assert bookmark_collection_public._id not in ids_actual
+        urls_actual = {summary['url'] for summary in collection_summary}
+        assert self._collection_url(bookmark_collection_public) not in urls_actual

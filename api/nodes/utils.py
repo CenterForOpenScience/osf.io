@@ -36,8 +36,13 @@ def get_file_object(target, path, provider, request):
         raise NotFound('The {} provider is not configured for this project.'.format(provider))
 
     view_only = request.query_params.get('view_only', default=None)
-    url = waterbutler_api_url_for(target._id, provider, path, _internal=True,
-                                  meta=True, view_only=view_only)
+    base_url = None
+    if hasattr(target, 'osfstorage_region'):
+        base_url = target.osfstorage_region.waterbutler_url
+    url = waterbutler_api_url_for(
+        target._id, provider, path, _internal=True,
+        base_url=base_url, meta=True, view_only=view_only,
+    )
 
     waterbutler_request = requests.get(
         url,
@@ -73,10 +78,12 @@ class NodeOptimizationMixin(object):
         wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
         contribs = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
         return queryset.prefetch_related('root').prefetch_related('subjects').annotate(
+            user_is_contrib=Exists(contribs),
             contrib_read=Subquery(contribs.values('read')[:1]),
             contrib_write=Subquery(contribs.values('write')[:1]),
             contrib_admin=Subquery(contribs.values('admin')[:1]),
             has_wiki_addon=Exists(wiki_addon),
             annotated_parent_id=Subquery(parent.values('parent__id')[:1], output_field=CharField()),
             annotated_tags=ArrayAgg('tags__name'),
-            has_admin_scope=Value(admin_scope, output_field=BooleanField()))
+            has_admin_scope=Value(admin_scope, output_field=BooleanField()),
+        )

@@ -3,12 +3,18 @@ import bleach
 from django import forms
 
 from osf.models import PreprintProvider, Subject
-from admin.base.utils import get_subject_rules, get_toplevel_subjects, get_nodelicense_choices, get_defaultlicense_choices
+from admin.base.utils import (get_subject_rules, get_toplevel_subjects,
+    get_nodelicense_choices, get_defaultlicense_choices, validate_slug)
 
 
 class PreprintProviderForm(forms.ModelForm):
     toplevel_subjects = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(), required=False)
     subjects_chosen = forms.CharField(widget=forms.HiddenInput(), required=False)
+    _id = forms.SlugField(
+        required=True,
+        help_text='URL Slug',
+        validators=[validate_slug]
+    )
 
     class Meta:
         model = PreprintProvider
@@ -30,7 +36,7 @@ class PreprintProviderForm(forms.ModelForm):
         self.fields['default_license'].choices = defaultlicense_choices
 
     def clean_subjects_acceptable(self, *args, **kwargs):
-        subject_ids = filter(None, self.data['subjects_chosen'].split(', '))
+        subject_ids = [_f for _f in self.data['subjects_chosen'].split(', ') if _f]
         subjects_selected = Subject.objects.filter(id__in=subject_ids)
         rules = get_subject_rules(subjects_selected)
         return rules
@@ -85,7 +91,7 @@ class PreprintProviderCustomTaxonomyForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(PreprintProviderCustomTaxonomyForm, self).__init__(*args, **kwargs)
         subject_choices = [(x, x) for x in Subject.objects.filter(bepress_subject__isnull=True).values_list('text', flat=True)]
-        for name, field in self.fields.iteritems():
+        for name, field in self.fields.items():
             if hasattr(field, 'choices'):
                 if field.choices == []:
                     field.choices = subject_choices

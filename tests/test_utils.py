@@ -205,16 +205,20 @@ class TestUrlForHelpers(unittest.TestCase):
 
     def test_waterbutler_api_url_for(self):
         with self.app.test_request_context():
-            url = waterbutler_api_url_for('fakeid', 'provider', '/path')
+            url = waterbutler_api_url_for('fakeid', 'provider', '/path', base_url=settings.WATERBUTLER_URL)
         assert_in('/fakeid/', url)
         assert_in('/path', url)
         assert_in('/providers/provider/', url)
         assert_in(settings.WATERBUTLER_URL, url)
 
+        with self.app.test_request_context():
+            url = waterbutler_api_url_for('fakeid', 'provider', '/path')
+        assert_in(settings.WATERBUTLER_URL, url)
+
     def test_waterbutler_api_url_for_internal(self):
         settings.WATERBUTLER_INTERNAL_URL = 'http://1.2.3.4:7777'
         with self.app.test_request_context():
-            url = waterbutler_api_url_for('fakeid', 'provider', '/path', _internal=True)
+            url = waterbutler_api_url_for('fakeid', 'provider', '/path', _internal=True, base_url=settings.WATERBUTLER_INTERNAL_URL)
 
         assert_not_in(settings.WATERBUTLER_URL, url)
         assert_in(settings.WATERBUTLER_INTERNAL_URL, url)
@@ -299,7 +303,7 @@ class TestWebsiteUtils(unittest.TestCase):
         rapply(outputs, r_assert)
 
     def test_rapply_on_list(self):
-        inputs = range(5)
+        inputs = list(range(5))
         add_one = lambda n: n + 1
         outputs = rapply(inputs, add_one)
         for i in inputs:
@@ -334,7 +338,7 @@ class TestWebsiteUtils(unittest.TestCase):
             if check and checkFn(item):
                 return item
             return 0
-        inputs = range(5)
+        inputs = list(range(5))
         outputs = rapply(inputs, zero_if_not_check, True, checkFn=lambda n: n % 2)
         assert_equal(outputs, [0, 1, 0, 3, 0])
         outputs = rapply(inputs, zero_if_not_check, False, checkFn=lambda n: n % 2)
@@ -436,7 +440,7 @@ class TestUserUtils(unittest.TestCase):
 class TestUserFactoryConflict:
 
     def test_build_create_user_time_conflict(self):
-        # Test that build and create user factories do not create conflicting usernames 
+        # Test that build and create user factories do not create conflicting usernames
         # because they occured quickly
         user_email_one = fake_email()
         user_email_two = fake_email()

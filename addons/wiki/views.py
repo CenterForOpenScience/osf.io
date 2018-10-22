@@ -14,6 +14,8 @@ from framework.flask import redirect
 from addons.wiki.utils import to_mongo_key
 from addons.wiki import settings
 from addons.wiki import utils as wiki_utils
+from addons.wiki.models import WikiPage, WikiVersion
+from osf import features
 from website.profile.utils import get_profile_image_url
 from website.project.views.node import _view_project
 from website.project.model import has_anonymous_link
@@ -72,7 +74,7 @@ WIKI_INVALID_VERSION_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
 def _get_wiki_versions(node, name, anonymous=False):
     # Skip if wiki_page doesn't exist; happens on new projects before
     # default "home" page is created
-    wiki_page = node.get_wiki_page(name)
+    wiki_page = WikiPage.objects.get_for_node(node, name)
     if wiki_page:
         versions = wiki_page.get_versions()
     else:
@@ -95,7 +97,7 @@ def _get_wiki_pages_latest(node):
             'wiki_id': page.wiki_page._primary_key,
             'wiki_content': _wiki_page_content(page.wiki_page.page_name, node=node)
         }
-        for page in node.get_wiki_pages_latest().order_by(F('name'))
+        for page in WikiPage.objects.get_wiki_pages_latest(node).order_by(F('name'))
     ]
 
 def _get_wiki_api_urls(node, name, additional_urls=None):
@@ -129,7 +131,7 @@ def _get_wiki_web_urls(node, key, version=1, additional_urls=None):
 @must_have_addon('wiki', 'node')
 def wiki_page_draft(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki_version = node.get_wiki_version(wname)
+    wiki_version = WikiVersion.objects.get_for_node(node, wname)
 
     return {
         'wiki_content': wiki_version.content if wiki_version else None,
@@ -139,7 +141,7 @@ def wiki_page_draft(wname, **kwargs):
 
 def _wiki_page_content(wname, wver=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki_version = node.get_wiki_version(wname, version=wver)
+    wiki_version = WikiVersion.objects.get_for_node(node, wname, wver)
     return {
         'wiki_content': wiki_version.content if wiki_version else '',
         'rendered_before_update': wiki_version.rendered_before_update if wiki_version else False
@@ -158,12 +160,13 @@ def wiki_page_content(wname, wver=None, **kwargs):
 def project_wiki_delete(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
-    wiki_page = node.get_wiki_page(wiki_name)
+    wiki_page = WikiPage.objects.get_for_node(node, wiki_name)
     sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
 
     if not wiki_page:
         raise HTTPError(http.NOT_FOUND)
-    node.delete_node_wiki(wiki_name, auth)
+
+    wiki_page.delete(auth)
     wiki_utils.broadcast_to_sharejs('delete', sharejs_uuid, node)
     return {}
 
@@ -177,8 +180,8 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     anonymous = has_anonymous_link(node, auth)
     wiki_name = (wname or '').strip()
     wiki_key = to_mongo_key(wiki_name)
-    wiki_page = node.get_wiki_page(wiki_name)
-    wiki_version = node.get_wiki_version(wiki_name)
+    wiki_page = WikiPage.objects.get_for_node(node, wiki_name)
+    wiki_version = WikiVersion.objects.get_for_node(node, wiki_name)
     wiki_settings = node.get_addon('wiki')
     can_edit = (
         auth.logged_in and not
@@ -292,7 +295,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
 def project_wiki_edit_post(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
-    wiki_version = node.get_wiki_version(wiki_name)
+    wiki_version = WikiVersion.objects.get_for_node(node, wiki_name)
     redirect_url = node.web_url_for('project_wiki_view', wname=wiki_name, _guid=True)
     form_wiki_content = request.form['content']
 
@@ -301,15 +304,15 @@ def project_wiki_edit_post(auth, wname, **kwargs):
         wiki_name = 'home'
 
     if wiki_version:
-        # Only update node wiki if content has changed
+        # Only update wiki if content has changed
         if form_wiki_content != wiki_version.content:
-            node.update_node_wiki(wiki_version.wiki_page.page_name, form_wiki_content, auth)
+            wiki_version.wiki_page.update(auth.user, form_wiki_content)
             ret = {'status': 'success'}
         else:
             ret = {'status': 'unmodified'}
     else:
-        # update_node_wiki will create a new wiki page because a page
-        node.update_node_wiki(wiki_name, form_wiki_content, auth)
+        # Create a wiki
+        WikiPage.objects.create_for_node(node, wiki_name, form_wiki_content, auth)
         ret = {'status': 'success'}
     return ret, http.FOUND, None, redirect_url
 
@@ -342,7 +345,7 @@ def edit_wiki_settings(node, auth, **kwargs):
     except NodeStateError as e:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_short="Can't change privacy",
-            message_long=e.message
+            message_long=str(e)
         ))
 
     return {
@@ -357,7 +360,7 @@ def get_node_wiki_permissions(node, auth, **kwargs):
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
-@ember_flag_is_active('ember_project_wiki_page')
+@ember_flag_is_active(features.EMBER_PROJECT_WIKI)
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return redirect(node.web_url_for('project_wiki_view', wname='home', _guid=True))
@@ -368,7 +371,7 @@ def project_wiki_home(**kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_id_page(auth, wid, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wiki = node.get_wiki_page(id=wid)
+    wiki = WikiPage.objects.get_for_node(node, id=wid)
     if wiki:
         return redirect(node.web_url_for('project_wiki_view', wname=wiki.page_name, _guid=True))
     else:
@@ -404,9 +407,13 @@ def project_wiki_rename(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
     new_wiki_name = request.get_json().get('value', None)
+    wiki_page = WikiPage.objects.get_for_node(node, wiki_name)
+
+    if not wiki_page:
+        raise WIKI_PAGE_NOT_FOUND_ERROR
 
     try:
-        node.rename_node_wiki(wiki_name, new_wiki_name, auth)
+        wiki_page.rename(new_wiki_name, auth)
     except NameEmptyError:
         raise WIKI_NAME_EMPTY_ERROR
     except NameInvalidError as error:
@@ -438,7 +445,7 @@ def project_wiki_rename(auth, wname, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_validate_name(wname, auth, node, **kwargs):
     wiki_name = wname.strip()
-    wiki = node.get_wiki_page(wiki_name)
+    wiki = WikiPage.objects.get_for_node(node, wiki_name)
 
     if wiki or wiki_name.lower() == 'home':
         raise HTTPError(http.CONFLICT, data=dict(
@@ -446,7 +453,7 @@ def project_wiki_validate_name(wname, auth, node, **kwargs):
             message_long='A wiki page with that name already exists.'
         ))
     else:
-        node.update_node_wiki(wiki_name, '', auth)
+        WikiPage.objects.create_for_node(node, wiki_name, '', auth)
     return {'message': wiki_name}
 
 @must_be_valid_project
@@ -474,7 +481,7 @@ def project_wiki_grid_data(auth, node, **kwargs):
 
 
 def format_home_wiki_page(node):
-    home_wiki = node.get_wiki_page('home')
+    home_wiki = WikiPage.objects.get_for_node(node, 'home')
     home_wiki_page = {
         'page': {
             'url': node.web_url_for('project_wiki_home'),

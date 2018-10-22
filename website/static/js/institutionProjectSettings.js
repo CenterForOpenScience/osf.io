@@ -28,7 +28,7 @@ var ViewModel = function(data) {
     self.availableInstitutionsIds = ko.computed(function() {
         return self.availableInstitutions().map(function(item){return item.id;});
     });
-    
+
     self.childNodes = ko.observable({});
     self.nodeId = ko.observable(data.node.id);
     self.rootId = ko.observable(data.node.rootId);

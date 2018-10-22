@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% block title %}
+    <title>List of Registration Providers</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Registration Providers</h2>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for registration_provider in registration_providers %}
+    <tr>
+        <td><a href="{% url 'registration_providers:detail' registration_provider_id=registration_provider.id %}">{{ registration_provider.name }}</a></td>
+        <td>{{ registration_provider.description | safe}}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}

@@ -145,11 +145,9 @@ class BitbucketClient(BaseClient):
         :param str repo: Bitbucket repo name
         :return: List of branch dicts
         """
-        branches, page_nbr = [], 1
+        branches = []
+        url = self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', user, repo, 'refs', 'branches')
         while True:
-            url = self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', user, repo,
-                                  'refs', 'branches')
-            url = '{}?page={}'.format(url, page_nbr)
             res = self._make_request(
                 'GET',
                 url,
@@ -158,8 +156,8 @@ class BitbucketClient(BaseClient):
             )
             res_data = res.json()
             branches.extend(res_data['values'])
-            page_nbr += 1
-            if not res_data.get('next', None):
+            url = res_data.get('next', None)
+            if not url:
                 break
         return branches
 
@@ -168,7 +166,7 @@ def ref_to_params(branch=None, sha=None):
 
     params = urllib.urlencode({
         key: value
-        for key, value in {'branch': branch, 'sha': sha}.iteritems()
+        for key, value in {'branch': branch, 'sha': sha}.items()
         if value
     })
     if params:

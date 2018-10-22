@@ -22,8 +22,8 @@ from api.collections.permissions import (
     ReadOnlyIfCollectedRegistration,
 )
 from api.collections.serializers import (
-    CollectedMetaSerializer,
-    CollectedMetaCreateSerializer,
+    CollectionSubmissionSerializer,
+    CollectionSubmissionCreateSerializer,
     CollectionSerializer,
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
@@ -32,13 +32,12 @@ from api.collections.serializers import (
 )
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
-
 from osf.models import (
     AbstractNode,
-    CollectedGuidMetadata,
+    CollectionSubmission,
     Collection,
     Node,
-    Registration
+    Registration,
 )
 
 
@@ -55,7 +54,7 @@ class CollectionMixin(object):
             Collection,
             self.kwargs[self.obj_lookup_url_kwarg],
             self.request,
-            display_name='collection'
+            display_name='collection',
         )
         # May raise a permission denied
         if check_object_permissions:
@@ -296,19 +295,19 @@ class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionM
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
-    model_class = CollectedGuidMetadata
-    serializer_class = CollectedMetaSerializer
+    model_class = CollectionSubmission
+    serializer_class = CollectionSubmissionSerializer
     view_category = 'collected-metadata'
     view_name = 'collected-metadata-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            return CollectedMetaCreateSerializer
+            return CollectionSubmissionCreateSerializer
         else:
-            return CollectedMetaSerializer
+            return CollectionSubmissionSerializer
 
     def get_default_queryset(self):
-        return self.get_collection().collectedguidmetadata_set.all()
+        return self.get_collection().collectionsubmission_set.all()
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -328,17 +327,17 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
-    serializer_class = CollectedMetaSerializer
+    serializer_class = CollectionSubmissionSerializer
     view_category = 'collected-metadata'
     view_name = 'collected-metadata-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
         cgm = get_object_or_error(
-            CollectedGuidMetadata,
+            CollectionSubmission,
             self.kwargs['cgm_id'],
             self.request,
-            'submission'
+            'submission',
         )
         # May raise a permission denied
         self.check_object_permissions(self.request, cgm)
@@ -581,12 +580,12 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     serializer_class = CollectionNodeLinkSerializer
     view_category = 'collections'
     view_name = 'node-pointers'
-    model_class = CollectedGuidMetadata
+    model_class = CollectionSubmission
 
     ordering = ('-modified',)
 
     def get_queryset(self):
-        return self.get_collection().collectedguidmetadata_set.filter(guid___id__in=AbstractNode.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).values_list('guids___id', flat=True))
+        return self.get_collection().collectionsubmission_set.filter(guid___id__in=AbstractNode.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).values_list('guids___id', flat=True))
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -594,7 +593,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         try:
             collection.remove_object(instance)
         except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
@@ -658,10 +657,10 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
     def get_object(self):
         node_link_lookup_url_kwarg = 'node_link_id'
         node_link = get_object_or_error(
-            CollectedGuidMetadata,
+            CollectionSubmission,
             self.kwargs[node_link_lookup_url_kwarg],
             self.request,
-            'node link'
+            'node link',
         )
         # May raise a permission denied
         self.kwargs['node_id'] = self.kwargs['collection_id']
@@ -675,7 +674,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         try:
             collection.remove_object(pointer.guid.referent)
         except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
         collection.save()
 
 
@@ -756,14 +755,16 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
     def get_object(self):
         collection = self.get_collection(check_object_permissions=False)
         auth = get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            Node.objects.filter(
-                guids__in=collection.guid_links.all(), is_deleted=False
-            ).can_view(
-                user=auth.user, private_link=auth.private_link
-            ).order_by('-modified')
-        ], 'self': collection}
+        obj = {
+            'data': [
+                pointer for pointer in
+                Node.objects.filter(
+                    guids__in=collection.guid_links.all(), is_deleted=False,
+                ).can_view(
+                    user=auth.user, private_link=auth.private_link,
+                ).order_by('-modified')
+            ], 'self': collection,
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -853,13 +854,15 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
     def get_object(self):
         collection = self.get_collection(check_object_permissions=False)
         auth = get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            Registration.objects.filter(
-                guids__in=collection.guid_links.all(), is_deleted=False
-            ).can_view(
-                user=auth.user, private_link=auth.private_link
-            ).order_by('-modified')
-        ], 'self': collection}
+        obj = {
+            'data': [
+                pointer for pointer in
+                Registration.objects.filter(
+                    guids__in=collection.guid_links.all(), is_deleted=False,
+                ).can_view(
+                    user=auth.user, private_link=auth.private_link,
+                ).order_by('-modified')
+            ], 'self': collection,
+        }
         self.check_object_permissions(self.request, obj)
         return obj

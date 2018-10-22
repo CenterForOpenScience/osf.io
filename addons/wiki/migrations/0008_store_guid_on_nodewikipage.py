@@ -3,13 +3,14 @@
 from __future__ import unicode_literals
 from django.db import migrations
 from django.db import connection
-from addons.wiki.models import NodeWikiPage
 from django.contrib.contenttypes.models import ContentType
 
 def reverse_func(state, schema):
+    NodeWikiPage = state.get_model('addons_wiki', 'nodewikipage')
     return NodeWikiPage.objects.update(former_guid=None)
 
 def add_guid_field(state, schema):
+    NodeWikiPage = state.get_model('addons_wiki', 'nodewikipage')
     content_type_id = ContentType.objects.get_for_model(NodeWikiPage).id
     with connection.cursor() as cursor:
         cursor.execute(

@@ -6,6 +6,7 @@ from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, TypeField, TypedRelationshipField
 from api.providers.workflows import Workflows
+from api.base.metrics import MetricsSerializerMixin
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
 from osf.utils.permissions import REVIEW_GROUPS
@@ -34,23 +35,23 @@ class ProviderSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
-        'external_url': 'get_external_url'
+        'external_url': 'get_external_url',
     })
 
     taxonomies = TypedRelationshipField(
         related_view='providers:taxonomy-list',
-        related_view_kwargs={'provider_id': '<_id>'}
+        related_view_kwargs={'provider_id': '<_id>'},
     )
 
     highlighted_taxonomies = TypedRelationshipField(
         related_view='providers:highlighted-taxonomy-list',
         related_view_kwargs={'provider_id': '<_id>'},
-        related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'}
+        related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'},
     )
 
     licenses_acceptable = TypedRelationshipField(
         related_view='providers:license-list',
-        related_view_kwargs={'provider_id': '<_id>'}
+        related_view_kwargs={'provider_id': '<_id>'},
     )
 
     def get_has_highlighted_subjects(self, obj):
@@ -72,7 +73,7 @@ class CollectionProviderSerializer(ProviderSerializer):
 
     primary_collection = RelationshipField(
         related_view='collections:collection-detail',
-        related_view_kwargs={'collection_id': '<primary_collection._id>'}
+        related_view_kwargs={'collection_id': '<primary_collection._id>'},
     )
 
     filterable_fields = frozenset([
@@ -91,7 +92,7 @@ class RegistrationProviderSerializer(ProviderSerializer):
 
     primary_collection = RelationshipField(
         related_view='collections:collection-detail',
-        related_view_kwargs={'collection_id': '<primary_collection._id>'}
+        related_view_kwargs={'collection_id': '<primary_collection._id>'},
     )
 
     filterable_fields = frozenset([
@@ -104,7 +105,7 @@ class RegistrationProviderSerializer(ProviderSerializer):
         'name',
     ])
 
-class PreprintProviderSerializer(ProviderSerializer):
+class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
     class Meta:
         type_ = 'preprint-providers'
@@ -121,6 +122,10 @@ class PreprintProviderSerializer(ProviderSerializer):
         'reviews_workflow',
         'permissions',
     ])
+    available_metrics = frozenset([
+        'downloads',
+        'views',
+    ])
 
     share_source = ser.CharField(read_only=True)
     share_publish_type = ser.CharField(read_only=True)
@@ -136,19 +141,21 @@ class PreprintProviderSerializer(ProviderSerializer):
     links = LinksField({
         'self': 'get_absolute_url',
         'preprints': 'get_preprints_url',
-        'external_url': 'get_external_url'
+        'external_url': 'get_external_url',
     })
 
     preprints = ReviewableCountsRelationshipField(
         related_view='providers:preprint-providers:preprints-list',
-        related_view_kwargs={'provider_id': '<_id>'}
+        related_view_kwargs={'provider_id': '<_id>'},
     )
 
     def get_preprints_url(self, obj):
-        return absolute_reverse('providers:preprint-providers:preprints-list', kwargs={
-            'provider_id': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'providers:preprint-providers:preprints-list', kwargs={
+                'provider_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_permissions(self, obj):
         auth = get_user_auth(self.context['request'])
@@ -175,7 +182,7 @@ class ModeratorSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'full_name',
         'id',
-        'permission_group'
+        'permission_group',
     ])
 
     id = IDField(source='_id', required=False, allow_null=True)
@@ -188,10 +195,13 @@ class ModeratorSerializer(JSONAPISerializer):
         type_ = 'moderators'
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('moderators:provider-moderator-detail', kwargs={
-            'provider_id': self.context['request'].parser_context['kwargs']['version'],
-            'moderator_id': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']})
+        return absolute_reverse(
+            'moderators:provider-moderator-detail', kwargs={
+                'provider_id': self.context['request'].parser_context['kwargs']['version'],
+                'moderator_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def create(self, validated_data):
         auth = get_user_auth(self.context['request'])
@@ -199,7 +209,7 @@ class ModeratorSerializer(JSONAPISerializer):
         address = validated_data.pop('email', '')
         provider = self.context['provider']
         context = {
-            'referrer': auth.user
+            'referrer': auth.user,
         }
         if user_id and address:
             raise ValidationError('Cannot specify both "id" and "email".')
@@ -215,8 +225,10 @@ class ModeratorSerializer(JSONAPISerializer):
                 if not full_name:
                     raise ValidationError('"full_name" is required when adding a moderator via email.')
                 user = OSFUser.create_unregistered(full_name, email=address)
-                user.add_unclaimed_record(provider, referrer=auth.user,
-                                                 given_name=full_name, email=address)
+                user.add_unclaimed_record(
+                    provider, referrer=auth.user,
+                    given_name=full_name, email=address,
+                )
                 user.save()
                 claim_url = user.get_claim_url(provider._id, external=True)
                 context['claim_url'] = claim_url
@@ -264,7 +276,7 @@ class ModeratorSerializer(JSONAPISerializer):
         try:
             provider.remove_from_group(instance, instance.permission_group, unsubscribe=False)
         except ValueError as e:
-            raise ValidationError(e.message)
+            raise ValidationError(str(e))
         provider.add_to_group(instance, perm_group)
         setattr(instance, 'permission_group', perm_group)
         return instance

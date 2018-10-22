@@ -9,11 +9,12 @@ from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.metrics import MetricsViewMixin
 from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
-from api.collections.serializers import CollectedMetaSerializer, CollectedMetaCreateSerializer
+from api.collections.serializers import CollectionSubmissionSerializer, CollectionSubmissionCreateSerializer
 from api.requests.serializers import PreprintRequestSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
@@ -22,9 +23,10 @@ from api.providers.serializers import CollectionProviderSerializer, PreprintProv
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, CollectionProvider, CollectedGuidMetadata, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
+from osf.models import AbstractNode, CollectionProvider, CollectionSubmission, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from osf.utils.workflows import RequestTypes
+from osf.metrics import PreprintDownload, PreprintView
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -61,7 +63,7 @@ class RegistrationProviderList(GenericProviderList):
     view_name = 'registration-providers-list'
 
 
-class PreprintProviderList(GenericProviderList):
+class PreprintProviderList(MetricsViewMixin, GenericProviderList):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
     """
 
@@ -69,11 +71,26 @@ class PreprintProviderList(GenericProviderList):
     serializer_class = PreprintProviderSerializer
     view_category = 'preprint-providers'
     view_name = 'preprint-providers-list'
+    metric_map = {
+        'downloads': PreprintDownload,
+        'views': PreprintView,
+    }
+
+    # overrides MetricsViewMixin
+    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
+        return metric_class.get_top_by_count(
+            qs=queryset,
+            model_field='_id',
+            metric_field='provider_id',
+            annotation=metric_name,
+            after=after,
+            size=None,
+        )
 
     def get_renderer_context(self):
         context = super(PreprintProviderList, self).get_renderer_context()
         context['meta'] = {
-            'whitelisted_providers': WhitelistedSHAREPreprintProvider.objects.all().values_list('provider_name', flat=True)
+            'whitelisted_providers': WhitelistedSHAREPreprintProvider.objects.all().values_list('provider_name', flat=True),
         }
         return context
 
@@ -158,32 +175,13 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
 
     ordering = ('-id',)
 
-    def is_valid_subject(self, allows_children, allowed_parents, sub):
-        # TODO: Delet this when all PreprintProviders have a mapping
-        if sub._id in allowed_parents:
-            return True
-        if sub.parent:
-            if sub.parent._id in allows_children:
-                return True
-            if sub.parent.parent:
-                if sub.parent.parent._id in allows_children:
-                    return True
-        return False
-
     def get_queryset(self):
         parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
         provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
         if parent:
             if parent == 'null':
                 return provider.top_level_subjects
-            if provider.subjects.exists():
-                return optimize_subject_query(provider.subjects.filter(parent___id=parent))
-            else:
-                # TODO: Delet this when all PreprintProviders have a mapping
-                #  Calculate this here to only have to do it once.
-                allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
-                allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-                return [sub for sub in optimize_subject_query(Subject.objects.filter(parent___id=parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+            return optimize_subject_query(provider.all_subjects.filter(parent___id=parent))
         return optimize_subject_query(provider.all_subjects)
 
 
@@ -325,22 +323,22 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
-    model_class = CollectedGuidMetadata
-    serializer_class = CollectedMetaSerializer
+    model_class = CollectionSubmission
+    serializer_class = CollectionSubmissionSerializer
     view_category = 'collected-metadata'
     view_name = 'provider-collected-metadata-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            return CollectedMetaCreateSerializer
+            return CollectionSubmissionCreateSerializer
         else:
-            return CollectedMetaSerializer
+            return CollectionSubmissionSerializer
 
     def get_default_queryset(self):
         provider = get_object_or_error(CollectionProvider, self.kwargs['provider_id'], self.request, display_name='CollectionProvider')
         if provider and provider.primary_collection:
-            return provider.primary_collection.collectedguidmetadata_set.all()
-        return CollectedGuidMetadata.objects.none()
+            return provider.primary_collection.collectionsubmission_set.all()
+        return CollectionSubmission.objects.none()
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -362,22 +360,22 @@ class RegistrationProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPI
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
-    model_class = CollectedGuidMetadata
-    serializer_class = CollectedMetaSerializer
+    model_class = CollectionSubmission
+    serializer_class = CollectionSubmissionSerializer
     view_category = 'collected-metadata'
     view_name = 'provider-collected-registration-metadata-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            return CollectedMetaCreateSerializer
+            return CollectionSubmissionCreateSerializer
         else:
-            return CollectedMetaSerializer
+            return CollectionSubmissionSerializer
 
     def get_default_queryset(self):
         provider = get_object_or_error(RegistrationProvider, self.kwargs['provider_id'], self.request, display_name='RegistrationProvider')
         if provider and provider.primary_collection:
-            return provider.primary_collection.collectedguidmetadata_set.all()
-        return CollectedGuidMetadata.objects.none()
+            return provider.primary_collection.collectionsubmission_set.all()
+        return CollectionSubmission.objects.none()
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -410,6 +408,18 @@ class PreprintProviderWithdrawRequestList(JSONAPIBaseView, generics.ListAPIView,
 
     def get_default_queryset(self):
         return PreprintRequest.objects.filter(request_type=RequestTypes.WITHDRAWAL.value, target__provider_id=self.get_provider().id)
+
+    def get_renderer_context(self):
+        context = super(PreprintProviderWithdrawRequestList, self).get_renderer_context()
+        if is_truthy(self.request.query_params.get('meta[requests_state_counts]', False)):
+            auth = get_user_auth(self.request)
+            auth_user = getattr(auth, 'user', None)
+            provider = self.get_provider()
+            if auth_user and auth_user.has_perm('view_submissions', provider):
+                context['meta'] = {
+                    'requests_state_counts': provider.get_request_state_counts(),
+                }
+        return context
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -448,7 +458,7 @@ class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.L
         return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
             When(groups=admin_group, then=Value('admin')),
             default=Value('moderator'),
-            output_field=CharField()
+            output_field=CharField(),
         )).order_by('fullname')
 
     def get_queryset(self):
@@ -485,4 +495,4 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
         try:
             self.get_provider().remove_from_group(instance, instance.permission_group)
         except ValueError as e:
-            raise ValidationError(e.message)
+            raise ValidationError(str(e))

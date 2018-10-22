@@ -24,7 +24,7 @@ class PostgreSQLFailoverRouter(object):
         Finds the first database that's writeable and returns the configuration name.
         :return: :str: name of database config or None
         """
-        for name, dsn in self.DSNS.iteritems():
+        for name, dsn in self.DSNS.items():
             conn = self._get_conn(dsn)
             cur = conn.cursor()
             cur.execute('SHOW transaction_read_only;')  # 'on' for slaves, 'off' for masters
@@ -43,7 +43,7 @@ class PostgreSQLFailoverRouter(object):
         :return: None
         """
         template = '{protocol}://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
-        for name, db in settings.DATABASES.iteritems():
+        for name, db in settings.DATABASES.items():
             if 'postgresql' in db['ENGINE']:
                 db['protocol'] = 'postgres'
             else:

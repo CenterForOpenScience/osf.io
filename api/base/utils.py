@@ -3,15 +3,17 @@ import urllib
 import furl
 import urlparse
 from distutils.version import StrictVersion
+from hashids import Hashids
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import OuterRef, Exists, Q
+from django.db.models import OuterRef, Exists, Q, QuerySet, F
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
 from api.base.authentication.drf import get_session_from_cookie
 from api.base.exceptions import Gone, UserGone
+from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
@@ -29,10 +31,12 @@ FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OF
 
 UPDATE_METHODS = ['PUT', 'PATCH']
 
+hashids = Hashids(alphabet='abcdefghijklmnopqrstuvwxyz', salt=HASHIDS_SALT)
+
 def decompose_field(field):
     from api.base.serializers import (
         HideIfWithdrawal, HideIfRegistration,
-        HideIfDisabled, AllowMissing, NoneIfWithdrawal
+        HideIfDisabled, AllowMissing, NoneIfWithdrawal,
     )
     WRAPPER_FIELDS = (HideIfWithdrawal, HideIfRegistration, HideIfDisabled, AllowMissing, NoneIfWithdrawal)
 
@@ -77,10 +81,24 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
+def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_name=None):
+    if not request:
+        # for backwards compat with existing get_object_or_error usages
+        raise TypeError('request is a required argument')
+
     obj = query = None
+    model_cls = model_or_qs
     select_for_update = check_select_for_update(request)
-    if isinstance(query_or_pk, basestring):
+
+    if isinstance(model_or_qs, QuerySet):
+        # they passed a queryset
+        model_cls = model_or_qs.model
+        try:
+            obj = model_or_qs.select_for_update().get() if select_for_update else model_or_qs.get()
+        except model_cls.DoesNotExist:
+            raise NotFound
+
+    elif isinstance(query_or_pk, basestring):
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
             # if it's a subclass of GuidMixin we know it's primary_identifier_name
@@ -127,7 +145,7 @@ def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
 
 def default_node_list_queryset(model_cls):
     assert model_cls in {Node, Registration}
-    return model_cls.objects.filter(is_deleted=False)
+    return model_cls.objects.filter(is_deleted=False).annotate(region=F('addons_osfstorage_node_settings__region___id'))
 
 def default_node_permission_queryset(user, model_cls):
     assert model_cls in {Node, Registration}
@@ -140,7 +158,8 @@ def default_node_list_permission_queryset(user, model_cls):
     # **DO NOT** change the order of the querysets below.
     # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
     # Django's alaising will break and the resulting QS will be empty and you will be sad.
-    return default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
+    qs = default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
+    return qs.annotate(region=F('addons_osfstorage_node_settings__region___id'))
 
 def extend_querystring_params(url, params):
     scheme, netloc, path, query, _ = urlparse.urlsplit(url)
@@ -182,9 +201,11 @@ def is_deprecated(request_version, min_version=None, max_version=None):
     return False
 
 
-def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, **kwargs):
+def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, base_url=None, **kwargs):
     assert path.startswith('/'), 'Path must always start with /'
-    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
+    if provider != 'osfstorage':
+        base_url = None
+    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else (base_url or website_settings.WATERBUTLER_URL))
     segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
     url.path.segments.extend([urlquote(x) for x in segments])
     url.args.update(kwargs)

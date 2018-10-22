@@ -10,8 +10,10 @@ from rest_framework import exceptions
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 from api.base import settings as api_settings
-from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
-                                 MergedAccountError, InvalidAccountError, TwoFactorRequiredError)
+from api.base.exceptions import (
+    UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
+    MergedAccountError, InvalidAccountError, TwoFactorRequiredError,
+)
 from framework.auth import cas
 from framework.auth.core import get_user
 from osf.models import OSFUser, Session

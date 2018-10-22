@@ -11,12 +11,12 @@ import corsheaders.middleware
 
 from framework.postcommit_tasks.handlers import (
     postcommit_after_request,
-    postcommit_before_request
+    postcommit_before_request,
 )
 from framework.celery_tasks.handlers import (
     celery_before_request,
     celery_after_request,
-    celery_teardown_request
+    celery_teardown_request,
 )
 from .api_globals import api_globals
 from api.base import settings as api_settings
@@ -79,10 +79,10 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
                 elif (
                     self._context.request.method == 'OPTIONS' and
                     'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in self._context.request.META and
-                    'authorization' in map(
+                    'authorization' in list(map(
                         lambda h: h.strip(),
-                        self._context.request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(',')
-                    )
+                        self._context.request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(','),
+                    ))
                 ):
                     return True
 

@@ -19,7 +19,7 @@ class TestUserCount(OsfTestCase):
         for _ in range(3):
             u = AuthUserFactory()
             u.is_registered = True
-            # Unclear why passwords are being set but it forces the users is_active status to false, which makes tests fail. 
+            # Unclear why passwords are being set but it forces the users is_active status to false, which makes tests fail.
             # When converted to pytest determine whether this is necessary for some unclear reason
             # u.password = 'wow' + str(i)
             u.date_confirmed = self.yesterday

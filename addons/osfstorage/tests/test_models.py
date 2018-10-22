@@ -8,10 +8,11 @@ import pytz
 from django.utils import timezone
 from nose.tools import *  # noqa
 
+from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
 from osf.utils.fields import EncryptedJSONField
-from osf_tests.factories import ProjectFactory, UserFactory
+from osf_tests.factories import ProjectFactory, UserFactory, RegionFactory, NodeFactory
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
@@ -167,7 +168,7 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_children(self):
         kids = [
             self.node_settings.get_root().append_file('Foo{}Bar'.format(x))
-            for x in xrange(100)
+            for x in range(100)
         ]
 
         assert_equals(sorted(kids, key=lambda kid: kid.name), list(self.node_settings.get_root().children.order_by('name')))
@@ -235,7 +236,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(trashed.path, '/' + child._id)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
                                f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type', 'modified']]
-        for f, value in child_data.iteritems():
+        for f, value in child_data.items():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
 
@@ -578,9 +579,40 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_equal(list(cloned_record.versions.all()), list(record.versions.all()))
         assert_true(fork_node_settings.root_node)
 
+    def test_fork_reverts_to_using_user_storage_default(self):
+        user = UserFactory()
+        user2 = UserFactory()
+        us = RegionFactory()
+        canada = RegionFactory()
+
+        user_settings = user.get_addon('osfstorage')
+        user_settings.default_region = us
+        user_settings.save()
+        user2_settings = user2.get_addon('osfstorage')
+        user2_settings.default_region = canada
+        user2_settings.save()
+
+        project = ProjectFactory(creator=user, is_public=True)
+        child = NodeFactory(parent=project, creator=user, is_public=True)
+        child_settings = child.get_addon('osfstorage')
+        child_settings.region_id = canada.id
+        child_settings.save()
+
+        fork = project.fork_node(Auth(user))
+        child_fork = models.Node.objects.get_children(fork).first()
+        assert fork.get_addon('osfstorage').region_id == us.id
+        assert fork.get_addon('osfstorage').user_settings == user.get_addon('osfstorage')
+        assert child_fork.get_addon('osfstorage').region_id == us.id
+
+        fork = project.fork_node(Auth(user2))
+        child_fork = models.Node.objects.get_children(fork).first()
+        assert fork.get_addon('osfstorage').region_id == canada.id
+        assert fork.get_addon('osfstorage').user_settings == user2.get_addon('osfstorage')
+        assert child_fork.get_addon('osfstorage').region_id == canada.id
+
     def test_region_wb_url_from_creators_defaults(self):
         user = UserFactory()
-        region = factories.RegionFactory()
+        region = RegionFactory()
 
         user_settings = user.get_addon('osfstorage')
         user_settings.default_region = region
@@ -598,7 +630,7 @@ class TestNodeSettingsModel(StorageTestCase):
                 'hey': ['woo', 'yeah', 'great']
             }
         }
-        region = factories.RegionFactory()
+        region = RegionFactory()
         region.waterbutler_credentials = new_test_creds
         region.save()
 
