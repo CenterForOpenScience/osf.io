@@ -712,6 +712,13 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         transaction.savepoint_rollback(savepoint_id)
         if not file_node.pk:
             file_node = BaseFileNode.load(path)
+
+            if file_node.kind == 'folder':
+                raise HTTPError(httplib.BAD_REQUEST, data={
+                    'message_short': 'Bad Request',
+                    'message_long': 'You cannot request a folder from this endpoint.'
+                })
+
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
             if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
