@@ -7,19 +7,20 @@ with each staging deployment, without having to change
 the OSF's helm chart.
 """
 
+import waffle
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
-
-
-COMMANDS = [
-    # Sync Postgres
-    ['migrate'],
-    # Sync Elasticsearch index templates
-    ['sync_metrics'],
-]
+from osf import features
 
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
+        COMMANDS = [
+            # Sync Postgres
+            ['migrate'],
+        ]
+        if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
+            COMMANDS.append(['sync_metrics'])
+
         for check in COMMANDS:
             call_command(*check)
