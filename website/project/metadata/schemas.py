@@ -45,7 +45,7 @@ OSF_META_SCHEMAS = [
 METASCHEMA_ORDERING = (
     'Prereg Challenge',
     'Open-Ended Registration',
-    'AsPredicted Preregistration',
+    'Preregistration Template from AsPredicted.org',
     'Registered Report Protocol Preregistration',
     'OSF-Standard Pre-Data Collection Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',

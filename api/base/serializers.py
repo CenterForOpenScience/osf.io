@@ -1439,10 +1439,18 @@ class JSONAPISerializer(BaseAPISerializer):
                 ret['meta'] = {'anonymous': True}
         else:
             ret = data
+
+        additional_meta = self.get_meta(obj)
+        if additional_meta:
+            meta_obj = ret.setdefault('meta', {})
+            meta_obj.update(additional_meta)
         return ret
 
     def get_absolute_url(self, obj):
         raise NotImplementedError()
+
+    def get_meta(self, obj):
+        return None
 
     def get_absolute_html_url(self, obj):
         return utils.extend_querystring_if_key_exists(obj.absolute_url, self.context['request'], 'view_only')

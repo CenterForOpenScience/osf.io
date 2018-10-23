@@ -10,6 +10,7 @@ from django.core.management import call_command
 
 CHECKS = [
     ['checkmigrations'],
+    ['check_metrics'],
 ]
 
 class Command(BaseCommand):

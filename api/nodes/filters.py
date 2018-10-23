@@ -7,6 +7,7 @@ from api.base.filters import ListFilterMixin
 from api.base import utils
 
 from osf.models import NodeRelation, AbstractNode, Preprint
+from osf.utils.permissions import PERMISSIONS, READ, WRITE, ADMIN
 
 
 class NodesFilterMixin(ListFilterMixin):
@@ -72,3 +73,22 @@ class NodesFilterMixin(ListFilterMixin):
             return preprint_query if utils.is_truthy(operation['value']) else ~preprint_query
 
         return super(NodesFilterMixin, self).build_query_from_field(field_name, operation)
+
+
+class UserNodesFilterMixin(NodesFilterMixin):
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'current_user_permissions':
+            if not operation['value'] in PERMISSIONS:
+                raise InvalidFilterValue(value=operation['value'])
+            perm = operation['value']
+            query = Q(contributor__user__id=self.get_user().id)
+            if perm == READ:
+                query &= Q(contributor__read=True)
+            elif perm == WRITE:
+                query &= Q(contributor__write=True)
+            elif perm == ADMIN:
+                query &= Q(contributor__admin=True)
+            else:
+                raise InvalidFilterValue(value=operation['value'])
+            return query
+        return super(UserNodesFilterMixin, self).build_query_from_field(field_name, operation)

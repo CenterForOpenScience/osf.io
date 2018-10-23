@@ -66,8 +66,9 @@ class PreprintManager(IncludeManager):
         primary_file__deleted_on__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value) \
         & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
 
-    def preprint_permissions_query(self, user=None, allow_contribs=True):
-        if user:
+    def preprint_permissions_query(self, user=None, allow_contribs=True, public_only=False):
+        include_non_public = user and not public_only
+        if include_non_public:
             moderator_for = get_objects_for_user(user, 'view_submissions', PreprintProvider)
             admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id))))
             reviews_user_query = Q(is_public=True, provider__in=moderator_for)
@@ -84,10 +85,21 @@ class PreprintManager(IncludeManager):
             query = query & Q(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
         return query
 
-    def can_view(self, base_queryset=None, user=None, allow_contribs=True):
+    def can_view(self, base_queryset=None, user=None, allow_contribs=True, public_only=False):
         if base_queryset is None:
             base_queryset = self
-        return base_queryset.filter(self.preprint_permissions_query(user=user, allow_contribs=allow_contribs) & Q(deleted__isnull=True)).distinct('id', 'created')
+        include_non_public = user and not public_only
+        ret = base_queryset.filter(
+            self.preprint_permissions_query(
+                user=user,
+                allow_contribs=allow_contribs,
+                public_only=public_only,
+            ) & Q(deleted__isnull=True)
+        )
+        # The auth subquery currently results in duplicates returned
+        # https://openscience.atlassian.net/browse/OSF-9058
+        # TODO: Remove need for .distinct using correct subqueries
+        return ret.distinct('id', 'created') if include_non_public else ret
 
 
 class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel,

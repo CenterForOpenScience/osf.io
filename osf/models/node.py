@@ -945,6 +945,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Override Taggable
     def on_tag_added(self, tag):
         self.update_search()
+        node_tasks.update_node_share(self)
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
@@ -967,6 +968,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
             self.update_search()
+            node_tasks.update_node_share(self)
+
             return True
 
     def remove_tags(self, tags, auth, save=True):
@@ -993,6 +996,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
         self.update_search()
+        node_tasks.update_node_share(self)
+
         return True
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
