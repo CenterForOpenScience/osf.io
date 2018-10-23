@@ -339,7 +339,7 @@ class TestPreregFiles(AdminTestCase):
             'q26': OsfStorageFile(target=self.node, name='26')
         }
         data = {}
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             guid = f.get_guid(create=True)._id
             f.save()
             if q == 'q26':
@@ -395,7 +395,7 @@ class TestPreregFiles(AdminTestCase):
         view = setup_user_view(view, request, self.admin_user,
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(self.admin_user, f.checkout)
 
@@ -410,7 +410,7 @@ class TestPreregFiles(AdminTestCase):
         view2 = setup_view(view2, request, draft_pk=self.draft._id)
         view2.checkin_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
@@ -427,7 +427,7 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
@@ -441,7 +441,7 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
@@ -456,7 +456,7 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 

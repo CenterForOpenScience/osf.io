@@ -277,7 +277,7 @@ class ImportRegistrationProvider(PermissionRequiredMixin, View):
         provider_data.pop('additional_providers')
 
         if provider:
-            for key, val in provider_data.iteritems():
+            for key, val in provider_data.items():
                 setattr(provider, key, val)
             provider.save()
         else:

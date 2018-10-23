@@ -235,7 +235,7 @@ class CommentUpdateView(PermissionRequiredMixin, UpdateView):
             draft.update_metadata(data)
             draft.save()
             log_message = list()
-            for key, value in data.iteritems():
+            for key, value in data.items():
                 comments = data.get(key, {}).get('comments', [])
                 for comment in comments:
                     log_message.append('{}: {}'.format(key, comment['value']))

@@ -147,7 +147,7 @@ def github_download_starball(node_addon, **kwargs):
     )
 
     resp = make_response(data)
-    for key, value in headers.iteritems():
+    for key, value in headers.items():
         resp.headers[key] = value
 
     return resp

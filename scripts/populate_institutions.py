@@ -30,7 +30,7 @@ def encode_uri_component(val):
 def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
     if inst:
-        for key, val in inst_data.iteritems():
+        for key, val in inst_data.items():
             setattr(inst, key, val)
         inst.save()
         print('Updated {}'.format(inst.name))

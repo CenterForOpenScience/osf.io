@@ -38,7 +38,8 @@ from api.preprints.permissions import PreprintPublishedOrAdmin, ModeratorIfNever
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
-
+from api.base.metrics import MetricsViewMixin
+from osf.metrics import PreprintDownload, PreprintView
 
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
@@ -61,7 +62,7 @@ class PreprintMixin(NodeMixin):
         return preprint
 
 
-class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
+class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_list).
     """
     # These permissions are not checked for the list of preprints, permissions handled by the query
@@ -82,6 +83,10 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
     ordering_fields = ('created', 'date_last_transitioned')
     view_category = 'preprints'
     view_name = 'preprint-list'
+    metric_map = {
+        'downloads': PreprintDownload,
+        'views': PreprintView,
+    }
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -94,14 +99,32 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         auth_user = getattr(auth, 'user', None)
 
         # Permissions on the list objects are handled by the query
-        return self.preprints_queryset(PreprintService.objects.all(), auth_user)
+        public_only = self.metrics_requested
+        queryset = self.preprints_queryset(PreprintService.objects.all(), auth_user, public_only=public_only)
+        # Use get_metrics_queryset to return an queryset with annotated metrics
+        # iff ?metrics query param is present
+        if self.metrics_requested:
+            return self.get_metrics_queryset(queryset)
+        else:
+            return queryset
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+    # overrides MetricsViewMixin
+    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
+        return metric_class.get_top_by_count(
+            qs=queryset,
+            model_field='guids___id',
+            metric_field='preprint_id',
+            annotation=metric_name,
+            after=after,
+            size=None,
+        )
 
-class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
+
+class PreprintDetail(MetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
     permission_classes = (
@@ -123,9 +146,22 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
 
     view_category = 'preprints'
     view_name = 'preprint-detail'
+    metric_map = {
+        'downloads': PreprintDownload,
+        'views': PreprintView,
+    }
+
+    def add_metric_to_object(self, obj, metric_class, metric_name, after):
+        count = metric_class.get_count_for_preprint(obj, after=after)
+        setattr(obj, metric_name, count)
+        return obj
 
     def get_object(self):
-        return self.get_preprint()
+        preprint = self.get_preprint()
+        # If requested, add metrics to object
+        if self.metrics_requested:
+            self.add_metrics_to_object(preprint)
+        return preprint
 
     def perform_destroy(self, instance):
         if instance.is_published:
@@ -190,7 +226,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
             try:
                 citation = render_citation(node=preprint, style=style)
             except ValueError as err:  # style requested could not be found
-                csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
+                csl_name = re.findall('[a-zA-Z]+\.csl', str(err))[0]
                 raise NotFound('{} is not a known style.'.format(csl_name))
 
             return {'citation': citation, 'id': style}

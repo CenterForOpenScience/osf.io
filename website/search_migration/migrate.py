@@ -7,7 +7,7 @@ from math import ceil
 import logging
 
 from django.db import connection
-from elasticsearch import helpers
+from elasticsearch2 import helpers
 
 import website.search.search as search
 from website.search.elastic_search import client

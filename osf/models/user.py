@@ -173,12 +173,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # user has taken action to register the account
     is_registered = models.BooleanField(db_index=True, default=False)
 
-    # user has claimed the account
-    # TODO: This should be retired - it always reflects is_registered.
-    #   While a few entries exist where this is not the case, they appear to be
-    #   the result of a bug, as they were all created over a small time span.
-    is_claimed = models.BooleanField(default=False, db_index=True)
-
     # for internal use
     tags = models.ManyToManyField('Tag', blank=True)
 
@@ -607,7 +601,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for system_tag in user.system_tags.all():
             self.add_system_tag(system_tag)
 
-        self.is_claimed = self.is_claimed or user.is_claimed
+        self.is_registered = self.is_registered or user.is_registered
         self.is_invited = self.is_invited or user.is_invited
         self.is_superuser = self.is_superuser or user.is_superuser
         self.is_staff = self.is_staff or user.is_staff
@@ -636,7 +630,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
         if not website_settings.RUNNING_MIGRATION:
-            for key, value in user.mailchimp_mailing_lists.iteritems():
+            for key, value in user.mailchimp_mailing_lists.items():
                 # subscribe to each list if either user was subscribed
                 subscription = value or self.mailchimp_mailing_lists.get(key)
                 signals.user_merged.send(self, list_name=key, subscription=subscription)
@@ -644,7 +638,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 # clear subscriptions for merged user
                 signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
 
-        for target_id, timestamp in user.comments_viewed_timestamp.iteritems():
+        for target_id, timestamp in user.comments_viewed_timestamp.items():
             if not self.comments_viewed_timestamp.get(target_id):
                 self.comments_viewed_timestamp[target_id] = timestamp
             elif timestamp > self.comments_viewed_timestamp[target_id]:
@@ -653,7 +647,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Give old user's emails to self
         user.emails.update(user=self)
 
-        for k, v in user.email_verifications.iteritems():
+        for k, v in user.email_verifications.items():
             email_to_confirm = v['email']
             if k not in self.email_verifications and email_to_confirm != user.username:
                 self.email_verifications[k] = v
@@ -662,7 +656,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.affiliated_institutions.add(*user.affiliated_institutions.values_list('pk', flat=True))
 
         for service in user.external_identity:
-            for service_id in user.external_identity[service].iterkeys():
+            for service_id in user.external_identity[service].keys():
                 if not (
                     service_id in self.external_identity.get(service, '') and
                     self.external_identity[service][service_id] == 'VERIFIED'
@@ -914,7 +908,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def create_confirmed(cls, username, password, fullname):
         user = cls.create(username, password, fullname)
         user.is_registered = True
-        user.is_claimed = True
         user.save()  # Must save before using auto_now_add field
         user.date_confirmed = user.date_registered
         user.emails.create(address=username.lower().strip())
@@ -945,7 +938,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         unconfirmed_emails = []
         if self.email_verifications:
-            for token, value in self.email_verifications.iteritems():
+            for token, value in self.email_verifications.items():
                 if not value.get('external_identity'):
                     unconfirmed_emails.append(value.get('email'))
         return unconfirmed_emails
@@ -1079,7 +1072,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
-        for token, value in self.email_verifications.iteritems():
+        for token, value in self.email_verifications.items():
             if value.get('email') == email:
                 del self.email_verifications[token]
                 return True
@@ -1158,7 +1151,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if not self.emails.filter(address=username):
             self.emails.create(address=username)
         self.is_registered = True
-        self.is_claimed = True
         self.date_confirmed = timezone.now()
         if accepted_terms_of_service:
             self.accepted_terms_of_service = timezone.now()
@@ -1253,7 +1245,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             'user_fullname': self.fullname,
             'user_profile_url': self.profile_url,
             'user_display_name': name_formatters[formatter](self),
-            'user_is_claimed': self.is_claimed
+            'user_is_registered': self.is_registered
         }
 
     def check_password(self, raw_password):

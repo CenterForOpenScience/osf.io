@@ -473,7 +473,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
             schema = meta_schema.schema
             flags = schema.get('flags', {})
             dirty = False
-            for flag, value in flags.iteritems():
+            for flag, value in flags.items():
                 if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
                     dirty = True
@@ -557,7 +557,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         changes = []
         # Prevent comments on approved drafts
         if not self.is_approved:
-            for question_id, value in metadata.iteritems():
+            for question_id, value in metadata.items():
                 old_value = self.registration_metadata.get(question_id)
                 if old_value:
                     old_comments = {

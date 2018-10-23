@@ -17,8 +17,8 @@ class NodesFilterMixin(ListFilterMixin):
         queryset = default_queryset
 
         if filters:
-            for key, field_names in filters.iteritems():
-                for field_name, operation in field_names.iteritems():
+            for key, field_names in filters.items():
+                for field_name, operation in field_names.items():
                     # filter[parent]=null
                     if field_name == 'parent' and operation['op'] == 'eq' and not operation['value']:
                         queryset = queryset.get_roots()

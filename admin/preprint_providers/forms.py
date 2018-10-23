@@ -36,7 +36,7 @@ class PreprintProviderForm(forms.ModelForm):
         self.fields['default_license'].choices = defaultlicense_choices
 
     def clean_subjects_acceptable(self, *args, **kwargs):
-        subject_ids = filter(None, self.data['subjects_chosen'].split(', '))
+        subject_ids = [_f for _f in self.data['subjects_chosen'].split(', ') if _f]
         subjects_selected = Subject.objects.filter(id__in=subject_ids)
         rules = get_subject_rules(subjects_selected)
         return rules
@@ -91,7 +91,7 @@ class PreprintProviderCustomTaxonomyForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(PreprintProviderCustomTaxonomyForm, self).__init__(*args, **kwargs)
         subject_choices = [(x, x) for x in Subject.objects.filter(bepress_subject__isnull=True).values_list('text', flat=True)]
-        for name, field in self.fields.iteritems():
+        for name, field in self.fields.items():
             if hasattr(field, 'choices'):
                 if field.choices == []:
                     field.choices = subject_choices

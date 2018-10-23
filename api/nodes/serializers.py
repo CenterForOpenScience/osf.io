@@ -293,6 +293,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         help_text='List of strings representing the permissions '
         'for the current user on this node.',
     )
+    current_user_is_contributor = ser.SerializerMethodField(
+        help_text='Whether the current user is a contributor on this node.',
+    )
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(
@@ -504,6 +507,15 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         else:
             return obj.can_comment(auth)
 
+    def get_current_user_is_contributor(self, obj):
+        if hasattr(obj, 'user_is_contrib'):
+            return obj.user_is_contrib
+
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return obj.is_contributor(user)
+
     class Meta:
         type_ = 'nodes'
 
@@ -709,11 +721,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 try:
                     node.set_subjects(subjects, auth)
                 except PermissionsError as e:
-                    raise exceptions.PermissionDenied(detail=e.message)
+                    raise exceptions.PermissionDenied(detail=str(e))
                 except ValueError as e:
-                    raise exceptions.ValidationError(detail=e.message)
+                    raise exceptions.ValidationError(detail=str(e))
                 except NodeStateError as e:
-                    raise exceptions.ValidationError(detail=e.message)
+                    raise exceptions.ValidationError(detail=str(e))
 
             try:
                 node.update(validated_data, auth=auth)
@@ -724,7 +736,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             except NodeUpdateError as e:
                 raise exceptions.ValidationError(detail=e.reason)
             except NodeStateError as e:
-                raise InvalidModelValueError(detail=e.message)
+                raise InvalidModelValueError(detail=str(e))
 
         return node
 
@@ -925,12 +937,6 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
-    current_user_is_contributor = ser.SerializerMethodField(help_text='Whether the current user is a contributor on this node.')
-
-    def get_current_user_is_contributor(self, obj):
-        user = self.context['request'].user
-        user = None if user.is_anonymous else user
-        return obj.is_contributor(user)
 
 
 class NodeForksSerializer(NodeSerializer):
@@ -1122,9 +1128,9 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
                 node.move_contributor(instance.user, auth, index, save=True)
             node.update_contributor(instance.user, permission, bibliographic, auth, save=True)
         except NodeStateError as e:
-            raise exceptions.ValidationError(detail=e.message)
+            raise exceptions.ValidationError(detail=str(e))
         except ValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
+            raise exceptions.ValidationError(detail=str(e))
         instance.refresh_from_db()
         return instance
 
@@ -1318,7 +1324,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         related_view='providers:registration-providers:registration-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False,
-        required=True,
+        required=False,
     )
 
     links = LinksField({
@@ -1334,7 +1340,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
         schema = validated_data.pop('registration_schema')
 
-        provider = validated_data.pop('provider')
+        provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
         # TODO: this
         # if not provider.schemas_acceptable.filter(id=schema.id).exists():
         #     raise exceptions.ValidationError('Invalid schema for provider.')

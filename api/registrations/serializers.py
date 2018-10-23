@@ -352,7 +352,7 @@ class BaseRegistrationSerializer(NodeSerializer):
             try:
                 registration.update_tags(new_tags, auth=auth)
             except NodeStateError as err:
-                raise Conflict(err.message)
+                raise Conflict(str(err))
         if 'custom_citation' in validated_data:
             if user_is_admin:
                 registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
@@ -367,7 +367,7 @@ class BaseRegistrationSerializer(NodeSerializer):
                     except NodeUpdateError as err:
                         raise exceptions.ValidationError(err.reason)
                     except NodeStateError as err:
-                        raise exceptions.ValidationError(err.message)
+                        raise exceptions.ValidationError(str(err))
                 else:
                     raise exceptions.PermissionDenied()
             else:

@@ -83,6 +83,6 @@ class GuidSerializer(JSONAPISerializer):
                 get_related_view(obj),
                 kwargs={'node_id': obj._id, 'version': self.context['view'].kwargs.get('version', '2')},
             )).func.cls.serializer_class()
-            [ser.context.update({k: v}) for k, v in self.context.iteritems()]
+            [ser.context.update({k: v}) for k, v in self.context.items()]
             return ser.to_representation(obj)
         return super(GuidSerializer, self).to_representation(obj)

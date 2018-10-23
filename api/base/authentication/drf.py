@@ -43,12 +43,12 @@ def check_user(user):
     """
     Verify users' status.
 
-                        registered      confirmed       disabled        merged      usable password     claimed
-    ACTIVE:             x               x               o               o           x                   x
-    NOT_CONFIRMED:      o               o               o               o           x                   o
-    NOT_CLAIMED:        o               o               o               o           o                   o
-    DISABLED:           o               x               x               o           x                   x
-    USER_MERGED:        x               x               o               x           o                   x
+                        registered      confirmed       disabled        merged      usable password
+    ACTIVE:             x               x               o               o           x
+    NOT_CONFIRMED:      o               o               o               o           x
+    NOT_CLAIMED:        o               o               o               o           o
+    DISABLED:           x               x               x               o           x
+    USER_MERGED:        x               x               o               x           o
 
     :param user: the user
     :raises UnconfirmedAccountError
@@ -71,7 +71,7 @@ def check_user(user):
         raise MergedAccountError
 
     # user not confirmed or contributor not claimed
-    if not user.is_confirmed and not user.is_registered and not user.is_claimed:
+    if not user.is_confirmed and not user.is_registered:
         if user.has_usable_password():
             raise UnconfirmedAccountError
         raise UnclaimedAccountError

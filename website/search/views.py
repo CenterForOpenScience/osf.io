@@ -13,6 +13,7 @@ from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from framework import sentry
 from website import language
+from osf import features
 from osf.models import OSFUser, AbstractNode
 from website import settings
 from website.project.views.contributor import get_node_contributors_abbrev
@@ -73,7 +74,7 @@ def search_search(**kwargs):
     results['time'] = round(time.time() - tick, 2)
     return results
 
-@ember_flag_is_active('ember_search_page')
+@ember_flag_is_active(features.EMBER_SEARCH_PAGE)
 def search_view():
     return {'shareUrl': settings.SHARE_URL},
 

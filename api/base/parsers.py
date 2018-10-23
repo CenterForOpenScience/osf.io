@@ -100,7 +100,7 @@ class JSONAPIParser(JSONParser):
                 relationship_values = []
                 relationship_key = None
                 for relationship in relationships:
-                    for key, value in relationship.iteritems():
+                    for key, value in relationship.items():
                         relationship_values.append(value)
                         relationship_key = key
                 relationship = {relationship_key: relationship_values}
@@ -302,7 +302,7 @@ class SearchParser(JSONAPIParser):
 
         if any(data.values()):
             res['query']['bool'].update({'filter': []})
-            for key, val in data.iteritems():
+            for key, val in data.items():
                 if val is not None:
                     if isinstance(val, list):
                         res['query']['bool']['filter'].append({'terms': {key: val}})

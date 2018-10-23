@@ -112,8 +112,8 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
 
     def is_blacklisted(self):
         query_params = self.parse_query_params(self.request.query_params)
-        for key, field_names in query_params.iteritems():
-            for field_name, data in field_names.iteritems():
+        for key, field_names in query_params.items():
+            for field_name, data in field_names.items():
                 field = self.serializer_class._declared_fields.get(field_name)
                 if isinstance(field, HideIfWithdrawal):
                     return True

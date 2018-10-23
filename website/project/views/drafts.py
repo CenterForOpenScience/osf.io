@@ -15,6 +15,7 @@ from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
+from osf import features
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
 from osf.utils.functional import rapply
@@ -158,11 +159,12 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
 
     push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,
                         kind='info',
-                        trust=False)
+                        trust=False,
+                        id='registration_submitted')
     return {
         'status': 'initiated',
         'urls': {
-            'registrations': node.web_url_for('node_registrations')
+            'registrations': node.web_url_for('node_registrations', _guid=True)
         }
     }, http.ACCEPTED
 
@@ -211,16 +213,17 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
         try:
             register.require_approval(auth.user)
         except NodeStateError as err:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=str(err)))
 
     register.save()
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
-                        trust=False)
+                        trust=False,
+                        id='registration_archiving')
     return {
         'status': 'initiated',
         'urls': {
-            'registrations': node.web_url_for('node_registrations')
+            'registrations': node.web_url_for('node_registrations', _guid=True)
         }
     }, http.ACCEPTED
 
@@ -253,7 +256,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
-@ember_flag_is_active('ember_create_draft_registration_page')
+@ember_flag_is_active(features.EMBER_CREATE_DRAFT_REGISTRATION)
 def new_draft_registration(auth, node, *args, **kwargs):
     """Create a new draft registration for the node
 
@@ -287,11 +290,11 @@ def new_draft_registration(auth, node, *args, **kwargs):
         schema=meta_schema,
         data={}
     )
-    return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id))
+    return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id, _guid=True))
 
 
 @must_have_permission(ADMIN)
-@ember_flag_is_active('ember_edit_draft_registration_page')
+@ember_flag_is_active(features.EMBER_EDIT_DRAFT_REGISTRATION)
 @must_be_branched_from_node
 def edit_draft_registration_page(auth, node, draft, **kwargs):
     """Draft registration editor

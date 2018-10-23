@@ -53,7 +53,7 @@ class TestRetractedPreprintSerialization:
         assert preprint.is_retracted
         assert always_show_fields.issubset(attributes)
         assert hide_if_not_withdrawal_fields.issubset(attributes)
-        assert all(list(map(lambda field: data['attributes'][field] is None, list(hide_if_withdrawal_fields))))
+        assert all(list([data['attributes'][field] is None for field in list(hide_if_withdrawal_fields)]))
 
 
 @pytest.mark.django_db

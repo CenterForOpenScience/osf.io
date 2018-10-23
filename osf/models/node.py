@@ -1111,6 +1111,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Override Taggable
     def on_tag_added(self, tag):
         self.update_search()
+        node_tasks.update_node_share(self)
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
@@ -1133,6 +1134,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
             self.update_search()
+            node_tasks.update_node_share(self)
+
             return True
 
     def remove_tags(self, tags, auth, save=True):
@@ -1159,6 +1162,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
         self.update_search()
+        node_tasks.update_node_share(self)
+
         return True
 
     def is_contributor(self, user):
@@ -2132,7 +2137,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.custom_citation = ''
 
         # apply `changes`
-        for attr, val in attributes.iteritems():
+        for attr, val in attributes.items():
             setattr(new, attr, val)
 
         # set attributes which may NOT be overridden by `changes`
@@ -2683,7 +2688,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not fields:  # Bail out early if there are no fields to update
             return False
         values = {}
-        for key, value in fields.iteritems():
+        for key, value in fields.items():
             if key not in self.WRITABLE_WHITELIST:
                 continue
             if self.is_registration and key != 'is_public':
