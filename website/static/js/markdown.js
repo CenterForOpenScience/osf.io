@@ -33,14 +33,14 @@ var oldMarkdownList = function(md) {
     md.block.ruler.after('hr', 'pyMarkdownList', pymarkdownList);
 };
 
+var WATERBUTLER_REGEX = new RegExp(window.contextVars.waterbutlerURL + 'v1\/resources\/[a-zA-Z0-9]{1,}\/providers\/[a-z0-9]{1,}\/');
 
-var ViewOnlyImage = function(md) {
+var viewOnlyImage = function(md) {
     var defaultRenderer = md.renderer.rules.image;
     md.renderer.rules.image = function (tokens, idx, options, env, self) {
         var token = tokens[idx];
         var imageLink = token.attrs[token.attrIndex('src')][1];
-        var WaterbuterRegex = new RegExp(window.contextVars.waterbutlerURL + 'v1\/resources\/[a-zA-Z0-9]{1,}\/providers\/[a-z0-9]{1,}\/');
-        if (imageLink.match(WaterbuterRegex) && $osf.urlParams().view_only) {
+        if (imageLink.match(WATERBUTLER_REGEX) && $osf.urlParams().view_only) {
             token = tokens[idx];
             imageLink = token.attrs[token.attrIndex('src')][1];
             token.attrs[token.attrIndex('src')][1] = imageLink + '&view_only=' + $osf.urlParams().view_only;
@@ -80,7 +80,7 @@ var markdown = new MarkdownIt('commonmark', {
     .use(require('@centerforopenscience/markdown-it-toc'))
     .use(require('markdown-it-sanitizer'))
     .use(require('markdown-it-imsize'))
-    .use(ViewOnlyImage)
+    .use(viewOnlyImage)
     .use(insDel)
     .enable('table')
     .enable('linkify')
@@ -92,7 +92,7 @@ var markdown = new MarkdownIt('commonmark', {
 var markdownQuick = new MarkdownIt('commonmark', { linkify: true })
     .use(require('markdown-it-sanitizer'))
     .use(require('markdown-it-imsize'))
-    .use(ViewOnlyImage)
+    .use(viewOnlyImage)
     .disable('link')
     .disable('image')
     .use(insDel)
