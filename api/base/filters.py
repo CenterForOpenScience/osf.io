@@ -518,5 +518,10 @@ class PreprintFilterMixin(ListFilterMixin):
                 operation['source_field_name'] = 'subjects__text'
                 operation['op'] = 'iexact'
 
-    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
-        return Preprint.objects.can_view(base_queryset=base_queryset, user=auth_user, allow_contribs=allow_contribs)
+    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
+        return Preprint.objects.can_view(
+            base_queryset=base_queryset,
+            user=auth_user,
+            allow_contribs=allow_contribs,
+            public_only=public_only,
+        )

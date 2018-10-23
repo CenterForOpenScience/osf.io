@@ -8,7 +8,7 @@ import logging
 
 from django.db import connection
 from django.core.paginator import Paginator
-from elasticsearch import helpers
+from elasticsearch2 import helpers
 
 import website.search.search as search
 from website.search.elastic_search import client
