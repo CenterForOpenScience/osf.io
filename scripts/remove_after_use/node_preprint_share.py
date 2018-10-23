@@ -13,7 +13,8 @@ def main():
     progress_bar = progressbar.ProgressBar(maxval=preprints.count()).start()
     for i, preprint in enumerate(preprints, 1):
         progress_bar.update(i)
-        update_preprint_share(preprint)
+        if preprint.provider.access_token:
+            update_preprint_share(preprint)
     progress_bar.finish()
 
 
