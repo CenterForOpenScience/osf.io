@@ -160,16 +160,29 @@ class OsfStorageFileNode(BaseFileNode):
         self._materialized_path = self.materialized_path
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
+    def update_folder_regions(self, destination_parent):
+        for child in self.children.all():
+            if child.is_file:
+                child.update_most_recent_fileversion(destination_parent)
+            else:
+                child.update_folder_regions(destination_parent)
+
+    def update_most_recent_fileversion(self, destination_parent):
+        most_recent_fileversion = self.versions.select_related('region').order_by('-created').first()
+        if most_recent_fileversion and most_recent_fileversion.region != destination_parent.target.osfstorage_region:
+            most_recent_fileversion.region = destination_parent.target.osfstorage_region
+            most_recent_fileversion.save()
+
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
             if self.target != destination_parent.target or self.provider != destination_parent.provider:
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
-        most_recent_fileversion = self.versions.select_related('region').order_by('-created').first()
-        if most_recent_fileversion and most_recent_fileversion.region != destination_parent.target.osfstorage_region:
-            most_recent_fileversion.region = destination_parent.target.osfstorage_region
-            most_recent_fileversion.save()
+        if not self.is_file:
+            self.update_folder_regions(destination_parent)
+        else:
+            self.update_most_recent_fileversion(destination_parent)
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def check_in_or_out(self, user, checkout, save=False):
