@@ -331,13 +331,12 @@ def get_auth(auth, **kwargs):
     # TODO: Add a signal here?
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
         user = auth.user
-        linked_preprint = node.linked_preprint
-        if linked_preprint and not node.is_contributor(user):
+        if isinstance(node, Preprint) and not node.is_contributor(user):
             metric_class = get_metric_class_for_action(action)
             if metric_class:
                 try:
                     metric_class.record_for_preprint(
-                        preprint=linked_preprint,
+                        preprint=node,
                         user=user,
                         version=fileversion.identifier if fileversion else None,
                         path=path
