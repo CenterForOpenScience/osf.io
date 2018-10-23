@@ -203,6 +203,7 @@ class PreprintIsPublishedListMixin:
 
     def test_filter_published_false_admin(
             self, app, user_admin_contrib, preprint_unpublished, url):
+
         res = app.get(
             '{}filter[is_published]=false'.format(url),
             auth=user_admin_contrib.auth)
@@ -364,7 +365,7 @@ class PreprintIsValidListMixin:
         assert len(res.json['data']) == 0
         # admin
         res = app.get(url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 0
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_preprint_node_null_invisible(
