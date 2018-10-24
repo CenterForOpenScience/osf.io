@@ -30,7 +30,7 @@ def encode_uri_component(val):
 def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
     if inst:
-        for key, val in inst_data.iteritems():
+        for key, val in inst_data.items():
             setattr(inst, key, val)
         inst.save()
         print('Updated {}'.format(inst.name))
@@ -421,7 +421,7 @@ def main(env):
                 'description': 'In partnership with the Office of the Deputy Vice-Chancellor (Research) and the University Library. Learn more about <a href="https://staff.mq.edu.au/research/strategy-priorities-and-initiatives/data-science-and-eresearch">Data Science and eResearch</a> at Macquarie University.',
                 'banner_name': 'mq-banner.png',
                 'logo_name': 'mq-shield.png',
-                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exkebok0cpJxGzMKz0h7')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exk1xnftf4QK3mQ592p7')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.mq.edu.au'],
                 'email_domains': [],

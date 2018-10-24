@@ -129,7 +129,6 @@ class TestOSFUser:
         )
         user.save()
         assert user.is_registered is True
-        assert user.is_claimed is True
         assert user.date_registered == user.date_confirmed
 
     def test_update_guessed_names(self):
@@ -153,7 +152,6 @@ class TestOSFUser:
         u.save()
         assert u.username == email
         assert u.is_registered is False
-        assert u.is_claimed is False
         assert u.is_invited is True
         assert not u.emails.filter(address=email).exists()
         parsed = impute_names_model(name)
@@ -241,7 +239,7 @@ class TestOSFUser:
     def test_add_blacklisted_domain_unconfirmed_email(self, user):
         with pytest.raises(BlacklistedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
-        assert e.value.message == 'Invalid Email'
+        assert str(e.value) == 'Invalid Email'
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url_for_external_service(self, random_string):
@@ -346,7 +344,6 @@ class TestOSFUser:
         assert len(u.email_verifications.keys()) == 0
         assert u.emails.filter(address=u.username).exists()
         assert bool(u.is_registered) is True
-        assert bool(u.is_claimed) is True
 
     def test_confirm_email(self, user):
         token = user.add_unconfirmed_email('foo@bar.com')
@@ -724,7 +721,7 @@ class TestChangePassword:
         with pytest.raises(ChangePasswordError) as excinfo:
             user.change_password(old_password, new_password, confirm_password)
             user.save()
-        assert error_message in excinfo.value.message
+        assert error_message in str(excinfo)
         assert bool(user.check_password(new_password)) is False
 
     def test_change_password_invalid_old_password(self):
@@ -970,7 +967,7 @@ class TestUnregisteredUser:
             unreg_user.add_unclaimed_record(project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
-        assert e.value.message == 'Referrer does not have permission to add a contributor to project {}'.format(project._primary_key)
+        assert str(e.value) == 'Referrer does not have permission to add a contributor to project {}'.format(project._primary_key)
 
         # test_referrer_is_not_admin_or_moderator
         referrer = UserFactory()
@@ -978,18 +975,16 @@ class TestUnregisteredUser:
             unreg_moderator.add_unclaimed_record(provider,
                 given_name='hodor', referrer=referrer)
             unreg_user.save()
-        assert e.value.message == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
+        assert str(e.value) == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
 
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     @mock.patch('osf.models.OSFUser.update_search')
     def test_register(self, mock_search, mock_search_nodes):
         user = UnregUserFactory()
         assert user.is_registered is False  # sanity check
-        assert user.is_claimed is False
         email = fake_email()
         user.register(username=email, password='killerqueen')
         user.save()
-        assert user.is_claimed is True
         assert user.is_registered is True
         assert user.check_password('killerqueen') is True
         assert user.username == email
@@ -1469,7 +1464,7 @@ class TestUser(OsfTestCase):
     def test_cannot_remove_primary_email_from_email_list(self):
         with pytest.raises(PermissionsError) as e:
             self.user.remove_email(self.user.username)
-        assert e.value.message == 'Can\'t remove primary email'
+        assert str(e.value) == 'Can\'t remove primary email'
 
     def test_add_same_unconfirmed_email_twice(self):
         email = 'test@mail.com'
@@ -1635,7 +1630,6 @@ class TestUserMerging(OsfTestCase):
             'family_name',
             'fullname',
             'given_name',
-            'is_claimed',
             'is_invited',
             'is_registered',
             'jobs',
@@ -1721,7 +1715,7 @@ class TestUserMerging(OsfTestCase):
         self.user.reload()
 
         # check each field/value pair
-        for k, v in expected.iteritems():
+        for k, v in expected.items():
             if is_mrm_field(getattr(self.user, k)):
                 assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, '{} doesn\'t match expectations'.format(k)
             else:
@@ -1742,7 +1736,7 @@ class TestUserMerging(OsfTestCase):
         assert self.unconfirmed.is_merged is True
         assert self.unconfirmed.merged_by == self.user
 
-        assert self.user.is_claimed is True
+        assert self.user.is_registered is True
         assert self.user.is_invited is False
 
         # TODO: test profile fields - jobs, schools, social

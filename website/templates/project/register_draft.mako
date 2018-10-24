@@ -35,7 +35,7 @@
           </button>
         </span>
         <span data-bind="if: draft.isPendingApproval">
-          <a type="button" class="btn btn-default pull-left" href="${web_url_for('node_registrations', pid=node['id'], tab='drafts')}"> Back </a>
+          <a type="button" class="btn btn-default pull-left" href="${web_url_for('node_registrations', pid=node['id'], tab='drafts', _guid=True)}"> Back </a>
         </span>
 
         <span data-bind="if: (draft.metaSchema.name === 'Prereg Challenge' && !draft.isPendingApproval)">

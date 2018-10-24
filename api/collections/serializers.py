@@ -135,7 +135,7 @@ class CollectionSerializer(JSONAPISerializer):
         """
         assert isinstance(collection, Collection), 'collection must be a Collection'
         if validated_data:
-            for key, value in validated_data.iteritems():
+            for key, value in validated_data.items():
                 if key == 'title' and collection.is_bookmark_collection:
                     raise InvalidModelValueError('Bookmark collections cannot be renamed.')
                 setattr(collection, key, value)
@@ -205,9 +205,9 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
             try:
                 obj.set_subjects(subjects, auth)
             except PermissionsError as e:
-                raise exceptions.PermissionDenied(detail=e.message)
+                raise exceptions.PermissionDenied(detail=str(e))
             except (ValueError, NodeStateError) as e:
-                raise exceptions.ValidationError(detail=e.message)
+                raise exceptions.ValidationError(detail=str(e))
         if 'status' in validated_data:
             obj.status = validated_data.pop('status')
         if 'collected_type' in validated_data:
@@ -245,9 +245,9 @@ class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
             try:
                 obj.set_subjects(subjects, auth)
             except PermissionsError as e:
-                raise exceptions.PermissionDenied(detail=e.message)
+                raise exceptions.PermissionDenied(detail=str(e))
             except (ValueError, NodeStateError) as e:
-                raise exceptions.ValidationError(detail=e.message)
+                raise exceptions.ValidationError(detail=str(e))
         return obj
 
 

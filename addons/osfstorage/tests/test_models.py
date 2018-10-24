@@ -168,7 +168,7 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_children(self):
         kids = [
             self.node_settings.get_root().append_file('Foo{}Bar'.format(x))
-            for x in xrange(100)
+            for x in range(100)
         ]
 
         assert_equals(sorted(kids, key=lambda kid: kid.name), list(self.node_settings.get_root().children.order_by('name')))
@@ -236,7 +236,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(trashed.path, '/' + child._id)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
                                f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type', 'modified']]
-        for f, value in child_data.iteritems():
+        for f, value in child_data.items():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
 

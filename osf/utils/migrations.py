@@ -5,6 +5,7 @@ import logging
 
 from contextlib import contextmanager
 from django.apps import apps
+from django.db.migrations.operations.base import Operation
 
 from website import settings
 from osf.models import NodeLicense, RegistrationSchema
@@ -158,3 +159,59 @@ def remove_schemas(*args):
     RegistrationSchema.objects.all().delete()
 
     logger.info('Removed {} schemas from the database'.format(pre_count))
+
+
+class AddWaffleFlags(Operation):
+    """Custom migration operation to add waffle flags
+
+    Params:
+    - flag_names: iterable of strings, flag names to create
+    - on_for_everyone: boolean (default False), whether to activate the newly created flags
+    """
+    reversible = True
+
+    def __init__(self, flag_names, on_for_everyone=False):
+        self.flag_names = flag_names
+        self.on_for_everyone = on_for_everyone
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        Flag = to_state.apps.get_model('waffle', 'flag')
+        for flag_name in self.flag_names:
+            Flag.objects.get_or_create(name=flag_name, defaults={'everyone': self.on_for_everyone})
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        Flag = to_state.apps.get_model('waffle', 'flag')
+        Flag.objects.filter(name__in=self.flag_names).delete()
+
+    def describe(self):
+        return 'Adds waffle flags: {}'.format(', '.join(self.flag_names))
+
+
+class DeleteWaffleFlags(Operation):
+    """Custom migration operation to delete waffle flags
+
+    Params:
+    - flag_names: iterable of strings, flag names to delete
+    """
+    reversible = True
+
+    def __init__(self, flag_names):
+        self.flag_names = flag_names
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        Flag = to_state.apps.get_model('waffle', 'flag')
+        Flag.objects.filter(name__in=self.flag_names).delete()
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        Flag = to_state.apps.get_model('waffle', 'flag')
+        for flag_name in self.flag_names:
+            Flag.objects.get_or_create(name=flag_name)
+
+    def describe(self):
+        return 'Adds waffle flags: {}'.format(', '.join(self.flag_names))

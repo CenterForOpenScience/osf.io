@@ -537,8 +537,8 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     def get_queryset(self):
         user = self.get_user()
         identities = []
-        for key, value in user.external_identity.iteritems():
-            identities.append({'_id': key, 'external_id': value.keys()[0], 'status': value.values()[0]})
+        for key, value in user.external_identity.items():
+            identities.append({'_id': key, 'external_id': list(value.keys())[0], 'status': list(value.values())[0]})
 
         return identities
 

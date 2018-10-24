@@ -17,7 +17,7 @@ from django.apps import apps
 from django.core.paginator import Paginator
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
+from elasticsearch2 import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.database import paginated
@@ -153,7 +153,7 @@ def get_aggregations(query, doc_type):
             item['key']: item['doc_count']
             for item in agg['buckets']
         }
-        for doc_type, agg in res['aggregations'].iteritems()
+        for doc_type, agg in res['aggregations'].items()
     }
     ret['total'] = res['hits']['total']
     return ret

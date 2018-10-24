@@ -440,6 +440,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
+        'scripts.clear_sessions',
     }
 
     med_pri_modules = {
@@ -509,6 +510,7 @@ class CeleryConfig:
         'scripts.approve_registrations',
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
+        'scripts.clear_sessions',
         'scripts.send_queued_mails',
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
@@ -582,6 +584,11 @@ class CeleryConfig:
             },
             'triggered_mails': {
                 'task': 'scripts.triggered_mails',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
+            'clear_sessions': {
+                'task': 'scripts.clear_sessions',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },

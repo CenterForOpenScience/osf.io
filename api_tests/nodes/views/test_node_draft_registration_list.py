@@ -55,7 +55,7 @@ class DraftRegistrationTestCase:
             json_schema = create_jsonschema_from_metaschema(
                 draft.registration_schema.schema)
 
-            for key, value in json_schema['properties'].iteritems():
+            for key, value in json_schema['properties'].items():
                 response = 'Test response'
                 if value['properties']['value'].get('enum'):
                     response = value['properties']['value']['enum'][0]

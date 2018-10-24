@@ -988,7 +988,7 @@ class LinksField(ser.Field):
 
     def to_representation(self, obj):
         ret = {}
-        for name, value in self.links.iteritems():
+        for name, value in self.links.items():
             try:
                 url = _url_val(value, obj=obj, serializer=self.parent, request=self.context['request'])
             except SkipField:
@@ -1230,7 +1230,7 @@ class BaseAPISerializer(ser.Serializer, SparseFieldsetMixin):
         super(BaseAPISerializer, self).__init__(*args, **kwargs)
         self.model_field_names = [
             name if field.source == '*' else field.source
-            for name, field in self.fields.iteritems()
+            for name, field in self.fields.items()
         ]
 
 
@@ -1420,10 +1420,18 @@ class JSONAPISerializer(BaseAPISerializer):
                 ret['meta'] = {'anonymous': True}
         else:
             ret = data
+
+        additional_meta = self.get_meta(obj)
+        if additional_meta:
+            meta_obj = ret.setdefault('meta', {})
+            meta_obj.update(additional_meta)
         return ret
 
     def get_absolute_url(self, obj):
         raise NotImplementedError()
+
+    def get_meta(self, obj):
+        return None
 
     def get_absolute_html_url(self, obj):
         return utils.extend_querystring_if_key_exists(obj.absolute_url, self.context['request'], 'view_only')

@@ -25,7 +25,7 @@ def serialize_node(node):
         'embargo': embargo,
         'embargo_formatted': embargo_formatted,
         'contributors': [serialize_simple_user_and_node_permissions(node, user) for user in node.contributors],
-        'children': map(serialize_simple_node, node.nodes),
+        'children': list(map(serialize_simple_node, node.nodes)),
         'deleted': node.is_deleted,
         'pending_registration': node.is_pending_registration,
         'registered_date': node.registered_date,
@@ -39,7 +39,7 @@ def serialize_node(node):
     }
 
 def serialize_log(log):
-    return log, list(log.params.iteritems())
+    return log, log.params.items()
 
 
 def serialize_simple_user_and_node_permissions(node, user):
