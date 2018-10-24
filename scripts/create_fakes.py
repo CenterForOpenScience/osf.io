@@ -270,9 +270,8 @@ def create_fake_user():
     email = fake_email()
     name = fake.name()
     user = UserFactory(username=email, fullname=name,
-                       is_registered=True, is_claimed=True,
+                       is_registered=True, emails=[email],
                        date_registered=fake.date_time(tzinfo=pytz.UTC),
-                       emails=[email]
                    )
     user.set_password('faker123')
     user.save()

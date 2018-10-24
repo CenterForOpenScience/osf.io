@@ -29,6 +29,7 @@ ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
 LOG_LEVEL = logging.INFO
+TEST_ENV = False
 
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
     VERSION = json.load(fobj)['version']
@@ -438,6 +439,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
+        'scripts.clear_sessions',
     }
 
     med_pri_modules = {
@@ -506,6 +508,7 @@ class CeleryConfig:
         'scripts.approve_registrations',
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
+        'scripts.clear_sessions',
         'scripts.send_queued_mails',
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
@@ -579,6 +582,11 @@ class CeleryConfig:
             },
             'triggered_mails': {
                 'task': 'scripts.triggered_mails',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
+            'clear_sessions': {
+                'task': 'scripts.clear_sessions',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
