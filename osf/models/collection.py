@@ -31,11 +31,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
     guid = models.ForeignKey('Guid', on_delete=models.CASCADE)
     creator = models.ForeignKey('OSFUser')
-    collected_type = models.CharField(blank=True, max_length=31)
-    status = models.CharField(blank=True, max_length=31)
-    volume = models.CharField(blank=True, max_length=31)
-    issue = models.CharField(blank=True, max_length=31)
-    program_area = models.CharField(blank=True, max_length=31)
+    collected_type = models.CharField(blank=True, max_length=127)
+    status = models.CharField(blank=True, max_length=127)
+    volume = models.CharField(blank=True, max_length=127)
+    issue = models.CharField(blank=True, max_length=127)
+    program_area = models.CharField(blank=True, max_length=127)
 
     @cached_property
     def _id(self):
@@ -105,11 +105,11 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             'model__in': ['abstractnode', 'basefilenode', 'collection', 'preprintservice']
         })
     title = models.CharField(max_length=200, validators=[validate_title])
-    collected_type_choices = ArrayField(models.CharField(max_length=31), blank=True, default=list)
-    status_choices = ArrayField(models.CharField(max_length=31), blank=True, default=list)
-    volume_choices = ArrayField(models.CharField(max_length=31), blank=True, default=list)
-    issue_choices = ArrayField(models.CharField(max_length=31), blank=True, default=list)
-    program_area_choices = ArrayField(models.CharField(max_length=31), blank=True, default=list)
+    collected_type_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
+    status_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
+    volume_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
+    issue_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
+    program_area_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     is_public = models.BooleanField(default=False, db_index=True)
     is_promoted = models.BooleanField(default=False, db_index=True)
     is_bookmark_collection = models.BooleanField(default=False, db_index=True)

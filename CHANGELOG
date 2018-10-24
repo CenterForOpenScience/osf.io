@@ -2,6 +2,17 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+18.4.0 (2018-10-23)
+===================
+
+- Store preprint views and downloads in Elasticsearch using django-elasticsearch-metrics.
+  This feature is behind the elasticsearch_metrics waffle switch.
+- Add link on OSF Search to institutions landing page.
+- Fix for editing tags on registrations.
+- Remove unnecessary is_claimed field on OSFUser.
+- Add celerybeatjob to clear out stale Session records.
+- Fix syncing registration tags with SHARE.
+
 18.3.0 (2018-10-10)
 ===================
 

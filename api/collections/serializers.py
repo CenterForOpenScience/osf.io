@@ -49,23 +49,23 @@ class CollectionSerializer(JSONAPISerializer):
     is_promoted = ser.BooleanField(read_only=True, default=False)
     is_public = ser.BooleanField(read_only=False, default=False)
     status_choices = ser.ListField(
-        child=ser.CharField(max_length=31),
+        child=ser.CharField(max_length=127),
         default=list(),
     )
     collected_type_choices = ser.ListField(
-        child=ser.CharField(max_length=31),
+        child=ser.CharField(max_length=127),
         default=list(),
     )
     volume_choices = ser.ListField(
-        child=ser.CharField(max_length=31),
+        child=ser.CharField(max_length=127),
         default=list(),
     )
     issue_choices = ser.ListField(
-        child=ser.CharField(max_length=31),
+        child=ser.CharField(max_length=127),
         default=list(),
     )
     program_area_choices = ser.ListField(
-        child=ser.CharField(max_length=31),
+        child=ser.CharField(max_length=127),
         default=list(),
     )
 

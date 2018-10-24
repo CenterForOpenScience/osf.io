@@ -4,7 +4,7 @@ from osf.models import Registration, RegistrationSchema
 
 PREREG_SCHEMA_NAMES = [
     'Prereg Challenge',
-    'AsPredicted Preregistration',
+    'Preregistration Template from AsPredicted.org',
     'OSF-Standard Pre-Data Collection Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',
     "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016): Pre-Registration",
