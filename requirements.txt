@@ -43,7 +43,7 @@ progressbar==2.3
 # (http://docs.python-requests.org/en/latest/community/faq/#what-are-hostname-doesn-t-match-errors)
 ndg-httpsclient==0.3.0
 # Python markdown extensions for comment emails
-git+git://github.com/CenterForOpenScience/mdx_del_ins.git
+git+git://github.com/aleray/mdx_del_ins.git@242ec8077def0146a9e91f74d943cf49fe11ce43
 
 # Issue: certifi-2015.9.6.1 and 2015.9.6.2 fail verification (https://github.com/certifi/python-certifi/issues/26)
 # MailChimp Ticket: LTK1218902287135X, Domain: https://us9.api.mailchimp.com
@@ -67,9 +67,7 @@ django-cors-headers==2.1.0
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
 pyjwt==1.5.3
-# django-celery-beat==1.0.1  # BSD 3 Clause
-# Contains a fix for handling disabled tasks that still has not been release
-git+git://github.com/celery/django-celery-beat@f014edcb954c707cb7628f4416257b6a58689523# BSD 3 Clause
+django-celery-beat==1.2.0  # BSD 3 Clause
 django-celery-results==1.0.1
 # Issue: sorry, but this version only supports 100 named groups (https://github.com/eliben/pycparser/issues/147)
 pycparser==2.18
@@ -92,7 +90,7 @@ django-typed-models==0.7.0
 django-storages==1.6.6
 google-cloud-storage==0.22.0  # dependency of django-storages, hard-pin to version
 django-dirtyfields==1.3.1
-git+https://github.com/cos-forks/django-extensions@master
+django-extensions==2.1.3
 django-include==0.2.4
 psycopg2==2.7.3
 ujson==1.35
