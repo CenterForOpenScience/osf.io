@@ -131,7 +131,6 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
     owner = models.ForeignKey('OSFUser', db_index=True, blank=True, null=True, on_delete=models.SET_NULL)
     name = models.CharField(max_length=100, blank=False, null=False, db_index=True)
 
-    # Temporary field so scopes can be properly related to tokens
     scopes = models.ManyToManyField('ApiOAuth2Scope', related_name='tokens', blank=False)
 
     is_active = models.BooleanField(default=True, db_index=True)

@@ -3,16 +3,33 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-from osf.models.oauth import ApiOAuth2PersonalToken, ApiOAuth2Scope
 
+"""
+2-part migration to make scopes an m2m field instead of a charfield on tokens
+
+This migration:
+1. Makes scopes field nullable
+2. Adds a scopes_temp field
+3. Copies scopes information from scopes field to scopes temp (char -> m2m)
+
+0140_auto_20181018_0008:
+1. Removes old scopes field (charfield)
+2. Renames scopes_temp -> scopes
+
+"""
 
 def remove_m2m_scopes(state, schema):
+    ApiOAuth2PersonalToken = state.get_model('osf', 'apioauth2personaltoken')
     tokens = ApiOAuth2PersonalToken.objects.all()
     for token in tokens:
-        token.scope_temp.clear()
+        token.scopes = ' '.join([scope.name for scope in token.scopes_temp.all()])
+        token.scopes_temp.clear()
         token.save()
 
 def migrate_scopes_from_char_to_m2m(state, schema):
+    ApiOAuth2PersonalToken = state.get_model('osf', 'apioauth2personaltoken')
+    ApiOAuth2Scope = state.get_model('osf', 'apioauth2scope')
+
     tokens = ApiOAuth2PersonalToken.objects.all()
     # Loop inside loop? How many tokens do we have on prod?
     for token in tokens:
@@ -27,7 +44,16 @@ class Migration(migrations.Migration):
         ('osf', '0138_merge_20181012_1944'),
     ]
 
+    # AlterField migration added to set null=True because when reverting 0140_auto_20181018_0008,
+    # scopes will be renamed to scopes_temp, and a scopes field will be restored.  That scopes
+    # field would be empty until this migration was run, but null needs to be True to all this.
     operations = [
+        migrations.AlterField(
+            model_name='apioauth2personaltoken',
+            name='scopes',
+            field=models.CharField(blank=False, null=True, max_length=300)
+        ),
+
         migrations.AddField(
             model_name='apioauth2personaltoken',
             name='scopes_temp',
