@@ -129,6 +129,13 @@ class ShowIfVersion(ConditionalField):
         return request and utils.is_deprecated(request.version, self.min_version, self.max_version)
 
 
+class RequireIfVersion(ShowIfVersion):
+
+    def bind(self, field_name, parent):
+        super(RequireIfVersion, self).bind(field_name, parent)
+        version = self.parent.context['view'].request.version
+        parent.fields[field_name].required = not utils.is_deprecated(version, self.min_version, self.max_version)
+
 class ShowIfCurrentUser(ConditionalField):
 
     def should_show(self, instance):

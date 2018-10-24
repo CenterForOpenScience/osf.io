@@ -3,22 +3,15 @@ from django.db import IntegrityError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from api.base import utils
-
 from website.files import exceptions as file_exceptions
-from api.base.serializers import IDField
+from api.base.serializers import IDField, RequireIfVersion
 
 
 class DestinationSerializer(ser.Serializer):
     parent = ser.CharField(write_only=True)
     target = ser.CharField(write_only=True)
     name = ser.CharField(write_only=True, allow_blank=True, allow_null=True)
-    node = ser.CharField(write_only=True)
-
-    def bind(self, *args, **kwargs):
-        super(DestinationSerializer, self).bind(*args, **kwargs)
-        version = self.parent.context['view'].request.version
-        self.fields['node'].required = not utils.is_deprecated(version, min_version='2.0', max_version='2.7')
+    node = RequireIfVersion(ser.CharField(write_only=True), min_version='2.0', max_version='2.7')
 
 class WaterbutlerMetadataSerializer(ser.Serializer):
     source = ser.CharField(write_only=True)
