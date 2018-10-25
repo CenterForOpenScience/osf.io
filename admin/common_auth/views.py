@@ -29,6 +29,10 @@ logger = logging.getLogger(__name__)
 import logging
 logger = logging.getLogger(__name__)
 
+from osf.models.institution import Institution
+import urllib
+from framework.auth import get_or_create_user
+
 class LoginView(FormView):
     form_class = LoginForm
     redirect_field_name = REDIRECT_FIELD_NAME
