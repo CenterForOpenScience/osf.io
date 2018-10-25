@@ -16,7 +16,6 @@ from framework import status
 from framework.utils import iso8601format
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from framework.flask import redirect  # VOL-aware redirect
 from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
