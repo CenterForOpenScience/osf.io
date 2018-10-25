@@ -18,6 +18,10 @@ from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserFor
 import logging
 logger = logging.getLogger(__name__)
 
+from osf.models.institution import Institution
+import urllib
+from framework.auth import get_or_create_user
+
 class LoginView(FormView):
     form_class = LoginForm
     redirect_field_name = REDIRECT_FIELD_NAME
@@ -57,8 +61,64 @@ class ShibLoginView(FormView):
     @method_decorator(csrf_protect)
     @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
-        return super(ShibLoginView, self).dispatch(request, *args, **kwargs)
+        ''' TODO:
+            add login from shibboleth:
+            username -> request
+        '''
 
+        idp = request.environ['HTTP_AUTH_SHIB_IDENTITY_PROVIDER']
+        institution = Institution.objects.filter(login_url__contains=idp)
+        institution = Institution.objects.filter(login_url__contains=urllib.quote(idp, safe='')) if not institution else institution
+        if not institution:
+          print('Authentication failed: Invalid institution id specified "{}"'.format(idp))
+          return redirect('auth:login')
+        print(vars(institution))
+
+        # user = request.user
+        # if hasattr(user, 'affiliated_institutions') and user.affiliated_institutions.all():
+        #   user.affiliated_institutions.add(institution)
+        # else:
+        #   print('Authentication failed: No affiliated institutions "{}"'.format(user.username))
+        #   return redirect('auth:login')
+ 
+        eppn = request.environ['HTTP_AUTH_EPPN']
+        if not eppn:
+          message = 'login failed: eppn required'
+          print(message)
+          return redirect('auth:login')
+        eppn_user = OSFUser.objects.filter(username=eppn)
+        if eppn_user:
+          user_is_staff = hasattr(eppn_user, 'is_staff') and eppn_user.is_staff
+          user_is_superuser = hasattr(eppn_user, 'is_superuser') and eppn_user.is_superuser
+          if user_is_staff or user_is_superuser or "GakuninRDMAdmin" in request.environ['HTTP_AUTH_ENTITLEMENT']: 
+            # login success
+            # not sure about this code
+            return super(ShibLoginView, self).dispatch(request, *args, **kwargs)
+          else:
+            # login failure occurs and the screen transits to the error screen
+            # not sure about this code
+            message = 'login failed: not staff or superuser'
+            print(message)
+            return redirect('auth:login')
+        else:
+          if "GakuninRDMAdmin" not in request.HTTP_AUTH_ENTITLEMENT:
+            message = 'login failed: no user with matching eppn'
+            print(message)
+            return redirect('auth:login')
+          else:
+            new_user, created = get_or_create_user(request.environ['HTTP_AUTH_DISPLAYNAME'], eppn, is_staff=True)
+            new_user.affiliated_institutions.add(institution)
+            eppn_user = new_user
+
+        auth.login(request, eppn_user)
+
+        logger.info('ShibLoginView.dispatch.request.environ:{}'.format((request.environ)))
+#       logger.info('ShibLoginView.dispatch.request.user:{}'.format(vars(request.user)))
+
+        # Transit to the administrator's home screen
+        # not sure about this code
+        return super(ShibLoginView, self).dispatch(request, *args, **kwargs)   
+ 
     def form_valid(self, form):
         user = authenticate(
             username=form.cleaned_data.get('email').strip(),
