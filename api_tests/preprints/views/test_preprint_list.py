@@ -241,6 +241,7 @@ class TestPreprintList(ApiTestCase):
 
     def test_withdrawn_preprints_list(self):
         pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=self.user)
+        pp.machine_state = 'pending'
         mod = AuthUserFactory()
         pp.provider.get_group('moderator').user_set.add(mod)
         pp.date_withdrawn = timezone.now()
@@ -795,6 +796,7 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
                                provider=provider_one,
                                subjects=[[subject._id]],
                                project=project_public,
+                               machine_state='pending',
                                is_published=False)
         preprint.add_contributor(user_write_contrib, permissions='write', save=True)
         return preprint
@@ -810,17 +812,16 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
 
-    def test_unpublished_invisible_to_write_contribs(
+    def test_unpublished_visible_to_write_contribs(
             self,
             app,
             user_write_contrib,
             preprint_unpublished,
             preprint_published,
             url):
-        # Also invisible because in initial state
         res = app.get(url, auth=user_write_contrib.auth)
-        assert len(res.json['data']) == 1
-        assert preprint_unpublished._id not in [
+        assert len(res.json['data']) == 2
+        assert preprint_unpublished._id in [
             d['id'] for d in res.json['data']]
 
     def test_unpublished_invisible_to_noncontribs(
@@ -841,7 +842,7 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
         res = app.get(
             '{}filter[is_published]=false'.format(url),
             auth=user_write_contrib.auth)
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == 1
 
 
 class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
@@ -964,7 +965,7 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
         preprint.add_contributor(user_write_contrib, permissions='write', save=True)
         return preprint
 
-    def test_unpublished_visible_to_admins(
+    def test_unpublished_not_visible_to_admins(
             self,
             app,
             user_admin_contrib,
@@ -972,8 +973,8 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
             preprint_published,
             url):
         res = app.get(url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 2
-        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
 
     def test_unpublished_invisible_to_write_contribs(
             self,
@@ -993,6 +994,17 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
             '{}filter[is_published]=false'.format(url),
             auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
+
+    def test_filter_published_false_admin(
+            self, app, user_admin_contrib, preprint_unpublished, url):
+
+        res = app.get(
+            '{}filter[is_published]=false'.format(url),
+            auth=user_admin_contrib.auth)
+        # initial state now visible to no one
+        assert len(res.json['data']) == 0
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
+
 
 
 class TestPreprintIsPublishedListMatchesDetail(
@@ -1044,7 +1056,7 @@ class TestPreprintIsPublishedListMatchesDetail(
     def detail_url(self, preprint_unpublished):
         return '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
 
-    def test_unpublished_visible_to_admins(
+    def test_unpublished_not_visible_to_admins(
             self,
             app,
             user_admin_contrib,
@@ -1053,8 +1065,8 @@ class TestPreprintIsPublishedListMatchesDetail(
             list_url,
             detail_url):
         res = app.get(list_url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 2
-        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
 
         res = app.get(detail_url, auth=user_admin_contrib.auth)
         assert res.json['data']['id'] == preprint_unpublished._id
@@ -1129,7 +1141,7 @@ class TestReviewsInitialPreprintIsPublishedListMatchesDetail(
     def detail_url(self, preprint_unpublished):
         return '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
 
-    def test_unpublished_visible_to_admins(
+    def test_unpublished_not_visible_to_admins(
             self,
             app,
             user_admin_contrib,
@@ -1138,8 +1150,8 @@ class TestReviewsInitialPreprintIsPublishedListMatchesDetail(
             list_url,
             detail_url):
         res = app.get(list_url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 2
-        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
 
         res = app.get(detail_url, auth=user_admin_contrib.auth)
         assert res.json['data']['id'] == preprint_unpublished._id

@@ -208,6 +208,7 @@ class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin):
             provider=provider_one,
             subjects=[[subject._id]],
             project=project_public,
+            machine_state='pending',
             is_published=False)
 
     def test_unpublished_visible_to_admins(

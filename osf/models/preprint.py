@@ -94,7 +94,7 @@ class PreprintManager(IncludeManager):
                 user=user,
                 allow_contribs=allow_contribs,
                 public_only=public_only,
-            ) & Q(deleted__isnull=True)
+            ) & Q(deleted__isnull=True) & ~Q(machine_state=DefaultStates.INITIAL.value)
         )
         # The auth subquery currently results in duplicates returned
         # https://openscience.atlassian.net/browse/OSF-9058
