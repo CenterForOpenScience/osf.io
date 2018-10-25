@@ -496,23 +496,6 @@ def external_login_confirm_email_get(auth, uid, token):
     if not destination:
         raise HTTPError(http.BAD_REQUEST)
 
-    # if user is already logged in
-    if auth and auth.user:
-        # if it is a wrong user
-        if auth.user._id != user._id:
-            return auth_logout(redirect_url=request.url)
-        # if it is the expected user
-        new = request.args.get('new', None)
-        if destination in campaigns.get_campaigns():
-            # external domain takes priority
-            campaign_url = campaigns.external_campaign_url_for(destination)
-            if not campaign_url:
-                campaign_url = campaigns.campaign_url_for(destination)
-            return redirect(campaign_url)
-        if new:
-            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
-        return redirect(web_url_for('dashboard'))
-
     # token is invalid
     if token not in user.email_verifications:
         raise HTTPError(http.BAD_REQUEST)
@@ -542,6 +525,23 @@ def external_login_confirm_email_get(auth, uid, token):
     del user.email_verifications[token]
     user.verification_key = generate_verification_key()
     user.save()
+
+    # if user is already logged in
+    if auth and auth.user:
+        # if it is a wrong user
+        if auth.user._id != user._id:
+            return auth_logout(redirect_url=request.url)
+        # if it is the expected user
+        new = request.args.get('new', None)
+        if destination in campaigns.get_campaigns():
+            # external domain takes priority
+            campaign_url = campaigns.external_campaign_url_for(destination)
+            if not campaign_url:
+                campaign_url = campaigns.campaign_url_for(destination)
+            return redirect(campaign_url)
+        if new:
+            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
+        return redirect(web_url_for('dashboard'))
 
     service_url = request.url
 

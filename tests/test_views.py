@@ -3942,6 +3942,23 @@ class TestExternalAuthViews(OsfTestCase):
         assert_true(self.user.is_registered)
         assert_true(self.user.has_usable_password())
 
+    def test_external_login_confirm_email_get_while_logged_in(self):
+        external_identity = {
+            'orcid': {
+                self.provider_id: 'PENDING'
+            }
+        }
+        user = AuthUserFactory(external_identity=external_identity)
+        user.email_verifications = {'token': {'expiration': timezone.now() + dt.timedelta(days=1), 'email': user.email, 'external_identity': {'orcid': {self.provider_id: 'status'}}}}
+        user.save()
+        url = user.get_confirmation_url(user.username, external_id_provider='orcid', destination='dashboard')
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/dashboard/', res.location)
+
+        user.reload()
+        assert_equal(user.external_identity['orcid'][self.provider_id], 'VERIFIED')
+
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_link(self, mock_link_confirm):
         self.user.external_identity['orcid'][self.provider_id] = 'LINK'
