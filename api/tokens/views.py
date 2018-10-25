@@ -17,7 +17,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON
 from api.base import permissions as base_permissions
 from api.scopes.serializers import ScopeSerializer
-from api.tokens.serializers import ApiOAuth2PersonalTokenSerializer
+from api.tokens.serializers import ApiOAuth2PersonalTokenWritableSerializer
 
 from osf.models import ApiOAuth2PersonalToken
 
@@ -35,7 +35,7 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     required_read_scopes = [CoreScopes.TOKENS_READ]
     required_write_scopes = [CoreScopes.TOKENS_WRITE]
 
-    serializer_class = ApiOAuth2PersonalTokenSerializer
+    serializer_class = ApiOAuth2PersonalTokenWritableSerializer
     view_category = 'tokens'
     view_name = 'token-list'
 
@@ -72,7 +72,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     required_read_scopes = [CoreScopes.TOKENS_READ]
     required_write_scopes = [CoreScopes.TOKENS_WRITE]
 
-    serializer_class = ApiOAuth2PersonalTokenSerializer
+    serializer_class = ApiOAuth2PersonalTokenWritableSerializer
     view_category = 'tokens'
     view_name = 'token-detail'
 
