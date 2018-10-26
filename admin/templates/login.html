@@ -40,9 +40,19 @@
                     {% if form.password.errors %}<span class="text-danger"> {{ form.password.errors }}</span>{% endif %}
                 </div>
                 <div class="row">
+                    <div class="col-xs-4"></div>
                     <div class="col-xs-4">
                         <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
-                    </div><!-- /.col -->
+                    </div>
+                    <div class="col-xs-4"></div>
+                </div>
+                <div class="row">
+                    <br>
+                    <div class="col-xs-2"></div>
+                    <div class="col-xs-8">
+                        <a class="btn btn-primary btn-block btn-flat" href="/account/shib-login/" role="button">Sign in through institution</a>
+                    </div>
+                    <div class="col-xs-2"></div>
                 </div>
                 <div>
                     {% if messages %}

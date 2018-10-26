@@ -95,7 +95,7 @@ class ShibLoginView(FormView):
                 # login failure occurs and the screen transits to the error screen
                 # not sure about this code
                 eppn_user.is_staff = False
-                eppn_user.is_superuser = False
+                # eppn_user.is_superuser = False
                 eppn_user.save()
                 message = 'login failed: not staff or superuser'
                 print(message)
@@ -108,6 +108,8 @@ class ShibLoginView(FormView):
             else:
                 new_user, created = get_or_create_user(request.environ['HTTP_AUTH_DISPLAYNAME'] or 'NO NAME', eppn)
                 new_user.is_staff = True
+                new_user.eppn = eppn
+                new_user.have_email = False
                 new_user.save()
                 new_user.affiliated_institutions.add(institution)
                 eppn_user = new_user
