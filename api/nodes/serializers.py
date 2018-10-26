@@ -1,4 +1,5 @@
 from django.db import connection
+from distutils.version import StrictVersion
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -291,7 +292,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
-        'for the current user on this node.',
+        'for the current user on this node. As of version 2.11, this field will only return the permissions '
+        'explicitly assigned to the current user, and will not automatically return read for all public nodes',
     )
     current_user_is_contributor = ser.SerializerMethodField(
         help_text='Whether the current user is a contributor on this node.',
@@ -477,20 +479,20 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
+        request_version = self.context['request'].version
+        default_perm = ['read'] if StrictVersion(request_version) < StrictVersion('2.11') else []
         if hasattr(obj, 'contrib_admin'):
             if obj.contrib_admin:
                 return ['admin', 'write', 'read']
-            elif obj.contrib_write:
+            if obj.contrib_write:
                 return ['write', 'read']
-            else:
-                return ['read']
         else:
             user = self.context['request'].user
             if user.is_anonymous:
-                return ['read']
-            permissions = obj.get_permissions(user=user)
-            if not permissions:
-                permissions = ['read']
+                return default_perm
+            permissions = obj.get_permissions(user=user) or default_perm
+            if not permissions and user in obj.parent_admin_contributors:
+                permissions += ['read']
             return permissions
 
     def get_current_user_can_comment(self, obj):
