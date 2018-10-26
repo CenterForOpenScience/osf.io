@@ -84,7 +84,7 @@ class ShibLoginView(FormView):
         if eppn_user:
             user_is_staff = hasattr(eppn_user, 'is_staff') and eppn_user.is_staff
             user_is_superuser = hasattr(eppn_user, 'is_superuser') and eppn_user.is_superuser
-            if user_is_staff or user_is_superuser or 'GakuninRDMAdmin' in request.environ['HTTP_AUTH_ENTITLEMENT']:
+            if user_is_staff or user_is_superuser or "GakuninRDMAdmin" in request.environ['HTTP_AUTH_ENTITLEMENT']:
                 # login success
                 # code is below this if/else tree
                 pass
@@ -95,7 +95,7 @@ class ShibLoginView(FormView):
                 print(message)
                 return redirect('auth:login')
         else:
-            if 'GakuninRDMAdmin' not in request.environ['HTTP_AUTH_ENTITLEMENT']:
+            if "GakuninRDMAdmin" not in request.environ['HTTP_AUTH_ENTITLEMENT']:
                 message = 'login failed: no user with matching eppn'
                 print(message)
                 return redirect('auth:login')
@@ -105,6 +105,8 @@ class ShibLoginView(FormView):
                 new_user.save()
                 new_user.affiliated_institutions.add(institution)
                 eppn_user = new_user
+
+        login(request, eppn_user, backend='api.base.authentication.backends.ODMBackend')
 
         # Transit to the administrator's home screen
         return redirect(self.get_success_url())
