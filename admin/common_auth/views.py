@@ -82,20 +82,23 @@ class ShibLoginView(FormView):
             return redirect('auth:login')
         eppn_user = get_user(eppn=eppn)
         if eppn_user:
-            user_is_staff = hasattr(eppn_user, 'is_staff') and eppn_user.is_staff
-            user_is_superuser = hasattr(eppn_user, 'is_superuser') and eppn_user.is_superuser
-            if user_is_staff or user_is_superuser or "GakuninRDMAdmin" in request.environ['HTTP_AUTH_ENTITLEMENT']:
+            if 'GakuninRDMAdmin' in request.environ['HTTP_AUTH_ENTITLEMENT']:
                 # login success
                 # code is below this if/else tree
-                pass
+                eppn_user.is_staff = True
+                #eppn_user.is_superuser = True
+                eppn_user.save()
             else:
                 # login failure occurs and the screen transits to the error screen
                 # not sure about this code
+                eppn_user.is_staff = False
+                eppn_user.is_superuser = False
+                eppn_user.save()
                 message = 'login failed: not staff or superuser'
                 print(message)
                 return redirect('auth:login')
         else:
-            if "GakuninRDMAdmin" not in request.environ['HTTP_AUTH_ENTITLEMENT']:
+            if 'GakuninRDMAdmin' not in request.environ['HTTP_AUTH_ENTITLEMENT']:
                 message = 'login failed: no user with matching eppn'
                 print(message)
                 return redirect('auth:login')
@@ -134,7 +137,7 @@ class ShibLoginView(FormView):
 
 def logout_user(request):
     logout(request)
-    return redirect('auth:login')
+    return redirect('login_home')
 
 
 class RegisterUser(PermissionRequiredMixin, FormView):
