@@ -91,7 +91,9 @@ class ShibLoginView(FormView):
         if eppn_user:
             user_is_staff = hasattr(eppn_user, 'is_staff') and eppn_user.is_staff
             user_is_superuser = hasattr(eppn_user, 'is_superuser') and eppn_user.is_superuser
-            if user_is_staff or user_is_superuser or "GakuninRDMAdmin" in request.environ['HTTP_AUTH_ENTITLEMENT']:
+            if user_is_staff in request.environ['HTTP_AUTH_ENTITLEMENT'] or \
+                    user_is_superuser in request.environ['HTTP_AUTH_ENTITLEMENT'] or \
+                    'GakuninRDMAdmin' in request.environ['HTTP_AUTH_ENTITLEMENT']:
                 # login success
                 # not sure about this code
                 return super(ShibLoginView, self).dispatch(request, *args, **kwargs)
@@ -102,7 +104,7 @@ class ShibLoginView(FormView):
                 print(message)
                 return redirect('auth:login')
         else:
-            if "GakuninRDMAdmin" not in request.HTTP_AUTH_ENTITLEMENT:
+            if 'GakuninRDMAdmin' not in request.HTTP_AUTH_ENTITLEMENT:
                 message = 'login failed: no user with matching eppn'
                 print(message)
                 return redirect('auth:login')
