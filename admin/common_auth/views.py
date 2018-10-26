@@ -26,15 +26,6 @@ from api.institutions.authentication import login_by_eppn
 import logging
 logger = logging.getLogger(__name__)
 
-import logging
-logger = logging.getLogger(__name__)
-
-from osf.models.institution import Institution
-import urllib
-from framework.auth import get_or_create_user
-
-import logging
-logger = logging.getLogger(__name__)
 
 class LoginView(FormView):
     form_class = LoginForm
@@ -52,7 +43,9 @@ class LoginView(FormView):
             password=form.cleaned_data.get('password').strip()
         )
         if user is not None:
+            print('self.request-before login:{}'.format(vars(self.request.session)))
             login(self.request, user)
+            print('self.request-after login:{}'.format(vars(self.request.session)))
         else:
             messages.error(
                 self.request,
