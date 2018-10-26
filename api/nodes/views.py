@@ -133,7 +133,7 @@ class NodeMixin(object):
             timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=self.kwargs['node_id'])
             timestamp_pattern.timestamp_pattern_division = int(self.request.data['timestampPattern'])
             timestamp_pattern.save()
-        except ObjectDoesNotExist:
+        except Exception:
             pass
         if node is None:
             node = get_object_or_error(
