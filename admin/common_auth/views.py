@@ -17,8 +17,12 @@ from osf.models import AdminProfile
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
 from osf.models.institution import Institution
-import urllib
 from framework.auth import get_or_create_user
+from framework.auth.core import get_user
+from admin.base.settings import SHIB_EPPN_SCOPING_SEPARATOR
+
+import logging
+logger = logging.getLogger(__name__)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -39,7 +43,9 @@ class LoginView(FormView):
             password=form.cleaned_data.get('password').strip()
         )
         if user is not None:
+            print('self.request-before login:{}'.format(vars(self.request.session)))
             login(self.request, user)
+            print('self.request-after login:{}'.format(vars(self.request.session)))
         else:
             messages.error(
                 self.request,
@@ -67,36 +73,24 @@ class ShibLoginView(FormView):
             username -> request
         '''
 
-        idp = request.environ['HTTP_AUTH_SHIB_IDENTITY_PROVIDER']
-        institution = Institution.objects.filter(login_url__contains=idp)
-        institution = Institution.objects.filter(login_url__contains=urllib.quote(idp, safe='')) if not institution else institution
-        if not institution:
-            print('Authentication failed: Invalid institution id specified "{}"'.format(idp))
-            return redirect('auth:login')
-        print(vars(institution))
-
-        # user = request.user
-        # if hasattr(user, 'affiliated_institutions') and user.affiliated_institutions.all():
-        #   user.affiliated_institutions.add(institution)
-        # else:
-        #   print('Authentication failed: No affiliated institutions "{}"'.format(user.username))
-        #   return redirect('auth:login')
-
         eppn = request.environ['HTTP_AUTH_EPPN']
+        seps = eppn.split(SHIB_EPPN_SCOPING_SEPARATOR)[-1]
+        institution = Institution.objects.filter(domains__contains=[str(seps)]).first()
+        if not institution:
+            return redirect('auth:login')
+
         if not eppn:
             message = 'login failed: eppn required'
             print(message)
             return redirect('auth:login')
-        eppn_user = OSFUser.objects.filter(username=eppn)
+        eppn_user = get_user(eppn=eppn)
         if eppn_user:
             user_is_staff = hasattr(eppn_user, 'is_staff') and eppn_user.is_staff
             user_is_superuser = hasattr(eppn_user, 'is_superuser') and eppn_user.is_superuser
-            if user_is_staff in request.environ['HTTP_AUTH_ENTITLEMENT'] or \
-                    user_is_superuser in request.environ['HTTP_AUTH_ENTITLEMENT'] or \
-                    'GakuninRDMAdmin' in request.environ['HTTP_AUTH_ENTITLEMENT']:
+            if user_is_staff or user_is_superuser or "GakuninRDMAdmin" in request.environ['HTTP_AUTH_ENTITLEMENT']:
                 # login success
-                # not sure about this code
-                return super(ShibLoginView, self).dispatch(request, *args, **kwargs)
+                # code is below this if/else tree
+                pass
             else:
                 # login failure occurs and the screen transits to the error screen
                 # not sure about this code
@@ -104,23 +98,19 @@ class ShibLoginView(FormView):
                 print(message)
                 return redirect('auth:login')
         else:
-            if 'GakuninRDMAdmin' not in request.HTTP_AUTH_ENTITLEMENT:
+            if "GakuninRDMAdmin" not in request.environ['HTTP_AUTH_ENTITLEMENT']:
                 message = 'login failed: no user with matching eppn'
                 print(message)
                 return redirect('auth:login')
             else:
-                new_user, created = get_or_create_user(request.environ['HTTP_AUTH_DISPLAYNAME'], eppn, is_staff=True)
+                new_user, created = get_or_create_user(request.environ['HTTP_AUTH_DISPLAYNAME'] or 'NO NAME', eppn)
+                new_user.is_staff = True
+                new_user.save()
                 new_user.affiliated_institutions.add(institution)
                 eppn_user = new_user
 
-        login(request, eppn_user)
-
-        logger.info('ShibLoginView.dispatch.request.environ:{}'.format((request.environ)))
-#       logger.info('ShibLoginView.dispatch.request.user:{}'.format(vars(request.user)))
-
         # Transit to the administrator's home screen
-        # not sure about this code
-        return super(ShibLoginView, self).dispatch(request, *args, **kwargs)
+        return redirect(self.get_success_url())
 
     def form_valid(self, form):
         user = authenticate(
