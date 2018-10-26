@@ -580,20 +580,14 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return obj.linked_nodes.count()
 
     def get_node_links_count(self, obj):
-        count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').exclude(type='osf.registration'):
-            if pointer.can_view(auth):
-                count += 1
-        return count
+        linked_nodes = obj.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').exclude(type='osf.registration')
+        return linked_nodes.can_view(auth.user, auth.private_link).count()
 
     def get_registration_links_count(self, obj):
-        count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.registration').exclude(type='osf.collection'):
-            if pointer.can_view(auth):
-                count += 1
-        return count
+        linked_registrations = obj.linked_nodes.filter(is_deleted=False, type='osf.registration').exclude(type='osf.collection')
+        return linked_registrations.can_view(auth.user, auth.private_link).count()
 
     def get_linked_by_nodes_count(self, obj):
         return obj._parents.filter(is_node_link=True, parent__is_deleted=False, parent__type='osf.node').count()
