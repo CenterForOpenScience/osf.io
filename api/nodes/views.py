@@ -109,7 +109,6 @@ from website import mails
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN, PERMISSIONS
 from osf.models import RdmTimestampGrantPattern
-from django.core.exceptions import ObjectDoesNotExist
 
 import logging
 logger = logging.getLogger(__name__)
