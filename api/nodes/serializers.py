@@ -298,6 +298,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     current_user_is_contributor = ser.SerializerMethodField(
         help_text='Whether the current user is a contributor on this node.',
     )
+    wiki_enabled = ser.SerializerMethodField(help_text='Whether the wiki addon is enabled')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(
@@ -623,6 +624,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             # i.e. after creating a node
             region_id = obj.osfstorage_region._id
         return region_id
+
+    def get_wiki_enabled(self, obj):
+        return obj.has_wiki_addon if hasattr(obj, 'has_wiki_addon') else obj.has_addon('wiki')
 
     def create(self, validated_data):
         request = self.context['request']
