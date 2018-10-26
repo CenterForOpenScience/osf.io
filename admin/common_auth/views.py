@@ -98,7 +98,7 @@ class ShibLoginView(RedirectView):
                 messages.error(self.request, message)
                 return redirect('auth:login')
         else:
-            if "GakuninRDMAdmin" not in request.environ['HTTP_AUTH_ENTITLEMENT']:
+            if 'GakuninRDMAdmin' not in request.environ['HTTP_AUTH_ENTITLEMENT']:
                 message = 'login failed: no user with matching eppn'
                 messages.error(self.request, message)
                 return redirect('auth:login')
@@ -131,7 +131,7 @@ class ShibLoginView(RedirectView):
 
 def logout_user(request):
     logout(request)
-    return redirect('auth:login')
+    return redirect('login_home')
 
 
 class RegisterUser(PermissionRequiredMixin, FormView):
