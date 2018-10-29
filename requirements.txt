@@ -43,7 +43,7 @@ progressbar==2.3
 # (http://docs.python-requests.org/en/latest/community/faq/#what-are-hostname-doesn-t-match-errors)
 ndg-httpsclient==0.3.0
 # Python markdown extensions for comment emails
-git+git://github.com/aleray/mdx_del_ins.git@242ec8077def0146a9e91f74d943cf49fe11ce43
+git+git://github.com/CenterForOpenScience/mdx_del_ins.git
 
 # Issue: certifi-2015.9.6.1 and 2015.9.6.2 fail verification (https://github.com/certifi/python-certifi/issues/26)
 # MailChimp Ticket: LTK1218902287135X, Domain: https://us9.api.mailchimp.com
