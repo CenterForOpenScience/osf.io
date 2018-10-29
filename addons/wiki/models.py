@@ -21,7 +21,7 @@ from markdown.extensions import codehilite, fenced_code, wikilinks
 from osf.models import NodeLog, OSFUser, Comment
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.requests import DummyRequest, get_request_and_user_id
+from osf.utils.requests import get_request_and_user_id, basestring_request_headers
 from addons.wiki import utils as wiki_utils
 from addons.wiki.exceptions import (
     PageCannotRenameError,
@@ -31,7 +31,6 @@ from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.files.exceptions import VersionNotFoundError
 from website import settings
-from osf.utils.requests import get_headers_from_request
 
 from .exceptions import (
     NameEmptyError,
@@ -185,13 +184,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
     def check_spam(self):
         request, user_id = get_request_and_user_id()
         user = OSFUser.load(user_id)
-        if not isinstance(request, DummyRequest):
-            request_headers = {
-                k: v
-                for k, v in get_headers_from_request(request).items()
-                if isinstance(v, basestring)
-            }
-
+        request_headers = basestring_request_headers(request)
         node = self.wiki_page.node
 
         if not settings.SPAM_CHECK_ENABLED:
