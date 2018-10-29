@@ -68,6 +68,8 @@ class ShibLoginView(RedirectView):
     @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
 
+        print('*** redirect view ***')
+
         eppn = request.environ['HTTP_AUTH_EPPN']
         seps = eppn.split(SHIB_EPPN_SCOPING_SEPARATOR)[-1]
         institution = Institution.objects.filter(domains__contains=[str(seps)]).first()
@@ -131,7 +133,7 @@ class ShibLoginView(RedirectView):
 
 def logout_user(request):
     logout(request)
-    return redirect('login_home')
+    return redirect('auth:login')
 
 
 class RegisterUser(PermissionRequiredMixin, FormView):
