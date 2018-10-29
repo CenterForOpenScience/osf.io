@@ -1132,18 +1132,6 @@ def make_url_map(app):
             OsfWebRenderer('project/project.mako', trust=False)
         ),
 
-        ### Logs ###
-
-        # View forks
-        Rule(
-            [
-                '/project/<pid>/forks/',
-                '/project/<pid>/node/<nid>/forks/',
-            ],
-            'get',
-            project_views.node.node_forks,
-            OsfWebRenderer('project/forks.mako', trust=False)
-        ),
 
         # Registrations
         Rule(
