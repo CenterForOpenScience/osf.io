@@ -40,6 +40,7 @@ from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
+from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social, validate_history_item
@@ -112,7 +113,7 @@ class Email(BaseModel):
         return self.address
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin, SpamMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
         'system_tags': 'tags',
@@ -156,6 +157,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'academiaProfileID': u'.academia.edu/{}',
         'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
         'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
+    }
+
+    SPAM_USER_PROFILE_FIELDS = {
+        'schools': ['degree', 'institution', 'department'],
+        'jobs': ['title', 'institution', 'department']
     }
 
     # The primary email address for the account.
@@ -1527,6 +1533,32 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
+
+    def _get_spam_content(self, saved_fields):
+        content = []
+        for field, contents in saved_fields.items():
+            if field in self.SPAM_USER_PROFILE_FIELDS.keys():
+                for item in contents:
+                    for key, value in item.items():
+                        if key in self.SPAM_USER_PROFILE_FIELDS[field]:
+                            content.append(value.encode('utf-8'))
+        return ' '.join(content).strip()
+
+    def check_spam(self, saved_fields, request_headers):
+        if not website_settings.SPAM_CHECK_ENABLED:
+            return False
+        is_spam = False
+        content = self._get_spam_content(saved_fields)
+        if content:
+            is_spam = self.do_check_spam(
+                self.fullname,
+                self.username,
+                content,
+                request_headers
+            )
+            self.save()
+
+        return is_spam
 
     def gdpr_delete(self):
         """

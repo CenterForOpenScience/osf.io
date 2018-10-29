@@ -74,3 +74,14 @@ def get_headers_from_request(req):
         }
         headers['Remote-Addr'] = req.remote_addr
     return headers
+
+
+def basestring_request_headers(req):
+    request_headers = {}
+    if not isinstance(req, DummyRequest):
+        request_headers = {
+            k: v
+            for k, v in get_headers_from_request(req).items()
+            if isinstance(v, basestring)
+        }
+    return request_headers
