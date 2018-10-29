@@ -2113,3 +2113,27 @@ class TestUserGdprDelete:
             user.gdpr_delete()
         assert exc_info.value.args[0] == 'You cannot delete this user because they have an external account for' \
                                          ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)
+
+
+class TestUserSpam:
+
+    @pytest.fixture
+    def user(self):
+        return AuthUserFactory()
+
+    def test_get_spam_content(self, user):
+        schools_list = []
+        expected_content = ''
+
+        for _ in range(2):
+            institution = fake.company()
+            degree = fake.catch_phrase()
+            schools_list.append({
+                'degree': degree,
+                'institution': institution
+            })
+            expected_content += '{} {} '.format(institution, degree)
+        saved_fields = {'schools': schools_list}
+
+        spam_content = user._get_spam_content(saved_fields)
+        assert spam_content == expected_content.strip()
