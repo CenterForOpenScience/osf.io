@@ -15,7 +15,7 @@ def untransfer_forked_date(state, schema):
     Revert the last logged date of nodes whose last log is forking to the previous log's date
     """
     newest = NodeLog.objects.filter(node=OuterRef('pk')).order_by('-date')
-    nodes = Node.objects.annotate(latest_log=Subquery(newest.values('action')[:1])).filter(latest_log='node_forked')
+    nodes = Node.objects.filter(is_fork=True).annotate(latest_log=Subquery(newest.values('action')[:1])).filter(latest_log='node_forked')
     for node in nodes:
         node.last_logged = node.logs.order_by('-date')[1].date
 
@@ -26,7 +26,7 @@ def transfer_forked_date(state, schema):
     If the most recent node log is forking, transfer that log's date to the node's last_logged field
     """
     newest = NodeLog.objects.filter(node=OuterRef('pk')).order_by('-date')
-    nodes = Node.objects.annotate(latest_log=Subquery(newest.values('action')[:1])).filter(latest_log='node_forked')
+    nodes = Node.objects.filter(is_fork=True).annotate(latest_log=Subquery(newest.values('action')[:1])).filter(latest_log='node_forked')
     for node in nodes:
         node.last_logged = node.logs.first().date
 
