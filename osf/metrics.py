@@ -12,7 +12,7 @@ class MetricMixin(object):
         if after:
             search = search.filter('range', timestamp={'gte': after})
         search.aggs.\
-            bucket('by_id', 'terms', field=metric_field, order={'sum_count': 'desc'}).\
+            bucket('by_id', 'terms', field=metric_field, size=size, order={'sum_count': 'desc'}).\
             metric('sum_count', 'sum', field=count_field)
         # Optimization: set size to 0 so that hits aren't returned (we only care about the aggregation)
         response = search.extra(size=0).execute()
