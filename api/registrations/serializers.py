@@ -395,7 +395,16 @@ class RegistrationSerializer(BaseRegistrationSerializer):
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
-    children = ser.ListField(write_only=True, required=False)
+
+    # Because the write-only `children` field shadows the read-only both fields must be included here to prevent the
+    # write-only from overriding the read-only in the parent class.
+    children = HideIfWithdrawal(RelationshipField(  # Read-only
+        related_view='registrations:registration-children',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_node_count'},
+    ))
+
+    children = ser.ListField(write_only=True, required=False)  # Write-only
 
 
 class RegistrationDetailSerializer(BaseRegistrationSerializer):
