@@ -21,6 +21,8 @@ from framework.auth import get_or_create_user
 from framework.auth.core import get_user
 from admin.base.settings import SHIB_EPPN_SCOPING_SEPARATOR
 
+from django.views.generic.base import RedirectView
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -60,10 +62,10 @@ class LoginView(FormView):
             redirect_to = reverse('home')
         return redirect_to
 
-class ShibLoginView(FormView):
+class ShibLoginView(RedirectView):
     form_class = LoginForm
     redirect_field_name = REDIRECT_FIELD_NAME
-    template_name = 'shib-login.html'
+    #template_name = 'shib-login.html'
 
     @method_decorator(csrf_protect)
     @method_decorator(never_cache)
@@ -72,6 +74,8 @@ class ShibLoginView(FormView):
             add login from shibboleth:
             username -> request
         '''
+
+        print('*** redirect view ***')
 
         eppn = request.environ['HTTP_AUTH_EPPN']
         seps = eppn.split(SHIB_EPPN_SCOPING_SEPARATOR)[-1]
@@ -119,20 +123,20 @@ class ShibLoginView(FormView):
         # Transit to the administrator's home screen
         return redirect(self.get_success_url())
 
-    def form_valid(self, form):
-        user = authenticate(
-            username=form.cleaned_data.get('email').strip(),
-            password=form.cleaned_data.get('password').strip()
-        )
-        if user is not None:
-            login(self.request, user)
-        else:
-            messages.error(
-                self.request,
-                'Email and/or Password incorrect. Please try again.'
-            )
-            return redirect('auth:shib-login')
-        return super(ShibLoginView, self).form_valid(form)
+    #def form_valid(self, form):
+    #    user = authenticate(
+    #        username=form.cleaned_data.get('email').strip(),
+    #        password=form.cleaned_data.get('password').strip()
+    #    )
+    #    if user is not None:
+    #        login(self.request, user)
+    #    else:
+    #        messages.error(
+    #            self.request,
+    #            'Email and/or Password incorrect. Please try again.'
+    #        )
+    #        return redirect('auth:shib-login')
+    #    return super(ShibLoginView, self).form_valid(form)
 
     def get_success_url(self):
         redirect_to = self.request.GET.get(self.redirect_field_name, '')
@@ -142,7 +146,7 @@ class ShibLoginView(FormView):
 
 def logout_user(request):
     logout(request)
-    return redirect('login_home')
+    return redirect('auth:login')
 
 
 class RegisterUser(PermissionRequiredMixin, FormView):
