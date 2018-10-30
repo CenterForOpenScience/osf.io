@@ -293,7 +293,7 @@ class SearchParser(JSONAPIParser):
         else:
             res['query']['bool'].update({
                 'must': {
-                    'multi_match': {
+                    'query_string': {
                         'query': q,
                         'fields': view.search_fields,
                     },

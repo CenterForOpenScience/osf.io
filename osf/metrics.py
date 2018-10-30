@@ -12,7 +12,7 @@ class MetricMixin(object):
         if after:
             search = search.filter('range', timestamp={'gte': after})
         search.aggs.\
-            bucket('by_id', 'terms', field=metric_field, order={'sum_count': 'desc'}).\
+            bucket('by_id', 'terms', field=metric_field, size=size, order={'sum_count': 'desc'}).\
             metric('sum_count', 'sum', field=count_field)
         # Optimization: set size to 0 so that hits aren't returned (we only care about the aggregation)
         response = search.extra(size=0).execute()
@@ -118,7 +118,13 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
         search = cls.search().filter('match', preprint_id=preprint._id)
         if after:
             search = search.filter('range', timestamp={'gte': after})
-        return search.count()
+        search.aggs.metric('sum_count', 'sum', field='count')
+        # Optimization: set size to 0 so that hits aren't returned (we only care about the aggregation)
+        response = search.extra(size=0).execute()
+        # No indexed data
+        if not hasattr(response.aggregations, 'sum_count'):
+            return 0
+        return int(response.aggregations.sum_count.value)
 
 
 class PreprintView(BasePreprintMetric):
