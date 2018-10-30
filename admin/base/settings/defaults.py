@@ -125,7 +125,7 @@ INSTALLED_APPS = (
     'addons.mendeley',
     'addons.owncloud',
     'addons.s3',
-    #     'addons.zotero',
+         'addons.zotero',
     #     'addons.swift',
     #     'addons.azureblobstorage',
     #     'addons.weko',
@@ -148,7 +148,7 @@ MIGRATION_MODULES = {
     'addons_mendeley': None,
     'addons_owncloud': None,
     'addons_s3': None,
-    #    'addons_zotero': None,
+        'addons_zotero': None,
     #    'addons.swift': None,
     #    'addons.azureblobstorage': None,
     #    'addons.weko': None,
@@ -292,3 +292,4 @@ FCM_SETTINGS = {
     'FCM_SERVER_KEY': ''
 }
 SHIB_EPPN_SCOPING_SEPARATOR = '@'
+ENABLE_SHB_LOGIN=True
