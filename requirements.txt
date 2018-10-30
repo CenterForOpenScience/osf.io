@@ -54,7 +54,7 @@ sendgrid==1.5.13
 # https://github.com/jaraco/keyring/blob/9.1/setup.py
 keyring==9.1
 
-requests==2.18.4
+requests==2.20.0
 urllib3==1.22
 oauthlib==2.0.6
 requests-oauthlib==0.8.0
