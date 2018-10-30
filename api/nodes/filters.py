@@ -1,13 +1,14 @@
 from copy import deepcopy
 
 from django.db.models import Q, Exists, OuterRef
+from guardian.shortcuts import get_objects_for_user
 
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
 from api.base.filters import ListFilterMixin
 from api.base import utils
 
 from osf.models import NodeRelation, AbstractNode, Preprint
-from osf.utils.permissions import PERMISSIONS, READ, WRITE, ADMIN
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 
 
 class NodesFilterMixin(ListFilterMixin):
@@ -78,16 +79,17 @@ class NodesFilterMixin(ListFilterMixin):
 class UserNodesFilterMixin(NodesFilterMixin):
     def build_query_from_field(self, field_name, operation):
         if field_name == 'current_user_permissions':
-            if not operation['value'] in PERMISSIONS:
+            if not operation['value'] in API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
             perm = operation['value']
-            query = Q(contributor__user__id=self.get_user().id)
+            user = self.get_user()
+            query = Q(contributor__user__id=user.id)
             if perm == READ:
-                query &= Q(contributor__read=True)
+                query &= Q(id__in=get_objects_for_user(user, 'read_node', AbstractNode))
             elif perm == WRITE:
-                query &= Q(contributor__write=True)
+                query &= Q(id__in=get_objects_for_user(user, 'write_node', AbstractNode))
             elif perm == ADMIN:
-                query &= Q(contributor__admin=True)
+                query &= Q(id__in=get_objects_for_user(user, 'admin_node', AbstractNode))
             else:
                 raise InvalidFilterValue(value=operation['value'])
             return query
