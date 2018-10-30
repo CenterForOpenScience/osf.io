@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 CREATE UNIQUE INDEX osf_basefilenode_non_trashed_unique_index
                 ON public.osf_basefilenode
                 (target_object_id, name, parent_id, type, _path)
-                WHERE type NOT IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder');
+                WHERE type NOT IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder', 'osf.googledrivefile');
                 """,
             ],
             [
