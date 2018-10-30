@@ -747,7 +747,6 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         """ This avoids needing to reimplement all of the logic in the sender methods.
         When v1 is more fully deprecated, those send hooks should be reworked to not
         rely upon a flask context and placed in utils (or elsewhere).
-
         :param bool registered: Indicates which sender to call (passed in as keyword)
         :param *args: Positional arguments passed to senders
         :param **kwargs: Keyword arguments passed to senders

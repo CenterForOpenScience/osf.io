@@ -144,7 +144,7 @@ def migrate_nodes_to_django_guardian(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0129_auto_20180818_1710'),
+        ('osf', '0144_add_permissions_to_node'),
     ]
 
     operations = [
