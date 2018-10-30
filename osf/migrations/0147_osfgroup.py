@@ -11,7 +11,7 @@ import django_extensions.db.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0131_auto_20180828_0444'),
+        ('osf', '0146_remove_contributor_permission_fields'),
     ]
 
     operations = [

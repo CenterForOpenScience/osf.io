@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0128_remove_node_preprint_fields'),
+        ('osf', '0143_merge_20181018_1818'),
     ]
 
     operations = [
