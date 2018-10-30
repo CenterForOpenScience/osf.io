@@ -69,9 +69,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
             else:
                 request = EmbeddedRequest(self.request)
 
-            if not hasattr(request._request._request, '_embed_cache'):
-                request._request._request._embed_cache = {}
-            cache = request._request._request._embed_cache
+            if not hasattr(request._request, '_embed_cache'):
+                request._request._embed_cache = {}
+            cache = request._request._embed_cache
 
             request.parents.setdefault(type(item), {})[item._id] = item
 
