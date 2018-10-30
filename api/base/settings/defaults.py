@@ -90,6 +90,7 @@ INSTALLED_APPS = (
     'guardian',
     'storages',
     'waffle',
+    'elasticsearch_metrics',
 
     # OSF
     'osf',
@@ -160,6 +161,7 @@ REST_FRAMEWORK = {
         '2.8',
         '2.9',
         '2.10',
+        '2.11',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -290,3 +292,10 @@ NPLUSONE_RAISE = False
 
 # salt used for generating hashids
 HASHIDS_SALT = 'pinkhimalayan'
+
+# django-elasticsearch-metrics
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': os.environ.get('ELASTIC6_URI', '127.0.0.1:9201'),
+    },
+}

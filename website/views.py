@@ -21,6 +21,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
 from website import settings
+from website.institutions.views import serialize_institution
 
 from osf import features
 from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, Registration
@@ -134,7 +135,12 @@ def index():
     # Check if we're on an institution landing page
     institution = Institution.objects.filter(domains__icontains=request.host, is_deleted=False)
     if institution.exists():
-        return redirect('{}institutions/{}/'.format(DOMAIN, institution.get()._id))
+        institution = institution.get()
+        inst_dict = serialize_institution(institution)
+        inst_dict.update({
+            'redirect_url': '{}institutions/{}/'.format(DOMAIN, institution._id),
+        })
+        return inst_dict
     else:
         return use_ember_app()
 

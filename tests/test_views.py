@@ -24,7 +24,8 @@ from django.test.utils import CaptureQueriesContext
 
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.wiki.models import WikiPage
-from framework.auth import cas
+from framework.auth import cas, authenticate
+from framework.flask import redirect
 from framework.auth.core import generate_verification_key
 from framework import auth
 from framework.auth.campaigns import get_campaigns, is_institution_login, is_native_login, is_proxy_login, campaign_url_for
@@ -66,6 +67,7 @@ from tests.base import (
     assert_datetime_equal,
 )
 from tests.base import test_app as mock_app
+from tests.test_cas_authentication import generate_external_user_with_resp, make_external_response
 from api_tests.utils import create_test_file
 
 pytestmark = pytest.mark.django_db
@@ -2621,6 +2623,40 @@ class TestClaimViews(OsfTestCase):
             token=token,
         )
         assert_equal(res.request.path, expected)
+
+    @mock.patch('framework.auth.cas.make_response_from_ticket')
+    def test_claim_user_when_user_is_registered_with_orcid(self, mock_response_from_ticket):
+        token = self.user.get_unclaimed_record(self.project._primary_key)['token']
+        url = '/user/{uid}/{pid}/claim/verify/{token}/'.format(
+            uid=self.user._id,
+            pid=self.project._id,
+            token=token
+        )
+        # logged out user gets redirected to cas login
+        res = self.app.get(url)
+        assert res.status_code == 302
+        res = res.follow()
+        service_url = 'http://localhost:80{}'.format(url)
+        expected = cas.get_logout_url(service_url=cas.get_login_url(service_url=service_url))
+        assert res.request.url == expected
+
+        # user logged in with orcid automatically becomes a contributor
+        orcid_user, validated_credentials, cas_resp = generate_external_user_with_resp(url)
+        mock_response_from_ticket.return_value = authenticate(
+            orcid_user,
+            cas_resp.attributes.get('accessToken', ''),
+            redirect(url)
+        )
+        orcid_user.set_unusable_password()
+        orcid_user.save()
+
+        ticket = fake.md5()
+        url += '?ticket={}'.format(ticket)
+        res = self.app.get(url)
+        res = res.follow()
+        assert res.status_code == 302
+        assert self.project.is_contributor(orcid_user)
+        assert self.project.url in res.headers.get('Location')
 
     def test_get_valid_form(self):
         url = self.user.get_claim_url(self.project._primary_key)

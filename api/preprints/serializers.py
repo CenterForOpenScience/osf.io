@@ -23,6 +23,7 @@ from api.nodes.serializers import (
     get_license_details,
     NodeTagField,
 )
+from api.base.metrics import MetricsSerializerMixin
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
@@ -67,7 +68,7 @@ class PreprintLicenseRelationshipField(RelationshipField):
         raise exceptions.NotFound('Unable to find specified license.')
 
 
-class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
+class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'date_created',
@@ -79,6 +80,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'subjects',
         'reviews_state',
         'node_is_public',
+    ])
+    available_metrics = frozenset([
+        'downloads',
+        'views',
     ])
 
     id = IDField(source='_id', read_only=True)

@@ -883,7 +883,7 @@ def serialize_preprints(node, user):
             'is_withdrawn': preprint.date_withdrawn is not None,
             'state': preprint.machine_state,
             'word': preprint.provider.preprint_word,
-            'provider': {'name': preprint.provider.name, 'workflow': preprint.provider.reviews_workflow},
+            'provider': {'name': 'OSF Preprints' if preprint.provider.name == 'Open Science Framework' else preprint.provider.name, 'workflow': preprint.provider.reviews_workflow},
             'url': preprint.url,
             'absolute_url': preprint.absolute_url
         } for preprint in Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)

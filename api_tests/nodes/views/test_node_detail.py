@@ -464,6 +464,42 @@ class TestNodeDetail:
         res = app.get(forks_url, auth=user.auth)
         assert len(res.json['data']) == 1
 
+    def test_current_user_permissions(self, app, user, url_public, project_public, user_two):
+        # in most recent API version, read isn't implicit for public nodes
+        url = url_public + '?version=2.11'
+        res = app.get(url, auth=user_two.auth)
+        assert not project_public.has_permission(user_two, permissions.READ)
+        assert permissions.READ not in res.json['data']['attributes']['current_user_permissions']
+
+        # ensure read is not included for an anonymous user
+        res = app.get(url)
+        assert permissions.READ not in res.json['data']['attributes']['current_user_permissions']
+
+        # ensure both read and write included for a write contributor
+        new_user = AuthUserFactory()
+        project_public.add_contributor(
+            new_user,
+            permissions=(permissions.READ, permissions.WRITE),
+            auth=Auth(project_public.creator)
+        )
+        res = app.get(url, auth=new_user.auth)
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.READ, permissions.WRITE]
+
+        # make sure 'read' is there for implicit read contributors
+        comp = NodeFactory(parent=project_public, is_public=True)
+        comp_url = '/{}nodes/{}/?version=2.11'.format(API_BASE, comp._id)
+        res = app.get(comp_url, auth=user.auth)
+        assert project_public.has_permission(user, permissions.ADMIN)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+
+        # ensure 'read' is still included with older versions
+        res = app.get(url_public, auth=user_two.auth)
+        assert not project_public.has_permission(user_two, permissions.READ)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+
+        # check read permission is included with older versions for anon user
+        res = app.get(url_public)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:

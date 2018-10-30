@@ -1,4 +1,5 @@
 from django.db import connection
+from distutils.version import StrictVersion
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -291,11 +292,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
-        'for the current user on this node.',
+        'for the current user on this node. As of version 2.11, this field will only return the permissions '
+        'explicitly assigned to the current user, and will not automatically return read for all public nodes',
     )
     current_user_is_contributor = ser.SerializerMethodField(
         help_text='Whether the current user is a contributor on this node.',
     )
+    wiki_enabled = ser.SerializerMethodField(help_text='Whether the wiki addon is enabled')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(
@@ -477,21 +480,23 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
+        request_version = self.context['request'].version
+        default_perm = ['read'] if StrictVersion(request_version) < StrictVersion('2.11') else []
         if hasattr(obj, 'contrib_admin'):
             if obj.contrib_admin:
                 return ['admin', 'write', 'read']
-            elif obj.contrib_write:
+            if obj.contrib_write:
                 return ['write', 'read']
-            else:
-                return ['read']
         else:
             user = self.context['request'].user
+            if user.is_anonymous:
+                return default_perm
             all_perms = ['read', 'write', 'admin']
             user_perms = []
             for p in all_perms:
                 if obj.has_permission(user, p):
                     user_perms.append(p)
-            if not user_perms:
+            if not user_perms and user in obj.parent_admin_contributors:
                 user_perms = ['read']
             return user_perms
 
@@ -589,7 +594,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                       )
                   )
                 );
-            """, [obj.id, obj.id, user_id, auth.private_key, user_id])
+            """, [obj.id, obj.id, user_id, auth.private_key, user_id],
+            )
 
             return int(cursor.fetchone()[0])
 
@@ -652,6 +658,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             region_id = obj.osfstorage_region._id
         return region_id
 
+    def get_wiki_enabled(self, obj):
+        return obj.has_wiki_addon if hasattr(obj, 'has_wiki_addon') else obj.has_addon('wiki')
+
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
@@ -699,7 +708,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 contributors.append({
                     'user': contributor.user,
                     'permissions': contributor.permission,
-                    'visible': contributor.visible
+                    'visible': contributor.visible,
                 })
                 if not contributor.user.is_registered:
                     node.add_unregistered_contributor(
@@ -1035,9 +1044,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
         help_text='Whether the user will be included in citations for this node or not.',
         default=True,
     )
-    permission = ser.ChoiceField(choices=osf_permissions.API_CONTRIBUTOR_PERMISSIONS, required=False, allow_null=True,
-                                 default=osf_permissions.WRITE,
-                                 help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
+    permission = ser.ChoiceField(
+        choices=osf_permissions.API_CONTRIBUTOR_PERMISSIONS, required=False, allow_null=True,
+        default=osf_permissions.WRITE,
+        help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".',
+    )
     unregistered_contributor = ser.SerializerMethodField()
 
     links = LinksField({

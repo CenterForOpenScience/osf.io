@@ -6,6 +6,7 @@ from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, TypeField, TypedRelationshipField
 from api.providers.workflows import Workflows
+from api.base.metrics import MetricsSerializerMixin
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
 from osf.utils.permissions import REVIEW_GROUPS
@@ -104,7 +105,7 @@ class RegistrationProviderSerializer(ProviderSerializer):
         'name',
     ])
 
-class PreprintProviderSerializer(ProviderSerializer):
+class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
     class Meta:
         type_ = 'preprint-providers'
@@ -120,6 +121,10 @@ class PreprintProviderSerializer(ProviderSerializer):
         'share_publish_type',
         'reviews_workflow',
         'permissions',
+    ])
+    available_metrics = frozenset([
+        'downloads',
+        'views',
     ])
 
     share_source = ser.CharField(read_only=True)

@@ -1031,6 +1031,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Override Taggable
     def on_tag_added(self, tag):
         self.update_search()
+        node_tasks.update_node_share(self)
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
@@ -1053,6 +1054,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
             self.update_search()
+            node_tasks.update_node_share(self)
+
             return True
 
     def remove_tags(self, tags, auth, save=True):
@@ -1079,6 +1082,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
         self.update_search()
+        node_tasks.update_node_share(self)
+
         return True
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
@@ -1346,7 +1351,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.add_permission(contrib.user, permission, save=True)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None, child_ids=None, draft_root=None, provider=None):
+    def register_node(self, schema, auth, data, parent=None, child_ids=None, provider=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1436,7 +1441,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     provider=provider,
                     parent=registered,
                     child_ids=child_ids,
-                    draft_root=draft_root
                 )
             else:
                 # Copy linked nodes

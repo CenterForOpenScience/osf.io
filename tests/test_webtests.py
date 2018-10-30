@@ -1085,7 +1085,7 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('Has supplemental materials for', res.body)
+        assert_not_in('Has supplemental materials for', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)

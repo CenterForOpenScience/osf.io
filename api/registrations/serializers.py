@@ -24,6 +24,7 @@ from api.base.serializers import (
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError
 from osf.models import Node
+from osf.utils import permissions
 
 class BaseRegistrationSerializer(NodeSerializer):
 
@@ -351,7 +352,10 @@ class BaseRegistrationSerializer(NodeSerializer):
         return obj.private_links.filter(is_deleted=False).count()
 
     def update(self, registration, validated_data):
-        auth = Auth(self.context['request'].user)
+        # TODO - when withdrawal is added, make sure to restrict to admin only here
+        user = self.context['request'].user
+        auth = Auth(user)
+        user_is_admin = registration.has_permission(user, permissions.ADMIN)
         # Update tags
         if 'tags' in validated_data:
             new_tags = validated_data.pop('tags', [])
@@ -360,16 +364,22 @@ class BaseRegistrationSerializer(NodeSerializer):
             except NodeStateError as err:
                 raise Conflict(str(err))
         if 'custom_citation' in validated_data:
-            registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
+            if user_is_admin:
+                registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
+            else:
+                raise exceptions.PermissionDenied()
         is_public = validated_data.get('is_public', None)
         if is_public is not None:
             if is_public:
-                try:
-                    registration.update(validated_data, auth=auth)
-                except NodeUpdateError as err:
-                    raise exceptions.ValidationError(err.reason)
-                except NodeStateError as err:
-                    raise exceptions.ValidationError(str(err))
+                if user_is_admin:
+                    try:
+                        registration.update(validated_data, auth=auth)
+                    except NodeUpdateError as err:
+                        raise exceptions.ValidationError(err.reason)
+                    except NodeStateError as err:
+                        raise exceptions.ValidationError(str(err))
+                else:
+                    raise exceptions.PermissionDenied()
             else:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration
@@ -385,7 +395,16 @@ class RegistrationSerializer(BaseRegistrationSerializer):
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
-    children = ser.ListField(write_only=True, required=False)
+
+    # Because the write-only `children` field shadows the read-only both fields must be included here to prevent the
+    # write-only from overriding the read-only in the parent class.
+    children = HideIfWithdrawal(RelationshipField(  # Read-only
+        related_view='registrations:registration-children',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_node_count'},
+    ))
+
+    children = ser.ListField(write_only=True, required=False)  # Write-only
 
 
 class RegistrationDetailSerializer(BaseRegistrationSerializer):

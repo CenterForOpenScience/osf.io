@@ -153,11 +153,11 @@ class TestRegistrationFiltering(ApiTestCase):
         self.project_two_reg = RegistrationFactory(
             creator=self.user_one, project=self.project_two, is_public=True)
         self.project_three_reg = RegistrationFactory(
-            creator=self.user_two, project=self.project_three, is_public=True)
+            creator=self.user_two, project=self.project_three, is_public=True, title='No search terms!')
         self.private_project_user_one_reg = RegistrationFactory(
-            creator=self.user_one, project=self.private_project_user_one, is_public=False)
+            creator=self.user_one, project=self.private_project_user_one, is_public=False, title='No search terms!')
         self.private_project_user_two_reg = RegistrationFactory(
-            creator=self.user_two, project=self.private_project_user_two, is_public=False)
+            creator=self.user_two, project=self.private_project_user_two, is_public=False, title='No search terms!')
 
         self.folder = CollectionFactory()
         self.bookmark_collection = find_bookmark_collection(self.user_one)

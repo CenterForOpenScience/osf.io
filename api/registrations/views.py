@@ -150,7 +150,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
+        ContributorOrPublic,
         base_permissions.TokenHasScope,
     )
 
