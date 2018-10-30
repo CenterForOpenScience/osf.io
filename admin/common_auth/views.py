@@ -45,9 +45,7 @@ class LoginView(FormView):
             password=form.cleaned_data.get('password').strip()
         )
         if user is not None:
-            print('self.request-before login:{}'.format(vars(self.request.session)))
             login(self.request, user)
-            print('self.request-after login:{}'.format(vars(self.request.session)))
         else:
             messages.error(
                 self.request,
@@ -65,17 +63,10 @@ class LoginView(FormView):
 class ShibLoginView(RedirectView):
     form_class = LoginForm
     redirect_field_name = REDIRECT_FIELD_NAME
-    #template_name = 'shib-login.html'
 
     @method_decorator(csrf_protect)
     @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
-        ''' TODO:
-            add login from shibboleth:
-            username -> request
-        '''
-
-        print('*** redirect view ***')
 
         eppn = request.environ['HTTP_AUTH_EPPN']
         seps = eppn.split(SHIB_EPPN_SCOPING_SEPARATOR)[-1]
@@ -85,7 +76,8 @@ class ShibLoginView(RedirectView):
 
         if not eppn:
             message = 'login failed: eppn required'
-            print(message)
+            logging.info(message)
+            messages.error(self.request, message)
             return redirect('auth:login')
         eppn_user = get_user(eppn=eppn)
         if eppn_user:
@@ -102,12 +94,13 @@ class ShibLoginView(RedirectView):
                 # eppn_user.is_superuser = False
                 eppn_user.save()
                 message = 'login failed: not staff or superuser'
-                print(message)
+                logging.info(message)
+                messages.error(self.request, message)
                 return redirect('auth:login')
         else:
             if 'GakuninRDMAdmin' not in request.environ['HTTP_AUTH_ENTITLEMENT']:
                 message = 'login failed: no user with matching eppn'
-                print(message)
+                messages.error(self.request, message)
                 return redirect('auth:login')
             else:
                 new_user, created = get_or_create_user(request.environ['HTTP_AUTH_DISPLAYNAME'] or 'NO NAME', eppn)
@@ -122,21 +115,6 @@ class ShibLoginView(RedirectView):
 
         # Transit to the administrator's home screen
         return redirect(self.get_success_url())
-
-    #def form_valid(self, form):
-    #    user = authenticate(
-    #        username=form.cleaned_data.get('email').strip(),
-    #        password=form.cleaned_data.get('password').strip()
-    #    )
-    #    if user is not None:
-    #        login(self.request, user)
-    #    else:
-    #        messages.error(
-    #            self.request,
-    #            'Email and/or Password incorrect. Please try again.'
-    #        )
-    #        return redirect('auth:shib-login')
-    #    return super(ShibLoginView, self).form_valid(form)
 
     def get_success_url(self):
         redirect_to = self.request.GET.get(self.redirect_field_name, '')
