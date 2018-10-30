@@ -64,10 +64,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
             if not v:
                 return None
 
-            if isinstance(self.request, EmbeddedRequest):
-                request = EmbeddedRequest(self.request._request)
-            else:
-                request = EmbeddedRequest(self.request)
+            request = EmbeddedRequest(self.request)
 
             if not hasattr(request._request, '_embed_cache'):
                 request._request._embed_cache = {}
