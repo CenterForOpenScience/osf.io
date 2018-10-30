@@ -16,7 +16,7 @@ from osf_tests.factories import (
     UserFactory,
     PreprintFactory,
     InstitutionFactory,
-    RegionFactory
+    RegionFactory,
     OSFGroupFactory,
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID

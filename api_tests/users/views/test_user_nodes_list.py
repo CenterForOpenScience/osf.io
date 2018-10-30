@@ -292,19 +292,19 @@ class TestNodeListPermissionFiltering:
     @pytest.fixture()
     def read_node(self, creator, contrib):
         node = ProjectFactory(creator=creator)
-        node.add_contributor(contrib, permissions=['read'], save=True)
+        node.add_contributor(contrib, permissions='read', save=True)
         return node
 
     @pytest.fixture()
     def write_node(self, creator, contrib):
         node = ProjectFactory(creator=creator)
-        node.add_contributor(contrib, permissions=['read', 'write'], save=True)
+        node.add_contributor(contrib, permissions='write', save=True)
         return node
 
     @pytest.fixture()
     def admin_node(self, creator, contrib):
         node = ProjectFactory(creator=creator)
-        node.add_contributor(contrib, permissions=['read', 'write', 'admin'], save=True)
+        node.add_contributor(contrib, permissions='admin', save=True)
         return node
 
     @pytest.fixture()
