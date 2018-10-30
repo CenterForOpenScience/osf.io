@@ -8,6 +8,28 @@ import osf.utils.datetime_aware_jsonfield
 import osf.utils.fields
 
 
+TAG_MAP = {
+    'spam_flagged': osf.models.spam.SpamStatus.FLAGGED,
+    'spam_confirmed': osf.models.spam.SpamStatus.SPAM,
+    'ham_confirmed': osf.models.spam.SpamStatus.HAM
+}
+
+def add_spam_status_to_tagged_users(state, schema):
+    OSFUser = state.get_model('osf', 'osfuser')
+    users_with_tag = OSFUser.objects.filter(tags__name__in=TAG_MAP.keys()).prefetch_related('tags')
+    for user in users_with_tag:
+        for tag, value in TAG_MAP.items():
+            if user.tags.filter(name=tag).exists():
+                user.spam_status = value
+
+        user.save()
+
+def remove_spam_status_from_tagged_users(state, schema):
+    OSFUser = state.get_model('osf', 'osfuser')
+    users_with_tag = OSFUser.objects.filter(tags__name__in=TAG_MAP.keys())
+    users_with_tag.objects.update(spam_status=None)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -40,4 +62,5 @@ class Migration(migrations.Migration):
             name='spam_status',
             field=models.IntegerField(blank=True, db_index=True, default=None, null=True),
         ),
+        migrations.RunPython(add_spam_status_to_tagged_users, remove_spam_status_from_tagged_users),
     ]
