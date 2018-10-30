@@ -43,9 +43,7 @@ class LoginView(FormView):
             password=form.cleaned_data.get('password').strip()
         )
         if user is not None:
-            print('self.request-before login:{}'.format(vars(self.request.session)))
             login(self.request, user)
-            print('self.request-after login:{}'.format(vars(self.request.session)))
         else:
             messages.error(
                 self.request,
@@ -67,8 +65,6 @@ class ShibLoginView(RedirectView):
     @method_decorator(csrf_protect)
     @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
-
-        print('*** redirect view ***')
 
         eppn = request.environ['HTTP_AUTH_EPPN']
         seps = eppn.split(SHIB_EPPN_SCOPING_SEPARATOR)[-1]
