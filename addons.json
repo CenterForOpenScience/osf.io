@@ -45,7 +45,6 @@
         "swift": "partial",
         "azureblobstorage": "partial",
         "weko": "partial",
-        "jupyterhub": "partial",
         "s3compat": "partial",
         "nextcloud": "partial"
     },
