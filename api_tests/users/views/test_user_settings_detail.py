@@ -81,7 +81,7 @@ class TestUserSettingsUpdateTwoFactor:
         payload['data']['attributes']['two_factor_enabled'] = 'Yes'
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"Yes" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         # Already disabled - nothing happens, still disabled
         payload['data']['attributes']['two_factor_enabled'] = False
@@ -193,7 +193,7 @@ class TestUserSettingsUpdateMailingList:
         res = app.patch_json_api(url, bad_payload, auth=user_one.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == u'"22" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == u'Must be a valid boolean.'
 
     def test_anonymous_patch_401(self, app, url, payload):
         res = app.patch_json_api(url, payload, expect_errors=True)
