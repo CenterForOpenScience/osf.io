@@ -2502,7 +2502,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"Must be a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
