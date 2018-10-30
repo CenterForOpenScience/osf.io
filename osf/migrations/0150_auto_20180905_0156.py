@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('auth', '0008_alter_user_username_max_length'),
-        ('osf', '0147_osfgroup'),
+        ('osf', '0149_osfgroup'),
     ]
 
     operations = [
