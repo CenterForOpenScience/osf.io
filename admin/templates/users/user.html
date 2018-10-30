@@ -219,6 +219,16 @@
                     </td>
                 </tr>
                 <tr>
+                    <td>User is spammy</td>
+                    <td>
+                        {{ user.is_spammy }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Profile content checked for spam</td>
+                    <td>{{ user.potential_spam_profile_content }}</td>
+                </tr>
+                <tr>
                     <td>Nodes</td>
                     <td>
                         <table class="table table-hover table-bordered">

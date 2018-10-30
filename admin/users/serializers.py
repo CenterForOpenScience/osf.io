@@ -4,6 +4,12 @@ Serialize user
 
 
 def serialize_user(user):
+
+    potential_spam_profile_content = {
+        'schools': user.schools,
+        'jobs': user.jobs
+    }
+
     return {
         'username': user.username,
         'name': user.fullname,
@@ -17,8 +23,10 @@ def serialize_user(user):
         'two_factor': user.has_addon('twofactor'),
         'osf_link': user.absolute_url,
         'system_tags': user.system_tags,
+        'is_spammy': user.is_spammy,
         'unclaimed': bool(user.unclaimed_records),
-        'requested_deactivation': bool(user.requested_deactivation)
+        'requested_deactivation': bool(user.requested_deactivation),
+        'potential_spam_profile_content': user._get_spam_content(potential_spam_profile_content),
     }
 
 

@@ -18,6 +18,7 @@ from website import settings
 from framework.auth import Auth
 from osf.models.user import OSFUser
 from osf.models.tag import Tag
+from osf.models.spam import SpamStatus
 from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
@@ -295,14 +296,17 @@ class SpamUserListMixin(object):
 
         self.flagged_user = UserFactory()
         self.flagged_user.tags.add(spam_flagged)
+        self.flagged_user.spam_status = SpamStatus.FLAGGED
         self.flagged_user.save()
 
         self.spam_user = UserFactory()
         self.spam_user.tags.add(spam_confirmed)
+        self.spam_user.spam_status = SpamStatus.SPAM
         self.spam_user.save()
 
         self.ham_user = UserFactory()
         self.ham_user.tags.add(ham_confirmed)
+        self.ham_user.spam_status = SpamStatus.HAM
         self.ham_user.save()
 
         self.request = RequestFactory().post('/fake_path')

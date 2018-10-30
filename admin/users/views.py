@@ -152,6 +152,7 @@ class HamUserRestoreView(UserDeleteView):
                     self.kwargs.get('guid')
                 ))
         if user:
+            user.confirm_ham(save=True)
             for node in user.contributor_to:
                 if node.is_spam:
                     node.confirm_ham(save=True)
@@ -168,7 +169,7 @@ class HamUserRestoreView(UserDeleteView):
 
 
 class UserSpamList(PermissionRequiredMixin, ListView):
-    SPAM_TAG = 'spam_flagged'
+    SPAM_STATUS = SpamStatus.UNKNOWN
 
     paginate_by = 25
     paginate_orphans = 1
@@ -178,7 +179,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        return OSFUser.objects.filter(tags__name=self.SPAM_TAG).order_by(self.ordering)
+        return OSFUser.objects.filter(spam_status=self.SPAM_STATUS)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -192,7 +193,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
 
 
 class UserFlaggedSpamList(UserSpamList, DeleteView):
-    SPAM_TAG = 'spam_flagged'
+    SPAM_STATUS = SpamStatus.FLAGGED
     template_name = 'users/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
@@ -207,6 +208,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
             if 'spam_flagged' in user.system_tags:
                 user.system_tags.remove('spam_flagged')
             user.add_system_tag('spam_confirmed')
+            user.confirm_spam()
             user.save()
             update_admin_log(
                 user_id=self.request.user.id,
@@ -219,11 +221,11 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
 
 
 class UserKnownSpamList(UserSpamList):
-    SPAM_TAG = 'spam_confirmed'
+    SPAM_STATUS = SpamStatus.SPAM
     template_name = 'users/known_spam_list.html'
 
 class UserKnownHamList(UserSpamList):
-    SPAM_TAG = 'ham_confirmed'
+    SPAM_STATUS = SpamStatus.HAM
     template_name = 'users/known_spam_list.html'
 
 class User2FactorDeleteView(UserDeleteView):
