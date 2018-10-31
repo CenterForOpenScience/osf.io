@@ -1263,7 +1263,7 @@ class TestSearchFiles(OsfTestCase):
         quickfiles_root.append_file('GreenLight.mp3')
 
         self.node.creator.disable_account()
-        self.node.creator.add_system_tag('spam_confirmed')
+        self.node.creator.confirm_spam()
         self.node.creator.save()
 
         find = query_file('GreenLight.mp3')['results']

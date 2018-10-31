@@ -1985,7 +1985,7 @@ class TestNodeSpam:
     def test_check_spam_skips_ham_user(self, project, user):
         with mock.patch('osf.models.AbstractNode._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.AbstractNode.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
-                user.add_system_tag('ham_confirmed')
+                user.confirm_ham()
                 project.set_privacy('public')
                 assert project.check_spam(user, None, None) is False
 
