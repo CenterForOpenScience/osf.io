@@ -2,6 +2,15 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+18.5.0 (unreleased)
+===================
+
+- APIv2: Return explicitly assigned node permissions for current user
+- APIv2: Add wiki_enabled attribute to nodes
+- Remove forked dependencies
+- Clean up unused settings
+- Fix Prereg weekly digest
+
 18.4.0 (2018-10-23)
 ===================
 
