@@ -522,13 +522,16 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
 
     def get_current_user_is_contributor(self, obj):
-        if hasattr(obj, 'user_is_contrib'):
-            return obj.user_is_contrib
+        # TODO - naming - this returns true if you have been given permissions
+        # through being made a contributor -OR- being an OSF group member w/ permissions.
+        # Reserving is contributor for the former.
+        if hasattr(obj, 'contrib_read'):
+            return obj.contrib_read
 
         user = self.context['request'].user
         if user.is_anonymous:
             return False
-        return obj.is_contributor(user)
+        return obj.is_contributor_or_group_member(user)
 
     class Meta:
         type_ = 'nodes'

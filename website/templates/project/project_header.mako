@@ -21,7 +21,7 @@
 
                     % if parent_node['id']:
 
-                        % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
+                        % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor_or_group_member']:
                             <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom"> <i class="fa fa-level-down fa-rotate-180"></i>  </a></li>
 
                         % else:
@@ -56,7 +56,7 @@
                             % endif
                         % endfor
 
-                        % if node['is_public'] or user['is_contributor']:
+                        % if node['is_public'] or user['is_contributor_or_group_member']:
                             <li><a href="${node['url']}analytics/">Analytics</a></li>
                         % endif
 
@@ -64,7 +64,7 @@
                             <li><a href="${node['url']}registrations/">Registrations</a></li>
                         % endif
 
-                        % if user['is_contributor']:
+                        % if user['is_contributor_or_group_member']:
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
 
@@ -174,15 +174,15 @@
 
     % endif  ## End registration undismissable labels
 
-    % if node['is_supplemental_project'] and user['is_contributor'] and not node['is_public']:
+    % if node['is_supplemental_project'] and user['is_contributor_or_group_member'] and not node['is_public']:
         <div class="alert alert-info">This ${node['node_type']} contains supplemental materials for a preprint, but has been made Private. Make your supplemental materials discoverable by making this ${node['node_type']} Public.</div>
     % endif
 
-    % if node['anonymous'] and user['is_contributor']:
+    % if node['anonymous'] and user['is_contributor_or_group_member']:
         <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="${node['redirect_url']}">here</a>.</div>
     % endif
 
-    % if node['link'] and not node['is_public'] and not user['is_contributor']:
+    % if node['link'] and not node['is_public'] and not user['is_contributor_or_group_member']:
         <div class="alert alert-info">This ${node['node_type']} is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.</div>
     % endif
 

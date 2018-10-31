@@ -843,21 +843,24 @@ class ContributorMixin(models.Model):
     def admin_contributor_ids(self):
         return self._get_admin_contributor_ids(include_self=True)
 
-    # TODO Remove explicit parameter, method should use explicit by default.
-    def is_contributor(self, user, explicit=False):
+    def is_contributor_or_group_member(self, user):
         """
-        Return whether ``user`` has been given read permissions to the object
-        By default, returns True if user is a contributor or the osf group has permissions.
-
-        If explicit = False, just must be an explicit contributor.
+        Whether the was given specific permission to the object in some way
+        They must be a contributor or a member of an osf group with permissions
         """
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
-        # Checking if contributor object or if user has read permissions, since unregistered
-        # contributors do not have any actual permissions.
-        if explicit:
-            return user is not None and self.contributor_class.objects.filter(**kwargs).exists()
+
         return user is not None and (self.has_permission(user, READ, check_parent=False) or self.contributor_class.objects.filter(**kwargs).exists())
+
+    def is_contributor(self, user):
+        """
+        Return whether ``user`` is a contributor on the node.
+        (Does not include whether user has permissions via a group.)
+        """
+        kwargs = self.contributor_kwargs
+        kwargs['user'] = user
+        return user is not None and self.contributor_class.objects.filter(**kwargs).exists()
 
     def active_contributors(self, include=lambda n: True):
         for contrib in self.contributors.filter(is_active=True):
@@ -909,7 +912,7 @@ class ContributorMixin(models.Model):
             raise UserStateError('This contributor cannot be added. If the problem persists please report it '
                                        'to ' + language.SUPPORT_LINK)
 
-        if self.is_contributor(contrib_to_add, explicit=True):
+        if self.is_contributor(contrib_to_add):
             if permissions is None:
                 return False
             # Permissions must be overridden if changed when contributor is
@@ -1012,7 +1015,7 @@ class ContributorMixin(models.Model):
             contributor = get_user(email=email)
             # Unregistered users may have multiple unclaimed records, so
             # only raise error if user is registered.
-            if contributor.is_registered or self.is_contributor(contributor, explicit=True):
+            if contributor.is_registered or self.is_contributor(contributor):
                 raise
 
             contributor.add_unclaimed_record(
@@ -1382,7 +1385,7 @@ class ContributorMixin(models.Model):
         return contributor.visible
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
-        if not self.is_contributor(user, explicit=True):
+        if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         kwargs = self.contributor_kwargs
         kwargs['user'] = user

@@ -201,7 +201,8 @@ class TestNodeSerializers(OsfTestCase):
         res = _view_project(
             project, auth=Auth(user),
         )
-        assert_true(res['user']['is_contributor'])
+        assert_false(res['user']['is_contributor'])
+        assert_true(res['user']['is_contributor_or_group_member'])
         assert_false(res['user']['is_admin'])
         assert_true(res['user']['can_edit'])
         assert_true(res['user']['has_read_permissions'])

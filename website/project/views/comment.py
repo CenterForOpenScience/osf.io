@@ -178,7 +178,7 @@ def is_reply(target):
 
 
 def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
-    if node.is_contributor(auth.user):
+    if node.is_contributor_or_group_member(auth.user):
         enqueue_postcommit_task(ban_url, (node, ), {}, celery=False, once_per_request=True)
         if root_id is not None:
             guid_obj = Guid.load(root_id)

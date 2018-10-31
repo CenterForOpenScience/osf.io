@@ -31,7 +31,7 @@ def get_addons_by_config_type(config_type, user):
 def format_last_known_metadata(auth, node, file, error_type):
     msg = """
     </div>"""  # None is default
-    if error_type != 'FILE_SUSPENDED' and ((auth.user and node.is_contributor(auth.user)) or (auth.private_key and auth.private_key in node.private_link_keys_active)):
+    if error_type != 'FILE_SUSPENDED' and ((auth.user and node.is_contributor_or_group_member(auth.user)) or (auth.private_key and auth.private_key in node.private_link_keys_active)):
         last_meta = file.last_known_metadata
         last_seen = last_meta.get('last_seen', None)
         hashes = last_meta.get('hashes', None)

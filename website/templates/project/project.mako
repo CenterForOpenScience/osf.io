@@ -13,7 +13,7 @@
         <div class="row no-gutters">
             <div class="col-lg-8 col-md-12 cite-container">
                 % if parent_node['exists']:
-                    % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
+                    % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor_or_group_member']:
                         <h2 class="node-parent-title">
                             <a href="${parent_node['url']}">${parent_node['title']}</a> &nbsp;/
                         </h2>
@@ -72,7 +72,7 @@
                                     <div class="arrow-up m-b-xs"></div>
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
-                                        <span class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
                                            data-dismiss="modal"
                                            onclick="NodeActions.forkNode();"
                                         >
@@ -81,7 +81,7 @@
                                     </li>
                                     %endif
                                     <li class="p-h-md">
-                                        <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
                                            onclick="NodeActions.useAsTemplate();"
                                         >
                                             ${ language.TEMPLATE_ACTION | n }
@@ -125,7 +125,7 @@
                                         </a>
                                     </li>
                                 %endif
-                                % if node['access_requests_enabled'] and not user['is_contributor'] and not node['is_registration']:
+                                % if node['access_requests_enabled'] and not user['is_contributor_or_group_member'] and not node['is_registration']:
                                     <li data-bind="css: {'keep-open': user.username}">
                                         <a role="button" href="#" data-bind="
                                                         visible: user.username,
@@ -146,7 +146,7 @@
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
                 <div id="contributorsList" style="height: 25px; overflow: hidden">
-                % if user['is_contributor']:
+                % if user['is_contributor_or_group_member']:
                     <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
                 % else:
                     Contributors:

@@ -1088,7 +1088,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return True
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
-        if not self.is_contributor(user, explicit=True):
+        if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
             Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
@@ -1186,7 +1186,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.is_public or
                 (auth.user and self.has_permission(auth.user, 'read'))
             )
-        return self.is_contributor(auth.user)
+        return self.is_contributor_or_group_member(auth.user)
 
     def set_node_license(self, license_detail, auth, save=False):
 
