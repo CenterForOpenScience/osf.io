@@ -104,6 +104,7 @@ def get_globals():
         'project_registrations': settings.to_bool('PROJECT_REGISTRATIONS', True),
         'project_makepublic': settings.to_bool('PROJECT_MAKEPUBLIC', True),
         'osf_page_name': unicode(settings.OSF_PAGE_NAME, 'utf-8'),
+        'use_tfa': settings.to_bool('USE_TFA', True),
         ''
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',

@@ -227,6 +227,7 @@
                         </form>
                     </div>
                 </div>
+                %if use_tfa:
                 <div class="panel panel-default">
                   <div class="panel-heading clearfix"><h3 class="panel-title">Security Settings</h3></div>
                   <div class="panel-body">
@@ -238,6 +239,7 @@
                     % endfor
                   </div>
                 </div>
+                %endif
                 <div id="exportAccount" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Export Account Data</h3></div>
                     <div class="panel-body">
