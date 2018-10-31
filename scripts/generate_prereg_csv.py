@@ -9,15 +9,16 @@ from website.app import setup_django
 setup_django()
 
 from admin.base import utils
+from django.conf import settings
 from django.utils import timezone
 from admin.pre_reg import serializers
 
-from website import mails
-from website import settings
 
+from api.base.utils import waterbutler_api_url_for
 from framework.celery_tasks import app as celery_app
 from scripts import utils as scripts_utils
 
+import requests
 logger = logging.getLogger(__name__)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -49,17 +50,15 @@ def main():
     with gzip.GzipFile(filename=filename, mode='wb', fileobj=output) as gzip_obj:
         gzip_obj.write(prereg_csv.getvalue())
 
-    mails.send_mail(
-        mail=mails.PREREG_CSV,
-        to_addr=settings.PREREG_EMAIL,
-        attachment_name=filename,
-        attachment_content=output.getvalue(),
-        can_change_preferences=False,
-        logo=settings.OSF_PREREG_LOGO,
-        celery=False  # attachment is not JSON-serializable, so don't pass it to celery
-    )
+    if settings.PREREG_DATA_STORE_GUID and settings.PREREG_DATA_STORE_TOKEN:
+        resp = requests.put(waterbutler_api_url_for(settings.PREREG_DATA_STORE_GUID, 'osfstorage', _internal=True) + '?name={}&kind=file'.format(filename),
+                     data=output.getvalue(),
+                     headers={'Authorization': 'Bearer {}'.format(settings.PREREG_DATA_STORE_TOKEN)})
 
-    logger.info('Updated prereg CSV email sent.')
+        if resp.status_code == 201:
+            logger.info('Prereg data uploaded properly')
+        else:
+            logger.info('Prereg data failed with code {}'.format(resp.status_code))
 
 
 @celery_app.task(name='scripts.generate_prereg_csv')
