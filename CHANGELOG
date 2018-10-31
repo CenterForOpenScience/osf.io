@@ -2,7 +2,7 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
-18.5.0 (unreleased)
+18.5.0 (2018-10-31)
 ===================
 
 - APIv2: Return explicitly assigned node permissions for current user
