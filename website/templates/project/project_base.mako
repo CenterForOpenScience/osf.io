@@ -159,7 +159,7 @@
        if parent_exists:
            parent_title = "Private {0}".format(parent_node['category'])
            parent_registration_url = ''
-       if parent_node['can_view'] or parent_node['is_contributor']:
+       if parent_node['can_view'] or parent_node['is_contributor_or_group_member']:
            parent_title = parent_node['title']
            parent_registration_url = parent_node['registrations_url']
            parent_url = parent_node['absolute_url']
@@ -175,6 +175,7 @@
                 profile: ${user_url | sjson, n}
             },
             isContributor: ${ user.get('is_contributor', False) | sjson, n },
+            isContributorOrGroupMember: ${ user.get('is_contributor_or_group_member', False) | sjson, n },
             fullname: ${ user['fullname'] | sjson, n },
             isAdmin: ${ user.get('is_admin', False) | sjson, n},
             canComment: ${ user['can_comment'] | sjson, n},

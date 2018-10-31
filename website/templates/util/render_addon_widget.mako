@@ -140,7 +140,7 @@
             % else:
                 <div class='addon-config-error p-sm'>
                     ${addon_data['full_name']} add-on is not configured properly.
-                    % if user['is_contributor']:
+                    % if user['is_contributor_or_group_member']:
                         Configure this add-on on the <a href="${node['url']}addons/">add-ons</a> page.
                     % endif
                 </div>

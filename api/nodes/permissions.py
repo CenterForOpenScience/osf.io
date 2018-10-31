@@ -61,12 +61,12 @@ class IsAdmin(permissions.BasePermission):
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
 
-class IsContributor(permissions.BasePermission):
+class IsContributorOrGroupMember(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, AbstractNode), 'obj must be an Node, got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_contributor(auth.user)
+            return obj.is_contributor_or_group_member(auth.user)
         else:
             return obj.has_permission(auth.user, 'write')
 

@@ -109,7 +109,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     @classmethod
     def find_n_unread(cls, user, node, page, root_id=None):
-        if node.is_contributor(user):
+        if node.is_contributor_or_group_member(user):
             if page == Comment.OVERVIEW:
                 view_timestamp = user.get_node_comment_timestamps(target_id=node._id)
                 root_target = Guid.load(node._id)

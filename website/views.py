@@ -104,6 +104,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'childExists': Node.objects.get_children(node, active=True).exists(),
             'is_admin': node.has_permission(user, permissions.ADMIN),
             'is_contributor': node.is_contributor(user),
+            'is_contributor_or_group_member': node.is_contributor_or_group_member(user),
             'logged_in': auth.logged_in,
             'node_type': node.project_or_component,
             'is_fork': node.is_fork,

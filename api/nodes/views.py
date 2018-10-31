@@ -74,7 +74,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
-    IsContributor,
+    IsContributorOrGroupMember,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
@@ -1990,7 +1990,7 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        IsContributor,
+        IsContributorOrGroupMember,
     )
 
     required_read_scopes = [CoreScopes.NODE_SETTINGS_READ]

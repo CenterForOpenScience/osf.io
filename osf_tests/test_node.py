@@ -917,7 +917,8 @@ class TestContributorMethods:
 
         group = OSFGroupFactory(creator=noncontrib)
         node.add_osf_group(group, 'read')
-        assert node.is_contributor(noncontrib) is True
+        assert node.is_contributor(noncontrib) is False
+        assert node.is_contributor_or_group_member(noncontrib) is True
 
     def test_visible_contributor_ids(self, node, user):
         visible_contrib = UserFactory()

@@ -450,7 +450,28 @@ class TestOSFGroup:
     def test_is_contributor(self, project, manager, member, osf_group):
         assert project.is_contributor(manager) is True
         assert project.is_contributor(member) is False
-
         project.add_osf_group(osf_group, 'read')
+        assert project.is_contributor(member) is False
+        assert project.is_contributor_or_group_member(member) is True
+
+        project.remove_osf_group(osf_group)
+        assert project.is_contributor_or_group_member(member) is False
+        project.add_contributor(member, 'read')
         assert project.is_contributor(member) is True
-        assert project.is_contributor(member, explicit=True) is False
+        assert project.is_contributor_or_group_member(member) is True
+
+    def test_is_contributor_or_group_member(self, project, manager, member, osf_group):
+        project.add_osf_group(osf_group, 'admin')
+        assert project.is_contributor_or_group_member(member) is True
+
+        project.remove_osf_group(osf_group)
+        assert project.is_contributor_or_group_member(member) is False
+        project.add_osf_group(osf_group, 'write')
+        assert project.is_contributor_or_group_member(member) is True
+
+        project.remove_osf_group(osf_group)
+        assert project.is_contributor_or_group_member(member) is False
+        project.add_osf_group(osf_group, 'read')
+        assert project.is_contributor_or_group_member(member) is True
+
+        project.remove_osf_group(osf_group)

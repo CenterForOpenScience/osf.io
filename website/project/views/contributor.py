@@ -287,7 +287,7 @@ def project_manage_contributors(auth, node, **kwargs):
 
     # If user has removed herself from project, alert; redirect to
     # node summary if node is public, else to user's dashboard page
-    if not node.is_contributor(auth.user, explicit=True):
+    if not node.is_contributor(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
             kind='success',
@@ -349,7 +349,7 @@ def project_remove_contributor(auth, **kwargs):
 
         # On parent node, if user has removed herself from project, alert; redirect to
         # node summary if node is public, else to user's dashboard page
-        if not node.is_contributor(auth.user, explicit=True) and node_id == parent_id:
+        if not node.is_contributor(auth.user) and node_id == parent_id:
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
                 kind='success',
@@ -542,7 +542,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
     # Email users for projects, or for components where they are not contributors on the parent node.
     if contributor.is_registered and (isinstance(node, Preprint) or
-            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor, explicit=True)))):
+            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))):
         mimetype = 'html'
         preprint_provider = None
         logo = None
@@ -864,7 +864,7 @@ def invite_contributor_post(node, **kwargs):
     # Check if email is in the database
     user = get_user(email=email)
     if user:
-        if node.is_contributor(user, explicit=True):
+        if node.is_contributor(user):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
         elif not user.is_confirmed:
