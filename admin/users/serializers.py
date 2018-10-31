@@ -24,6 +24,7 @@ def serialize_user(user):
         'osf_link': user.absolute_url,
         'system_tags': user.system_tags,
         'is_spammy': user.is_spammy,
+        'spam_status': user.spam_status,
         'unclaimed': bool(user.unclaimed_records),
         'requested_deactivation': bool(user.requested_deactivation),
         'potential_spam_profile_content': user._get_spam_content(potential_spam_profile_content),

@@ -63,8 +63,8 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 if 'ham_confirmed' in user.system_tags:
                     user.tags.through.objects.filter(tag__name='ham_confirmed').delete()
 
-                if kwargs.get('is_spam') and 'spam_confirmed' not in user.system_tags:
-                    user.add_system_tag('spam_confirmed')
+                if kwargs.get('is_spam'):
+                    user.confirm_spam()
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
@@ -73,8 +73,7 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 subscribe_on_confirm(user)
                 user.is_registered = True
                 user.tags.through.objects.filter(tag__name__in=['spam_flagged', 'spam_confirmed'], tag__system=True).delete()
-                if 'ham_confirmed' not in user.system_tags:
-                    user.add_system_tag('ham_confirmed')
+                user.confirm_ham()
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
@@ -189,6 +188,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
         return {
             'users': list(map(serialize_user, query_set)),
             'page': page,
+            'SPAM_STATUS': SpamStatus,
         }
 
 
@@ -207,7 +207,6 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
             user = OSFUser.load(uid)
             if 'spam_flagged' in user.system_tags:
                 user.system_tags.remove('spam_flagged')
-            user.add_system_tag('spam_confirmed')
             user.confirm_spam()
             user.save()
             update_admin_log(

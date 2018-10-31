@@ -27,7 +27,7 @@ from website import settings, mails
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin
-from osf.models.spam import SpamMixin
+from osf.models.spam import SpamMixin, SpamStatus
 
 logger = logging.getLogger(__name__)
 
@@ -272,7 +272,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.node.is_public:
             return False
-        if 'ham_confirmed' in user.system_tags:
+        if user.spam_status == SpamStatus.HAM:
             return False
 
         content = self._get_spam_content(saved_fields)

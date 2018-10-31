@@ -41,7 +41,7 @@ from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.sanctions import RegistrationApproval
 from osf.models.private_link import PrivateLink
-from osf.models.spam import SpamMixin
+from osf.models.spam import SpamMixin, SpamStatus
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
@@ -2525,7 +2525,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
             return False
-        if 'ham_confirmed' in user.system_tags:
+        if user.spam_status == SpamStatus.HAM:
             return False
 
         content = self._get_spam_content(saved_fields)
@@ -2556,8 +2556,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.set_privacy('private', log=False, save=False)
 
             # Suspend the flagged user for spam.
-            if 'spam_flagged' not in user.system_tags:
-                user.add_system_tag('spam_flagged')
             user.flag_spam()
             if not user.is_disabled:
                 user.disable_account()

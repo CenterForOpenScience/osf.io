@@ -26,6 +26,7 @@ from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
+from osf.models.spam import SpamStatus
 from addons.wiki.models import WikiPage
 from osf.models import CollectionSubmission
 from osf.utils.sanitize import unescape_entities
@@ -503,7 +504,7 @@ def update_user(user, index=None):
         try:
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
             # update files in their quickfiles node if the user has been marked as spam
-            if 'spam_confirmed' in user.system_tags:
+            if user.spam_status == SpamStatus.SPAM:
                 quickfiles = QuickFilesNode.objects.get_for_user(user)
                 for quickfile_id in quickfiles.files.values_list('_id', flat=True):
                     client().delete(
