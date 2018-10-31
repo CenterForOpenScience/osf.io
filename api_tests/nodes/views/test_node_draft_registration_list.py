@@ -111,7 +111,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 1
-        assert data[0]['attributes']['registration_supplement'] == schema._id
+        assert schema._id in data[0]['relationships']['registration_schema']['links']['related']['href']
 
     def test_cannot_view_draft_list(
             self, app, user_write_contrib, project_public,

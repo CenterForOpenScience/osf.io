@@ -496,6 +496,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             for p in all_perms:
                 if obj.has_permission(user, p):
                     user_perms.append(p)
+            user_perms = user_perms or default_perm
             if not user_perms and user in obj.parent_admin_contributors:
                 user_perms = ['read']
             return user_perms
