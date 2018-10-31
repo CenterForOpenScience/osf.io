@@ -35,7 +35,7 @@ var mfrURL = window.contextVars.node.urls.mfr;
 var osfURL = window.contextVars.osfURL;
 
 var getMfrUrl = function (guid) {
-    return mfrURL + 'render?url='+ osfURL + guid + '/?action=download%26mode=render';
+    return mfrURL + 'render?url='+ osfURL + guid + '/download/?action=download%26mode=render';
 };
 
 var mfrId = 0;
