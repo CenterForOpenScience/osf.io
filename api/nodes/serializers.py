@@ -1,4 +1,5 @@
 from django.db import connection
+from distutils.version import StrictVersion
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -479,23 +480,27 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
+        request_version = self.context['request'].version
+        default_perm = ['read'] if StrictVersion(request_version) < StrictVersion('2.11') else []
+        if user.is_anonymous:
+            return default_perm
+
         if hasattr(obj, 'contrib_admin'):
-            if obj.contrib_admin:
-                return ['admin', 'write', 'read']
-            elif obj.contrib_write:
-                return ['write', 'read']
-            else:
-                return ['read']
-        else:
-            user = self.context['request'].user
-            all_perms = ['read', 'write', 'admin']
             user_perms = []
-            for p in all_perms:
-                if obj.has_permission(user, p):
-                    user_perms.append(p)
-            if not user_perms:
+            if obj.contrib_admin:
+                user_perms = ['admin', 'write', 'read']
+            elif obj.contrib_write:
+                user_perms = ['write', 'read']
+            elif obj.contrib_read:
                 user_perms = ['read']
-            return user_perms
+        else:
+            user_perms = [osf_permissions.CONTRIB_PERMISSIONS[perm] for perm in obj.get_permissions(user)]
+
+        user_perms = user_perms or default_perm
+        if not user_perms and user in obj.parent_admin_users:
+            user_perms = ['read']
+        return user_perms
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user

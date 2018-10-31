@@ -1,7 +1,7 @@
 import pytz
 
 from django.apps import apps
-from django.db.models import Exists, F, OuterRef, Q
+from django.db.models import F, Q
 from guardian.shortcuts import get_objects_for_user
 
 from api.addons.views import AddonSettingsMixin
@@ -472,8 +472,7 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
     def get_queryset(self):
         user = self.get_user()
-        contrib_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, admin=True)
-        node_qs = Node.objects.annotate(admin=Exists(contrib_qs)).filter(admin=True).exclude(is_deleted=True)
+        node_qs = get_objects_for_user(user, 'admin_node', Node).exclude(is_deleted=True)
         return DraftRegistration.objects.filter(
             Q(registered_node__isnull=True) |
             Q(registered_node__is_deleted=True),

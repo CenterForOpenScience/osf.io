@@ -479,7 +479,7 @@ class TestNodeDetail:
         new_user = AuthUserFactory()
         project_public.add_contributor(
             new_user,
-            permissions=(permissions.READ, permissions.WRITE),
+            permissions=permissions.WRITE,
             auth=Auth(project_public.creator)
         )
         res = app.get(url, auth=new_user.auth)
