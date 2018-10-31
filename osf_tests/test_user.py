@@ -2137,3 +2137,23 @@ class TestUserSpam:
 
         spam_content = user._get_spam_content(saved_fields)
         assert spam_content == expected_content.strip()
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch('osf.models.spam._get_client')
+    def test_do_check_spam(self, mock_get_client, user):
+        new_mock = mock.MagicMock()
+        new_mock.check_comment = mock.MagicMock(return_value=(True, None))
+        mock_get_client.return_value = new_mock
+
+        suspicious_content = 'spam eggs sausage and spam'
+        with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
+            user.do_check_spam(
+                author=user.fullname,
+                author_email=user.username,
+                content=suspicious_content,
+                request_headers={'Referrer': 'Woo', 'User-Agent': 'yay', 'Remote-Addr': 'ok'}
+            )
+        user.save()
+        assert user.spam_data['content'] == suspicious_content
+        assert user.spam_data['author'] == user.fullname
+        assert user.spam_data['author_email'] == user.username
