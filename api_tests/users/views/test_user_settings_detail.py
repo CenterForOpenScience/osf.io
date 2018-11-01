@@ -140,7 +140,7 @@ class TestUserSettingsUpdateTwoFactor:
         addon = user_one.get_addon('twofactor')
         addon.totp_secret = TOTP_SECRET
         addon.save()
-        payload['data']['attributes']['two_factor_verification'] = _valid_code(TOTP_SECRET)
+        payload['data']['attributes']['two_factor_verification'] = _valid_code(TOTP_SECRET, drift=-1)
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.json['data']['attributes']['two_factor_enabled'] is True
         assert res.status_code == 200
