@@ -10,7 +10,6 @@ urlpatterns = [
     url(
         base_pattern,
         include([
-            url(r'^login/', views.login_home, name='login_home'),
             url(r'^$', views.home, name='home'),
             url(r'^admin/', admin.site.urls),
             url(r'^asset_files/', include('admin.asset_files.urls', namespace='asset_files')),
