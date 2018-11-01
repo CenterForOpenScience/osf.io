@@ -1,35 +1,26 @@
 #-*- coding: utf-8 -*-
+import re
 import copy
 import datetime
 import functools
-import json
-import logging
 import random
-import re
 from contextlib import nested
 
-import celery
 import responses
 import mock  # noqa
 from django.utils import timezone
 from django.db import IntegrityError
 from mock import call
 import pytest
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 
 from framework.auth import Auth
 from framework.celery_tasks import handlers
 
 from website.archiver import (
     ARCHIVER_INITIATED,
-    ARCHIVER_SUCCESS,
-    ARCHIVER_FAILURE,
-    ARCHIVER_NETWORK_ERROR,
-    ARCHIVER_SIZE_EXCEEDED,
-    NO_ARCHIVE_LIMIT,
 )
 from website.archiver import utils as archiver_utils
-from website.archiver.tasks import ArchivedFileNotFound
 from website.app import *  # noqa
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa
@@ -180,7 +171,7 @@ WB_FILE_TREE = {
                     ],
                 }
             }
-       ],
+        ],
     }
 }
 
@@ -278,6 +269,7 @@ def generate_schema_from_data(data):
                 'id': id,
                 'type': 'osf-upload' if prop.get('extra') else 'string'
             }
+
     def from_question(qid, question):
         if q.get('extra'):
             return {
@@ -513,6 +505,7 @@ class TestArchiverTasks(ArchiverTestCase):
     def test_archive_node_does_not_archive_empty_addons(self, mock_archive_addon, mock_send):
         with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
             mock_addon = MockAddon()
+
             def empty_file_tree(user, version):
                 return {
                     'path': '/',
@@ -620,7 +613,7 @@ class TestArchiverTasks(ArchiverTestCase):
             }
         }
         schema = generate_schema_from_data(data)
-        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registered_metadata=data)
+        factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registered_metadata=data)
 
         with test_utils.mock_archive(node, schema=schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
@@ -1120,8 +1113,8 @@ class TestArchiverListeners(ArchiverTestCase):
 
     def test_archive_tree_finished_false_for_partial_archive(self):
         proj = factories.NodeFactory()
-        child = factories.NodeFactory(parent=proj, title='child')
-        sibling = factories.NodeFactory(parent=proj, title='sibling')
+        factories.NodeFactory(parent=proj, title='child')
+        factories.NodeFactory(parent=proj, title='sibling')
 
         reg = factories.RegistrationFactory(project=proj)
         rchild = reg._nodes.filter(title='child').get()
@@ -1208,6 +1201,7 @@ class TestArchiverDecorators(ArchiverTestCase):
     @mock.patch('website.archiver.signals.archive_fail.send')
     def test_fail_archive_on_error(self, mock_fail):
         e = HTTPError(418)
+
         def error(*args, **kwargs):
             raise e
 

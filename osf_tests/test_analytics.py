@@ -2,21 +2,18 @@
 """
 Unit tests for analytics logic in framework/analytics/__init__.py
 """
-import re
-import unittest
 
 import mock
+import re
 import pytest
 from django.utils import timezone
-from nose.tools import *  # flake8: noqa  (PEP8 asserts)
-from flask import Flask
+from nose.tools import *  # noqa:  (PEP8 asserts)
 
 from datetime import datetime
 
 from addons.osfstorage.models import OsfStorageFile
-from framework import analytics, sessions
-from framework.sessions import session
-from osf.models import PageCounter, Session
+from framework import analytics
+from osf.models import PageCounter
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, ProjectFactory

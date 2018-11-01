@@ -1,4 +1,4 @@
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 
 from tests.base import AdminTestCase
 

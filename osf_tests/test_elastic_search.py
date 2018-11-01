@@ -6,7 +6,7 @@ import unittest
 import logging
 import functools
 
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from nose.tools import *  # noqa: (PEP8 asserts)
 import pytest
 import mock
 
@@ -16,7 +16,7 @@ from website import settings
 import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
-from website.search_migration.migrate import migrate, migrate_collected_metadata
+from website.search_migration.migrate import migrate
 from osf.models import (
     Retraction,
     NodeLicense,
@@ -24,14 +24,13 @@ from osf.models import (
     QuickFilesNode,
 )
 from addons.wiki.models import WikiPage
-from addons.osfstorage.models import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
 
 from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
-from tests.utils import mock_archive, run_celery_tasks
+from tests.utils import run_celery_tasks
 
 
 TEST_INDEX = 'test'
@@ -60,6 +59,7 @@ def retry_assertion(interval=0.3, retries=3):
     def test_wrapper(func):
         t_interval = interval
         t_retries = retries
+
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             try:
@@ -93,7 +93,7 @@ class TestCollectionsSearch(OsfTestCase):
         self.reg_provider = factories.RegistrationProviderFactory()
         self.collection_one = factories.CollectionFactory(creator=self.user, is_public=True, provider=self.provider)
         self.collection_public = factories.CollectionFactory(creator=self.user, is_public=True, provider=self.provider)
-        self.collection_private = factories.CollectionFactory(creator=self.user, is_public = False, provider=self.provider)
+        self.collection_private = factories.CollectionFactory(creator=self.user, is_public=False, provider=self.provider)
         self.reg_collection = factories.CollectionFactory(creator=self.user, provider=self.reg_provider, is_public=True)
         self.reg_collection_private = factories.CollectionFactory(creator=self.user, provider=self.reg_provider, is_public=False)
 
@@ -358,7 +358,6 @@ class TestUserUpdate(OsfTestCase):
 
         docs = query_user(institution)['results']
         assert_equal(len(docs), 1)
-
 
     def test_name_fields(self):
         names = ['Bill Nye', 'William', 'the science guy', 'Sanford', 'the Great']
@@ -778,7 +777,6 @@ class TestAddContributor(OsfTestCase):
         contribs = search.search_contributor(unreg.fullname)
         assert_equal(len(contribs['users']), 0)
 
-
     def test_unreg_users_do_show_on_projects(self):
         with run_celery_tasks():
             unreg = factories.UnregUserFactory(fullname='Robert Paulson')
@@ -789,7 +787,6 @@ class TestAddContributor(OsfTestCase):
             )
         results = query(unreg.fullname)['results']
         assert_equal(len(results), 1)
-
 
     def test_search_fullname(self):
         # Searching for full name yields exactly one result.
@@ -865,7 +862,6 @@ class TestProjectSearchResults(OsfTestCase):
         with run_celery_tasks():
             super(TestProjectSearchResults, self).setUp()
             self.user = factories.UserFactory(fullname='Doug Bogie')
-
 
             self.project_singular = factories.ProjectFactory(
                 title=self.singular,
@@ -1178,7 +1174,7 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(len(find), 0)
 
     def test_make_node_private(self):
-        file_ = self.root.append_file('Change_Gonna_Come.wav')
+        self.root.append_file('Change_Gonna_Come.wav')
         find = query_file('Change_Gonna_Come.wav')['results']
         assert_equal(len(find), 1)
         self.node.is_public = False
@@ -1190,7 +1186,7 @@ class TestSearchFiles(OsfTestCase):
     def test_make_private_node_public(self):
         self.node.is_public = False
         self.node.save()
-        file_ = self.root.append_file('Try a Little Tenderness.flac')
+        self.root.append_file('Try a Little Tenderness.flac')
         find = query_file('Try a Little Tenderness.flac')['results']
         assert_equal(len(find), 0)
         self.node.is_public = True
@@ -1218,7 +1214,6 @@ class TestSearchFiles(OsfTestCase):
         file_.save()
         find = query_file('Timber.mp3')['results']
         assert_equal(find[0]['guid_url'], '/' + file_guid._id + '/')
-
 
     def test_file_download_url_no_guid(self):
         file_ = self.root.append_file('Timber.mp3')

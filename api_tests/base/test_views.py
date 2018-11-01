@@ -5,7 +5,7 @@ import pkgutil
 import mock
 
 from nose import SkipTest
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 
 from tests.base import ApiTestCase
 from osf_tests import factories
@@ -112,8 +112,7 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_view_classes_define_or_override_serializer_class(self):
         for view in VIEW_CLASSES:
-            has_serializer_class = getattr(view, 'serializer_class', None) or \
-                                   getattr(view, 'get_serializer_class', None)
+            has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
             assert_true(
                 has_serializer_class,
                 '{0} should include serializer class or override get_serializer_class()'.format(view)
