@@ -14,10 +14,6 @@ def home(request):
     context = {}
     return render(request, 'home.html', context)
 
-def login_home(request):
-    context = {}
-    return render(request, 'shib-login.html', context)
-
 class GuidFormView(FormView):
     form_class = GuidForm
     template_name = None
