@@ -5,7 +5,6 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
 )
-from addons.twofactor.tests.utils import _valid_code
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST
 
 
@@ -113,15 +112,17 @@ class TestUserSettingsUpdateTwoFactor:
         addon = user_one.get_addon('twofactor')
         assert addon is None
 
-    def test_update_two_factor_verification(self, app, user_one, url, payload):
-        TOTP_SECRET = 'b8f85986068f8079aa9d'
+    @mock.patch('addons.twofactor.models.UserSettings.verify_code')
+    def test_update_two_factor_verification(self, mock_verify_code, app, user_one, url, payload):
         # Two factor not enabled
+        mock_verify_code.return_value = True
         payload['data']['attributes']['two_factor_verification'] = 123456
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Two-factor authentication is not enabled.'
 
         # Two factor invalid code
+        mock_verify_code.return_value = False
         payload['data']['attributes']['two_factor_enabled'] = True
         payload['data']['attributes']['two_factor_verification'] = 123456
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
@@ -129,19 +130,19 @@ class TestUserSettingsUpdateTwoFactor:
         assert res.json['errors'][0]['detail'] == 'The two-factor verification code you provided is invalid.'
 
         # Test invalid data type
+        mock_verify_code.return_value = False
         payload['data']['attributes']['two_factor_verification'] = 'abcd123'
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'A valid integer is required.'
 
         # Test two factor valid code
+        mock_verify_code.return_value = True
         del payload['data']['attributes']['two_factor_verification']
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        addon = user_one.get_addon('twofactor')
-        addon.totp_secret = TOTP_SECRET
-        addon.save()
-        payload['data']['attributes']['two_factor_verification'] = _valid_code(TOTP_SECRET)
+        payload['data']['attributes']['two_factor_verification'] = 654321
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+
         assert res.json['data']['attributes']['two_factor_enabled'] is True
         assert res.status_code == 200
         user_one.reload()
