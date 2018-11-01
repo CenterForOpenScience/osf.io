@@ -104,9 +104,7 @@ class ShibLoginView(RedirectView):
                 USE_EPPN = login_by_eppn()
                 if USE_EPPN:
                     new_user.eppn = eppn
-                    mew_user.have_email = False
-                    #user.unclaimed_records = {}
-                    new_username = eppn
+                    new_user.have_email = False
                 else:
                     new_user.eppn = None
                     new_user.have_email = True
