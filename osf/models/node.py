@@ -2041,9 +2041,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         forked.root = None  # Recompute root on save
 
-        # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
-
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
@@ -2065,6 +2062,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             addon.after_fork(original, forked, user)
 
         forked.save()
+
+        # Need to call this after save for the notifications to be created with the _primary_key
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
 
         return forked
 
