@@ -131,7 +131,11 @@ class TestRegistrationFiltering(ApiTestCase):
             is_public=True,
             creator=self.user_one)
         self.project_three = ProjectFactory(
-            title='Three', is_public=True, creator=self.user_two)
+            title='Three',
+            description='',
+            is_public=True,
+            creator=self.user_two
+        )
 
         self.private_project_user_one = ProjectFactory(
             title='Private Project User One', is_public=False, creator=self.user_one)
