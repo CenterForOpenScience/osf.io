@@ -12,7 +12,6 @@ urlpatterns = [
     url(
         base_pattern,
         include([
-            url(r'^login/', views.login_home, name='login_home'),
             url(r'^$', views.home, name='home'),
             url(r'^admin/', admin.site.urls),
             url(r'^spam/', include('admin.spam.urls', namespace='spam')),
