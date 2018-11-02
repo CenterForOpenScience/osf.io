@@ -320,6 +320,21 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'igdore',
+                'name': 'Institute for Globally Distributed Open Research and Education (IGDORE)',
+                'description': 'Institute for Globally Distributed Open Research and Education '
+                               '(IGDORE) is an independent research institute dedicated to improve '
+                               'the quality of science, science education, and quality of life for '
+                               'scientists, students, and their families.',
+                'banner_name': 'igdore-banner.png',
+                'logo_name': 'igdore-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['igdore.org'],
+                'delegation_protocol': '',
+            },
+            {
                 '_id': 'iit',
                 'name': 'Illinois Institute of Technology ',
                 'description': 'A research data service provided by Illinois Tech Libraries',
@@ -1029,6 +1044,21 @@ def main(env):
                 'logout_url': None,
                 'domains': ['test-osf-icer.cos.io'],
                 'email_domains': ['icer-review.org'],
+                'delegation_protocol': '',
+            },
+            {
+                '_id': 'igdore',
+                'name': 'Institute for Globally Distributed Open Research and Education [Test]',
+                'description': 'Institute for Globally Distributed Open Research and Education '
+                               '(IGDORE) is an independent research institute dedicated to improve '
+                               'the quality of science, science education, and quality of life for '
+                               'scientists, students, and their families.',
+                'banner_name': 'igdore-banner.png',
+                'logo_name': 'igdore-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['test-osf-icer.igdore.io'],
+                'email_domains': ['igdore.org'],
                 'delegation_protocol': '',
             },
             {
