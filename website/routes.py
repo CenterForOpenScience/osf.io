@@ -1226,6 +1226,17 @@ def make_url_map(app):
             notemplate,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/analytics/',
+                '/project/<pid>/node/<nid>/analytics/',
+            ],
+            'get',
+            project_views.node.project_statistics,
+            notemplate,
+        ),
+
+
         ### Files ###
 
         # Note: Web endpoint for files view must pass `mode` = `page` to

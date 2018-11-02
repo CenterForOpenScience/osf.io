@@ -13,6 +13,7 @@ from django.db.models import Q, OuterRef, Exists, Subquery
 
 from framework import status
 from framework.utils import iso8601format
+from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from framework.exceptions import HTTPError
@@ -23,6 +24,7 @@ from osf import features
 from website import language
 
 from website.util import rubeus
+from website.ember_osf_web.views import use_ember_app
 from website.exceptions import NodeStateError
 from website.project import new_node, new_private_link
 from website.project.decorators import (
@@ -512,6 +514,14 @@ def project_reorder_components(node, **kwargs):
 
     logger.error('Got invalid node list in reorder components')
     raise HTTPError(http.BAD_REQUEST)
+
+@must_be_valid_project
+@must_be_contributor_or_public
+@must_not_be_retracted_registration
+def project_statistics(auth, node, **kwargs):
+    if 'project' in request.url:
+        return redirect('/' + node._id + '/analytics/')
+    return use_ember_app()
 
 
 ###############################################################################
