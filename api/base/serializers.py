@@ -1298,6 +1298,10 @@ class JSONAPISerializer(BaseAPISerializer):
         assert type_ is not None, 'Must define Meta.type_'
         self.parse_sparse_fields(allow_unsafe=True, context=self.context)
 
+        request = self.context['request']
+        if not request.version or StrictVersion(request.version) > StrictVersion('2.11'):
+            type_ = type_.replace('-', '_')
+
         data = {
             'id': '',
             'type': type_,
