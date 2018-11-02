@@ -5,6 +5,7 @@ import datetime
 from addons.wiki.models import WikiVersion
 from django.utils import timezone
 from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
 from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
@@ -547,6 +548,17 @@ class TestDraftRegistrations:
         assert not draft.registered_node
         draft.register(auth)
         assert draft.registered_node
+
+        # group member with admin access cannot register
+        member = factories.AuthUserFactory()
+        osf_group = factories.OSFGroupFactory(creator=user)
+        osf_group.make_member(member, auth=auth)
+        project.add_osf_group(osf_group, 'admin')
+        draft_2 = factories.DraftRegistrationFactory(branched_from=project)
+        assert project.has_permission(member, 'admin')
+        with pytest.raises(PermissionsError):
+            draft_2.register(Auth(member))
+        assert not draft_2.registered_node
 
     def test_update_metadata_tracks_changes(self, project):
         draft = factories.DraftRegistrationFactory(branched_from=project)
