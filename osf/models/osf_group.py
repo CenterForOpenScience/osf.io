@@ -17,10 +17,9 @@ MANAGER = 'manager'
 
 # TODO Add logging for OSFGroup actions
 # TODO Send email to member/unregistered member when added to group
-# TODO OSFGroups should either have a guid or a longer _id, assuming guid for now, can remove
 
 
-class OSFGroup(GuardianMixin, base.GuidMixin, base.BaseModel):
+class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
     """
     OSFGroup model.  When an OSFGroup is created, a manager and member Django group are created.
     Managers belong to both manager and member groups.  Members belong to member group only.
