@@ -41,7 +41,7 @@ def migrate_scopes_from_char_to_m2m(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0138_merge_20181012_1944'),
+        ('osf', '0142_apioauth2scope_is_public'),
     ]
 
     # AlterField migration added to set null=True because when reverting 0140_auto_20181018_0008,
