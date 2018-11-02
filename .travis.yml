@@ -1,11 +1,11 @@
 # Config file for automatic testing at travis-ci.org
+sudo: false
 
 language: python
 
 python:
     - "2.7"
 
-sudo: false
 
 # TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
 # addons:
