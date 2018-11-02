@@ -15,8 +15,6 @@ routes = [
     '/<uid>/quickfiles/',
     '/institutions/',
     '/support/',
-    '/project/<pid>/forks/',
-    '/project/<pid>/node/<nid>/forks/',
 ]
 
 def use_ember_app(**kwargs):
