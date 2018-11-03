@@ -26,6 +26,9 @@ from api.institutions.authentication import login_by_eppn
 import logging
 logger = logging.getLogger(__name__)
 
+import logging
+logger = logging.getLogger(__name__)
+
 class LoginView(FormView):
     form_class = LoginForm
     redirect_field_name = REDIRECT_FIELD_NAME
