@@ -6,6 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     PrivateLinkFactory,
+    OSFGroupFactory,
 )
 from osf.models import NodeLog
 
@@ -20,6 +21,14 @@ def write_contrib():
 @pytest.fixture()
 def read_contrib():
     return AuthUserFactory()
+
+@pytest.fixture()
+def group_member():
+    return AuthUserFactory()
+
+@pytest.fixture()
+def osf_group(group_member):
+    return OSFGroupFactory(creator=group_member)
 
 @pytest.fixture()
 def project(admin_contrib, write_contrib, read_contrib):
@@ -41,7 +50,7 @@ class TestNodeSettingsGet:
     def non_contrib(self):
         return AuthUserFactory()
 
-    def test_node_settings_detail(self, app, admin_contrib, non_contrib, write_contrib, url, project):
+    def test_node_settings_detail(self, app, admin_contrib, non_contrib, write_contrib, osf_group, group_member, url, project):
 
         # non logged in uers can't access node settings
         res = app.get(url, expect_errors=True)
@@ -57,6 +66,11 @@ class TestNodeSettingsGet:
 
         # admin can access node settings
         res = app.get(url, auth=admin_contrib.auth)
+        assert res.status_code == 200
+
+        # group member can access node settings
+        project.add_osf_group(osf_group, 'read')
+        res = app.get(url, auth=group_member.auth)
         assert res.status_code == 200
 
         # allow_access_requests
@@ -132,7 +146,7 @@ class TestNodeSettingsPUT:
             }
         }
 
-    def test_put_permissions(self, app, project, payload, admin_contrib, write_contrib, read_contrib, url):
+    def test_put_permissions(self, app, project, payload, admin_contrib, write_contrib, read_contrib, url, osf_group, group_member):
         assert project.access_requests_enabled is True
         payload['data']['attributes']['access_requests_enabled'] = False
         # Logged out
@@ -148,12 +162,30 @@ class TestNodeSettingsPUT:
         res = app.put_json_api(url, payload, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
+        # group member read
+        project.add_osf_group(osf_group, 'read')
+        project.save()
+        res = app.put_json_api(url, payload, auth=group_member.auth, expect_errors=True)
+        assert res.status_code == 403
+
         # Logged in write (Write contribs can only change some node settings)
         res = app.put_json_api(url, payload, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # Logged in admin
+        # group member write
+        project.add_osf_group(osf_group, 'write')
+        project.save()
+        res = app.put_json_api(url, payload, auth=group_member.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Logged in write (Write group mems can only change some node settings)
         res = app.put_json_api(url, payload, auth=admin_contrib.auth)
+        assert res.status_code == 200
+
+        # group member admin
+        project.add_osf_group(osf_group, 'admin')
+        project.save()
+        res = app.put_json_api(url, payload, auth=group_member.auth, expect_errors=True)
         assert res.status_code == 200
 
 
@@ -171,7 +203,7 @@ class TestNodeSettingsUpdate:
             }
         }
 
-    def test_patch_permissions(self, app, project, payload, admin_contrib, write_contrib, read_contrib, url):
+    def test_patch_permissions(self, app, project, payload, admin_contrib, write_contrib, read_contrib, group_member, osf_group, url):
         payload['data']['attributes']['redirect_link_enabled'] = True
         payload['data']['attributes']['redirect_link_url'] = 'https://cos.io'
         # Logged out
@@ -192,6 +224,21 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
 
         # Logged in admin
+        res = app.patch_json_api(url, payload, auth=admin_contrib.auth)
+        assert res.status_code == 200
+
+        # Logged in read group mem
+        project.add_osf_group(osf_group, 'read')
+        res = app.patch_json_api(url, payload, auth=read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Logged in write group mem (Write group mems can only change some node settings)
+        project.add_osf_group(osf_group, 'write')
+        res = app.patch_json_api(url, payload, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # Logged in admin group mem
+        project.add_osf_group(osf_group, 'admin')
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth)
         assert res.status_code == 200
 
