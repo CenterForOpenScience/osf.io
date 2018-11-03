@@ -83,13 +83,12 @@ class UserNodesFilterMixin(NodesFilterMixin):
                 raise InvalidFilterValue(value=operation['value'])
             perm = operation['value']
             user = self.get_user()
-            query = Q(contributor__user__id=user.id)
             if perm == READ:
-                query &= Q(id__in=get_objects_for_user(user, 'read_node', AbstractNode))
+                query = Q(id__in=get_objects_for_user(user, 'read_node', AbstractNode))
             elif perm == WRITE:
-                query &= Q(id__in=get_objects_for_user(user, 'write_node', AbstractNode))
+                query = Q(id__in=get_objects_for_user(user, 'write_node', AbstractNode))
             elif perm == ADMIN:
-                query &= Q(id__in=get_objects_for_user(user, 'admin_node', AbstractNode))
+                query = Q(id__in=get_objects_for_user(user, 'admin_node', AbstractNode))
             else:
                 raise InvalidFilterValue(value=operation['value'])
             return query
