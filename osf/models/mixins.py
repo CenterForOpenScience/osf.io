@@ -845,8 +845,11 @@ class ContributorMixin(models.Model):
 
     def is_contributor_or_group_member(self, user):
         """
-        Whether the was given specific permission to the object in some way
+        Whether the was given specific permission to the object -
         They must be a contributor or a member of an osf group with permissions
+
+        Checking if contributor object exists because unregistered contributors are contributors,
+        but have no permissions until user object is claimed.
         """
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
