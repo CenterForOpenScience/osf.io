@@ -58,11 +58,8 @@ class LoginView(FormView):
         return redirect_to
 
 class ShibLoginView(RedirectView):
-    form_class = LoginForm
     redirect_field_name = REDIRECT_FIELD_NAME
 
-    @method_decorator(csrf_protect)
-    @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
 
         eppn = request.environ['HTTP_AUTH_EPPN']
