@@ -330,3 +330,24 @@ class TestNodeListPermissionFiltering:
         # test filter null
         res = app.get('{}null'.format(url), auth=contrib.auth, expect_errors=True)
         assert res.status_code == 400
+
+        user2 = AuthUserFactory()
+        osf_group = OSFGroupFactory(creator=user2)
+        read_node.add_osf_group(osf_group, 'read')
+        write_node.add_osf_group(osf_group, 'write')
+        admin_node.add_osf_group(osf_group, 'admin')
+
+        # test filter group member read
+        res = app.get('{}read'.format(url), auth=user2.auth)
+        assert len(res.json['data']) == 3
+        assert set([read_node._id, write_node._id, admin_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter group member write
+        res = app.get('{}write'.format(url), auth=user2.auth)
+        assert len(res.json['data']) == 2
+        assert set([admin_node._id, write_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter group member admin
+        res = app.get('{}admin'.format(url), auth=user2.auth)
+        assert len(res.json['data']) == 1
+        assert [admin_node._id] == [node['id'] for node in res.json['data']]
