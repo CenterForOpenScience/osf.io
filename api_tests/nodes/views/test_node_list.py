@@ -2,6 +2,7 @@ import pytest
 
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
+from api.base.utils import default_node_permission_queryset
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from framework.auth.core import Auth
 from osf.models import AbstractNode, Node, NodeLog
@@ -156,6 +157,30 @@ class TestNodeList:
         res = app.get('{}?embed=region'.format(url))
         assert res.status_code == 200
         assert res.json['data'][0]['embeds']['region']['data']['id'] == DEFAULT_REGION_ID
+
+    def test_default_node_permission_queryset(self, app, url, private_project, user):
+        # Node admin contributor
+        qs = default_node_permission_queryset(user, Node)
+        assert qs.count() == 1
+
+        user_2 = AuthUserFactory()
+        assert default_node_permission_queryset(user_2, Node).count() == 0
+
+        # Node write contributor
+        private_project.add_contributor(user_2, 'read')
+        private_project.save()
+        assert default_node_permission_queryset(user_2, Node).count() == 1
+
+        # Public nodes
+        ProjectFactory(is_public=True)
+        assert default_node_permission_queryset(user_2, Node).count() == 2
+
+        # Node read group member
+        project_3 = ProjectFactory(is_public=False)
+        assert default_node_permission_queryset(user_2, Node).count() == 2
+        group = OSFGroupFactory(creator=user_2)
+        project_3.add_osf_group(group, 'read')
+        assert default_node_permission_queryset(user_2, Node).count() == 3
 
 
 @pytest.mark.django_db
