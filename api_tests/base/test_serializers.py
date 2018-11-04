@@ -131,6 +131,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'type',
             'current_user_can_comment',
             'current_user_is_contributor',
+            'current_user_is_contributor_or_group_member',
             'preprint',
             'subjects',
             'wiki_enabled']
