@@ -10,7 +10,7 @@ import requests
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from addons.wiki.models import NodeSettings as WikiNodeSettings
-from osf.models import AbstractNode, Preprint, Guid, NodeRelation
+from osf.models import AbstractNode, Preprint, Guid, NodeRelation, Contributor
 from osf.models.node import NodeGroupObjectPermission
 
 from api.base.exceptions import ServiceUnavailableError
@@ -87,10 +87,12 @@ class NodeOptimizationMixin(object):
         admin_permission = Permission.objects.get(codename='admin_node')
         write_permission = Permission.objects.get(codename='write_node')
         read_permission = Permission.objects.get(codename='read_node')
+        contrib = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
         user_group = OSFUserGroup.objects.filter(osfuser_id=auth.user.id if auth.user else None, group_id=OuterRef('group_id'))
         node_group = NodeGroupObjectPermission.objects.annotate(user_group=Subquery(user_group.values_list('group_id')[:1])).filter(user_group__isnull=False, content_object_id=OuterRef('pk'))
         # TODO restore user_is_contrib
         return queryset.prefetch_related('root').prefetch_related('subjects').annotate(
+            user_is_contrib=Exists(contrib),
             contrib_read=Exists(node_group.filter(permission_id=read_permission.id)),
             contrib_write=Exists(node_group.filter(permission_id=write_permission.id)),
             contrib_admin=Exists(node_group.filter(permission_id=admin_permission.id)),

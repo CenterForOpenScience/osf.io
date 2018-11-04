@@ -298,6 +298,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     current_user_is_contributor = ser.SerializerMethodField(
         help_text='Whether the current user is a contributor on this node.',
     )
+    current_user_is_contributor_or_group_member = ser.SerializerMethodField(
+        help_text='Whether the current user is a contributor or group member on this node.',
+    )
     wiki_enabled = ser.SerializerMethodField(help_text='Whether the wiki addon is enabled')
 
     # Public is only write-able by admins--see update method
@@ -522,9 +525,17 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
 
     def get_current_user_is_contributor(self, obj):
-        # TODO - naming - this returns true if you have been given permissions
-        # through being made a contributor -OR- being an OSF group member w/ permissions.
-        # Reserving is contributor for the former.
+        # Returns whether user is a contributor (does not include group members)
+        if hasattr(obj, 'user_is_contrib'):
+            return obj.user_is_contrib
+
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return obj.is_contributor(user)
+
+    def get_current_user_is_contributor_or_group_member(self, obj):
+        # Returns whether user is a contributor -or- a group member
         if hasattr(obj, 'contrib_read'):
             return obj.contrib_read
 

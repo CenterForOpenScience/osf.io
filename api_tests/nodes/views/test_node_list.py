@@ -188,10 +188,12 @@ class TestNodeList:
         res = app.get(url_public, auth=non_contrib.auth)
         assert not public_project.has_permission(non_contrib, permissions.READ)
         assert permissions.READ not in res.json['data'][0]['attributes']['current_user_permissions']
+        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
 
         # ensure read is not included for an anonymous user
         res = app.get(url_public)
         assert permissions.READ not in res.json['data'][0]['attributes']['current_user_permissions']
+        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
 
         # ensure both read and write included for a write contributor
         new_user = AuthUserFactory()
@@ -202,21 +204,25 @@ class TestNodeList:
         )
         res = app.get(url_public, auth=new_user.auth)
         assert set(res.json['data'][0]['attributes']['current_user_permissions']) == set([permissions.READ, permissions.WRITE])
+        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is True
 
         # make sure 'read' is there for implicit read contributors
         NodeFactory(parent=public_project, is_public=True)
         res = app.get(url_public, auth=user.auth)
         assert public_project.has_permission(user, permissions.ADMIN)
         assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
+        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
 
         # ensure 'read' is still included with older versions
         res = app.get(url, auth=non_contrib.auth)
         assert not public_project.has_permission(non_contrib, permissions.READ)
         assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
+        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
 
         # check read permission is included with older versions for anon user
         res = app.get(url)
         assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
+        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
 
     def test_current_user_permissions_group_member(self, app, user, url, public_project):
         # in most recent API version, read isn't implicit for public nodes
@@ -229,6 +235,7 @@ class TestNodeList:
         res = app.get(url_public, auth=group_member.auth)
         assert public_project.has_permission(group_member, permissions.READ)
         assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
+        assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is True
 
         # Write group member has "read" and "write" permissions
         group_member = AuthUserFactory()
@@ -236,6 +243,8 @@ class TestNodeList:
         public_project.add_osf_group(osf_group, 'write')
         res = app.get(url_public, auth=group_member.auth)
         assert set(res.json['data'][0]['attributes']['current_user_permissions']) == set([permissions.READ, permissions.WRITE])
+        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
+        assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is True
 
         # Admin group member has "read" and "write" and "admin" permissions
         group_member = AuthUserFactory()
@@ -243,18 +252,24 @@ class TestNodeList:
         public_project.add_osf_group(osf_group, 'admin')
         res = app.get(url_public, auth=group_member.auth)
         assert set(res.json['data'][0]['attributes']['current_user_permissions']) == set([permissions.READ, permissions.WRITE, permissions.ADMIN])
+        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
+        assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is True
 
         # make sure 'read' is there for implicit read group members
         NodeFactory(parent=public_project, is_public=True)
         res = app.get(url_public, auth=group_member.auth)
         assert public_project.has_permission(user, permissions.ADMIN)
         assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
+        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
+        assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is False
 
         # ensure 'read' is still included with older versions
         public_project.remove_osf_group(osf_group)
         res = app.get(url, auth=group_member.auth)
         assert not public_project.has_permission(group_member, permissions.READ)
         assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
+        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
+        assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is False
 
 
 @pytest.mark.django_db
