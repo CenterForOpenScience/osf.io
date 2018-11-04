@@ -501,6 +501,42 @@ class TestNodeDetail:
         res = app.get(url_public)
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
 
+        # Read group member has "read" permissions
+        group_member = AuthUserFactory()
+        osf_group = OSFGroupFactory(creator=group_member)
+        project_public.add_osf_group(osf_group, 'read')
+        res = app.get(url, auth=group_member.auth)
+        assert project_public.has_permission(group_member, permissions.READ)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+
+        # Write group member has "read" and "write" permissions
+        group_member = AuthUserFactory()
+        osf_group = OSFGroupFactory(creator=group_member)
+        project_public.add_osf_group(osf_group, 'write')
+        res = app.get(url, auth=group_member.auth)
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.READ, permissions.WRITE]
+
+        # Admin group member has "read" and "write" and "admin" permissions
+        group_member = AuthUserFactory()
+        osf_group = OSFGroupFactory(creator=group_member)
+        project_public.add_osf_group(osf_group, 'admin')
+        res = app.get(url, auth=group_member.auth)
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.READ, permissions.WRITE, permissions.ADMIN]
+
+        # make sure 'read' is there for implicit read group members
+        comp = NodeFactory(parent=project_public, is_public=True)
+        comp_url = '/{}nodes/{}/?version=2.11'.format(API_BASE, comp._id)
+        res = app.get(comp_url, auth=group_member.auth)
+        assert project_public.has_permission(user, permissions.ADMIN)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+
+        # ensure 'read' is still included with older versions
+        project_public.remove_osf_group(osf_group)
+        res = app.get(url_public, auth=group_member.auth)
+        assert not project_public.has_permission(group_member, permissions.READ)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+
+
 @pytest.mark.django_db
 class NodeCRUDTestCase:
 
