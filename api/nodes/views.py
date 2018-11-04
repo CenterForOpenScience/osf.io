@@ -412,6 +412,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             query_val = operation['value'].lower().strip()
             if query_val not in API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
+            # Group members not returned under contributors endpoints
             return Q(user__in=self.get_resource().get_group(query_val).user_set.all())
         return super(NodeContributorsList, self).build_query_from_field(field_name, operation)
 
