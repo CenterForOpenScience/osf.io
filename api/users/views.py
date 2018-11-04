@@ -448,6 +448,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
         user = self.get_user()
         current_user = self.request.user
         qs = default_node_list_permission_queryset(user=current_user, model_cls=Registration)
+        # OSF group members not copied to registration.  Only registration contributors need to be checked here.
         return qs.filter(contributor__user__id=user.id)
 
     # overrides ListAPIView

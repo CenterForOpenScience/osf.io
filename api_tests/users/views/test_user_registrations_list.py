@@ -10,6 +10,7 @@ from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
     RegistrationFactory,
+    OSFGroupFactory
 )
 from tests.base import ApiTestCase
 from website.views import find_bookmark_collection
@@ -28,6 +29,14 @@ class TestUserRegistrations:
     @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
+
+    @pytest.fixture()
+    def group_member(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def osf_group(self, group_member):
+        return OSFGroupFactory(creator=group_member)
 
     @pytest.fixture()
     def project_public_user_one(self, user_one):
@@ -56,6 +65,16 @@ class TestUserRegistrations:
             title='Private Project User Two',
             is_public=False,
             creator=user_two)
+
+    @pytest.fixture()
+    def project_private_group_member(self, user_one, osf_group):
+        project = ProjectFactory(
+            title='Private Project Group Member',
+            is_public=False,
+            creator=user_one
+        )
+        project.add_osf_group(osf_group, 'admin')
+        return project
 
     @pytest.fixture()
     def project_deleted_user_one(self, user_one):
@@ -109,12 +128,20 @@ class TestUserRegistrations:
             creator=user_two,
             is_private=True)
 
+    @pytest.fixture()
+    def reg_project_private_group_member(self, user_one, project_private_group_member):
+        return RegistrationFactory(
+            project=project_private_group_member,
+            creator=user_one,
+            is_private=True)
+
     def test_user_registrations(
-            self, app, user_one, user_two,
+            self, app, user_one, user_two, group_member,
             reg_project_public_user_one,
             reg_project_public_user_two,
             reg_project_private_user_one,
             reg_project_private_user_two,
+            reg_project_private_group_member,
             folder, folder_deleted,
             project_deleted_user_one):
 
@@ -171,6 +198,22 @@ class TestUserRegistrations:
         assert folder._id not in ids
         assert folder_deleted._id not in ids
         assert project_deleted_user_one._id not in ids
+
+    #   test_get_registrations_logged_in_group_member
+        url = '/{}users/{}/registrations/'.format(API_BASE, group_member._id)
+        res = app.get(url, auth=group_member.auth)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert reg_project_public_user_one._id not in ids
+        assert reg_project_private_user_one._id not in ids
+        assert reg_project_public_user_two._id not in ids
+        assert reg_project_private_user_two._id not in ids
+        assert folder._id not in ids
+        assert folder_deleted._id not in ids
+        assert project_deleted_user_one._id not in ids
+        # project group members not copied to registration.
+        assert reg_project_private_group_member not in ids
 
 
 class TestRegistrationListFiltering(
