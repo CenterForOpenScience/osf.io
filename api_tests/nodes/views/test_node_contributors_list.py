@@ -2952,6 +2952,16 @@ class TestNodeContributorFiltering:
         assert len(errors) == 1
         assert errors[0]['detail'] == '\'invalid\' is not a valid field for this endpoint.'
 
+    #   test_filtering_write_contributors
+        user_two = AuthUserFactory()
+        project.add_contributor(user_two, 'write')
+        url = '/{}nodes/{}/contributors/?filter[permission]=write'.format(
+            API_BASE, project._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes'].get('permission') == 'write'
+
     def test_filtering_node_with_non_bibliographic_contributor(
             self, app, user, project):
         non_bibliographic_contrib = UserFactory()
