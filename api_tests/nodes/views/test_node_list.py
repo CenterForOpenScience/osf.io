@@ -3705,6 +3705,60 @@ class TestNodeBulkDeleteSkipUneditable:
         assert public_project_one.is_deleted is True
         assert public_project_two.is_deleted is True
 
+    def test_skip_uneditable_has_admin_permission_for_one_node(
+            self, app, user_one, public_project_one, public_project_three, url):
+        payload = {
+            'data': [
+                {
+                    'id': public_project_one._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': public_project_three._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+        res = app.delete_json_api(url, payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 200
+        assert res.json['errors'][0]['id'] == public_project_three._id
+        public_project_one.reload()
+        public_project_three.reload()
+
+        assert public_project_one.is_deleted is True
+        assert public_project_three.is_deleted is False
+
+    def test_skip_uneditable_has_admin_permission_for_one_node_group_members(
+            self, app, public_project_one, public_project_three, url):
+        group_member = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_member)
+        public_project_one.add_osf_group(group, 'admin')
+        public_project_one.save()
+        public_project_three.add_osf_group(group, 'write')
+        public_project_three.save()
+        payload = {
+            'data': [
+                {
+                    'id': public_project_one._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': public_project_three._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+        res = app.delete_json_api(url, payload, auth=group_member.auth, bulk=True)
+        assert res.status_code == 200
+        assert res.json['errors'][0]['id'] == public_project_three._id
+        public_project_one.reload()
+        public_project_three.reload()
+
+        assert public_project_one.is_deleted is True
+        assert public_project_three.is_deleted is False
+
     def test_skip_uneditable_does_not_have_admin_permission_for_any_nodes(
             self, app, user_one, public_project_three, public_project_four, url):
         payload = {

@@ -90,7 +90,7 @@ class NodeOptimizationMixin(object):
         contrib = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
         user_group = OSFUserGroup.objects.filter(osfuser_id=auth.user.id if auth.user else None, group_id=OuterRef('group_id'))
         node_group = NodeGroupObjectPermission.objects.annotate(user_group=Subquery(user_group.values_list('group_id')[:1])).filter(user_group__isnull=False, content_object_id=OuterRef('pk'))
-        # TODO restore user_is_contrib
+        # user_is_contrib means user is a contributor, while contrib_read/write/admin are permissions the user has either through group membership or contributorship
         return queryset.prefetch_related('root').prefetch_related('subjects').annotate(
             user_is_contrib=Exists(contrib),
             contrib_read=Exists(node_group.filter(permission_id=read_permission.id)),
