@@ -12,7 +12,13 @@ def get_campaign_schema(campaign):
     return RegistrationSchema.objects.get(name=schema_name, schema_version=2)
 
 def drafts_for_user(user, campaign=None):
-    from osf.models import DraftRegistration
+    from osf.models import DraftRegistration, Node
+    from guardian.shortcuts import get_objects_for_user
+
+    if not user or user.is_anonymous:
+        return None
+
+    node_qs = get_objects_for_user(user, 'admin_node', Node).exclude(is_deleted=True)
 
     if campaign:
         drafts = DraftRegistration.objects.filter(
@@ -20,6 +26,7 @@ def drafts_for_user(user, campaign=None):
             approval=None,
             registered_node=None,
             deleted__isnull=True,
+            branched_from__in=list(node_qs),
             initiator=user
         )
     else:
@@ -27,6 +34,7 @@ def drafts_for_user(user, campaign=None):
             approval=None,
             registered_node=None,
             deleted__isnull=True,
+            branched_from__in=list(node_qs),
             initiator=user
         )
     return drafts
