@@ -28,7 +28,7 @@ from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import Session, RegistrationSchema, QuickFilesNode
 from osf.models import files as file_models
@@ -1031,6 +1031,26 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 401)
+
+    def test_resolve_folder_raise(self):
+        folder = OsfStorageFolder(
+            name='folder',
+            target=self.project,
+            path='/test/folder/',
+            materialized_path='/test/folder/',
+        )
+        folder.save()
+        resp = self.app.get(
+            self.project.web_url_for(
+                'addon_view_or_download_file',
+                path=folder._id,
+                provider='osfstorage',
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 400)
 
     def test_delete_action_creates_trashed_file_node(self):
         file_node = self.get_test_file()

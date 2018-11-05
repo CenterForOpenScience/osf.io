@@ -320,6 +320,21 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'igdore',
+                'name': 'Institute for Globally Distributed Open Research and Education (IGDORE)',
+                'description': 'Institute for Globally Distributed Open Research and Education '
+                               '(IGDORE) is an independent research institute dedicated to improve '
+                               'the quality of science, science education, and quality of life for '
+                               'scientists, students, and their families.',
+                'banner_name': 'igdore-banner.png',
+                'logo_name': 'igdore-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['igdore.org'],
+                'delegation_protocol': '',
+            },
+            {
                 '_id': 'iit',
                 'name': 'Illinois Institute of Technology ',
                 'description': 'A research data service provided by Illinois Tech Libraries',
@@ -421,7 +436,7 @@ def main(env):
                 'description': 'In partnership with the Office of the Deputy Vice-Chancellor (Research) and the University Library. Learn more about <a href="https://staff.mq.edu.au/research/strategy-priorities-and-initiatives/data-science-and-eresearch">Data Science and eResearch</a> at Macquarie University.',
                 'banner_name': 'mq-banner.png',
                 'logo_name': 'mq-shield.png',
-                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exkebok0cpJxGzMKz0h7')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exk2dzwun7KebsDIV2p7')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.mq.edu.au'],
                 'email_domains': [],
@@ -1029,6 +1044,21 @@ def main(env):
                 'logout_url': None,
                 'domains': ['test-osf-icer.cos.io'],
                 'email_domains': ['icer-review.org'],
+                'delegation_protocol': '',
+            },
+            {
+                '_id': 'igdore',
+                'name': 'Institute for Globally Distributed Open Research and Education [Test]',
+                'description': 'Institute for Globally Distributed Open Research and Education '
+                               '(IGDORE) is an independent research institute dedicated to improve '
+                               'the quality of science, science education, and quality of life for '
+                               'scientists, students, and their families.',
+                'banner_name': 'igdore-banner.png',
+                'logo_name': 'igdore-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['test-osf-icer.igdore.io'],
+                'email_domains': ['igdore.org'],
                 'delegation_protocol': '',
             },
             {
