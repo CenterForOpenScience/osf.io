@@ -1,14 +1,14 @@
 from django.apps import apps
 from django.db import models
 from django.core.exceptions import ValidationError
-from guardian.shortcuts import assign_perm, remove_perm, get_perms
+from guardian.shortcuts import assign_perm, remove_perm, get_perms, get_objects_for_group
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.exceptions import PermissionsError
 from framework.auth.core import get_user
 
 from osf.models import base
 from osf.models.mixins import GuardianMixin
-from osf.models.user import OSFUser
+from osf.models import AbstractNode, OSFUser
 from osf.utils.permissions import ADMIN
 from osf.utils import sanitize
 
@@ -65,6 +65,13 @@ class OSFGroup(GuardianMixin, base.GuidMixin, base.BaseModel):
     @property
     def members(self):
         return self.member_group.user_set.all()
+
+    @property
+    def nodes(self):
+        """
+        Returns nodes that the OSF group has permission to
+        """
+        return get_objects_for_group(self.member_group, 'read_node', AbstractNode)
 
     def is_member(self, user):
         return user in self.members

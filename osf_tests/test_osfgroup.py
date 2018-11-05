@@ -227,6 +227,17 @@ class TestOSFGroup:
         assert other_group not in manager.osf_groups
         assert other_group not in member.osf_groups
 
+    def test_osf_group_nodes(self, manager, member, project, osf_group):
+        nodes = osf_group.nodes
+        assert len(nodes) == 0
+        project.add_osf_group(osf_group, 'read')
+        assert project in osf_group.nodes
+
+        project_two = ProjectFactory(creator=manager)
+        project_two.add_osf_group(osf_group, 'write')
+        assert len(osf_group.nodes) == 2
+        assert project_two in osf_group.nodes
+
     def test_add_osf_group_to_node(self, manager, member, user_two, osf_group, project):
         # noncontributor
         with pytest.raises(PermissionsError):
