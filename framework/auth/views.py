@@ -564,6 +564,7 @@ def external_login_confirm_email_get(auth, uid, token):
         return redirect(web_url_for('dashboard'))
 
     user.date_last_logged_in = timezone.now()
+    user.save()
 
     # redirect to CAS and authenticate the user with the verification key
     return redirect(cas.get_login_url(
