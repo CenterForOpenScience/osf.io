@@ -11,6 +11,7 @@ from osf.models.mixins import GuardianMixin
 from osf.models import AbstractNode, OSFUser
 from osf.utils.permissions import ADMIN
 from osf.utils import sanitize
+from website import settings, mails
 
 MEMBER = 'member'
 MANAGER = 'manager'
@@ -84,7 +85,24 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
             raise ValueError('Group must have at least one manager')
 
     def send_member_email(self, user, permission, auth=None):
-        pass
+        # TODO - add a throttle?
+
+        if not user.is_registered:
+            # TODO - do something here for unregistered contribs added to a group?
+            return
+
+        mimetype = 'html'
+        email_template = mails.GROUP_MEMBER_ADDED
+        mails.send_mail(
+            to_addr=user.username,
+            mail=email_template,
+            mimetype=mimetype,
+            user=user,
+            group_name=self.name,
+            permission=permission,
+            referrer_name=auth.user.fullname if auth else '',
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+        )
 
     def belongs_to_osfgroup(self, user):
         return user in self.members
