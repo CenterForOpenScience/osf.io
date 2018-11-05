@@ -308,7 +308,8 @@ def get_auth(auth, **kwargs):
                 except FileVersion.DoesNotExist:
                     raise HTTPError(httplib.BAD_REQUEST)
                 if auth.user:
-                    mark_file_version_as_seen(auth.user, filenode, fileversion)
+                    # mark fileversion as seen
+                    FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
                 if not node.is_contributor(auth.user):
                     download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
                     # version index is 0 based
@@ -375,14 +376,6 @@ DOWNLOAD_ACTIONS = set([
     'download_file',
     'download_zip',
 ])
-
-
-def mark_file_version_as_seen(user, file_to_update, fileversion):
-    """
-    Mark a file version as seen by the given user.
-    """
-    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=fileversion)
-
 
 @must_be_signed
 @no_auto_transaction

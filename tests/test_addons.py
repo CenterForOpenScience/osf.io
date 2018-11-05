@@ -176,8 +176,7 @@ class TestAddonAuth(OsfTestCase):
         assert versions.first().seen_by.filter(guids___id=noncontrib._id).exists()
         assert not versions.last().seen_by.filter(guids___id=noncontrib._id).exists()
 
-    @mock.patch('addons.base.views.mark_file_version_as_seen')
-    def test_action_download_contrib(self, mock_mark_version):
+    def test_action_download_contrib(self):
         test_file = create_test_file(self.node, self.user)
         url = self.build_url(action='download', provider='osfstorage', path=test_file.path, version=1)
         nlogs = self.node.logs.count()
@@ -188,8 +187,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(test_file.get_download_count(), 0) # contribs don't count as downloads
         assert_equal(self.node.logs.count(), nlogs) # don't log downloads
 
-    @mock.patch('addons.base.views.mark_file_version_as_seen')
-    def test_action_download_non_contrib(self, mock_mark_version):
+    def test_action_download_non_contrib(self):
         noncontrib = AuthUserFactory()
         node = ProjectFactory(is_public=True)
         test_file = create_test_file(node, self.user)
@@ -202,8 +200,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(test_file.get_download_count(), 1)
         assert_equal(node.logs.count(), nlogs) # don't log views
 
-    @mock.patch('addons.base.views.mark_file_version_as_seen')
-    def test_action_download_mfr_views_contrib(self, mock_mark_version):
+    def test_action_download_mfr_views_contrib(self):
         test_file = create_test_file(self.node, self.user)
         url = self.build_url(action='render', provider='osfstorage', path=test_file.path, version=1)
         nlogs = self.node.logs.count()
@@ -214,8 +211,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(test_file.get_view_count(), 0) # contribs don't count as views
         assert_equal(self.node.logs.count(), nlogs) # don't log views
 
-    @mock.patch('addons.base.views.mark_file_version_as_seen')
-    def test_action_download_mfr_views_non_contrib(self, mock_mark_version):
+    def test_action_download_mfr_views_non_contrib(self):
         noncontrib = AuthUserFactory()
         node = ProjectFactory(is_public=True)
         test_file = create_test_file(node, self.user)
@@ -410,8 +406,7 @@ class TestAddonLogs(OsfTestCase):
             'github_addon_file_renamed',
         )
 
-    @mock.patch('addons.base.views.mark_file_version_as_seen')
-    def test_action_downloads_contrib(self, mock_mark_version):
+    def test_action_downloads_contrib(self):
         url = self.node.api_url_for('create_waterbutler_log')
         download_actions=('download_file', 'download_zip')
         base_url = self.node.osfstorage_region.waterbutler_url
