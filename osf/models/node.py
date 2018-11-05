@@ -810,10 +810,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def osf_groups(self):
-        """Returns a queryset of django member groups that are associated with OSFGroups
-        These django member groups have permissions to the current node.
+        """Returns a queryset of OSF Groups whose members have some permission to the node
         """
-        return get_groups_with_perms(self).filter(name__icontains='osfgroup')
+        from osf.models.osf_group import OSFGroupGroupObjectPermission, OSFGroup
+
+        member_groups = get_groups_with_perms(self).filter(name__icontains='osfgroup')
+        return OSFGroup.objects.filter(id__in=OSFGroupGroupObjectPermission.objects.filter(group_id__in=member_groups).values_list('content_object_id'))
 
     def get_aggregate_logs_query(self, auth):
         return (
