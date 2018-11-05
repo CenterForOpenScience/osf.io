@@ -1,3 +1,4 @@
+import mock
 import pytest
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
@@ -56,7 +57,8 @@ class TestOSFGroup:
         assert manager in osf_group.managers
         assert manager in osf_group.members
 
-    def test_make_manager(self, manager, member, user_two, user_three, osf_group):
+    @mock.patch('osf.models.osf_group.mails.send_mail')
+    def test_make_manager(self, mock_send_mail, manager, member, user_two, user_three, osf_group):
         # no permissions
         with pytest.raises(PermissionsError):
             osf_group.make_manager(user_two, Auth(user_three))
@@ -70,14 +72,18 @@ class TestOSFGroup:
         assert osf_group.has_permission(user_two, 'manage') is True
         assert user_two in osf_group.managers
         assert user_two in osf_group.members
+        assert mock_send_mail.call_count == 1
 
         # upgrade to manager
         osf_group.make_manager(member, Auth(manager))
         assert osf_group.has_permission(member, 'manage') is True
         assert member in osf_group.managers
         assert member in osf_group.members
+        # upgrading an existing member does not re-send an email
+        assert mock_send_mail.call_count == 1
 
-    def test_make_member(self, manager, member, user_two, user_three, osf_group):
+    @mock.patch('osf.models.osf_group.mails.send_mail')
+    def test_make_member(self, mock_send_mail, manager, member, user_two, user_three, osf_group):
         # no permissions
         with pytest.raises(PermissionsError):
             osf_group.make_member(user_two, Auth(user_three))
@@ -91,6 +97,7 @@ class TestOSFGroup:
         assert osf_group.has_permission(user_two, 'manage') is False
         assert user_two not in osf_group.managers
         assert user_two in osf_group.members
+        assert mock_send_mail.call_count == 1
 
         # downgrade to member, sole manager
         with pytest.raises(ValueError):
@@ -103,6 +110,7 @@ class TestOSFGroup:
         osf_group.make_member(user_two, Auth(manager))
         assert user_two not in osf_group.managers
         assert user_two in osf_group.members
+        assert mock_send_mail.call_count == 1
 
     def test_add_unregistered_member(self, manager, member, osf_group, user_two):
         test_fullname = 'Test User'
