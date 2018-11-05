@@ -315,7 +315,7 @@ class TestUserEmailsList:
         payload['data']['attributes']['email_address'] = new_email
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'This email address is blacklisted.'
+        assert res.json['errors'][0]['detail'] == 'This email address domain is blacklisted.'
 
     def test_unconfirmed_email_with_expired_token_not_in_results(self, app, url, payload, user_one):
         unconfirmed = 'notyet@unconfirmed.test'

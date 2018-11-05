@@ -510,7 +510,7 @@ class UserEmailsSerializer(JSONAPISerializer):
         except ValidationError as e:
             raise exceptions.ValidationError(e.args[0])
         except BlacklistedEmailError:
-            raise exceptions.ValidationError('This email address is blacklisted.')
+            raise exceptions.ValidationError('This email address domain is blacklisted.')
 
         return UserEmail(email_id=token, address=address, confirmed=False, primary=False)
 
