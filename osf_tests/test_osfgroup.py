@@ -329,12 +329,14 @@ class TestOSFGroup:
 
     def test_node_groups_property(self, manager, member, osf_group, project):
         project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
-        assert osf_group.member_group in project.osf_groups
+        project.save()
+        assert osf_group in project.osf_groups
         assert len(project.osf_groups) == 1
 
         group_two = OSFGroupFactory(creator=manager)
         project.add_osf_group(group_two, 'admin', auth=Auth(manager))
-        assert group_two.member_group in project.osf_groups
+        project.save()
+        assert group_two in project.osf_groups
         assert len(project.osf_groups) == 2
 
     def test_belongs_to_osfgroup_property(self, manager, member, user_two, osf_group):
