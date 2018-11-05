@@ -514,3 +514,18 @@ class TestOSFGroup:
         assert project.is_contributor_or_group_member(member) is True
 
         project.remove_osf_group(osf_group, auth=Auth(manager))
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_merge_users_transfers_group_membership(self, member, manager, osf_group):
+        # merge member
+        other_user = UserFactory()
+        other_user.merge_user(member)
+        other_user.save()
+        assert osf_group.is_member(other_user)
+
+        # merge manager
+        other_other_user = UserFactory()
+        other_other_user.merge_user(manager)
+        other_other_user.save()
+        assert osf_group.is_member(other_other_user)
+        assert osf_group.has_permission(other_other_user, 'manage')

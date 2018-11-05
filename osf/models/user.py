@@ -771,6 +771,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             merging_user_file.move_under(primary_quickfiles_root)
             merging_user_file.save()
 
+        # transfer group membership
+        for group in user.osf_groups:
+            if group.has_permission(user, 'manage'):
+                group.make_manager(self)
+            else:
+                group.make_member(self)
+
         # finalize the merge
 
         remove_sessions_for_user(user)
