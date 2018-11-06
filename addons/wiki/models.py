@@ -22,7 +22,7 @@ from osf.models import NodeLog, OSFUser, Comment
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.models.spam import SpamStatus
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.requests import get_request_and_user_id, basestring_request_headers
+from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from addons.wiki import utils as wiki_utils
 from addons.wiki.exceptions import (
     PageCannotRenameError,
@@ -185,7 +185,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
     def check_spam(self):
         request, user_id = get_request_and_user_id()
         user = OSFUser.load(user_id)
-        request_headers = basestring_request_headers(request)
+        request_headers = string_type_request_headers(request)
         node = self.wiki_page.node
 
         if not settings.SPAM_CHECK_ENABLED:

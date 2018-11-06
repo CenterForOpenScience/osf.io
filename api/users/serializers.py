@@ -15,7 +15,7 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.models import OSFUser, QuickFilesNode
-from osf.utils.requests import basestring_request_headers
+from osf.utils.requests import string_type_request_headers
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
@@ -215,7 +215,7 @@ class UserSerializer(JSONAPISerializer):
             raise InvalidModelValueError(e)
 
         if set(validated_data.keys()).intersection(set(instance.SPAM_USER_PROFILE_FIELDS.keys())):
-            request_headers = basestring_request_headers(self.context['request'])
+            request_headers = string_type_request_headers(self.context['request'])
             instance.check_spam(saved_fields=validated_data, request_headers=request_headers)
 
         return instance

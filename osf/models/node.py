@@ -48,7 +48,7 @@ from osf.models.validators import validate_doi, validate_title
 from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.requests import get_request_and_user_id, basestring_request_headers
+from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from osf.utils import sanitize
 from osf.utils.workflows import DefaultStates
 from website import language, settings
@@ -2494,7 +2494,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def on_update(self, first_save, saved_fields):
         User = apps.get_model('osf.OSFUser')
         request, user_id = get_request_and_user_id()
-        request_headers = basestring_request_headers(request)
+        request_headers = string_type_request_headers(request)
         self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
         if self.preprint_file:

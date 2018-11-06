@@ -27,7 +27,7 @@ from framework.utils import throttle_period_expired
 from osf import features
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
 from osf.exceptions import BlacklistedEmailError
-from osf.utils.requests import basestring_request_headers
+from osf.utils.requests import string_type_request_headers
 from website import mails
 from website import mailchimp_utils
 from website import settings
@@ -767,7 +767,7 @@ def unserialize_contents(field, func, auth):
 
     if contents:
         saved_fields = {field: contents}
-        request_headers = basestring_request_headers(request)
+        request_headers = string_type_request_headers(request)
         user.check_spam(saved_fields=saved_fields, request_headers=request_headers)
 
 @must_be_logged_in

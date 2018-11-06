@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from six import string_types
 from django.db import transaction
 from flask import Request as FlaskRequest
 from flask import request
@@ -76,12 +77,12 @@ def get_headers_from_request(req):
     return headers
 
 
-def basestring_request_headers(req):
+def string_type_request_headers(req):
     request_headers = {}
     if not isinstance(req, DummyRequest):
         request_headers = {
             k: v
             for k, v in get_headers_from_request(req).items()
-            if isinstance(v, basestring)
+            if isinstance(v, string_types)
         }
     return request_headers

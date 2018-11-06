@@ -15,7 +15,7 @@ from osf.models import OSFUser
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import ReviewStates
 from osf.utils.permissions import ADMIN
-from osf.utils.requests import get_request_and_user_id, basestring_request_headers
+from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
@@ -242,7 +242,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
         old_subjects = kwargs.pop('old_subjects', [])
         if saved_fields:
             request, user_id = get_request_and_user_id()
-            request_headers = basestring_request_headers
+            request_headers = string_type_request_headers
             user = OSFUser.load(user_id)
             if user:
                 self.check_spam(user, saved_fields, request_headers)
