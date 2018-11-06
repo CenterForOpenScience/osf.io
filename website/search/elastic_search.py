@@ -17,7 +17,7 @@ from django.apps import apps
 from django.core.paginator import Paginator
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
+from elasticsearch2 import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.database import paginated
@@ -322,7 +322,7 @@ def update_node_async(self, node_id, index=None, bulk=False):
     AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
     try:
-        update_node(node=node, index=index, bulk=bulk, async=True)
+        update_node(node=node, index=index, bulk=bulk, async_update=True)
     except Exception as exc:
         self.retry(exc=exc)
 
@@ -385,7 +385,7 @@ def serialize_node(node, category):
     return elastic_document
 
 @requires_search
-def update_node(node, index=None, bulk=False, async=False):
+def update_node(node, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(node)), target_object_id=node.id)):

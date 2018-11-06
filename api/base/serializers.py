@@ -433,7 +433,7 @@ class AuthorizedCharField(ser.CharField):
         return field_source_method(auth=auth)
 
 class AnonymizedRegexField(AuthorizedCharField):
-    """
+    r"""
     Performs a regex replace on the content of the authorized object's
     source field when an anonymous view is requested.
 
@@ -657,7 +657,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             # nested attributes in relationship fields.
             try:
                 return_val = get_nested_attributes(obj, source_attrs)
-            except KeyError:
+            except (KeyError, AttributeError):
                 return None
             return return_val
 
@@ -675,10 +675,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         for lookup_url_kwarg, lookup_field in kwargs_dict.items():
 
             if _tpl(lookup_field):
-                try:
-                    lookup_value = self.lookup_attribute(obj, lookup_field)
-                except AttributeError as exc:
-                    raise AssertionError(exc)
+                lookup_value = self.lookup_attribute(obj, lookup_field)
             else:
                 lookup_value = _url_val(lookup_field, obj, self.parent, self.context['request'])
 
@@ -1419,10 +1416,18 @@ class JSONAPISerializer(BaseAPISerializer):
                 ret['meta'] = {'anonymous': True}
         else:
             ret = data
+
+        additional_meta = self.get_meta(obj)
+        if additional_meta:
+            meta_obj = ret.setdefault('meta', {})
+            meta_obj.update(additional_meta)
         return ret
 
     def get_absolute_url(self, obj):
         raise NotImplementedError()
+
+    def get_meta(self, obj):
+        return None
 
     def get_absolute_html_url(self, obj):
         return utils.extend_querystring_if_key_exists(obj.absolute_url, self.context['request'], 'view_only')

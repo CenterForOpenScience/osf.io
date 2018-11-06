@@ -2,7 +2,7 @@
 import furl
 import responses
 import mock
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from nose.tools import *  # noqa: F403
 import unittest
 
 from framework.auth import cas

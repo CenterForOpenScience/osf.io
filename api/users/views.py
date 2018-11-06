@@ -22,8 +22,8 @@ from api.base.utils import (
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle
 from api.institutions.serializers import InstitutionSerializer
-from api.nodes.filters import NodesFilterMixin
-from api.nodes.serializers import NodeSerializer, DraftRegistrationSerializer
+from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
+from api.nodes.serializers import DraftRegistrationSerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -41,6 +41,7 @@ from api.users.serializers import (
     UserSerializer,
     UserEmail,
     UserEmailsSerializer,
+    UserNodeSerializer,
     UserSettingsSerializer,
     UserSettingsUpdateSerializer,
     UserQuickFilesSerializer,
@@ -289,7 +290,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin, NodeOptimizationMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilterMixin, NodeOptimizationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_nodes_list).
     """
     permission_classes = (
@@ -302,7 +303,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
 
-    serializer_class = NodeSerializer
+    serializer_class = UserNodeSerializer
     view_category = 'users'
     view_name = 'user-nodes'
 
@@ -740,8 +741,8 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         rely upon a flask context and placed in utils (or elsewhere).
 
         :param bool registered: Indicates which sender to call (passed in as keyword)
-        :param \*args: Positional arguments passed to senders
-        :param \*\*kwargs: Keyword arguments passed to senders
+        :param *args: Positional arguments passed to senders
+        :param **kwargs: Keyword arguments passed to senders
         :return: None
         """
         from website.app import app

@@ -12,8 +12,11 @@ from flask import request
 import furl
 import jwe
 import jwt
+import waffle
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
+from elasticsearch import exceptions as es_exceptions
+
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
@@ -38,6 +41,7 @@ from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata, FileVersion)
+from osf.metrics import PreprintView, PreprintDownload
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -224,6 +228,15 @@ def make_auth(user):
         }
     return {}
 
+def get_metric_class_for_action(action):
+    metric_class = None
+    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
+    if action == 'render':
+        metric_class = PreprintView
+    elif action == 'download' and not download_is_from_mfr:
+        metric_class = PreprintDownload
+    return metric_class
+
 
 @collect_auth
 def get_auth(auth, **kwargs):
@@ -313,6 +326,23 @@ def get_auth(auth, **kwargs):
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
+
+    # TODO: Add a signal here?
+    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
+        user = auth.user
+        linked_preprint = node.linked_preprint
+        if linked_preprint and not node.is_contributor(user):
+            metric_class = get_metric_class_for_action(action)
+            if metric_class:
+                try:
+                    metric_class.record_for_preprint(
+                        preprint=linked_preprint,
+                        user=user,
+                        version=fileversion.identifier if fileversion else None,
+                        path=path
+                    )
+                except es_exceptions.ConnectionError:
+                    log_exception()
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
@@ -713,6 +743,13 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         transaction.savepoint_rollback(savepoint_id)
         if not file_node.pk:
             file_node = BaseFileNode.load(path)
+
+            if file_node.kind == 'folder':
+                raise HTTPError(httplib.BAD_REQUEST, data={
+                    'message_short': 'Bad Request',
+                    'message_long': 'You cannot request a folder from this endpoint.'
+                })
+
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
             if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(

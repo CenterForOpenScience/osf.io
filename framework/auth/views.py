@@ -263,6 +263,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             )
     # login or register with next parameter
     elif next_url:
+        # TODO - logout is no longer used by claim_user_registered, see [#PLAT-1151]
         if logout:
             # handle `claim_user_registered`
             data['next_url'] = next_url
@@ -346,7 +347,7 @@ def auth_register(auth):
     campaign = request.args.get('campaign')
     # the service url for CAS login or redirect url for OSF
     next_url = request.args.get('next')
-    # used only for `claim_user_registered`
+    # TODO: no longer used for `claim_user_registered`, see [#PLAT-1151]
     logout = request.args.get('logout')
 
     # logout must have next_url

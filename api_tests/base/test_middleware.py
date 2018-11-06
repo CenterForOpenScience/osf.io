@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-import pytest
-
 from django.http import HttpResponse
 
 from urlparse import urlparse
 import mock
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 from rest_framework.test import APIRequestFactory
 from django.test.utils import override_settings
 
@@ -33,7 +31,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
     def test_institutions_added_to_cors_whitelist(self):
         url = api_v2_url('users/me/')
         domain = urlparse('https://dinosaurs.sexy')
-        institution = factories.InstitutionFactory(
+        factories.InstitutionFactory(
             domains=[domain.netloc.lower()],
             name='Institute for Sexy Lizards'
         )
@@ -41,14 +39,14 @@ class TestCorsMiddleware(MiddlewareTestCase):
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = HttpResponse()
         self.middleware.process_request(request)
-        processed = self.middleware.process_response(request, response)
+        self.middleware.process_response(request, response)
         assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_preprintproviders_added_to_cors_whitelist(self):
         url = api_v2_url('users/me/')
         domain = urlparse('https://dinoprints.sexy')
-        preprintprovider = factories.PreprintProviderFactory(
+        factories.PreprintProviderFactory(
             domain=domain.geturl().lower(),
             _id='DinoXiv'
         )
@@ -56,7 +54,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = HttpResponse()
         self.middleware.process_request(request)
-        processed = self.middleware.process_response(request, response)
+        self.middleware.process_response(request, response)
         assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
@@ -67,7 +65,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         response = {}
         with mock.patch.object(request, 'COOKIES', True):
             self.middleware.process_request(request)
-            processed = self.middleware.process_response(request, response)
+            self.middleware.process_response(request, response)
         assert_not_in('Access-Control-Allow-Origin', response)
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
@@ -81,7 +79,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         )
         response = HttpResponse()
         self.middleware.process_request(request)
-        processed = self.middleware.process_response(request, response)
+        self.middleware.process_response(request, response)
         assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
@@ -97,7 +95,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         response = {}
         with mock.patch.object(request, 'COOKIES', True):
             self.middleware.process_request(request)
-            processed = self.middleware.process_response(request, response)
+            self.middleware.process_response(request, response)
         assert_not_in('Access-Control-Allow-Origin', response)
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
@@ -113,5 +111,5 @@ class TestCorsMiddleware(MiddlewareTestCase):
         )
         response = HttpResponse()
         self.middleware.process_request(request)
-        processed = self.middleware.process_response(request, response)
+        self.middleware.process_response(request, response)
         assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
