@@ -14,13 +14,12 @@ class TestSchemaList:
     def test_schemas_list_crud(self, app):
 
         user = AuthUserFactory()
-        url = '/{}schemas/registrations/'.format(API_BASE)
-
+        url = '/{}schemas/registrations/?version=2.11'.format(API_BASE)
+        schemas = RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
         # test_pass_authenticated_user_can_view_schemas
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert (len(res.json['data']) == RegistrationSchema.objects.filter(
-            active=True, schema_version=LATEST_SCHEMA_VERSION).count())
+        assert res.json['meta']['total'] == schemas.count()
 
         # test_cannot_update_metaschemas
         res = app.put_json_api(url, auth=user.auth, expect_errors=True)
@@ -33,3 +32,9 @@ class TestSchemaList:
         # test_pass_unauthenticated_user_can_view_schemas
         res = app.get(url)
         assert res.status_code == 200
+
+        # test_filter_on_active
+        url = '/{}schemas/registrations/?version=2.11&filter[active]=True'.format(API_BASE)
+        res = app.get(url)
+        assert res.status_code == 200
+        assert res.json['meta']['total'] == schemas.filter(active=True).count()

@@ -5,12 +5,13 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
+from api.base.filters import ListFilterMixin
 
 from osf.models import RegistrationSchema
 from api.schemas.serializers import RegistrationSchemaSerializer
 
 
-class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView):
+class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_list).
 
     """
@@ -28,9 +29,13 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView):
 
     ordering = ('-id',)
 
-    # overrides ListCreateAPIView
+    # overrides ListAPIView
+    def get_default_queryset(self):
+        return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
+
+    # overrides ListAPIView
     def get_queryset(self):
-        return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)
+        return self.get_queryset_from_request()
 
 
 class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
