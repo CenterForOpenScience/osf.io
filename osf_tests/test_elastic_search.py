@@ -6,7 +6,7 @@ import unittest
 import logging
 import functools
 
-from nose.tools import *  # noqa: (PEP8 asserts)
+from nose.tools import *  # noqa: F403
 import pytest
 import mock
 

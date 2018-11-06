@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.db import IntegrityError
 from mock import call
 import pytest
-from nose.tools import *  # noqa:
+from nose.tools import *  # noqa: F403
 
 from framework.auth import Auth
 from framework.celery_tasks import handlers
@@ -21,9 +21,9 @@ from website.archiver import (
     ARCHIVER_INITIATED,
 )
 from website.archiver import utils as archiver_utils
-from website.app import *  # noqa
+from website.app import *  # noqa: F403
 from website.archiver import listeners
-from website.archiver.tasks import *   # noqa
+from website.archiver.tasks import *   # noqa: F403
 from osf.models.archive import ArchiveTarget, ArchiveJob
 from website.archiver.decorators import fail_archive_on_error
 

@@ -7,7 +7,7 @@ import mock
 import re
 import pytest
 from django.utils import timezone
-from nose.tools import *  # noqa:  (PEP8 asserts)
+from nose.tools import *  # noqa: F403
 
 from datetime import datetime
 

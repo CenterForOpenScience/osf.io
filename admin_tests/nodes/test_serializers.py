@@ -1,4 +1,4 @@
-from nose.tools import *  # noqa:
+from nose.tools import *  # noqa: F403
 
 from tests.base import AdminTestCase
 from osf_tests.factories import NodeFactory, UserFactory
