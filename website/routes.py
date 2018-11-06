@@ -85,7 +85,7 @@ def get_globals():
     location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
-            inst_id = Institution.objects.get(domains__icontains=[request.host])._id
+            inst_id = Institution.objects.get(domains__icontains=request.host, is_deleted=False)._id
             request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
         except Institution.DoesNotExist:
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
@@ -134,6 +134,7 @@ def get_globals():
         'osf_url': settings.INTERNAL_DOMAIN,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request_login_url),
+        'sign_up_url': util.web_url_for('auth_register', _absolute=True, next=request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
@@ -1076,7 +1077,7 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-        Rule('/', 'get', website_views.index, notemplate),
+        Rule('/', 'get', website_views.index, OsfWebRenderer('institution.mako', trust=False)),
 
         Rule('/goodbye/', 'get', goodbye, notemplate),
 

@@ -134,8 +134,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools',
         'social',
     }
-    TRACK_FIELDS = SEARCH_UPDATE_FIELDS.copy()
-    TRACK_FIELDS.update({'password', 'last_login'})
+
+    # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
+    FIELDS_TO_CHECK = SEARCH_UPDATE_FIELDS.copy()
+    FIELDS_TO_CHECK.update({'password', 'last_login', 'merged_by_id'})
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -736,7 +738,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 split_filename = splitext(merging_user_file.name)
                 name_without_extension = split_filename[0]
                 extension = split_filename[1]
-                found_digit_in_parens = re.findall('(?<=\()(\d)(?=\))', name_without_extension)
+                found_digit_in_parens = re.findall(r'(?<=\()(\d)(?=\))', name_without_extension)
                 if found_digit_in_parens:
                     found_digit = int(found_digit_in_parens[0])
                     digit = found_digit + 1

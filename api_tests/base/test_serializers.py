@@ -8,7 +8,7 @@ from pytz import utc
 from datetime import datetime
 import urllib
 
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import re
 
 from tests.base import ApiTestCase, DbTestCase
@@ -132,7 +132,8 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'current_user_can_comment',
             'current_user_is_contributor',
             'preprint',
-            'subjects']
+            'subjects',
+            'wiki_enabled']
         # fields that do not appear on registrations
         non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings']
 
@@ -567,7 +568,7 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(
-            datetime.strftime(self.old_date,self.old_format),
+            datetime.strftime(self.old_date, self.old_format),
             data['attributes']['date_modified']
         )
 
@@ -588,7 +589,7 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(
-            datetime.strftime(self.old_date,self.new_format),
+            datetime.strftime(self.old_date, self.new_format),
             data['attributes']['date_modified']
         )
 

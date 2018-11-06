@@ -1,6 +1,6 @@
 import pytest
 import mock
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
 
@@ -37,7 +37,7 @@ class TestRootThrottle(ApiTestCase):
         assert_equal(mock_allow.call_count, 1)
 
     @mock.patch('rest_framework.throttling.UserRateThrottle.allow_request')
-    def test_root_throttle_unauthenticated_request(self, mock_allow):
+    def test_root_throttle_authenticated_request(self, mock_allow):
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(mock_allow.call_count, 1)

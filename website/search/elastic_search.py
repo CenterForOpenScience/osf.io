@@ -353,7 +353,7 @@ def update_node_async(self, node_id, index=None, bulk=False):
     AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
     try:
-        update_node(node=node, index=index, bulk=bulk, async=True)
+        update_node(node=node, index=index, bulk=bulk, async_update=True)
     except Exception as exc:
         self.retry(exc=exc)
 
@@ -362,7 +362,7 @@ def update_preprint_async(self, preprint_id, index=None, bulk=False):
     Preprint = apps.get_model('osf.Preprint')
     preprint = Preprint.load(preprint_id)
     try:
-        update_preprint(preprint=preprint, index=index, bulk=bulk, async=True)
+        update_preprint(preprint=preprint, index=index, bulk=bulk, async_update=True)
     except Exception as exc:
         self.retry(exc=exc)
 
@@ -459,7 +459,7 @@ def serialize_preprint(preprint, category):
     return elastic_document
 
 @requires_search
-def update_node(node, index=None, bulk=False, async=False):
+def update_node(node, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(node)), target_object_id=node.id)):
@@ -477,7 +477,7 @@ def update_node(node, index=None, bulk=False, async=False):
             client().index(index=index, doc_type=category, id=node._id, body=elastic_document, refresh=True)
 
 @requires_search
-def update_preprint(preprint, index=None, bulk=False, async=False):
+def update_preprint(preprint, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(preprint)), target_object_id=preprint.id)):

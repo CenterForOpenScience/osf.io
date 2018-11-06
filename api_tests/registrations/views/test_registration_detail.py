@@ -322,7 +322,7 @@ class TestRegistrationUpdate:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"Dr.Strange" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
     #   test_fields_other_than_public_are_ignored
         attribute_list = {
@@ -429,6 +429,15 @@ class TestRegistrationUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'An unapproved registration cannot be made public.'
 
+    def test_read_write_contributor_cannot_update_custom_citation(
+            self, app, read_write_contributor, private_registration, private_url, make_payload):
+        payload = make_payload(
+            id=private_registration._id,
+            attributes={'custom_citation': 'This is a custom citation yay'}
+        )
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
 
 @pytest.mark.django_db
 class TestRegistrationTags:
@@ -438,7 +447,7 @@ class TestRegistrationTags:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def user_read_contrib(self):
+    def read_write_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -446,7 +455,7 @@ class TestRegistrationTags:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def project_public(self, user_admin, user_read_contrib):
+    def project_public(self, user_admin, read_write_contrib):
         project_public = ProjectFactory(
             title='Project One',
             is_public=True,
@@ -456,7 +465,7 @@ class TestRegistrationTags:
             permissions=permissions.CREATOR_PERMISSIONS,
             save=True)
         project_public.add_contributor(
-            user_read_contrib,
+            read_write_contrib,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
             save=True)
         return project_public
@@ -549,7 +558,7 @@ class TestRegistrationTags:
             self, app, registration_public, registration_private,
             url_registration_public, url_registration_private,
             new_tag_payload_public, new_tag_payload_private,
-            user_admin, user_non_contrib):
+            user_admin, user_non_contrib, read_write_contrib):
         # test_registration_starts_with_no_tags
         res = app.get(url_registration_public)
         assert res.status_code == 200
@@ -625,6 +634,14 @@ class TestRegistrationTags:
             auth=user_admin.auth)
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 1
+
+        # test read-write contributor can update tags
+        new_tag_payload_public['data']['attributes']['tags'] = ['from-readwrite']
+        res = app.patch_json_api(
+            url_registration_public,
+            new_tag_payload_public,
+            auth=read_write_contrib.auth)
+        assert res.status_code == 200
 
     def test_tags_add_and_remove_properly(
             self, app, user_admin, registration_public,

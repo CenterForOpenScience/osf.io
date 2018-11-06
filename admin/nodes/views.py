@@ -467,7 +467,7 @@ class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
-        search.search.update_node(node, bulk=False, async=False)
+        search.search.update_node(node, bulk=False, async_update=False)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,

@@ -655,6 +655,14 @@ def verify_claim_token(user, token, pid):
     return True
 
 
+def check_external_auth(user):
+    if user:
+        return not user.has_usable_password() and (
+            'VERIFIED' in sum([each.values() for each in user.external_identity.values()], [])
+        )
+    return False
+
+
 @block_bing_preview
 @collect_auth
 @must_be_valid_project
@@ -666,17 +674,16 @@ def claim_user_registered(auth, node, **kwargs):
 
     current_user = auth.user
 
-    sign_out_url = web_url_for('auth_register', logout=True, next=request.url)
+    sign_out_url = cas.get_logout_url(service_url=cas.get_login_url(service_url=request.url))
     if not current_user:
         return redirect(sign_out_url)
 
     # Logged in user should not be a contributor the project
     if node.is_contributor(current_user):
-        logout_url = web_url_for('auth_logout', redirect_url=request.url)
         data = {
             'message_short': 'Already a contributor',
             'message_long': ('The logged-in user is already a contributor to this '
-                'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
+                'project. Would you like to <a href="{}">log out</a>?').format(sign_out_url)
         }
         raise HTTPError(http.BAD_REQUEST, data=data)
 
@@ -696,22 +703,26 @@ def claim_user_registered(auth, node, **kwargs):
     }
     session.save()
 
+    # If a user is already validated though external auth, it is OK to claim
+    should_claim = check_external_auth(auth.user)
     form = PasswordForm(request.form)
     if request.method == 'POST':
         if form.validate():
             if current_user.check_password(form.password.data):
-                node.replace_contributor(old=unreg_user, new=current_user)
-                node.save()
-                status.push_status_message(
-                    'You are now a contributor to this project.',
-                    kind='success',
-                    trust=False
-                )
-                return redirect(node.url)
+                should_claim = True
             else:
                 status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=False)
         else:
             forms.push_errors_to_status(form.errors)
+    if should_claim:
+        node.replace_contributor(old=unreg_user, new=current_user)
+        node.save()
+        status.push_status_message(
+            'You are now a contributor to this project.',
+            kind='success',
+            trust=False
+        )
+        return redirect(node.url)
     if is_json_request():
         form_ret = forms.utils.jsonify(form)
         user_ret = profile_utils.serialize_user(current_user, full=False)
