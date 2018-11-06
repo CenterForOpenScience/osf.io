@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import abc
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import re
 import pytest
 

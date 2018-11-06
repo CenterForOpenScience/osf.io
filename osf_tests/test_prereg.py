@@ -1,4 +1,4 @@
-from nose.tools import *  # noqa
+from nose.tools import *  # noqa: F403
 
 from osf.models import RegistrationSchema
 from website.prereg import prereg_landing_page as landing_page

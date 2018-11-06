@@ -1,14 +1,9 @@
 import mock
-from nose.tools import *  # flake8: noqa
-import pytest
-import factory
-
-from django.utils import timezone
 import datetime as dt
 
+from nose.tools import *  # noqa:
 import pytest
 from django.utils import timezone
-from django.conf import settings
 from waffle.testutils import override_switch
 
 from addons.github.models import GithubFile
@@ -37,7 +32,8 @@ from website.project import signals as project_signals
 
 
 def build_preprint_update_payload(
-    preprint_id, primary_file_id, is_published=True):
+    preprint_id, primary_file_id, is_published=True
+):
     return {
         'data': {
             'id': preprint_id,
@@ -125,7 +121,6 @@ class TestPreprintCreateWithoutNode:
     @pytest.fixture()
     def url(self):
         return '/{}preprints/'.format(API_BASE)
-
 
     @pytest.fixture()
     def supplementary_project(self, user_one):
@@ -247,7 +242,7 @@ class TestPreprintList(ApiTestCase):
         pp.date_withdrawn = timezone.now()
         pp.save()
 
-        assert not pp.ever_public # Sanity check
+        assert not pp.ever_public  # Sanity check
 
         unauth_res = self.app.get(self.url)
         user_res = self.app.get(self.url, auth=self.user.auth)
@@ -319,7 +314,7 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
         preprint_one.is_published = True
         preprint_one.date_published = timezone.now()
         preprint_one.machine_state = 'accepted'
-        assert preprint_one.ever_public == False
+        assert preprint_one.ever_public is False
         # Putting this preprint in a weird state, is verified_publishable, but has been
         # withdrawn and ever_public is False.  This is to isolate withdrawal portion of query
         preprint_one.save()
@@ -440,7 +435,7 @@ class TestPreprintCreate(ApiTestCase):
                 'subjects': [
                     [
                         SubjectFactory()._id]],
-                })
+            })
         res = self.app.post_json_api(
             self.url,
             private_project_payload,
@@ -691,7 +686,7 @@ class TestPreprintCreate(ApiTestCase):
 
     def test_create_preprint_adds_log_if_published(self):
         public_project_payload = build_preprint_create_payload(
-            provider_id = self.provider._id,
+            provider_id=self.provider._id,
         )
         res = self.app.post_json_api(
             self.url,
@@ -729,7 +724,7 @@ class TestPreprintCreate(ApiTestCase):
         private_project_payload = build_preprint_create_payload(
             self.private_project._id,
             self.provider._id)
-        res = self.app.post_json_api(
+        self.app.post_json_api(
             self.url,
             private_project_payload,
             auth=self.user.auth)
@@ -813,29 +808,30 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
 
     def test_unpublished_visible_to_write_contribs(
-            self,
-            app,
-            user_write_contrib,
-            preprint_unpublished,
-            preprint_published,
-            url):
+        self,
+        app,
+        user_write_contrib,
+        preprint_unpublished,
+        preprint_published,
+        url
+    ):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [
             d['id'] for d in res.json['data']]
 
     def test_unpublished_invisible_to_noncontribs(
-                self,
-                app,
-                preprint_unpublished,
-                preprint_published,
-                url):
+        self,
+        app,
+        preprint_unpublished,
+        preprint_published,
+        url
+    ):
         noncontrib = AuthUserFactory()
         res = app.get(url, auth=noncontrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [
             d['id'] for d in res.json['data']]
-
 
     def test_filter_published_false_write_contrib(
             self, app, user_write_contrib, preprint_unpublished, url):
@@ -1004,7 +1000,6 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
         # initial state now visible to no one
         assert len(res.json['data']) == 0
         assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
-
 
 
 class TestPreprintIsPublishedListMatchesDetail(
