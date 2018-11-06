@@ -1,3 +1,4 @@
+import waffle
 from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -29,14 +30,18 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
 
     ordering = ('-id',)
 
-    # overrides ListAPIView
     def get_default_queryset(self):
-        return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
+        if waffle.switch_is_active('filter_schemas_registration_on_active'):
+            return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
+        else:
+            return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
-
+        if waffle.switch_is_active('filter_schemas_registration_on_active'):
+            return self.get_queryset_from_request()
+        else:
+            return self.get_default_queryset()
 
 class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read).
