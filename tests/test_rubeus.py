@@ -6,7 +6,7 @@ from types import NoneType
 from xmlrpclib import DateTime
 
 import mock
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa: F403
 
 from tests.base import OsfTestCase
 from osf_tests.factories import (UserFactory, ProjectFactory, NodeFactory,
