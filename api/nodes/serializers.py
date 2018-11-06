@@ -485,8 +485,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if hasattr(obj, 'contrib_admin'):
             if obj.contrib_admin:
                 return ['admin', 'write', 'read']
-            if obj.contrib_write:
+            elif obj.contrib_write:
                 return ['write', 'read']
+            elif obj.contrib_read:
+                return ['read']
+            else:
+                return default_perm
         else:
             user = self.context['request'].user
             if user.is_anonymous:
