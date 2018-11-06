@@ -178,8 +178,6 @@ class ChronosClient(object):
         # 1 = draft, 2 = submitted, 3 = accepted, 4 = published
         # Disallow submission if the current preprint has submissions that are submitted, accepted or publishes
         # regardless of journals
-        if submission_qs.filter(status=1).exists():
-            raise ValueError('Cannot submit because a drafted submission exists')
         if submission_qs.filter(status=2).exists():
             raise ValueError('Cannot submit because a pending submission exists')
         if submission_qs.filter(status__in=[3, 4]).exists():
