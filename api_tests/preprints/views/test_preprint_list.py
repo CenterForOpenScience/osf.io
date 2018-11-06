@@ -706,14 +706,8 @@ class TestPreprintCreate(ApiTestCase):
             self, mock_on_preprint_updated):
         private_project_payload = build_preprint_create_payload(
             self.private_project._id,
-            self.provider._id,
-            self.file_one_private_project._id,
-            attrs={
-                'subjects': [
-                    [
-                        SubjectFactory()._id]],
-                'is_published': True})
-        self.app.post_json_api(
+            self.provider._id)
+        res = self.app.post_json_api(
             self.url,
             private_project_payload,
             auth=self.user.auth)
@@ -729,13 +723,7 @@ class TestPreprintCreate(ApiTestCase):
             self, mock_on_preprint_updated):
         private_project_payload = build_preprint_create_payload(
             self.private_project._id,
-            self.provider._id,
-            self.file_one_private_project._id,
-            attrs={
-                'subjects': [
-                    [
-                        SubjectFactory()._id]],
-                'is_published': False})
+            self.provider._id)
         self.app.post_json_api(
             self.url,
             private_project_payload,
