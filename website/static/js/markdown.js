@@ -4,6 +4,7 @@ require('highlight-css');
 var MarkdownIt = require('markdown-it');
 
 var $ = require('jquery');
+var $osf = require('js/osfHelpers');
 var insDel = require('markdown-it-ins-del');
 var pymarkdownList = require('js/markdown-it-pymarkdown-lists');
 
@@ -31,11 +32,33 @@ var bootstrapTable = function(md) {
 var oldMarkdownList = function(md) {
     md.block.ruler.after('hr', 'pyMarkdownList', pymarkdownList);
 };
+
+var WATERBUTLER_REGEX = new RegExp(window.contextVars.waterbutlerURL + 'v1\/resources\/[a-zA-Z0-9]{1,}\/providers\/[a-z0-9]{1,}\/');
+
+var viewOnlyImage = function(md) {
+    var defaultRenderer = md.renderer.rules.image;
+    md.renderer.rules.image = function (tokens, idx, options, env, self) {
+        var token = tokens[idx];
+        var imageLink = token.attrs[token.attrIndex('src')][1];
+        if (imageLink.match(WATERBUTLER_REGEX) && $osf.urlParams().view_only) {
+            token = tokens[idx];
+            imageLink = token.attrs[token.attrIndex('src')][1];
+            token.attrs[token.attrIndex('src')][1] = imageLink + '&view_only=' + $osf.urlParams().view_only;
+            tokens[idx] = token;
+        }
+        return defaultRenderer(tokens, idx, options, env, self);
+    };
+};
+
 var mfrURL = window.contextVars.node.urls.mfr;
 var osfURL = window.contextVars.osfURL;
 
 var getMfrUrl = function (guid) {
-    return mfrURL + 'render?url='+ osfURL + guid + '/?action=download%26mode=render';
+    var mfrLink = mfrURL + 'render?url='+ osfURL + guid + '/?action=download%26mode=render';
+    if ($osf.urlParams().view_only) {
+        mfrLink += '%26view_only=' + $osf.urlParams().view_only;
+    }
+    return mfrLink;
 };
 
 var mfrId = 0;
@@ -57,6 +80,7 @@ var markdown = new MarkdownIt('commonmark', {
     .use(require('@centerforopenscience/markdown-it-toc'))
     .use(require('markdown-it-sanitizer'))
     .use(require('markdown-it-imsize'))
+    .use(viewOnlyImage)
     .use(insDel)
     .enable('table')
     .enable('linkify')
@@ -68,6 +92,7 @@ var markdown = new MarkdownIt('commonmark', {
 var markdownQuick = new MarkdownIt('commonmark', { linkify: true })
     .use(require('markdown-it-sanitizer'))
     .use(require('markdown-it-imsize'))
+    .use(viewOnlyImage)
     .disable('link')
     .disable('image')
     .use(insDel)
