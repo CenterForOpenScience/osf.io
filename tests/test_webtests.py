@@ -9,7 +9,7 @@ import unittest
 import markupsafe
 import mock
 import pytest
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from nose.tools import *  # noqa: F403
 import re
 
 from addons.wiki.utils import to_mongo_key

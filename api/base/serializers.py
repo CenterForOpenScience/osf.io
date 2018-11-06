@@ -433,7 +433,7 @@ class AuthorizedCharField(ser.CharField):
         return field_source_method(auth=auth)
 
 class AnonymizedRegexField(AuthorizedCharField):
-    """
+    r"""
     Performs a regex replace on the content of the authorized object's
     source field when an anonymous view is requested.
 
