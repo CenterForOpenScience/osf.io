@@ -52,6 +52,81 @@
         }]
     }, {
         "id": "page2",
+        "title": "Design Plan",
+        "description": "In this section, you will be asked to describe the overall design of your study. Remember that this research plan is designed to register a single study, so if you have multiple experimental designs, please complete a separate preregistration.",
+        "questions": [{
+            "qid": "q14",
+            "nav": "Study type",
+            "title": "Study type",
+            "description": "Please check one of the following statements",
+            "type": "choose",
+            "format": "singleselect",
+            "options": [
+                "Experiment - A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment and includes randomized controlled trials.",
+                "Observational Study - Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, “natural experiments,” and regression discontinuity designs.",
+                "Meta-Analysis - A systematic review of published studies."
+            ],
+            "required": true
+        }, {
+            "qid": "q15",
+            "nav": "Study Type",
+            "title": "Other",
+            "description": "Study Type (Other)",
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "q16",
+            "nav": "Blinding",
+            "title": "Blinding",
+            "description": "Blinding describes who is aware of the experimental manipulations within a study. Mark all that apply.",
+            "type": "choose",
+            "format": "multiselect",
+            "options": [
+                "No blinding is involved in this study.",
+                "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
+                "Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.",
+                "Research personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
+            ],
+            "required": true
+        }, {
+            "qid": "q17",
+            "nav": "Blinding",
+            "title": "Is there any additional blinding in this study?",
+            "description": "Blinding (Other)",
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "q18",
+            "nav": "Study design",
+            "type": "object",
+            "title": "Study design",
+            "description": "Describe your study design. Examples include two-group, factorial, randomized block, and repeated measures. Is it a between (unpaired), within-subject (paired), or mixed design? Describe any counterbalancing required. Typical study designs for observation studies include cohort, cross sectional, and case-control studies. ",
+            "help": "We have a between subjects design with 1 factor (sugar by mass) with 4 levels. <br /><br /> How responses will be evaluated: This question has a variety of possible answers. The key is for a researcher to be as detailed as is necessary given the specifics of their design. Be careful to determine if every parameter has been specified in the description of the study design. There may be some overlap between this question and the following questions. That is OK, as long as sufficient detail is given in one of the areas to provide all of the requested information. For example, if the study design describes a complete factorial, 2 X 3 design and the treatments and levels are specified previously, you do not have to repeat that information.",
+            "properties": [
+                {
+                    "id": "question",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                },
+                {
+                    "id": "uploader",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle"
+                }
+            ]
+        }, {
+            "qid": "q19",
+            "nav": "Randomization",
+            "title": "Randomization",
+            "description": "If you are doing a randomized study, how will you randomize, and at what level? ",
+            "help": "We will use block randomization, where each participant will be randomly assigned to one of the four equally sized, predetermined blocks. The random number list used to create these four blocks will be created using the web applications available at http://random.org. <br /><br /> How responses will be evaluated: Typical randomization techniques include: simple, block, stratified, and adaptive covariate randomization. If randomization is required for the study, the method should be specified here, not simply the source of random numbers.",
+            "required": true,
+            "type": "string",
+            "format": "textarea"
+        }]
+    }, {
+        "id": "page3",
         "title": "Sampling Plan",
         "description": "In this section we’ll ask you to describe how you plan to collect samples, as well as the number of samples you plan to collect and your rationale for this decision. Please keep in mind that the data described in this section should be the actual data used for analysis, so if you are using a subset of a larger dataset, please describe the subset that will actually be used in your study.",
         "questions": [{
@@ -142,7 +217,7 @@
             "required": true
         }]
     }, {
-        "id": "page3",
+        "id": "page4",
         "title": "Variables",
         "description": "In this section you can describe all variables (both manipulated and measured variables) that will later be used in your confirmatory analysis plan. In your analysis plan, you will have the opportunity to describe how each variable will be used. If you have variables which you are measuring for exploratory analyses, you are not required to list them, though you are permitted to do so.",
         "questions": [{
@@ -205,81 +280,6 @@
                     "format": "osf-upload-toggle"
                 }
             ]
-        }]
-    }, {
-        "id": "page4",
-        "title": "Design Plan",
-        "description": "In this section, you will be asked to describe the overall design of your study. Remember that this research plan is designed to register a single study, so if you have multiple experimental designs, please complete a separate preregistration.",
-        "questions": [{
-            "qid": "q14",
-            "nav": "Study type",
-            "title": "Study type",
-            "description": "Please check one of the following statements",
-            "type": "choose",
-            "format": "singleselect",
-            "options": [
-                "Experiment - A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment and includes randomized controlled trials.",
-                "Observational Study - Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, “natural experiments,” and regression discontinuity designs.",
-                "Meta-Analysis - A systematic review of published studies."
-            ],
-            "required": true
-        }, {
-            "qid": "q15",
-            "nav": "Study Type",
-            "title": "Other",
-            "description": "Study Type (Other)",
-            "type": "string",
-            "format": "textarea"
-        }, {
-            "qid": "q16",
-            "nav": "Blinding",
-            "title": "Blinding",
-            "description": "Blinding describes who is aware of the experimental manipulations within a study. Mark all that apply.",
-            "type": "choose",
-            "format": "multiselect",
-            "options": [
-                "No blinding is involved in this study.",
-                "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
-                "Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.",
-                "Research personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
-            ],
-            "required": true
-        }, {
-            "qid": "q17",
-            "nav": "Blinding",
-            "title": "Is there any additional blinding in this study?",
-            "description": "Blinding (Other)",
-            "type": "string",
-            "format": "textarea"
-        }, {
-            "qid": "q18",
-            "nav": "Study design",
-            "type": "object",
-            "title": "Study design",
-            "description": "Describe your study design. Examples include two-group, factorial, randomized block, and repeated measures. Is it a between (unpaired), within-subject (paired), or mixed design? Describe any counterbalancing required. Typical study designs for observation studies include cohort, cross sectional, and case-control studies. ",
-            "help": "We have a between subjects design with 1 factor (sugar by mass) with 4 levels. <br /><br /> How responses will be evaluated: This question has a variety of possible answers. The key is for a researcher to be as detailed as is necessary given the specifics of their design. Be careful to determine if every parameter has been specified in the description of the study design. There may be some overlap between this question and the following questions. That is OK, as long as sufficient detail is given in one of the areas to provide all of the requested information. For example, if the study design describes a complete factorial, 2 X 3 design and the treatments and levels are specified previously, you do not have to repeat that information.",
-            "properties": [
-                {
-                    "id": "question",
-                    "type": "string",
-                    "format": "textarea",
-                    "required": true
-                },
-                {
-                    "id": "uploader",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
-                }
-            ]
-        }, {
-            "qid": "q19",
-            "nav": "Randomization",
-            "title": "Randomization",
-            "description": "If you are doing a randomized study, how will you randomize, and at what level? ",
-            "help": "We will use block randomization, where each participant will be randomly assigned to one of the four equally sized, predetermined blocks. The random number list used to create these four blocks will be created using the web applications available at http://random.org. <br /><br /> How responses will be evaluated: Typical randomization techniques include: simple, block, stratified, and adaptive covariate randomization. If randomization is required for the study, the method should be specified here, not simply the source of random numbers.",
-            "required": true,
-            "type": "string",
-            "format": "textarea"
         }]
     }, {
         "id": "page5",
