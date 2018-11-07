@@ -20,6 +20,7 @@
         </div><!-- /.login-logo -->
         <div class="login-box-body">
             <p class="login-box-msg">Sign in to start your session</p>
+{%comment%}
             <form action="" method="post">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
@@ -47,14 +48,6 @@
                     <div class="col-xs-4"></div>
                 </div>
                 <div class="row">
-{%comment%}
-                    <br>
-                    <div class="col-xs-2"></div>
-                    <div class="col-xs-8">
-                        <a class="btn btn-primary btn-block btn-flat" href="/account/shib-login/" role="button">Sign in through institution</a>
-{%endcomment%}
-                    </div>
-                    <div class="col-xs-2"></div>
                 </div>
                 <div>
                     {% if messages %}
@@ -67,6 +60,7 @@
                     {% endif %}
                 </div>
             </form>
+{%endcomment%}
 <div class="row">
         <div class="col-xs-1"></div>
         <br>

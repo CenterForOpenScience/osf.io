@@ -402,7 +402,6 @@ def create_pdf(request, is_pdf=True, **kwargs):
 def convert_to_pdf(html_string, file=False):
     # wkhtmltopdf settings
     wkhtmltopdf_path = os.path.join(os.path.dirname(__file__), '.', 'wkhtmltopdf')
-    # print wkhtmltopdf_path
     config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
     options = {
         'page-size': 'A4',
@@ -574,7 +573,6 @@ class GatherView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         # simple authentication
-        print '---- GatherView.get'
         access_token = self.kwargs.get('access_token')
         if not simple_auth(access_token):
             response_hash = {'state': 'fail', 'error': 'access forbidden'}
@@ -592,7 +590,6 @@ class GatherView(TemplateView):
             self.adapter = requests.adapters.HTTPAdapter(max_retries=WB_MAX_RETRY)
             # user crawling
             for user in self.get_users():
-                print user
                 if user.affiliated_institutions.first():
                     institution = user.affiliated_institutions.first()
                 else:
@@ -601,7 +598,6 @@ class GatherView(TemplateView):
                 for node in self.get_user_nodes(user):
                     providers = node.get_addon_names()
                     for guid in node.guids.all():
-                        # print guid
                         for provider in providers:
                             self.count_list = []
                             path = '/'
@@ -687,7 +683,6 @@ class GatherView(TemplateView):
 
     def count_project_files(self, node_id, provider, path, cookies):
         """recursive count"""
-        # print ('path : ' + path)
         url_api = self.get_wb_url(node_id=node_id, provider=provider, path=re.sub(r'^//', '/', path), cookie=cookies)
         # print(url_api)
         self.session.mount('http://', self.adapter)
@@ -799,8 +794,8 @@ def send_email(to_list, cc_list, data, user, backend='smtp'):
         )
         if 'attach_data' in data:
             message.attach(data['attach_file'], data['attach_data'], 'application/pdf')
-        # message.send()
-#        connection.send_messages([message])
+        message.send()
+        connection.send_messages([message])
         connection.close()
     except Exception as e:
         ret['is_success'] = False
