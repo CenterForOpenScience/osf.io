@@ -121,7 +121,6 @@
             "title": "Randomization",
             "description": "If you are doing a randomized study, how will you randomize, and at what level? ",
             "help": "We will use block randomization, where each participant will be randomly assigned to one of the four equally sized, predetermined blocks. The random number list used to create these four blocks will be created using the web applications available at http://random.org. <br /><br /> How responses will be evaluated: Typical randomization techniques include: simple, block, stratified, and adaptive covariate randomization. If randomization is required for the study, the method should be specified here, not simply the source of random numbers.",
-            "required": true,
             "type": "string",
             "format": "textarea"
         }]
@@ -167,7 +166,6 @@
             "title": "Explanation of existing data",
             "description": "If you indicate that you will be using some data that already exist in this study, please describe the steps you have taken to assure that you are unaware of any patterns or summary statistics in the data. This may include an explanation of how access to the data has been limited, who has observed the data, or how you have avoided observing any analysis of the specific data you will use in your study.",
             "help": " An appropriate instance of using existing data would be collecting a sample size much larger than is required for the study, using a small portion of it to conduct exploratory analysis, and then registering one particular analysis that showed promising results. After registration, conduct the specified analysis on that part of the dataset that had not been investigated by the researcher up to that point. <br /><br /> How responses will be evaluated: Both confirmatory (hypothesis testing) and exploratory (hypothesis generating) analysis contribute to scientific progress, and do so best when it is clear which is which.  OSF Preregistration stimulates experience with preregistration of analysis plans for hypothesis testing, and transparency about the distinction between confirmatory and exploratory analysis. Research plans using existing data present unique challenges for hypothesis testing because observation of data can influence subsequent analysis plans of the same data. This can produce a gray area between confirmatory and exploratory analysis.",
-            "required": true
         }, {
             "qid": "q7",
             "nav": "Data collection procedures",
@@ -205,7 +203,6 @@
             "title": "Sample size rationale",
             "description": "This could include a power analysis or an arbitrary constraint such as time, money, or personnel.",
             "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability. <br /><br /> How responses will be evaluated: This gives you an opportunity to specifically state how the sample size will be determined. A wide range of possible answers is acceptable; remember that transparency is more important than principled justifications. If you state any reason for a sample size upfront, it is better than stating no reason and leaving the reader to “fill in the blanks.” Acceptable rationales include: a power analysis, an arbitrary number of subjects, or a number based on time or monetary constraints.",
-            "required": true
         }, {
             "qid": "q10",
             "nav": "Stopping rule",
@@ -214,7 +211,6 @@
             "format": "textarea",
             "description": "If your data collection procedures do not give you full control over your exact sample size, specify how you will decide when to terminate your data collection. ",
             "help": "We will post participant sign-up slots by week on the preceding Friday night, with 20 spots posted per week. We will post 20 new slots each week if, on that Friday night, we are below 320 participants. <br /><br /> How responses will be evaluated: You may specify a stopping rule based on p-values only in the specific case of sequential analyses with pre-specified checkpoints, alphas levels, and stopping rules. Unacceptable rationales include stopping based on p-values if checkpoints and stopping rules are not specified. If you have control over your sample size, then including a stopping rule is not necessary, though it must be clear in this question or a previous question how an exact sample size is attained.",
-            "required": true
         }]
     }, {
         "id": "page4",
@@ -232,7 +228,6 @@
                     "id": "question",
                     "type": "string",
                     "format": "textarea",
-                    "required": true
                 },
                 {
                     "id": "uploader",
@@ -272,7 +267,6 @@
                     "id": "question",
                     "type": "string",
                     "format": "textarea",
-                    "required": true
                 },
                 {
                     "id": "uploader",
@@ -313,7 +307,6 @@
             "title": "Transformations",
             "description": "If you plan on transforming, centering, recoding the data, or will require a coding scheme for categorical variables, please describe that process.",
             "help": "The “Effect of sugar on brownie tastiness” does not require any additional transformations. However, if it were using a regression analysis and each level of sweet had been categorically described (e.g. not sweet, somewhat sweet, sweet, and very sweet), ‘sweet’ could be dummy coded with ‘not sweet’ as the reference category. <br /><br /> How responses will be evaluated: If any categorical predictors are included in a regression, indicate how those variables will be coded (e.g. dummy coding, summation coding, etc.) and what the reference category will be.",
-            "required": true,
             "type": "string",
             "format": "textarea"
         }, {
@@ -322,7 +315,6 @@
             "title": "Follow-up analyses",
             "description": "If not specified previously, will you be conducting any confirmatory analyses to follow up on effects in your statistical model, such as subgroup analyses, pairwise or complex contrasts, or follow-up tests from interactions? Remember that any analyses not specified in this research plan must be noted as exploratory.",
             "help": "If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to conduct all possible pairwise comparison.<br /><br /> How responses will be evaluated: This is simply a place to allow entering in any additional analyses. The criteria for these follow up analyses are identical to any analyses listed in other sections. It is also fine to enter these follow up analyses in a separate analysis section. The purpose of this question is to allow entering of any follow up tests that naturally follow from a primary analysis.",
-            "required": true,
             "type": "string",
             "format": "textarea"
         }, {
@@ -331,7 +323,6 @@
             "title": "Inference criteria",
             "description": "What criteria will you use to make inferences? Please describe the information you’ll use (e.g. specify the p-values, Bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this? ",
             "help": "We will use the standard p<.05 criteria for determining if the ANOVA and the post hoc test suggest that the results are significantly different from those expected if the null hypothesis were correct. The post-hoc Tukey-Kramer test adjusts for multiple comparisons.<br /><br /> How responses will be evaluated: P-values, confidence intervals, and effect sizes are standard means for making an inference, and any level is acceptable, though some criteria must be specified in this or previous fields. Bayesian analyses should specify a Bayes factor or a credible interval. If you are selecting models, then how will you determine the relative quality of each? In regards to multiple comparisons, this is a question with few “wrong” answers. In other words, transparency is more important than any specific method of controlling the false discovery rate or false error rate. One may state an intention to report all tests conducted or one may conduct a specific correction procedure; either strategy is acceptable.",
-            "required": true,
             "type": "string",
             "format": "textarea"
         }, {
@@ -340,7 +331,6 @@
             "title": "Data exclusion",
             "description": "How will you determine which data points or samples (if any) to exclude from your analyses? How will outliers be handled? Will you use any awareness check?",
             "help": "No checks will be performed to determine eligibility for inclusion besides verification that each subject answered each of the three tastiness indices. Outliers will be included in the analysis. <br /><br /> How responses will be evaluated: Any rule for excluding a particular set of data is acceptable. One may describe rules for excluding a participant or for identifying outlier data.",
-            "required": true,
             "type": "string",
             "format": "textarea"
         }, {
@@ -349,7 +339,6 @@
             "title": "Missing data",
             "description": "How will you deal with incomplete or missing data?",
             "help": "If a subject does not complete any of the three indices of tastiness, that subject will not be included in the analysis.<br /><br /> How responses will be evaluated:  Any relevant explanation is acceptable. As a final reminder, remember that the final analysis must follow the specified plan, and deviations must be either strongly justified or included as a separate, exploratory analysis.",
-            "required": true,
             "type": "string",
             "format": "textarea"
         }, {
