@@ -3,13 +3,12 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import migrations
-from osf.utils.migrations import ensure_schemas, remove_schemas
+from osf.utils.migrations import ensure_schemas
 
 
 logger = logging.getLogger(__file__)
 
 def update_schemas(state, schema):
-    remove_schemas()
     ensure_schemas()
 
 
