@@ -1,6 +1,7 @@
 {
     "name": "OSF Preregistration",
     "version": 2,
+    "active": false,
     "config": {
 	"hasFiles": true,
         "fulfills": [{
