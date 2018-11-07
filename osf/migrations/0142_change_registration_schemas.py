@@ -8,9 +8,6 @@ from osf.utils.migrations import ensure_schemas
 
 logger = logging.getLogger(__file__)
 
-def update_schemas(state, schema):
-    ensure_schemas()
-
 
 class Migration(migrations.Migration):
 
@@ -20,5 +17,5 @@ class Migration(migrations.Migration):
 
     operations = [
         # To reverse this migrations simply revert changes to the schema and re-run
-        migrations.RunPython(update_schemas, update_schemas),
+        migrations.RunPython(ensure_schemas, ensure_schemas),
     ]
