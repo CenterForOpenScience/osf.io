@@ -2,6 +2,8 @@ import os
 import json
 import waffle
 
+from osf.features import OSF_PREREGISTRATION
+
 LATEST_SCHEMA_VERSION = 2
 
 def _id_to_name(id):
@@ -58,7 +60,7 @@ METASCHEMA_ORDERING = (
     'RIDIE Registration - Study Complete',
 )
 
-if waffle.switch_is_active('osf_preregistration'):
+if waffle.switch_is_active(OSF_PREREGISTRATION):
     lst = list(METASCHEMA_ORDERING)
     lst.insert(1, 'OSF Preregistration')
     METASCHEMA_ORDERING = tuple(lst)

@@ -1,5 +1,6 @@
 DISABLE_ENGAGEMENT_EMAILS = 'disable_engagement_emails'
 ELASTICSEARCH_METRICS = 'elasticsearch_metrics'
+OSF_PREREGISTRATION = 'osf_preregistration'
 
 EMBER_AUTH_REGISTER = 'ember_auth_register'
 EMBER_CREATE_DRAFT_REGISTRATION = 'ember_create_draft_registration_page'
