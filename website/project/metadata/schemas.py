@@ -1,5 +1,6 @@
 import os
 import json
+import waffle
 
 LATEST_SCHEMA_VERSION = 2
 
@@ -44,6 +45,7 @@ OSF_META_SCHEMAS = [
 
 METASCHEMA_ORDERING = (
     'Prereg Challenge',
+    'OSF Preregistration',
     'Open-Ended Registration',
     'Preregistration Template from AsPredicted.org',
     'Registered Report Protocol Preregistration',
@@ -55,3 +57,9 @@ METASCHEMA_ORDERING = (
     'RIDIE Registration - Study Initiation',
     'RIDIE Registration - Study Complete',
 )
+
+if waffle.switch_is_active('osf_preregistration'):
+    lst = list(METASCHEMA_ORDERING)
+    lst.insert(1, 'OSF Preregistration')
+    METASCHEMA_ORDERING = tuple(lst)
+    OSF_META_SCHEMAS.append(ensure_schema_structure(from_json('osf-preregistration.json')))
