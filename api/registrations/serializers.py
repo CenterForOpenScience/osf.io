@@ -26,7 +26,8 @@ from osf.exceptions import ValidationValueError
 from osf.models import Node
 from osf.utils import permissions
 
-class BaseRegistrationSerializer(NodeSerializer):
+
+class RegistrationSerializer(NodeSerializer):
 
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
@@ -388,28 +389,19 @@ class BaseRegistrationSerializer(NodeSerializer):
         type_ = 'registrations'
 
 
-class RegistrationSerializer(BaseRegistrationSerializer):
+class RegistrationCreateSerializer(RegistrationSerializer):
     """
-    Overrides BaseRegistrationSerializer to add draft_registration, registration_choice, and lift_embargo fields
+    Overrides RegistrationSerializer to add draft_registration, registration_choice, and lift_embargo fields
     """
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
-
-    # Because the write-only `children` field shadows the read-only both fields must be included here to prevent the
-    # write-only from overriding the read-only in the parent class.
-    children = HideIfWithdrawal(RelationshipField(  # Read-only
-        related_view='registrations:registration-children',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_node_count'},
-    ))
-
-    children = ser.ListField(write_only=True, required=False)  # Write-only
+    children = ser.ListField(write_only=True, required=False)
 
 
-class RegistrationDetailSerializer(BaseRegistrationSerializer):
+class RegistrationDetailSerializer(RegistrationSerializer):
     """
-    Overrides BaseRegistrationSerializer to make id required.
+    Overrides RegistrationSerializer to make id required.
     """
 
     id = IDField(source='_id', required=True)

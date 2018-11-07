@@ -620,7 +620,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_can_create_registration_with_specific_children(
-            self, mock_enqueue, app, user, payload_with_children, project_public,  project_public_child, project_public_excluded_sibling, project_public_grandchild, url_registrations):
+            self, mock_enqueue, app, user, payload_with_children, project_public, project_public_child, project_public_excluded_sibling, project_public_grandchild, url_registrations):
         res = app.post_json_api(url_registrations, payload_with_children, auth=user.auth)
         data = res.json['data']['attributes']
         assert res.status_code == 201
@@ -633,7 +633,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert project_public_grandchild.registrations.all().count() == 1
         assert project_public_excluded_sibling.registrations.all().count() == 0
 
-
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_400_with_bad_child_node_guid(
             self, mock_enqueue, app, user, payload_with_bad_child_node_guid, url_registrations):
@@ -641,7 +640,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Some child nodes could not be found.'
-
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_cant_register_grandchildren_without_children(
