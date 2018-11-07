@@ -9,6 +9,7 @@ from api.base.utils import get_object_or_error
 from api.base.filters import ListFilterMixin
 
 from osf.models import RegistrationSchema
+from osf.features import FILTER_REG_SCHEMAS_ON_ACTIVE
 from api.schemas.serializers import RegistrationSchemaSerializer
 
 
@@ -31,17 +32,18 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
     ordering = ('-id',)
 
     def get_default_queryset(self):
-        if waffle.switch_is_active('filter_schemas_registration_on_active'):
+        if waffle.switch_is_active(FILTER_REG_SCHEMAS_ON_ACTIVE):
             return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
         else:
             return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)
 
     # overrides ListAPIView
     def get_queryset(self):
-        if waffle.switch_is_active('filter_schemas_registration_on_active'):
+        if waffle.switch_is_active(FILTER_REG_SCHEMAS_ON_ACTIVE):
             return self.get_queryset_from_request()
         else:
             return self.get_default_queryset()
+
 
 class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read).
