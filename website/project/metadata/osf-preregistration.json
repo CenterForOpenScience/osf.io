@@ -224,14 +224,14 @@
             ],
             "required": true
         }, {
-            "qid": "q14a",
+            "qid": "q15",
             "nav": "Study Type",
             "title": "Other",
             "description": "Study Type (Other)",
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q15",
+            "qid": "q16",
             "nav": "Blinding",
             "title": "Blinding",
             "description": "Blinding describes who is aware of the experimental manipulations within a study. Mark all that apply.",
@@ -245,14 +245,14 @@
             ],
             "required": true
         }, {
-            "qid": "q15a",
+            "qid": "q17",
             "nav": "Blinding",
             "title": "Is there any additional blinding in this study?",
             "description": "Blinding (Other)",
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q16",
+            "qid": "q18",
             "nav": "Study design",
             "type": "object",
             "title": "Study design",
@@ -272,7 +272,7 @@
                 }
             ]
         }, {
-            "qid": "q17",
+            "qid": "q19",
             "nav": "Randomization",
             "title": "Randomization",
             "description": "If you are doing a randomized study, how will you randomize, and at what level? ",
@@ -287,7 +287,7 @@
         "type": "object",
         "description": "You may describe one or more confirmatory analysis in this preregistration. Please remember that all analyses specified below must be reported in the final article, and any additional analyses must be noted as exploratory or hypothesis-generating.<br /><br />A confirmatory analysis plan must state up front which variables are predictors (independent) and which are the outcomes (dependent), otherwise it is an exploratory analysis. You are allowed to describe any exploratory work here, but a clear confirmatory analysis is required.",
         "questions": [{
-            "qid": "q19",
+            "qid": "q20",
             "nav": "Statistical models",
             "type": "object",
             "title": "Statistical models",
@@ -308,7 +308,7 @@
                 }
             ]
         }, {
-            "qid": "q20",
+            "qid": "q21",
             "nav": "Transformations",
             "title": "Transformations",
             "description": "If you plan on transforming, centering, recoding the data, or will require a coding scheme for categorical variables, please describe that process.",
@@ -317,7 +317,7 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q21",
+            "qid": "q22",
             "nav": "Follow-up analyses",
             "title": "Follow-up analyses",
             "description": "If not specified previously, will you be conducting any confirmatory analyses to follow up on effects in your statistical model, such as subgroup analyses, pairwise or complex contrasts, or follow-up tests from interactions? Remember that any analyses not specified in this research plan must be noted as exploratory.",
@@ -326,7 +326,7 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q22",
+            "qid": "q23",
             "nav": "Inference criteria",
             "title": "Inference criteria",
             "description": "What criteria will you use to make inferences? Please describe the information you’ll use (e.g. specify the p-values, Bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this? ",
@@ -335,7 +335,7 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q23",
+            "qid": "q24",
             "nav": "Data exclusion",
             "title": "Data exclusion",
             "description": "How will you determine which data points or samples (if any) to exclude from your analyses? How will outliers be handled? Will you use any awareness check?",
@@ -344,7 +344,7 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q24",
+            "qid": "q25",
             "nav": "Missing data",
             "title": "Missing data",
             "description": "How will you deal with incomplete or missing data?",
@@ -353,7 +353,7 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q25",
+            "qid": "q26",
             "nav": "Exploratory analysis",
             "title": "Exploratory analysis",
             "description": "If you plan to explore your data set to look for unexpected differences or relationships, you may describe those tests here. An exploratory test is any test where a prediction is not made up front, or there are multiple possible tests that you are going to use. A statistically significant finding in an exploratory test is a great way to form a new confirmatory hypothesis, which could be registered at a later time.",
@@ -367,7 +367,7 @@
         "type": "object",
         "description": "The purpose of a fully commented analysis script is to unambiguously provide the responses to all of the questions raised in the analysis section. This step is not common, but we encourage you to try creating an analysis script, refine it using a modeled dataset, and use it in place of your written analysis plan.",
         "questions": [{
-            "qid": "q26",
+            "qid": "q27",
             "nav": "Script",
             "title": "Upload an analysis script with clear comments",
             "type": "osf-upload",
@@ -379,7 +379,7 @@
         "title": "Other",
         "type": "object",
         "questions": [{
-            "qid": "q27",
+            "qid": "q28",
             "nav": "Other",
             "title": "Other",
             "description": "If there is any additional information that you feel needs to be included in your preregistration, please enter it here. Literature cited, disclosures of any related work such as replications or work that uses the same data, or other context that will be helpful for future readers would be appropriate here.",
