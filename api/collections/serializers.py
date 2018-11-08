@@ -2,9 +2,9 @@ from django.db import IntegrityError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
-from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider
+from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider, Preprint
 from osf.exceptions import ValidationError
-from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer
+from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
@@ -100,6 +100,14 @@ class CollectionSerializer(JSONAPISerializer):
         self_view_kwargs={'collection_id': '<_id>'},
     )
 
+    linked_preprints = RelationshipField(
+        related_view='collections:linked-preprints',
+        related_view_kwargs={'collection_id': '<_id>'},
+        self_view='collections:collection-preprint-pointer-relationship',
+        self_view_kwargs={'collection_id': '<_id>'},
+        related_meta={'count': 'get_preprint_links_count'},
+    )
+
     class Meta:
         type_ = 'collections'
 
@@ -118,6 +126,10 @@ class CollectionSerializer(JSONAPISerializer):
     def get_registration_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
         return Registration.objects.filter(guids__in=obj.guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
+
+    def get_preprint_links_count(self, obj):
+        auth = get_user_auth(self.context['request'])
+        return self.context['view'].collection_preprints(obj, auth.user).count()
 
     def create(self, validated_data):
         node = Collection(**validated_data)
@@ -341,3 +353,19 @@ class CollectedNodeRelationshipSerializer(CollectedAbstractNodeRelationshipSeria
 
 class CollectedRegistrationsRelationshipSerializer(CollectedAbstractNodeRelationshipSerializer, LinkedRegistrationsRelationshipSerializer):
     _abstract_node_subclass = Registration
+
+class CollectedPreprintsRelationshipSerializer(CollectedAbstractNodeRelationshipSerializer, LinkedPreprintsRelationshipSerializer):
+    _abstract_node_subclass = Preprint
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {
+            'data':
+            list(self._abstract_node_subclass.objects.filter(
+                guids__in=obj.guid_links.all(), deleted__isnull=True,
+            )),
+            'self': obj,
+        }
+
+    class Meta:
+        type_ = 'linked_preprints'

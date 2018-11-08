@@ -1580,6 +1580,11 @@ class LinkedRegistration(JSONAPIRelationshipSerializer):
         type_ = 'linked_registrations'
 
 
+class LinkedPreprint(LinkedNode):
+    class Meta:
+        type_ = 'linked_preprints'
+
+
 class LinkedNodesRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=LinkedNode())
     links = LinksField({
@@ -1604,7 +1609,7 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
 
         nodes_to_add = []
         for node_id in diff['add']:
-            node = AbstractNode.load(node_id)
+            node = AbstractNode.load(node_id) or Preprint.load(node_id)
             if not node:
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
             nodes_to_add.append(node)
@@ -1716,6 +1721,28 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
             collection.add_pointer(node, auth)
 
         return self.make_instance_obj(collection)
+
+
+class LinkedPreprintsRelationshipSerializer(LinkedNodesRelationshipSerializer):
+    data = ser.ListField(child=LinkedPreprint())
+
+    def get_self_url(self, obj):
+        return obj['self'].linked_preprints_self_url
+
+    def get_related_url(self, obj):
+        return obj['self'].linked_preprints_related_url
+
+    class Meta:
+        type_ = 'linked_preprints'
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {
+            'data': [
+                pointer for pointer in
+                obj.linked_nodes.filter(deleted__isnull=True, type='osf.preprint')
+            ], 'self': obj,
+        }
 
 
 class MaintenanceStateSerializer(ser.ModelSerializer):

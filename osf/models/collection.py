@@ -138,6 +138,14 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         return '{}relationships/linked_registrations/'.format(self.absolute_api_v2_url)
 
     @property
+    def linked_preprints_self_url(self):
+        return '{}relationships/linked_preprints/'.format(self.absolute_api_v2_url)
+
+    @property
+    def linked_preprints_related_url(self):
+        return '{}linked_preprints/'.format(self.absolute_api_v2_url)
+
+    @property
     def linked_nodes_related_url(self):
         return '{}linked_nodes/'.format(self.absolute_api_v2_url)
 
@@ -166,7 +174,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
         if first_save:
             # Set defaults for M2M
-            self.collected_types = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection'])
+            self.collected_types = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection', 'preprint'])
             # Set up initial permissions
             self.update_group_permissions()
             self.get_group('admin').user_set.add(self.creator)

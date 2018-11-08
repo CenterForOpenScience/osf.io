@@ -339,8 +339,7 @@ var tbOptions = {
     },
     onmultiselect : _poMultiselect,
     resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
-        var isMypreprintsCollection = this.options.currentView().collection.data.nodeType === 'preprints';
-        var iconType = item.data.type === 'preprints' && isMypreprintsCollection ? 'preprint' : item.data.attributes.category;
+        var iconType = item.data.type === 'preprints' ? 'preprint' : item.data.attributes.category;
         return m('i.' + iconmap.projectComponentIcons[iconType]);
     },
     resolveToggle : _poResolveToggle,

@@ -28,9 +28,11 @@ from api.collections.serializers import (
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
     CollectedNodeRelationshipSerializer,
+    CollectedPreprintsRelationshipSerializer,
     CollectedRegistrationsRelationshipSerializer,
 )
 from api.nodes.serializers import NodeSerializer
+from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from osf.models import (
     AbstractNode,
@@ -38,6 +40,7 @@ from osf.models import (
     Collection,
     Node,
     Registration,
+    Preprint,
 )
 
 
@@ -62,7 +65,16 @@ class CollectionMixin(object):
         return collection
 
 
-class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
+class CollectionPreprintsMixin(object):
+    def collection_preprints(self, collection, user):
+        return Preprint.objects.can_view(
+            Preprint.objects.filter(
+                guids__in=collection.guid_links.all(), deleted__isnull=True,
+            ), user=user,
+        )
+
+
+class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, CollectionPreprintsMixin):
     """Organizer Collections organize projects and components. *Writeable*.
 
     Paginated list of Project Organizer Collections ordered by their `modified`.
@@ -194,7 +206,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
         instance.delete()
 
 
-class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin, CollectionPreprintsMixin):
     """Details about Organizer Collections. *Writeable*.
 
     The Project Organizer is a tool to allow the user to make Collections of projects, components, and registrations
@@ -516,6 +528,34 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
         return res
 
 
+class LinkedPreprintsList(BaseLinkedList, CollectionPreprintsMixin, CollectionMixin):
+    """List of preprints linked to this collection. *Read-only*.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CollectionWriteOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    serializer_class = PreprintSerializer
+    view_category = 'collections'
+    view_name = 'linked-preprints'
+
+    ordering = ('-modified',)
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        return self.collection_preprints(self.get_collection(), auth.user)
+
+    # overrides APIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(LinkedPreprintsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
+
 class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, CollectionMixin):
     """Node Links to other nodes. *Writeable*.
 
@@ -775,6 +815,31 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         for val in data:
             if val['id'] in current_pointers:
                 collection.remove_object(current_pointers[val['id']])
+
+
+class CollectionLinkedPreprintsRelationship(CollectionLinkedNodesRelationship, CollectionPreprintsMixin):
+    """ Relationship Endpoint for Collection -> Linked Preprints relationships
+    """
+    permission_classes = (
+        CollectionWriteOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    serializer_class = CollectedPreprintsRelationshipSerializer
+
+    view_category = 'collections'
+    view_name = 'collection-preprint-pointer-relationship'
+
+    def get_object(self):
+        collection = self.get_collection(check_object_permissions=False)
+        auth = get_user_auth(self.request)
+        obj = {
+            'data': [
+                pointer for pointer in self.collection_preprints(collection, auth.user)
+            ], 'self': collection,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, CollectionMixin):

@@ -84,10 +84,12 @@ if (!window.Set) {
 }
 
 
-function NodeFetcher(type, link, handleOrphans, regType, regLink) {
+function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, preprintLink) {
     this.type = type || 'nodes';
     this.regType = regType || null;
     this.regLink = regLink || null;
+    this.preprintType = preprintType || null;
+    this.preprintLink = preprintLink || null;
     this.loaded = 0;
     this._failed = 0;
     this.total = 0;
@@ -257,6 +259,12 @@ NodeFetcher.prototype = {
         this.nextLink = this.regLink;
         this.type = this.regType;
         this.regLink = null;
+    }
+
+    if(!this.nextLink && this.preprintLink) {
+        this.nextLink = this.preprintLink;
+        this.type = this.preprintType;
+        this.preprintLink = null;
     }
 
     this._callbacks.page.forEach((function(cb) {
@@ -627,14 +635,18 @@ var MyProjects = {
             var collectionNode = currentCollection.data.node; // If it's not a system collection like projects or registrations this will have a node
 
             var link_types = {'linked_nodes': {'data': []},
-                              'linked_registrations': {'data': []}};
+                              'linked_registrations': {'data': []},
+                              'linked_preprints': {'data': []}};
             self.selected().map(function(item){
                 if(item.data.type === 'nodes') {
                     link_types.linked_nodes.data.push({id: item.data.id,
                                                        type: 'linked_nodes'});
-                } else {
+                } else if (item.data.type === 'registrations') {
                     link_types.linked_registrations.data.push({id: item.data.id,
                                                  type: 'linked_registrations'});
+                } else {
+                    link_types.linked_preprints.data.push({id: item.data.id,
+                                                 type: 'linked_preprints'});
                 }
             });
 
@@ -941,12 +953,13 @@ var MyProjects = {
             var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function(result){
                 result.data.forEach(function(node){
-                    var count = node.relationships.linked_registrations.links.related.meta.count + node.relationships.linked_nodes.links.related.meta.count;
+                    var count = node.relationships.linked_registrations.links.related.meta.count + node.relationships.linked_nodes.links.related.meta.count + node.relationships.linked_preprints.links.related.meta.count;
                     self.collections().push(new LinkObject('collection', {nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, $osf.decodeText(node.attributes.title)));
                     // TODO assess whether more sparse fields can be used
+                    var preprintLink = $osf.apiV2Url('collections/' + node.id + '/linked_preprints/', { query : {'embed' : 'contributors', 'version': '2.2'}});
                     var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2', 'fields[registrations]' : sparseRegistrationFields}});
                     var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'fields[nodes]' : sparseNodeFields }});
-                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false, 'registrations', regLink);
+                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false, 'registrations', regLink, 'preprints', preprintLink);
                     self.fetchers[self.collections()[self.collections().length-1].id].on(['page'], self.onPageLoad);
                 });
                 if(result.links.next){
@@ -1031,7 +1044,7 @@ var MyProjects = {
             });
             if (!self.viewOnly){
                 // TODO use sparse fields
-                var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_registrations,linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'linked_nodes'}});
+                var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_registrations,linked_nodes,linked_preprints', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'linked_nodes'}});
                 self.loadCollections(collectionsUrl);
             }
             // Add linkObject to the currentView
