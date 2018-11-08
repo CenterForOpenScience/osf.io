@@ -413,7 +413,8 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        nodes = Node.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        node_ids = self.get_collection().guid_links.all().values_list('object_id', flat=True)
+        nodes = Node.objects.filter(id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
         return self.optimize_node_queryset(nodes)
 
     # overrides APIView
