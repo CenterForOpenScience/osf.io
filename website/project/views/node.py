@@ -259,7 +259,7 @@ def node_registrations(auth, node, **kwargs):
 @must_be_contributor_or_public_but_not_anonymized
 @must_not_be_retracted_registration
 def node_forks(auth, node, **kwargs):
-    if 'project' in request.url:
+    if request.path.startswith('/project/'):
         return redirect('/' + node._id + '/forks/')
     return use_ember_app()
 
