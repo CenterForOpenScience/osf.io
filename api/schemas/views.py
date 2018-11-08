@@ -39,10 +39,7 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
 
     # overrides ListAPIView
     def get_queryset(self):
-        if waffle.switch_is_active(FILTER_REG_SCHEMAS_ON_ACTIVE):
-            return self.get_queryset_from_request()
-        else:
-            return self.get_default_queryset()
+        return self.get_queryset_from_request()
 
 
 class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
