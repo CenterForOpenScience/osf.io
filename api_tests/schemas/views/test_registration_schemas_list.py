@@ -20,9 +20,14 @@ class TestSchemaList:
         url = '/{}schemas/registrations/?version=2.11'.format(API_BASE)
         schemas = RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
         # test_pass_authenticated_user_can_view_schemas
+
+        with override_switch(FILTER_REG_SCHEMAS_ON_ACTIVE, active=False):
+            res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['meta']['total'] == schemas.filter(active=True).count()
+
         with override_switch(FILTER_REG_SCHEMAS_ON_ACTIVE, active=True):
             res = app.get(url, auth=user.auth)
-
         assert res.status_code == 200
         assert res.json['meta']['total'] == schemas.count()
 
