@@ -379,13 +379,6 @@ var tbOptions = {
     ondblclickrow : function(item, event){
         var tb = this;
         $osf.trackClick('myProjects', 'projectOrganizer', 'double-click-project');
-        var node = item.data;
-        var linkObject = new LinkObject('node', node, node.attributes.title);
-        tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?related_counts=children&embed=contributors');
-        tb.options.fetchers[linkObject.id].on(['page', 'done'], tb.options.onPageLoad);
-
-        // Get ancestors
-        linkObject.ancestors = [];
         function getAncestors (item) {
             var parent = item.parent();
             if(parent && parent.id > tb.treeData.id) {
@@ -393,8 +386,17 @@ var tbOptions = {
                 getAncestors(parent);
             }
         }
-        getAncestors(item);
-        tb.options.updateFilesData(linkObject);
+        var node = item.data;
+        var linkObject = new LinkObject('node', node, node.attributes.title);
+        if (item.data.type !== 'preprints') {
+            tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?related_counts=children&embed=contributors');
+            tb.options.fetchers[linkObject.id].on(['page', 'done'], tb.options.onPageLoad);
+
+            // Get ancestors
+            linkObject.ancestors = [];
+            getAncestors(item);
+            tb.options.updateFilesData(linkObject);
+        }
     },
     hScroll : 'auto',
     filterTemplate : function() {

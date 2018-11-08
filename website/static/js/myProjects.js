@@ -784,7 +784,7 @@ var MyProjects = {
                     } else {
                         var helpText = 'This collection is empty.';
                         if (!self.viewOnly) {
-                            helpText +=' You can add projects or registrations by dragging them into the collection.';
+                            helpText +=' You can add projects, registrations, or preprints by dragging them into the collection.';
                         }
                         template = m('.db-non-load-template.m-md.p-md.osf-box', helpText);
                     }
