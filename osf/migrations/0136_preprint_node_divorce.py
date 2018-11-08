@@ -6,6 +6,7 @@ import logging
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.db import migrations, connection
+from django.db.models import Func, Value, F, Q
 from django.core.management.sql import emit_post_migrate_signal
 from bulk_update.helper import bulk_update
 
@@ -18,6 +19,8 @@ def reverse_func(apps, schema_editor):
     AbstractNode = apps.get_model('osf', 'AbstractNode')
     Preprint = apps.get_model('osf', 'Preprint')
     BaseFileNode = apps.get_model('osf', 'BaseFileNode')
+    PageCounter = apps.get_model('osf', 'PageCounter')
+    Guid = apps.get_model('osf', 'Guid')
 
     preprints = []
     files = []
@@ -48,6 +51,13 @@ def reverse_func(apps, schema_editor):
             preprint_file.target_object_id = node.id
             preprint_file.target_content_type_id = ContentType.objects.get_for_model(AbstractNode).id
             preprint_file.parent_id = NodeSettings.objects.get(owner_id=node.id).root_node_id
+
+            node_id = Guid.objects.get(content_type=ContentType.objects.get_for_model(AbstractNode).id, object_id=node.id)._id
+            preprint_id = Guid.objects.get(content_type=ContentType.objects.get_for_model(Preprint).id, object_id=preprint.id)._id
+            PageCounter.objects.filter(Q(_id__contains=preprint_id) & Q(_id__contains=preprint_file._id)).update(
+                _id=Func(F('_id'), Value(preprint_id), Value(node_id), function='replace')
+            )
+
         node.preprint_file = preprint_file
         preprint.primary_file = None
 
@@ -318,6 +328,19 @@ def divorce_preprints_from_nodes_sql(state, schema):
             FROM osf_abstractnode N
             WHERE P.node_id = N.id
             AND P.node_id IS NOT NULL;
+
+            -- Update primary_file entries in the PageCounter table to reference the preprint _id
+            UPDATE osf_pagecounter PC
+            SET _id = REPLACE(PC._id, NG._id, PG._id)
+            FROM osf_preprint P, osf_abstractnode N, osf_guid NG, osf_guid PG, django_content_type NCT, django_content_type PCT, osf_basefilenode F
+            WHERE P.node_id = N.id
+            AND NCT.model = 'abstractnode'
+            AND PCT.model = 'preprint'
+            AND NG.object_id = N.id AND NG.content_type_id = NCT.id
+            AND PG.object_id = P.id AND PG.content_type_id = PCT.id
+            AND F.id = P.primary_file_id
+            AND PC._id LIKE '%' || NG._id || '%'
+            AND PC._id LIKE '%' || F._id || '%';
 
             -- Set deleted date on preprint, if exists, pulling from attached node's project_deleted log
             UPDATE osf_preprint as P
