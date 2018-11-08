@@ -8,7 +8,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
-from guardian.shortcuts import get_objects_for_user
+from guardian.shortcuts import get_objects_for_user, get_perms
 
 from addons.base.exceptions import InvalidAuthError
 from addons.osfstorage.models import OsfStorageFolder
@@ -99,6 +99,7 @@ from api.nodes.serializers import (
     NodeSettingsUpdateSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer,
+    NodeGroupsSerializer,
 )
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
@@ -109,11 +110,12 @@ from api.requests.views import NodeRequestMixin
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
 from osf.models import OSFUser
+from osf.models import OSFGroup
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
@@ -1149,6 +1151,78 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
             raise NotFound
 
         return fobj
+
+
+class NodeGroupsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListFilterMixin):
+    """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_groups_list)
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        AdminOrPublic,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = NodeGroupsSerializer
+
+    required_read_scopes = [CoreScopes.NODE_OSF_GROUPS_READ]
+    required_write_scopes = [CoreScopes.NODE_OSF_GROUPS_WRITE]
+    view_category = 'nodes'
+    view_name = 'node-groups'
+
+    def get_default_queryset(self):
+        return self.get_node().osf_groups
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    # overrides FilterMixin
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'permission':
+            node = self.get_node()
+            osf_groups = node.osf_groups
+            group_ids = [
+                group.id for group in osf_groups if '{}_node'.format(
+                    operation['value'],
+                ) in get_perms(group.member_group, node)
+            ]
+            return Q(id__in=group_ids)
+
+        return super(NodeGroupsList, self).build_query_from_field(field_name, operation)
+
+
+class NodeGroupsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+    """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_groups_read)
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = NodeGroupsSerializer
+
+    required_read_scopes = [CoreScopes.NODE_OSF_GROUPS_READ]
+    required_write_scopes = [CoreScopes.NODE_OSF_GROUPS_WRITE]
+    view_category = 'nodes'
+    view_name = 'node-group-detail'
+
+    def get_object(self):
+        group_id = self.kwargs.get('group_id')
+        try:
+            return OSFGroup.objects.get(_id=group_id)
+        except OSFGroup.DoesNotExist:
+            raise NotFound
+
+    def perform_destroy(self, instance):
+        node = self.get_node()
+        auth = get_user_auth(self.request)
+        if instance not in node.osf_groups:
+            raise ValidationError('The OSF group {} has not been added to the node {}'.format(instance.name, node._id))
+        try:
+            node.remove_osf_group(instance, auth)
+        except PermissionsError:
+            raise PermissionDenied('Not authorized to remove this group.')
 
 
 class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin, AddonSettingsMixin):

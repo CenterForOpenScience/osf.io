@@ -24,6 +24,7 @@ from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from guardian.shortcuts import get_perms
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from osf.models import Tag
@@ -35,7 +36,7 @@ from website.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, Institution,
     RegistrationSchema, AbstractNode, PrivateLink,
-    RegistrationProvider,
+    RegistrationProvider, OSFGroup,
 )
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
@@ -376,6 +377,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-forks',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_forks_count'},
+    )
+
+    groups = RelationshipField(
+        related_view='nodes:node-groups',
+        related_view_kwargs={'node_id': '<_id>'},
     )
 
     node_links = ShowIfVersion(
@@ -1012,13 +1018,13 @@ class NodeForksSerializer(NodeSerializer):
         return fork
 
 
-class ContributorIDField(IDField):
-    """ID field to use with the contributor resource. Contributor IDs have the form "<node-id>-<user-id>"."""
+class CompoundIDField(IDField):
+    """ID field to use with another resource related to the node. CompoundIDField IDs have the form "<node-id>-<related-id>"."""
 
     def __init__(self, *args, **kwargs):
         kwargs['source'] = kwargs.pop('source', '_id')
-        kwargs['help_text'] = kwargs.get('help_text', 'Unique contributor ID. Has the form "<node-id>-<user-id>". Example: "abc12-xyz34"')
-        super(ContributorIDField, self).__init__(*args, **kwargs)
+        kwargs['help_text'] = kwargs.get('help_text', 'Unique ID that is a compound of two objects. Has the form "<node-id>-<related-id>". Example: "abc12-xyz34"')
+        super(CompoundIDField, self).__init__(*args, **kwargs)
 
     def _get_node_id(self):
         return self.context['request'].parser_context['kwargs']['node_id']
@@ -1026,13 +1032,13 @@ class ContributorIDField(IDField):
     # override IDField
     def get_id(self, obj):
         node_id = self._get_node_id()
-        user_id = obj._id
-        return '{}-{}'.format(node_id, user_id)
+        related_id = obj._id
+        return '{}-{}'.format(node_id, related_id)
 
     def to_representation(self, value):
         node_id = self._get_node_id()
-        user_id = super(ContributorIDField, self).to_representation(value)
-        return '{}-{}'.format(node_id, user_id)
+        related_id = super(CompoundIDField, self).to_representation(value)
+        return '{}-{}'.format(node_id, related_id)
 
 
 class NodeContributorsSerializer(JSONAPISerializer):
@@ -1721,3 +1727,97 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         if type(addon) == bool:
             addon = None
         return addon
+
+class OSFGroupsRelationshipField(RelationshipField):
+
+    def get_value(self, data):
+        return data['id']
+
+    def to_internal_value(self, data):
+        try:
+            osf_group_id = OSFGroup.objects.filter(_id=data).values_list('_id', flat=True).get()
+        except OSFGroup.DoesNotExist:
+            raise exceptions.ValidationError(detail='OSFGroup {} is invalid.'.format(data))
+        return {'group_id': osf_group_id}
+
+
+class NodeGroupsSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'name',
+        'permission',
+        'date_created',
+    ])
+
+    writeable_method_fields = frozenset([
+        'permission',
+    ])
+
+    id = CompoundIDField(source='_id', read_only=True)
+    permission = ser.SerializerMethodField()
+    type = TypeField()
+    name = ser.CharField(read_only=True)
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
+
+    osf_groups = OSFGroupsRelationshipField(
+        related_view='osf_groups:group-detail',
+        related_view_kwargs={'group_id': '<_id>'},
+        read_only=False,
+    )
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        node = self.context['view'].get_node()
+        return absolute_reverse(
+            'nodes:node-group-detail', kwargs={
+                'group_id': obj._id,
+                'node_id': node._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_permission(self, obj):
+        node = self.context['view'].get_node()
+        permissions = get_perms(obj.member_group, node)
+        if not permissions:
+            raise exceptions.ValidationError(
+                detail='The OSF group {} has not been added to the node {}'.format(obj._id, node._id),
+            )
+        return osf_permissions.reduce_permissions(permissions)
+
+    def update(self, obj, validated_data):
+        auth = get_user_auth(self.context['request'])
+        node = self.context['view'].get_node()
+        permission = validated_data.get('permission')
+        group_id = validated_data.get('group_id')
+        group = OSFGroup.load(group_id)
+        try:
+            node.update_osf_group(group, permission, auth)
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=str(e.message))
+        return group
+
+    def create(self, validated_data):
+        auth = get_user_auth(self.context['request'])
+        node = self.context['view'].get_node()
+        permission = validated_data.get('permission')
+        group_id = validated_data.get('group_id')
+        group = OSFGroup.load(group_id)
+        if group in node.osf_groups:
+            raise exceptions.ValidationError(
+                'The OSF group {} has already been added to the node {}'.format(group_id, node._id),
+            )
+        try:
+            node.add_osf_group(group, permission, auth)
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=str(e))
+        except KeyError as e:
+            # permission is in writeable_method_fields, so validation happens in guardian
+            raise exceptions.ValidationError(detail=str(e.message))
+        return group
+
+    class Meta:
+        type_ = 'node-groups'
