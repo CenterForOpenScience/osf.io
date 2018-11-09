@@ -1051,6 +1051,38 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'This draft has already been approved and cannot be modified.'
 
+    def test_cannot_register_draft_that_has_orphan_files(
+            self, app, user, payload, draft_registration, url_registrations):
+        schema = draft_registration.registration_schema
+        schema.schema['pages'][0]['questions'][0].update({
+            u'description': u'Upload files!',
+            u'format': u'osf-upload-open',
+            u'qid': u'qwhatever',
+            u'title': u'Upload an analysis script with clear comments',
+            u'type': u'osf-upload',
+        })
+        schema.save()
+
+        draft_registration.registration_metadata = {
+            'qwhatever': {
+                'value': 'file 1',
+                'extra': [{
+                    'nodeId': 'badid',
+                    'selectedFileName': 'file 1',
+                }]
+            }
+        }
+        draft_registration.save()
+        res = app.post_json_api(
+            url_registrations,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'All files attached to this form must be registered to complete the' \
+                                                  ' process. The following file(s) are attached, but are not part of' \
+                                                  ' a component being registered: file 1'
+
 
 @pytest.mark.django_db
 class TestRegistrationBulkUpdate:
