@@ -238,7 +238,7 @@ def post(connection, insert_index_id, stream, stream_size):
         'Content-Length': str(stream_size),
         'insert_index': str(insert_index_id)
     }
-    resp = connection.post_url(target, stream, headers=weko_headers)
+    resp = connection.post_url(target, stream, default_headers=weko_headers)
     logger.info(etree.tostring(resp))
     for index, elem in enumerate(resp.findall('.//{%s}content' % ATOM_NAMESPACE)):
         src = elem.attrib['src']
@@ -281,7 +281,7 @@ def create_index(connection, title_ja=None, title_en=None, relation=None):
         'Content-Type': 'text/xml',
         'Content-Length': str(len(stream)),
     }
-    root = connection.post_url(target, stream, headers=weko_headers)
+    root = connection.post_url(target, stream, default_headers=weko_headers)
     logger.info('Result: {}'.format(etree.tostring(root)))
     return index_id
 
@@ -314,7 +314,7 @@ def update_index(connection, index_id, title_ja=None, title_en=None, relation=No
         'Content-Type': 'text/xml',
         'Content-Length': str(len(stream)),
     }
-    root = connection.post_url(target, stream, headers=weko_headers)
+    root = connection.post_url(target, stream, default_headers=weko_headers)
     logger.info('Result: {}'.format(etree.tostring(root)))
 
 def create_import_xml(item_type, internal_item_type_id, uploaded_filenames, title, title_en, contributors):
