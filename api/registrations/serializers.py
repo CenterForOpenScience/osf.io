@@ -412,9 +412,10 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         files = find_selected_files(draft.registration_schema, draft.registration_metadata)
         orphan_files = []
         for _, value in files.items():
-            for file_metadata in value['extra']:
-                if file_metadata['nodeId'] not in registering:
-                    orphan_files.append(file_metadata)
+            if 'extra' in value:
+                for file_metadata in value['extra']:
+                    if file_metadata['nodeId'] not in registering:
+                        orphan_files.append(file_metadata)
         return orphan_files
 
 
