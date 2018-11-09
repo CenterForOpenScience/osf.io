@@ -519,7 +519,7 @@ def project_reorder_components(node, **kwargs):
 @must_be_contributor_or_public
 @must_not_be_retracted_registration
 def project_statistics(auth, node, **kwargs):
-    if 'project' in request.url:
+    if request.path.startswith('/project/'):
         return redirect('/' + node._id + '/analytics/')
     return use_ember_app()
 
