@@ -9,7 +9,7 @@ from api.base.utils import get_object_or_error
 from api.base.filters import ListFilterMixin
 
 from osf.models import RegistrationSchema
-from osf.features import FILTER_REG_SCHEMAS_ON_ACTIVE
+from osf.features import ENABLE_INACTIVE_SCHEMAS
 from api.schemas.serializers import RegistrationSchemaSerializer
 
 
@@ -32,7 +32,7 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
     ordering = ('-id',)
 
     def get_default_queryset(self):
-        if waffle.switch_is_active(FILTER_REG_SCHEMAS_ON_ACTIVE):
+        if waffle.switch_is_active(ENABLE_INACTIVE_SCHEMAS):
             return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
         else:
             return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)

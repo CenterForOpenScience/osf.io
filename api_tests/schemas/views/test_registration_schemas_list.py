@@ -7,7 +7,7 @@ from osf.models.metaschema import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
 )
-from osf.features import FILTER_REG_SCHEMAS_ON_ACTIVE
+from osf.features import ENABLE_INACTIVE_SCHEMAS
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
 
@@ -21,12 +21,12 @@ class TestSchemaList:
         schemas = RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
         # test_pass_authenticated_user_can_view_schemas
 
-        with override_switch(FILTER_REG_SCHEMAS_ON_ACTIVE, active=False):
+        with override_switch(ENABLE_INACTIVE_SCHEMAS, active=False):
             res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['meta']['total'] == schemas.filter(active=True).count()
 
-        with override_switch(FILTER_REG_SCHEMAS_ON_ACTIVE, active=True):
+        with override_switch(ENABLE_INACTIVE_SCHEMAS, active=True):
             res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['meta']['total'] == schemas.count()
@@ -45,7 +45,7 @@ class TestSchemaList:
 
         # test_filter_on_active
         url = '/{}schemas/registrations/?version=2.11&filter[active]=True'.format(API_BASE)
-        with override_switch(FILTER_REG_SCHEMAS_ON_ACTIVE, active=True):
+        with override_switch(ENABLE_INACTIVE_SCHEMAS, active=True):
             res = app.get(url)
 
         assert res.status_code == 200

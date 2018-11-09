@@ -1,6 +1,6 @@
 DISABLE_ENGAGEMENT_EMAILS = 'disable_engagement_emails'
 ELASTICSEARCH_METRICS = 'elasticsearch_metrics'
-FILTER_REG_SCHEMAS_ON_ACTIVE = 'filter_registration_schemas_on_active'
+ENABLE_INACTIVE_SCHEMAS = 'enable_inactive_schemas'
 
 EMBER_AUTH_REGISTER = 'ember_auth_register'
 EMBER_CREATE_DRAFT_REGISTRATION = 'ember_create_draft_registration_page'
