@@ -7,7 +7,7 @@ from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from framework.sessions import session
-from osf.models.base import BaseModel
+from osf.models.base import BaseModel, Guid
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,15 @@ class PageCounter(BaseModel):
     total = models.PositiveIntegerField(default=0)
     unique = models.PositiveIntegerField(default=0)
 
+    action = models.CharField(max_length=128, null=False, blank=False, default='download', db_index=True)
+    guid = models.ForeignKey(Guid, related_name='pagecounters', null=True, blank=True, db_index=True)
+    file = models.ForeignKey('osf.BaseFileNode', null=True, blank=True, related_name='pagecounters', db_index=True)
+    version = models.IntegerField(null=True, blank=True, db_index=True)
+
     DOWNLOAD_ALL_VERSIONS_ID_PATTERN = r'^download:[^:]*:{1}[^:]*$'
+
+    class Meta:
+        index_together = (('action', 'guid', 'file', 'version'))
 
     @classmethod
     def get_all_downloads_on_date(cls, date):
