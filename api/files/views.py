@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -77,7 +77,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     def get_serializer_class(self):
         try:
             target = self.get_target()
-        except (NotFound, Gone):
+        except (NotFound, Gone, PermissionDenied):
             return FileDetailSerializer
         else:
             if isinstance(target, QuickFilesNode):
