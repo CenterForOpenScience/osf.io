@@ -24,21 +24,17 @@
             <!-- Begin sidebar -->
             <ul class="nav nav-stacked nav-pills">
                 <li class="active"><a href="#">Timestamp Error</a></li>
-                <li><a href="#">&nbsp;</a></li>
             </ul>
         </div>
     </div>
 
     <div class="col-md-9 col-xs-12">
          <form id="timestamp-form" class="form">
-         <div class="panel panel-default">
-             <div class="col-xs-12">
-                 <div class="pull-right">
-                   <span>
-                         <button type="button" class="btn btn-success" id="btn-verify">Verify</button>
-                         <button type="button" class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</button>
-                   </span>
-                 </div>
+             <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                 <span>
+                     <button type="button" class="btn btn-success" id="btn-verify">Verify</button>
+                     <button type="button" class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</button>
+                 </span>
              </div>
              <style type="text/css">
                  #addTimestampAllCheck, #addTimestampCheck {
@@ -49,28 +45,26 @@
                     transform:              scale(1.2);
                  }
              </style>
-             <span id="configureNodeAnchor" class="anchor"></span></div>
-                 <table class="table table-bordered table-addon-terms">
-                      <thead class="block-head">
-                          <tr>
-                              <th width="3%"><input type="checkBox" id="addTimestampAllCheck"/></th>
-                              <th width="45%">FilePath</th>
-                              <th width="15%">TimestampUpdateUser</th>
-                              <th width="15%">TimestampUpdateDate</th>
-                              <th widht="22%">Timestamp verification</th>
-                          </tr>
-                      </thead>
-                      <font color="red">
-                           <div id="timestamp_errors_spinner" class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-lg"></div>
-                                <p class="m-t-sm fg-load-message"> Loading timestamp error list ...  </p>
-                           </div>
-                      </font>
-                      <tbody id="tree_timestamp_error_data">
-                      </tbody>
-                 </table>
-             </span>
-         </div>
+             <span id="configureNodeAnchor" class="anchor"></span>
+             <table class="table table-bordered table-addon-terms">
+                 <thead class="block-head">
+                     <tr>
+                         <th width="3%"><input type="checkBox" id="addTimestampAllCheck"/></th>
+                         <th width="45%">FilePath</th>
+                         <th width="15%">TimestampUpdateUser</th>
+                         <th width="15%">TimestampUpdateDate</th>
+                         <th widht="22%">Timestamp verification</th>
+                     </tr>
+                 </thead>
+                 <font color="red">
+                     <div id="timestamp_errors_spinner" class="spinner-loading-wrapper">
+                         <div class="logo-spin logo-lg"></div>
+                         <p class="m-t-sm fg-load-message"> Loading timestamp error list ...  </p>
+                     </div>
+                 </font>
+                 <tbody id="tree_timestamp_error_data">
+                 </tbody>
+             </table>
          </form>
     </div>
 </div>
