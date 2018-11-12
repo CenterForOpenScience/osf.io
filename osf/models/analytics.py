@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from framework.sessions import session
 from osf.models.base import BaseModel, Guid
+from osf.models.files import BaseFileNode
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -101,15 +102,34 @@ class PageCounter(BaseModel):
             '$', '_'
         )
 
+    @staticmethod
+    def deconstruct_id(page):
+        """
+        Temporary method before Part II of PLAT-1771 is merged
+        """
+        split = page.split(':')
+        action = split[0]
+        guid = Guid.load(split[1])
+        file = BaseFileNode.load(split[2])
+        if len(split) == 3:
+            version = None
+        else:
+            version = split[3]
+        return guid, file, action, version
+
     @classmethod
     def update_counter(cls, page, node_info):
         cleaned_page = cls.clean_page(page)
         date = timezone.now()
         date_string = date.strftime('%Y/%m/%d')
         visited_by_date = session.data.get('visited_by_date', {'date': date_string, 'pages': []})
-
         with transaction.atomic():
-            model_instance, created = cls.objects.select_for_update().get_or_create(_id=cleaned_page)
+            # Temporary backwards compat - when creating new PageCounters, temporarily write to _id, guid, file, action, and version fields
+            try:
+                model_instance = cls.objects.get(_id=cleaned_page)
+            except cls.DoesNotExist:
+                guid, file, action, version = cls.deconstruct_id(cleaned_page)
+                model_instance = cls.objects.create(_id=cleaned_page, guid=guid, file=file, action=action, version=version)
 
             # if they visited something today
             if date_string == visited_by_date['date']:
