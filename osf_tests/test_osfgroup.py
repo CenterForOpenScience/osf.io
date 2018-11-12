@@ -529,3 +529,31 @@ class TestOSFGroup:
         other_other_user.save()
         assert osf_group.is_member(other_other_user)
         assert osf_group.has_permission(other_other_user, 'manage')
+
+    def test_osf_group_is_admin_parent(self, project, manager, member, osf_group, user_two, user_three):
+        child = NodeFactory(parent=project, creator=manager)
+        assert project.is_admin_parent(manager) is True
+        assert project.is_admin_parent(member) is False
+
+        project.add_contributor(user_two, 'write', save=True)
+        assert project.is_admin_parent(user_two) is False
+
+        assert child.is_admin_parent(manager) is True
+        child.add_contributor(user_two, 'admin', save=True)
+        assert child.is_admin_parent(user_two) is True
+
+        assert child.is_admin_parent(user_three) is False
+        osf_group.make_member(user_three)
+        project.add_osf_group(osf_group, 'write')
+        assert child.is_admin_parent(user_three) is False
+
+        project.add_osf_group(osf_group, 'admin')
+        assert child.is_admin_parent(user_three) is True
+        assert child.is_admin_parent(user_three, include_group_admin=False) is False
+        project.remove_osf_group(osf_group)
+
+        child.add_osf_group(osf_group, 'write')
+        assert child.is_admin_parent(user_three) is False
+        child.add_osf_group(osf_group, 'admin')
+        assert child.is_admin_parent(user_three) is True
+        assert child.is_admin_parent(user_three, include_group_admin=False) is False
