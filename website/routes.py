@@ -1232,8 +1232,9 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.project_statistics,
-            OsfWebRenderer('project/statistics.mako', trust=False)
+            notemplate,
         ),
+
 
         ### Files ###
 

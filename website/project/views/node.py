@@ -24,9 +24,9 @@ from osf import features
 from website import language
 
 from website.util import rubeus
+from website.ember_osf_web.views import use_ember_app
 from website.exceptions import NodeStateError
 from website.project import new_node, new_private_link
-from website.ember_osf_web.views import use_ember_app
 from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
     must_be_contributor_or_public,
@@ -514,18 +514,13 @@ def project_reorder_components(node, **kwargs):
     logger.error('Got invalid node list in reorder components')
     raise HTTPError(http.BAD_REQUEST)
 
-
-##############################################################################
-
-
 @must_be_valid_project
 @must_be_contributor_or_public
 @must_not_be_retracted_registration
-@ember_flag_is_active(features.EMBER_PROJECT_ANALYTICS)
 def project_statistics(auth, node, **kwargs):
-    ret = _view_project(node, auth, primary=True)
-    ret['node']['keenio_read_key'] = node.keenio_read_key
-    return ret
+    if request.path.startswith('/project/'):
+        return redirect('/' + node._id + '/analytics/')
+    return use_ember_app()
 
 
 ###############################################################################
