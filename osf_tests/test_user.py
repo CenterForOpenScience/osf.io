@@ -2157,3 +2157,21 @@ class TestUserSpam:
         assert user.spam_data['content'] == suspicious_content
         assert user.spam_data['author'] == user.fullname
         assert user.spam_data['author_email'] == user.username
+
+        # test do_check_spam for ham user
+        user.confirm_ham()
+        assert user.do_check_spam(None, None, None, None) is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch('osf.models.OSFUser.do_check_spam')
+    def test_check_spam(self, mock_do_check_spam, user):
+
+        # test check_spam for other saved fields
+        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
+            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
+            assert mock_do_check_spam.call_count == 0
+
+        # test check spam for correct saved_fields
+        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
+            user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
+            assert mock_do_check_spam.call_count == 1

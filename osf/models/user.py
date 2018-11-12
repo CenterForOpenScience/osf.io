@@ -1548,15 +1548,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if not website_settings.SPAM_CHECK_ENABLED:
             return False
         is_spam = False
-        content = self._get_spam_content(saved_fields)
-        if content:
-            is_spam = self.do_check_spam(
-                self.fullname,
-                self.username,
-                content,
-                request_headers
-            )
-            self.save()
+        if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(set(saved_fields.keys())):
+            content = self._get_spam_content(saved_fields)
+            if content:
+                is_spam = self.do_check_spam(
+                    self.fullname,
+                    self.username,
+                    content,
+                    request_headers
+                )
+                self.save()
 
         return is_spam
 
