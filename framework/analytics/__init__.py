@@ -2,8 +2,6 @@
 
 import logging
 
-from flask import request
-
 from framework.celery_tasks import app
 from framework.postcommit_tasks.handlers import run_postcommit
 
@@ -30,33 +28,15 @@ def get_total_activity_count(user_id):
     return UserActivityCounter.get_total_activity_count(user_id)
 
 
-def build_page(rex, kwargs):
-    """Build page key from format pattern and request data.
-
-    :param str: Format string (e.g. `'{node}:{file}'`)
-    :param dict kwargs: Data used to render format string
-    """
-    target_node = kwargs.get('node') or kwargs.get('project')
-    target_id = target_node._id
-    data = {
-        'target_id': target_id,
-    }
-    data.update(kwargs)
-    data.update(request.args.to_dict())
-    try:
-        return rex.format(**data)
-    except KeyError:
-        return None
-
-def update_counter(page, node_info=None):
+def update_counter(guid, file, version, action, node_info=None):
     """Update counters for page.
 
     :param str page: Colon-delimited page key in analytics collection
     """
     from osf.models import PageCounter
-    return PageCounter.update_counter(page, node_info)
+    return PageCounter.update_counter(guid, file, version=version, action=action, node_info=node_info)
 
 
-def get_basic_counters(page):
+def get_basic_counters(guid, file, version, action):
     from osf.models import PageCounter
-    return PageCounter.get_basic_counters(page)
+    return PageCounter.get_basic_counters(guid, file, version=version, action=action)

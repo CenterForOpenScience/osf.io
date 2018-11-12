@@ -339,11 +339,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """Assembles a string to retrieve the correct file data from the pagecounter collection,
         then calls get_basic_counters to retrieve the total count. Limit to version if specified.
         """
-        parts = [count_type, self.target._id, self._id]
-        if version is not None:
-            parts.append(version)
-        page = ':'.join([format(part) for part in parts])
-        _, count = get_basic_counters(page)
+        _, count = get_basic_counters(self.target.guids.first(), self, version=version, action=count_type)
 
         return count or 0
 
