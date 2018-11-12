@@ -33,7 +33,7 @@ def separate_pagecounter_id(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0143_pagecounter_index'),
+        ('osf', '0145_pagecounter_index'),
     ]
 
     operations = [
