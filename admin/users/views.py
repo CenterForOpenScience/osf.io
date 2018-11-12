@@ -609,7 +609,7 @@ class UserReindexElastic(UserDeleteView):
 
     def delete(self, request, *args, **kwargs):
         user = self.get_object()
-        search.search.update_user(user, async=False)
+        search.search.update_user(user, async_update=False)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=user._id,

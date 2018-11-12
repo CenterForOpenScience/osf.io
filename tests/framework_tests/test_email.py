@@ -3,7 +3,7 @@ import unittest
 import smtplib
 
 import mock
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from nose.tools import *  # noqa: F403
 import sendgrid
 
 from framework.email.tasks import send_email, _send_with_sendgrid
