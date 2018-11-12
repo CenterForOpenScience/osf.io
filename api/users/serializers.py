@@ -213,8 +213,7 @@ class UserSerializer(JSONAPISerializer):
             raise InvalidModelValueError(detail=e.message)
         except ValidationError as e:
             raise InvalidModelValueError(e)
-
-        if set(validated_data.keys()).intersection(set(instance.SPAM_USER_PROFILE_FIELDS.keys())):
+        if set(validated_data.keys()).intersection(set(OSFUser.SPAM_USER_PROFILE_FIELDS.keys())):
             request_headers = string_type_request_headers(self.context['request'])
             instance.check_spam(saved_fields=validated_data, request_headers=request_headers)
 

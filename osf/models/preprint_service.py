@@ -242,7 +242,7 @@ class PreprintService(DirtyFieldsMixin, SpamMixin, GuidMixin, IdentifierMixin, R
         old_subjects = kwargs.pop('old_subjects', [])
         if saved_fields:
             request, user_id = get_request_and_user_id()
-            request_headers = string_type_request_headers
+            request_headers = string_type_request_headers(request)
             user = OSFUser.load(user_id)
             if user:
                 self.check_spam(user, saved_fields, request_headers)

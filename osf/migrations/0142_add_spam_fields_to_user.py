@@ -27,7 +27,7 @@ def add_spam_status_to_tagged_users(state, schema):
 def remove_spam_status_from_tagged_users(state, schema):
     OSFUser = state.get_model('osf', 'osfuser')
     users_with_tag = OSFUser.objects.filter(tags__name__in=TAG_MAP.keys())
-    users_with_tag.objects.update(spam_status=None)
+    users_with_tag.update(spam_status=None)
 
 
 class Migration(migrations.Migration):
