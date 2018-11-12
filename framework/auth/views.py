@@ -497,6 +497,23 @@ def external_login_confirm_email_get(auth, uid, token):
     if not destination:
         raise HTTPError(http.BAD_REQUEST)
 
+    # if user is already logged in
+    if auth and auth.user:
+        # if it is a wrong user
+        if auth.user._id != user._id:
+            return auth_logout(redirect_url=request.url)
+        # if it is the expected user
+        new = request.args.get('new', None)
+        if destination in campaigns.get_campaigns():
+            # external domain takes priority
+            campaign_url = campaigns.external_campaign_url_for(destination)
+            if not campaign_url:
+                campaign_url = campaigns.campaign_url_for(destination)
+            return redirect(campaign_url)
+        if new:
+            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
+        return redirect(web_url_for('dashboard'))
+
     # token is invalid
     if token not in user.email_verifications:
         raise HTTPError(http.BAD_REQUEST)
@@ -520,6 +537,7 @@ def external_login_confirm_email_get(auth, uid, token):
     if not user.emails.filter(address=email.lower()):
         user.emails.create(address=email.lower())
 
+    user.date_last_logged_in = timezone.now()
     user.external_identity[provider][provider_id] = 'VERIFIED'
     user.social[provider.lower()] = provider_id
     del user.email_verifications[token]
@@ -546,26 +564,6 @@ def external_login_confirm_email_get(auth, uid, token):
             external_id_provider=provider,
             can_change_preferences=False,
         )
-
-    # if user is already logged in
-    if auth and auth.user:
-        # if it is a wrong user
-        if auth.user._id != user._id:
-            return auth_logout(redirect_url=request.url)
-        # if it is the expected user
-        new = request.args.get('new', None)
-        if destination in campaigns.get_campaigns():
-            # external domain takes priority
-            campaign_url = campaigns.external_campaign_url_for(destination)
-            if not campaign_url:
-                campaign_url = campaigns.campaign_url_for(destination)
-            return redirect(campaign_url)
-        if new:
-            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
-        return redirect(web_url_for('dashboard'))
-
-    user.date_last_logged_in = timezone.now()
-    user.save()
 
     # redirect to CAS and authenticate the user with the verification key
     return redirect(cas.get_login_url(
