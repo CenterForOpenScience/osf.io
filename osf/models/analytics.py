@@ -68,9 +68,6 @@ class PageCounter(BaseModel, ObjectIDMixin):
     file = models.ForeignKey('osf.BaseFileNode', null=True, blank=True, related_name='pagecounters', db_index=True)
     version = models.IntegerField(null=True, blank=True, db_index=True)
 
-    class Meta:
-        index_together = (('action', 'guid', 'file'))
-
     @classmethod
     def get_all_downloads_on_date(cls, date):
         """
