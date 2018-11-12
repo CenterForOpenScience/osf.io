@@ -74,7 +74,7 @@ class PageCounter(BaseModel):
     DOWNLOAD_ALL_VERSIONS_ID_PATTERN = r'^download:[^:]*:{1}[^:]*$'
 
     class Meta:
-        index_together = (('action', 'guid', 'file', 'version'))
+        index_together = (('action', 'guid', 'file'))
 
     @classmethod
     def get_all_downloads_on_date(cls, date):
