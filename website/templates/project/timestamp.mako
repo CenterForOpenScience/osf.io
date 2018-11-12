@@ -40,11 +40,11 @@
             <table class="table table-bordered table-addon-terms">
                 <thead class="block-head">
                     <tr>
-                        <th width="5%"><input type="checkBox" id="addTimestampAllCheck" style="width: 15px; height: 15px;"/></th>
+                        <th width="3%"><input type="checkBox" id="addTimestampAllCheck" style="width: 15px; height: 15px;"/></th>
                         <th width="40%">File Path</th>
                         <th width="15%">Timestamp Update User</th>
                         <th width="22%">Timestamp Update Date</th>
-                        <th widht="18%">Timestamp Verification</th>
+                        <th widht="20%">Timestamp Verification</th>
                     </tr>
                 </thead>
                 <font color="red">
