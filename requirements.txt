@@ -13,7 +13,11 @@ Mako==1.0.7
 Markdown==2.6.9
 WTForms==1.0.4
 beautifulsoup4==4.6.0
-celery==4.2.1
+# Fork of celery 4.1.1 with https://github.com/celery/celery/pull/4278 backported,
+# which fixes a bug that was causing stuck registrations
+# Need to pin to 4.1.1 due to https://github.com/celery/celery/issues/4355
+# TODO: Remove usage of this fork when celery/celery#4355 is resolved
+git+https://github.com/cos-forks/celery@v4.1.1+cos0
 kombu==4.2.0
 amqp==2.2.2
 vine==1.1.4
