@@ -9,7 +9,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0144_pagecounter_data'),
+        ('osf', '0145_pagecounter_data'),
     ]
 
     operations = [
