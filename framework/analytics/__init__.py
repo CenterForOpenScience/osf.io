@@ -27,3 +27,8 @@ def update_counter(page, node_info=None):
     """
     from osf.models import PageCounter
     return PageCounter.update_counter(page, node_info)
+
+
+def get_basic_counters(page):
+    from osf.models import PageCounter
+    return PageCounter.get_basic_counters(page)

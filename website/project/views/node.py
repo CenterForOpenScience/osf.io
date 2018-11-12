@@ -13,7 +13,7 @@ from django.db.models import Q, OuterRef, Exists, Subquery
 
 from framework import status
 from framework.utils import iso8601format
-from framework.flask import redirect
+from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from framework.exceptions import HTTPError
@@ -255,14 +255,13 @@ def project_before_template(auth, node, **kwargs):
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_registrations=True)
 
-
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 @must_not_be_retracted_registration
-@ember_flag_is_active(features.EMBER_PROJECT_FORKS)
 def node_forks(auth, node, **kwargs):
-    return _view_project(node, auth, primary=True, embed_forks=True)
-
+    if request.path.startswith('/project/'):
+        return redirect('/' + node._id + '/forks/')
+    return use_ember_app()
 
 @must_be_valid_project
 @must_not_be_retracted_registration

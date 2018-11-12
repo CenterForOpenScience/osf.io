@@ -2,7 +2,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import pytest
-from nose.tools import *  # noqa PEP8 asserts
+from nose.tools import *  # noqa: F403
 
 from osf_tests import factories
 from tests.base import OsfTestCase

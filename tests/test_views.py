@@ -221,12 +221,6 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
         assert_equal(res.status_code, 401)
 
-        url = self.project_url + 'forks/?view_only={}'.format(anonymous_link.key)
-
-        res = self.app.get(url, expect_errors=True)
-
-        assert_equal(res.status_code, 401)
-
     def test_can_access_registrations_and_forks_with_not_anon_key(self):
         link = PrivateLinkFactory(anonymous=False)
         link.nodes.add(self.project)
@@ -234,11 +228,6 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.is_public = False
         self.project.save()
         url = self.project_url + 'registrations/?view_only={}'.format(self.link.key)
-        res = self.app.get(url)
-
-        assert_equal(res.status_code, 200)
-
-        url = self.project_url + 'forks/?view_only={}'.format(self.link.key)
         res = self.app.get(url)
 
         assert_equal(res.status_code, 200)
@@ -942,7 +931,7 @@ class TestProjectViews(OsfTestCase):
         assert_in(registration.title, res.body)
         assert_equal(res.status_code, 200)
 
-        for route in ['files', 'wiki/home', 'forks', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
+        for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
             res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
             assert_equal(res.status_code, 302, route)
             res = res.follow()
