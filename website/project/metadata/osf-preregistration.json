@@ -166,7 +166,7 @@
             "format": "textarea",
             "title": "Explanation of existing data",
             "description": "If you indicate that you will be using some data that already exist in this study, please describe the steps you have taken to assure that you are unaware of any patterns or summary statistics in the data. This may include an explanation of how access to the data has been limited, who has observed the data, or how you have avoided observing any analysis of the specific data you will use in your study.",
-            "help": " An appropriate instance of using existing data would be collecting a sample size much larger than is required for the study, using a small portion of it to conduct exploratory analysis, and then registering one particular analysis that showed promising results. After registration, conduct the specified analysis on that part of the dataset that had not been investigated by the researcher up to that point. <br /><br /> How responses will be evaluated: Both confirmatory (hypothesis testing) and exploratory (hypothesis generating) analysis contribute to scientific progress, and do so best when it is clear which is which.  OSF Preregistration stimulates experience with preregistration of analysis plans for hypothesis testing, and transparency about the distinction between confirmatory and exploratory analysis. Research plans using existing data present unique challenges for hypothesis testing because observation of data can influence subsequent analysis plans of the same data. This can produce a gray area between confirmatory and exploratory analysis.",
+            "help": " An appropriate instance of using existing data would be collecting a sample size much larger than is required for the study, using a small portion of it to conduct exploratory analysis, and then registering one particular analysis that showed promising results. After registration, conduct the specified analysis on that part of the dataset that had not been investigated by the researcher up to that point. <br /><br /> How responses will be evaluated: Both confirmatory (hypothesis testing) and exploratory (hypothesis generating) analysis contribute to scientific progress, and do so best when it is clear which is which.  OSF Preregistration stimulates experience with preregistration of analysis plans for hypothesis testing, and transparency about the distinction between confirmatory and exploratory analysis. Research plans using existing data present unique challenges for hypothesis testing because observation of data can influence subsequent analysis plans of the same data. This can produce a gray area between confirmatory and exploratory analysis."
         }, {
             "qid": "q7",
             "nav": "Data collection procedures",
@@ -203,7 +203,7 @@
             "format": "textarea",
             "title": "Sample size rationale",
             "description": "This could include a power analysis or an arbitrary constraint such as time, money, or personnel.",
-            "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability. <br /><br /> How responses will be evaluated: This gives you an opportunity to specifically state how the sample size will be determined. A wide range of possible answers is acceptable; remember that transparency is more important than principled justifications. If you state any reason for a sample size upfront, it is better than stating no reason and leaving the reader to “fill in the blanks.” Acceptable rationales include: a power analysis, an arbitrary number of subjects, or a number based on time or monetary constraints.",
+            "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability. <br /><br /> How responses will be evaluated: This gives you an opportunity to specifically state how the sample size will be determined. A wide range of possible answers is acceptable; remember that transparency is more important than principled justifications. If you state any reason for a sample size upfront, it is better than stating no reason and leaving the reader to “fill in the blanks.” Acceptable rationales include: a power analysis, an arbitrary number of subjects, or a number based on time or monetary constraints."
         }, {
             "qid": "q10",
             "nav": "Stopping rule",
@@ -211,7 +211,7 @@
             "type": "string",
             "format": "textarea",
             "description": "If your data collection procedures do not give you full control over your exact sample size, specify how you will decide when to terminate your data collection. ",
-            "help": "We will post participant sign-up slots by week on the preceding Friday night, with 20 spots posted per week. We will post 20 new slots each week if, on that Friday night, we are below 320 participants. <br /><br /> How responses will be evaluated: You may specify a stopping rule based on p-values only in the specific case of sequential analyses with pre-specified checkpoints, alphas levels, and stopping rules. Unacceptable rationales include stopping based on p-values if checkpoints and stopping rules are not specified. If you have control over your sample size, then including a stopping rule is not necessary, though it must be clear in this question or a previous question how an exact sample size is attained.",
+            "help": "We will post participant sign-up slots by week on the preceding Friday night, with 20 spots posted per week. We will post 20 new slots each week if, on that Friday night, we are below 320 participants. <br /><br /> How responses will be evaluated: You may specify a stopping rule based on p-values only in the specific case of sequential analyses with pre-specified checkpoints, alphas levels, and stopping rules. Unacceptable rationales include stopping based on p-values if checkpoints and stopping rules are not specified. If you have control over your sample size, then including a stopping rule is not necessary, though it must be clear in this question or a previous question how an exact sample size is attained."
         }]
     }, {
         "id": "page4",
@@ -228,7 +228,7 @@
                 {
                     "id": "question",
                     "type": "string",
-                    "format": "textarea",
+                    "format": "textarea"
                 },
                 {
                     "id": "uploader",
@@ -267,7 +267,7 @@
                 {
                     "id": "question",
                     "type": "string",
-                    "format": "textarea",
+                    "format": "textarea"
                 },
                 {
                     "id": "uploader",
