@@ -11,13 +11,13 @@ $(document).ready(function(){
     var index = 0;
     for (var i = 0; i < project_file_list.length; i++) {
         var file_list = project_file_list[i].error_list;
-        var provider_tr = '<tr><td colspan="4">' + project_file_list[i].provider + '</td></tr>';
+        var provider_tr = '<tr><td colspan="5"><b>' + project_file_list[i].provider + '</b></td></tr>';
         $(provider_tr).appendTo($('#tree_timestamp_error_data'));
         for (var j = 0; j < file_list.length; j++) {
             var error_tr =
                 '<tr>' +
                 '<td class="addTimestamp">' +
-                '<input type="checkBox" id="addTimestampCheck" style="width: 13px; height: 13px;" value="' + index + '"/>&nbsp;' +
+                '<input type="checkBox" id="addTimestampCheck" style="width: 15px; height: 15px;" value="' + index + '"/>' +
                 '<td>' + file_list[j].file_path + '</td>' +
                 '<input type="hidden" id="provider" value="' + project_file_list[i].provider + '" />' +
                 '<input type="hidden" id="file_id" value="' + file_list[j].file_id + '" />' +
