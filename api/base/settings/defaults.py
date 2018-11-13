@@ -297,6 +297,7 @@ HASHIDS_SALT = 'pinkhimalayan'
 ELASTICSEARCH_DSL = {
     'default': {
         'hosts': os.environ.get('ELASTIC6_URI', '127.0.0.1:9201'),
+        'retry_on_timeout': True,
     },
 }
 
