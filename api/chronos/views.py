@@ -33,6 +33,7 @@ class ChronosJournalList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin)
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = ChronosJournalSerializer
+    model_class = ChronosJournal
 
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning

@@ -20,7 +20,7 @@ class ChronosJournalSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'chronos-journals'
 
-    filterable_fields = frozenset(['title', 'name'])
+    filterable_fields = frozenset(['title', 'name', 'id'])
 
     id = ser.CharField(source='journal_id', read_only=True)
     name = ser.CharField(read_only=True)

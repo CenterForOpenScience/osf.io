@@ -12,6 +12,8 @@ class ChronosJournal(BaseModel):
 
     raw_response = DateTimeAwareJSONField(null=False, blank=False)
 
+    primary_identifier_name = 'journal_id'
+
     def __repr__(self):
         return '<{}({} - {})>'.format(
             self.__class__.__name__,
