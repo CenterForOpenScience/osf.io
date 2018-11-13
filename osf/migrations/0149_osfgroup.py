@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 import django_extensions.db.fields
+import osf.models.base
 
 
 class Migration(migrations.Migration):
@@ -23,6 +24,7 @@ class Migration(migrations.Migration):
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('name', models.TextField()),
                 ('creator', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='osfgroups_created', to=settings.AUTH_USER_MODEL)),
+                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
             ],
             options={
                 'permissions': (('member_group', 'Has group membership'), ('manage_group', 'Can manage group membership'),),

@@ -439,3 +439,8 @@ PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
     'preprint_withdrawal_request_granted',
     subject='Your ${reviewable.provider.preprint_word} has been withdrawn',
 )
+
+GROUP_MEMBER_ADDED = Mail(
+    'group_member_added',
+    subject='You have been added as a ${permission} of the group ${group_name}',
+)

@@ -849,12 +849,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 return True
         return False
 
-    def is_admin_parent(self, user):
+    def is_admin_parent(self, user, include_group_admin=True):
+        """
+        :param user: OSFUser to check for admin permissions
+        :param bool include_group_admin: Check if a user is an admin on the parent project via a group.
+                                    Useful for checking parent permissions for non-group actions like registrations.
+        :return: bool Does the user have admin permissions on this object or its parents?
+        """
         if self.has_permission(user, 'admin', check_parent=False):
-            return True
+            ret = True
+            if not include_group_admin and not self.is_contributor(user):
+                ret = False
+            return ret
         parent = self.parent_node
         if parent:
-            return parent.is_admin_parent(user)
+            return parent.is_admin_parent(user, include_group_admin=include_group_admin)
         return False
 
     def find_readable_descendants(self, auth):
@@ -1362,8 +1371,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param parent Node: parent registration of registration to be created
         :param provider RegistrationProvider: provider to submit the registration to
         """
-        # NOTE: Admins can register child nodes even if they don't have write access them
-        if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
+        # NOTE: Admins can register child nodes even if they don't have write access them, but not if they are group admins
+        not_contributor_or_admin_parent = not self.is_contributor(auth.user) and not self.is_admin_parent(user=auth.user, include_group_admin=False)
+        cannot_edit_or_admin_parent = not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user)
+        if cannot_edit_or_admin_parent or not_contributor_or_admin_parent:
             raise PermissionsError(
                 'User {} does not have permission '
                 'to register this node'.format(auth.user._id)
