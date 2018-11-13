@@ -9,7 +9,7 @@ import unittest
 import markupsafe
 import mock
 import pytest
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from nose.tools import *  # noqa: F403
 import re
 
 from django.utils import timezone

@@ -102,7 +102,7 @@ from api.nodes.serializers import (
 )
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
-from api.registrations.serializers import RegistrationSerializer
+from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
@@ -624,6 +624,11 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
     ordering = ('-modified',)
 
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'POST'):
+            return RegistrationCreateSerializer
+        return RegistrationSerializer
+
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
     def get_queryset(self):
@@ -741,7 +746,7 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
         try:
             citation = render_citation(node=node, style=style)
         except ValueError as err:  # style requested could not be found
-            csl_name = re.findall('[a-zA-Z]+\.csl', str(err))[0]
+            csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
             raise NotFound('{} is not a known style.'.format(csl_name))
 
         return {'citation': citation, 'id': style}
@@ -1815,12 +1820,7 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
     view_name = 'linked-registrations'
 
     def get_queryset(self):
-        ret = [
-            node for node in
-            super(NodeLinkedRegistrationsList, self).get_queryset()
-            if node.is_registration
-        ]
-        return ret
+        return super(NodeLinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):

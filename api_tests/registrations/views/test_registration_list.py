@@ -1,7 +1,7 @@
 import dateutil.relativedelta
 from django.utils import timezone
 import mock
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import pytest
 from urlparse import urlparse
 
@@ -100,8 +100,8 @@ class TestRegistrationList(ApiTestCase):
             res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
         )
         assert_equal(
-            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'],
-        2)
+            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'], 2
+        )
 
     def test_exclude_nodes_from_registrations_endpoint(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -131,7 +131,11 @@ class TestRegistrationFiltering(ApiTestCase):
             is_public=True,
             creator=self.user_one)
         self.project_three = ProjectFactory(
-            title='Three', is_public=True, creator=self.user_two)
+            title='Three',
+            description='',
+            is_public=True,
+            creator=self.user_two
+        )
 
         self.private_project_user_one = ProjectFactory(
             title='Private Project User One', is_public=False, creator=self.user_one)
@@ -301,7 +305,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_equal(len(res.json.get('data')), 0)
 
     def test_filtering_tags_returns_distinct(self):
-       # regression test for returning multiple of the same file
+        # regression test for returning multiple of the same file
         self.project_one.add_tag('cat', Auth(self.user_one))
         self.project_one.add_tag('cAt', Auth(self.user_one))
         self.project_one.add_tag('caT', Auth(self.user_one))
@@ -616,7 +620,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_can_create_registration_with_specific_children(
-            self, mock_enqueue, app, user, payload_with_children, project_public,  project_public_child, project_public_excluded_sibling, project_public_grandchild, url_registrations):
+            self, mock_enqueue, app, user, payload_with_children, project_public, project_public_child, project_public_excluded_sibling, project_public_grandchild, url_registrations):
         res = app.post_json_api(url_registrations, payload_with_children, auth=user.auth)
         data = res.json['data']['attributes']
         assert res.status_code == 201
@@ -629,7 +633,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert project_public_grandchild.registrations.all().count() == 1
         assert project_public_excluded_sibling.registrations.all().count() == 0
 
-
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_400_with_bad_child_node_guid(
             self, mock_enqueue, app, user, payload_with_bad_child_node_guid, url_registrations):
@@ -637,7 +640,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Some child nodes could not be found.'
-
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_cant_register_grandchildren_without_children(
@@ -739,43 +741,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This draft registration is not created from the given node.'
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_required_top_level_questions_must_be_answered_on_draft(
-            self, mock_enqueue, app, user, project_public,
-            prereg_metadata, url_registrations):
-        prereg_schema = RegistrationSchema.objects.get(
-            name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
-
-        prereg_draft_registration = DraftRegistrationFactory(
-            initiator=user,
-            registration_schema=prereg_schema,
-            branched_from=project_public
-        )
-
-        registration_metadata = prereg_metadata(prereg_draft_registration)
-        del registration_metadata['q1']
-        prereg_draft_registration.registration_metadata = registration_metadata
-        prereg_draft_registration.save()
-
-        payload = {
-            'data': {
-                'type': 'registrations',
-                'attributes': {
-                    'registration_choice': 'immediate',
-                    'draft_registration': prereg_draft_registration._id,
-                }
-            }
-        }
-
-        res = app.post_json_api(
-            url_registrations,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'u\'q1\' is a required property'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_top_level_questions_must_be_answered_on_draft(
@@ -1085,6 +1050,38 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                 expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'This draft has already been approved and cannot be modified.'
+
+    def test_cannot_register_draft_that_has_orphan_files(
+            self, app, user, payload, draft_registration, url_registrations):
+        schema = draft_registration.registration_schema
+        schema.schema['pages'][0]['questions'][0].update({
+            u'description': u'Upload files!',
+            u'format': u'osf-upload-open',
+            u'qid': u'qwhatever',
+            u'title': u'Upload an analysis script with clear comments',
+            u'type': u'osf-upload',
+        })
+        schema.save()
+
+        draft_registration.registration_metadata = {
+            'qwhatever': {
+                'value': 'file 1',
+                'extra': [{
+                    'nodeId': 'badid',
+                    'selectedFileName': 'file 1',
+                }]
+            }
+        }
+        draft_registration.save()
+        res = app.post_json_api(
+            url_registrations,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'All files attached to this form must be registered to complete the' \
+                                                  ' process. The following file(s) are attached, but are not part of' \
+                                                  ' a component being registered: file 1'
 
 
 @pytest.mark.django_db

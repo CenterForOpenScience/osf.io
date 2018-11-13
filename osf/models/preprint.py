@@ -888,7 +888,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def bulk_update_search(cls, preprints, index=None):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_preprint, index=index, bulk=True, async=False)
+            serialize = functools.partial(search.search.update_preprint, index=index, bulk=True, async_update=False)
             search.search.bulk_update_nodes(serialize, preprints, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
@@ -897,7 +897,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def update_search(self):
         from website import search
         try:
-            search.search.update_preprint(self, bulk=False, async=True)
+            search.search.update_preprint(self, bulk=False, async_update=True)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()

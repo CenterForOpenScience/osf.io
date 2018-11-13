@@ -25,12 +25,12 @@ def search(query, index=None, doc_type=None, raw=None):
     return search_engine.search(query, index=index, doc_type=doc_type, raw=raw)
 
 @requires_search
-def update_node(node, index=None, bulk=False, async=True, saved_fields=None):
+def update_node(node, index=None, bulk=False, async_update=True, saved_fields=None):
     kwargs = {
         'index': index,
         'bulk': bulk
     }
-    if async:
+    if async_update:
         node_id = node._id
         # We need the transaction to be committed before trying to run celery tasks.
         # For example, when updating a Node's privacy, is_public must be True in the
@@ -45,12 +45,12 @@ def update_node(node, index=None, bulk=False, async=True, saved_fields=None):
         return search_engine.update_node(node, **kwargs)
 
 @requires_search
-def update_preprint(preprint, index=None, bulk=False, async=True, saved_fields=None):
+def update_preprint(preprint, index=None, bulk=False, async_update=True, saved_fields=None):
     kwargs = {
         'index': index,
         'bulk': bulk
     }
-    if async:
+    if async_update:
         preprint_id = preprint._id
         # We need the transaction to be committed before trying to run celery tasks.
         if settings.USE_CELERY:
@@ -83,9 +83,9 @@ def update_contributors_async(user_id):
         search_engine.update_contributors_async(user_id)
 
 @requires_search
-def update_user(user, index=None, async=True):
+def update_user(user, index=None, async_update=True):
     index = index or settings.ELASTIC_INDEX
-    if async:
+    if async_update:
         user_id = user.id
         if settings.USE_CELERY:
             enqueue_task(search_engine.update_user_async.s(user_id, index=index))

@@ -748,7 +748,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 split_filename = splitext(merging_user_file.name)
                 name_without_extension = split_filename[0]
                 extension = split_filename[1]
-                found_digit_in_parens = re.findall('(?<=\()(\d)(?=\))', name_without_extension)
+                found_digit_in_parens = re.findall(r'(?<=\()(\d)(?=\))', name_without_extension)
                 if found_digit_in_parens:
                     found_digit = int(found_digit_in_parens[0])
                     digit = found_digit + 1

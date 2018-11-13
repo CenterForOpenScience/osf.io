@@ -4,7 +4,7 @@ import json
 import furl
 import responses
 from django.utils import timezone
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 
 from framework.auth.core import Auth
 
@@ -29,8 +29,7 @@ def prepare_mock_wb_response(
         folder=True,
         path='/',
         method=responses.GET,
-        status_code=200
-    ):
+        status_code=200):
     """Prepare a mock Waterbutler response with responses library.
 
     :param Node node: Target node.
@@ -430,7 +429,7 @@ class TestNodeFilesList(ApiTestCase):
             responses.Response(
                 responses.GET,
                 wb_url,
-                json={'bad' : 'json'},
+                json={'bad': 'json'},
                 status=418
             )
         )

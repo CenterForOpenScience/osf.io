@@ -70,9 +70,6 @@ EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
 ANONYMIZED_TITLES = ['Authors']
 
 LOAD_BALANCER = False
-PROXY_ADDRS = []
-
-USE_POSTGRES = True
 
 # May set these to True in local.py for development
 DEV_MODE = False
@@ -98,11 +95,9 @@ EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
-ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
-ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
@@ -131,9 +126,6 @@ SESSION_COOKIE_HTTPONLY = True
 # local path to private key and cert for local development using https, overwrite in local.py
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
-
-# Change if using `scripts/cron.py` to manage crontab
-CRON_USER = None
 
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
@@ -189,28 +181,12 @@ MAILGUN_API_KEY = None
 # Use Celery for file rendering
 USE_CELERY = True
 
-# File rendering timeout (in ms)
-MFR_TIMEOUT = 30000
-
 # TODO: Override in local.py in production
 DB_HOST = 'localhost'
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
-DB_NAME = 'osf20130903'
-DB_USER = None
-DB_PASS = None
-
-# Cache settings
-SESSION_HISTORY_LENGTH = 5
-SESSION_HISTORY_IGNORE_RULES = [
-    lambda url: '/static/' in url,
-    lambda url: 'favicon' in url,
-    lambda url: url.startswith('/api/'),
-]
 
 # TODO: Configuration should not change between deploys - this should be dynamic.
-CANONICAL_DOMAIN = 'openscienceframework.org'
 COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
-SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
 # If you change COMMENT_MAXLENGTH, make sure you create a corresponding migration.
@@ -219,7 +195,6 @@ COMMENT_MAXLENGTH = 1000
 # Profile image options
 PROFILE_IMAGE_LARGE = 70
 PROFILE_IMAGE_MEDIUM = 40
-PROFILE_IMAGE_SMALL = 20
 # Currently (8/21/2017) only gravatar supported.
 PROFILE_IMAGE_PROVIDER = 'gravatar'
 
@@ -276,18 +251,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
-    ADDONS_DESCRIPTION = addon_settings['addons_description']
-    ADDONS_URL = addon_settings['addons_url']
     ADDONS_DEFAULT = addon_settings['addons_default']
-
-ADDON_CATEGORIES = [
-    'documentation',
-    'storage',
-    'bibliography',
-    'other',
-    'security',
-    'citations',
-]
 
 SYSTEM_ADDED_ADDONS = {
     'user': [],
@@ -313,12 +277,6 @@ SENTRY_DSN_JS = None
 
 MISSING_FILE_NAME = 'untitled'
 
-# Project Organizer
-ALL_MY_PROJECTS_ID = '-amp'
-ALL_MY_REGISTRATIONS_ID = '-amr'
-ALL_MY_PROJECTS_NAME = 'All my projects'
-ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
-
 # Most Popular and New and Noteworthy Nodes
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
 POPULAR_LINKS_REGISTRATIONS = None  # TODO Override in local.py in production.
@@ -343,7 +301,6 @@ DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
-WATERBUTLER_ADDRS = ['127.0.0.1']
 
 ####################
 #   Identifiers   #
@@ -356,8 +313,6 @@ DOI_FORMAT = '{prefix}/osf.io/{guid}'
 # ezid
 EZID_DOI_NAMESPACE = 'doi:10.5072'
 EZID_ARK_NAMESPACE = 'ark:99999'
-EZID_USERNAME = None
-EZID_PASSWORD = None
 
 # datacite
 DATACITE_USERNAME = None
@@ -391,7 +346,6 @@ MFR_SERVER_URL = 'http://localhost:7778'
 ARCHIVE_PROVIDER = 'osfstorage'
 
 MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
-MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
 
@@ -1869,9 +1823,6 @@ SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 
 SHARE_API_TOKEN = None
 
-# number of nodes that need to be affiliated with an institution before the institution logo is shown on the dashboard
-INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
-
 # refresh campaign every 5 minutes
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
 
@@ -1899,8 +1850,6 @@ SITEMAP_STATIC_URLS = [
 
 SITEMAP_USER_CONFIG = OrderedDict([('loc', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_NODE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'monthly'), ('priority', '0.5')])
-SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
-SITEMAP_REVIEWS_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
 SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 

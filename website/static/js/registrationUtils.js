@@ -756,14 +756,18 @@ Draft.prototype.register = function(url, data) {
     ).done(function(response) {
         window.location.assign(response.data.links.html);
     }).fail(function(response) {
+        var errorMessage;
+        if(response.status === 400){
+            errorMessage = response.responseJSON.errors[0].detail;
+        } else {
+            errorMessage = language.registerFail;
+        }
+
         bootbox.alert({
             title: 'Registration failed',
-            message: language.registerFail,
+            message: errorMessage,
             callback: function() {
                 $osf.unblock();
-                if (self.urls.registrations) {
-                    window.location.assign(self.urls.registrations);
-                }
             },
             buttons: {
                 ok: {

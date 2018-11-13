@@ -268,7 +268,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
             try:
                 citation = render_citation(node=preprint, style=style)
             except ValueError as err:  # style requested could not be found
-                csl_name = re.findall('[a-zA-Z]+\.csl', str(err))[0]
+                csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
                 raise NotFound('{} is not a known style.'.format(csl_name))
 
             return {'citation': citation, 'id': style}

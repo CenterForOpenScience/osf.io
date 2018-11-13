@@ -42,9 +42,9 @@ def validate_bucket_name(name):
     http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html#bucketnamingrules
     The laxer rules for US East (N. Virginia) are not supported.
     """
-    label = '[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])?'
+    label = r'[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])?'
     validate_name = re.compile('^' + label + '(?:\\.' + label + ')*$')
-    is_ip_address = re.compile('^[0-9]+(?:\.[0-9]+){3}$')
+    is_ip_address = re.compile(r'^[0-9]+(?:\.[0-9]+){3}$')
     return (
         len(name) >= 3 and len(name) <= 63 and bool(validate_name.match(name)) and not bool(is_ip_address.match(name))
     )

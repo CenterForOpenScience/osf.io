@@ -2156,7 +2156,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
@@ -2573,7 +2573,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
