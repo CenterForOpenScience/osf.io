@@ -1567,11 +1567,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         forked.root = None  # Recompute root on save
 
-        forked.save()
-
-        # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
-
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
@@ -1587,11 +1582,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Clone each log from the original node for this fork.
         self.clone_logs(forked)
-        forked.refresh_from_db()
 
         # After fork callback
         for addon in original.get_addons():
             addon.after_fork(original, forked, user)
+
+        forked.save()
+
+        # Need to call this after save for the notifications to be created with the _primary_key
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
 
         return forked
 
