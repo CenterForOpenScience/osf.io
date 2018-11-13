@@ -3256,6 +3256,25 @@ class TestAuthViews(OsfTestCase):
         users = OSFUser.objects.filter(username=email)
         assert_equal(users.count(), 0)
 
+    def test_register_email_already_registered(self):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake_email(), fake.password()
+        existing_user = UserFactory(
+            username=email,
+        )
+        res = self.app.post_json(
+            url, {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password
+            },
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.CONFLICT)
+        users = OSFUser.objects.filter(username=email)
+        assert_equal(users.count(), 1)
+
     def test_register_blacklisted_email_domain(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), 'bad@mailinator.com', 'agreatpasswordobviously'
