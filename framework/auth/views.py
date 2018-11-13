@@ -832,7 +832,7 @@ def register_user(**kwargs):
         framework_auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(
-            http.BAD_REQUEST,
+            http.CONFLICT,
             data=dict(
                 message_long=language.ALREADY_REGISTERED.format(
                     email=markupsafe.escape(request.json['email1'])
