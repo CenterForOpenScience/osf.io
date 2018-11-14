@@ -34,10 +34,10 @@
             "required": true
         }, {
             "qid": "q3",
-            "nav": "Research Questions",
+            "nav": "Description",
             "type": "string",
             "format": "textarea",
-            "title": "Research Questions",
+            "title": "Description",
             "description": "Please list each research question included in this study.",
             "help": "Though there is strong evidence to suggest that sugar affects taste preferences, the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe to determine if the effect exists in this pastry. <br /><br />How responses will be evaluated: The type of submissions for this question will vary widely by discipline, and we cannot determine if the question is worth asking. However, questions that are excessively vague so as to make understanding later sections difficult are not appropriate. For some studies, the research questions and hypotheses are extremely similar, so overlap between this and the subsequent question is expected.",
             "required": true
