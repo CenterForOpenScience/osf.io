@@ -35,7 +35,7 @@
             "type": "string",
             "format": "textarea",
             "title": "Description",
-            "description": "Please list each research question included in this study.",
+            "description": "Please give a brief description of your study, including some background, the purpose of the of the study, or broad research questions.",
             "help": "Though there is strong evidence to suggest that sugar affects taste preferences, the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe to determine if the effect exists in this pastry. <br /><br />How responses will be evaluated: The type of submissions for this question will vary widely by discipline, and we cannot determine if the question is worth asking. However, questions that are excessively vague so as to make understanding later sections difficult are not appropriate. For some studies, the research questions and hypotheses are extremely similar, so overlap between this and the subsequent question is expected.",
             "required": true
         }, {
@@ -44,7 +44,7 @@
             "type": "string",
             "format": "textarea",
             "title": "Hypotheses",
-            "description": "For each of the research questions listed in the previous section, provide one or multiple specific and testable hypotheses. Please state if the hypotheses are directional or non-directional. If directional, state the direction. A predicted effect is also appropriate here.",
+            "description": "List specific, concise, and testable hypotheses. Please state if the hypotheses are directional or non-directional. If directional, state the direction. A predicted effect is also appropriate here. If a specific interaction or moderation is important to your research, you can list that as a separate hypothesis.",
             "help": "If taste affects preference, then mean preference indices will be higher with higher concentrations of sugar. <br /><br /> How responses will be evaluated:  In this section, the submission should provide a prediction as to the outcome of the study or a statement that no specific prediction is expected.",
             "required": true
         }]
@@ -98,7 +98,7 @@
             "nav": "Study design",
             "type": "object",
             "title": "Study design",
-            "description": "Describe your study design. Examples include two-group, factorial, randomized block, and repeated measures. Is it a between (unpaired), within-subject (paired), or mixed design? Describe any counterbalancing required. Typical study designs for observation studies include cohort, cross sectional, and case-control studies. ",
+            "description": "Describe your study design. Examples include two-group, factorial, randomized block, and repeated measures. Is it a between (unpaired), within-subject (paired), or mixed design? Describe any counterbalancing required. Typical study designs for observation studies include cohort, cross sectional, and case-control studies.",
             "help": "We have a between subjects design with 1 factor (sugar by mass) with 4 levels. <br /><br /> How responses will be evaluated: This question has a variety of possible answers. The key is for a researcher to be as detailed as is necessary given the specifics of their design. Be careful to determine if every parameter has been specified in the description of the study design. There may be some overlap between this question and the following questions. That is OK, as long as sufficient detail is given in one of the areas to provide all of the requested information. For example, if the study design describes a complete factorial, 2 X 3 design and the treatments and levels are specified previously, you do not have to repeat that information.",
             "properties": [
                 {
