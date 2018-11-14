@@ -25,10 +25,7 @@
         }, {
             "qid": "q2",
             "nav": "Authors",
-            "type": "string",
             "title": "Authors",
-            "description": "The author who submits the preregistration is the recipient of the award money and must also be an author of the published manuscript. Additional authors may be added or removed at any time.",
-            "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
             "type": "osf-author-import",
             "format": "textarea",
             "required": true
