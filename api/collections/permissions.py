@@ -94,15 +94,15 @@ class CollectionWriteOrPublicForRelationshipPointers(permissions.BasePermission)
 
         if not has_collection_auth:
             return False
-        pointer_nodes = []
+        pointer_objects = []
         for pointer in request.data.get('data', []):
-            node = AbstractNode.load(pointer['id']) or Preprint.load(pointer['id'])
-            if not node:
+            obj = AbstractNode.load(pointer['id']) or Preprint.load(pointer['id'])
+            if not obj:
                 raise NotFound(detail='Node with id "{}" was not found'.format(pointer['id']))
-            pointer_nodes.append(node)
+            pointer_objects.append(obj)
         has_pointer_auth = True
         # TODO: is this necessary? get_object checks can_view
-        for pointer in pointer_nodes:
+        for pointer in pointer_objects:
             if not pointer.can_view(auth):
                 has_pointer_auth = False
                 break

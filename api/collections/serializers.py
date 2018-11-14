@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
-from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider, Preprint
+from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider
 from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
@@ -355,15 +355,12 @@ class CollectedRegistrationsRelationshipSerializer(CollectedAbstractNodeRelation
     _abstract_node_subclass = Registration
 
 class CollectedPreprintsRelationshipSerializer(CollectedAbstractNodeRelationshipSerializer, LinkedPreprintsRelationshipSerializer):
-    _abstract_node_subclass = Preprint
 
     def make_instance_obj(self, obj):
         # Convenience method to format instance based on view's get_object
         return {
             'data':
-            list(self._abstract_node_subclass.objects.filter(
-                guids__in=obj.guid_links.all(), deleted__isnull=True,
-            )),
+                list(self.context['view'].collection_preprints(obj, user=get_user_auth(self.context['request']).user)),
             'self': obj,
         }
 

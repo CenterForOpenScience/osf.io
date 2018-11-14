@@ -64,8 +64,6 @@ class CollectionMixin(object):
             self.check_object_permissions(self.request, collection)
         return collection
 
-
-class CollectionPreprintsMixin(object):
     def collection_preprints(self, collection, user):
         return Preprint.objects.can_view(
             Preprint.objects.filter(
@@ -74,7 +72,7 @@ class CollectionPreprintsMixin(object):
         )
 
 
-class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, CollectionPreprintsMixin):
+class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
     """Organizer Collections organize projects and components. *Writeable*.
 
     Paginated list of Project Organizer Collections ordered by their `modified`.
@@ -206,7 +204,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
         instance.delete()
 
 
-class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin, CollectionPreprintsMixin):
+class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     """Details about Organizer Collections. *Writeable*.
 
     The Project Organizer is a tool to allow the user to make Collections of projects, components, and registrations
@@ -528,7 +526,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
         return res
 
 
-class LinkedPreprintsList(BaseLinkedList, CollectionPreprintsMixin, CollectionMixin):
+class LinkedPreprintsList(BaseLinkedList, CollectionMixin):
     """List of preprints linked to this collection. *Read-only*.
     """
     permission_classes = (
@@ -817,7 +815,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
                 collection.remove_object(current_pointers[val['id']])
 
 
-class CollectionLinkedPreprintsRelationship(CollectionLinkedNodesRelationship, CollectionPreprintsMixin):
+class CollectionLinkedPreprintsRelationship(CollectionLinkedNodesRelationship):
     """ Relationship Endpoint for Collection -> Linked Preprints relationships
     """
     permission_classes = (
