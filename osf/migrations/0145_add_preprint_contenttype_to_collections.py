@@ -24,7 +24,7 @@ def add_preprint_type_to_collections(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0143_merge_20181023_1807'),
+        ('osf', '0144_merge_20181113_1420'),
     ]
 
     operations = [
