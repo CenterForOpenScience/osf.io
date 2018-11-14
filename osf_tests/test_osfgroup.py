@@ -56,6 +56,7 @@ class TestOSFGroup:
 
         assert manager in osf_group.managers
         assert manager in osf_group.members
+        assert manager not in osf_group.members_only
 
     @mock.patch('osf.models.osf_group.mails.send_mail')
     def test_make_manager(self, mock_send_mail, manager, member, user_two, user_three, osf_group):
@@ -225,6 +226,14 @@ class TestOSFGroup:
         assert not Group.objects.filter(name=member_group_name).exists()
 
         assert manager_group_name not in manager.groups.values_list('name', flat=True)
+
+    def test_remove_group_node_perms(self, manager, member, osf_group, project):
+        project.add_osf_group(osf_group, 'admin')
+        assert project.has_permission(member, 'admin') is True
+
+        osf_group.remove_group(Auth(manager))
+
+        assert project.has_permission(member, 'admin') is False
 
     def test_user_groups_property(self, manager, member, osf_group):
         assert osf_group in manager.osf_groups

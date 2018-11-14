@@ -12,6 +12,7 @@ from osf.models import AbstractNode, OSFUser
 from osf.utils.permissions import ADMIN
 from osf.utils import sanitize
 from website import settings, mails
+from website.util import api_v2_url
 
 MEMBER = 'member'
 MANAGER = 'manager'
@@ -64,7 +65,14 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
 
     @property
     def members(self):
+        # Actually a queryset of all users that belong to the OSFGroup since
+        # both members and managers are added to the Member Group
         return self.member_group.user_set.all()
+
+    @property
+    def members_only(self):
+        # Users that are truly members-only and not managers
+        return self.members.exclude(id__in=self.managers)
 
     @property
     def nodes(self):
@@ -73,7 +81,17 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         """
         return get_objects_for_group(self.member_group, 'read_node', AbstractNode)
 
+    @property  # TODO Separate out for submodels
+    def absolute_api_v2_url(self):
+        path = '/osf_groups/{}/'.format(self._id)
+        return api_v2_url(path)
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
     def is_member(self, user):
+        # Checking group membership instead of permissions, because unregistered
+        # members have no perms
         return user in self.members
 
     def _require_manager_permission(self, auth=None):
@@ -82,7 +100,7 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
 
     def _enforce_one_manager(self, user):
         if len(self.managers) == 1 and self.managers[0] == user:
-            raise ValueError('Group must have at least one manager')
+            raise ValueError('Group must have at least one manager.')
 
     def send_member_email(self, user, permission, auth=None):
         # TODO - add a throttle?
