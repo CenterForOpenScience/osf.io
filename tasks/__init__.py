@@ -623,13 +623,6 @@ def clear_sessions(ctx, months=1, dry_run=False):
     clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
 
 
-@task
-def end_prereg_challenge(ctx, dry_run=False):
-    from website.app import init_app
-    init_app(routes=False, set_backends=True)
-    from scripts.remove_after_use import end_prereg_challenge
-    end_prereg_challenge(dry_run=dry_run)
-
 # Release tasks
 
 @task
