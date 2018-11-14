@@ -15,10 +15,10 @@
 <%def name="content()">
 
     <!-- Main jumbotron for a primary marketing message or call to action -->
-    <div id="home-hero">
+    <div id="home-hero" style="height: 600px">
       <div class="container text-center">
         <div class="visible-xs-block visible-sm-block visible-md-block network-bg"></div>
-        <h1 class="hero-brand">Open Science Framework</h1>
+        <h1 class="hero-brand">GakuNin RDM</h1>
         <h3 class="hero-tagline">A scholarly commons to connect the entire research cycle</h3>
 
         <div id="canvas-container">
@@ -36,13 +36,13 @@
           <div class="circle" id="circle-8"><span></span></div>
         </div>
 
-        <div id="hero-signup" class="container">
+        <div id="hero-signup" class="container" style="visibility: hidden">
           <div class="row">
             <div class="col-sm-6 hidden-xs">
               <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw" aria-label="OSF YouTube Video"><i class="icon icon-play"></i></a>
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
-            <div class="col-sm-6 sign-up-div">
+            <div class="col-sm-6 sign-up-div" style="visibility: hidden">
               <h2>Free and open source. Start now.</h2>
 
              <div id="signUp" class="anchor"></div>
@@ -95,7 +95,7 @@
                               <p data-bind="html: message, attr: {class: messageClass}" class=""></p>
                           </div>
                           <!-- ko ifnot: submitted -->
-                          <div>
+                          <div style="visibility: hidden">
                               <small> By clicking "Sign up free", you agree to our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</small>
                           </div>
                           <!-- /ko -->
@@ -104,7 +104,7 @@
                                   <div class="g-recaptcha" style="display: inline-block; margin: 0 auto;" data-sitekey="${recaptcha_site_key}"></div>
                               </div>
                           %endif
-                          <div>
+                          <div style="visibility: hidden">
                               <button type="submit" class="btn btn-warning m-t-sm" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
                           </div>
                   </form>
@@ -118,6 +118,7 @@
       </div>
     </div>
 
+<!--
     <div class="container grey-pullout space-top space-bottom">
 
       <div class="row space-bottom">
@@ -336,6 +337,7 @@
 
     </div>
 
+-->
 
 </%def>
 

@@ -985,6 +985,17 @@ def main(env):
                 'domains': ['openidp.nii.ac.jp'],
                 'email_domains': ['openidp.nii.ac.jp'],
             },
+            {
+                '_id': 'tiqr',
+                'name': 'tiQr',
+                'description': 'tiQr',
+                'banner_name': 'tiQr-logo.png',
+                'logo_name': 'tiQr-logo.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.rdm.nii.ac.jp/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component(url + '/goodbye')),
+                'domains': ['rdm.nii.ac.jp'],
+                'email_domains': ['rdm.nii.ac.jp'],
+            },
         ]
 
     init_app(routes=False)
