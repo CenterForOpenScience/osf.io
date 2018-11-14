@@ -45,7 +45,9 @@
         <ul class="nav navbar-nav">
             % if service_name == 'HOME':
                 % if user_name:
+<!--
                     <li><a data-bind="click: trackClick.bind($data, 'MyQuickFiles')" href="${domain}${user_id}/quickfiles/">My Quick Files</a></li>
+-->
                     <li><a data-bind="click: trackClick.bind($data, 'MyProjects')" href="${domain}myprojects/">My Projects</a></li>
                 % endif
                     <li><a id="navbar-search" data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">Search</a></li>
@@ -92,7 +94,9 @@
 		%if not embedded_ds:
                 <li class="dropdown sign-in">
                     <div class="col-sm-12">
+<!--
                         <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${web_url_for('auth_register')}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
+-->
                         <a data-bind="click: trackClick.bind($data, 'SignIn')" href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign In</a>
                     </div>
                 </li>
