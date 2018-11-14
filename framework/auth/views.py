@@ -552,6 +552,7 @@ def external_login_confirm_email_get(auth, uid, token):
             mail=mails.WELCOME,
             mimetype='html',
             user=user,
+            domain=settings.DOMAIN,
             osf_support_email=settings.OSF_SUPPORT_EMAIL,
             storage_flag_is_active=storage_i18n_flag_active(),
         )
