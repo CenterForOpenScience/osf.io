@@ -20,6 +20,8 @@ def main(dry_run=True):
 
     switch = Switch.objects.get(name='osf_preregistration')
     switch.active = True
+    prereg_challenge_schema = RegistrationSchema.objects.get(name='Prereg Challenge')
+    prereg_challenge_schema.active = False
     prereg_schema = RegistrationSchema.objects.get(name='OSF Preregistration')
     prereg_schema.active = True
     if dry_run:
@@ -27,6 +29,7 @@ def main(dry_run=True):
     else:
         switch.save()
         prereg_schema.save()
+        prereg_challenge_schema.save()
 
 
 @celery_app.task(name='scripts.remove_after_use.end_prereg_challenge')
