@@ -19,7 +19,7 @@
             "type": "string",
             "format": "text",
             "title": "Title",
-            "description": "Provide the working title of your study. It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",
+            "description": "Provide the working title of your study. It may be the same title that you submit for publication of your final manuscript, but it is not a requirement.",
             "help": "Effect of sugar on brownie tastiness. <br /><br />How responses will be evaluated: The title should be a specific and informative description of a project. Vague titles such as 'Fruit fly preregistration plan' are not appropriate.",
             "required": true
         }, {
