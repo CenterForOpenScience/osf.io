@@ -52,7 +52,7 @@
         "title": "Design Plan",
         "description": "In this section, you will be asked to describe the overall design of your study. Remember that this research plan is designed to register a single study, so if you have multiple experimental designs, please complete a separate preregistration.",
         "questions": [{
-            "qid": "q14",
+            "qid": "q5",
             "nav": "Study type",
             "title": "Study type",
             "description": "Please check one of the following statements",
@@ -66,14 +66,7 @@
             ],
             "required": true
         }, {
-            "qid": "q15",
-            "nav": "Study Type",
-            "title": "Other",
-            "description": "Study Type (Other)",
-            "type": "string",
-            "format": "textarea"
-        }, {
-            "qid": "q16",
+            "qid": "q6",
             "nav": "Blinding",
             "title": "Blinding",
             "description": "Blinding describes who is aware of the experimental manipulations within a study. Mark all that apply.",
@@ -87,14 +80,14 @@
             ],
             "required": true
         }, {
-            "qid": "q17",
+            "qid": "q7",
             "nav": "Blinding",
             "title": "Is there any additional blinding in this study?",
             "description": "Blinding (Other)",
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q18",
+            "qid": "q8",
             "nav": "Study design",
             "type": "object",
             "title": "Study design",
@@ -114,7 +107,7 @@
                 }
             ]
         }, {
-            "qid": "q19",
+            "qid": "q9",
             "nav": "Randomization",
             "title": "Randomization",
             "description": "If you are doing a randomized study, how will you randomize, and at what level? ",
@@ -127,7 +120,7 @@
         "title": "Sampling Plan",
         "description": "In this section we’ll ask you to describe how you plan to collect samples, as well as the number of samples you plan to collect and your rationale for this decision. Please keep in mind that the data described in this section should be the actual data used for analysis, so if you are using a subset of a larger dataset, please describe the subset that will actually be used in your study.",
         "questions": [{
-            "qid": "q5",
+            "qid": "q10",
             "nav": "Existing Data",
             "title": "Existing Data",
             "description": "Preregistration is designed to make clear the distinction between confirmatory tests, specified prior to seeing the data, and exploratory analyses conducted after observing the data. Therefore, creating a research plan in which existing data will be used presents unique challenges. Please select the description that best describes your situation. Please do not hesitate to contact us if you have questions about how to answer this question (prereg@cos.io).",
@@ -157,7 +150,7 @@
             ],
             "required": true
         }, {
-            "qid": "q6",
+            "qid": "q11",
             "nav": "Explanation",
             "type": "string",
             "format": "textarea",
@@ -165,7 +158,7 @@
             "description": "If you indicate that you will be using some data that already exist in this study, please describe the steps you have taken to assure that you are unaware of any patterns or summary statistics in the data. This may include an explanation of how access to the data has been limited, who has observed the data, or how you have avoided observing any analysis of the specific data you will use in your study.",
             "help": " An appropriate instance of using existing data would be collecting a sample size much larger than is required for the study, using a small portion of it to conduct exploratory analysis, and then registering one particular analysis that showed promising results. After registration, conduct the specified analysis on that part of the dataset that had not been investigated by the researcher up to that point. <br /><br /> How responses will be evaluated: Both confirmatory (hypothesis testing) and exploratory (hypothesis generating) analysis contribute to scientific progress, and do so best when it is clear which is which.  OSF Preregistration stimulates experience with preregistration of analysis plans for hypothesis testing, and transparency about the distinction between confirmatory and exploratory analysis. Research plans using existing data present unique challenges for hypothesis testing because observation of data can influence subsequent analysis plans of the same data. This can produce a gray area between confirmatory and exploratory analysis."
         }, {
-            "qid": "q7",
+            "qid": "q12",
             "nav": "Data collection procedures",
             "type": "object",
             "title": "Data collection procedures",
@@ -185,7 +178,7 @@
                 }
             ]
         }, {
-            "qid": "q8",
+            "qid": "q13",
             "nav": "Sample size",
             "type": "string",
             "format": "textarea",
@@ -194,7 +187,7 @@
             "help": "Our target sample size is 280 participants. We will attempt to recruit up to 320, assuming that not all will complete the total task. <br /><br /> How responses will be evaluated: For some studies, this will simply be the number of samples or the number of clusters. For others, this could be an expected range, minimum, or maximum number.",
             "required": true
         }, {
-            "qid": "q9",
+            "qid": "q14",
             "nav": "Sample size rationale",
             "type": "string",
             "format": "textarea",
@@ -202,7 +195,7 @@
             "description": "This could include a power analysis or an arbitrary constraint such as time, money, or personnel.",
             "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability. <br /><br /> How responses will be evaluated: This gives you an opportunity to specifically state how the sample size will be determined. A wide range of possible answers is acceptable; remember that transparency is more important than principled justifications. If you state any reason for a sample size upfront, it is better than stating no reason and leaving the reader to “fill in the blanks.” Acceptable rationales include: a power analysis, an arbitrary number of subjects, or a number based on time or monetary constraints."
         }, {
-            "qid": "q10",
+            "qid": "q15",
             "nav": "Stopping rule",
             "title": "Stopping rule",
             "type": "string",
@@ -215,7 +208,7 @@
         "title": "Variables",
         "description": "In this section you can describe all variables (both manipulated and measured variables) that will later be used in your confirmatory analysis plan. In your analysis plan, you will have the opportunity to describe how each variable will be used. If you have variables which you are measuring for exploratory analyses, you are not required to list them, though you are permitted to do so.",
         "questions": [{
-            "qid": "q11",
+            "qid": "q16",
             "nav": "Manipulated",
             "type": "object",
             "title": "Manipulated variables",
@@ -234,7 +227,7 @@
                 }
             ]
         }, {
-            "qid": "q12",
+            "qid": "q17",
             "nav": "Measured",
             "type": "object",
             "title": "Measured variables",
@@ -254,7 +247,7 @@
                 }
             ]
         }, {
-            "qid": "q13",
+            "qid": "q18",
             "nav": "Indices",
             "type": "object",
             "title": "Indices",
@@ -279,7 +272,7 @@
         "type": "object",
         "description": "You may describe one or more confirmatory analysis in this preregistration. Please remember that all analyses specified below must be reported in the final article, and any additional analyses must be noted as exploratory or hypothesis-generating.<br /><br />A confirmatory analysis plan must state up front which variables are predictors (independent) and which are the outcomes (dependent), otherwise it is an exploratory analysis. You are allowed to describe any exploratory work here, but a clear confirmatory analysis is required.",
         "questions": [{
-            "qid": "q20",
+            "qid": "q19",
             "nav": "Statistical models",
             "type": "object",
             "title": "Statistical models",
@@ -296,11 +289,10 @@
                     "id": "uploader",
                     "type": "osf-upload",
                     "format": "osf-upload-toggle",
-                    "description": "You may attach up to 5 file(s) to this question, such as analysis scripts. You may attach files that you already have in this OSF project, or upload a new file from your computer. Uploaded files will automatically be added to this project so that they can be registered."
                 }
             ]
         }, {
-            "qid": "q21",
+            "qid": "q20",
             "nav": "Transformations",
             "title": "Transformations",
             "description": "If you plan on transforming, centering, recoding the data, or will require a coding scheme for categorical variables, please describe that process.",
@@ -308,7 +300,7 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q22",
+            "qid": "q21",
             "nav": "Inference criteria",
             "title": "Inference criteria",
             "description": "What criteria will you use to make inferences? Please describe the information you’ll use (e.g. specify the p-values, Bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this? ",
@@ -316,7 +308,7 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q23",
+            "qid": "q22",
             "nav": "Data exclusion",
             "title": "Data exclusion",
             "description": "How will you determine which data points or samples if any to exclude from your analyses? How will outliers be handled? Will you use any awareness check?",
@@ -324,7 +316,7 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q24",
+            "qid": "q23",
             "nav": "Missing data",
             "title": "Missing data",
             "description": "How will you deal with incomplete or missing data?",
@@ -332,7 +324,7 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q25",
+            "qid": "q24",
             "nav": "Exploratory analysis",
             "title": "Exploratory analysis",
             "description": "If you plan to explore your data set to look for unexpected differences or relationships, you may describe those tests here. An exploratory test is any test where a prediction is not made up front, or there are multiple possible tests that you are going to use. A statistically significant finding in an exploratory test is a great way to form a new confirmatory hypothesis, which could be registered at a later time.",
@@ -345,7 +337,7 @@
         "title": "Other",
         "type": "object",
         "questions": [{
-            "qid": "q26",
+            "qid": "q25",
             "nav": "Other",
             "title": "Other",
             "description": "If there is any additional information that you feel needs to be included in your preregistration, please enter it here. Literature cited, disclosures of any related work such as replications or work that uses the same data, or other context that will be helpful for future readers would be appropriate here.",
