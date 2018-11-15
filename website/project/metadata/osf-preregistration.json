@@ -309,14 +309,6 @@
             "format": "textarea"
         }, {
             "qid": "q22",
-            "nav": "Follow-up analyses",
-            "title": "Follow-up analyses",
-            "description": "If not specified previously, will you be conducting any confirmatory analyses to follow up on effects in your statistical model, such as subgroup analyses, pairwise or complex contrasts, or follow-up tests from interactions? Remember that any analyses not specified in this research plan must be noted as exploratory.",
-            "help": "If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to conduct all possible pairwise comparison.<br /><br /> How responses will be evaluated: This is simply a place to allow entering in any additional analyses. The criteria for these follow up analyses are identical to any analyses listed in other sections. It is also fine to enter these follow up analyses in a separate analysis section. The purpose of this question is to allow entering of any follow up tests that naturally follow from a primary analysis.",
-            "type": "string",
-            "format": "textarea"
-        }, {
-            "qid": "q23",
             "nav": "Inference criteria",
             "title": "Inference criteria",
             "description": "What criteria will you use to make inferences? Please describe the information you’ll use (e.g. specify the p-values, Bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this? ",
@@ -324,15 +316,15 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q24",
+            "qid": "q23",
             "nav": "Data exclusion",
             "title": "Data exclusion",
-            "description": "How will you determine which data points or samples (if any) to exclude from your analyses? How will outliers be handled? Will you use any awareness check?",
+            "description": "How will you determine which data points or samples if any to exclude from your analyses? How will outliers be handled? Will you use any awareness check?",
             "help": "No checks will be performed to determine eligibility for inclusion besides verification that each subject answered each of the three tastiness indices. Outliers will be included in the analysis. <br /><br /> How responses will be evaluated: Any rule for excluding a particular set of data is acceptable. One may describe rules for excluding a participant or for identifying outlier data.",
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q25",
+            "qid": "q24",
             "nav": "Missing data",
             "title": "Missing data",
             "description": "How will you deal with incomplete or missing data?",
@@ -340,7 +332,7 @@
             "type": "string",
             "format": "textarea"
         }, {
-            "qid": "q26",
+            "qid": "q25",
             "nav": "Exploratory analysis",
             "title": "Exploratory analysis",
             "description": "If you plan to explore your data set to look for unexpected differences or relationships, you may describe those tests here. An exploratory test is any test where a prediction is not made up front, or there are multiple possible tests that you are going to use. A statistically significant finding in an exploratory test is a great way to form a new confirmatory hypothesis, which could be registered at a later time.",
@@ -350,23 +342,10 @@
         }]
     }, {
         "id": "page6",
-        "title": "Scripts",
-        "type": "object",
-        "description": "The purpose of a fully commented analysis script is to unambiguously provide the responses to all of the questions raised in the analysis section. This step is not common, but we encourage you to try creating an analysis script, refine it using a modeled dataset, and use it in place of your written analysis plan.",
-        "questions": [{
-            "qid": "q27",
-            "nav": "Script",
-            "title": "Upload an analysis script with clear comments",
-            "type": "osf-upload",
-            "format": "osf-upload-open",
-            "description": "This optional step is helpful in order to create a process that is completely transparent and increase the likelihood that your analysis can be replicated. We recommend that you run the code on a simulated dataset in order to check that it will run without errors."
-        }]
-    }, {
-        "id": "page7",
         "title": "Other",
         "type": "object",
         "questions": [{
-            "qid": "q28",
+            "qid": "q26",
             "nav": "Other",
             "title": "Other",
             "description": "If there is any additional information that you feel needs to be included in your preregistration, please enter it here. Literature cited, disclosures of any related work such as replications or work that uses the same data, or other context that will be helpful for future readers would be appropriate here.",
