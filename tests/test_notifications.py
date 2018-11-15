@@ -552,20 +552,35 @@ class TestRemoveNodeSignal(OsfTestCase):
 
     def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
         project = factories.ProjectFactory()
+        component = factories.NodeFactory(parent=project, creator=project.creator)
 
         s = NotificationSubscription.objects.filter(email_transactional=project.creator)
         assert_equal(s.count(), 2)
 
+        s = NotificationSubscription.objects.filter(email_transactional=component.creator)
+        assert_equal(s.count(), 2)
+
         with capture_signals() as mock_signals:
             project.remove_node(auth=Auth(project.creator))
+        project.reload()
+        component.reload()
+
         assert_true(project.is_deleted)
+        assert_true(component.is_deleted)
         assert_equal(mock_signals.signals_sent(), set([node_deleted]))
 
         s = NotificationSubscription.objects.filter(email_transactional=project.creator)
         assert_equal(s.count(), 0)
 
+        s = NotificationSubscription.objects.filter(email_transactional=component.creator)
+        assert_equal(s.count(), 0)
+
         with assert_raises(NotificationSubscription.DoesNotExist):
             NotificationSubscription.objects.get(node=project)
+
+        with assert_raises(NotificationSubscription.DoesNotExist):
+            NotificationSubscription.objects.get(node=component)
+
 
 
 def list_or_dict(data):

@@ -3087,6 +3087,53 @@ class TestNodeBulkDelete:
             url, new_payload, auth=user_one.auth, bulk=True)
         assert res.status_code == 204
 
+    def test_bulk_delete_project_with_component_version_2_12(
+            self, app, user_one,
+            public_project_parent,
+            public_project_one,
+            public_component, url):
+
+        new_payload = {'data': [
+            {'id': public_project_parent._id, 'type': 'nodes'},
+            {'id': public_project_one._id, 'type': 'nodes'}
+        ]}
+        res = app.delete_json_api(
+            url + '?version=2.12', new_payload, auth=user_one.auth,
+            expect_errors=True, bulk=True)
+        assert res.status_code == 204
+
+        public_project_parent.reload()
+        public_project_one.reload()
+        public_component.reload()
+
+        assert public_project_parent.is_deleted
+        assert public_project_one.is_deleted
+        assert public_component.is_deleted
+
+    def test_bulk_delete_project_with_component_version_2_12_no_permissions(
+            self, app, user_one,
+            public_project_parent,
+            public_project_one,
+            public_component, url):
+
+        NodeFactory(parent=public_project_parent)
+        new_payload = {'data': [
+            {'id': public_project_parent._id, 'type': 'nodes'},
+            {'id': public_project_one._id, 'type': 'nodes'}
+        ]}
+        res = app.delete_json_api(
+            url + '?version=2.12', new_payload, auth=user_one.auth,
+            expect_errors=True, bulk=True)
+        assert res.status_code == 403
+
+        public_project_parent.reload()
+        public_project_one.reload()
+        public_component.reload()
+
+        assert not public_project_parent.is_deleted
+        assert not public_project_one.is_deleted
+        assert not public_component.is_deleted
+
     # Regression test for PLAT-859
     def test_bulk_delete_project_with_already_deleted_component(
             self, app, user_one,

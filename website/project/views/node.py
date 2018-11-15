@@ -589,7 +589,6 @@ def component_remove(auth, node, **kwargs):
                 'message_long': 'Could not delete component: ' + str(e)
             },
         )
-    node.save()
 
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()

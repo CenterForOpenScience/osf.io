@@ -7,7 +7,7 @@ import warnings
 import markupsafe
 
 import bson
-from django.db.models import Q
+from django.db.models import Q, OuterRef, Exists
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.auth.models import AnonymousUser
@@ -79,11 +79,11 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
     def get_roots(self):
         return self.filter(id__in=self.exclude(type='osf.collection').exclude(type='osf.quickfilesnode').values_list('root_id', flat=True))
 
-    def get_children(self, root, active=False):
+    def get_children(self, root, active=False, include_root=False):
         # If `root` is a root node, we can use the 'descendants' related name
         # rather than doing a recursive query
         if root.id == root.root_id:
-            query = root.descendants.exclude(id=root.id)
+            query = root.descendants.filter() if include_root else root.descendants.exclude(id=root.id)
             if active:
                 query = query.filter(is_deleted=False)
             return query
@@ -124,7 +124,9 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     root.pk])
                 row = cursor.fetchone()[0]
                 if not row:
-                    return AbstractNode.objects.none()
+                    return AbstractNode.objects.filter(id=root.pk) if include_root else AbstractNode.objects.none()
+                if include_root:
+                    row.append(root.pk)
                 return AbstractNode.objects.filter(id__in=row)
 
     def can_view(self, user=None, private_link=None):
@@ -177,8 +179,8 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
     def get_roots(self):
         return self.get_queryset().get_roots()
 
-    def get_children(self, root, active=False):
-        return self.get_queryset().get_children(root, active=active)
+    def get_children(self, root, active=False, include_root=False):
+        return self.get_queryset().get_children(root, active=active, include_root=include_root)
 
     def can_view(self, user=None, private_link=None):
         return self.get_queryset().can_view(user=user, private_link=private_link)
@@ -2777,7 +2779,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def remove_node(self, auth, date=None):
-        """Marks a node as deleted.
+        """Marks a node plus every node in its hierarchy as deleted
 
         TODO: Call a hook on addons
         Adds a log to the parent node if applicable
@@ -2787,30 +2789,29 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param datetime date: `datetime.datetime` or `None`
         """
         # TODO: rename "date" param - it's shadowing a global
-        if not self.can_edit(auth):
+        hierarchy = Node.objects.get_children(self, active=True, include_root=True)
+        is_admin = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=auth.user)
+        if hierarchy.annotate(has_admin_perm=Exists(is_admin)).filter(has_admin_perm=False).exists():
             raise PermissionsError(
-                '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
+                '{0!r} does not have permission to modify this {1}, or a component in its hierarchy.'.format(auth.user, self.category or 'node')
             )
 
-        if Node.objects.get_children(self, active=True).exists():
-            raise NodeStateError('Any child components must be deleted prior to deleting this project.')
-
         # After delete callback
-        remove_addons(auth, [self])
-
-        log_date = date or timezone.now()
+        remove_addons(auth, list(hierarchy))
 
         Comment = apps.get_model('osf.Comment')
-        Comment.objects.filter(node=self).update(root_target=None)
+        Comment.objects.filter(node__id__in=hierarchy).update(root_target=None)
 
-        # Add log to parent
-        self.add_remove_node_log(auth=auth, date=log_date)
+        log_date = date or timezone.now()
+        for node in hierarchy:
+            # Add log to parents
+            self.add_remove_node_log(auth=auth, date=log_date)
+            project_signals.node_deleted.send(node)
 
-        self.is_deleted = True
-        self.deleted_date = date
-        self.save()
+        hierarchy.update(is_deleted=True, deleted_date=date)
 
-        project_signals.node_deleted.send(self)
+        if hierarchy.filter(is_public=True).exists():
+            AbstractNode.bulk_update_search(hierarchy)
 
         return True
 
