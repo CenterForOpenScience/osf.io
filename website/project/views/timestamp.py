@@ -1,6 +1,13 @@
+# -*- coding: utf-8 -*-
 """
 Timestamp views.
 """
+import requests
+import time
+import os
+import shutil
+import pytz
+import logging
 from flask import request
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public
@@ -12,12 +19,6 @@ from datetime import datetime
 from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
 from api.timestamp.add_timestamp import AddTimestamp
 from api.base import settings as api_settings
-import requests
-import time
-import os
-import shutil
-import pytz
-import logging
 
 
 logger = logging.getLogger(__name__)

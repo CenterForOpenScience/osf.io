@@ -54,7 +54,7 @@ $(function () {
             url: 'json/',
             data: postData,
             dataType: 'json'
-        }).done(function(projectFileList) {
+        }).done(function (projectFileList) {
             projectFileList = projectFileList.provider_list;
             for (var i = 0; i < projectFileList.length; i++) {
                 var fileList = projectFileList[i].provider_file_list;
@@ -67,25 +67,26 @@ $(function () {
             for (var i = 0; i < projectFileList.length; i++) {
                 var provider_tr = '<tr><td colspan="4">' + projectFileList[i].provider + '</td></tr>';
                 var fileList = projectFileList[i].provider_file_list;
-                var provider_output_flg = false;
                 for (var j = 0; j < fileList.length; j++) {
-                    var postData = {'provider': projectFileList[i].provider,
+                    var postData = {
+                        'provider': projectFileList[i].provider,
                         'file_id': fileList[j].file_id,
                         'file_path': fileList[j].file_path,
                         'file_name': fileList[j].file_name,
-                        'version': fileList[j].version};
+                        'version': fileList[j].version
+                    };
                     $.ajax({
                         url:  nodeApiUrl + 'timestamp/timestamp_error_data/',
                         data: postData,
                         dataType: 'json'
-                    }).done(function(data) {
+                    }).done(function (data) {
                         successCnt++;
                         $("#timestamp_errors_spinner").text("Verification files : " + successCnt + " / " + fileCnt + " ...");
                         if (successCnt == fileCnt) {
                             $("#timestamp_errors_spinner").text("Verification (100%) and Refreshing...");
                             window.location.reload();
                         }
-                    }).fail(function(xhr, status, error) {
+                    }).fail(function (xhr, status, error) {
                         $("#btn-verify").removeAttr("disabled");
                         $("#btn-addtimestamp").removeAttr("disabled");
                         $("#timestamp_errors_spinner").text("Error : " + fileList[j].file_path);
@@ -99,7 +100,7 @@ $(function () {
                     });
                 }
             }
-        }).fail(function(xhr, textStatus, error) {
+        }).fail(function (xhr, textStatus, error) {
             $("#btn-verify").removeAttr("disabled");
             $("#btn-addtimestamp").removeAttr("disabled");
             $("#timestamp_errors_spinner").text("Error : Storage files list gathering Failed");
@@ -113,7 +114,7 @@ $(function () {
         });
     };
 
-    var btnAddtimestamp_onclick = function(event) {
+    var btnAddtimestamp_onclick = function (event) {
         if ($("#btn-verify").attr("disabled") != undefined || $("#btn-addtimestamp").attr("disabled") != undefined) {
             return false;
         }
@@ -154,26 +155,28 @@ $(function () {
         var index;
         for (var i = 0; i < inputCheckBoxs.length; i++) {
             index = inputCheckBoxs[i];
-            var postData = {'provider': providerList[index],
+            var postData = {
+                'provider': providerList[index],
                 'file_id': fileIdList[index],
                 'file_path': filePathList[index],
                 'file_name': fileNameList[index],
-                'version': versionList[index]};
+                'version': versionList[index]
+            };
             $.ajax({
-                beforeSend: function(){
+                beforeSend: function () {
                     $("#timestamp_errors_spinner").show();
                 },
                 url: nodeApiUrl + 'timestamp/add_timestamp/',
                 data: postData,
                 dataType: 'json'
-            }).done(function(data) {
+            }).done(function (data) {
                 successCnt++;
                 $("#timestamp_errors_spinner").text("Adding Timestamp files : " + successCnt + " / " + inputCheckBoxs.length + " ...");
                 if (successCnt ==  inputCheckBoxs.length) {
                     $("#timestamp_errors_spinner").text("Added Timestamp (100%) and Refreshing...");
                     window.location.reload();
                 }
-            }).fail(function(xhr, textStatus, error) {
+            }).fail(function (xhr, textStatus, error) {
                 $("#btn-verify").removeAttr("disabled");
                 $("#btn-addtimestamp").removeAttr("disabled");
                 $("#timestamp_errors_spinner").text("Error : Timestamp Add Failed");
@@ -188,7 +191,7 @@ $(function () {
         }
     };
 
-    $('#addTimestampAllCheck').on('change', function() {
+    $('#addTimestampAllCheck').on('change', function () {
         $('input[id=addTimestampCheck]').prop('checked', this.checked);
     });
 
