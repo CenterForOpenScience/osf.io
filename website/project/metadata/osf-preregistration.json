@@ -61,7 +61,8 @@
             "options": [
                 "Experiment - A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment and includes randomized controlled trials.",
                 "Observational Study - Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, “natural experiments,” and regression discontinuity designs.",
-                "Meta-Analysis - A systematic review of published studies."
+                "Meta-Analysis - A systematic review of published studies.",
+                "Other"
             ],
             "required": true
         }, {
