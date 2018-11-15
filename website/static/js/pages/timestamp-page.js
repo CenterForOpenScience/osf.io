@@ -5,32 +5,32 @@ var $osf = require('js/osfHelpers');
 var node = window.contextVars.node;
 
 var nodeApiUrl = window.contextVars.node.urls.api;
-var project_file_list = window.contextVars.project_file_list;
+var projectFileList = window.contextVars.project_file_list;
 
 
 $(document).ready(function () {
     var index = 0;
-    for (var i = 0; i < project_file_list.length; i++) {
-        var file_list = project_file_list[i].error_list;
-        var provider_tr = '<tr><td colspan="5"><b>' + project_file_list[i].provider + '</b></td></tr>';
-        $(provider_tr).appendTo($('#tree_timestamp_error_data'));
-        for (var j = 0; j < file_list.length; j++) {
-            var error_tr =
+    for (var i = 0; i < projectFileList.length; i++) {
+        var fileList = projectFileList[i].error_list;
+        var providerTr = '<tr><td colspan="5"><b>' + projectFileList[i].provider + '</b></td></tr>';
+        $(providerTr).appendTo($('#tree_timestamp_error_data'));
+        for (var j = 0; j < fileList.length; j++) {
+            var errorTr =
                 '<tr>' +
                 '<td class="addTimestamp">' +
                 '<input type="checkBox" id="addTimestampCheck" style="width: 15px; height: 15px;" value="' + index + '"/>' +
-                '<td>' + file_list[j].file_path + '</td>' +
-                '<input type="hidden" id="provider" value="' + project_file_list[i].provider + '" />' +
-                '<input type="hidden" id="file_id" value="' + file_list[j].file_id + '" />' +
-                '<input type="hidden" id="file_path" value="' + file_list[j].file_path + '" />' +
-                '<input type="hidden" id="version" value="' + file_list[j].version + '" />' +
-                '<input type="hidden" id="file_name" value="' + file_list[j].file_name + '" />' +
+                '<td>' + fileList[j].file_path + '</td>' +
+                '<input type="hidden" id="provider" value="' + projectFileList[i].provider + '" />' +
+                '<input type="hidden" id="file_id" value="' + fileList[j].file_id + '" />' +
+                '<input type="hidden" id="file_path" value="' + fileList[j].file_path + '" />' +
+                '<input type="hidden" id="version" value="' + fileList[j].version + '" />' +
+                '<input type="hidden" id="file_name" value="' + fileList[j].file_name + '" />' +
                 '</td>' +
-                '<td>' + file_list[j].operator_user + '</td>' +
-                '<td>' + file_list[j].operator_date + '</td>' +
-                '<td>' + file_list[j].verify_result_title + '</td>' +
+                '<td>' + fileList[j].operator_user + '</td>' +
+                '<td>' + fileList[j].operator_date + '</td>' +
+                '<td>' + fileList[j].verify_result_title + '</td>' +
                 '</tr>';
-            $(error_tr).appendTo($('#tree_timestamp_error_data'));
+            $(errorTr).appendTo($('#tree_timestamp_error_data'));
             index++;
         }
      }
@@ -45,38 +45,38 @@ $(function () {
         $("#btn-verify").attr("disabled", true);
         $("#btn-addtimestamp").attr("disabled", true);
         $("#timestamp_errors_spinner").text("Storage files list gathering ...");
-        var post_data = {}
+        var postData = {}
         var fileCnt = 0;
         $.ajax({
             beforeSend: function () {
                 $("#timestamp_errors_spinner").show();
             },
             url: 'json/',
-            data: post_data,
+            data: postData,
             dataType: 'json'
-        }).done(function(project_file_list) {
-            project_file_list = project_file_list.provider_list;
-            for (var i = 0; i < project_file_list.length; i++) {
-                var file_list = project_file_list[i].provider_file_list;
-                for (var j = 0; j < file_list.length; j++) {
+        }).done(function(projectFileList) {
+            projectFileList = projectFileList.provider_list;
+            for (var i = 0; i < projectFileList.length; i++) {
+                var fileList = projectFileList[i].provider_file_list;
+                for (var j = 0; j < fileList.length; j++) {
                     fileCnt++;
                 }
             }
             var index = 0;
             var successCnt = 0;
-            for (var i = 0; i < project_file_list.length; i++) {
-                var provider_tr = '<tr><td colspan="4">' + project_file_list[i].provider + '</td></tr>';
-                var file_list = project_file_list[i].provider_file_list;
+            for (var i = 0; i < projectFileList.length; i++) {
+                var provider_tr = '<tr><td colspan="4">' + projectFileList[i].provider + '</td></tr>';
+                var fileList = projectFileList[i].provider_file_list;
                 var provider_output_flg = false;
-                for (var j = 0; j < file_list.length; j++) {
-                    var post_data = {'provider': project_file_list[i].provider,
-                        'file_id': file_list[j].file_id,
-                        'file_path': file_list[j].file_path,
-                        'file_name': file_list[j].file_name,
-                        'version': file_list[j].version};
+                for (var j = 0; j < fileList.length; j++) {
+                    var postData = {'provider': projectFileList[i].provider,
+                        'file_id': fileList[j].file_id,
+                        'file_path': fileList[j].file_path,
+                        'file_name': fileList[j].file_name,
+                        'version': fileList[j].version};
                     $.ajax({
                         url:  nodeApiUrl + 'timestamp/timestamp_error_data/',
-                        data: post_data,
+                        data: postData,
                         dataType: 'json'
                     }).done(function(data) {
                         successCnt++;
@@ -88,7 +88,7 @@ $(function () {
                     }).fail(function(xhr, status, error) {
                         $("#btn-verify").removeAttr("disabled");
                         $("#btn-addtimestamp").removeAttr("disabled");
-                        $("#timestamp_errors_spinner").text("Error : " + file_list[j].file_path);
+                        $("#timestamp_errors_spinner").text("Error : " + fileList[j].file_path);
                         Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
                             extra: {
                                 url: url,
@@ -154,7 +154,7 @@ $(function () {
         var index;
         for (var i = 0; i < inputCheckBoxs.length; i++) {
             index = inputCheckBoxs[i];
-            var post_data = {'provider': providerList[index],
+            var postData = {'provider': providerList[index],
                 'file_id': fileIdList[index],
                 'file_path': filePathList[index],
                 'file_name': fileNameList[index],
@@ -164,7 +164,7 @@ $(function () {
                     $("#timestamp_errors_spinner").show();
                 },
                 url: nodeApiUrl + 'timestamp/add_timestamp/',
-                data: post_data,
+                data: postData,
                 dataType: 'json'
             }).done(function(data) {
                 successCnt++;
