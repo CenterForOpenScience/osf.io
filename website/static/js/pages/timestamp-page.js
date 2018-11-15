@@ -7,7 +7,8 @@ var node = window.contextVars.node;
 var nodeApiUrl = window.contextVars.node.urls.api;
 var project_file_list = window.contextVars.project_file_list;
 
-$(document).ready(function(){
+
+$(document).ready(function () {
     var index = 0;
     for (var i = 0; i < project_file_list.length; i++) {
         var file_list = project_file_list[i].error_list;
@@ -34,5 +35,3 @@ $(document).ready(function(){
         }
      }
 });
-
-
