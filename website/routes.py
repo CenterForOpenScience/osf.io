@@ -1133,8 +1133,6 @@ def make_url_map(app):
             OsfWebRenderer('project/project.mako', trust=False)
         ),
 
-        ### Logs ###
-
         # View forks
         Rule(
             [
@@ -1143,7 +1141,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.node_forks,
-            OsfWebRenderer('project/forks.mako', trust=False)
+            notemplate,
         ),
 
         # Registrations
@@ -1234,8 +1232,9 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.project_statistics,
-            OsfWebRenderer('project/statistics.mako', trust=False)
+            notemplate,
         ),
+
 
         ### Files ###
 

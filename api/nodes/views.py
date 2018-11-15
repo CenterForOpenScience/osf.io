@@ -1800,12 +1800,7 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
     view_name = 'linked-registrations'
 
     def get_queryset(self):
-        ret = [
-            node for node in
-            super(NodeLinkedRegistrationsList, self).get_queryset()
-            if node.is_registration
-        ]
-        return ret
+        return super(NodeLinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):
