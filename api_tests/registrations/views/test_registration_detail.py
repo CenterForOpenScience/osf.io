@@ -322,7 +322,7 @@ class TestRegistrationUpdate:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"Dr.Strange" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
     #   test_fields_other_than_public_are_ignored
         attribute_list = {
@@ -384,6 +384,7 @@ class TestRegistrationUpdate:
             'draft_registration',
             'registration_choice',
             'lift_embargo',
+            'children',
             'tags',
             'custom_citation']
         for field in RegistrationSerializer._declared_fields:
@@ -398,8 +399,10 @@ class TestRegistrationUpdate:
             'draft_registration',
             'registration_choice',
             'lift_embargo',
+            'children',
             'tags',
             'custom_citation']
+
         for field in RegistrationDetailSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:

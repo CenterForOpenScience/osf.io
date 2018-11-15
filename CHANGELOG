@@ -2,6 +2,16 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+18.6.0 (2018-11-15)
+===================
+
+- Support for partial registrations.
+- APIv2: Fix error when adding an email on a blacklisted domain.
+- APIv2: Optimizations for collections endpoints.
+- Upgrade djangorestframework to 3.9.0.
+- Update subject lines in emails with "OSF" instead of "Open Science Framework."
+- Remove legacy forks and analytics pages.
+
 18.5.0 (2018-10-31)
 ===================
 

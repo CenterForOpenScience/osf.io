@@ -113,11 +113,13 @@ class CollectionSerializer(JSONAPISerializer):
 
     def get_node_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        return Node.objects.filter(guids__in=obj.guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
+        node_ids = obj.guid_links.all().values_list('_id', flat=True)
+        return Node.objects.filter(guids___id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
 
     def get_registration_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        return Registration.objects.filter(guids__in=obj.guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
+        registration_ids = obj.guid_links.all().values_list('_id', flat=True)
+        return Registration.objects.filter(guids___id__in=registration_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
 
     def create(self, validated_data):
         node = Collection(**validated_data)

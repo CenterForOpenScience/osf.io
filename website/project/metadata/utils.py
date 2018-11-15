@@ -27,6 +27,7 @@ def serialize_meta_schemas(meta_schemas):
 
 def serialize_draft_registration(draft, auth=None):
     from website.project.utils import serialize_node  # noqa
+    from api.base.utils import absolute_reverse
 
     node = draft.branched_from
 
@@ -43,7 +44,7 @@ def serialize_draft_registration(draft, auth=None):
             'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id, _guid=True),
             'submit': node.api_url_for('submit_draft_for_review', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),
-            'register': node.api_url_for('register_draft_registration', draft_id=draft._id),
+            'register': absolute_reverse('nodes:node-registrations', kwargs={'node_id': node._id, 'version': 'v2'}),
             'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id, _guid=True),
             'registrations': node.web_url_for('node_registrations', _guid=True)
         },
@@ -176,6 +177,8 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
                         'properties': {
                             'downloads': {'type': 'integer'},
                             'version': {'type': 'integer'},
+                            'latestVersionSeen': {'type': 'string'},
+                            'guid': {'type': 'string'},
                             'checkout': {'type': 'string'},
                             'hashes': {
                                 'type': 'object',
@@ -193,9 +196,46 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
                     'etag': {'type': 'string'},
                     'provider': {'type': 'string'},
                     'path': {'type': 'string'},
-                    'size': {'type': 'integer'}
+                    'nodeUrl': {'type': 'string'},
+                    'waterbutlerURL': {'type': 'string'},
+                    'resource': {'type': 'string'},
+                    'nodeApiUrl': {'type': 'string'},
+                    'type': {'type': 'string'},
+                    'accept': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'acceptedFiles': {'type': 'boolean'},
+                            'maxSize': {'type': 'integer'},
+                        }
+                    },
+                    'links': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'download': {'type': 'string'},
+                            'move': {'type': 'string'},
+                            'upload': {'type': 'string'},
+                            'delete': {'type': 'string'}
+                        }
+                    },
+                    'permissions': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'edit': {'type': 'boolean'},
+                            'view': {'type': 'boolean'}
+                        }
+                    },
+                    'created_utc': {'type': 'string'},
+                    'id': {'type': 'string'},
+                    'modified_utc': {'type': 'string'},
+                    'size': {'type': 'integer'},
+                    'sizeInt': {'type': 'integer'},
                 }
             },
+            'fileId': {'type': 'string'},
+            'descriptionValue': {'type': 'string'},
             'sha256': {'type': 'string'},
             'selectedFileName': {'type': 'string'},
             'nodeId': {'type': 'string'},
@@ -203,6 +243,7 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
         }
     }
 }
+
 
 COMMENTS_SCHEMA = {
     'type': 'array',

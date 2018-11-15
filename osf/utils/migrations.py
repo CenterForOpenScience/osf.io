@@ -214,4 +214,4 @@ class DeleteWaffleFlags(Operation):
             Flag.objects.get_or_create(name=flag_name)
 
     def describe(self):
-        return 'Adds waffle flags: {}'.format(', '.join(self.flag_names))
+        return 'Removes waffle flags: {}'.format(', '.join(self.flag_names))

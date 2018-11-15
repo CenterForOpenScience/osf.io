@@ -657,7 +657,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             # nested attributes in relationship fields.
             try:
                 return_val = get_nested_attributes(obj, source_attrs)
-            except KeyError:
+            except (KeyError, AttributeError):
                 return None
             return return_val
 
@@ -675,10 +675,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         for lookup_url_kwarg, lookup_field in kwargs_dict.items():
 
             if _tpl(lookup_field):
-                try:
-                    lookup_value = self.lookup_attribute(obj, lookup_field)
-                except AttributeError as exc:
-                    raise AssertionError(exc)
+                lookup_value = self.lookup_attribute(obj, lookup_field)
             else:
                 lookup_value = _url_val(lookup_field, obj, self.parent, self.context['request'])
 

@@ -66,7 +66,7 @@ raven==5.32.0
 
 # API requirements
 Django==1.11.15  # pyup: <2.0 # Remove this when we're on Py3
-djangorestframework==3.6.3
+djangorestframework==3.9.0
 django-cors-headers==2.1.0
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
