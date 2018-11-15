@@ -314,7 +314,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
     def get_default_queryset(self):
         user = self.get_user()
         # Nodes the requested user has read_permissions on
-        default_queryset = get_objects_for_user(user, 'read_node', Node).filter(is_deleted=False)
+        default_queryset = get_objects_for_user(user, 'read_node', Node, with_superuser=False).filter(is_deleted=False)
         if user != self.request.user:
             if self.request.user.is_anonymous:
                 return self.optimize_node_queryset(default_queryset.filter(Q(is_public=True)))
