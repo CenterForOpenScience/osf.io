@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0143_merge_20181018_1818'),
+        ('osf', '0145_add_preprint_contenttype_to_collections'),
     ]
 
     operations = [
