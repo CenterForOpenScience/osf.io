@@ -82,8 +82,8 @@
             "options": [
                 "No blinding is involved in this study.",
                 "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
-                "Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.",
-                "Research personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
+                "Personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments. (Commonly known as “double blind”)",
+                "Personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
             ],
             "required": true
         }, {
