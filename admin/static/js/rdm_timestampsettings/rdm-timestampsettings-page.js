@@ -45,7 +45,6 @@ $('.is_changed input').on('click', function() {
     var nodeGuid = $input.data('node-guid');
     var timestampAddPattern = $("#" + nodeGuid).val();
     var url = '/timestampsettings/' + institutionId +'/nodes/change/' + nodeGuid + '/' + timestampAddPattern;
-    console.log('url:' + url);
     $input.prop('disabled', true);
     $.ajax({
         url: url,
@@ -62,4 +61,3 @@ $('.is_changed input').on('click', function() {
         });
     });
 });
-
