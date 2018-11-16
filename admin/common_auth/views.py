@@ -20,14 +20,12 @@ from osf.models.institution import Institution
 from framework.auth import get_or_create_user
 from framework.auth.core import get_user
 from admin.base.settings import SHIB_EPPN_SCOPING_SEPARATOR
-
+from admin.base.settings import ENABLE_LOGIN_FORM, ENABLE_SHB_LOGIN
 from django.views.generic.base import RedirectView
 from api.institutions.authentication import login_by_eppn
 import logging
 logger = logging.getLogger(__name__)
 
-import logging
-logger = logging.getLogger(__name__)
 
 class LoginView(FormView):
     form_class = LoginForm
@@ -59,6 +57,12 @@ class LoginView(FormView):
         if not redirect_to or redirect_to == '/':
             redirect_to = reverse('home')
         return redirect_to
+
+    def get_context_data(self, **kwargs):
+        context = super(LoginView, self).get_context_data(**kwargs)
+        context['enable_form'] = ENABLE_LOGIN_FORM
+        context['eneble_shib_login'] = ENABLE_SHB_LOGIN
+        return context
 
 class ShibLoginView(RedirectView):
     redirect_field_name = REDIRECT_FIELD_NAME

@@ -85,8 +85,6 @@ class InstitutionAuthentication(BaseAuthentication):
         middle_names = provider['user'].get('middleNames')
         suffix = provider['user'].get('suffix')
         entitlement = provider['user'].get('entitlement')
-#        o = provider['user'].get('o')
-#        ou = provider['user'].get('ou')
 
         # use given name and family name to build full name if not provided
         if given_name and family_name and not fullname:

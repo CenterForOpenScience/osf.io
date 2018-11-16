@@ -1,45 +1,27 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
-
 import json
-
-#from django.core import serializers
+import requests
+import time
+import os
+import shutil
 from django.shortcuts import redirect
-#from django.forms.models import model_to_dict
-#from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse
 from django.views.generic import ListView, View, TemplateView
-#from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
-
 from admin.base import settings
-#from admin.base.forms import ImportFileForm
-#from admin.institutions.forms import InstitutionForm
 from osf.models import Institution, Node, OSFUser, AbstractNode, BaseFileNode, RdmFileTimestamptokenVerifyResult, Guid
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
-#from api.timestamp import local
 from api.base import settings as api_settings
-
-#from website import util
-
-import requests
 from datetime import datetime
-import time
-#from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
 from api.timestamp.add_timestamp import AddTimestamp
-#from api.timestamp import local
-import os
-import shutil
-#from django import forms
-#from django.forms.widgets import HiddenInput, CheckboxInput
-#from framework.auth import Auth
 from website.util import waterbutler_api_url_for
 
-class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
 
+class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     paginate_by = 25
     template_name = 'rdm_timestampadd/list.html'
     ordering = 'name'
@@ -47,24 +29,18 @@ class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     model = Institution
 
     def test_func(self):
-        """権限等のチェック"""
-        # ログインチェック
         if not self.is_authenticated:
             return False
-        # 統合管理者または機関管理者なら許可
         if self.is_super_admin or self.is_admin:
             return True
         return False
 
     def get(self, request, *args, **kwargs):
-        """コンテキスト取得"""
         user = self.request.user
-        # 統合管理者
         if self.is_super_admin:
             self.object_list = self.get_queryset()
             ctx = self.get_context_data()
             return self.render_to_response(ctx)
-        # 機関管理者
         elif self.is_admin:
             institution = user.affiliated_institutions.first()
             if institution:
@@ -85,6 +61,7 @@ class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
         kwargs.setdefault('logohost', settings.OSF_URL)
         return super(InstitutionList, self).get_context_data(**kwargs)
 
+
 class InstitutionNodeList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     template_name = 'rdm_timestampadd/node_list.html'
     paginate_by = 25
@@ -93,7 +70,6 @@ class InstitutionNodeList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     model = Node
 
     def test_func(self):
-        """権限等のチェック"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -111,13 +87,17 @@ class InstitutionNodeList(RdmPermissionMixin, UserPassesTestMixin, ListView):
         kwargs.setdefault('logohost', settings.OSF_URL)
         return super(InstitutionNodeList, self).get_context_data(**kwargs)
 
+
 class TimeStampAddList(RdmPermissionMixin, TemplateView):
     template_name = 'rdm_timestampadd/timestampadd.html'
     ordering = 'provider'
+
     def get_context_data(self, **kwargs):
         ctx = super(TimeStampAddList, self).get_context_data(**kwargs)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
-        data_list = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=absNodeData._id).order_by('provider', 'path')
+        data_list = RdmFileTimestamptokenVerifyResult.objects.filter(
+            project_id=absNodeData._id
+        ).order_by('provider', 'path')
         guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
         provider_error_list = []
         provider = None
@@ -153,28 +133,31 @@ class TimeStampAddList(RdmPermissionMixin, TemplateView):
 
             if provider == 'osfstorage':
                 base_file_data = BaseFileNode.objects.get(_id=data.file_id)
-                error_info = {'file_name': base_file_data.name,
-                              'file_path': data.path,
-                              'file_kind': 'file',
-                              'project_id': data.project_id,
-                              'file_id': data.file_id,
-                              'version': base_file_data.current_version_number,
-                              'operator_user': operator_user,
-                              'operator_date': operator_date,
-                              'verify_result_title': verify_result_title}
+                error_info = {
+                    'file_name': base_file_data.name,
+                    'file_path': data.path,
+                    'file_kind': 'file',
+                    'project_id': data.project_id,
+                    'file_id': data.file_id,
+                    'version': base_file_data.current_version_number,
+                    'operator_user': operator_user,
+                    'operator_date': operator_date,
+                    'verify_result_title': verify_result_title
+                }
             else:
-
                 file_name = os.path.basename(data.path)
 
-                error_info = {'file_name': file_name,
-                              'file_path': data.path,
-                              'file_kind': 'file',
-                              'project_id': data.project_id,
-                              'file_id': data.file_id,
-                              'version': '',
-                              'operator_user': operator_user,
-                              'operator_date': operator_date,
-                              'verify_result_title': verify_result_title}
+                error_info = {
+                    'file_name': file_name,
+                    'file_path': data.path,
+                    'file_kind': 'file',
+                    'project_id': data.project_id,
+                    'file_id': data.file_id,
+                    'version': '',
+                    'operator_user': operator_user,
+                    'operator_date': operator_date,
+                    'verify_result_title': verify_result_title
+                }
             error_list.append(error_info)
 
         if error_list:
@@ -189,6 +172,7 @@ class TimeStampAddList(RdmPermissionMixin, TemplateView):
 
     def web_api_url(self, node_id):
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
+
 
 class VerifyTimeStampAddList(RdmPermissionMixin, View):
 
@@ -229,10 +213,10 @@ class VerifyTimeStampAddList(RdmPermissionMixin, View):
     def web_api_url(self, node_id):
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
 
+
 class TimestampVerifyData(RdmPermissionMixin, View):
 
     def test_func(self):
-        """権限等のチェック"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -245,9 +229,12 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
         headers = {'content-type': 'application/json'}
-        #guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
+        guid = Guid.objects.get(
+            object_id=self.kwargs['guid'],
+            content_type_id=ContentType.objects.get_for_model(AbstractNode).id
+        )
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
-        #web_url = self.web_api_url(guid._id)
+        web_url = self.web_api_url(guid._id)
 
         # Node Admin
         admin_osfuser_list = list(absNodeData.get_admin_contributors(absNodeData.contributors))
@@ -255,35 +242,29 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         self.request.user = admin_osfuser_list[0]
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
-        """
-        web_api_response = requests.post(web_url + 'timestamp/timestamp_error_data/',
-                                         headers=headers, cookies=cookies,
-                                         data=json.dumps(request_data))
 
-        """
-        from website.project.views.timestamp import do_get_timestamp_error_data
-        data = {}
-        for key in request_data.keys():
-            data.update({key: request_data[key][0]})
-        response = do_get_timestamp_error_data(self.request, absNodeData, headers, cookies, data)
+        web_api_response = requests.post(
+            web_url + 'timestamp/timestamp_error_data/',
+            headers=headers, cookies=cookies,
+            data=json.dumps(request_data)
+        )
+
         # Admin User
         self.request.user = source_user
-        #response_json = web_api_response.json()
-        #web_api_response.close()
-        #response = response_json
+
+        response_json = web_api_response.json()
+        web_api_response.close()
+        response = response_json
         return HttpResponse(json.dumps(response), content_type='application/json')
 
     def web_api_url(self, node_id):
-        import sys
-        if 'pytest' in sys.modules:
-            return settings.osf_settings.INTERNAL_DOMAIN + 'api/v1/project/' + node_id + '/'
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
+
 
 class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
     template_name = 'rdm_timestampadd/timestampadd.html'
 
     def test_func(self):
-        """権限等のチェック"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -292,7 +273,10 @@ class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
         headers = {'content-type': 'application/json'}
-        guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
+        guid = Guid.objects.get(
+            object_id=self.kwargs['guid'],
+            content_type_id=ContentType.objects.get_for_model(AbstractNode).id
+        )
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
         web_url = self.web_url_path(guid._id)
 
@@ -311,10 +295,10 @@ class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
     def web_api_url(self, node_id):
         return settings.osf_settings.DOMAIN + 'api/v1/project/' + node_id + '/'
 
+
 class AddTimestampData(RdmPermissionMixin, View):
 
     def test_func(self):
-        """権限等のチェック"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -332,22 +316,29 @@ class AddTimestampData(RdmPermissionMixin, View):
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
         headers = {'content-type': 'application/json'}
-        guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
+        guid = Guid.objects.get(
+            object_id=self.kwargs['guid'],
+            content_type_id=ContentType.objects.get_for_model(AbstractNode).id
+        )
 
         url = None
         tmp_dir = None
         data = RdmFileTimestamptokenVerifyResult.objects.get(file_id=request_data['file_id'][0])
         try:
             if request_data['provider'][0] == 'osfstorage':
-                url = waterbutler_api_url_for(data.project_id,
-                                              data.provider,
-                                              '/' + request_data['file_id'][0],
-                                              version=request_data['version'][0], action='download', direct=None)
+                url = waterbutler_api_url_for(
+                    data.project_id,
+                    data.provider,
+                    '/' + request_data['file_id'][0],
+                    version=request_data['version'][0], action='download', direct=None
+                )
             else:
-                url = waterbutler_api_url_for(data.project_id,
-                                              data.provider,
-                                              '/' + request_data['file_id'][0],
-                                              action='download', direct=None)
+                url = waterbutler_api_url_for(
+                    data.project_id,
+                    data.provider,
+                    '/' + request_data['file_id'][0],
+                    action='download', direct=None
+                )
             res = requests.get(url, headers=headers, cookies=cookies)
             tmp_dir = 'tmp_{}'.format(self.request.user._id)
             if os.path.exists(tmp_dir):
@@ -361,16 +352,18 @@ class AddTimestampData(RdmPermissionMixin, View):
             addTimestamp = AddTimestamp()
             # Admin User
             self.request.user = source_user
-            result = addTimestamp.add_timestamp(self.request.user._id, request_data['file_id'][0],
-                                                guid._id, request_data['provider'][0], request_data['file_path'][0],
-                                                download_file_path, tmp_dir)
+            result = addTimestamp.add_timestamp(
+                self.request.user._id, request_data['file_id'][0],
+                guid._id, request_data['provider'][0], request_data['file_path'][0],
+                download_file_path, tmp_dir
+            )
             shutil.rmtree(tmp_dir)
         except Exception as err:
-            if tmp_dir:
-                if os.path.exists(tmp_dir):
-                    shutil.rmtree(tmp_dir)
-        if 'result' in locals():
-            request_data.update({'result': result})
+            if os.path.exists(tmp_dir):
+                shutil.rmtree(tmp_dir)
+            raise ValueError('Exception:{}'.format(err))
+
+        request_data.update({'result': result})
         return HttpResponse(json.dumps(request_data), content_type='application/json')
 
     def web_api_url(self, node_id):
