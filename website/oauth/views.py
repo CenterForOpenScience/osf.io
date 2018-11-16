@@ -60,7 +60,7 @@ def osf_oauth_callback(service_name, auth):
 
 def oauth_callback(service_name):
     # OSFAdmin
-    osfadmin_callback_url = osfadmin_oauth_calback(service_name)
+    osfadmin_callback_url = osfadmin_oauth_callback(service_name)
     # if OAuth autherization failed on the OSFAdmin side,
     # consider it that the request was for OSF.
     if osfadmin_callback_url:
@@ -71,7 +71,7 @@ def oauth_callback(service_name):
     # OSF
     return osf_oauth_callback(service_name)
 
-def osfadmin_oauth_calback(service_name):
+def osfadmin_oauth_callback(service_name):
     from furl import furl
     import requests
     import flask

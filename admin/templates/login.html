@@ -20,7 +20,7 @@
         </div><!-- /.login-logo -->
         <div class="login-box-body">
             <p class="login-box-msg">Sign in to start your session</p>
-{%comment%}
+{% if enable_form %}
             <form action="" method="post">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
@@ -60,7 +60,8 @@
                     {% endif %}
                 </div>
             </form>
-{%endcomment%}
+{% endif %}
+{% if eneble_shib_login %}
 <div class="row">
         <div class="col-xs-1"></div>
         <br>
@@ -69,6 +70,7 @@
         <script type="text/javascript" src="https://test-ds.gakunin.nii.ac.jp/WAYF/embedded-wayf.js"></script>
          <div class="col-xs-1"></div>
 </div>
+{% endif %}
         </div><!-- /.login-box-body -->
       <br><!-- refactor  -->
     </div><!-- /.login-box -->
