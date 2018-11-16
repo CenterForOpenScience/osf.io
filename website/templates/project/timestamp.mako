@@ -24,55 +24,48 @@
             <!-- Begin sidebar -->
             <ul class="nav nav-stacked nav-pills">
                 <li class="active"><a href="#">Timestamp Error</a></li>
-                <li><a href="#">&nbsp;</a></li>
             </ul>
         </div>
     </div>
- 
+
     <div class="col-md-9 col-xs-12">
-         <form id="timestamp-form" class="form">
-         <div class="panel panel-default">
-             <div class="col-xs-12">
-                 <div class="pull-right">
-                   <span>
-                         <button type="button" class="btn btn-success" id="btn-verify">Verify</button>
-                         <button type="button" class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</button>
-                   </span>        
-                 </div>
-             </div>
-             <style type="text/css">
-                 #addTimestampAllCheck, #addTimestampCheck {
-                    -ms-transform:          scale(1.2); /* IE */
-                    -moz-transform:         scale(1.2); /* FF */
-                    -webkit-transform:      scale(1.2); /* Safari and Chrome */
-                    -o-transform:           scale(1.2); /* Opera */
-                    //transform:              scale(1.2);
-                 }
-             </style>
-             <span id="configureNodeAnchor" class="anchor"></span></div>
-                 <table class="table table-bordered table-addon-terms">
-                      <thead class="block-head">
-                          <tr>
-                              <th width="45%"><input type="checkBox" id="addTimestampAllCheck"/>FilePath</th>
-                              <th width="15%">TimestampUpdateUser</th>
-                              <th width="15%">TimestampUpdateDate</th>
-                              <th widht="25%">Timestamp verification</th>
-                          </tr>
-                      </thead>
-                      <font color="red">
-                           <div id="timestamp_errors_spinner" class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-lg"></div>
-                                <p class="m-t-sm fg-load-message"> Loading timestamp error list ...  </p>
-                           </div>
-                      </font>
-                      <tbody id="tree_timestamp_error_data">
-                      </tbody>
-                 </table>
-             </span>
-         </div>
-         </form>
+        <form id="timestamp-form" class="form">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                <span>
+                    <button type="button" class="btn btn-success" id="btn-verify">Verify</button>
+                    <button type="button" class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</button>
+                </span>
+            </div>
+            <span id="configureNodeAnchor" class="anchor"></span>
+            <table class="table table-bordered table-addon-terms">
+                <thead class="block-head">
+                    <tr>
+                        <th width="3%"><input type="checkBox" id="addTimestampAllCheck" style="width: 15px; height: 15px;"/></th>
+                        <th width="40%">File Path</th>
+                        <th width="15%">Timestamp Update User</th>
+                        <th width="22%">Timestamp Update Date</th>
+                        <th widht="20%">Timestamp Verification</th>
+                    </tr>
+                </thead>
+                <font color="red">
+                    <div id="timestamp_errors_spinner" class="spinner-loading-wrapper">
+                        <div class="logo-spin logo-lg"></div>
+                        <p class="m-t-sm fg-load-message"> Loading timestamp error list ...  </p>
+                    </div>
+                </font>
+                <tbody id="tree_timestamp_error_data">
+                </tbody>
+            </table>
+        </form>
     </div>
 </div>
+
+<style type="text/css">
+    .table>thead>tr>th {
+        vertical-align: middle;
+    }
+</style>
+
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     % for script in tree_js:
@@ -84,11 +77,11 @@
     </script>
 
     <script src=${"/static/public/js/timestamp-page.js" | webpack_asset}></script>
-
 </%def>
+
 <script>
-    $(function(){
-        var btnVerify_onclick = function(event) {
+    $(function () {
+        var btnVerify_onclick = function (event) {
             if($("#btn-verify").attr("disabled") != undefined || $("#btn-addtimestamp").attr("disabled") != undefined) {
                 return false;
             }
@@ -99,7 +92,7 @@
             var post_data = {}
             var fileCnt = 0;
             $.ajax({
-                beforeSend: function(){
+                beforeSend: function () {
                     $("#timestamp_errors_spinner").show();
                 },
                 url: 'json/',
@@ -107,14 +100,12 @@
                 dataType: 'json'
             }).done(function(project_file_list) {
                 project_file_list = project_file_list.provider_list;
-                //console.log(project_file_list);
                 for (var i = 0; i < project_file_list.length; i++) {
                     var file_list = project_file_list[i].provider_file_list;
                     for (var j = 0; j < file_list.length; j++) {
                        fileCnt++;
                     }
                 }
-                //console.log(fileCnt);
                 var index = 0;
                 var successCnt = 0;
                 for (var i = 0; i < project_file_list.length; i++) {
@@ -127,15 +118,12 @@
                                          'file_path': file_list[j].file_path,
                                          'file_name': file_list[j].file_name,
                                          'version': file_list[j].version};
-                        //console.log(post_data);
                         $.ajax({
                              url:  nodeApiUrl + 'timestamp/timestamp_error_data/',
                              data: post_data,
                              dataType: 'json'
                           }).done(function(data) {
                                   successCnt++;
-                                  //console.log(successCnt);
-                                  //console.log(post_data);
                                   $("#timestamp_errors_spinner").text("Verification files : " + successCnt + " / " + fileCnt + " ...");
                                   if (successCnt == fileCnt) {
                                      $("#timestamp_errors_spinner").text("Verification (100%) and Refreshing...");
@@ -181,7 +169,7 @@
             if (inputCheckBoxs.length == 0) {
                 return false;
             }
-            
+
             providerList = $('[id=provider]').map(function (index, el) {
                 return $(this).val();
             });
@@ -189,7 +177,7 @@
             fileIdList = $('[id="file_id"]').map(function (index, el) {
                 return $(this).val();
             });
-            
+
             filePathList = $('[id=file_path]').map(function (index, el) {
                 return $(this).val();
             });
@@ -207,7 +195,6 @@
             $("#timestamp_errors_spinner").text("Addtimestamp loading ...");
             errorFlg = false;
             successCnt = 0;
-            //console.log("check : " + inputCheckBoxs.length);
             for (var i = 0; i < inputCheckBoxs.length; i++) {
                  index = inputCheckBoxs[i];
                  var post_data = {'provider': providerList[index],
@@ -215,7 +202,6 @@
                                   'file_path': filePathList[index],
                                   'file_name': fileNameList[index],
                                   'version': versionList[index]};
-                 //console.log(post_data);
                  $.ajax({
                      beforeSend: function(){
                        $("#timestamp_errors_spinner").show();
@@ -225,8 +211,6 @@
                      dataType: 'json'
                  }).done(function(data) {
                      successCnt++;
-                     //console.log(successCnt);
-                     //console.log(post_data);
                      $("#timestamp_errors_spinner").text("Adding Timestamp files : " + successCnt + " / " + inputCheckBoxs.length + " ...");
                      if (successCnt ==  inputCheckBoxs.length) {
                         $("#timestamp_errors_spinner").text("Added Timestamp (100%) and Refreshing...");
