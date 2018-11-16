@@ -1,7 +1,7 @@
 {
     "name": "Open-Ended Registration",
     "version": 2,
-    "description": "You will be asked to provide a narrative summary of what is contained in your project. There is no minimum character length. This registration form is not a valid submission for the Pre-registration Prize.",
+    "description": "You will be asked to provide a narrative summary of what is contained in your project. There is no minimum character length.",
     "pages": [{
         "id": "page1",
         "title": "Summary",
