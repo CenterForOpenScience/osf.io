@@ -16,6 +16,18 @@ from osf.models.user import OSFUser
 from osf.models import AdminProfile
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
+from osf.models.institution import Institution
+from framework.auth import get_or_create_user
+from framework.auth.core import get_user
+from admin.base.settings import SHIB_EPPN_SCOPING_SEPARATOR
+
+from django.views.generic.base import RedirectView
+from api.institutions.authentication import login_by_eppn
+import logging
+logger = logging.getLogger(__name__)
+
+import logging
+logger = logging.getLogger(__name__)
 
 class LoginView(FormView):
     form_class = LoginForm
@@ -48,6 +60,71 @@ class LoginView(FormView):
             redirect_to = reverse('home')
         return redirect_to
 
+class ShibLoginView(RedirectView):
+    redirect_field_name = REDIRECT_FIELD_NAME
+
+    def dispatch(self, request, *args, **kwargs):
+
+        eppn = request.environ['HTTP_AUTH_EPPN']
+        seps = eppn.split(SHIB_EPPN_SCOPING_SEPARATOR)[-1]
+        institution = Institution.objects.filter(domains__contains=[str(seps)]).first()
+        if not institution:
+            return redirect('auth:login')
+
+        if not eppn:
+            message = 'login failed: eppn required'
+            logging.info(message)
+            messages.error(self.request, message)
+            return redirect('auth:login')
+        eppn_user = get_user(eppn=eppn)
+        if eppn_user:
+            if 'GakuninRDMAdmin' in request.environ['HTTP_AUTH_ENTITLEMENT']:
+                # login success
+                # code is below this if/else tree
+                eppn_user.is_staff = True
+                #eppn_user.is_superuser = True
+                eppn_user.save()
+            else:
+                # login failure occurs and the screen transits to the error screen
+                # not sure about this code
+                eppn_user.is_staff = False
+                # eppn_user.is_superuser = False
+                eppn_user.save()
+                message = 'login failed: not staff or superuser'
+                logging.info(message)
+                messages.error(self.request, message)
+                return redirect('auth:login')
+        else:
+            if 'GakuninRDMAdmin' not in request.environ['HTTP_AUTH_ENTITLEMENT']:
+                message = 'login failed: no user with matching eppn'
+                messages.error(self.request, message)
+                return redirect('auth:login')
+            else:
+                new_user, created = get_or_create_user(request.environ['HTTP_AUTH_DISPLAYNAME'] or 'NO NAME', eppn, reset_password=False)
+                USE_EPPN = login_by_eppn()
+                if USE_EPPN:
+                    new_user.eppn = eppn
+                    new_user.have_email = False
+                else:
+                    new_user.eppn = None
+                    new_user.have_email = True
+                new_user.is_staff = True
+                new_user.eppn = eppn
+                new_user.have_email = False
+                new_user.save()
+                new_user.affiliated_institutions.add(institution)
+                eppn_user = new_user
+
+        login(request, eppn_user, backend='api.base.authentication.backends.ODMBackend')
+
+        # Transit to the administrator's home screen
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        redirect_to = self.request.GET.get(self.redirect_field_name, '')
+        if not redirect_to or redirect_to == '/':
+            redirect_to = reverse('home')
+        return redirect_to
 
 def logout_user(request):
     logout(request)

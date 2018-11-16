@@ -15,6 +15,8 @@ from framework.auth.core import get_user
 from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
 
+import logging
+logger = logging.getLogger(__name__)
 
 class InstitutionAuthentication(BaseAuthentication):
 
@@ -74,6 +76,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 sentry.log_message(message)
                 raise AuthenticationFailed(message)
             eppn_tmp = ('tmp_eppn_' + eppn).lower()
+        logger.info('---InstitutionAuthentication.authenticate.user:{}'.format(provider))
 
         username = provider['user'].get('username')
         fullname = provider['user'].get('fullname')
@@ -81,6 +84,9 @@ class InstitutionAuthentication(BaseAuthentication):
         family_name = provider['user'].get('familyName')
         middle_names = provider['user'].get('middleNames')
         suffix = provider['user'].get('suffix')
+        entitlement = provider['user'].get('entitlement')
+#        o = provider['user'].get('o')
+#        ou = provider['user'].get('ou')
 
         # use given name and family name to build full name if not provided
         if given_name and family_name and not fullname:
@@ -126,6 +132,10 @@ class InstitutionAuthentication(BaseAuthentication):
 
             if settings.USER_LOCALE:
                 user.locale = settings.USER_LOCALE
+
+            if entitlement:
+                if 'GakuninRDMAdmin' in entitlement:
+                    user.is_staff = True
 
             if USE_EPPN:
                 user.eppn = eppn

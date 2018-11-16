@@ -104,10 +104,14 @@
                             <select id="timestamp_pattern" data-bind="value: selectedTimestampPattern">
                             % if timestamp_pattern_division == 1:
                                  <option value="1" selected>Timestamp only</option>
+<%doc> Only "Timestamp only" (while digital signature develop)
                                  <option value="2">Timestamp with digital signature</option>
+</%doc>
                             % else:
                                  <option value="1">Timestamp only</option>
+<%doc>
                                  <option value="2" selected>Timestamp with digital signature</option>
+</%doc>
                             % endif
                             </select>
                         </div>
@@ -501,7 +505,7 @@
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
       window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
-      window.contextVars.timestampPattern = 1;
+      window.contextVars.timestampPattern = ${ node['timestamp_pattern_division'] | sjson, n };
       window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
           pageMeta: {
               title: 'Settings',

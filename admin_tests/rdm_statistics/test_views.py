@@ -37,9 +37,9 @@ class TestInstitutionListViewStat(AdminTestCase):
     def tearDown(self):
         super(TestInstitutionListViewStat, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
+        self.user.delete()
         for institution in self.institutions:
-            institution.remove()
+            institution.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
         """統合管理者のログインテスト"""
@@ -115,8 +115,8 @@ class TestclassStatisticsView(AdminTestCase):
     def tearDown(self):
         super(TestclassStatisticsView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
-        self.institution1.remove()
+        self.user.delete()
+        self.institution1.delete()
 
     def test_super_admin_login(self):
         """統合管理者のログインテスト"""
@@ -196,9 +196,9 @@ class TestImageView(AdminTestCase):
     def tearDown(self):
         super(TestImageView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
-        self.institution1.remove()
-        self.rdm_statistics.remove()
+        self.user.delete()
+        self.institution1.delete()
+        self.rdm_statistics.delete()
 
     def test_super_admin_login(self):
         """統合管理者のログインテスト"""
@@ -271,8 +271,8 @@ class TestSendView(AdminTestCase):
     def tearDown(self):
         super(TestSendView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
-        self.institution1.remove()
+        self.user.delete()
+        self.institution1.delete()
 
     def test_super_admin_login(self):
         """統合管理者のログインテスト"""
@@ -350,8 +350,8 @@ class TestCreateCSV(AdminTestCase):
     def tearDown(self):
         super(TestCreateCSV, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
-        self.institution1.remove()
+        self.user.delete()
+        self.institution1.delete()
 
 
 # class TestGatherView(AdminTestCase):

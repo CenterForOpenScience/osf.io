@@ -8,15 +8,6 @@
 {% block top_includes %}
 <link rel="stylesheet" href='/static/css/rdm_addons.css'>
 
-{% comment %}
-<link rel="stylesheet" href='/static/css/user-addon-settings.css'>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
-<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
-<script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
-<script src="{{ '/static/public/js/base-page.js'|webpack_asset }}"></script-->
-<script src="{{ '/static/public/js/vendor.js'|webpack_asset }}"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
-{% endcomment %}
 {% endblock top_includes %}
 
 {% block content %}
@@ -47,6 +38,7 @@
                             </div>
                         </td>
                         <td>{% include addon.institution_settings_template with addon=addon institution=institution %}</td>
+
                         <td class="is_forced">
                             <div class="checkbox">
                                 <label>
@@ -54,10 +46,9 @@
                                         data-addon-short-name="{{ addon.addon_short_name }}"
                                         data-institution-id="{{ institution.id }}"
                                         {% if addon.option.is_forced %}checked{% endif %}> Force to use
-                                </lable>
+                                </label>
                             </div>
                         </td>
-                    <!--<hr>-->
                     </tr>
                 {% endfor %}
                 </table>
@@ -73,11 +64,6 @@
 </script>
 <script src="{{ '/static/public/js/rdm-addons-page.js' }}"></script>
 
-{% comment %}
-<script src="{{ '/static/public/js/rdm-addons-page.js'|webpack_asset }}"></script>
-
-<script src="{{ '/static/public/js/rdm-dataverse-cfg.js'|webpack_asset }}"></script>
-{% endcomment %}
 
 {% for js_asset in addons_js %}
   <script src="{{ js_asset }}"></script>
