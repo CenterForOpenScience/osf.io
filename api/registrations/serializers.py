@@ -8,7 +8,7 @@ from rest_framework import exceptions
 from api.base.exceptions import Conflict
 
 from api.base.utils import absolute_reverse, get_user_auth
-from website.project.metadata.utils import is_prereg_admin_not_project_admin
+# from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
@@ -22,7 +22,7 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
-from osf.exceptions import ValidationValueError
+# from osf.exceptions import ValidationValueError
 from osf.models import Node
 from osf.utils import permissions
 
@@ -363,7 +363,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         draft = validated_data.pop('draft')
         registration_choice = validated_data.pop('registration_choice', 'immediate')
         embargo_lifted = validated_data.pop('lift_embargo', None)
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+        # reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
         children = validated_data.pop('children', [])
         if children:
             # First check that all children are valid
@@ -380,10 +380,10 @@ class RegistrationCreateSerializer(RegistrationSerializer):
                                              'The following file(s) are attached, but are not part of a component being'
                                              ' registered: {}'.format(','.join(orphan_files_names)))
 
-        try:
-            draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
-        except ValidationValueError as e:
-            raise exceptions.ValidationError(e.message)
+        # try:
+        #     draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
+        # except ValidationValueError as e:
+        #     raise exceptions.ValidationError(e.message)
 
         try:
             registration = draft.register(auth, save=True, child_ids=children)
