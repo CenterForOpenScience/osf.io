@@ -967,7 +967,7 @@ class TestUnregisteredUser:
             unreg_user.add_unclaimed_record(project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
-        assert str(e.value) == 'Referrer does not have permission to add a contributor to project {}'.format(project._primary_key)
+        assert str(e.value) == 'Referrer does not have permission to add a contributor to {}'.format(project._primary_key)
 
         # test_referrer_is_not_admin_or_moderator
         referrer = UserFactory()
