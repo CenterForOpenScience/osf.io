@@ -679,7 +679,7 @@ def claim_user_registered(auth, node, **kwargs):
         return redirect(sign_out_url)
 
     # Logged in user should not be a contributor the project
-    if node.is_contributor(current_user, explicit=True):
+    if node.is_contributor(current_user):
         data = {
             'message_short': 'Already a contributor',
             'message_long': ('The logged-in user is already a contributor to this '
