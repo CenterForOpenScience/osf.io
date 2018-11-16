@@ -72,7 +72,7 @@ class CollectionMixin(object):
         )
 
 
-class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
+class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, CollectionMixin):
     """Organizer Collections organize projects and components. *Writeable*.
 
     Paginated list of Project Organizer Collections ordered by their `modified`.
