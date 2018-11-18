@@ -1256,6 +1256,7 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_delete_project_with_component_allowed_with_2_12(self, app, user):
         project = ProjectFactory(creator=user)
         child = NodeFactory(parent=project, creator=user)
+        grandchild = NodeFactory(parent=child, creator=user)
         # Versions 2.12 and greater delete all the nodes in the hierarchy
         res = app.delete_json_api(
             '/{}nodes/{}/?version=2.12'.format(API_BASE, project._id),
@@ -1265,8 +1266,10 @@ class TestNodeDelete(NodeCRUDTestCase):
         assert res.status_code == 204
         project.reload()
         child.reload()
+        grandchild.reload()
         assert project.is_deleted is True
         assert child.is_deleted is True
+        assert grandchild.is_deleted is True
 
     def test_delete_project_with_private_component_2_12(self, app, user):
         user_two = AuthUserFactory()

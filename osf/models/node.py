@@ -10,6 +10,7 @@ import bson
 from django.db.models import Q, OuterRef, Exists
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
+from django_bulk_update.helper import bulk_update
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.paginator import Paginator
@@ -2791,13 +2792,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # TODO: rename "date" param - it's shadowing a global
         hierarchy = Node.objects.get_children(self, active=True, include_root=True)
         is_admin = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=auth.user)
-        if hierarchy.annotate(has_admin_perm=Exists(is_admin)).filter(has_admin_perm=False).exists():
+        if len(hierarchy.annotate(has_admin_perm=Exists(is_admin)).filter(has_admin_perm=False)):
             raise PermissionsError(
                 '{0!r} does not have permission to modify this {1}, or a component in its hierarchy.'.format(auth.user, self.category or 'node')
             )
 
+        has_public = hierarchy.filter(is_public=True).exists()
+
         # After delete callback
-        remove_addons(auth, list(hierarchy))
+        remove_addons(auth, hierarchy)
 
         Comment = apps.get_model('osf.Comment')
         Comment.objects.filter(node__id__in=hierarchy).update(root_target=None)
@@ -2805,12 +2808,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         log_date = date or timezone.now()
         for node in hierarchy:
             # Add log to parents
+            node.is_deleted = True
+            node.deleted_date = date
             self.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
 
-        hierarchy.update(is_deleted=True, deleted_date=date)
+        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
 
-        if hierarchy.filter(is_public=True).exists():
+        if has_public:
             AbstractNode.bulk_update_search(hierarchy)
 
         return True
