@@ -553,7 +553,6 @@ class GatherView(TemplateView):
         nodes = AbstractNode.objects.all().select_related().filter(creator_id=user, category='project')
         return nodes
 
-
     def get_wb_url(self, path, node_id, provider, cookie):
         url = waterbutler_api_url_for(node_id=node_id, _internal=True, meta=True, provider=provider, path=path, cookie=cookie)
         return url
