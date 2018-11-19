@@ -25,7 +25,7 @@
 ## Documentation
 
 <!-- Does any internal or external documentation need to be updated?
-     - If the API was versioned, update the developer.osf.io changelog. 
+     - If the API was versioned, update the developer.osf.io changelog.
      - If changes were made to the API, link the developer.osf.io PR here.
 -->
 
