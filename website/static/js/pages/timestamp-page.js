@@ -36,7 +36,7 @@ $(document).ready(function () {
 
 $(function () {
     var btnVerify_onclick = function () {
-        if ($('#btn-verify').attr('disabled') != undefined || $('#btn-addtimestamp').attr('disabled') != undefined) {
+        if ($('#btn-verify').attr('disabled') !== undefined || $('#btn-addtimestamp').attr('disabled') !== undefined) {
             return false;
         }
         timestampCommon.verify({
@@ -47,7 +47,7 @@ $(function () {
     };
 
     var btnAddtimestamp_onclick = function () {
-        if ($('#btn-verify').attr('disabled') != undefined || $('#btn-addtimestamp').attr('disabled') != undefined) {
+        if ($('#btn-verify').attr('disabled') !== undefined || $('#btn-addtimestamp').attr('disabled') !== undefined) {
             return false;
         }
         timestampCommon.add({
