@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.http import Http404
 from django.shortcuts import redirect
@@ -13,7 +14,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 
 from osf.models.user import OSFUser
-from osf.models import AdminProfile
+from osf.models import AdminProfile, Guid
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
 from osf.models.institution import Institution
@@ -23,6 +24,7 @@ from admin.base.settings import SHIB_EPPN_SCOPING_SEPARATOR
 from admin.base.settings import ENABLE_LOGIN_FORM, ENABLE_SHB_LOGIN
 from django.views.generic.base import RedirectView
 from api.institutions.authentication import login_by_eppn
+from website.views import userkey_generation_check, userkey_generation
 import logging
 logger = logging.getLogger(__name__)
 
@@ -119,6 +121,9 @@ class ShibLoginView(RedirectView):
                 new_user.affiliated_institutions.add(institution)
                 eppn_user = new_user
 
+        guid = Guid.objects.get(object_id=eppn_user.id, content_type_id=ContentType.objects.get_for_model(OSFUser).id)
+        if not userkey_generation_check(guid._id):
+            userkey_generation(guid._id)
         login(request, eppn_user, backend='api.base.authentication.backends.ODMBackend')
 
         # Transit to the administrator's home screen
