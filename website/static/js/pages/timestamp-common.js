@@ -51,9 +51,9 @@ var verify = function (params) {
                     }
                 }).fail(function (xhr, status, error) {
                     if (successCnt == fileCnt) {
-                        Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
+                        Raven.captureMessage('Timestamp Add Error: ' + fileList[j].file_path, {
                             extra: {
-                                url: url,
+                                url: params.urlVerifyData,
                                 status: status,
                                 error: error
                             }
@@ -68,7 +68,7 @@ var verify = function (params) {
     }).fail(function (xhr, textStatus, error) {
         Raven.captureMessage('Timestamp Add Error', {
             extra: {
-                url: url,
+                url: params.urlVerify,
                 textStatus: textStatus,
                 error: error
             }
@@ -124,9 +124,9 @@ var add = function (params) {
                 window.location.reload();
             }
         }).fail(function (xhr, status, error) {
-            Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
+            Raven.captureMessage('Timestamp Add Error: ' + fileList[i]['file_path'], {
                 extra: {
-                    url: urls.addTimestampData,
+                    url: params.url,
                     status: status,
                     error: error
                 }
