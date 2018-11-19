@@ -45,12 +45,12 @@ var verify = function (params) {
                 }).done(function () {
                     successCnt++;
                     $('#timestamp_errors_spinner').text('Verification files : ' + successCnt + ' / ' + fileCnt + ' ...');
-                    if (successCnt == fileCnt) {
+                    if (successCnt === fileCnt) {
                         $('#timestamp_errors_spinner').text('Verification (100%) and Refreshing...');
                         window.location.reload();
                     }
                 }).fail(function (xhr, status, error) {
-                    if (successCnt == fileCnt) {
+                    if (successCnt === fileCnt) {
                         Raven.captureMessage('Timestamp Add Error: ' + fileList[j].file_path, {
                             extra: {
                                 url: params.urlVerifyData,
@@ -93,7 +93,7 @@ var add = function (params) {
         return null;
     });
 
-    if (fileList.length == 0) {
+    if (fileList.length === 0) {
         return false;
     }
 
@@ -105,11 +105,11 @@ var add = function (params) {
     var successCnt = 0;
     for (var i = 0; i < fileList.length; i++) {
         var post_data = {
-            'provider': fileList[i]['provider'],
-            'file_id': fileList[i]['file_id'],
-            'file_path': fileList[i]['file_path'],
-            'file_name': fileList[i]['file_name'],
-            'version': fileList[i]['version']
+            'provider': fileList[i].provider,
+            'file_id': fileList[i].file_id,
+            'file_path': fileList[i].file_path,
+            'file_name': fileList[i].file_name,
+            'version': fileList[i].version
         };
         $.ajax({
             url: params.url,
@@ -119,12 +119,12 @@ var add = function (params) {
         }).done(function () {
             successCnt++;
             $('#timestamp_errors_spinner').text('Adding Timestamp files : ' + successCnt + ' / ' + fileList.length + ' ...');
-            if (successCnt == fileList.length) {
+            if (successCnt === fileList.length) {
                 $('#timestamp_errors_spinner').text('Added Timestamp (100%) and Refreshing...');
                 window.location.reload();
             }
         }).fail(function (xhr, status, error) {
-            Raven.captureMessage('Timestamp Add Error: ' + fileList[i]['file_path'], {
+            Raven.captureMessage('Timestamp Add Error: ' + fileList[i].file_path, {
                 extra: {
                     url: params.url,
                     status: status,
