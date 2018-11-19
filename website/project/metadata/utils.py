@@ -123,7 +123,11 @@ def extract_question_values(question, required_fields, is_reviewer):
     elif question.get('type') == 'choose':
         options = question.get('options')
         if options:
-            response['value'] = get_options_jsonschema(options)
+            enum_options = get_options_jsonschema(options)
+            if question.get('format') == 'singleselect':
+                response['value'] = enum_options
+            elif question.get('format') == 'multiselect':
+                response['value'] = {'type': 'array', 'items': enum_options}
     elif question.get('type') == 'osf-upload':
         response['extra'] = OSF_UPLOAD_EXTRA_SCHEMA
 
