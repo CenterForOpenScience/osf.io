@@ -359,39 +359,43 @@
        <div style="margin-top: 5px; margin-bottom: 5px;">
            Has supplemental materials for <a href="${preprint['url']}" target="_blank">${preprint['title']}</a>
            on ${preprint['provider']['name']}
-         &nbsp;<span id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}"></span>
+         % if user['is_contributor']:
+            &nbsp;<span id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}"></span>
+        % endif
        </div>
-       <div id="metadatapreprint${i}" class="collection-details collapse">
-           <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
-                <li>
-                    Status:&nbsp;&nbsp;
-                        <b>
-                            % if preprint['is_withdrawn']:
-                                Withdrawn
+       % if user['is_contributor']:
+           <div id="metadatapreprint${i}" class="collection-details collapse">
+               <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
+                    <li>
+                        Status:&nbsp;&nbsp;
+                            <b>
+                                % if preprint['is_withdrawn']:
+                                    Withdrawn
+                                % else:
+                                    ${preprint['state'].capitalize()}
+                                % endif
+                            </b>
+                        % if preprint['is_moderated'] and not preprint['is_withdrawn']:
+                            <% icon_tooltip = ''%>
+                            % if preprint['state'] == 'pending':
+                                % if preprint['provider']['workflow'] == 'post-moderation':
+                                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
+                                    ' removal by a moderator.'.format(preprint_word=preprint['word'])%>
+                                % else:
+                                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
+                                    'by a moderator.'.format(preprint_word=preprint['word'])%>
+                                % endif
+                            % elif preprint['state'] == 'accepted':
+                                <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>
                             % else:
-                                ${preprint['state'].capitalize()}
+                                <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>
                             % endif
-                        </b>
-                    % if preprint['is_moderated'] and not preprint['is_withdrawn']:
-                        <% icon_tooltip = ''%>
-                        % if preprint['state'] == 'pending':
-                            % if preprint['provider']['workflow'] == 'post-moderation':
-                                <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
-                                ' removal by a moderator.'.format(preprint_word=preprint['word'])%>
-                            % else:
-                                <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
-                                'by a moderator.'.format(preprint_word=preprint['word'])%>
-                            % endif
-                        % elif preprint['state'] == 'accepted':
-                            <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>
-                        % else:
-                            <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>
+                            <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
                         % endif
-                        <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
-                    % endif
-                </li>
-           </ul>
-       </div>
+                    </li>
+               </ul>
+           </div>
+         % endif
    </div>
 </div>
 % endfor
