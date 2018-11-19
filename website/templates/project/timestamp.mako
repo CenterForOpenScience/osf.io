@@ -53,7 +53,7 @@
                         <p class="m-t-sm fg-load-message"> Loading timestamp error list ...  </p>
                     </div>
                 </font>
-                <tbody id="tree_timestamp_error_data">
+                <tbody id="timestamp_error_list">
                 </tbody>
             </table>
         </form>

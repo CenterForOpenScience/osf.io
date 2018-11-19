@@ -207,7 +207,7 @@ class VerifyTimeStampAddList(RdmPermissionMixin, View):
 
         # Admin User
         self.request.user = source_user
-        ctx['provider_file_list'] = web_response.json()['provider_list']
+        ctx['provider_list'] = web_response.json()['provider_list']
         ctx['guid'] = self.kwargs['guid']
         ctx['project_title'] = absNodeData.title
         ctx['institution_id'] = self.kwargs['institution_id']
