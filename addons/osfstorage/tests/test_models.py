@@ -833,7 +833,7 @@ class TestOsfStorageCheckout(StorageTestCase):
 
     def test_checkout_logs(self):
         non_admin = factories.AuthUserFactory()
-        self.node.add_contributor(non_admin, permissions=['read', 'write'])
+        self.node.add_contributor(non_admin, permissions='write')
         self.node.save()
         self.file.check_in_or_out(non_admin, non_admin, save=True)
         self.file.reload()
@@ -905,11 +905,9 @@ class TestOsfStorageCheckout(StorageTestCase):
         models.Contributor.objects.create(
             node=self.node,
             user=user,
-            admin=True,
-            write=True,
-            read=True,
             visible=True
         )
+        self.node.add_permission(user, 'admin')
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         assert_equal(self.file.checkout, self.user)

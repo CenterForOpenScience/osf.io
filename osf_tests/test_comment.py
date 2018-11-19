@@ -176,7 +176,7 @@ class TestCommentModel:
             with capture_signals() as mock_signals:
                 user = UnregUserFactory()
                 user.save()
-                node.add_unregistered_contributor(user.fullname, user.email, Auth(node.creator), permissions=[permissions.READ], save=True)
+                node.add_unregistered_contributor(user.fullname, user.email, Auth(node.creator), permissions=permissions.READ, save=True)
 
                 Comment.create(
                     auth=auth,
@@ -273,7 +273,7 @@ class TestCommentModel:
             with capture_signals() as mock_signals:
                 user = UnregUserFactory()
                 user.save()
-                comment.node.add_unregistered_contributor(user.fullname, user.email, auth=Auth(comment.node.creator), visible=False, permissions=[permissions.READ])
+                comment.node.add_unregistered_contributor(user.fullname, user.email, auth=Auth(comment.node.creator), visible=False, permissions=permissions.READ)
                 comment.node.save()
 
                 comment.edit(
@@ -318,7 +318,7 @@ class TestCommentModel:
         project = ProjectFactory()
         user = UserFactory()
         project.set_privacy('private')
-        project.add_contributor(user, permissions=[permissions.READ])
+        project.add_contributor(user, permissions=permissions.READ)
         project.save()
 
         assert project.can_comment(Auth(user=user))

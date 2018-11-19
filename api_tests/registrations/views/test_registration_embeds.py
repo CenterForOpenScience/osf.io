@@ -30,9 +30,9 @@ class TestRegistrationEmbeds(ApiTestCase):
         self.contribs = [AuthUserFactory() for i in range(2)]
         for contrib in self.contribs:
             self.root_node.add_contributor(
-                contrib, ['read', 'write'], auth=self.auth, save=True)
+                contrib, 'write', auth=self.auth, save=True)
             self.child1.add_contributor(
-                contrib, ['read', 'write'], auth=self.auth, save=True)
+                contrib, 'write', auth=self.auth, save=True)
 
         self.contrib1 = self.contribs[0]
         self.contrib2 = self.contribs[1]

@@ -21,7 +21,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     @pytest.fixture()
     def other_admin(self, project_public):
         user = AuthUserFactory()
-        project_public.add_contributor(user, permissions=[permissions.ADMIN], save=True)
+        project_public.add_contributor(user, permissions=permissions.ADMIN, save=True)
         return user
 
     @pytest.fixture()

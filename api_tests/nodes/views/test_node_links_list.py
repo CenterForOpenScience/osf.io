@@ -6,6 +6,7 @@ from osf.models import NodeLog
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
+    OSFGroupFactory,
     AuthUserFactory
 )
 from rest_framework import exceptions
@@ -57,7 +58,7 @@ class TestNodeLinksList:
         return '/{}nodes/{}/node_links/'.format(API_BASE, public_project._id)
 
     def test_non_mutational_node_links_list_tests(
-            self, app, user, public_non_contrib, public_pointer_project,
+            self, app, user, public_non_contrib, public_pointer_project, private_project,
             private_pointer_project, public_url, private_url):
 
         #   test_return_embedded_public_node_pointers_logged_out
@@ -100,6 +101,16 @@ class TestNodeLinksList:
             expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
+
+    #   test_osf_group_member_read_can_view
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        private_project.add_osf_group(group, 'read')
+        res = app.get(
+            private_url,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 200
 
     #   test_node_links_bad_version
         url = '{}?version=2.1'.format(public_url)
@@ -384,6 +395,14 @@ class TestNodeLinkCreate:
             assert res.status_code == 403
             assert 'detail' in res.json['errors'][0]
 
+            group_mem = AuthUserFactory()
+            group = OSFGroupFactory(creator=group_mem)
+            public_project.add_osf_group(group, 'read')
+            res = app.post_json_api(
+                public_url, public_payload,
+                auth=group_mem.auth, expect_errors=True)
+            assert res.status_code == 403
+
             res = app.post_json_api(public_url, public_payload, auth=user.auth)
             assert res.status_code == 201
             assert res.content_type == 'application/vnd.api+json'
@@ -399,6 +418,16 @@ class TestNodeLinkCreate:
             expect_errors=True)
         assert res.status_code == 401
         assert 'detail' in res.json['errors'][0]
+
+    def test_creates_private_node_pointer_group_member(
+            self, app, private_project, private_pointer_project, private_url, make_payload):
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        private_project.add_osf_group(group, 'write')
+        private_payload = make_payload(id=private_pointer_project._id)
+        res = app.post_json_api(
+            private_url, private_payload, auth=group_mem.auth)
+        assert res.status_code == 201
 
     def test_creates_private_node_pointer_logged_in_contributor(
             self, app, user, private_pointer_project, private_url, make_payload):

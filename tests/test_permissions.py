@@ -7,24 +7,24 @@ from osf.utils import permissions
 
 
 def test_expand_permissions():
-    result = permissions.expand_permissions('admin')
-    assert_equal(result, ['read', 'write', 'admin'])
+    result = permissions.expand_permissions('admin_node')
+    assert_equal(result, ['read_node', 'write_node', 'admin_node'])
 
-    result2 = permissions.expand_permissions('write')
-    assert_equal(result2, ['read', 'write'])
+    result2 = permissions.expand_permissions('write_node')
+    assert_equal(result2, ['read_node', 'write_node'])
 
     result3 = permissions.expand_permissions(None)
     assert_equal(result3, [])
 
 
 def test_reduce_permissions():
-    result = permissions.reduce_permissions(['read', 'write', 'admin'])
+    result = permissions.reduce_permissions(['read_node', 'write_node', 'admin_node'])
     assert_equal(result, 'admin')
 
-    result2 = permissions.reduce_permissions(['read', 'write'])
+    result2 = permissions.reduce_permissions(['read_node', 'write_node'])
     assert_equal(result2, 'write')
 
-    result3 = permissions.reduce_permissions(['read'])
+    result3 = permissions.reduce_permissions(['read_node'])
     assert_equal(result3, 'read')
 
 
@@ -40,7 +40,7 @@ def test_reduce_permissions_with_unknown_permission_raises_error():
 
 def test_default_contributor_permissions():
     assert_equal(permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-        ['read', 'write'])
+        'write')
 
 
 if __name__ == '__main__':

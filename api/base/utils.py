@@ -7,9 +7,10 @@ from hashids import Hashids
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import OuterRef, Exists, Q, QuerySet, F
+from django.db.models import Q, QuerySet, F
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
+from guardian.shortcuts import get_objects_for_user
 
 from api.base.authentication.drf import get_session_from_cookie
 from api.base.exceptions import Gone, UserGone
@@ -17,7 +18,7 @@ from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser, Contributor, Node, Registration
+from osf.models import OSFUser, Node, Registration
 from osf.models.base import GuidMixin
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
@@ -151,8 +152,8 @@ def default_node_permission_queryset(user, model_cls):
     assert model_cls in {Node, Registration}
     if user.is_anonymous:
         return model_cls.objects.filter(is_public=True)
-    sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, read=True)
-    return model_cls.objects.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True) | Q(is_public=True))
+    read_user_query = Q(id__in=get_objects_for_user(user, 'read_node', model_cls))
+    return model_cls.objects.filter(read_user_query | Q(is_public=True))
 
 def default_node_list_permission_queryset(user, model_cls):
     # **DO NOT** change the order of the querysets below.

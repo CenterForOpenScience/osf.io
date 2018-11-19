@@ -82,6 +82,7 @@ from osf_tests.factories import (
     CommentFactory,
     InstitutionFactory,
     NodeFactory,
+    OSFGroupFactory,
     PreprintFactory,
     PreprintProviderFactory,
     PrivateLinkFactory,
@@ -237,6 +238,13 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.add_contributor(contributor, auth=Auth(self.project.creator))
         self.project.save()
         assert_true(check_can_access(self.project, contributor))
+
+    def test_check_can_access_osf_group_member_valid(self):
+        user = AuthUserFactory()
+        group = OSFGroupFactory(creator=user)
+        self.project.add_osf_group(group, 'read')
+        self.project.save()
+        assert_true(check_can_access(self.project, user))
 
     def test_check_user_access_invalid(self):
         noncontrib = AuthUserFactory()
@@ -456,8 +464,13 @@ class TestProjectViews(OsfTestCase):
         assert_equal(project.logs.latest().action, 'contributor_added')
         assert_equal(len(project.contributors), 3)
 
-        assert_equal(project.get_permissions(user2), ['read', 'write', 'admin'])
-        assert_equal(project.get_permissions(user3), ['read', 'write'])
+        assert project.has_permission(user2, 'admin') is True
+        assert project.has_permission(user2, 'write') is True
+        assert project.has_permission(user2, 'read') is True
+
+        assert project.has_permission(user3, 'admin') is False
+        assert project.has_permission(user3, 'write') is True
+        assert project.has_permission(user3, 'read') is True
 
     def test_manage_permissions(self):
         url = self.project.api_url + 'contributors/manage/'
@@ -478,8 +491,13 @@ class TestProjectViews(OsfTestCase):
 
         self.project.reload()
 
-        assert_equal(self.project.get_permissions(self.user1), ['read'])
-        assert_equal(self.project.get_permissions(self.user2), ['read', 'write', 'admin'])
+        assert self.project.has_permission(self.user1, 'admin') is False
+        assert self.project.has_permission(self.user1, 'write') is False
+        assert self.project.has_permission(self.user1, 'read') is True
+
+        assert self.project.has_permission(self.user2, 'admin') is True
+        assert self.project.has_permission(self.user2, 'write') is True
+        assert self.project.has_permission(self.user2, 'read') is True
 
     def test_manage_permissions_again(self):
         url = self.project.api_url + 'contributors/manage/'
@@ -512,8 +530,13 @@ class TestProjectViews(OsfTestCase):
 
         self.project.reload()
 
-        assert_equal(self.project.get_permissions(self.user2), ['read'])
-        assert_equal(self.project.get_permissions(self.user1), ['read', 'write', 'admin'])
+        assert self.project.has_permission(self.user2, 'admin') is False
+        assert self.project.has_permission(self.user2, 'write') is False
+        assert self.project.has_permission(self.user2, 'read') is True
+
+        assert self.project.has_permission(self.user1, 'admin') is True
+        assert self.project.has_permission(self.user1, 'write') is True
+        assert self.project.has_permission(self.user1, 'read') is True
 
     def test_contributor_manage_reorder(self):
 
@@ -522,10 +545,8 @@ class TestProjectViews(OsfTestCase):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
         project.add_contributors(
             [
-                {'user': reg_user1, 'permissions': [
-                    'read', 'write', 'admin'], 'visible': True},
-                {'user': reg_user2, 'permissions': [
-                    'read', 'write', 'admin'], 'visible': False},
+                {'user': reg_user1, 'permissions': 'admin', 'visible': True},
+                {'user': reg_user2, 'permissions': 'admin', 'visible': False},
             ]
         )
         # Add a non-registered user
@@ -679,10 +700,8 @@ class TestProjectViews(OsfTestCase):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
         project.add_contributors(
             [
-                {'user': reg_user1, 'permissions': [
-                    'read', 'write', 'admin'], 'visible': True},
-                {'user': reg_user2, 'permissions': [
-                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user1, 'permissions': 'admin', 'visible': True},
+                {'user': reg_user2, 'permissions': 'admin', 'visible': True},
             ]
         )
 
@@ -826,7 +845,7 @@ class TestProjectViews(OsfTestCase):
         non_admin = AuthUserFactory()
         node.add_contributor(
             non_admin,
-            permissions=['read', 'write'],
+            permissions='write',
             save=True,
         )
 
@@ -2045,7 +2064,7 @@ class TestAddingContributorViews(OsfTestCase):
         contributors = [{
             'user': contributor,
             'visible': True,
-            'permissions': ['read', 'write']
+            'permissions': 'write'
         }]
         project = ProjectFactory(creator=self.auth.user)
         project.add_contributors(contributors, auth=self.auth)
@@ -2814,7 +2833,7 @@ class TestPointerViews(OsfTestCase):
         user2 = AuthUserFactory()
         self.project.add_contributor(user2,
                                      auth=Auth(self.project.creator),
-                                     permissions=[permissions.READ])
+                                     permissions=permissions.READ)
 
         self._make_pointer_only_user_can_see(user2, self.project)
         self.project.save()
@@ -2837,7 +2856,7 @@ class TestPointerViews(OsfTestCase):
         user2 = AuthUserFactory()
         self.project.add_contributor(user2,
                                      auth=Auth(self.project.creator),
-                                     permissions=[permissions.READ])
+                                     permissions=permissions.READ)
         self.project.save()
 
         res = self.app.get(url, auth=user2.auth).maybe_follow()
@@ -4389,17 +4408,26 @@ class TestWikiWidgetViews(OsfTestCase):
         WikiPage.objects.create_for_node(self.project2, 'home', '', Auth(self.project.creator))
 
     def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
-        contrib = self.project.contributor_set.get(user=self.project.creator)
-        assert_true(_should_show_wiki_widget(self.project, contrib))
-        assert_true(_should_show_wiki_widget(self.project2, contrib))
+        assert_true(_should_show_wiki_widget(self.project, self.project.creator))
+        assert_true(_should_show_wiki_widget(self.project2, self.project.creator))
 
     def test_show_wiki_is_false_for_read_contributors_when_no_wiki_or_content(self):
-        contrib = self.project.contributor_set.get(user=self.read_only_contrib)
-        assert_false(_should_show_wiki_widget(self.project, contrib))
-        assert_false(_should_show_wiki_widget(self.project2, contrib))
+        assert_false(_should_show_wiki_widget(self.project, self.read_only_contrib))
+        assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
 
     def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
         assert_false(_should_show_wiki_widget(self.project, None))
+
+    def test_show_wiki_for_osf_group_members(self):
+        group = OSFGroupFactory(creator=self.noncontributor)
+        self.project.add_osf_group(group, 'read')
+        assert_false(_should_show_wiki_widget(self.project, self.noncontributor))
+        assert_false(_should_show_wiki_widget(self.project2, self.noncontributor))
+
+        self.project.remove_osf_group(group)
+        self.project.add_osf_group(group, 'write')
+        assert_true(_should_show_wiki_widget(self.project, self.noncontributor))
+        assert_false(_should_show_wiki_widget(self.project2, self.noncontributor))
 
 
 @pytest.mark.enable_implicit_clean
@@ -4499,7 +4527,7 @@ class TestProjectCreation(OsfTestCase):
     def test_create_component_with_contributors_read_write(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         non_admin = AuthUserFactory()
-        self.project.add_contributor(non_admin, permissions=['read', 'write'])
+        self.project.add_contributor(non_admin, permissions='write')
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=non_admin.auth)
@@ -4509,14 +4537,16 @@ class TestProjectCreation(OsfTestCase):
         assert_in(non_admin, child.contributors)
         assert_in(self.user1, child.contributors)
         assert_in(self.user2, child.contributors)
-        assert_equal(child.get_permissions(non_admin), ['read', 'write', 'admin'])
+        assert child.has_permission(non_admin, 'admin') is True
+        assert child.has_permission(non_admin, 'write') is True
+        assert child.has_permission(non_admin, 'read') is True
         # check redirect url
         assert_in('/contributors/', res.location)
 
     def test_create_component_with_contributors_read(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         non_admin = AuthUserFactory()
-        self.project.add_contributor(non_admin, permissions=['read'])
+        self.project.add_contributor(non_admin, permissions='read')
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=non_admin.auth, expect_errors=True)

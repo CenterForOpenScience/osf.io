@@ -16,6 +16,7 @@ import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
@@ -25,6 +26,7 @@ from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_save
 from django.utils import timezone
+from guardian.shortcuts import get_objects_for_user
 
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
@@ -47,6 +49,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -552,6 +555,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def is_anonymous(self):
         return False
 
+    @property
+    def osf_groups(self):
+        OSFGroup = apps.get_model('osf.OSFGroup')
+        return get_objects_for_user(self, 'member_group', OSFGroup)
+
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
@@ -693,11 +701,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             # Skip quickfiles
             if node.is_quickfiles:
                 continue
+            user_perms = Contributor(node=node, user=user).permission
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
-                user_permissions = node.get_permissions(user)
-                self_permissions = node.get_permissions(self)
-                permissions = max([user_permissions, self_permissions])
+                self_perms = Contributor(node=node, user=self).permission
+                permissions = API_CONTRIBUTOR_PERMISSIONS[max(API_CONTRIBUTOR_PERMISSIONS.index(user_perms), API_CONTRIBUTOR_PERMISSIONS.index(self_perms))]
                 node.set_permissions(user=self, permissions=permissions)
 
                 visible1 = self._id in node.visible_contributor_ids
@@ -708,6 +716,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 node.contributor_set.filter(user=user).delete()
             else:
                 node.contributor_set.filter(user=user).update(user=self)
+                node.add_permission(self, user_perms)
+                node.remove_permission(user, user_perms)
 
             node.save()
 
@@ -760,6 +770,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             merging_user_file.move_under(primary_quickfiles_root)
             merging_user_file.save()
+
+        # transfer group membership
+        for group in user.osf_groups:
+            if group.has_permission(user, 'manage'):
+                group.make_manager(self)
+            else:
+                group.make_member(self)
 
         # finalize the merge
 
@@ -1384,22 +1401,23 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
 
         from osf.models.provider import AbstractProvider
-        from osf.models import Preprint
+        from osf.models.osf_group import OSFGroup
+
         if isinstance(claim_origin, AbstractProvider):
             if not bool(get_perms(referrer, claim_origin)):
                 raise PermissionsError(
                     'Referrer does not have permission to add a moderator to provider {0}'.format(claim_origin._id)
                 )
 
-        elif isinstance(claim_origin, Preprint):
-            if not claim_origin.has_permission(referrer, 'admin'):
+        elif isinstance(claim_origin, OSFGroup):
+            if not claim_origin.has_permission(referrer, 'manage'):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a contributor to preprint {0}'.format(claim_origin._id)
+                    'Referrer does not have permission to add a member to {0}'.format(claim_origin._id)
                 )
         else:
-            if not claim_origin.can_edit(user=referrer):
+            if not claim_origin.has_permission(referrer, 'admin'):
                 raise PermissionsError(
-                    'Referrer does not have permission to add a contributor to project {0}'.format(claim_origin._primary_key)
+                    'Referrer does not have permission to add a contributor to {0}'.format(claim_origin._id)
                 )
 
         pid = str(claim_origin._id)
@@ -1564,11 +1582,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
         for node in shared_nodes.exclude(type='osf.quickfilesnode'):
-            alternate_admins = Contributor.objects.select_related('user').filter(
-                node=node,
-                user__is_active=True,
-                admin=True,
-            ).exclude(user=self)
+            alternate_admins = OSFUser.objects.filter(groups__name=node.format_group('admin')).exclude(id=self.id)
             if not alternate_admins:
                 raise UserStateError(
                     'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(

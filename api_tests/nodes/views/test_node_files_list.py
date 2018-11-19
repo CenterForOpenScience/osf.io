@@ -17,6 +17,7 @@ from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
+    OSFGroupFactory,
     PrivateLinkFactory
 )
 
@@ -214,6 +215,16 @@ class TestNodeFilesList(ApiTestCase):
             expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
+
+    def test_returns_private_files_logged_in_osf_group_member(self):
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        self.project.add_osf_group(group, 'read')
+        res = self.app.get(
+            self.private_url,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 200)
 
     def test_returns_addon_folders(self):
         user_auth = Auth(self.user)

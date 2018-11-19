@@ -11,6 +11,7 @@ from osf.models import NodeLog
 from osf_tests.factories import (
     fake_email,
     AuthUserFactory,
+    OSFGroupFactory,
     ProjectFactory,
     UnconfirmedUserFactory,
     UserFactory,
@@ -135,16 +136,9 @@ class TestNodeContributorList(NodeCRUDTestCase):
         }
         for i in range(0, 25):
             perm = random.choice(users.keys())
-            perms = []
-            if perm == 'admin':
-                perms = ['read', 'write', 'admin', ]
-            elif perm == 'write':
-                perms = ['read', 'write', ]
-            elif perm == 'read':
-                perms = ['read', ]
             user = AuthUserFactory()
 
-            project_private.add_contributor(user, permissions=perms)
+            project_private.add_contributor(user, permissions=perm)
             users[perm].append(user._id)
 
         res = app.get(url_private, auth=user.auth)
@@ -156,7 +150,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
                 user_id, api_perm)
 
     def test_return(
-            self, app, user, user_two, project_public,
+            self, app, user, user_two, project_public, project_private,
             url_public, url_private, make_contrib_id):
 
         #   test_return_public_contributor_list_logged_in
@@ -176,6 +170,17 @@ class TestNodeContributorList(NodeCRUDTestCase):
         res = app.get(url_private, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
+
+    #   test_return_private_contributor_list_logged_in_osf_group_member
+        res = app.get(url_private, auth=user_two.auth, expect_errors=True)
+        osf_group = OSFGroupFactory(creator=user_two)
+        project_private.add_osf_group(osf_group, 'read')
+        res = app.get(url_private, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == make_contrib_id(
+            project_private._id, user._id)
 
     def test_return_public_contributor_list_logged_out(
             self, app, user, user_two, project_public, url_public, make_contrib_id):
@@ -670,11 +675,20 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_public, data_user_three, url_public):
         project_public.add_contributor(
             user_two,
-            permissions=[
-                permissions.READ,
-                permissions.WRITE],
+            permissions=permissions.WRITE,
             auth=Auth(user),
             save=True)
+        res = app.post_json_api(url_public, data_user_three,
+                                auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        project_public.reload()
+        assert user_three not in project_public.contributors.all()
+
+    def test_adds_contributor_public_project_non_admin_osf_group(
+            self, app, user, user_two, user_three,
+            project_public, data_user_three, url_public):
+        group = OSFGroupFactory(creator=user_two)
+        project_public.add_osf_group(group, 'write')
         res = app.post_json_api(url_public, data_user_three,
                                 auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
@@ -699,6 +713,20 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             data_user_two, url_private):
         with assert_latest_log(NodeLog.CONTRIB_ADDED, project_private):
             res = app.post_json_api(url_private, data_user_two, auth=user.auth)
+            assert res.status_code == 201
+            assert res.json['data']['id'] == '{}-{}'.format(
+                project_private._id, user_two._id)
+
+            project_private.reload()
+            assert user_two in project_private.contributors
+
+    def test_adds_contributor_private_project_osf_group_admin_perms(
+            self, app, user, user_two, user_three, project_private,
+            data_user_two, url_private):
+        osf_group = OSFGroupFactory(creator=user_three)
+        project_private.add_osf_group(osf_group, 'admin')
+        with assert_latest_log(NodeLog.CONTRIB_ADDED, project_private):
+            res = app.post_json_api(url_private, data_user_two, auth=user_three.auth)
             assert res.status_code == 201
             assert res.json['data']['id'] == '{}-{}'.format(
                 project_private._id, user_two._id)
@@ -760,7 +788,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_private.reload()
             assert user_two in project_private.contributors
             assert project_private.get_permissions(user_two) == [
-                permissions.READ, permissions.WRITE, permissions.ADMIN]
+                'read_node', 'write_node', 'admin_node']
 
     def test_adds_write_contributor_private_project_admin(
             self, app, user, user_two, project_private, url_private):
@@ -790,7 +818,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_private.reload()
             assert user_two in project_private.contributors
             assert project_private.get_permissions(
-                user_two) == [permissions.READ, permissions.WRITE]
+                user_two) == ['read_node', 'write_node']
 
     def test_adds_read_contributor_private_project_admin(
             self, app, user, user_two, project_private, url_private):
@@ -820,7 +848,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_private.reload()
             assert user_two in project_private.contributors
             assert project_private.get_permissions(user_two) == [
-                permissions.READ]
+                'read_node']
 
     def test_adds_invalid_permission_contributor_private_project_admin(
             self, app, user, user_two, project_private, url_private):
@@ -874,8 +902,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
             project_private.reload()
             assert user_two in project_private.contributors
-            for permission in permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS:
-                assert project_private.has_permission(user_two, permission)
+            assert project_private.has_permission(user_two, 'write')
 
     def test_adds_already_existing_contributor_private_project_admin(
             self, app, user, user_two, project_private, data_user_two, url_private):
@@ -917,9 +944,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_private, data_user_three, url_private):
         project_private.add_contributor(
             user_two,
-            permissions=[
-                permissions.READ,
-                permissions.WRITE],
+            permissions=permissions.WRITE,
             auth=Auth(user))
         res = app.post_json_api(
             url_private, data_user_three,
@@ -1569,7 +1594,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
             payload_one, payload_two, url_public):
         project_public.add_contributor(
             user_two,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         res = app.post_json_api(
             url_public,
@@ -1622,7 +1647,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
 
     #   test_node_contributor_bulk_create_logged_in_read_only_contrib_private_project
         project_private.add_contributor(
-            user_two, permissions=[permissions.READ], save=True)
+            user_two, permissions=permissions.READ, save=True)
         res = app.post_json_api(
             url_private,
             {'data': [payload_two]},
@@ -1757,11 +1782,11 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         )
         project_public.add_contributor(
             user_two,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         project_public.add_contributor(
             user_three,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         return project_public
 
@@ -1778,11 +1803,11 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         )
         project_private.add_contributor(
             user_two,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         project_private.add_contributor(
             user_three,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         return project_private
 
@@ -2203,12 +2228,12 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         )
         project_public.add_contributor(
             user_two,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True
         )
         project_public.add_contributor(
             user_three,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True
         )
         return project_public
@@ -2226,11 +2251,11 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         )
         project_private.add_contributor(
             user_two,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         project_private.add_contributor(
             user_three,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         return project_private
 
@@ -2564,11 +2589,11 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         )
         project_public.add_contributor(
             user_two,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         project_public.add_contributor(
             user_three,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         return project_public
 
@@ -2585,11 +2610,11 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         )
         project_private.add_contributor(
             user_two,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         project_private.add_contributor(
             user_three,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             visible=True, save=True)
         return project_private
 
@@ -2926,6 +2951,16 @@ class TestNodeContributorFiltering:
         errors = res.json['errors']
         assert len(errors) == 1
         assert errors[0]['detail'] == '\'invalid\' is not a valid field for this endpoint.'
+
+    #   test_filtering_write_contributors
+        user_two = AuthUserFactory()
+        project.add_contributor(user_two, 'write')
+        url = '/{}nodes/{}/contributors/?filter[permission]=write'.format(
+            API_BASE, project._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes'].get('permission') == 'write'
 
     def test_filtering_node_with_non_bibliographic_contributor(
             self, app, user, project):

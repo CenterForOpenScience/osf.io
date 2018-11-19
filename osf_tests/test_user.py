@@ -206,8 +206,8 @@ class TestOSFUser:
         # Both the master and dupe are contributors
         project.add_contributor(user2, log=False)
         project.add_contributor(user, log=False)
-        project.set_permissions(user=user, permissions=['read'])
-        project.set_permissions(user=user2, permissions=['read', 'write', 'admin'])
+        project.set_permissions(user=user, permissions='read')
+        project.set_permissions(user=user2, permissions='admin')
         project.set_visible(user=user, visible=False)
         project.set_visible(user=user2, visible=True)
         project.save()
@@ -967,7 +967,7 @@ class TestUnregisteredUser:
             unreg_user.add_unclaimed_record(project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
-        assert str(e.value) == 'Referrer does not have permission to add a contributor to project {}'.format(project._primary_key)
+        assert str(e.value) == 'Referrer does not have permission to add a contributor to {}'.format(project._primary_key)
 
         # test_referrer_is_not_admin_or_moderator
         referrer = UserFactory()
@@ -1301,24 +1301,24 @@ class TestMergingUsers:
     def test_merge_user_with_higher_permissions_on_project(self, master, dupe, merge_dupe):
         # Both master and dupe are contributors on the same project
         project = ProjectFactory()
-        project.add_contributor(contributor=master, permissions=('read', 'write'))
-        project.add_contributor(contributor=dupe, permissions=('read', 'write', 'admin'))
+        project.add_contributor(contributor=master, permissions='write')
+        project.add_contributor(contributor=dupe, permissions='admin')
 
         project.save()
         merge_dupe()  # perform the merge
 
-        assert project.get_permissions(master) == ['read', 'write', 'admin']
+        assert project.get_permissions(master) == ['read_node', 'write_node', 'admin_node']
 
     def test_merge_user_with_lower_permissions_on_project(self, master, dupe, merge_dupe):
         # Both master and dupe are contributors on the same project
         project = ProjectFactory()
-        project.add_contributor(contributor=master, permissions=('read', 'write', 'admin'))
-        project.add_contributor(contributor=dupe, permissions=('read', 'write'))
+        project.add_contributor(contributor=master, permissions='admin')
+        project.add_contributor(contributor=dupe, permissions='write')
 
         project.save()
         merge_dupe()  # perform the merge
 
-        assert project.get_permissions(master) == ['read', 'write', 'admin']
+        assert project.get_permissions(master) == ['read_node', 'write_node', 'admin_node']
 
     def test_merge_user_into_self_fails(self, master):
         with pytest.raises(ValueError):
@@ -2000,7 +2000,7 @@ class TestUserGdprDelete:
         second_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(second_admin_contrib)
-        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        project.set_permissions(user=second_admin_contrib, permissions='admin')
         project.save()
         return project
 
@@ -2009,7 +2009,7 @@ class TestUserGdprDelete:
         second_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(second_admin_contrib)
-        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        project.set_permissions(user=second_admin_contrib, permissions='admin')
         user = project.creator
 
         node_settings = project.add_addon('github', auth=None)

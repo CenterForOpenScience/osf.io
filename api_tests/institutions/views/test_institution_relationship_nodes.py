@@ -187,7 +187,7 @@ class TestInstitutionRelationshipNodes:
     ):
         user = AuthUserFactory()
         user.affiliated_institutions.add(institution)
-        node.add_contributor(user, permissions=[permissions.READ])
+        node.add_contributor(user, permissions=permissions.READ)
         node.save()
 
         res = app.post_json_api(
@@ -492,7 +492,7 @@ class TestInstitutionRelationshipRegistrations:
 
         # User has read permission
         registration_no_affiliation.add_contributor(
-            affiliated_user, permissions=[permissions.READ])
+            affiliated_user, permissions=permissions.READ)
         registration_no_affiliation.save()
 
         res = app.post_json_api(

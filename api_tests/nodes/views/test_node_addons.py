@@ -365,7 +365,7 @@ class NodeAddonDetailMixin(object):
     def test_settings_detail_PATCH_readcontrib_raises_error(self):
         read_user = AuthUserFactory()
         self.node.add_contributor(
-            read_user, permissions=[READ], auth=self.auth)
+            read_user, permissions=READ, auth=self.auth)
         res = self.app.patch_json_api(
             self.setting_detail_url,
             {'data': {
@@ -551,22 +551,26 @@ class NodeAddonFolderMixin(object):
         assert_equal(res.status_code, 403)
 
     def test_folder_list_GET_raises_error_writecontrib_not_authorizer(self):
+        wrong_type = self.should_expect_errors()
         write_user = AuthUserFactory()
         self.node.add_contributor(
             write_user,
-            permissions=[WRITE],
+            permissions=WRITE,
             auth=self.auth)
         res = self.app.get(
             self.folder_url,
             auth=write_user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
+        if wrong_type:
+            assert_in(res.status_code, [404, 501])
+        else:
+            assert_equal(res.status_code, 403)
 
     def test_folder_list_GET_raises_error_admin_not_authorizer(self):
         wrong_type = self.should_expect_errors()
         admin_user = AuthUserFactory()
         self.node.add_contributor(
-            admin_user, permissions=[ADMIN],
+            admin_user, permissions=ADMIN,
             auth=self.auth)
         res = self.app.get(
             self.folder_url,
@@ -1163,11 +1167,23 @@ class TestNodeForwardAddon(
         self.should_expect_errors()
         admin_user = AuthUserFactory()
         self.node.add_contributor(
-            admin_user, permissions=[ADMIN],
+            admin_user, permissions=ADMIN,
             auth=self.auth)
         res = self.app.get(
             self.folder_url,
             auth=admin_user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 501)
+
+    def test_folder_list_GET_raises_error_writecontrib_not_authorizer(self):
+        write_user = AuthUserFactory()
+        self.node.add_contributor(
+            write_user,
+            permissions=WRITE,
+            auth=self.auth)
+        res = self.app.get(
+            self.folder_url,
+            auth=write_user.auth,
             expect_errors=True)
         assert_equal(res.status_code, 501)
 

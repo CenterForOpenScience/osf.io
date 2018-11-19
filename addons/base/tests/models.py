@@ -594,7 +594,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
     @mock.patch('framework.status.push_status_message')
     def test_remove_contributor_authorizer(self, mock_push_status):
         contributor = UserFactory()
-        self.node.add_contributor(contributor, permissions=['read', 'write', 'admin'])
+        self.node.add_contributor(contributor, permissions='admin')
         self.node.remove_contributor(self.node.creator, auth=Auth(user=contributor))
         self.node_settings.reload()
         self.user_settings.reload()

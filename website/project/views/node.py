@@ -9,7 +9,8 @@ from itertools import islice
 from flask import request
 from django.apps import apps
 from django.core.exceptions import ValidationError
-from django.db.models import Q, OuterRef, Exists, Subquery
+from django.db.models import Q, OuterRef, Subquery
+from guardian.shortcuts import get_objects_for_user
 
 from framework import status
 from framework.utils import iso8601format
@@ -40,12 +41,12 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation, Preprint
 from addons.wiki.models import WikiPage
+from osf.models import AbstractNode, Collection, Guid, PrivateLink, Node, NodeRelation, Preprint
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
-from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
+from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS, reduce_permissions
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary, get_storage_region_list
@@ -191,7 +192,7 @@ def project_new_node(auth, node, **kwargs):
         ).format(component_url=new_component.url)
         if form.inherit_contributors.data and node.has_permission(user, WRITE):
             for contributor in node.contributors:
-                perm = CREATOR_PERMISSIONS if contributor._id == user._id else node.get_permissions(contributor)
+                perm = CREATOR_PERMISSIONS if contributor._id == user._id else reduce_permissions(node.get_permissions(contributor))
                 if contributor._id == user._id and not contributor.is_registered:
                     new_component.add_unregistered_contributor(
                         fullname=contributor.fullname, email=contributor.email,
@@ -653,11 +654,11 @@ def _render_addons(addons):
     return widgets, configs, js, css
 
 
-def _should_show_wiki_widget(node, contributor):
+def _should_show_wiki_widget(node, user):
     has_wiki = bool(node.get_addon('wiki'))
     wiki_page = WikiVersion.objects.get_for_node(node, 'home')
 
-    if contributor and contributor.write and not node.is_registration:
+    if node.has_permission(user, 'write') and not node.is_registration:
         return has_wiki
     else:
         return has_wiki and wiki_page and wiki_page.html(node)
@@ -671,11 +672,6 @@ def _view_project(node, auth, primary=False,
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
-
-    try:
-        contributor = node.contributor_set.get(user=user)
-    except Contributor.DoesNotExist:
-        contributor = None
 
     parent = node.find_readable_antecedent(auth)
     if user:
@@ -787,22 +783,24 @@ def _view_project(node, auth, primary=False,
             'absolute_url': parent.absolute_url if parent else '',
             'registrations_url': parent.web_url_for('node_registrations', _guid=True) if parent else '',
             'is_public': parent.is_public if parent else '',
+            'is_contributor_or_group_member': parent.is_contributor_or_group_member(user) if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
             'can_view': parent.can_view(auth) if parent else False,
         },
         'user': {
-            'is_contributor': bool(contributor),
-            'is_admin': bool(contributor) and contributor.admin,
+            'is_contributor_or_group_member': node.is_contributor_or_group_member(user),
+            'is_contributor': node.is_contributor(user),
+            'is_admin': node.has_permission(user, ADMIN),
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
-            'can_edit': bool(contributor) and contributor.write and not node.is_registration,
-            'can_edit_tags': bool(contributor) and contributor.write,
+            'can_edit': node.has_permission(user, WRITE) and not node.is_registration,
+            'can_edit_tags': node.has_permission(user, WRITE),
             'has_read_permissions': node.has_permission(user, READ),
-            'permissions': get_contributor_permissions(contributor, as_list=True) if contributor else [],
+            'permissions': get_contributor_permissions(user, as_list=True, node=node),
             'id': user._id if user else None,
             'username': user.username if user else None,
             'fullname': user.fullname if user else '',
-            'can_comment': bool(contributor) or node.can_comment(auth),
-            'show_wiki_widget': _should_show_wiki_widget(node, contributor),
+            'can_comment': node.can_comment(auth),
+            'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': bookmark_collection_id,
             'institutions': get_affiliated_institutions(user) if user else [],
         },
@@ -915,16 +913,14 @@ def _get_children(node, auth):
     Returns the serialized representation of the given node and all of its children
     for which the given user has ADMIN permission.
     """
-    is_admin = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=auth.user)
     parent_node_sqs = NodeRelation.objects.filter(child=OuterRef('pk'), is_node_link=False).values('parent__guids___id')
     children = (Node.objects.get_children(node)
                 .filter(is_deleted=False)
-                .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
-                .annotate(has_admin_perm=Exists(is_admin))
-                .filter(has_admin_perm=True))
+                .annotate(parentnode_id=Subquery(parent_node_sqs[:1])))
+    admin_nodes = get_objects_for_user(auth.user, 'admin_node', children)
 
     nested = defaultdict(list)
-    for child in children:
+    for child in admin_nodes:
         nested[child.parentnode_id].append(child)
 
     return serialize_children(nested[node._id], nested)
@@ -994,10 +990,10 @@ def serialize_child_tree(child_list, user, nested):
     """
     serialized_children = []
     for child in child_list:
-        if child.has_read_perm or child.has_permission_on_children(user, READ):
+        if child.has_permission(user, READ) or child.has_permission_on_children(user, READ):
             contributors = [{
                 'id': contributor.user._id,
-                'is_admin': contributor.admin,
+                'is_admin': child.has_permission(contributor.user, 'admin'),
                 'is_confirmed': contributor.user.is_confirmed,
                 'visible': contributor.visible
             } for contributor in child.contributor_set.all()]
@@ -1009,7 +1005,7 @@ def serialize_child_tree(child_list, user, nested):
                     'title': child.title,
                     'is_public': child.is_public,
                     'contributors': contributors,
-                    'is_admin': child.has_admin_perm,
+                    'is_admin': child.has_permission(user, 'admin'),
                     'is_supplemental_project': child.has_linked_published_preprints,
                 },
                 'user_id': user._id,
@@ -1018,7 +1014,7 @@ def serialize_child_tree(child_list, user, nested):
                 'category': child.category,
                 'permissions': {
                     'view': True,
-                    'is_admin': child.has_admin_perm
+                    'is_admin': child.has_permission(user, 'admin')
                 }
             })
 
@@ -1034,14 +1030,10 @@ def node_child_tree(user, node):
 
     assert node, '{} is not a valid Node.'.format(node._id)
 
-    is_admin_sqs = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=user)
-    can_read_sqs = Contributor.objects.filter(node=OuterRef('pk'), read=True, user=user)
     parent_node_sqs = NodeRelation.objects.filter(child=OuterRef('pk'), is_node_link=False).values('parent__guids___id')
     children = (Node.objects.get_children(node)
                 .filter(is_deleted=False)
                 .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
-                .annotate(has_admin_perm=Exists(is_admin_sqs))
-                .annotate(has_read_perm=Exists(can_read_sqs))
                 .include('contributor__user__guids')
                 )
 

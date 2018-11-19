@@ -495,7 +495,7 @@ class TestFileView:
 
         # test_read_contrib_cannot_checkout
         read_contrib = AuthUserFactory()
-        node.add_contributor(read_contrib, permissions=['read'])
+        node.add_contributor(read_contrib, permissions='read')
         node.save()
         assert not node.can_edit(user=read_contrib)
         res = app.put_json_api(
@@ -515,7 +515,7 @@ class TestFileView:
 
     def test_write_contrib_can_checkin(self, app, node, file, file_url):
         write_contrib = AuthUserFactory()
-        node.add_contributor(write_contrib, permissions=['read', 'write'])
+        node.add_contributor(write_contrib, permissions='write')
         node.save()
         assert node.can_edit(user=write_contrib)
         file.checkout = write_contrib
@@ -536,7 +536,7 @@ class TestFileView:
 
     def test_removed_contrib_files_checked_in(self, app, node, file):
         write_contrib = AuthUserFactory()
-        node.add_contributor(write_contrib, permissions=['read', 'write'])
+        node.add_contributor(write_contrib, permissions='write')
         node.save()
         assert node.can_edit(user=write_contrib)
         file.checkout = write_contrib

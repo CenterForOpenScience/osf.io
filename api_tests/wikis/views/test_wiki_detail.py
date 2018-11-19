@@ -75,15 +75,15 @@ class WikiCRUDTestCase:
     @pytest.fixture()
     def user_write_contributor(self, project_public, project_private):
         user = AuthUserFactory()
-        project_public.add_contributor(user, permissions=[permissions.WRITE])
-        project_private.add_contributor(user, permissions=[permissions.WRITE])
+        project_public.add_contributor(user, permissions=permissions.WRITE)
+        project_private.add_contributor(user, permissions=permissions.WRITE)
         return user
 
     @pytest.fixture()
     def user_read_contributor(self, project_public, project_private):
         user = AuthUserFactory()
-        project_public.add_contributor(user, permissions=[permissions.READ])
-        project_private.add_contributor(user, permissions=[permissions.READ])
+        project_public.add_contributor(user, permissions=permissions.READ)
+        project_private.add_contributor(user, permissions=permissions.READ)
         return user
 
     @pytest.fixture()

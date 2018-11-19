@@ -8,6 +8,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
+from guardian.shortcuts import get_objects_for_user
 
 from addons.base.exceptions import InvalidAuthError
 from addons.osfstorage.models import OsfStorageFolder
@@ -73,7 +74,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
-    IsContributor,
+    IsContributorOrGroupMember,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
@@ -118,7 +119,7 @@ from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.models.node import remove_addons
-from osf.utils.permissions import ADMIN, PERMISSIONS
+from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
 from website import mails
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
@@ -225,8 +226,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                has_permission = nodes.filter(contributor__user_id=auth.user.id, contributor__write=True).values_list('guids___id', flat=True)
-                return Node.objects.filter(guids___id__in=has_permission)
+                return get_objects_for_user(auth.user, 'write_node', nodes)
 
             for node in nodes:
                 if not node.can_edit(auth):
@@ -409,9 +409,11 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             if operation['op'] != 'eq':
                 raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
             # operation['value'] should be 'admin', 'write', or 'read'
-            if operation['value'].lower().strip() not in PERMISSIONS:
+            query_val = operation['value'].lower().strip()
+            if query_val not in API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
-            return Q(**{operation['value'].lower().strip(): True})
+            # Group members not returned under contributors endpoints
+            return Q(user__in=self.get_resource().get_group(query_val).user_set.all())
         return super(NodeContributorsList, self).build_query_from_field(field_name, operation)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
@@ -1984,7 +1986,7 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        IsContributor,
+        IsContributorOrGroupMember,
     )
 
     required_read_scopes = [CoreScopes.NODE_SETTINGS_READ]

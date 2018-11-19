@@ -371,9 +371,6 @@ class PreprintContributorsCreateSerializer(NodeContributorsCreateSerializer, Pre
 
     email_preferences = ['preprint', 'false']
 
-    def get_proposed_permissions(self, validated_data):
-        return validated_data.get('permission') or osf_permissions.WRITE
-
 
 class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, PreprintContributorsSerializer):
     """

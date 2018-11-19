@@ -10,6 +10,7 @@ from osf_tests.factories import (
     RegistrationProviderFactory,
     AuthUserFactory,
     CollectionFactory,
+    OSFGroupFactory,
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
@@ -41,10 +42,10 @@ class DraftRegistrationTestCase:
         project_public = ProjectFactory(is_public=True, creator=user)
         project_public.add_contributor(
             user_write_contrib,
-            permissions=[permissions.WRITE])
+            permissions=permissions.WRITE)
         project_public.add_contributor(
             user_read_contrib,
-            permissions=[permissions.READ])
+            permissions=permissions.READ)
         project_public.save()
         return project_public
 
@@ -91,7 +92,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
             API_BASE, project_public._id)
 
     def test_admin_can_view_draft_list(
-            self, app, user, draft_registration,
+            self, app, user, draft_registration, project_public,
             schema, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
@@ -102,8 +103,18 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
+    #   test_osf_group_with_admin_permissions
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, 'admin')
+        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 1
+        assert schema._id in data[0]['relationships']['registration_schema']['links']['related']['href']
+
     def test_cannot_view_draft_list(
-            self, app, user_write_contrib,
+            self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
             url_draft_registrations):
 
@@ -131,6 +142,13 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     #   test_unauthenticated_user_cannot_view_draft_list
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
+
+    #   test_osf_group_with_read_permissions
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, 'read')
+        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_deleted_draft_registration_does_not_show_up_in_draft_list(
             self, app, user, draft_registration, url_draft_registrations):

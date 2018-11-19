@@ -7,6 +7,7 @@ from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesL
 from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
+    OSFGroupFactory,
     PreprintFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -173,6 +174,24 @@ class TestUserNodes:
         assert public_project_user_one._id == ids[1]
         assert private_project_user_one._id == ids[0]
 
+    # test_osf_group_member_node_shows_up_in_user_nodes
+        group_mem = AuthUserFactory()
+        url = '/{}users/{}/nodes/'.format(API_BASE, group_mem._id)
+        res = app.get(url, auth=group_mem.auth)
+        assert len(res.json['data']) == 0
+
+        group = OSFGroupFactory(creator=group_mem)
+        private_project_user_one.add_osf_group(group, 'read')
+        res = app.get(url, auth=group_mem.auth)
+        assert len(res.json['data']) == 1
+
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 1
+
+        private_project_user_one.delete()
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 0
+
 
 @pytest.mark.django_db
 class TestUserNodesPreprintsFiltering:
@@ -273,19 +292,19 @@ class TestNodeListPermissionFiltering:
     @pytest.fixture()
     def read_node(self, creator, contrib):
         node = ProjectFactory(creator=creator)
-        node.add_contributor(contrib, permissions=['read'], save=True)
+        node.add_contributor(contrib, permissions='read', save=True)
         return node
 
     @pytest.fixture()
     def write_node(self, creator, contrib):
         node = ProjectFactory(creator=creator)
-        node.add_contributor(contrib, permissions=['read', 'write'], save=True)
+        node.add_contributor(contrib, permissions='write', save=True)
         return node
 
     @pytest.fixture()
     def admin_node(self, creator, contrib):
         node = ProjectFactory(creator=creator)
-        node.add_contributor(contrib, permissions=['read', 'write', 'admin'], save=True)
+        node.add_contributor(contrib, permissions='admin', save=True)
         return node
 
     @pytest.fixture()
@@ -311,3 +330,24 @@ class TestNodeListPermissionFiltering:
         # test filter null
         res = app.get('{}null'.format(url), auth=contrib.auth, expect_errors=True)
         assert res.status_code == 400
+
+        user2 = AuthUserFactory()
+        osf_group = OSFGroupFactory(creator=user2)
+        read_node.add_osf_group(osf_group, 'read')
+        write_node.add_osf_group(osf_group, 'write')
+        admin_node.add_osf_group(osf_group, 'admin')
+
+        # test filter group member read
+        res = app.get('{}read'.format(url), auth=user2.auth)
+        assert len(res.json['data']) == 3
+        assert set([read_node._id, write_node._id, admin_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter group member write
+        res = app.get('{}write'.format(url), auth=user2.auth)
+        assert len(res.json['data']) == 2
+        assert set([admin_node._id, write_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter group member admin
+        res = app.get('{}admin'.format(url), auth=user2.auth)
+        assert len(res.json['data']) == 1
+        assert [admin_node._id] == [node['id'] for node in res.json['data']]

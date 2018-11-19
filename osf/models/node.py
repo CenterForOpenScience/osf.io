@@ -10,7 +10,7 @@ import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
-from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
@@ -23,17 +23,23 @@ from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
+from guardian.models import (
+    GroupObjectPermissionBase,
+    UserObjectPermissionBase,
+)
+from guardian.shortcuts import get_perms, get_objects_for_user, get_groups_with_perms
 
 from framework import status
 from framework.auth import oauth_scopes
 from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
-from osf.models.contributor import (Contributor, get_contributor_permissions)
+from osf.models.contributor import Contributor
 from osf.models.collection import CollectionSubmission
+
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
-from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, ContributorMixin,
+from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, ContributorMixin, GuardianMixin,
                                NodeLinkMixin, Taggable, TaxonomizableMixin, SpamOverrideMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
@@ -58,7 +64,7 @@ from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
 from osf.utils.requests import get_headers_from_request
-from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, expand_permissions
+from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 
@@ -131,20 +137,19 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
 
         if user is not None and not isinstance(user, AnonymousUser):
-            if isinstance(user, OSFUser):
-                user = user.pk
-            if not isinstance(user, int):
-                raise TypeError('"user" must be either {} or {}. Got {!r}'.format(int, OSFUser, user))
-
-            sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user__id=user, read=True)
-            qs |= self.annotate(can_view=models.Exists(sqs)).filter(can_view=True)
+            read_user_query = get_objects_for_user(user, 'read_node', self)
+            qs |= read_user_query
             qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
-                        SELECT "osf_contributor"."node_id"
-                        FROM "osf_contributor"
-                        WHERE "osf_contributor"."user_id" = %s
-                        AND "osf_contributor"."admin" is TRUE
+                        SELECT DISTINCT N.id as node_id
+                        FROM osf_abstractnode as N, auth_permission as P, osf_nodegroupobjectpermission as G, osf_osfuser_groups as UG
+                        WHERE P.codename = 'admin_node'
+                        AND G.permission_id = P.id
+                        AND UG.osfuser_id = %s
+                        AND G.group_id = UG.group_id
+                        AND G.content_object_id = N.id
+                        AND N.type = 'osf.node'
                     UNION ALL
                         SELECT "osf_noderelation"."child_id"
                         FROM "implicit_read"
@@ -152,9 +157,8 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                         WHERE "osf_noderelation"."is_node_link" IS FALSE
                     ) SELECT * FROM implicit_read
                 )
-            """], params=(user, ))
-
-        return qs
+            """], params=(user.id, ))
+        return qs.filter(is_deleted=False)
 
 
 class AbstractNodeManager(TypedModelManager, IncludeManager):
@@ -176,7 +180,7 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
         return self.get_queryset().can_view(user=user, private_link=private_link)
 
 
-class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
+class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin, GuardianMixin,
                    NodeLinkMixin, CommentableMixin, SpamOverrideMixin, TaxonomizableMixin,
                    ContributorMixin, Taggable, Loggable, GuidMixin, BaseModel):
     """
@@ -321,10 +325,22 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     related_name='parent_nodes')
 
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
+    groups = {
+        'read': ('read_node',),
+        'write': ('read_node', 'write_node',),
+        'admin': ('read_node', 'write_node', 'admin_node',)
+    }
+    group_format = 'node_{self.id}_{group}'
 
     class Meta:
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
+        permissions = (
+            ('view_node', 'Can view node details'),
+            ('read_node', 'Can read the node'),
+            ('write_node', 'Can edit the node'),
+            ('admin_node', 'Can manage the node'),
+        )
 
     objects = AbstractNodeManager()
 
@@ -774,6 +790,33 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             (user and self.has_permission(user, 'write')) or is_api_node
         )
 
+    def add_osf_group(self, group, permission='write', auth=None):
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to add an OSF Group.')
+        group.add_group_to_node(self, permission, auth)
+        # TODO Log that osf_group was added to project
+
+    def update_osf_group(self, group, permission='write', auth=None):
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to add an OSF Group.')
+        group.update_group_permissions_to_node(self, permission, auth)
+        # TODO Log that osf_group's permissions were updated
+
+    def remove_osf_group(self, group, auth=None):
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to remove an OSF Group.')
+        group.remove_group_from_node(self)
+        # TODO Log that osf_group was removed from project
+
+    @property
+    def osf_groups(self):
+        """Returns a queryset of OSF Groups whose members have some permission to the node
+        """
+        from osf.models.osf_group import OSFGroupGroupObjectPermission, OSFGroup
+
+        member_groups = get_groups_with_perms(self).filter(name__icontains='osfgroup')
+        return OSFGroup.objects.filter(id__in=OSFGroupGroupObjectPermission.objects.filter(group_id__in=member_groups).values_list('content_object_id'))
+
     def get_aggregate_logs_query(self, auth):
         return (
             (
@@ -791,15 +834,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        if getattr(self.contributor_set.all(), '_result_cache', None):
-            for contrib in self.contributor_set.all():
-                if contrib.user_id == user.id:
-                    return get_contributor_permissions(contrib)
-        try:
-            contrib = user.contributor_set.get(node=self)
-        except Contributor.DoesNotExist:
+        # Overrides guardian mixin - displays user's explicit permissions to the node
+        if isinstance(user, AnonymousUser):
             return []
-        return get_contributor_permissions(contrib)
+        return list(set(get_perms(user, self)) & set(['read_node', 'write_node', 'admin_node']))
 
     def has_permission_on_children(self, user, permission):
         """Checks if the given user has a given permission on any child nodes
@@ -812,12 +850,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 return True
         return False
 
-    def is_admin_parent(self, user):
+    def is_admin_parent(self, user, include_group_admin=True):
+        """
+        :param user: OSFUser to check for admin permissions
+        :param bool include_group_admin: Check if a user is an admin on the parent project via a group.
+                                    Useful for checking parent permissions for non-group actions like registrations.
+        :return: bool Does the user have admin permissions on this object or its parents?
+        """
         if self.has_permission(user, 'admin', check_parent=False):
-            return True
+            ret = True
+            if not include_group_admin and not self.is_contributor(user):
+                ret = False
+            return ret
         parent = self.parent_node
         if parent:
-            return parent.is_admin_parent(user)
+            return parent.is_admin_parent(user, include_group_admin=include_group_admin)
         return False
 
     def find_readable_descendants(self, auth):
@@ -841,17 +888,27 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return [self.parent_node] + self.parent_node.parents
         return []
 
+    def get_users_with_perm(self, permission):
+        # Returns queryset of all User objects a specific permission for the given node
+        # Explicit permissions only
+        if permission not in self.groups:
+            return False
+
+        perm = Permission.objects.get(codename='{}_node'.format(permission))
+        admin_groups = NodeGroupObjectPermission.objects.filter(permission_id=perm.id,
+                                                            content_object_id=self.id).values_list('group_id', flat=True)
+        return OSFUser.objects.filter(groups__id__in=admin_groups).distinct('id', 'family_name')
+
     @property
     def parent_admin_contributor_ids(self):
+        """
+        Contributors who have admin permissions on a parent (excludes group members)
+        """
         return self._get_admin_contributor_ids()
 
     def _get_admin_contributor_ids(self, include_self=False):
         def get_admin_contributor_ids(node):
-            return Contributor.objects.select_related('user').filter(
-                node=node,
-                user__is_active=True,
-                admin=True
-            ).values_list('user__guids___id', flat=True)
+            return node.get_group('admin').user_set.filter(is_active=True).values_list('guids___id', flat=True)
 
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
         admin_ids = set(get_admin_contributor_ids(self)) if include_self else set()
@@ -862,14 +919,55 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def admin_contributors(self):
+        """
+        Returns node contributors who are admins on the current node
+        """
         return OSFUser.objects.filter(
             guids___id__in=self.admin_contributor_ids
         ).order_by('family_name')
 
     @property
     def parent_admin_contributors(self):
+        """
+        Returns node contributors who are admins on the parent node (excludes group members)
+        """
         return OSFUser.objects.filter(
             guids___id__in=self.parent_admin_contributor_ids
+        ).order_by('family_name')
+
+    @property
+    def parent_admin_user_ids(self):
+        return self._get_admin_user_ids()
+
+    def _get_admin_user_ids(self, include_self=False):
+        def get_admin_user_ids(node):
+            return node.get_users_with_perm('admin').values_list('guids___id', flat=True)
+
+        contributor_ids = set(self.get_users_with_perm('read').values_list('guids___id', flat=True))
+        admin_ids = set(get_admin_user_ids(self)) if include_self else set()
+        for parent in self.parents:
+            admins = get_admin_user_ids(parent)
+            admin_ids.update(set(admins).difference(contributor_ids))
+        return admin_ids
+
+    @property
+    def admin_users(self):
+        """
+        Returns users who are admins on the current node
+
+        Includes .contributors and members of OSF Groups
+        """
+        return self.get_users_with_perm('admin')
+
+    @property
+    def parent_admin_users(self):
+        """
+        Returns users who are admins on the parent node
+
+        Includes contributors and members of OSF Groups
+        """
+        return OSFUser.objects.filter(
+            guids___id__in=self.parent_admin_user_ids
         ).order_by('family_name')
 
     @property
@@ -1063,24 +1161,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Override for ContributorMixin
         return NodeStateError
 
-    def expand_permissions(self, permission=None):
-        # Override for ContributorMixin
-        # Preprint contributor methods don't require a list ['read', 'write'], they
-        # just use highest permission, 'write'
-        return expand_permissions(permission)
-
-    def belongs_to_permission_group(self, user, permission):
-        # Override for ContributorMixin
-        permissions = self.expand_permissions(permission)
-        return set(permissions) == set(self.get_permissions(user))
-
     def get_spam_fields(self, saved_fields):
         # Override for SpamOverrideMixin
         return self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
-
-    # Needed for ContributorMixin
-    DEFAULT_CONTRIBUTOR_PERMISSIONS = DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
@@ -1113,7 +1197,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.is_public or
                 (auth.user and self.has_permission(auth.user, 'read'))
             )
-        return self.is_contributor(auth.user)
+        return self.is_contributor_or_group_member(auth.user)
 
     def set_node_license(self, license_detail, auth, save=False):
 
@@ -1272,9 +1356,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Copies the contibutors from node (including permissions and visibility) into this node."""
         contribs = []
         for contrib in node.contributor_set.all():
+            permission = contrib.permission
             contrib.id = None
             contrib.node = self
             contribs.append(contrib)
+            self.add_permission(contrib.user, permission, save=True)
         Contributor.objects.bulk_create(contribs)
 
     def register_node(self, schema, auth, data, parent=None, provider=None):
@@ -1286,8 +1372,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param parent Node: parent registration of registration to be created
         :param provider RegistrationProvider: provider to submit the registration to
         """
-        # NOTE: Admins can register child nodes even if they don't have write access them
-        if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
+        # NOTE: Admins can register child nodes even if they don't have write access them, but not if they are group admins
+        not_contributor_or_admin_parent = not self.is_contributor(auth.user) and not self.is_admin_parent(user=auth.user, include_group_admin=False)
+        cannot_edit_or_admin_parent = not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user)
+        if cannot_edit_or_admin_parent or not_contributor_or_admin_parent:
             raise PermissionsError(
                 'User {} does not have permission '
                 'to register this node'.format(auth.user._id)
@@ -1814,6 +1902,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def save(self, *args, **kwargs):
+        from osf.models import Registration
         first_save = not bool(self.pk)
         if 'old_subjects' in kwargs.keys():
             # TODO: send this data to SHARE
@@ -1835,6 +1924,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.bulk_update_search(batch)
                 children = children[99:]
 
+        if first_save:
+            self.update_group_permissions()
+            if not isinstance(self, Registration):
+                Contributor.objects.get_or_create(
+                    user=self.creator,
+                    node=self,
+                    visible=True,
+                )
+                self.add_permission(self.creator, 'admin')
         return ret
 
     def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
@@ -2206,6 +2304,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.save()
 
 
+class NodeUserObjectPermission(UserObjectPermissionBase):
+    content_object = models.ForeignKey(AbstractNode, on_delete=models.CASCADE)
+
+
+class NodeGroupObjectPermission(GroupObjectPermissionBase):
+    content_object = models.ForeignKey(AbstractNode, on_delete=models.CASCADE)
+
+
 class Node(AbstractNode):
     """
     Concrete Node class: Instance of AbstractNode(TypedModel). All things that inherit
@@ -2223,13 +2329,6 @@ class Node(AbstractNode):
         """For v1 compat"""
         return False
 
-    class Meta:
-        # custom permissions for use in the OSF Admin App
-        permissions = (
-            ('view_node', 'Can view node details'),
-        )
-
-
 def remove_addons(auth, resource_object_list):
     for config in AbstractNode.ADDONS_AVAILABLE:
         try:
@@ -2241,21 +2340,6 @@ def remove_addons(auth, resource_object_list):
             addon_list = settings_model.objects.filter(owner__in=resource_object_list, deleted=False)
             for addon in addon_list:
                 addon.after_delete(auth.user)
-
-
-##### Signal listeners #####
-@receiver(post_save, sender=Node)
-@receiver(post_save, sender='osf.QuickFilesNode')
-def add_creator_as_contributor(sender, instance, created, **kwargs):
-    if created:
-        Contributor.objects.get_or_create(
-            user=instance.creator,
-            node=instance,
-            visible=True,
-            read=True,
-            write=True,
-            admin=True
-        )
 
 
 @receiver(post_save, sender=Node)
@@ -2291,7 +2375,6 @@ def add_default_node_addons(sender, instance, created, **kwargs):
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
-
 
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')

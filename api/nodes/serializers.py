@@ -298,6 +298,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     current_user_is_contributor = ser.SerializerMethodField(
         help_text='Whether the current user is a contributor on this node.',
     )
+    current_user_is_contributor_or_group_member = ser.SerializerMethodField(
+        help_text='Whether the current user is a contributor or group member on this node.',
+    )
     wiki_enabled = ser.SerializerMethodField(help_text='Whether the wiki addon is enabled')
 
     # Public is only write-able by admins--see update method
@@ -480,25 +483,27 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
         request_version = self.context['request'].version
         default_perm = ['read'] if StrictVersion(request_version) < StrictVersion('2.11') else []
+        if user.is_anonymous:
+            return default_perm
+
         if hasattr(obj, 'contrib_admin'):
+            user_perms = []
             if obj.contrib_admin:
-                return ['admin', 'write', 'read']
+                user_perms = ['admin', 'write', 'read']
             elif obj.contrib_write:
-                return ['write', 'read']
+                user_perms = ['write', 'read']
             elif obj.contrib_read:
-                return ['read']
-            else:
-                return default_perm
+                user_perms = ['read']
         else:
-            user = self.context['request'].user
-            if user.is_anonymous:
-                return default_perm
-            permissions = obj.get_permissions(user=user) or default_perm
-            if not permissions and user in obj.parent_admin_contributors:
-                permissions += ['read']
-            return permissions
+            user_perms = [osf_permissions.CONTRIB_PERMISSIONS[perm] for perm in obj.get_permissions(user)]
+
+        user_perms = user_perms or default_perm
+        if not user_perms and user in obj.parent_admin_users:
+            user_perms = ['read']
+        return user_perms
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
@@ -520,6 +525,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
 
     def get_current_user_is_contributor(self, obj):
+        # Returns whether user is a contributor (does not include group members)
         if hasattr(obj, 'user_is_contrib'):
             return obj.user_is_contrib
 
@@ -527,6 +533,16 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if user.is_anonymous:
             return False
         return obj.is_contributor(user)
+
+    def get_current_user_is_contributor_or_group_member(self, obj):
+        # Returns whether user is a contributor -or- a group member
+        if hasattr(obj, 'contrib_read'):
+            return obj.contrib_read
+
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return obj.is_contributor_or_group_member(user)
 
     class Meta:
         type_ = 'nodes'
@@ -553,7 +569,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   SELECT osf_noderelation.parent_id, parents.parent_id AS child_id
                   FROM parents JOIN osf_noderelation ON parents.PARENT_ID = osf_noderelation.child_id
                   WHERE osf_noderelation.is_node_link IS FALSE
-                ), has_admin AS (SELECT * FROM osf_contributor WHERE (node_id IN (SELECT parent_id FROM parents) OR node_id = %s) AND user_id = %s AND admin IS TRUE LIMIT 1)
+                )
                 SELECT DISTINCT
                   COUNT(child_id)
                 FROM
@@ -566,11 +582,35 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 AND osf_abstractnode.is_deleted IS FALSE
                 AND (
                   osf_abstractnode.is_public
-                  OR (TRUE IN (SELECT TRUE FROM has_admin))
-                  OR (osf_contributor.user_id = %s AND osf_contributor.read IS TRUE)
+                  OR (SELECT EXISTS(
+                      SELECT P.codename
+                      FROM auth_permission AS P
+                      INNER JOIN django_content_type AS CT ON (P.content_type_id = CT.id)
+                      INNER JOIN osf_nodegroupobjectpermission AS G ON (P.id = G.permission_id)
+                      INNER JOIN osf_osfuser_groups AS UG ON (G.group_id = UG.group_id)
+                      WHERE (P.content_type_id = CT.id
+                             AND P.codename = 'read_node'
+                             AND G.permission_id = P.id
+                             AND G.content_object_id = osf_abstractnode.id
+                             AND UG.osfuser_id = %s)
+                      )
+                  )
                   OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
+                  OR (SELECT EXISTS(
+                      SELECT P.codename
+                      FROM auth_permission AS P
+                      INNER JOIN django_content_type AS CT ON (P.content_type_id = CT.id)
+                      INNER JOIN osf_nodegroupobjectpermission AS G ON (P.id = G.permission_id)
+                      INNER JOIN osf_osfuser_groups AS UG ON (G.group_id = UG.group_id)
+                      WHERE (P.content_type_id = CT.id
+                             AND P.codename = 'admin_node'
+                             AND G.permission_id = P.id
+                             AND G.content_object_id = osf_noderelation.parent_id
+                             AND UG.osfuser_id = %s)
+                      )
+                  )
                 );
-            """, [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key],
+            """, [obj.id, obj.id, user_id, auth.private_key, user_id],
             )
 
             return int(cursor.fetchone()[0])
@@ -677,7 +717,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             for contributor in parent.contributor_set.exclude(user=user):
                 contributors.append({
                     'user': contributor.user,
-                    'permissions': parent.get_permissions(contributor.user),
+                    'permissions': contributor.permission,
                     'visible': contributor.visible,
                 })
                 if not contributor.user.is_registered:
@@ -1015,8 +1055,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
         default=True,
     )
     permission = ser.ChoiceField(
-        choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
-        default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
+        choices=osf_permissions.API_CONTRIBUTOR_PERMISSIONS, required=False, allow_null=True,
+        default=osf_permissions.WRITE,
         help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".',
     )
     unregistered_contributor = ser.SerializerMethodField()
@@ -1079,7 +1119,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     email_preferences = ['default', 'false']
 
     def get_proposed_permissions(self, validated_data):
-        return osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        return validated_data.get('permission') or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
         if not user_id and not full_name:
