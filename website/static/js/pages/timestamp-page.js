@@ -3,6 +3,7 @@
 var $ = require('jquery');
 var nodeApiUrl = window.contextVars.node.urls.api;
 var projectFileList = window.contextVars.project_file_list;
+var Raven = require('raven-js');
 
 
 $(document).ready(function () {
@@ -35,7 +36,7 @@ $(document).ready(function () {
 
 $(function () {
     var btnVerify_onclick = function () {
-        if ($('#btn-verify').attr('disabled') != undefined || $('#btn-addtimestamp').attr('disabled') != undefined) {
+        if ($('#btn-verify').attr('disabled') !== undefined || $('#btn-addtimestamp').attr('disabled') !== undefined) {
             return false;
         }
 
@@ -53,9 +54,10 @@ $(function () {
             dataType: 'json'
         }).done(function (projectFileList) {
             var i, j;
+            var fileList;
             projectFileList = projectFileList.provider_list;
             for (i = 0; i < projectFileList.length; i++) {
-                var fileList = projectFileList[i].provider_file_list;
+                fileList = projectFileList[i].provider_file_list;
                 for (j = 0; j < fileList.length; j++) {
                     fileCnt++;
                 }
@@ -79,7 +81,7 @@ $(function () {
                     }).done(function () {
                         successCnt++;
                         $('#timestamp_errors_spinner').text('Verification files : ' + successCnt + ' / ' + fileCnt + ' ...');
-                        if (successCnt == fileCnt) {
+                        if (successCnt === fileCnt) {
                             $('#timestamp_errors_spinner').text('Verification (100%) and Refreshing...');
                             window.location.reload();
                         }
@@ -87,9 +89,8 @@ $(function () {
                         $('#btn-verify').removeAttr('disabled');
                         $('#btn-addtimestamp').removeAttr('disabled');
                         $('#timestamp_errors_spinner').text('Error : ' + fileList[j].file_path);
-                        Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
+                        Raven.captureMessage('Timestamp Add Error: ' , {
                             extra: {
-                                url: url,
                                 status: status,
                                 error: error
                             }
@@ -103,7 +104,6 @@ $(function () {
             $('#timestamp_errors_spinner').text('Error : Storage files list gathering Failed');
             Raven.captureMessage('Timestamp Add Error', {
                 extra: {
-                    url: url,
                     textStatus: textStatus,
                     error: error
                 }
@@ -112,7 +112,7 @@ $(function () {
     };
 
     var btnAddtimestamp_onclick = function () {
-        if ($('#btn-verify').attr('disabled') != undefined || $('#btn-addtimestamp').attr('disabled') != undefined) {
+        if ($('#btn-verify').attr('disabled') !== undefined || $('#btn-addtimestamp').attr('disabled') !== undefined) {
             return false;
         }
 
@@ -120,7 +120,7 @@ $(function () {
             return $(this).val();
         });
 
-        if (inputCheckBoxs.length == 0) {
+        if (inputCheckBoxs.length === 0) {
             return false;
         }
 
@@ -168,7 +168,7 @@ $(function () {
             }).done(function () {
                 successCnt++;
                 $('#timestamp_errors_spinner').text('Adding Timestamp files : ' + successCnt + ' / ' + inputCheckBoxs.length + ' ...');
-                if (successCnt ==  inputCheckBoxs.length) {
+                if (successCnt ===  inputCheckBoxs.length) {
                     $('#timestamp_errors_spinner').text('Added Timestamp (100%) and Refreshing...');
                     window.location.reload();
                 }
@@ -176,9 +176,8 @@ $(function () {
                 $('#btn-verify').removeAttr('disabled');
                 $('#btn-addtimestamp').removeAttr('disabled');
                 $('#timestamp_errors_spinner').text('Error : Timestamp Add Failed');
-                Raven.captureMessage('Timestamp Add Error: ' + filePathList[index], {
+                Raven.captureMessage('Timestamp Add Error: ' , {
                     extra: {
-                        url: url,
                         textStatus: textStatus,
                         error: error
                     }
