@@ -582,7 +582,6 @@ class TestRemoveNodeSignal(OsfTestCase):
             NotificationSubscription.objects.get(node=component)
 
 
-
 def list_or_dict(data):
     # Generator only returns lists or dicts from list or dict
     if isinstance(data, dict):

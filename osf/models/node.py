@@ -84,7 +84,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         # If `root` is a root node, we can use the 'descendants' related name
         # rather than doing a recursive query
         if root.id == root.root_id:
-            query = root.descendants.filter() if include_root else root.descendants.exclude(id=root.id)
+            query = root.descendants.all() if include_root else root.descendants.exclude(id=root.id)
             if active:
                 query = query.filter(is_deleted=False)
             return query
@@ -2797,8 +2797,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}, or a component in its hierarchy.'.format(auth.user, self.category or 'node')
             )
 
-        has_public = hierarchy.filter(is_public=True).exists()
-
         # After delete callback
         remove_addons(auth, hierarchy)
 
@@ -2815,8 +2813,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
 
-        if has_public:
-            AbstractNode.bulk_update_search(hierarchy)
+        if len(hierarchy.filter(is_public=True)):
+            AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
 
         return True
 
