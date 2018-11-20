@@ -1048,6 +1048,8 @@ class TestPreprintBannerView(OsfTestCase):
         self.non_contrib = AuthUserFactory()
         self.provider_one = PreprintProviderFactory()
         self.project_one = ProjectFactory(creator=self.admin, is_public=True)
+        self.project_one.add_contributor(self.write_contrib, ['write', 'read'])
+        self.project_one.add_contributor(self.read_contrib, ['read'])
 
         self.subject_one = SubjectFactory()
         self.preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=self.project_one, is_published=True)
@@ -1218,32 +1220,32 @@ class TestPreprintBannerView(OsfTestCase):
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
         assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending', res.body)
+        assert_in('Pending\n', res.body)
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
         assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending', res.body)
+        assert_in('Pending\n', res.body)
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
         assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending', res.body)
+        assert_in('Pending\n', res.body)
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
         assert_in('on {}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending', res.body)
-        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+        assert_not_in('Pending\n', res.body)
+        assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
         assert_in('on {}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending', res.body)
-        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+        assert_not_in('Pending\n', res.body)
+        assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
     def test_public_project_pending_preprint_pre_moderation(self):
         self.preprint.machine_state = 'pending'
@@ -1256,32 +1258,32 @@ class TestPreprintBannerView(OsfTestCase):
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
         assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending', res.body)
+        assert_in('Pending\n', res.body)
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
         assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending', res.body)
+        assert_in('Pending\n', res.body)
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
         assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending', res.body)
+        assert_in('Pending\n', res.body)
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
         assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending', res.body)
-        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+        assert_not_in('Pending\n', res.body)
+        assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
         # Unauthenticated - preprint
         res = self.app.get(url)
         assert_in('{}'.format(self.preprint.provider.name), res.body)
-        assert_in('Pending', res.body)
-        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+        assert_not_in('Pending\n', res.body)
+        assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
 if __name__ == '__main__':
     unittest.main()
