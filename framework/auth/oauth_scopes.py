@@ -53,6 +53,9 @@ class CoreScopes(object):
     NODE_CONTRIBUTORS_READ = 'nodes.contributors_read'
     NODE_CONTRIBUTORS_WRITE = 'nodes.contributors_write'
 
+    OSF_GROUPS_READ = 'osf_groups.groups_read'
+    OSF_GROUPS_WRITE = 'osf_groups.groups_write'
+
     PREPRINT_CONTRIBUTORS_READ = 'preprints.contributors_read'
     PREPRINT_CONTRIBUTORS_WRITE = 'preprints.contributors_write'
 
@@ -196,6 +199,10 @@ class ComposedScopes(object):
     DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, )
     DRAFT_WRITE = (CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE, )
 
+    # OSF Groups
+    GROUP_READ = (CoreScopes.OSF_GROUPS_READ, )
+    GROUP_WRITE = (CoreScopes.OSF_GROUPS_WRITE, )
+
     # Identifier views
     IDENTIFIERS_READ = (CoreScopes.IDENTIFIERS_READ, )
 
@@ -260,8 +267,8 @@ class ComposedScopes(object):
     REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.MODERATORS_WRITE, CoreScopes.PROVIDERS_WRITE)
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + PREPRINT_ALL_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
-    FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE + PREPRINT_ALL_WRITE
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + PREPRINT_ALL_READ + GROUP_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
+    FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE + PREPRINT_ALL_WRITE + GROUP_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\

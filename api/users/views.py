@@ -25,6 +25,7 @@ from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationSerializer
 from api.nodes.utils import NodeOptimizationMixin
+from api.osf_groups.serializers import OSFGroupSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 
@@ -331,6 +332,28 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
             .select_related('node_license')
             .include('contributor__user__guids', 'root__guids', limit_includes=10)
         )
+
+
+class UserOSFGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.OSF_GROUPS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    model_class = apps.get_model('osf.OSFGroup')
+    serializer_class = OSFGroupSerializer
+    view_category = 'users'
+    view_name = 'user-osf-groups'
+    ordering = ('-modified', )
+
+    def get_default_queryset(self):
+        return self.get_user().osf_groups
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, UserMixin, ListFilterMixin):

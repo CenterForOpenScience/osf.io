@@ -49,8 +49,7 @@ class JSONAPIParser(JSONParser):
         if not isinstance(relationships[related_resource], dict) or related_resource == 'data':
             raise ParseError()
         data = relationships[related_resource].get('data')
-
-        if not data:
+        if not data and not isinstance(data, list):
             raise JSONAPIException(source={'pointer': 'data/relationships/{}/data'.format(related_resource)}, detail=NO_DATA_ERROR)
 
         if isinstance(data, list):

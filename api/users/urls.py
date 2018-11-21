@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^(?P<user_id>\w+)/draft_registrations/$', views.UserDraftRegistrations.as_view(), name=views.UserDraftRegistrations.view_name),
     url(r'^(?P<user_id>\w+)/institutions/$', views.UserInstitutions.as_view(), name=views.UserInstitutions.view_name),
     url(r'^(?P<user_id>\w+)/nodes/$', views.UserNodes.as_view(), name=views.UserNodes.view_name),
+    url(r'^(?P<user_id>\w+)/osf_groups/$', views.UserOSFGroups.as_view(), name=views.UserOSFGroups.view_name),
     url(r'^(?P<user_id>\w+)/preprints/$', views.UserPreprints.as_view(), name=views.UserPreprints.view_name),
     url(r'^(?P<user_id>\w+)/registrations/$', views.UserRegistrations.as_view(), name=views.UserRegistrations.view_name),
     url(r'^(?P<user_id>\w+)/settings/$', views.UserSettings.as_view(), name=views.UserSettings.view_name),
