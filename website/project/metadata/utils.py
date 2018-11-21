@@ -257,9 +257,6 @@ COMMENTS_SCHEMA = {
         'properties': {
             'seenBy': {
                 'type': 'array',
-                'items': {
-                    'type': 'integer'
-                }
             },
             'canDelete': {'type': 'boolean'},
             'created': {'type': 'string'},
