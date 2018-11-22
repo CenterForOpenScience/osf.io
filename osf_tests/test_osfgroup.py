@@ -362,6 +362,18 @@ class TestOSFGroup:
         assert project.has_permission(member, 'write') is False
         assert project.has_permission(member, 'read') is False
 
+        # Manager who is not an admin can remove the group
+        user_three = UserFactory()
+        osf_group.make_manager(user_three)
+        project.add_osf_group(osf_group, 'write')
+        assert project.has_permission(user_three, 'admin') is False
+        assert project.has_permission(user_three, 'write') is True
+        assert project.has_permission(user_three, 'read') is True
+        project.remove_osf_group(osf_group, auth=Auth(user_three))
+        assert project.has_permission(user_three, 'admin') is False
+        assert project.has_permission(user_three, 'write') is False
+        assert project.has_permission(user_three, 'read') is False
+
     def test_node_groups_property(self, manager, member, osf_group, project):
         project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
         project.save()
@@ -373,6 +385,29 @@ class TestOSFGroup:
         project.save()
         assert group_two in project.osf_groups
         assert len(project.osf_groups) == 2
+
+    def test_get_osf_groups_with_perms_property(self, manager, member, osf_group, project):
+        second_group = OSFGroupFactory(creator=manager)
+        third_group = OSFGroupFactory(creator=manager)
+        fourth_group = OSFGroupFactory(creator=manager)
+        OSFGroupFactory(creator=manager)
+
+        project.add_osf_group(osf_group, 'admin')
+        project.add_osf_group(second_group, 'write')
+        project.add_osf_group(third_group, 'write')
+        project.add_osf_group(fourth_group, 'read')
+
+        read_groups = project.get_osf_groups_with_perms('read')
+        assert len(read_groups) == 4
+
+        write_groups = project.get_osf_groups_with_perms('write')
+        assert len(write_groups) == 3
+
+        admin_groups = project.get_osf_groups_with_perms('admin')
+        assert len(admin_groups) == 1
+
+        with pytest.raises(ValueError):
+            project.get_osf_groups_with_perms('crazy')
 
     def test_belongs_to_osfgroup_property(self, manager, member, user_two, osf_group):
         assert osf_group.belongs_to_osfgroup(manager) is True
