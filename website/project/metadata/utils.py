@@ -238,7 +238,7 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
                     'sizeInt': {'type': 'integer'},
                 }
             },
-            'fileId': {'type': 'string'},
+            'fileId': {'type': ['string', 'object']},
             'descriptionValue': {'type': 'string'},
             'sha256': {'type': 'string'},
             'selectedFileName': {'type': 'string'},
