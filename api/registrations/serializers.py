@@ -383,20 +383,9 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
-        except ValidationValueError as e:
+        except ValidationValueError as exc:
             log_exception()  # Probably indicates a bug on our end, so log to sentry
-            for page in draft.registration_schema.schema['pages']:
-                for question in page['questions']:
-                    if e.path[0] == question['qid']:
-                        if 'options' in question:
-                            raise exceptions.ValidationError(
-                                'For your registration the \'{}\' field is invalid, your response must be one of the provided options.'.format(
-                                    question['title'],
-                                ),
-                            )
-                        raise exceptions.ValidationError(
-                            'For your registration the \'{}\' field is invalid.'.format(question['title']),
-                        )
+            raise exceptions.ValidationError(exc.message)
 
         try:
             registration = draft.register(auth, save=True, child_ids=children)
