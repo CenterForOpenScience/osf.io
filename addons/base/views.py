@@ -962,6 +962,7 @@ def adding_timestamp(auth, node, file_node, version):
     import shutil
 
     tmp_dir = None
+    result = None
     try:
         ret = serialize_node(node, auth, primary=True)
         user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
@@ -985,7 +986,6 @@ def adding_timestamp(auth, node, file_node, version):
                                             tmp_file, tmp_dir)
 
         shutil.rmtree(tmp_dir)
-        return result
 
     except Exception as err:
         if tmp_dir:
@@ -993,7 +993,7 @@ def adding_timestamp(auth, node, file_node, version):
                 shutil.rmtree(tmp_dir)
         logger.exception(err)
 
-#    return result
+    return result
 
 def timestamptoken_verify(auth, node, file_node, version, guid):
     from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
