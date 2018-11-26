@@ -1,9 +1,6 @@
 from nose import tools as nt
 
 from django.test import RequestFactory
-#from django.core.urlresolvers import reverse, reverse_lazy
-#from django.utils import timezone
-#from django.urls import reverse
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -19,7 +16,6 @@ from website.views import userkey_generation
 from osf.models import RdmUserKey, RdmFileTimestamptokenVerifyResult, Guid, BaseFileNode
 from api.base import settings as api_settings
 import os
-#import json
 import mock
 from tests.test_views import create_rdmfiletimestamptokenverifyresult
 
@@ -63,10 +59,8 @@ class TestInstitutionNodeList(AdminTestCase):
         self.project_user = UserFactory()
         userkey_generation(self.project_user._id)
         self.project_user.affiliated_institutions.add(self.project_institution)
-        # project1 timestamp_pattern_division=1
         self.private_project1 = ProjectFactory(creator=self.project_user)
         self.private_project1.affiliated_institutions.add(self.project_institution)
-        # project2 timestamp_pattern_division=2
         self.private_project2 = ProjectFactory(creator=self.project_user)
         self.private_project2.affiliated_institutions.add(self.project_institution)
 
@@ -153,9 +147,6 @@ class TestTimeStampAddList(AdminTestCase):
         nt.assert_is_instance(res['view'], views.TimeStampAddList)
 
 
-#class TestVerifyTimeStampAddList(AdminTestCase):
-
-
 class TestTimestampVerifyData(AdminTestCase):
     def setUp(self):
         super(TestTimestampVerifyData, self).setUp()
@@ -167,7 +158,6 @@ class TestTimestampVerifyData(AdminTestCase):
         userkey_generation(self.project_user._id)
         self.project_user.affiliated_institutions.add(self.project_institution)
         self.user = self.project_user
-        # project1 timestamp_pattern_division=1
         self.private_project1 = ProjectFactory(creator=self.project_user)
         self.private_project1.affiliated_institutions.add(self.project_institution)
         self.node = self.private_project1
@@ -229,7 +219,6 @@ class TestAddTimestampData(AdminTestCase):
         userkey_generation(self.project_user._id)
         self.project_user.affiliated_institutions.add(self.project_institution)
         self.user = self.project_user
-        # project1 timestamp_pattern_division=1
         self.private_project1 = ProjectFactory(creator=self.project_user)
         self.private_project1.affiliated_institutions.add(self.project_institution)
         self.node = self.private_project1

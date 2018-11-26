@@ -5105,8 +5105,6 @@ class TestTimestampView(OsfTestCase):
         self.project.reload()
         assert_equal(res.status_code, 200)
 
-#    def test_collect_timestamp_trees_to_json(self):
-
 
 class TestAddonFileViewTimestampFunc(OsfTestCase):
 

@@ -840,7 +840,6 @@ def upload_file_add_timestamptoken(payload, node):
 
         current_datetime = timezone.now()
         current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        #print(current_datetime_str)
         tmp_dir = 'tmp_{}_{}_{}'.format(auth_id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, metadata['name'])
@@ -867,7 +866,6 @@ def adding_timestamp(auth, node, file_node, version):
     from api.timestamp.add_timestamp import AddTimestamp
     import shutil
 
-    #verify_result = 0
     tmp_dir = None
     try:
         ret = serialize_node(node, auth, primary=True)
@@ -908,8 +906,6 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
     from osf.models import Guid
     import shutil
 
-    #verify_result = 0
-    #verify_title = None
     tmp_dir = 'tmp_{}'.format(guid)
     current_datetime = timezone.now()
     current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')

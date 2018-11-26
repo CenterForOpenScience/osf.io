@@ -39,11 +39,6 @@
                 {% endif %}
                 <th>Parent</th>
                 <th>Root</th>
-<!--                <th>Date created</th>
-                <th>Public</th>
-                <th>Withdrawn</th>
-                <th>Embargo</th>
-                <th>Contributors</th>-->
                 <th>Select Timestamp Function</th>
                 <th>&nbsp;</th>
             </tr>
@@ -72,23 +67,6 @@
                 <td>
                     {{ data.node.root.title }}
                 </td>
-<!--                <td>
-                    {{ data.node.date_created|date }}
-                </td>
-                <td>
-                    {{ data.node.public }}
-                </td>
-                <td>
-                    {{ data.node.retraction }}
-                </td>
-                <td>
-                    {{ data.node.embargo }}
-                </td>
-                <td>
-                    {% for user in data.node.contributors %}
-                        <a href="{{ user.id | reverse_user }}">{{ user.username }}</a>{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                </td>-->
                 <td>
                     <select id="{{ data.timestamppattern.node_guid }}">
                         {% for timestamppattern in timestamppatterns %}

@@ -2,31 +2,24 @@
 
 import uuid
 from collections import defaultdict
-#from urlparse import parse_qsl
-#import requests
 from requests.compat import urljoin
 from django.views.generic import View, TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.mixins import UserPassesTestMixin
-#from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 from django.http import HttpResponse
-#from django.http.response import JsonResponse
 from django.utils.decorators import method_decorator
 import flask
 from werkzeug.datastructures import ImmutableMultiDict
 
 import osf
 import addons
-#from osf.models import RdmAddonOption, ExternalAccount
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_addons.utils import get_rdm_addon_option
 from admin.rdm_addons.api_v1.views import disconnect
 from website.oauth.utils import get_service
 from website.routes import make_url_map
 from website import settings as website_settings
-#from admin.base import settings as admin_settings
-#from . import CALLBACK_SECRET_TOKEN
 
 class RdmAddonRequestContextMixin(object):
     app = flask.Flask(__name__)
@@ -93,7 +86,6 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
             institution_id = int(self.kwargs.get('institution_id'))
         else:
             institution_id = None
-        #print 'institution id', institution_id
         return self.has_auth(institution_id)
 
     def get(self, request, *args, **kwargs):

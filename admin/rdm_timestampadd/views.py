@@ -228,9 +228,7 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         cookie = self.request.user.get_or_create_cookie()
         cookies = {settings.osf_settings.COOKIE_NAME: cookie}
         headers = {'content-type': 'application/json'}
-        #guid = Guid.objects.get(object_id=self.kwargs['guid'], content_type_id=ContentType.objects.get_for_model(AbstractNode).id)
         absNodeData = AbstractNode.objects.get(id=self.kwargs['guid'])
-        #web_url = self.web_api_url(guid._id)
 
         # Node Admin
         admin_osfuser_list = list(absNodeData.get_admin_contributors(absNodeData.contributors))
@@ -251,9 +249,6 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         response = do_get_timestamp_error_data(self.request, absNodeData, headers, cookies, data)
         # Admin User
         self.request.user = source_user
-        #response_json = web_api_response.json()
-        #web_api_response.close()
-        #response = response_json
         return HttpResponse(json.dumps(response), content_type='application/json')
 
     def web_api_url(self, node_id):
