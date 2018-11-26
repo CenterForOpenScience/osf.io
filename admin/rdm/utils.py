@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # dummi institution model
-# If there is a code that assumes False in the evaluation of the sentence, 
+# If there is a code that assumes False in the evaluation of the sentence,
 # it should not be a number other than 0.
 MAGIC_INSTITUTION_ID = 0
 
