@@ -3,15 +3,14 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from osf.models import RegistrationSchema
 
 OLD_NAME = 'AsPredicted Preregistration'
 NEW_NAME = 'Preregistration Template from AsPredicted.org'
 
-def rename_schema(from_name, to_name):
+def rename_schema(model, from_name, to_name):
     try:
-        schema = RegistrationSchema.objects.get(name=from_name)
-    except RegistrationSchema.DoesNotExist:
+        schema = model.objects.get(name=from_name)
+    except model.DoesNotExist:
         return
 
     schema.name = to_name
@@ -20,11 +19,13 @@ def rename_schema(from_name, to_name):
     schema.schema['pages'][0]['title'] = to_name
     return schema.save()
 
-def rename_aspredicted_schema(*args, **kwargs):
-    return rename_schema(OLD_NAME, NEW_NAME)
+def rename_aspredicted_schema(state, schema):
+    RegistrationSchema = state.get_model('osf.registrationschema')
+    return rename_schema(RegistrationSchema, OLD_NAME, NEW_NAME)
 
-def undo_aspredicted_rename(*args, **kwargs):
-    return rename_schema(NEW_NAME, OLD_NAME)
+def undo_aspredicted_rename(state, schema):
+    RegistrationSchema = state.get_model('osf.registrationschema')
+    return rename_schema(RegistrationSchema, NEW_NAME, OLD_NAME)
 
 class Migration(migrations.Migration):
 
