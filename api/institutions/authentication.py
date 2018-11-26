@@ -13,6 +13,7 @@ from api.base import settings
 from framework import sentry
 from framework.auth import get_or_create_user
 
+from osf import features
 from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
@@ -111,7 +112,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 user=user,
                 domain=DOMAIN,
                 osf_support_email=OSF_SUPPORT_EMAIL,
-                storage_flag_is_active=waffle.flag_is_active(request, 'storage_i18n'),
+                storage_flag_is_active=waffle.flag_is_active(request, features.STORAGE_I18N),
             )
 
         if not user.is_affiliated_with_institution(institution):

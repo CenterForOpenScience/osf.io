@@ -101,7 +101,7 @@ from api.nodes.serializers import (
 )
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
-from api.registrations.serializers import RegistrationSerializer
+from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
@@ -603,6 +603,11 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_name = 'node-registrations'
 
     ordering = ('-modified',)
+
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'POST'):
+            return RegistrationCreateSerializer
+        return RegistrationSerializer
 
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
