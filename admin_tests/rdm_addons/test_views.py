@@ -2,9 +2,6 @@
 
 from nose import tools as nt
 from django.test import RequestFactory
-#from django.contrib.auth.models import Permission
-#from django.core.exceptions import PermissionDenied
-#from django.http import Http404
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -13,8 +10,6 @@ from osf_tests.factories import (
     ExternalAccountFactory,
 )
 
-#from osf.models.rdm_addons import RdmAddonOption, RdmAddonNoInstitutionOption
-#from osf.models.user import OSFUser, Institution
 
 from admin_tests.utilities import setup_user_view
 from admin.rdm_addons import views
@@ -137,14 +132,6 @@ class TestAddonListView(AdminTestCase):
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
         nt.assert_equal(self.view.test_func(), False)
 
-    #def test_get_context_data(self, **kwargs):
-    #    ctx = self.view.get_context_data(**self.view.kwargs)
-    #    nt.assert_is_instance(ctx['institution'], Institution)
-    #    nt.assert_equal(ctx['institution'].id, self.institution1.id)
-    #    nt.assert_true('addon_enabled_settings' in ctx)
-    #    nt.assert_true('addons_js' in ctx)
-    #    nt.assert_true('addon_capabilities' in ctx)
-    #    nt.assert_true('addons_css' in ctx)
 
 class TestIconView(AdminTestCase):
     def setUp(self):
@@ -166,13 +153,6 @@ class TestIconView(AdminTestCase):
         res = self.view.get(self.request, *args, **self.view.kwargs)
         nt.assert_equal(res.status_code, 200)
 
-
-'''
-    def test_non_valid_get(self, *args, **kwargs):
-        self.view.kwargs = {'addon_name': 'fake_addon'}
-        with self.assertRaises(Http404):
-            res = self.view.get(self.request, *args, **self.view.kwargs)
-'''
 
 class TestAddonAllowView(AdminTestCase):
     def setUp(self):

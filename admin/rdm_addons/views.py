@@ -1,19 +1,14 @@
 # -*- coding: utf-8 -*-
 
-#import importlib
 import os
 from mimetypes import MimeTypes
-#import uuid
 
-#import django
 from django.views.generic import TemplateView, View
-#from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404
 from django.forms.models import model_to_dict
-#import flask
 
 from osf.models import Institution, OSFUser
 from admin.base import settings as admin_settings
@@ -113,7 +108,6 @@ class AddonListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
                 addon['option'] = {}
                 addon['option'] = model_to_dict(rdm_addon_option)
                 addon['option']['external_accounts'] = rdm_addon_option.external_accounts.values()
-                #print addon['option']
 
             return ctx
 

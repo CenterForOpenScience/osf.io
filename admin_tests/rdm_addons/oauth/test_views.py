@@ -3,12 +3,7 @@
 import flask
 from nose import tools as nt
 from django.test import RequestFactory
-#from django.contrib.auth.models import Permission
-#from django.contrib import auth
 from django.contrib.sessions.middleware import SessionMiddleware
-#from django.core.exceptions import PermissionDenied
-#from django.core.urlresolvers import reverse
-#from django.http import Http404
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -18,13 +13,9 @@ from osf_tests.factories import (
     MockOAuth2Provider,
 )
 
-#from osf.models.rdm_addons import RdmAddonOption, RdmAddonNoInstitutionOption
-#from osf.models.user import OSFUser, Institution
 
 from admin_tests.utilities import setup_user_view
 from admin.rdm_addons.oauth import views
-#from admin.rdm_addons import utils
-#from admin.rdm.utils import MAGIC_INSTITUTION_ID
 
 from admin_tests.rdm_addons import factories as rdm_addon_factories
 
@@ -109,7 +100,6 @@ class TestCallbackView(AdminTestCase):
         super(TestCallbackView, self).setUp()
         self.user = AuthUserFactory()
         self.external_account = ExternalAccountFactory()
-        #self.external_account.provider = 's3'
         self.institution = InstitutionFactory()
 
         self.provider = MockOAuth2Provider(self.external_account)
@@ -175,12 +165,6 @@ class TestCallbackView(AdminTestCase):
         """登録済みではないユーザのログインテスト"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
-
-    #def test_get(self, *args, **kwargs):
-    #    self.request.user.is_superuser = False
-    #    self.request.user.is_staff = True
-    #    res = self.view.get(self.request, *args, **self.view.kwargs)
-    #    nt.assert_equal(res.status_code, 200)
 
 
 class TestCompleteView(AdminTestCase):
@@ -279,9 +263,6 @@ class TestAccountsView(AdminTestCase):
         self.request.user.is_staff = True
         nt.assert_equal(self.user.external_accounts.count(), 1)
         nt.assert_equal(self.rdm_addon_option.external_accounts.count(), 1)
-        #res = self.view.delete(self.request, *args, **self.view.kwargs)
-        #nt.assert_equal(self.user.external_accounts.count(), 0)
-        #nt.assert_equal(self.rdm_addon_option.external_accounts.count(), 0)
 
 
 '''

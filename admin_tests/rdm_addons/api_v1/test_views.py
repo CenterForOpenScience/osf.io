@@ -3,8 +3,6 @@
 import json
 from nose import tools as nt
 from django.test import RequestFactory
-#from django.contrib.auth.models import Permission
-#from django.core.exceptions import PermissionDenied
 from django.http import Http404
 
 from tests.base import AdminTestCase
@@ -14,13 +12,9 @@ from osf_tests.factories import (
     ExternalAccountFactory,
 )
 
-#from osf.models.rdm_addons import RdmAddonOption, RdmAddonNoInstitutionOption
-#from osf.models.user import OSFUser, Institution
 
 from admin_tests.utilities import setup_user_view
 from admin.rdm_addons.api_v1 import views
-#from admin.rdm_addons import utils
-#from admin.rdm.utils import MAGIC_INSTITUTION_ID
 
 from admin_tests.rdm_addons import factories as rdm_addon_factories
 

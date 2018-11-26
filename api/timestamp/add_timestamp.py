@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 import requests
 import datetime
-#from modularodm import Q
 from osf.models import RdmFileTimestamptokenVerifyResult, RdmUserKey, Guid
 from urllib3.util.retry import Retry
 import subprocess
-#import os
-#from StringIO import StringIO
 from api.base import settings as api_settings
 from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
 from django.core.exceptions import ObjectDoesNotExist
@@ -101,8 +98,6 @@ class AddTimestamp:
 
     #⑥メイン処理
     def add_timestamp(self, guid, file_id, project_id, provider, path, file_name, tmp_dir):
-
-        #        logger.info('add_timestamp start guid:{guid} project_id:{project_id} provider:{provider} path:{path} file_name:{file_name} file_id:{file_id}'.format(guid=guid,project_id=project_id,provider=provider,path=path,file_name=file_name, file_id=file_id))
 
         # guid から user_idを取得する
         #user_id = Guid.find_one(Q('_id', 'eq', guid)).object_id

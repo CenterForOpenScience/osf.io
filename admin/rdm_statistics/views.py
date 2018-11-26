@@ -39,9 +39,7 @@ import matplotlib.pyplot as plt    # noqa
 import matplotlib.ticker as ticker  # noqa
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import seaborn as sns
-#from reportlab.pdfgen import canvas
 import pdfkit
-# from admin and rdm
 from admin.base import settings
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 from admin.rdm_addons import utils
@@ -233,7 +231,6 @@ class StatisticsData(object):
     def __init__(self, provider, current_date):
         self.provider = provider
         self.current_date = current_date
-        # self.provider_id = 0
         self.data_type = ''
         self.graphstyle = 'darkgrid'
         self.background = '#CCCCFF'

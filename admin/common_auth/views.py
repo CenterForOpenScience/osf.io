@@ -88,13 +88,11 @@ class ShibLoginView(RedirectView):
                 # login success
                 # code is below this if/else tree
                 eppn_user.is_staff = True
-                #eppn_user.is_superuser = True
                 eppn_user.save()
             else:
                 # login failure occurs and the screen transits to the error screen
                 # not sure about this code
                 eppn_user.is_staff = False
-                # eppn_user.is_superuser = False
                 eppn_user.save()
                 message = 'login failed: not staff or superuser'
                 logging.info(message)

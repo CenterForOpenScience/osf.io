@@ -2,9 +2,6 @@
 
 from nose import tools as nt
 from django.test import RequestFactory
-#from django.contrib.auth.models import Permission
-#from django.core.exceptions import PermissionDenied
-#from django.http import HttpResponse, Http404
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -14,11 +11,9 @@ from osf_tests.factories import (
 from admin_tests.utilities import setup_user_view
 from admin_tests.rdm_statistics import factories as rdm_statistics_factories
 
-#from osf.models.rdm_statistics import RdmStatistics
 from osf.models.user import Institution
 
 from admin.rdm_statistics import views
-#from admin.rdm.utils import MAGIC_INSTITUTION_ID
 
 
 class TestInstitutionListViewStat(AdminTestCase):
@@ -249,12 +244,6 @@ class TestImageView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
         self.view.kwargs = {'institution_id': self.institution1.id}
 
-    # def test_valid_get(self, *args, **kwargs):
-    #     """有効なgetテスト"""
-    #     res = self.view.get(self.request, *args, **self.view.kwargs)
-    #     nt.assert_equal(res.status_code, 200)
-
-
 class TestSendView(AdminTestCase):
     """test SendView"""
     def setUp(self):
@@ -352,12 +341,3 @@ class TestCreateCSV(AdminTestCase):
         self.user.affiliated_institutions.remove(self.institution1)
         self.user.delete()
         self.institution1.delete()
-
-
-# class TestGatherView(AdminTestCase):
-#     """test ImageView"""
-#     def setUp(self):
-#         super(TestGatherView, self).setUp()
-
-#     def tearDown(self):
-#         super(TestGatherView, self).tearDown()
