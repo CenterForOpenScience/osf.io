@@ -119,6 +119,6 @@ class AddTimestamp:
         self.timestamptoken_register(file_id, project_id, provider, path,
                                      key_file_name, tsa_response, user_id, verify_data)
 
-        # tsr verification request call 
+        # tsr verification request call
         return TimeStampTokenVerifyCheck().timestamp_check(guid, file_id,
                                                            project_id, provider, path, file_name, tmp_dir)

@@ -54,7 +54,7 @@ def disconnect(external_account_id, institution_id, user):
     with app.test_client() as c:
         # Create dummy communication of flask.
         # because revoke_oauth_access method through flask
-        # confirming that user logged in. 
+        # confirming that user logged in.
         c.get('/')
         # iterate AddonUserSettings for addons
         for user_settings in user.get_oauth_addons():
