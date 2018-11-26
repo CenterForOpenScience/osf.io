@@ -379,7 +379,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             orphan_files_names = [file_data['selectedFileName'] for file_data in orphan_files]
             raise exceptions.ValidationError('All files attached to this form must be registered to complete the process. '
                                              'The following file(s) are attached, but are not part of a component being'
-                                             ' registered: {}'.format(','.join(orphan_files_names)))
+                                             ' registered: <b>{}</b>'.format(','.join(orphan_files_names)))
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
