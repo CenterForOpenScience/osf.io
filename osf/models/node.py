@@ -2818,6 +2818,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.deleted_date = date
         self.save()
 
+        # mark node's files as deleted
+        for osfstorage_file in self.files.all():
+            osfstorage_file.delete()
+
         project_signals.node_deleted.send(self)
 
         return True
