@@ -20,7 +20,7 @@
             "format": "text",
             "title": "Title",
             "description": "Provide the working title of your study. It may be the same title that you submit for publication of your final manuscript, but it is not a requirement.",
-            "help": "Effect of sugar on brownie tastiness. <br /><br />How responses will be evaluated: The title should be a specific and informative description of a project. Vague titles such as 'Fruit fly preregistration plan' are not appropriate.",
+            "help": "The title should be a specific and informative description of a project. Vague titles such as 'Fruit fly preregistration plan' are not appropriate.",
             "required": true
         }, {
             "qid": "q2",
@@ -36,7 +36,7 @@
             "format": "textarea",
             "title": "Description",
             "description": "Please give a brief description of your study, including some background, the purpose of the of the study, or broad research questions.",
-            "help": "Though there is strong evidence to suggest that sugar affects taste preferences, the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe to determine if the effect exists in this pastry."
+            "help": "Though there is strong evidence to suggest that sugar affects taste preferences, the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe to determine if the effect exists in this pastry. The description should be no longer than the length of an abstract. It can give some context for the proposed study, but great detail is not needed here for your preregistration."
         }, {
             "qid": "q4",
             "nav": "Hypotheses",
@@ -156,7 +156,7 @@
             "format": "textarea",
             "title": "Explanation of existing data",
             "description": "If you indicate that you will be using some data that already exist in this study, please describe the steps you have taken to assure that you are unaware of any patterns or summary statistics in the data. This may include an explanation of how access to the data has been limited, who has observed the data, or how you have avoided observing any analysis of the specific data you will use in your study.",
-            "help": " An appropriate instance of using existing data would be collecting a sample size much larger than is required for the study, using a small portion of it to conduct exploratory analysis, and then registering one particular analysis that showed promising results. After registration, conduct the specified analysis on that part of the dataset that had not been investigated by the researcher up to that point."
+            "help": "Both confirmatory (hypothesis testing) and exploratory (hypothesis generating) analysis contribute to scientific progress, and do so best when it is clear which is which. We encourage researchers to gain experience with preregistration of analysis plans for hypothesis testing in order to increase transparency about the distinction between confirmatory and exploratory analysis. Research plans using existing data present unique challenges for hypothesis testing because observation of data can influence subsequent analysis plans of the same data. This can produce a gray area between confirmatory and exploratory analysis."
         }, {
             "qid": "q12",
             "nav": "Data collection procedures",
