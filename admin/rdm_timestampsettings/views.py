@@ -19,24 +19,24 @@ class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     model = Institution
 
     def test_func(self):
-        '''権限等のチェック'''
-        # ログインチェック
+        '''check user permissions'''
+        # login check
         if not self.is_authenticated:
             return False
-        # 統合管理者または機関管理者なら許可
+        # allowed by superuser, or institution administrator
         if self.is_super_admin or self.is_admin:
             return True
         return False
 
     def get(self, request, *args, **kwargs):
-        '''コンテキスト取得'''
+        '''get contexts'''
         user = self.request.user
-        # 統合管理者
+        # superuser:
         if self.is_super_admin:
             self.object_list = self.get_queryset()
             ctx = self.get_context_data()
             return self.render_to_response(ctx)
-        # 機関管理者
+        # institution administrator
         elif self.is_admin:
             institution = user.affiliated_institutions.first()
             if institution:
@@ -85,7 +85,7 @@ class InstitutionNodeList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     model = Node
 
     def test_func(self):
-        '''権限等のチェック'''
+        '''check user permissions'''
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -127,7 +127,7 @@ class InstitutionTimeStampPatternForce(RdmPermissionMixin, UserPassesTestMixin, 
     raise_exception = True
 
     def test_func(self):
-        '''権限等のチェック'''
+        '''check user permissions'''
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -150,7 +150,7 @@ class NodeTimeStampPatternChange(RdmPermissionMixin, UserPassesTestMixin, View):
     raise_exception = True
 
     def test_func(self):
-        '''権限等のチェック'''
+        '''check user permissions'''
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 

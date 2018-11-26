@@ -37,41 +37,41 @@ class TestInstitutionListView(AdminTestCase):
             institution.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
-        """統合管理者のログインテスト"""
+        """login test at superuser"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """login test at institution administrator"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """login test at user not superuser or institution administrator"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """login test at invalid user"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """login test at unregistered user"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_super_admin_get(self, *args, **kwargs):
-        """統合管理者のgetメソッドのテスト"""
+        """test superuser GET request"""
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
         nt.assert_equal(res.status_code, 200)
 
     def test_admin_get(self, *args, **kwargs):
-        """機関管理者のgetメソッドのテスト"""
+        """test institution administrator GET request"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
@@ -99,34 +99,34 @@ class TestAddonListView(AdminTestCase):
         self.institution2.delete()
 
     def test_super_admin_login(self):
-        """統合管理者のログインテスト"""
+        """login test at superuser"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """login test at institution administrator"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """login test at user not superuser or institution administrator"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """login test at invalid user"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """login test at unregistered user"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """所属していない機関のユーザのログインテスト"""
+        """login test at user unorganized institution"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
@@ -192,34 +192,34 @@ class TestAddonAllowView(AdminTestCase):
         self.external_account.delete()
 
     def test_super_admin_login(self):
-        """統合管理者のログインテスト"""
+        """login test at superuser"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """login test at institution administrator"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """login test at user not superuser or institution administrator"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """login test at invalid user"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """login test at unregistered user"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """所属していない機関のユーザのログインテスト"""
+        """login test at user unorganized institution"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.rdm_addon_option.institution.id + 1}
@@ -273,7 +273,7 @@ class TestNoInstitutionAddonAllowView(AdminTestCase):
         self.external_account.delete()
 
     def test_super_admin_login(self):
-        """統合管理者のログインテスト"""
+        """login test at superuser"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -329,34 +329,34 @@ class TestAddonForceView(AdminTestCase):
         self.external_account.delete()
 
     def test_super_admin_login(self):
-        """統合管理者のログインテスト"""
+        """login test at superuser"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """login test at institution administrator"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """login test at user not superuser or institution administrator"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """login test at invalid user"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """login test at unregistered user"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """所属していない機関のユーザのログインテスト"""
+        """login test at user unorganized institution"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.rdm_addon_option.institution.id + 1}

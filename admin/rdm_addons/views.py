@@ -37,31 +37,31 @@ def init_app():
 app = init_app()
 
 class InstitutionListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
-    """Institution一覧画面用のView"""
+    """InstitutionListView"""
     template_name = 'rdm_addons/institution_list.html'
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
-        # ログインチェック
+        """check user permissions"""
+        # login check
         if not self.is_authenticated:
             return False
-        # 統合管理者または機関管理者なら許可
+        # allowed by superuser, or institution administrator
         if self.is_super_admin or self.is_admin:
             return True
         return False
 
     def get(self, request, *args, **kwargs):
-        """コンテキスト取得"""
+        """get contexts"""
         user = self.request.user
-        # 統合管理者
+        # superuser:
         if self.is_super_admin:
             ctx = {
                 'institutions': Institution.objects.order_by('id').all(),
                 'logohost': admin_settings.OSF_URL,
             }
             return self.render_to_response(ctx)
-        # 機関管理者
+        # institution administrator
         elif self.is_admin:
             institution = user.affiliated_institutions.first()
             if institution:
@@ -71,17 +71,17 @@ class InstitutionListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView)
                 return redirect(reverse('addons:addons', args=[institution.id]))
 
 class AddonListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
-    """アドオンの設定一覧用のView"""
+    """AddonsListView"""
     template_name = 'rdm_addons/addon_list.html'
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     def get_context_data(self, **kwargs):
-        """コンテキスト取得"""
+        """get contexts"""
         ctx = super(AddonListView, self).get_context_data(**kwargs)
         institution_id = int(kwargs['institution_id'])
 
@@ -112,19 +112,19 @@ class AddonListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
             return ctx
 
 class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """各アドオンのアイコン画像用のView"""
+    """View for addons icon"""
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
-        # ログインチェック
+        """check user permissions"""
+        # login check
         return self.is_authenticated
 
     def get(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
         addon = utils.get_addon_config('accounts', addon_name)
         if addon:
-            # アイコン画像の取得
+            # get addon's icon
             image_path = os.path.join('addons', addon_name, 'static', addon.icon)
             if os.path.exists(image_path):
                 with open(image_path, 'rb') as f:
@@ -134,11 +134,11 @@ class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
         raise Http404
 
 class AddonAllowView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """各アドオンの使用を許可するかどうかを保存するためのView"""
+    """View for saving whether to allow use of each add-on"""
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -154,7 +154,7 @@ class AddonAllowView(RdmPermissionMixin, UserPassesTestMixin, View):
         return HttpResponse('')
 
     def revoke_user_accounts(self, institution_id, addon_name):
-        """管理者が指定するクラウドストレージを利用しているプロジェクトから接続を切断する。"""
+        """disconnect strorage from project adminiatrator designated"""
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
         if institution_id:
             users = OSFUser.objects.filter(affiliated_institutions__pk=institution_id)
@@ -169,11 +169,11 @@ class AddonAllowView(RdmPermissionMixin, UserPassesTestMixin, View):
             user.save()
 
 class AddonForceView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """各アドオンの使用を強制するかどうかを保存するためのView"""
+    """View for preserving whether to force use of each add-on"""
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
