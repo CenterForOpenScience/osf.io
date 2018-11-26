@@ -1081,7 +1081,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'All files attached to this form must be registered to complete the' \
                                                   ' process. The following file(s) are attached, but are not part of' \
-                                                  ' a component being registered: file 1'
+                                                  ' a component being registered: <b>file 1</b>'
 
 
 @pytest.mark.django_db
