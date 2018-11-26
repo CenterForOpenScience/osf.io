@@ -14,9 +14,9 @@ def add_account(json_request, institution_id, addon_name):
     api_token = json_request['api_token']
 
     provider = DataverseProvider()
-    # 認証確認
+    # check authentication
     client.connect_or_error(host, api_token)
-    # 認証アカウント情報取得
+    # acquire authentication account information
     try:
         provider.account = ExternalAccount(
             provider=provider.short_name,

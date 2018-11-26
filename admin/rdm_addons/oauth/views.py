@@ -48,7 +48,7 @@ class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTes
     raise_exception = True
 
     def test_func(self):
-        """validate user permissions"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -77,7 +77,7 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
     raise_exception = True
 
     def test_func(self):
-        """validate user permissions"""
+        """check user permissions"""
         addon_name = self.kwargs.get('addon_name')
         session = self.get_session(addon_name)
         if 'oauth_states' in session.data:
@@ -138,7 +138,7 @@ class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
     raise_exception = True
 
     def test_func(self):
-        """validate user permissions"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 

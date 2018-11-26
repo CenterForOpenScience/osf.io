@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 
 class AddTimestamp:
 
-    #①鍵情報テーブルから操作ユーザに紐づく鍵情報を取得する
+    #1 get user key info
     def get_userkey(self, user_id):
         userKey = RdmUserKey.objects.get(guid=user_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
         return userKey.key_name
 
-    #②ファイル情報 + 鍵情報をハッシュ化したタイムスタンプリクエスト（tsq）を生成する
+    #2 create  tsq(timestamp request) from file, and keyinfo
     def get_timestamp_request(self, file_name):
         cmd = [api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_TS, api_settings.OPENSSL_OPTION_QUERY, api_settings.OPENSSL_OPTION_DATA,
                file_name, api_settings.OPENSSL_OPTION_CERT, api_settings.OPENSSL_OPTION_SHA512]
@@ -30,7 +30,7 @@ class AddTimestamp:
         stdout_data, stderr_data = process.communicate()
         return stdout_data
 
-    #③tsqをTSAに送信してタイムスタンプトークン（tsr）を受け取る
+    #3 send tsq to TSA, and recieve tsr(timestamp token)
     def get_timestamp_response(self, file_name, ts_request_file, key_file):
         res_content = None
         try:
@@ -52,7 +52,7 @@ class AddTimestamp:
 
         return res_content
 
-    #④データの取得
+    #4 get timestamp verified result
     def get_data(self, file_id, project_id, provider, path):
         try:
             res = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_id)
@@ -63,12 +63,12 @@ class AddTimestamp:
 
         return res
 
-    #⑤ファイルタイムスタンプトークン情報テーブルに登録。
+    #5 resister verify result in db
     def timestamptoken_register(self, file_id, project_id, provider, path,
                                 key_file, tsa_response, user_id, verify_data):
 
         try:
-            # データが登録されていない場合
+            # data not registered yet
             if not verify_data:
                 verify_data = RdmFileTimestamptokenVerifyResult()
                 verify_data.key_file_name = key_file
@@ -81,7 +81,7 @@ class AddTimestamp:
                 verify_data.create_user = user_id
                 verify_data.create_date = datetime.datetime.now()
 
-            # データがすでに登録されている場合
+            # registered data:
             else:
                 verify_data.key_file_name = key_file
                 verify_data.timestamp_token = tsa_response
@@ -96,29 +96,29 @@ class AddTimestamp:
 
         return
 
-    #⑥メイン処理
+    #6 main
     def add_timestamp(self, guid, file_id, project_id, provider, path, file_name, tmp_dir):
 
-        # guid から user_idを取得する
+        # get user_id from guid
         #user_id = Guid.find_one(Q('_id', 'eq', guid)).object_id
         user_id = Guid.objects.get(_id=guid).object_id
 
-        # ユーザ鍵情報を取得する。
+        # get user key info
         key_file_name = self.get_userkey(user_id)
 
-        # タイムスタンプリクエスト生成
+        # create tsq
         tsa_request = self.get_timestamp_request(file_name)
 
-        # タイムスタンプトークン取得
+        # get tsr
         tsa_response = self.get_timestamp_response(file_name, tsa_request, key_file_name)
 
-        # 検証データ存在チェック
+        # data exists check
         verify_data = self.get_data(file_id, project_id, provider, path)
 
-        # 検証結果テーブルに登録する。
+        # resiser in db
         self.timestamptoken_register(file_id, project_id, provider, path,
                                      key_file_name, tsa_response, user_id, verify_data)
 
-        # （共通処理）タイムスタンプ検証処理の呼び出し
+        # tsr verification request call 
         return TimeStampTokenVerifyCheck().timestamp_check(guid, file_id,
                                                            project_id, provider, path, file_name, tmp_dir)

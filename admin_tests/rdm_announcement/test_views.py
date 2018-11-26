@@ -39,14 +39,14 @@ class TestIndexView(AdminTestCase):
         self.user.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
-        """統合管理者のログインテスト"""
+        """login test at superuser"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """login test at institution administrator"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -54,7 +54,7 @@ class TestIndexView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """login test at user not superuser or institution administrator"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -62,7 +62,7 @@ class TestIndexView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """login test at invalid user"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -70,7 +70,7 @@ class TestIndexView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """login test at unregistered user"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -78,7 +78,7 @@ class TestIndexView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_super_admin_get(self, *args, **kwargs):
-        """統合管理者のgetメソッドのテスト"""
+        """test superuser GET request"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -87,7 +87,7 @@ class TestIndexView(AdminTestCase):
         nt.assert_equal(res.status_code, 200)
 
     def test_admin_get(self, *args, **kwargs):
-        """機関管理者のgetメソッドのテスト"""
+        """test institution administrator GET request"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -151,14 +151,14 @@ class TestSettingsView(AdminTestCase):
         self.user.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
-        """統合管理者のログインテスト"""
+        """login test at superuser"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """login test at institution administraror"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -166,7 +166,7 @@ class TestSettingsView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """login test at user not superuser or institution administrator"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -174,7 +174,7 @@ class TestSettingsView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """login test at invalid user"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -182,7 +182,7 @@ class TestSettingsView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """login at unregisterd user"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -190,7 +190,7 @@ class TestSettingsView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_super_admin_get(self, *args, **kwargs):
-        """統合管理者のgetメソッドのテスト"""
+        """test superuser GET requesr"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -199,7 +199,7 @@ class TestSettingsView(AdminTestCase):
         nt.assert_equal(res.status_code, 200)
 
     def test_admin_get(self, *args, **kwargs):
-        """機関管理者のgetメソッドのテスト"""
+        """test institution administrator GET request"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -213,7 +213,7 @@ class TestSettingsView(AdminTestCase):
         nt.assert_equal(res['form'], SettingsForm)
 
     def test_get_exist_option_set(self):
-        """統合管理者のテスト"""
+        """test superuser changes option """
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -232,7 +232,7 @@ class TestSettingsView(AdminTestCase):
         nt.assert_true(ret)
 
     def test_get_exist_option_set2(self):
-        """機関管理者のテスト"""
+        """test institution administrator changes option"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -251,7 +251,7 @@ class TestSettingsView(AdminTestCase):
         nt.assert_true(ret)
 
     def test_get_exist_option_set3(self):
-        """統合管理者でも機関管理者でもないユーザのテスト"""
+        """test user not superuser or institution administrator, changes option"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -282,14 +282,14 @@ class TestSettingsUpdateView(AdminTestCase):
         self.user.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
-        """統合管理者のログインテスト"""
+        """login test at superuser"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """login test at institution administrator"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -297,7 +297,7 @@ class TestSettingsUpdateView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """login test at user not superuser or institution administrator"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -305,7 +305,7 @@ class TestSettingsUpdateView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """login test at invalid user"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -313,7 +313,7 @@ class TestSettingsUpdateView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """login test at unregistered user"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -333,14 +333,14 @@ class TestSendView(AdminTestCase):
         self.user.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
-        """統合管理者のログインテスト"""
+        """login test at superuser"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """login test at institution administrator"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -348,7 +348,7 @@ class TestSendView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """login test at user not superuser or institution administrator"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -356,7 +356,7 @@ class TestSendView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """login test at invalid user"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -364,7 +364,7 @@ class TestSendView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """login test at unregistered user"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True

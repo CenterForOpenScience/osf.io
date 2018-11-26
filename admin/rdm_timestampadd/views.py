@@ -34,7 +34,7 @@ class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     model = Institution
 
     def test_func(self):
-        """validate user permissions"""
+        """check user permissions"""
         if not self.is_authenticated:
             return False
         if self.is_super_admin or self.is_admin:
@@ -215,7 +215,7 @@ class VerifyTimeStampAddList(RdmPermissionMixin, View):
 class TimestampVerifyData(RdmPermissionMixin, View):
 
     def test_func(self):
-        """validate user permissions"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -261,7 +261,7 @@ class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
     template_name = 'rdm_timestampadd/timestampadd.html'
 
     def test_func(self):
-        """validate user permissions"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -292,7 +292,7 @@ class AddTimeStampResultList(RdmPermissionMixin, TemplateView):
 class AddTimestampData(RdmPermissionMixin, View):
 
     def test_func(self):
-        """validate user permissions"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
