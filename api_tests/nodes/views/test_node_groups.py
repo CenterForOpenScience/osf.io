@@ -66,7 +66,7 @@ def make_node_group_payload():
     def payload(attributes, relationships=None):
         payload_data = {
             'data': {
-                'type': 'node-groups',
+                'type': 'node_groups',
                 'attributes': attributes,
             }
         }
@@ -248,7 +248,7 @@ class TestNodeGroupCreate:
         assert res.status_code == 409
 
         # test not a real group
-        payload['data']['type'] = 'node-groups'
+        payload['data']['type'] = 'node_groups'
         payload['data']['relationships']['osf_groups']['data']['id'] = 'not_a_real_group_id'
         res = app.post_json_api(public_url, payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 404
@@ -374,7 +374,7 @@ class TestNodeGroupDelete:
         public_project.add_contributor(manager, permissions='admin')
         payload = {
             'data': [
-                {'type': 'node-groups', 'id': '{}-{}'.format(public_project._id, osf_group._id)}
+                {'type': 'node_groups', 'id': '{}-{}'.format(public_project._id, osf_group._id)}
             ]
         }
         # group has not been added to the node
@@ -417,7 +417,7 @@ class TestNodeGroupDelete:
         # test member with write cannot remove group
         second_payload = {
             'data': [
-                {'type': 'node-groups', 'id': '{}-{}'.format(public_project._id, second_group._id)}
+                {'type': 'node_groups', 'id': '{}-{}'.format(public_project._id, second_group._id)}
             ]
         }
         second_url = '/{}nodes/{}/groups/{}/'.format(API_BASE, public_project._id, second_group._id)

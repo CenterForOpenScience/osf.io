@@ -1772,7 +1772,7 @@ class NodeGroupsSerializer(JSONAPISerializer):
         return osf_permissions.reduce_permissions(permissions)
 
     class Meta:
-        type_ = 'node-groups'
+        type_ = 'node_groups'
 
 
 class NodeGroupsCreateSerializer(NodeGroupsSerializer):
