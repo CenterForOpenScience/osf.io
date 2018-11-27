@@ -1325,7 +1325,6 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/timestamp/',
             ],
             ['get', 'post'],
-            #project_views.timestamp.collect_timestamp_trees,
             project_views.timestamp.get_init_timestamp_error_data_list,
             OsfWebRenderer('project/timestamp.mako', trust=False),
         ),

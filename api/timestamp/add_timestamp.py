@@ -92,7 +92,6 @@ class AddTimestamp:
 
         except Exception as ex:
             logger.exception(ex)
-#            res = None
 
         return
 
@@ -100,7 +99,6 @@ class AddTimestamp:
     def add_timestamp(self, guid, file_id, project_id, provider, path, file_name, tmp_dir):
 
         # get user_id from guid
-        #user_id = Guid.find_one(Q('_id', 'eq', guid)).object_id
         user_id = Guid.objects.get(_id=guid).object_id
 
         # get user key info

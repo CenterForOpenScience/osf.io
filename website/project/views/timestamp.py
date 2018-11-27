@@ -249,7 +249,6 @@ def do_get_timestamp_error_data(auth, node, headers, cookies, data):
         )
 
         shutil.rmtree(tmp_dir)
-        return result
 
     except Exception as err:
         if tmp_dir:
@@ -257,7 +256,7 @@ def do_get_timestamp_error_data(auth, node, headers, cookies, data):
                 shutil.rmtree(tmp_dir)
         logger.exception(err)
 
-#    return result
+    return result
 
 
 @must_be_contributor_or_public
@@ -277,6 +276,7 @@ def add_timestamp_token(auth, node, **kwargs):
     headers = {'content-type': 'application/json'}
     url = None
     tmp_dir = None
+    result = None
     try:
         file_node = BaseFileNode.objects.get(_id=data['file_id'])
         if data['provider'] == 'osfstorage':
@@ -314,7 +314,6 @@ def add_timestamp_token(auth, node, **kwargs):
         )
 
         shutil.rmtree(tmp_dir)
-        return result
 
     except Exception as err:
         if tmp_dir:
@@ -322,7 +321,7 @@ def add_timestamp_token(auth, node, **kwargs):
                 shutil.rmtree(tmp_dir)
         logger.exception(err)
 
-#    return result
+    return result
 
 
 @must_be_contributor_or_public
