@@ -37,41 +37,41 @@ class TestInstitutionListView(AdminTestCase):
             institution.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
-        """login test at superuser"""
+        """test superuser login"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """login test at institution administrator"""
+        """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """login test at user not superuser or institution administrator"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """login test at invalid user"""
+        """test invalid user login"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """login test at unregistered user"""
+        """test unregistered user login"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_super_admin_get(self, *args, **kwargs):
-        """test superuser GET request"""
+        """test superuser GET method"""
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
         nt.assert_equal(res.status_code, 200)
 
     def test_admin_get(self, *args, **kwargs):
-        """test institution administrator GET request"""
+        """test institution administrator GET method"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
@@ -99,34 +99,34 @@ class TestAddonListView(AdminTestCase):
         self.institution2.delete()
 
     def test_super_admin_login(self):
-        """login test at superuser"""
+        """test superuser login"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """login test at institution administrator"""
+        """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """login test at user not superuser or institution administrator"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """login test at invalid user"""
+        """test invalid user login"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """login test at unregistered user"""
+        """test unregistered user login"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """login test at user unorganized institution"""
+        """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
@@ -192,34 +192,34 @@ class TestAddonAllowView(AdminTestCase):
         self.external_account.delete()
 
     def test_super_admin_login(self):
-        """login test at superuser"""
+        """test superuser login"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """login test at institution administrator"""
+        """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """login test at user not superuser or institution administrator"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """login test at invalid user"""
+        """test invalid user login"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """login test at unregistered user"""
+        """test unregistered user login"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """login test at user unorganized institution"""
+        """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.rdm_addon_option.institution.id + 1}
@@ -273,7 +273,7 @@ class TestNoInstitutionAddonAllowView(AdminTestCase):
         self.external_account.delete()
 
     def test_super_admin_login(self):
-        """login test at superuser"""
+        """test superuser login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -329,34 +329,34 @@ class TestAddonForceView(AdminTestCase):
         self.external_account.delete()
 
     def test_super_admin_login(self):
-        """login test at superuser"""
+        """test superuser login"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """login test at institution administrator"""
+        """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """login test at user not superuser or institution administrator"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """login test at invalid user"""
+        """test invalid user login"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """login test at unregistered user"""
+        """test unregistered user login"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """login test at user unorganized institution"""
+        """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.rdm_addon_option.institution.id + 1}

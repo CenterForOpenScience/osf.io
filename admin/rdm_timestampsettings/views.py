@@ -23,7 +23,7 @@ class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
         # login check
         if not self.is_authenticated:
             return False
-        # allowed by superuser, or institution administrator
+        # permitted if superuser or institution administrator
         if self.is_super_admin or self.is_admin:
             return True
         return False
@@ -31,7 +31,7 @@ class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     def get(self, request, *args, **kwargs):
         '''get contexts'''
         user = self.request.user
-        # superuser:
+        # superuser
         if self.is_super_admin:
             self.object_list = self.get_queryset()
             ctx = self.get_context_data()

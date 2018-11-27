@@ -591,7 +591,7 @@ def simple_auth(access_token):
         return False
 
 def send_stat_mail(request, **kwargs):
-    """send statistics information mail"""
+    """send statistics information email"""
     current_date = get_current_date()
     all_institutions = Institution.objects.order_by('id').all()
     all_staff_users = OSFUser.objects.filter(is_staff=True)
@@ -625,7 +625,7 @@ def send_stat_mail(request, **kwargs):
     return response
 
 def send_error_mail(err):
-    """send error mail"""
+    """send error email"""
     current_date = get_current_date()
     # to list
     all_superusers_list = list(OSFUser.objects.filter(is_superuser=True).values_list('username', flat=True))
