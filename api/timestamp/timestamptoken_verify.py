@@ -99,17 +99,17 @@ class TimeStampTokenVerifyCheck:
         try:
             # get file information, verifyresult table
             if provider == 'osfstorage':
-                # 'osfstrage'
+                # 'osfstorage'
                 baseFileNode = self.get_baseFileNode(file_id)
                 if baseFileNode.is_deleted and not verifyResult:
-                    # if file was deleted ,and verify result does not exists:
+                    # if file was deleted ,and verify result does not exist:
                     # update verifyResult:'FILE missing'
                     ret = api_settings.FILE_NOT_EXISTS
                     verify_result_title = api_settings.FILE_NOT_EXISTS_MSG  # 'FILE missing'
                     verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider,
                                                                        path, ret, userid)
                 elif baseFileNode.is_deleted and verifyResult and not verifyResult.timestamp_token:
-                    # if file does not exists ,and verify result does not exists in db:
+                    # if file does not exist ,and verify result does not exist in db:
                     # update verifyResult 'FILE missing(Unverify)'
                     verifyResult.inspection_result_status = api_settings.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verifyResult.validation_user = userid
@@ -124,14 +124,14 @@ class TimeStampTokenVerifyCheck:
                     verifyResult.validation_date = datetime.datetime.now()
                     ret = api_settings.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_NO_DATA
                 elif not baseFileNode.is_deleted and not verifyResult:
-                    # if file was deleted, and verify result does not exists in db:
+                    # if file was deleted, and verify result does not exist in db:
                     # update verifyResult 'TST missing(Unverify)'
                     ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG  # 'TST missing(Unverify)'
                     verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider,
                                                                             path, ret, userid)
                 elif not baseFileNode.is_deleted and not verifyResult.timestamp_token:
-                    # if file exists and  verifyResult.timestamp_token does not exists:
+                    # if file exists and  verifyResult.timestamp_token does not exist:
                     # update verifyResult 'TST missing(Retrieving Failed)'
                     verifyResult.inspection_result_status = api_settings.TIME_STAMP_TOKEN_NO_DATA
                     verifyResult.validation_user = userid
@@ -141,14 +141,14 @@ class TimeStampTokenVerifyCheck:
             else:
                 # storage other than osfstorage:
                 if not verifyResult:
-                    # if file does not exists, and  verify result does not exists:
+                    # if file does not exist, and  verify result does not exist:
                     # update verifyResult 'TST missing(Unverify)'
                     ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG  # 'TST missing(Unverify)'
                     verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider,
                                                                              path, ret, userid)
                 elif not verifyResult.timestamp_token:
-                    # if timestamptoken does not exists:
+                    # if timestamptoken does not exist:
                     # update verifyResult 'TST missing(Retrieving Failed)'
                     verifyResult.inspection_result_status = api_settings.TIME_STAMP_TOKEN_NO_DATA
                     verifyResult.validation_user = userid
