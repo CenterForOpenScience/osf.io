@@ -102,6 +102,12 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         if len(self.managers) == 1 and self.managers[0] == user:
             raise ValueError('Group must have at least one manager.')
 
+    def _get_node_group_perms(self, node, permission):
+        permissions = node.groups.get(permission)
+        if not permissions:
+            raise ValueError('{} is not a valid permission.'.format(permission))
+        return permissions
+
     def send_member_email(self, user, permission, auth=None):
         # TODO - add a throttle?
 
@@ -227,7 +233,9 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         :param auth: Auth object
         """
         self._require_manager_permission(auth)
-        for perm in node.groups[permission]:
+
+        permissions = self._get_node_group_perms(node, permission)
+        for perm in permissions:
             assign_perm(perm, self.member_group, node)
 
     def update_group_permissions_to_node(self, node, permission='write', auth=None):
@@ -237,10 +245,11 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         :param str Highest permission to grant, 'read', 'write', or 'admin'
         :param auth: Auth object
         """
-        to_remove = set(get_perms(self.member_group, node)).difference(node.groups[permission])
+        permissions = self._get_node_group_perms(node, permission)
+        to_remove = set(get_perms(self.member_group, node)).difference(permissions)
         for perm in to_remove:
             remove_perm(perm, self.member_group, node)
-        for perm in node.groups[permission]:
+        for perm in permissions:
             assign_perm(perm, self.member_group, node)
 
     def remove_group_from_node(self, node):

@@ -35,7 +35,7 @@ from website.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, Institution,
     RegistrationSchema, AbstractNode, PrivateLink,
-    RegistrationProvider,
+    RegistrationProvider, OSFGroup,
 )
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
@@ -376,6 +376,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-forks',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_forks_count'},
+    )
+
+    groups = RelationshipField(
+        related_view='nodes:node-groups',
+        related_view_kwargs={'node_id': '<_id>'},
     )
 
     node_links = ShowIfVersion(
@@ -1012,13 +1017,13 @@ class NodeForksSerializer(NodeSerializer):
         return fork
 
 
-class ContributorIDField(IDField):
-    """ID field to use with the contributor resource. Contributor IDs have the form "<node-id>-<user-id>"."""
+class CompoundIDField(IDField):
+    """ID field to use with another resource related to the node. CompoundIDField IDs have the form "<node-id>-<related-id>"."""
 
     def __init__(self, *args, **kwargs):
         kwargs['source'] = kwargs.pop('source', '_id')
-        kwargs['help_text'] = kwargs.get('help_text', 'Unique contributor ID. Has the form "<node-id>-<user-id>". Example: "abc12-xyz34"')
-        super(ContributorIDField, self).__init__(*args, **kwargs)
+        kwargs['help_text'] = kwargs.get('help_text', 'Unique ID that is a compound of two objects. Has the form "<node-id>-<related-id>". Example: "abc12-xyz34"')
+        super(CompoundIDField, self).__init__(*args, **kwargs)
 
     def _get_node_id(self):
         return self.context['request'].parser_context['kwargs']['node_id']
@@ -1026,13 +1031,13 @@ class ContributorIDField(IDField):
     # override IDField
     def get_id(self, obj):
         node_id = self._get_node_id()
-        user_id = obj._id
-        return '{}-{}'.format(node_id, user_id)
+        related_id = obj._id
+        return '{}-{}'.format(node_id, related_id)
 
     def to_representation(self, value):
         node_id = self._get_node_id()
-        user_id = super(ContributorIDField, self).to_representation(value)
-        return '{}-{}'.format(node_id, user_id)
+        related_id = super(CompoundIDField, self).to_representation(value)
+        return '{}-{}'.format(node_id, related_id)
 
 
 class NodeContributorsSerializer(JSONAPISerializer):
@@ -1721,3 +1726,116 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         if type(addon) == bool:
             addon = None
         return addon
+
+
+class NodeGroupsSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'name',
+        'permission',
+        'date_created',
+    ])
+
+    writeable_method_fields = frozenset([
+        'permission',
+    ])
+
+    id = CompoundIDField(source='_id', read_only=True)
+    type = TypeField()
+    permission = ser.SerializerMethodField()
+    name = ser.CharField(read_only=True)
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
+
+    osf_groups = RelationshipField(
+        related_view='osf_groups:group-detail',
+        related_view_kwargs={'group_id': '<_id>'},
+        required=False,
+    )
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        node = self.context['view'].get_node()
+        return absolute_reverse(
+            'nodes:node-group-detail', kwargs={
+                'group_id': obj._id,
+                'node_id': node._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_permission(self, obj):
+        node = self.context['view'].get_node()
+        permissions = self.context['view'].get_node_group_perms(obj, node)
+        return osf_permissions.reduce_permissions(permissions)
+
+    class Meta:
+        type_ = 'node_groups'
+
+
+class NodeGroupsCreateSerializer(NodeGroupsSerializer):
+    """
+    Overrides NodeGroupSerializer so osf_groups relationship is properly parsed
+    (JSONAPIParser will flatten osf_groups relationship into {'_id': 'group_id'},
+    so _id field needs to be writeable so it's not dropped from validated_data)
+
+    """
+    id = IDField(source='_id', required=False, allow_null=True)
+
+    osf_groups = RelationshipField(
+        related_view='osf_groups:group-detail',
+        related_view_kwargs={'group_id': '<_id>'},
+        required=False,
+    )
+
+    def load_osf_group(self, _id):
+        if not _id:
+            raise exceptions.ValidationError(detail='OSFGroup relationship must be specified.')
+        try:
+            osf_group = OSFGroup.objects.get(_id=_id)
+        except OSFGroup.DoesNotExist:
+            raise exceptions.NotFound(detail='OSFGroup {} is invalid.'.format(_id))
+        return osf_group
+
+    def create(self, validated_data):
+        auth = get_user_auth(self.context['request'])
+        node = self.context['view'].get_node()
+        permission = validated_data.get('permission', osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS)
+        group = self.load_osf_group(validated_data.get('_id'))
+        if group in node.osf_groups:
+            raise exceptions.ValidationError(
+                'The OSF group {} has already been added to the node {}'.format(group._id, node._id),
+            )
+
+        try:
+            node.add_osf_group(group, permission, auth)
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=str(e))
+        except ValueError as e:
+            # permission is in writeable_method_fields, so validation happens on OSF Group model
+            raise exceptions.ValidationError(detail=str(e.message))
+        return group
+
+
+class NodeGroupsDetailSerializer(NodeGroupsSerializer):
+    """
+    Overrides NodeGroupsSerializer to make id required.  Adds update method here.
+    """
+    id = CompoundIDField(source='_id', required=True)
+
+    def update(self, obj, validated_data):
+        auth = get_user_auth(self.context['request'])
+        node = self.context['view'].get_node()
+        permission = validated_data.get('permission')
+        if not permission:
+            return obj
+        try:
+            node.update_osf_group(obj, permission, auth)
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=str(e.message))
+        except ValueError as e:
+            # permission is in writeable_method_fields, so validation happens on OSF Group model
+            raise exceptions.ValidationError(detail=str(e.message))
+        return obj

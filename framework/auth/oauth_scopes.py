@@ -77,6 +77,9 @@ class CoreScopes(object):
     NODE_PREPRINTS_READ = 'node.preprints_read'
     NODE_PREPRINTS_WRITE = 'node.preprints_write'
 
+    NODE_OSF_GROUPS_READ = 'node.osf_groups_read'
+    NODE_OSF_GROUPS_WRITE = 'node.osf_groups_write'
+
     PREPRINTS_READ = 'preprint.preprints_read'
     PREPRINTS_WRITE = 'preprint.preprints_write'
 
@@ -240,11 +243,11 @@ class ComposedScopes(object):
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
                         CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
-                        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ)
+                        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ, CoreScopes.NODE_OSF_GROUPS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
                             (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
                              CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
-                             CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE)
+                             CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE, CoreScopes.NODE_OSF_GROUPS_WRITE)
 
     # Privileges relating to who can access a preprint via contributors
     PREPRINT_ACCESS_READ = (CoreScopes.PREPRINT_CONTRIBUTORS_READ,)

@@ -1161,7 +1161,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
     def update(self, instance, validated_data):
 
         # avoiding circular import
-        from api.nodes.serializers import ContributorIDField
+        from api.nodes.serializers import CompoundIDField
 
         # if PATCH request, the child serializer's partial attribute needs to be True
         if self.context['request'].method == 'PATCH':
@@ -1175,7 +1175,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         id_lookup = self.child.fields['id'].source
         data_mapping = {item.get(id_lookup): item for item in validated_data}
 
-        if isinstance(self.child.fields['id'], ContributorIDField):
+        if isinstance(self.child.fields['id'], CompoundIDField):
             instance_mapping = {self.child.fields['id'].get_id(item): item for item in instance}
         else:
             instance_mapping = {getattr(item, id_lookup): item for item in instance}
