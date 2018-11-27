@@ -1,6 +1,6 @@
 import pytest
 
-from waffle.models import Flag
+from waffle.models import Flag, Switch, Sample
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -45,7 +45,7 @@ class TestWaffleList:
     def test_waffle_flag_no_filter(self, app, user, url, inactive_flag, active_flag):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == Flag.objects.all().count()
+        assert len(res.json['data']) == Flag.objects.all().count() + Switch.objects.all().count() + Sample.objects.all().count()
 
     def test_waffle_flag_filter_active(self, app, user, flag_url, active_flag):
         res = app.get(flag_url, auth=user.auth)
