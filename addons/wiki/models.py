@@ -29,7 +29,7 @@ from .exceptions import (
 
 logger = logging.getLogger(__name__)
 
-SHAREJS_HOST = 'ec2-13-115-158-202.ap-northeast-1.compute.amazonaws.com'
+SHAREJS_HOST = 'localhost'
 SHAREJS_PORT = 7007
 SHAREJS_URL = '{}:{}'.format(SHAREJS_HOST, SHAREJS_PORT)
 
