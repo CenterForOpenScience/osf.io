@@ -32,7 +32,7 @@ def get_addon_template_config(config, user):
     return ret
 
 def get_addons_by_config_type(config_type, user):
-    """get a list of Addon objects from the configuration type of Addon."""
+    """get a list of Addon objects from the Config Type of Addon."""
     addons = [addon for addon in settings.ADDONS_AVAILABLE if config_type in addon.configs]
     return [get_addon_template_config(addon_config, user) for addon_config in sorted(addons, key=lambda cfg: cfg.full_name.lower())]
 
@@ -55,7 +55,7 @@ def collect_addon_js(addons):
     return js_url_list
 
 def get_rdm_addon_option(institution_id, addon_name):
-    """get model objects RdmAddonOption or RdmAddonNoInstitutionOption"""
+    """get model objects of RdmAddonOption or RdmAddonNoInstitutionOption"""
     if institution_id:
         rdm_addon_option, _ = RdmAddonOption.objects.get_or_create(institution_id=institution_id,
             provider=addon_name)
@@ -64,7 +64,7 @@ def get_rdm_addon_option(institution_id, addon_name):
     return rdm_addon_option
 
 def update_with_rdm_addon_settings(addon_setting, user):
-    """add configuration information specific to RDM to the Addon setting information of OSF"""
+    """add configuration information specific to RDM to the OSF Addon settings"""
     institutoin_id = get_institution_id(user)
     for addon in addon_setting:
         addon_name = addon['addon_short_name']

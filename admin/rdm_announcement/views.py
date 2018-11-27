@@ -27,7 +27,7 @@ class RdmAnnouncementPermissionMixin(RdmPermissionMixin):
         # login check
         if not self.is_authenticated:
             return False
-        # allowed by superuser, or institution administrator
+        # permitted if superuser or institution administrator
         if self.is_super_admin or self.is_admin:
             return True
         return False
