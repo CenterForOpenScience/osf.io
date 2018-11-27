@@ -223,7 +223,6 @@ class TestAddonLogs(OsfTestCase):
         nodelog_count2 = NodeLog.objects.all().count()
         assert_equal(nodelog_count1 + 1, nodelog_count2)
         result_list2 = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=self.node._id)
-#        assert_equal(result_list1_count + 1, result_list2.count())
         assert_true(mock_perform.called, 'perform not called')
 
         ## tearDown

@@ -280,7 +280,6 @@ class TestNoInstitutionAddonAllowView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_get(self, *args, **kwargs):
-        #res = self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(MAGIC_INSTITUTION_ID, self.view.kwargs['addon_name'])
         nt.assert_true(rdm_addon_option.is_allowed)
         nt.assert_equal(rdm_addon_option.provider, self.view.kwargs['addon_name'])
