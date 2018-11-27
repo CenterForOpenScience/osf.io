@@ -19,7 +19,7 @@ from framework.auth import Auth
 
 
 class OAuthView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """View for canceling add-on authentication information"""
+    """View for revoking add-on authentication information"""
     raise_exception = True
 
     def test_func(self):
@@ -29,11 +29,11 @@ class OAuthView(RdmPermissionMixin, UserPassesTestMixin, View):
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
-        """disabled CSRF"""
+        """disable CSRF"""
         return super(OAuthView, self).dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        """delete OAuth"""
+        """disconnect OAuth"""
         external_account_id = kwargs['external_account_id']
         institution_id = int(kwargs['institution_id'])
         user = self.request.user
@@ -52,9 +52,9 @@ def disconnect(external_account_id, institution_id, user):
 
     app = flask.Flask(__name__)
     with app.test_client() as c:
-        # Create dummy communication of flask.
-        # because revoke_oauth_access method through flask
-        # confirming that user logged in.
+        # Create dummy Flask communication.
+        # revoke_oauth_access method goes through flask
+        # in order to confirm the user is logged in.
         c.get('/')
         # iterate AddonUserSettings for addons
         for user_settings in user.get_oauth_addons():
@@ -82,7 +82,7 @@ class SettingsView(RdmPermissionMixin, UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
         institution_id = int(kwargs['institution_id'])
-        # Separate processing to acquire settings for each add-on.
+        # Separate by add-on the processing to acquire settings.
         settings = get_settings(addon_name, institution_id)
         return JsonResponse(settings)
 
@@ -103,7 +103,7 @@ def get_settings(addon_name, institution_id):
     return {}
 
 class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """View get add-on account information."""
+    """get add-on account information."""
     raise_exception = True
 
     def test_func(self):
@@ -121,7 +121,7 @@ class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
         institution_id = int(kwargs['institution_id'])
 
         rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
-        # check existence of OAuth authentication setting information
+        # check existence of OAuth authentication settings
         if not rdm_addon_option.external_accounts.exists():
             res = add_extra_info({'accounts': []}, addon_name)
             return JsonResponse(res)
@@ -136,7 +136,7 @@ class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
                     'display_name': external_account.display_name,
                     'profile_url': external_account.profile_url,
                 }
-                # append addon specific info
+                # add each add-on's account information
                 account = add_addon_extra_info(account, external_account, addon_name)
                 accounts.append(account)
         res = add_extra_info({'accounts': accounts}, addon_name)
@@ -151,7 +151,7 @@ class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
         return JsonResponse(response, status=status)
 
 def add_addon_extra_info(ret, external_account, addon_name):
-    """append addon specific info"""
+    """add each add-on's account information"""
     if addon_name == 'dataverse':
         ret.update({
             'host': external_account.oauth_key,
@@ -160,7 +160,7 @@ def add_addon_extra_info(ret, external_account, addon_name):
     return ret
 
 def add_extra_info(ret, addon_name):
-    """append addon specific info(other than accont info.)"""
+    """add each add-on's non-account-related individual information"""
     if addon_name == 'owncloud':
         from addons.owncloud.settings import DEFAULT_HOSTS
         ret.update({

@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 
-# dummi institution model
-# If there is a code that assumes False in the evaluation of the sentence,
-# it should not be a number other than 0.
+# dummy institution model
+# Some 'if' statements expect this ID to evaluate to false,
+# so it should not be a number other than 0.
 MAGIC_INSTITUTION_ID = 0
 
 class RdmPermissionMixin(object):
 
     @property
     def is_authenticated(self):
-        """login check"""
+        """determine whether the user is logged in or not"""
         return self.request.user.is_authenticated
 
     @property
     def is_super_admin(self):
-        """superuser check"""
+        """determine whether the user is super or not"""
         user = self.request.user
         if not (user.is_active and user.is_registered):
-            # 無効なユーザ
+            # invalid user
             return False
         if user.is_superuser:
             return True
@@ -25,7 +25,7 @@ class RdmPermissionMixin(object):
 
     @property
     def is_admin(self):
-        """institution administrator check"""
+        """determine whether the user is an institution administrator"""
         user = self.request.user
         if not (user.is_active and user.is_registered):
             # invalid user
@@ -35,7 +35,7 @@ class RdmPermissionMixin(object):
         return False
 
     def is_affiliated_institution(self, institution_id):
-        """check institution user belonging"""
+        """determine whether the user has affiliated institutions"""
         user = self.request.user
         if not user.affiliated_institutions.exists():
             if institution_id:
@@ -44,7 +44,7 @@ class RdmPermissionMixin(object):
         return user.affiliated_institutions.filter(pk=institution_id).exists()
 
     def has_auth(self, institution_id):
-        """check permissions to institution"""
+        """determine whether the user has institution permissions"""
         # login check
         if not self.is_authenticated:
             return False
@@ -56,13 +56,13 @@ class RdmPermissionMixin(object):
         return False
 
 def get_institution_id(user):
-    """get institutionID at user is belonging"""
+    """get the institutionID for the institution the user belongs to"""
     if user.affiliated_institutions.exists():
         return user.affiliated_institutions.first().id
     return None
 
 def get_dummy_institution():
-    """get dummy institution model if user is not belonging to institution"""
+    """if the user doesn't belong to an institution, get the dummy institution model"""
     class DummyInstitution(object):
         pass
     dummy_institution = DummyInstitution()

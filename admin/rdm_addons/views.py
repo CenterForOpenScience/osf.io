@@ -37,7 +37,7 @@ def init_app():
 app = init_app()
 
 class InstitutionListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
-    """InstitutionListView"""
+    """View for the Institution Summary Screen"""
     template_name = 'rdm_addons/institution_list.html'
     raise_exception = True
 
@@ -46,7 +46,7 @@ class InstitutionListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView)
         # login check
         if not self.is_authenticated:
             return False
-        # allowed by superuser, or institution administrator
+        # permitted if superuser or institution administrator
         if self.is_super_admin or self.is_admin:
             return True
         return False
@@ -71,7 +71,7 @@ class InstitutionListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView)
                 return redirect(reverse('addons:addons', args=[institution.id]))
 
 class AddonListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
-    """AddonsListView"""
+    """View for Addon Summary Screen"""
     template_name = 'rdm_addons/addon_list.html'
     raise_exception = True
 
@@ -112,7 +112,7 @@ class AddonListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
             return ctx
 
 class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """View for addons icon"""
+    """View for each addon's icon"""
     raise_exception = True
 
     def test_func(self):
@@ -154,7 +154,7 @@ class AddonAllowView(RdmPermissionMixin, UserPassesTestMixin, View):
         return HttpResponse('')
 
     def revoke_user_accounts(self, institution_id, addon_name):
-        """disconnect strorage from project adminiatrator designated"""
+        """disconnect from administrator specified storage the project using it"""
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
         if institution_id:
             users = OSFUser.objects.filter(affiliated_institutions__pk=institution_id)
@@ -169,7 +169,7 @@ class AddonAllowView(RdmPermissionMixin, UserPassesTestMixin, View):
             user.save()
 
 class AddonForceView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """View for preserving whether to force use of each add-on"""
+    """View for saving whether to force use of each add-on"""
     raise_exception = True
 
     def test_func(self):
