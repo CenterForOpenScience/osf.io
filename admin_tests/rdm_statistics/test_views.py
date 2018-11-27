@@ -37,14 +37,14 @@ class TestInstitutionListViewStat(AdminTestCase):
             institution.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
-        """login test at superuser"""
+        """test superuser login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """login test at institution administrator"""
+        """test institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -52,7 +52,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """login test at user not superuser or institution administrator"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -60,7 +60,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """login test at invalid user"""
+        """test invalid user login"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -68,7 +68,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """login test at unregistered user"""
+        """test unregistered user login"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -76,7 +76,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_super_admin_get(self, *args, **kwargs):
-        """test superuser GET request"""
+        """test superuser GET method"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -85,7 +85,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         nt.assert_equal(res.status_code, 200)
 
     def test_admin_get(self, *args, **kwargs):
-        """test institution administrator GET request"""
+        """test institution administrator GET method"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -114,14 +114,14 @@ class TestclassStatisticsView(AdminTestCase):
         self.institution1.delete()
 
     def test_super_admin_login(self):
-        """login test at superuser"""
+        """test superuser login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """login test at institution administrator"""
+        """test institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -129,7 +129,7 @@ class TestclassStatisticsView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """login test at user not superuser or institution administrator"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -137,7 +137,7 @@ class TestclassStatisticsView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """login test at invalid user"""
+        """test invalid user login"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -145,7 +145,7 @@ class TestclassStatisticsView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """login test at unregistered user"""
+        """test unregistered user login"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -153,7 +153,7 @@ class TestclassStatisticsView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """login test at user unorganized institution"""
+        """test user unaffiliated institution login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -196,14 +196,14 @@ class TestImageView(AdminTestCase):
         self.rdm_statistics.delete()
 
     def test_super_admin_login(self):
-        """login test at superuser"""
+        """test superuser login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """login test at institution administrator"""
+        """test institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -211,7 +211,7 @@ class TestImageView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """login test at user not superuser or institution administrator"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -219,7 +219,7 @@ class TestImageView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """login test at invalid user"""
+        """test invalid user login"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -227,7 +227,7 @@ class TestImageView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """login test at unregistered user"""
+        """test unregistered user login"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -235,7 +235,7 @@ class TestImageView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """login test at user unorganized institution"""
+        """test user unaffiliated institution login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -264,14 +264,14 @@ class TestSendView(AdminTestCase):
         self.institution1.delete()
 
     def test_super_admin_login(self):
-        """login test at superuser"""
+        """test superuser login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """login test at institution administrator"""
+        """test institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -279,7 +279,7 @@ class TestSendView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """login test at user not superuser or institution administrator"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -287,7 +287,7 @@ class TestSendView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """login test at invalid user"""
+        """test invalid user login"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -295,7 +295,7 @@ class TestSendView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """login test at unregistered user"""
+        """test unregistered user login"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -303,7 +303,7 @@ class TestSendView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """login test at user unorganized institution"""
+        """test user unaffiliated institution login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -313,12 +313,12 @@ class TestSendView(AdminTestCase):
         self.view.kwargs = {'institution_id': self.institution1.id}
 
     def test_valid_get(self, *args, **kwargs):
-        """test valid GET request"""
+        """test valid GET method"""
         res = self.view.get(self.request, *args, **self.view.kwargs)
         nt.assert_equal(res.status_code, 200)
 
     def test_invalid_get(self, *args, **kwargs):
-        """test invalid GET request"""
+        """test invalid GET method"""
         self.view.kwargs = {'institution_id': 100}
         res = self.view.get(self.request, *args, **self.view.kwargs)
         nt.assert_equal(res.status_code, 200)
