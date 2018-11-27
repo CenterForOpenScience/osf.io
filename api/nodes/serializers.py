@@ -1025,19 +1025,19 @@ class CompoundIDField(IDField):
         kwargs['help_text'] = kwargs.get('help_text', 'Unique ID that is a compound of two objects. Has the form "<node-id>-<related-id>". Example: "abc12-xyz34"')
         super(CompoundIDField, self).__init__(*args, **kwargs)
 
-    def _get_node_id(self):
+    def _get_resource_id(self):
         return self.context['request'].parser_context['kwargs']['node_id']
 
     # override IDField
     def get_id(self, obj):
-        node_id = self._get_node_id()
+        resource_id = self._get_resource_id()
         related_id = obj._id
-        return '{}-{}'.format(node_id, related_id)
+        return '{}-{}'.format(resource_id, related_id)
 
     def to_representation(self, value):
-        node_id = self._get_node_id()
+        resource_id = self._get_resource_id()
         related_id = super(CompoundIDField, self).to_representation(value)
-        return '{}-{}'.format(node_id, related_id)
+        return '{}-{}'.format(resource_id, related_id)
 
 
 class NodeContributorsSerializer(JSONAPISerializer):

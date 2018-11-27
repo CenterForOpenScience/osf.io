@@ -7,6 +7,7 @@ from framework.auth import Auth
 from django.contrib.auth.models import AnonymousUser
 from framework.exceptions import PermissionsError
 from osf.models import OSFGroup, Node, OSFUser
+from osf.utils.permissions import MANAGER, MEMBER
 from .factories import (
     NodeFactory,
     ProjectFactory,
@@ -254,6 +255,11 @@ class TestOSFGroup:
         project_two.add_osf_group(osf_group, 'write')
         assert len(osf_group.nodes) == 2
         assert project_two in osf_group.nodes
+
+    def test_user_group_roles(self, manager, member, user_three, osf_group):
+        assert manager.group_role(osf_group) == MANAGER
+        assert member.group_role(osf_group) == MEMBER
+        assert user_three.group_role(osf_group) is None
 
     def test_add_osf_group_to_node(self, manager, member, user_two, osf_group, project):
         # noncontributor

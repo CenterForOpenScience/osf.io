@@ -9,4 +9,5 @@ urlpatterns = [
     url(r'^(?P<group_id>\w+)/$', views.OSFGroupDetail.as_view(), name=views.OSFGroupDetail.view_name),
     url(r'^(?P<group_id>\w+)/managers/$', views.OSFGroupManagersList.as_view(), name=views.OSFGroupManagersList.view_name),
     url(r'^(?P<group_id>\w+)/members/$', views.OSFGroupMembersList.as_view(), name=views.OSFGroupMembersList.view_name),
+    url(r'^(?P<group_id>\w+)/members/(?P<user_id>\w+)/$', views.OSFGroupMemberDetail.as_view(), name=views.OSFGroupMemberDetail.view_name),
 ]

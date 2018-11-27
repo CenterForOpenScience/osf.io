@@ -9,13 +9,10 @@ from framework.auth.core import get_user
 from osf.models import base
 from osf.models.mixins import GuardianMixin
 from osf.models import AbstractNode, OSFUser
-from osf.utils.permissions import ADMIN
+from osf.utils.permissions import ADMIN, MANAGER, MEMBER, MANAGE
 from osf.utils import sanitize
 from website import settings, mails
 from website.util import api_v2_url
-
-MEMBER = 'member'
-MANAGER = 'manager'
 
 # TODO Add logging for OSFGroup actions
 # TODO Send email to member/unregistered member when added to group
@@ -94,12 +91,22 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         # members have no perms
         return user in self.members
 
+    def is_manager(self, user):
+        # Checking group membership instead of permissions, because unregistered
+        # members have no perms
+        return user in self.managers
+
     def _require_manager_permission(self, auth=None):
-        if auth and not self.has_permission(auth.user, 'manage'):
+        if auth and not self.has_permission(auth.user, MANAGE):
             raise PermissionsError('Must be a group manager to modify group membership.')
 
+    def _disabled_user_check(self, user):
+        if user.is_disabled:
+            raise ValueError('Deactivated users cannot be added to OSF Groups.')
+
     def _enforce_one_manager(self, user):
-        if len(self.managers) == 1 and self.managers[0] == user:
+        # Group must have at least one registered manager
+        if (len(self.managers) == 1 and self.managers[0] == user) or not self.managers.filter(is_registered=True).exclude(id=user.id):
             raise ValueError('Group must have at least one manager.')
 
     def _get_node_group_perms(self, node, permission):
@@ -138,9 +145,10 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         :param auth: Auth object
         """
         self._require_manager_permission(auth)
+        self._disabled_user_check(user)
         adding_member = not self.belongs_to_osfgroup(user)
         self.member_group.user_set.add(user)
-        if self.has_permission(user, 'manage'):
+        if self.has_permission(user, MANAGE):
             self._enforce_one_manager(user)
             self.manager_group.user_set.remove(user)
 
@@ -154,6 +162,7 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         :param auth: Auth object
         """
         self._require_manager_permission(auth)
+        self._disabled_user_check(user)
         adding_member = not self.belongs_to_osfgroup(user)
         self.manager_group.user_set.add(user)
         self.member_group.user_set.add(user)
@@ -161,7 +170,7 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         if adding_member:
             self.send_member_email(user, MANAGER, auth)
 
-    def add_unregistered_member(self, fullname, email, auth, role='member'):
+    def add_unregistered_member(self, fullname, email, auth, role=MEMBER):
         """Add unregistered member or manager to OSFGroup
 
         :param fullname: string, user fullname

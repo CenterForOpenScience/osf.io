@@ -1,5 +1,7 @@
 import pytest
 
+from django.utils import timezone
+
 from api.base.settings.defaults import API_BASE
 from osf.models import OSFUser
 from osf.utils.permissions import MEMBER, MANAGE, MANAGER
@@ -107,7 +109,6 @@ class TestOSFGroupMembersCreate:
         assert res.status_code == 201
         data = res.json['data']
         assert data['attributes']['role'] == MANAGER
-        assert data['attributes']['unregistered_member'] is None
         assert data['id'] == '{}-{}'.format(osf_group._id, user3._id)
         assert user3._id in data['relationships']['users']['links']['related']['href']
         assert osf_group.has_permission(user3, MANAGE) is True
@@ -118,7 +119,6 @@ class TestOSFGroupMembersCreate:
         assert res.status_code == 201
         data = res.json['data']
         assert data['attributes']['role'] == MEMBER
-        assert data['attributes']['unregistered_member'] is None
         assert data['id'] == '{}-{}'.format(osf_group._id, user3._id)
         assert user3._id in data['relationships']['users']['links']['related']['href']
         assert osf_group.has_permission(user3, MANAGE) is False
@@ -130,7 +130,6 @@ class TestOSFGroupMembersCreate:
         assert res.status_code == 201
         data = res.json['data']
         assert data['attributes']['role'] == MEMBER
-        assert data['attributes']['unregistered_member'] == 'Crazy 8s'
         user = OSFUser.load(data['id'].split('-')[1])
         assert user._id in data['relationships']['users']['links']['related']['href']
         assert osf_group.has_permission(user, MANAGE) is False
@@ -191,7 +190,17 @@ class TestOSFGroupMembersCreate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User is already a member of this group.'
 
+        # Disabled user
+        user3.date_disabled = timezone.now()
+        user3.save()
+        payload = make_create_payload(MEMBER, user=user3)
+        res = app.post_json_api(url, payload, auth=manager.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Deactivated users cannot be added to OSF Groups.'
+
         # No role specified - given member by default
+        user3.date_disabled = None
+        user3.save()
         payload = make_create_payload(MEMBER, user=user3)
         payload['attributes'] = {}
         res = app.post_json_api(url, payload, auth=manager.auth)
