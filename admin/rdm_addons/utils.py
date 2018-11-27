@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-#import glob
 
 from django.urls import reverse
 
@@ -29,7 +28,6 @@ def get_addon_template_config(config, user):
         'is_enabled': user_addon is not None,
         'addon_icon_url': reverse('addons:icon', args=[config.short_name, config.icon]),
     }
-    #print user_addon
     ret.update(user_addon.to_json(user) if user_addon else {})
     return ret
 
@@ -51,7 +49,6 @@ def collect_addon_js(addons):
     for addon in addons:
         filename = 'rdm-{}-cfg.js'.format(addon.short_name)
         public_js_file = os.path.join(BASE_DIR, 'static', 'public', 'js', filename)
-        #print public_js_file
         if os.path.exists(public_js_file):
             js_url = '/static/public/js/{}'.format(filename)
             js_url_list.append(js_url)

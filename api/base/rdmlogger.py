@@ -2,7 +2,6 @@
 # rdminfo logger
 import json
 import logging
-#import sys
 
 class RdmLogger(logging.LoggerAdapter):
     def process(self, msg, kwargs):

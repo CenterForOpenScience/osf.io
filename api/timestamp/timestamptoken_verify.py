@@ -6,17 +6,12 @@ import os.path
 import os
 import subprocess
 
-#from modularodm import Q
-#from modularodm.exceptions import NoResultsFound
-#from modularodm.exceptions import ValidationValueError
 
 from osf.models import AbstractNode, BaseFileNode, RdmFileTimestamptokenVerifyResult, Guid, RdmUserKey, OSFUser
-#from osf.utils import requests
 from api.base import settings as api_settings
 
 import logging
 from api.base.rdmlogger import RdmLogger, rdmlog
-#from api.timestamp.rdmlogger import RdmLogger, rdmlog
 
 logger = logging.getLogger(__name__)
 

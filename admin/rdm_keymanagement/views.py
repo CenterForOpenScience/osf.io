@@ -2,23 +2,15 @@
 
 from __future__ import unicode_literals
 
-#import json
-
-#from django.core import serializers
 from django.shortcuts import redirect
-#from django.forms.models import model_to_dict
-#from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse
 from django.views.generic import ListView, View
-#from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from django.contrib.auth.mixins import UserPassesTestMixin
 
 from django.core.urlresolvers import reverse
 
 from admin.base import settings
-#from admin.base.forms import ImportFileForm
-#from admin.institutions.forms import InstitutionForm
 from osf.models import Institution, OSFUser
 from osf.models import RdmUserKey
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
