@@ -162,10 +162,12 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
                         trust=False,
                         id='registration_submitted')
     return {
+        'data': {
+            'links': {
+                'html': node.web_url_for('node_registrations', _guid=True)
+            }
+        },
         'status': 'initiated',
-        'urls': {
-            'registrations': node.web_url_for('node_registrations', _guid=True)
-        }
     }, http.ACCEPTED
 
 @must_have_permission(ADMIN)
