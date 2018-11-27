@@ -63,7 +63,7 @@ class AddTimestamp:
 
         return res
 
-    #5 resister verify result in db
+    #5 register verify result in db
     def timestamptoken_register(self, file_id, project_id, provider, path,
                                 key_file, tsa_response, user_id, verify_data):
 
@@ -110,10 +110,10 @@ class AddTimestamp:
         # get tsr
         tsa_response = self.get_timestamp_response(file_name, tsa_request, key_file_name)
 
-        # data exists check
+        # check that data exists
         verify_data = self.get_data(file_id, project_id, provider, path)
 
-        # resiser in db
+        # register in db
         self.timestamptoken_register(file_id, project_id, provider, path,
                                      key_file_name, tsa_response, user_id, verify_data)
 
