@@ -1,5 +1,6 @@
 DISABLE_ENGAGEMENT_EMAILS = 'disable_engagement_emails'
 ELASTICSEARCH_METRICS = 'elasticsearch_metrics'
+ENABLE_INACTIVE_SCHEMAS = 'enable_inactive_schemas'
 ENFORCE_CSRF = 'enforce_csrf'
 EZID_SWITCH = 'ezid'
 INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
