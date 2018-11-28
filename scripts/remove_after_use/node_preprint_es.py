@@ -22,7 +22,7 @@ def main():
         search.search.update_preprint(p, bulk=False, async=False) # create new index for preprint
         if p.node:
             delete_doc(p.node._id, p.node, category='preprint') # delete old index for node categorized as a preprint
-            search.search.update_node(p.node, bulk=False, async=False) # create new index for node (this time categorized as a node)
+            search.search.update_node(p.node, bulk=False, async_update=False) # create new index for node (this time categorized as a node)
     progress_bar.finish()
 
 
