@@ -40,10 +40,12 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('registered-report.json')),
     ensure_schema_structure(from_json('ridie-initiation.json')),
     ensure_schema_structure(from_json('ridie-complete.json')),
+    ensure_schema_structure(from_json('osf-preregistration.json'))
 ]
 
 METASCHEMA_ORDERING = (
     'Prereg Challenge',
+    'OSF Preregistration',
     'Open-Ended Registration',
     'Preregistration Template from AsPredicted.org',
     'Registered Report Protocol Preregistration',
