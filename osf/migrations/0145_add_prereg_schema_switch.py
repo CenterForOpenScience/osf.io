@@ -20,7 +20,7 @@ def remove_prereg_switch(*args, **kwargs):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('osf', '0143_merge_20181115_1458'),
+        ('osf', '0144_merge_20181127_1822'),
     ]
     operations = [
         migrations.RunPython(add_prereg_switch, remove_prereg_switch)
