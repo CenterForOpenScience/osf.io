@@ -3,12 +3,7 @@
 import flask
 from nose import tools as nt
 from django.test import RequestFactory
-#from django.contrib.auth.models import Permission
-#from django.contrib import auth
 from django.contrib.sessions.middleware import SessionMiddleware
-#from django.core.exceptions import PermissionDenied
-#from django.core.urlresolvers import reverse
-#from django.http import Http404
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -18,13 +13,9 @@ from osf_tests.factories import (
     MockOAuth2Provider,
 )
 
-#from osf.models.rdm_addons import RdmAddonOption, RdmAddonNoInstitutionOption
-#from osf.models.user import OSFUser, Institution
 
 from admin_tests.utilities import setup_user_view
 from admin.rdm_addons.oauth import views
-#from admin.rdm_addons import utils
-#from admin.rdm.utils import MAGIC_INSTITUTION_ID
 
 from admin_tests.rdm_addons import factories as rdm_addon_factories
 
@@ -60,39 +51,39 @@ class TestConnectView(AdminTestCase):
     def tearDown(self):
         super(TestConnectView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution)
-        self.user.remove()
-        self.institution.remove()
-        self.external_account.remove()
+        self.user.delete()
+        self.institution.delete()
+        self.external_account.delete()
 
     def test_super_admin_login(self):
-        """統合管理者のログインテスト"""
+        """test superuser login"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """test invalid user login"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """test unregistered user login"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """所属していない機関のユーザのログインテスト"""
+        """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution.id + 1}
@@ -109,7 +100,6 @@ class TestCallbackView(AdminTestCase):
         super(TestCallbackView, self).setUp()
         self.user = AuthUserFactory()
         self.external_account = ExternalAccountFactory()
-        #self.external_account.provider = 's3'
         self.institution = InstitutionFactory()
 
         self.provider = MockOAuth2Provider(self.external_account)
@@ -138,52 +128,43 @@ class TestCallbackView(AdminTestCase):
             'institution_id': self.institution.id,
         }
 
-        #args = []
-        #res0 = self.view0.get(self.request, *args, **self.view0.kwargs)
-
     def tearDown(self):
         super(TestCallbackView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution)
-        self.user.remove()
-        self.institution.remove()
-        self.external_account.remove()
+        self.user.delete()
+        self.institution.delete()
+        self.external_account.delete()
         try:
             self.ctx.pop()
         except AssertionError:
             pass
 
     def test_super_admin_login(self):
-        """統合管理者のログインテスト"""
+        """test superuser login"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """test invalid user login"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """test unregistered user login"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
-
-    #def test_get(self, *args, **kwargs):
-    #    self.request.user.is_superuser = False
-    #    self.request.user.is_staff = True
-    #    res = self.view.get(self.request, *args, **self.view.kwargs)
-    #    nt.assert_equal(res.status_code, 200)
 
 
 class TestCompleteView(AdminTestCase):
@@ -196,10 +177,10 @@ class TestCompleteView(AdminTestCase):
 
     def tearDown(self):
         super(TestCompleteView, self).tearDown()
-        self.user.remove()
+        self.user.delete()
 
     def test_login(self):
-        """ログインテスト"""
+        """login test"""
         nt.assert_true(self.view.test_func())
 
     def test_get_context_data(self, *args, **kwargs):
@@ -236,42 +217,42 @@ class TestAccountsView(AdminTestCase):
         self.user.affiliated_institutions.remove(institution)
         if self.user.external_accounts.filter(pk=self.external_account.id).exists():
             self.user.external_accounts.remove(self.external_account)
-        self.user.remove()
+        self.user.delete()
         if self.rdm_addon_option.external_accounts.filter(pk=self.external_account.id).exists():
             self.rdm_addon_option.external_accounts.remove(self.external_account)
-        self.rdm_addon_option.remove()
-        institution.remove()
-        self.external_account.remove()
+        self.rdm_addon_option.delete()
+        institution.delete()
+        self.external_account.delete()
 
     def test_super_admin_login(self):
-        """統合管理者のログインテスト"""
+        """test superuser login"""
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """test invalid user login"""
         self.request.user.is_active = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """test unregistered user login"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """所属していない機関のユーザのログインテスト"""
+        """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.rdm_addon_option.institution.id + 1}
@@ -282,9 +263,6 @@ class TestAccountsView(AdminTestCase):
         self.request.user.is_staff = True
         nt.assert_equal(self.user.external_accounts.count(), 1)
         nt.assert_equal(self.rdm_addon_option.external_accounts.count(), 1)
-        #res = self.view.delete(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(self.user.external_accounts.count(), 0)
-        nt.assert_equal(self.rdm_addon_option.external_accounts.count(), 0)
 
 
 '''

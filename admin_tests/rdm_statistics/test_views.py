@@ -2,9 +2,6 @@
 
 from nose import tools as nt
 from django.test import RequestFactory
-#from django.contrib.auth.models import Permission
-#from django.core.exceptions import PermissionDenied
-#from django.http import HttpResponse, Http404
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -14,11 +11,9 @@ from osf_tests.factories import (
 from admin_tests.utilities import setup_user_view
 from admin_tests.rdm_statistics import factories as rdm_statistics_factories
 
-#from osf.models.rdm_statistics import RdmStatistics
 from osf.models.user import Institution
 
 from admin.rdm_statistics import views
-#from admin.rdm.utils import MAGIC_INSTITUTION_ID
 
 
 class TestInstitutionListViewStat(AdminTestCase):
@@ -37,19 +32,19 @@ class TestInstitutionListViewStat(AdminTestCase):
     def tearDown(self):
         super(TestInstitutionListViewStat, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
+        self.user.delete()
         for institution in self.institutions:
-            institution.remove()
+            institution.delete()
 
     def test_super_admin_login(self, *args, **kwargs):
-        """統合管理者のログインテスト"""
+        """test superuser login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """test institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -57,7 +52,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -65,7 +60,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """test invalid user login"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -73,7 +68,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """test unregistered user login"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -81,7 +76,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_super_admin_get(self, *args, **kwargs):
-        """統合管理者のgetメソッドのテスト"""
+        """test superuser GET method"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -90,7 +85,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         nt.assert_equal(res.status_code, 200)
 
     def test_admin_get(self, *args, **kwargs):
-        """機関管理者のgetメソッドのテスト"""
+        """test institution administrator GET method"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -115,18 +110,18 @@ class TestclassStatisticsView(AdminTestCase):
     def tearDown(self):
         super(TestclassStatisticsView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
-        self.institution1.remove()
+        self.user.delete()
+        self.institution1.delete()
 
     def test_super_admin_login(self):
-        """統合管理者のログインテスト"""
+        """test superuser login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """test institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -134,7 +129,7 @@ class TestclassStatisticsView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -142,7 +137,7 @@ class TestclassStatisticsView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """test invalid user login"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -150,7 +145,7 @@ class TestclassStatisticsView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """test unregistered user login"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -158,7 +153,7 @@ class TestclassStatisticsView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """所属していない機関のユーザのログインテスト"""
+        """test user unaffiliated institution login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -196,19 +191,19 @@ class TestImageView(AdminTestCase):
     def tearDown(self):
         super(TestImageView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
-        self.institution1.remove()
-        self.rdm_statistics.remove()
+        self.user.delete()
+        self.institution1.delete()
+        self.rdm_statistics.delete()
 
     def test_super_admin_login(self):
-        """統合管理者のログインテスト"""
+        """test superuser login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """test institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -216,7 +211,7 @@ class TestImageView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -224,7 +219,7 @@ class TestImageView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """test invalid user login"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -232,7 +227,7 @@ class TestImageView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """test unregistered user login"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -240,7 +235,7 @@ class TestImageView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """所属していない機関のユーザのログインテスト"""
+        """test user unaffiliated institution login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -248,12 +243,6 @@ class TestImageView(AdminTestCase):
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
         nt.assert_equal(self.view.test_func(), False)
         self.view.kwargs = {'institution_id': self.institution1.id}
-
-    # def test_valid_get(self, *args, **kwargs):
-    #     """有効なgetテスト"""
-    #     res = self.view.get(self.request, *args, **self.view.kwargs)
-    #     nt.assert_equal(res.status_code, 200)
-
 
 class TestSendView(AdminTestCase):
     """test SendView"""
@@ -271,18 +260,18 @@ class TestSendView(AdminTestCase):
     def tearDown(self):
         super(TestSendView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
-        self.institution1.remove()
+        self.user.delete()
+        self.institution1.delete()
 
     def test_super_admin_login(self):
-        """統合管理者のログインテスト"""
+        """test superuser login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_true(self.view.test_func())
 
     def test_admin_login(self):
-        """機関管理者のログインテスト"""
+        """test institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -290,7 +279,7 @@ class TestSendView(AdminTestCase):
         nt.assert_true(self.view.test_func())
 
     def test_non_admin_login(self):
-        """統合管理者でも機関管理者でもないユーザのログインテスト"""
+        """test user not superuser or institution administrator login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -298,7 +287,7 @@ class TestSendView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_active_user_login(self):
-        """有効ではないユーザのログインテスト"""
+        """test invalid user login"""
         self.request.user.is_active = False
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -306,7 +295,7 @@ class TestSendView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_registered_user_login(self):
-        """登録済みではないユーザのログインテスト"""
+        """test unregistered user login"""
         self.request.user.is_active = True
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
@@ -314,7 +303,7 @@ class TestSendView(AdminTestCase):
         nt.assert_equal(self.view.test_func(), False)
 
     def test_non_affiliated_institution_user_login(self):
-        """所属していない機関のユーザのログインテスト"""
+        """test user unaffiliated institution login"""
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
@@ -324,12 +313,12 @@ class TestSendView(AdminTestCase):
         self.view.kwargs = {'institution_id': self.institution1.id}
 
     def test_valid_get(self, *args, **kwargs):
-        """有効なgetテスト"""
+        """test valid GET method"""
         res = self.view.get(self.request, *args, **self.view.kwargs)
         nt.assert_equal(res.status_code, 200)
 
     def test_invalid_get(self, *args, **kwargs):
-        """無効なgetテスト"""
+        """test invalid GET method"""
         self.view.kwargs = {'institution_id': 100}
         res = self.view.get(self.request, *args, **self.view.kwargs)
         nt.assert_equal(res.status_code, 200)
@@ -350,14 +339,5 @@ class TestCreateCSV(AdminTestCase):
     def tearDown(self):
         super(TestCreateCSV, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        self.user.remove()
-        self.institution1.remove()
-
-
-# class TestGatherView(AdminTestCase):
-#     """test ImageView"""
-#     def setUp(self):
-#         super(TestGatherView, self).setUp()
-
-#     def tearDown(self):
-#         super(TestGatherView, self).tearDown()
+        self.user.delete()
+        self.institution1.delete()

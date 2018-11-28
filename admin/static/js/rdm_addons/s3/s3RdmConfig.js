@@ -5,7 +5,6 @@
 
 var ko = require('knockout');
 var $ = require('jquery');
-var bootstrap = require('bootstrap');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 require('js/osfToggleHeight');
@@ -13,7 +12,6 @@ require('js/osfToggleHeight');
 var language = require('js/osfLanguage').Addons.s3;
 var osfHelpers = require('js/osfHelpers');
 var addonSettings = require('../rdmAddonSettings');
-//var ChangeMessageMixin = require('js/changeMessage');
 
 
 var ExternalAccount = addonSettings.ExternalAccount;
@@ -180,7 +178,6 @@ function S3UserConfig(selector, url, institutionId) {
     self.url = url;
     // On success, instantiate and bind the ViewModel
     self.viewModel = new ViewModel(url, institutionId);
-    //osfHelpers.applyBindings(self.viewModel, self.selector);
     ko.applyBindings(self.viewModel, $(self.selector)[0]);
 }
 

@@ -1,5 +1,4 @@
 import datetime
-#import pytz
 import httplib
 import os
 import uuid
@@ -840,7 +839,6 @@ def upload_file_add_timestamptoken(payload, node):
 
         current_datetime = timezone.now()
         current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        #print(current_datetime_str)
         tmp_dir = 'tmp_{}_{}_{}'.format(auth_id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, metadata['name'])
@@ -867,8 +865,8 @@ def adding_timestamp(auth, node, file_node, version):
     from api.timestamp.add_timestamp import AddTimestamp
     import shutil
 
-    #verify_result = 0
     tmp_dir = None
+    result = None
     try:
         ret = serialize_node(node, auth, primary=True)
         user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
@@ -907,12 +905,11 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
     from osf.models import Guid
     import shutil
 
-    #verify_result = 0
-    #verify_title = None
     tmp_dir = 'tmp_{}'.format(guid)
     current_datetime = timezone.now()
     current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
     tmp_dir = 'tmp_{}_{}_{}'.format(guid, file_node._id, current_datetime_str)
+    tmp_file = None
     try:
         ret = serialize_node(node, auth, primary=True)
         user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
@@ -927,15 +924,16 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
         with open(tmp_file, 'wb') as fout:
             fout.write(res.content)
             res.close()
-        verifyCheck = TimeStampTokenVerifyCheck()
-        result = verifyCheck.timestamp_check(ret['user']['id'], file_node._id, node._id,
-                                             file_node.provider, file_node._path,
-                                             tmp_file, tmp_dir)
-        shutil.rmtree(tmp_dir)
     except Exception as err:
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
         logger.exception(err)
-        raise err
+
+    verifyCheck = TimeStampTokenVerifyCheck()
+    result = verifyCheck.timestamp_check(ret['user']['id'], file_node._id, node._id,
+                                         file_node.provider, file_node._path,
+                                         tmp_file, tmp_dir)
+    if os.path.exists(tmp_dir):
+        shutil.rmtree(tmp_dir)
 
     return result

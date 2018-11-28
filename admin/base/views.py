@@ -14,7 +14,6 @@ def home(request):
     context = {}
     return render(request, 'home.html', context)
 
-
 class GuidFormView(FormView):
     form_class = GuidForm
     template_name = None

@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.http import Http404
 from django.shortcuts import redirect
@@ -13,8 +14,19 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 
 from osf.models.user import OSFUser
-from osf.models import AdminProfile
+from osf.models import AdminProfile, Guid
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
+
+from osf.models.institution import Institution
+from framework.auth import get_or_create_user
+from framework.auth.core import get_user
+from admin.base.settings import SHIB_EPPN_SCOPING_SEPARATOR
+from admin.base.settings import ENABLE_LOGIN_FORM, ENABLE_SHB_LOGIN
+from django.views.generic.base import RedirectView
+from api.institutions.authentication import login_by_eppn
+from website.views import userkey_generation_check, userkey_generation
+import logging
+logger = logging.getLogger(__name__)
 
 
 class LoginView(FormView):
@@ -48,6 +60,78 @@ class LoginView(FormView):
             redirect_to = reverse('home')
         return redirect_to
 
+    def get_context_data(self, **kwargs):
+        context = super(LoginView, self).get_context_data(**kwargs)
+        context['enable_form'] = ENABLE_LOGIN_FORM
+        context['eneble_shib_login'] = ENABLE_SHB_LOGIN
+        return context
+
+class ShibLoginView(RedirectView):
+    redirect_field_name = REDIRECT_FIELD_NAME
+
+    def dispatch(self, request, *args, **kwargs):
+
+        eppn = request.environ['HTTP_AUTH_EPPN']
+        seps = eppn.split(SHIB_EPPN_SCOPING_SEPARATOR)[-1]
+        institution = Institution.objects.filter(domains__contains=[str(seps)]).first()
+        if not institution:
+            return redirect('auth:login')
+
+        if not eppn:
+            message = 'login failed: permission denied.'
+            logging.info(message)
+            messages.error(self.request, message)
+            return redirect('auth:login')
+        eppn_user = get_user(eppn=eppn)
+        if eppn_user:
+            if 'GakuninRDMAdmin' in request.environ['HTTP_AUTH_ENTITLEMENT']:
+                # login success
+                # code is below this if/else tree
+                eppn_user.is_staff = True
+                eppn_user.save()
+            else:
+                # login failure occurs and the screen transits to the error screen
+                # not sure about this code
+                eppn_user.is_staff = False
+                eppn_user.save()
+                message = 'login failed: permission denied.'
+                logging.info(message)
+                messages.error(self.request, message)
+                return redirect('auth:login')
+        else:
+            if 'GakuninRDMAdmin' not in request.environ['HTTP_AUTH_ENTITLEMENT']:
+                message = 'login failed: no user with matching eppn'
+                messages.error(self.request, message)
+                return redirect('auth:login')
+            else:
+                new_user, created = get_or_create_user(request.environ['HTTP_AUTH_DISPLAYNAME'] or 'NO NAME', eppn, reset_password=False)
+                USE_EPPN = login_by_eppn()
+                if USE_EPPN:
+                    new_user.eppn = eppn
+                    new_user.have_email = False
+                else:
+                    new_user.eppn = None
+                    new_user.have_email = True
+                new_user.is_staff = True
+                new_user.eppn = eppn
+                new_user.have_email = False
+                new_user.save()
+                new_user.affiliated_institutions.add(institution)
+                eppn_user = new_user
+
+        guid = Guid.objects.get(object_id=eppn_user.id, content_type_id=ContentType.objects.get_for_model(OSFUser).id)
+        if not userkey_generation_check(guid._id):
+            userkey_generation(guid._id)
+        login(request, eppn_user, backend='api.base.authentication.backends.ODMBackend')
+
+        # Transit to the administrator's home screen
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        redirect_to = self.request.GET.get(self.redirect_field_name, '')
+        if not redirect_to or redirect_to == '/':
+            redirect_to = reverse('home')
+        return redirect_to
 
 def logout_user(request):
     logout(request)

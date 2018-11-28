@@ -20,6 +20,7 @@
         </div><!-- /.login-logo -->
         <div class="login-box-body">
             <p class="login-box-msg">Sign in to start your session</p>
+{% if enable_form %}
             <form action="" method="post">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
@@ -40,9 +41,13 @@
                     {% if form.password.errors %}<span class="text-danger"> {{ form.password.errors }}</span>{% endif %}
                 </div>
                 <div class="row">
+                    <div class="col-xs-4"></div>
                     <div class="col-xs-4">
                         <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
-                    </div><!-- /.col -->
+                    </div>
+                    <div class="col-xs-4"></div>
+                </div>
+                <div class="row">
                 </div>
                 <div>
                     {% if messages %}
@@ -55,8 +60,17 @@
                     {% endif %}
                 </div>
             </form>
+{% endif %}
         </div><!-- /.login-box-body -->
       <br><!-- refactor  -->
+{% if eneble_shib_login %}
+    <div class="row">
+            <script type="text/javascript" src="/js/embedded-wayf_disp.js"></script>
+            <script type="text/javascript" src="/js/embedded-wayf_config.js"></script>
+            <script type="text/javascript" src="https://test-ds.gakunin.nii.ac.jp/WAYF/embedded-wayf.js"></script>
+    </div>
+{% endif %}
     </div><!-- /.login-box -->
+    <br><!-- refactor  -->
 </div>
 {% endblock %}

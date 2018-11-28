@@ -8,7 +8,7 @@ from itertools import islice
 
 from flask import request
 from django.apps import apps
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db.models import Q, OuterRef, Exists, Subquery
 
 from framework import status
@@ -306,25 +306,47 @@ def node_addons(auth, node, **kwargs):
     # The page only needs to load enabled addons and it refreshes when a new addon is being enabled.
     ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
 
-#    from osf.models import RdmTimestampGrantPattern
     try:
         timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=node._id)
         ret['timestamp_pattern_division'] = timestamp_pattern.timestamp_pattern_division
-    except Exception as err:
-        logging.exception(err)
+    except ObjectDoesNotExist:
         timestamp_pattern = None
-#    timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=self.kwargs['node_id'])
-#    ret['timestamp_pattern_division'] = timestamp_pattern.timestamp_pattern_division
 
     return ret
+def get_timestamp_pattern_division(auth, node, **kwargs):
+    try:
+        timestamp_pattern = RdmTimestampGrantPattern.objects.get(node_guid=node._id)
+        timestamp_pattern_division = timestamp_pattern.timestamp_pattern_division
+    except ObjectDoesNotExist:
+        timestamp_pattern_division = None
 
+    return timestamp_pattern_division
 
 def serialize_addons(node, auth):
 
     addon_settings = []
     addons_available = [addon for addon in settings.ADDONS_AVAILABLE
-                        if addon not in settings.SYSTEM_ADDED_ADDONS['node']
-                        and addon.short_name not in ('wiki', 'forward', 'twofactor')]
+                        if addon not in settings.SYSTEM_ADDED_ADDONS['node'] and
+                        addon.short_name not in ('wiki', 'forward', 'twofactor')]
+
+### forced Admin Settings
+    from admin.rdm_addons.utils import update_with_rdm_addon_settings
+
+    owners_addons_available = sorted([
+        owners_addon
+        for owners_addon in settings.ADDONS_AVAILABLE
+        if 'node' in owners_addon.owners and
+        owners_addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and
+        owners_addon.short_name not in ['wiki', 'forward', 'twofactor']
+    ], key=lambda owners_addon: owners_addon.full_name.lower())
+    rdm_addon_settings = [{'addon_short_name': owners_addon.short_name} for owners_addon in owners_addons_available]
+    update_with_rdm_addon_settings(rdm_addon_settings, auth.user)
+    addons_allowed = [
+        addon['addon_short_name']
+        for addon in rdm_addon_settings
+        if (addon['is_allowed'] and not addon['is_forced']) or
+        (addon['is_allowed'] and addon['is_forced'] and addon['has_user_external_accounts'])
+    ]
 
     for addon in addons_available:
         addon_config = apps.get_app_config('addons_{}'.format(addon.short_name))
@@ -342,7 +364,8 @@ def serialize_addons(node, auth):
             node_json = node.get_addon(addon.short_name).to_json(auth.user)
             config.update(node_json)
 
-        addon_settings.append(config)
+        if addon.short_name in addons_allowed:
+            addon_settings.append(config)
 
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
 
@@ -702,6 +725,7 @@ def _view_project(node, auth, primary=False,
     NodeRelation = apps.get_model('osf.NodeRelation')
 
     is_registration = node.is_registration
+    timestamp_pattern = get_timestamp_pattern_division(auth, node)
     data = {
         'node': {
             'disapproval_link': disapproval_link,
@@ -773,7 +797,8 @@ def _view_project(node, auth, primary=False,
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
-            'preprint_url': node.preprint_url
+            'preprint_url': node.preprint_url,
+            'timestamp_pattern_division': timestamp_pattern
         },
         'parent_node': {
             'exists': parent is not None,

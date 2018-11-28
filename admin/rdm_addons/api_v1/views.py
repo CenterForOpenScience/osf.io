@@ -19,28 +19,28 @@ from framework.auth import Auth
 
 
 class OAuthView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """アドオンの認証情報を解除するためのView"""
+    """View for revoking add-on authentication information"""
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
-        """CSRF無効化"""
+        """disable CSRF"""
         return super(OAuthView, self).dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        """OAuth切断"""
+        """disconnect OAuth"""
         external_account_id = kwargs['external_account_id']
         institution_id = int(kwargs['institution_id'])
         user = self.request.user
         return disconnect(external_account_id, institution_id, user)
 
 def disconnect(external_account_id, institution_id, user):
-    """OAuthを切断する。"""
+    """disconnect OAuth"""
     account = ExternalAccount.load(external_account_id)
 
     if not account:
@@ -52,9 +52,9 @@ def disconnect(external_account_id, institution_id, user):
 
     app = flask.Flask(__name__)
     with app.test_client() as c:
-        # flaskのダミーの通信を作成。
-        # revoke_oauth_accessメソッドがflaskを通じて
-        # ログイン済みであるかを確認しているため。
+        # Create dummy Flask communication.
+        # revoke_oauth_access method goes through flask
+        # in order to confirm the user is logged in.
         c.get('/')
         # iterate AddonUserSettings for addons
         for user_settings in user.get_oauth_addons():
@@ -71,23 +71,23 @@ def disconnect(external_account_id, institution_id, user):
 
 
 class SettingsView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """アドオンの設定情報取得用のView"""
+    """View for getting add-on configuration information"""
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     def get(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
         institution_id = int(kwargs['institution_id'])
-        # アドオンごとに設定情報を取得する処理を分ける。
+        # Separate by add-on the processing to acquire settings.
         settings = get_settings(addon_name, institution_id)
         return JsonResponse(settings)
 
 def get_settings(addon_name, institution_id):
-    """アドオンの設定情報を取得する。"""
+    """get add-on configuration information."""
     if addon_name == 'dataverse':
         from addons.dataverse.settings import DEFAULT_HOSTS
         return {
@@ -103,17 +103,17 @@ def get_settings(addon_name, institution_id):
     return {}
 
 class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """アドオンのアカウント情報を取得する。"""
+    """get add-on account information."""
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
-        """CSRF無効化"""
+        """disable CSRF"""
         return super(AccountsView, self).dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -121,7 +121,7 @@ class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
         institution_id = int(kwargs['institution_id'])
 
         rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
-        # OAuth認証の設定情報の有無の確認
+        # check existence of OAuth authentication settings
         if not rdm_addon_option.external_accounts.exists():
             res = add_extra_info({'accounts': []}, addon_name)
             return JsonResponse(res)
@@ -136,7 +136,7 @@ class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
                     'display_name': external_account.display_name,
                     'profile_url': external_account.profile_url,
                 }
-                # アドオン固有のアカウント情報を追加する。
+                # add each add-on's account information
                 account = add_addon_extra_info(account, external_account, addon_name)
                 accounts.append(account)
         res = add_extra_info({'accounts': accounts}, addon_name)
@@ -146,12 +146,12 @@ class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
         addon_name = kwargs['addon_name']
         institution_id = int(kwargs['institution_id'])
         json_request = json.loads(request.body)
-        # 認証・認可情報の登録
+        # registration of authentication / authorization information
         response, status = add_account(json_request, institution_id, addon_name)
         return JsonResponse(response, status=status)
 
 def add_addon_extra_info(ret, external_account, addon_name):
-    """アドオン固有のアカウント情報を追加する。"""
+    """add each add-on's account information"""
     if addon_name == 'dataverse':
         ret.update({
             'host': external_account.oauth_key,
@@ -160,7 +160,7 @@ def add_addon_extra_info(ret, external_account, addon_name):
     return ret
 
 def add_extra_info(ret, addon_name):
-    """アカウント以外のアドオン固有の情報を追加する。"""
+    """add each add-on's non-account-related individual information"""
     if addon_name == 'owncloud':
         from addons.owncloud.settings import DEFAULT_HOSTS
         ret.update({

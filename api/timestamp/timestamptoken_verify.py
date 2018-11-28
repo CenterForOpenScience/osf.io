@@ -6,26 +6,21 @@ import os.path
 import os
 import subprocess
 
-#from modularodm import Q
-#from modularodm.exceptions import NoResultsFound
-#from modularodm.exceptions import ValidationValueError
 
 from osf.models import AbstractNode, BaseFileNode, RdmFileTimestamptokenVerifyResult, Guid, RdmUserKey, OSFUser
-#from osf.utils import requests
 from api.base import settings as api_settings
 
 import logging
 from api.base.rdmlogger import RdmLogger, rdmlog
-#from api.timestamp.rdmlogger import RdmLogger, rdmlog
 
 logger = logging.getLogger(__name__)
 
 
 class TimeStampTokenVerifyCheck:
 
-    # abstractNodeデータ取得
+    # get abstractNode
     def get_abstractNode(self, node_id):
-        # プロジェクト名取得
+        # get project name
         try:
             abstractNode = AbstractNode.objects.get(id=node_id)
         except Exception as err:
@@ -34,9 +29,8 @@ class TimeStampTokenVerifyCheck:
 
         return abstractNode
 
-    # 検証結果データ取得
+    # get verify result
     def get_verifyResult(self, file_id, project_id, provider, path):
-        # 検証結果取得
         try:
             if RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_id).exists():
                 verifyResult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_id)
@@ -49,9 +43,8 @@ class TimeStampTokenVerifyCheck:
 
         return verifyResult
 
-    # baseFileNodeデータ取得
+    # get baseFileNode
     def get_baseFileNode(self, file_id):
-        # ファイル取得
         try:
             baseFileNode = BaseFileNode.objects.get(_id=file_id)
         except Exception as err:
@@ -60,7 +53,7 @@ class TimeStampTokenVerifyCheck:
 
         return baseFileNode
 
-    # baseFileNodeのファイルパス取得
+    # get baseFileNode filepath
     def get_filenameStruct(self, fsnode, fname):
         try:
             if fsnode.parent is not None:
@@ -82,7 +75,6 @@ class TimeStampTokenVerifyCheck:
         create_data.provider = provider
         create_data.key_file_name = userKey.key_name
         create_data.path = path
-#        create_data.inspection_result_status = api_settings.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
         create_data.inspection_result_status = inspection_result_status
         create_data.validation_user = userid
         create_data.validation_date = timezone.now()
@@ -91,12 +83,12 @@ class TimeStampTokenVerifyCheck:
 
         return create_data
 
-    # タイムスタンプトークンチェック
+    # timestamp token check
     def timestamp_check(self, guid, file_id, project_id, provider, path, file_name, tmp_dir):
 
         userid = Guid.objects.get(_id=guid).object_id
 
-        # 検証結果取得
+        # get verify result
         verifyResult = self.get_verifyResult(file_id, project_id, provider, path)
 
         ret = 0
@@ -105,65 +97,62 @@ class TimeStampTokenVerifyCheck:
         verify_result_title = None
 
         try:
-            # ファイル情報と検証結果のタイムスタンプ未登録確認
+            # get file information, verifyresult table
             if provider == 'osfstorage':
-                # ファイル取得
+                # 'osfstorage'
                 baseFileNode = self.get_baseFileNode(file_id)
-#                if baseFileNode and not verifyResult:
-#                    # ファイルが存在せず、検証結果がない場合
-#                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
-#                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG #'TST missing(Unverify)'
-#                    verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider,
-#                                                                            path, ret, userid)
-#                elif baseFileNode.is_deleted and not verifyResult:
                 if baseFileNode.is_deleted and not verifyResult:
-                    # ファイルが削除されていて検証結果がない場合
+                    # if file was deleted ,and verify result does not exist:
+                    # update verifyResult:'FILE missing'
                     ret = api_settings.FILE_NOT_EXISTS
                     verify_result_title = api_settings.FILE_NOT_EXISTS_MSG  # 'FILE missing'
                     verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider,
                                                                        path, ret, userid)
                 elif baseFileNode.is_deleted and verifyResult and not verifyResult.timestamp_token:
-                    # ファイルが存在しなくてタイムスタンプトークンが未検証がない場合
+                    # if file does not exist ,and verify result does not exist in db:
+                    # update verifyResult 'FILE missing(Unverify)'
                     verifyResult.inspection_result_status = api_settings.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verifyResult.validation_user = userid
                     verifyResult.validation_date = datetime.datetime.now()
-#                    ret = api_settings.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_NO_DATA
                     ret = api_settings.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verify_result_title = api_settings.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG  # 'FILE missing(Unverify)'
                 elif baseFileNode.is_deleted and verifyResult:
-                    # ファイルが削除されていて、検証結果テーブルにレコードが存在する場合
+                    # if file was deleted, and verify result exists in db:
+                    # update verifyResult 'FILE missing(Unverify)'
                     verifyResult.inspection_result_status = api_settings.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verifyResult.validation_user = userid
                     verifyResult.validation_date = datetime.datetime.now()
-                    # ファイルが削除されていて検証結果があり場合、検証結果テーブルを更新する。
                     ret = api_settings.FILE_NOT_EXISTS_TIME_STAMP_TOKEN_NO_DATA
                 elif not baseFileNode.is_deleted and not verifyResult:
-                    # ファイルは存在し、検証結果のタイムスタンプが未登録の場合は更新する。
+                    # if file was deleted, and verify result does not exist in db:
+                    # update verifyResult 'TST missing(Unverify)'
                     ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG  # 'TST missing(Unverify)'
                     verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider,
                                                                             path, ret, userid)
-
                 elif not baseFileNode.is_deleted and not verifyResult.timestamp_token:
-                    # ファイルは存在し、検証結果のタイムスタンプが未登録の場合は更新する。
+                    # if file exists and  verifyResult.timestamp_token does not exist:
+                    # update verifyResult 'TST missing(Retrieving Failed)'
                     verifyResult.inspection_result_status = api_settings.TIME_STAMP_TOKEN_NO_DATA
                     verifyResult.validation_user = userid
                     verifyResult.validation_date = datetime.datetime.now()
-                    # ファイルが削除されていて検証結果があり場合、検証結果テーブルを更新する。
                     ret = api_settings.TIME_STAMP_TOKEN_NO_DATA
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG  # 'TST missing(Retrieving Failed)'
             else:
+                # storage other than osfstorage:
                 if not verifyResult:
-                    # ファイルが存在せず、検証結果がない場合
+                    # if file does not exist, and  verify result does not exist:
+                    # update verifyResult 'TST missing(Unverify)'
                     ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG  # 'TST missing(Unverify)'
                     verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider,
                                                                              path, ret, userid)
                 elif not verifyResult.timestamp_token:
+                    # if timestamptoken does not exist:
+                    # update verifyResult 'TST missing(Retrieving Failed)'
                     verifyResult.inspection_result_status = api_settings.TIME_STAMP_TOKEN_NO_DATA
                     verifyResult.validation_user = userid
                     verifyResult.validation_date = datetime.datetime.now()
-                    # ファイルが削除されていて検証結果があり場合、検証結果テーブルを更新する。
                     ret = api_settings.TIME_STAMP_TOKEN_NO_DATA
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG  # 'TST missing(Retrieving Failed)'
 
@@ -177,7 +166,7 @@ class TimeStampTokenVerifyCheck:
                 except Exception as err:
                     raise err
 
-                # 取得したタイムスタンプトークンと鍵情報から検証を行う。
+                # verify timestamptoken and rootCA
                 cmd = [api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_TS, api_settings.OPENSSL_OPTION_VERIFY,
                        api_settings.OPENSSL_OPTION_DATA, file_name, api_settings.OPENSSL_OPTION_IN, timestamptoken_file_path,
                        api_settings.OPENSSL_OPTION_CAFILE, os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)]
@@ -187,8 +176,6 @@ class TimeStampTokenVerifyCheck:
                                        stdout=subprocess.PIPE)
                 stdout_data, stderr_data = prc.communicate()
                 ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
-#                print(stdout_data.__str__())
-#                print(stderr_data.__str__())
                 if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
                     ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
@@ -225,7 +212,6 @@ class TimeStampTokenVerifyCheck:
             abstractNode = self.get_abstractNode(Guid.objects.get(_id=project_id).object_id)
 
         ## RDM Logger ##
-#        import sys
         rdmlogger = RdmLogger(rdmlog, {})
         rdmlogger.info('RDM Project', RDMINFO='TimeStampVerify', result_status=ret, user=guid, project=abstractNode.title, file_path=filepath, file_id=file_id)
         return {'verify_result': ret, 'verify_result_title': verify_result_title,

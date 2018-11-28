@@ -2,31 +2,24 @@
 
 import uuid
 from collections import defaultdict
-#from urlparse import parse_qsl
-#import requests
 from requests.compat import urljoin
 from django.views.generic import View, TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.mixins import UserPassesTestMixin
-#from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 from django.http import HttpResponse
-#from django.http.response import JsonResponse
 from django.utils.decorators import method_decorator
 import flask
 from werkzeug.datastructures import ImmutableMultiDict
 
 import osf
 import addons
-#from osf.models import RdmAddonOption, ExternalAccount
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_addons.utils import get_rdm_addon_option
 from admin.rdm_addons.api_v1.views import disconnect
 from website.oauth.utils import get_service
 from website.routes import make_url_map
 from website import settings as website_settings
-#from admin.base import settings as admin_settings
-#from . import CALLBACK_SECRET_TOKEN
 
 class RdmAddonRequestContextMixin(object):
     app = flask.Flask(__name__)
@@ -43,7 +36,7 @@ class RdmAddonRequestContextMixin(object):
         return osf.models.external.session
 
     def get_callback_url_func(self, addon_name):
-        """管理画面用のOAuthのCallback URLを返す関数を取得する。"""
+        """Get a function that returns the OAuth Callback Admin'sURL """
         def web_url_for(view_name, _absolute=False, _internal=False, _guid=False, *args, **kwargs):
             path = 'oauth/callback/{}/'.format(addon_name)
             return urljoin(website_settings.ADMIN_URL, path)
@@ -51,11 +44,11 @@ class RdmAddonRequestContextMixin(object):
 
 
 class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTestMixin, View):
-    """OAuth接続用View"""
+    """View OAUTH Connect"""
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -73,7 +66,6 @@ class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTes
         provider = get_service(addon_name)
 
         auth_url = provider.auth_url
-        #print auth_url
         session = self.get_session(addon_name)
         session.data['oauth_states'][addon_name]['institution_id'] = institution_id
         session.save()
@@ -81,15 +73,19 @@ class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTes
         return redirect(auth_url)
 
 class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTestMixin, View):
-    """OAuthのCallback用View"""
+    """View OAUTH callback"""
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         addon_name = self.kwargs.get('addon_name')
         session = self.get_session(addon_name)
-        institution_id = int(session.data['oauth_states'][addon_name]['institution_id'])
-        #print 'institution id', institution_id
+        if 'oauth_states' in session.data:
+            institution_id = int(session.data['oauth_states'][addon_name]['institution_id'])
+        elif 'institution_id' in self.kwargs:
+            institution_id = int(self.kwargs.get('institution_id'))
+        else:
+            institution_id = None
         return self.has_auth(institution_id)
 
     def get(self, request, *args, **kwargs):
@@ -125,12 +121,12 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
 
 
 class CompleteView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
-    """OAuthのCallback用View"""
+    """View OAUTH callback completed"""
     template_name = 'rdm_addons/oauth_complete.html'
     raise_exception = True
 
     def test_func(self):
-        """ログインチェック"""
+        """user login check"""
         return self.is_authenticated
 
     def get_context_data(self, **kwargs):
@@ -138,21 +134,21 @@ class CompleteView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
         return ctx
 
 class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """OAuthの切断用View"""
+    """View OAUTH disconnect"""
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
-        """CSRF無効化"""
+        """imvalidate CSRF"""
         return super(AccountsView, self).dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        """OAuth切断"""
+        """disconnect OAuth"""
         external_account_id = kwargs['external_account_id']
         institution_id = int(kwargs['institution_id'])
         user = self.request.user

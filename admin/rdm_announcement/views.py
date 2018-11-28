@@ -13,7 +13,7 @@ from osf.models.user import OSFUser
 from django.core.mail import EmailMessage
 from website.settings import SUPPORT_EMAIL
 from admin.base.settings import FCM_SETTINGS
-#from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS
+from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS  # noqa
 from redminelib import Redmine
 from pyfcm import FCMNotification
 import facebook
@@ -23,11 +23,11 @@ import tweepy
 class RdmAnnouncementPermissionMixin(RdmPermissionMixin):
     @property
     def has_auth(self):
-        """権限等のチェック"""
-        # ログインチェック
+        """check user permissions"""
+        # login check
         if not self.is_authenticated:
             return False
-        # 統合管理者または機関管理者なら許可
+        # permitted if superuser or institution administrator
         if self.is_super_admin or self.is_admin:
             return True
         return False
@@ -37,7 +37,7 @@ class IndexView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, TemplateVie
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         return self.has_auth
 
     def get_context_data(self, **kwargs):
@@ -88,7 +88,7 @@ class SettingsView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, Template
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         return self.has_auth
 
     def get_context_data(self, **kwargs):
@@ -137,7 +137,7 @@ class SettingsUpdateView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, Up
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         return self.has_auth
 
     def get_object(self, queryset=None):
@@ -183,7 +183,7 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         return self.has_auth
 
     def post(self, request, *args, **kwargs):

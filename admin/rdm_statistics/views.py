@@ -1,29 +1,19 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-#import sys
 import os.path
 from io import BytesIO
-#from cStringIO import StringIO
-#import subprocess
-#from pprint import pprint
 import datetime
 import pytz
 import re
-#import httplib
-#import base64
 import json
 import requests
 import urllib
 import csv
-#from collections import OrderedDict
-#import httplib2
 import pandas as pd
-# from PIL import Image, ImageDraw
 import numpy as np
 import hashlib
 
-# from django
 from django.apps import apps
 from django.views.generic import TemplateView, View
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -33,7 +23,6 @@ from django.http import HttpResponse
 from django.core.exceptions import PermissionDenied
 from django.core import mail
 from django.core.mail import EmailMessage
-#from django.utils.functional import cached_property
 from django.template.loader import render_to_string
 # from OSF
 from osf.models import (
@@ -44,26 +33,18 @@ from osf.models import (
 from website import settings as website_settings
 from website.settings import SUPPORT_EMAIL
 from website.util import waterbutler_api_url_for
-#from website import mails
-#from addons.base import utils as addon_utils
-#from framework.exceptions import HTTPError
-# for graph image and pdf
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+import matplotlib as mpl           # noqa
+mpl.use('Agg')                     # noqa
+import matplotlib.pyplot as plt    # noqa
+import matplotlib.ticker as ticker  # noqa
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import seaborn as sns
-#from reportlab.pdfgen import canvas
 import pdfkit
-# from admin and rdm
 from admin.base import settings
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 from admin.rdm_addons import utils
 
-#import matplotlib as mpl
-#mpl.use('Agg')
 
-# DEBUG = True
-# constant
 RANGE_STATISTICS = 10
 STATISTICS_IMAGE_WIDTH = 8
 STATISTICS_IMAGE_HEIGHT = 4
@@ -77,38 +58,34 @@ class InstitutionListViewStat(RdmPermissionMixin, UserPassesTestMixin, TemplateV
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
-        #user = self.request.user
-        # ログインチェック
-        # if not user.is_authenticated:
+        """check user permissions"""
         if not self.is_authenticated:
             return False
-        # 統合管理者または機関管理者なら許可
-        # if user.is_superuser or user.is_staff:
+        # allow superuser and institution_administrator
         if self.is_super_admin or self.is_admin:
             return True
         return False
 
     def get(self, request, *args, **kwargs):
-        """コンテキスト取得"""
+        """get contexts"""
         user = self.request.user
-        # 統合管理者SUPERUSER
+        # supseruser
         if self.is_super_admin:
             ctx = {
                 'institutions': Institution.objects.order_by('id').all(),
                 'logohost': settings.OSF_URL,
             }
             return self.render_to_response(ctx)
-        # 機関管理者
+        # institution_admin
         elif self.is_admin:
             institution = user.affiliated_institutions.first()
             if institution:
                 return redirect(reverse('statistics:statistics', args=[institution.id]))
             else:
-                # 機関に所属していないSTAFF
+                # admin not affiliated institution
                 raise PermissionDenied
         else:
-            # superuserでもstaffでもない
+            # not superuser, or admin
             raise PermissionDenied
 
 
@@ -118,19 +95,14 @@ class StatisticsView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     def get_context_data(self, **kwargs):
-        """コンテキスト取得"""
+        """get contexts"""
         ctx = super(StatisticsView, self).get_context_data(**kwargs)
         user = self.request.user
-        # url base user set
-        # user_id = kwargs['user_id']
-        # if OSFUser.objects.filter(pk=user_id).exists():
-        #     user = OSFUser.objects.get(pk=user_id)
-        # 機関取得
         institution_id = int(kwargs['institution_id'])
         if Institution.objects.filter(pk=institution_id).exists():
             institution = Institution.objects.get(pk=institution_id)
@@ -138,9 +110,7 @@ class StatisticsView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
             institution = get_dummy_institution()
         if institution:
             ctx['institution'] = institution
-        # 本日以前RANGE_STATISTICS週分を対象
         current_date = get_current_date()
-        # 統計データを取得
         start_date = get_start_date(end_date=current_date)
         provider_data_array = get_provider_data_array(institution=institution,
                                                       start_date=start_date, end_date=current_date)
@@ -162,7 +132,6 @@ class ProviderData(object):
         self.end_date = end_date
         self.institution = institution
         self.statistics_data_array = []
-        # self.stat_data = RdmStatistics.objects.filter(owner=self.user, institution=self.institution,
         self.__create_statistics_data()
         self.statistics_data_array = self.__get_statistics_data_array()
 
@@ -193,8 +162,6 @@ class ProviderData(object):
         self.date_list = self.stat_data.values_list('date_acquired', flat=True)
         self.x_tk = np.unique(map(lambda x: x.strftime('%Y/%m/%d'), self.date_list))
         self.x_tk.sort()
-        # 空のデータフレーム
-        # left = np.array(range(0,RANGE_STATISTICS))
         self.left = np.unique(map(lambda x: x.strftime('%Y-%m-%d'), self.date_list))
         cols = ['left', 'height', 'type']
         self.size_df = pd.DataFrame(index=[], columns=cols)
@@ -222,7 +189,6 @@ class ProviderData(object):
 
     def __get_statistics_data(self, data_type='ext', **kwargs):
         """get data"""
-        # 統計情報データを格納
         statistics_data = StatisticsData(self.provider, self.end_date)
         statistics_data.label = self.x_tk
         statistics_data.data_type = data_type
@@ -243,7 +209,6 @@ class ProviderData(object):
             size_sum_list = list(size_df_sum['height'].values.flatten())
             statistics_data.title = 'Subtotal of file sizes'
             statistics_data.y_label = 'File Sizes'
-            # statistics_data.add('size', size_sum_list)
             statistics_data.add('size', map(lambda x: approximate_size(x, True), size_sum_list))
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#EEFFEE'
@@ -266,7 +231,6 @@ class StatisticsData(object):
     def __init__(self, provider, current_date):
         self.provider = provider
         self.current_date = current_date
-        # self.provider_id = 0
         self.data_type = ''
         self.graphstyle = 'darkgrid'
         self.background = '#CCCCFF'
@@ -285,30 +249,21 @@ class StatisticsData(object):
 
 def get_provider_data_array(institution, start_date, end_date, **kwargs):
     """retrieve statistics data array by provider"""
-    # プロバイダリスト取得
-    # provider_data = RdmStatistics.objects.filter(owner=user, institution=institution, date_acquired__lte=end_date).\
     provider_list_data = RdmStatistics.objects.filter(institution=institution, date_acquired__lte=end_date).\
                                             filter(date_acquired__gte=start_date).values_list('provider', flat=True)\
                                             .order_by('provider').distinct()
     provider_list = np.unique(provider_list_data)
     provider_data_array = []
     for provider in provider_list:
-        # retrieve RDMstatistics data
         provider_data = ProviderData(provider=provider, institution=institution,
                                      start_date=start_date, end_date=end_date)
-        # print(provider_data)
         provider_data_array.append(provider_data)
     return provider_data_array
 
 def create_image_string(provider, statistics_data):
-    # 空のデータフレーム
     cols = ['left', 'height', 'type']
     data = pd.DataFrame(index=[], columns=cols)
-    # 描画用データ
-    # left = np.array(range(0, RANGE_STATISTICS))
     left = statistics_data.label
-    #x_tk = statistics_data.label
-    # print(left)
     if statistics_data.data_type == 'ext':
         data = statistics_data.df
     else:
@@ -319,8 +274,6 @@ def create_image_string(provider, statistics_data):
 
     # fig properties
     fig = plt.figure(figsize=(STATISTICS_IMAGE_WIDTH, STATISTICS_IMAGE_HEIGHT))
-    # palette変更
-    # sns.set_palette("bright", 8)
     sns.set_style(statistics_data.graphstyle)
     fig.patch.set_facecolor(statistics_data.background)
     ax = sns.pointplot(x='left', y='height', hue='type', data=data)
@@ -329,47 +282,30 @@ def create_image_string(provider, statistics_data):
     ax.set_ylabel(ylabel=statistics_data.y_label)
     ax.set_title(statistics_data.title + ' in ' + provider)
     ax.tick_params(labelsize=9)
-    # ax.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True))
     ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(integer=True))
+    plt.legend(loc='upper right', bbox_to_anchor=(1.1255555, 1), ncol=1, borderaxespad=1, shadow=True)
     canvas = FigureCanvasAgg(fig)
     png_output = BytesIO()
     canvas.print_png(png_output)
     img_data = urllib.quote(png_output.getvalue())
-    # enc_data = png_output.getvalue().encode('base64')
-    # img_data = urllib.quote(enc_data)
-    # img_data = base64.b64encode(png_output.getvalue())
     plt.close()
     return img_data
 
 def create_pdf(request, is_pdf=True, **kwargs):
     """download pdf"""
-    # if shows html
-    # is_pdf = False
-    # ユーザ
     user = request.user
-    # ログインチェック
     if not user.is_authenticated:
         raise PermissionDenied
-    # 統合管理者または機関管理者なら許可
     if not (user.is_superuser or user.is_staff):
         raise PermissionDenied
-    # url base user set
-    # user_id = int(kwargs['user_id'])
-    # if OSFUser.objects.filter(pk=user_id).exists():
-    #     user = OSFUser.objects.get(pk=user_id)
-    # 機関ID
     institution_id = int(kwargs['institution_id'])
     if Institution.objects.filter(pk=institution_id).exists():
         institution = Institution.objects.get(pk=institution_id)
     else:
         institution = get_dummy_institution()
-    # # 統計データ取得範囲設定、取得
     current_date = get_current_date()
     start_date = get_start_date(end_date=current_date)
     provider_data_array = get_provider_data_array(institution=institution, start_date=start_date, end_date=current_date)
-    # stat html作成
-    # template
     template_name = 'rdm_statistics/statistics_report.html'
     # context data
     ctx = {}
@@ -381,7 +317,7 @@ def create_pdf(request, is_pdf=True, **kwargs):
     html_string = render_to_string(template_name, ctx)
     # if html
     if is_pdf:
-        # # if PDF
+        # if PDF
         try:
             converted_pdf = convert_to_pdf(html_string=html_string, file=False)
             pdf_file_name = 'statistics.' + current_date.strftime('%Y%m%d') + '.pdf'
@@ -389,10 +325,8 @@ def create_pdf(request, is_pdf=True, **kwargs):
             response['Content-Disposition'] = 'attachment; filename="' + pdf_file_name + '"'
             return response
         except OSError as e:
-            # print(str(e))
             response = HttpResponse(str(e), content_type='text/html', status=501)
         except Exception as e:
-            # print(str(e))
             response = HttpResponse(str(e), content_type='text/html', status=501)
     else:
         response = HttpResponse(html_string, content_type='text/html')
@@ -401,7 +335,6 @@ def create_pdf(request, is_pdf=True, **kwargs):
 def convert_to_pdf(html_string, file=False):
     # wkhtmltopdf settings
     wkhtmltopdf_path = os.path.join(os.path.dirname(__file__), '.', 'wkhtmltopdf')
-    # print wkhtmltopdf_path
     config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
     options = {
         'page-size': 'A4',
@@ -410,23 +343,12 @@ def convert_to_pdf(html_string, file=False):
         'margin-bottom': '0.60in',
         'margin-left': '0.60in'
     }
-    # user_css = [
-    #             '/code/admin/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css',
-    #             '/code/admin/static/vendor/bower_components/admin-lte/dist/css/AdminLTE.min.css',
-    #             '/code/admin/static/vendor/bower_components/admin-lte/dist/css/skins/skin-blue.min.css',
-    #             '/code/admin/static/css/institutions.css',
-    #             '/code/admin/static/css/datatables.min.css',
-    #             '/code/admin/static/css/base.css'
-    #             ]
-    # file name
     current_date = get_current_date()
     # if file
     if file:
         pdf_file_name = 'statistics.' + current_date.strftime('%Y%m%d') + '.pdf'
         converted_pdf = pdf_file_name
-    # if binary
     else:
-        # converted_pdf = pdfkit.from_string(html_string, False, configuration=config, css=user_css)
         converted_pdf = pdfkit.from_string(html_string, False,
                                            configuration=config, options=options)
     return converted_pdf
@@ -438,37 +360,26 @@ def get_start_date(end_date):
 
 def create_csv(request, **kwargs):
     """download pdf"""
-    # ユーザ
-    # user_id = int(kwargs['user_id'])
-    # if OSFUser.objects.filter(pk=user_id).exists():
-    #     user = OSFUser.objects.get(pk=user_id)
     user = request.user
-    # ログインチェック
     if not user.is_authenticated:
         raise PermissionDenied
-    # 統合管理者または機関管理者なら許可
     if not (user.is_superuser or user.is_staff):
         raise PermissionDenied
-    # 機関ID
     institution_id = int(kwargs['institution_id'])
     if Institution.objects.filter(pk=institution_id).exists():
         institution = Institution.objects.get(pk=institution_id)
     else:
         institution = get_dummy_institution()
-    # # 統計データ取得範囲設定、取得
     current_date = get_current_date()
     csv_data = get_all_statistic_data_csv(institution=institution)
     csv_file_name = 'statistics.all.' + current_date.strftime('%Y%m%d') + '.csv'
-    # if html
     response = HttpResponse(content_type='text/csv')
-    # response = HttpResponse(mimetype='text/csv')
     response['Content-Disposition'] = 'attachment; filename=' + csv_file_name
     writer = csv.writer(response, quoting=csv.QUOTE_NONNUMERIC)
     writer.writerows(csv_data)
     return response
 
 def get_all_statistic_data_csv(institution, **kwargs):
-    # 統計データ取得範囲設定
     target_fields = ['provider', 'extention_type', 'subtotal_file_number', 'subtotal_file_size', 'date_acquired']
     all_stat_dict = RdmStatistics.objects.filter(institution=institution).order_by('provider', 'extention_type', 'date_acquired').values(*target_fields)
     # csv data list
@@ -476,12 +387,10 @@ def get_all_statistic_data_csv(institution, **kwargs):
     header_list.extend(target_fields)
     csv_data_list = []
     csv_data_list.append(header_list)
-    # csv_data_list.append(target_fields)
     for row in all_stat_dict:
         row_list = [institution.name]
         for field in target_fields:
             row_list.append(row[field])
-        # print(row_list)
         csv_data_list.append(row_list)
     return csv_data_list
 
@@ -490,59 +399,37 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
-        #user = self.request.user
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
-        # ログインチェック
         if not self.is_authenticated:
             return False
-        # 統合管理者または機関管理者なら許可
         if self.is_super_admin or self.is_admin:
             return self.has_auth(institution_id)
         return False
 
     def get(self, request, *args, **kwargs):
         """get context data"""
-        # user = request.user
         graph_type = self.kwargs.get('graph_type')
         provider = self.kwargs.get('provider')
-        #user = self.request.user
-        # user_id = self.kwargs.get('user_id')
-        # user = OSFUser.objects.get(pk=user_id)
-        # if OSFUser.objects.filter(pk=user_id).exists():
-        #     user = OSFUser.objects.get(pk=user_id)
         institution_id = int(self.kwargs.get('institution_id'))
-        # institution_id = int(kwargs['institution_id'])
         if Institution.objects.filter(pk=institution_id).exists():
             institution = Institution.objects.get(pk=institution_id)
         else:
             institution = get_dummy_institution()
+
         # create provider data
         provider_data = self.__get_data(provider=provider, institution=institution)
-        # 空のデータフレーム
         cols = ['left', 'height', 'type']
         data = pd.DataFrame(index=[], columns=cols)
-        # 描画用データ
         statistics_data = provider_data.get_data(data_type=graph_type)
         left = statistics_data.label
-        #x_tk = statistics_data.label
-        # print(left)
         if statistics_data.data_type == 'ext':
             data = statistics_data.df
         else:
             size_df_sum = statistics_data.df.groupby('left', as_index=False).sum()
             size_sum_list = list(size_df_sum['height'].values.flatten())
-            # print(size_sum_list)
             data = pd.DataFrame({'left': left, 'height': size_sum_list, 'type': statistics_data.data_type})
-            # print(data)
-        # for key, item in statistics_data.data.items():
-        #     data = data.append(pd.DataFrame({'left': left, 'height': item, 'type': key}))
-        # fig properties
         fig = plt.figure(figsize=(STATISTICS_IMAGE_WIDTH, STATISTICS_IMAGE_HEIGHT))
-        # palette変更
-        # sns.set_palette('bright', 8)
-        # if graph_type == 'ext':
-        #     sns.set_style('darkgrid')
         sns.set_style(statistics_data.graphstyle)
         fig.patch.set_facecolor(statistics_data.background)
         ax = sns.pointplot(x='left', y='height', hue='type', data=data)
@@ -552,7 +439,7 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
         ax.set_title(statistics_data.title + ' in ' + provider)
         ax.tick_params(labelsize=9)
         ax.yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-        # ax.yaxis.set_minor_locator(ticker.MaxNLocator(integer=True))
+        plt.legend(loc='upper right', bbox_to_anchor=(1.1255555, 1), ncol=1, borderaxespad=1, shadow=True)
         response = HttpResponse(content_type='image/png')
         canvas = FigureCanvasAgg(fig)
         canvas.print_png(response)
@@ -597,20 +484,14 @@ class GatherView(TemplateView):
                 for node in self.get_user_nodes(user):
                     providers = node.get_addon_names()
                     for guid in node.guids.all():
-                        # print guid
                         for provider in providers:
                             self.count_list = []
                             path = '/'
                             self.count_project_files(node_id=guid._id, provider=provider, path=path, cookies=cookie)
                             if len(self.count_list) > 0:
-                                # print(node.id)
                                 self.regist_database(node=node, guid=guid, owner=user, institution=institution,
                                              provider=provider, date_acquired=current_date, count_list=self.count_list)
-                                # self.stat_list.append([institution.name, user.id, guid._id, provider, regist_list])
-                                #regist_list = self.regist_database(node=node, guid=guid, owner=user, institution=institution,
-                                #                provider=provider, date_acquired=current_date, count_list=self.count_list)
                                 self.stat_list.append([institution.name, guid._id, provider])
-            # print(self.stat_list)
             response_json = json.dumps(self.stat_list)
             response = HttpResponse(response_json, content_type='application/json')
             # statistics mail send
@@ -627,10 +508,8 @@ class GatherView(TemplateView):
     def regist_database(self, node, guid, owner, institution, provider, date_acquired, count_list):
         """regist count data to database"""
         reg_list = []
-        # データフレーム
         cols = ['type', 'id', 'size', 'ext']
         count_data = pd.DataFrame(count_list, columns=cols)
-        # size_sum = count_data.sum(numeric_only=True)
         number_sum = count_data[count_data['type'] == 'file'].groupby('ext').count()
         ext_sum = count_data[count_data['type'] == 'file'].groupby('ext').sum(numeric_only=True)
         number_sum.fillna(0, inplace=True)
@@ -654,14 +533,10 @@ class GatherView(TemplateView):
                             number_sum[number_sum.index == ext]['type'].values[0],
                             ext_sum[ext_sum.index == ext]['size'].values[0],
                             date_acquired.strftime('%Y-%m-%d')])
-        # print(reg_list)
         return reg_list
 
     def gather(**kwargs):
         """gathering storage data"""
-        # 機関ID
-        #institution_id = int(kwargs['institution_id'])
-        #user_id = int(kwargs['user_id'])
 
     def get_users(self):
         return OSFUser.objects.all()
@@ -674,26 +549,17 @@ class GatherView(TemplateView):
         nodes = AbstractNode.objects.all().select_related().filter(creator_id=user, category='project')
         return nodes
 
-#    def get_providers(self):
-#        providers = ExternalAccount.objects.distinct('provider').values('provider')
-
     def get_wb_url(self, path, node_id, provider, cookie):
         url = waterbutler_api_url_for(node_id=node_id, _internal=True, meta=True, provider=provider, path=path, cookie=cookie)
         return url
 
     def count_project_files(self, node_id, provider, path, cookies):
         """recursive count"""
-        # print ('path : ' + path)
-        url_api = self.get_wb_url(node_id=node_id, provider=provider, path=path, cookie=cookies)
-        # print(url_api)
+        url_api = self.get_wb_url(node_id=node_id, provider=provider, path=re.sub(r'^//', '/', path), cookie=cookies)
         self.session.mount('http://', self.adapter)
         headers = {'content-type': 'application/json'}
-        # connect timeoutを10秒, read timeoutを30秒に設定
+        # connect timeout:10sec, read timeout:30sec
         res = self.session.get(url=url_api, headers=headers, timeout=(10.0, 30.0))
-        # 404等のhttp status errorの場合はraise
-        # res.raise_for_status()
-        # res = requests.get(url_api, headers=headers)
-        # print(res.ok)
         if not res.status_code == requests.codes.ok:
             return None
         response_json = res.json()
@@ -703,7 +569,10 @@ class GatherView(TemplateView):
         # parse response json
         if 'data' in response_json.keys():
             for obj in response_json['data']:
-                root, ext = os.path.splitext(obj['id'])
+                if provider != 'osfstorage':
+                    root, ext = os.path.splitext(obj['id'])
+                else:
+                    root, ext = os.path.splitext(obj['attributes']['materialized'])
                 if not ext:
                     ext = 'none'
                 if obj['attributes']['kind'] == 'file':
@@ -715,15 +584,13 @@ class GatherView(TemplateView):
 
 def simple_auth(access_token):
     digest = hashlib.sha512(SITE_KEY).hexdigest()
-    # print(access_token)
-    # print(digest)
     if digest == access_token.lower():
         return True
     else:
         return False
 
 def send_stat_mail(request, **kwargs):
-    """統計情報メール送信"""
+    """send statistics information email"""
     current_date = get_current_date()
     all_institutions = Institution.objects.order_by('id').all()
     all_staff_users = OSFUser.objects.filter(is_staff=True)
@@ -736,15 +603,12 @@ def send_stat_mail(request, **kwargs):
                 to_list.append(user.username)
         if not to_list:
             continue
-        # to_list = [user.username]
         # cc list
         all_superusers_list = list(OSFUser.objects.filter(is_superuser=True).values_list('username', flat=True))
         cc_list = all_superusers_list
         # cc_list = [] # debug
-        # 重複除去
         set_superusers = set(cc_list) - set(to_list)
         cc_list = list(set_superusers)
-        # 添付ファイル
         attachment_file_name = 'statistics' + current_date.strftime('%Y%m%d') + '.pdf'
         attachment_file_data = get_pdf_data(institution=institution)
         mail_data = {
@@ -756,12 +620,11 @@ def send_stat_mail(request, **kwargs):
         }
         response_hash[institution.name] = send_email(to_list=to_list, cc_list=cc_list, data=mail_data, user=user)
     response_json = json.dumps(response_hash)
-    # response_json = json.dumps(mail_data)
     response = HttpResponse(response_json, content_type='application/json')
     return response
 
 def send_error_mail(err):
-    """エラーメール送信"""
+    """send error email"""
     current_date = get_current_date()
     # to list
     all_superusers_list = list(OSFUser.objects.filter(is_superuser=True).values_list('username', flat=True))
@@ -793,7 +656,7 @@ def send_email(to_list, cc_list, data, user, backend='smtp'):
         )
         if 'attach_data' in data:
             message.attach(data['attach_file'], data['attach_data'], 'application/pdf')
-        # message.send()
+        message.send()
         connection.send_messages([message])
         connection.close()
     except Exception as e:
@@ -803,12 +666,9 @@ def send_email(to_list, cc_list, data, user, backend='smtp'):
         return ret
 
 def get_pdf_data(institution):
-    # # 統計データ取得範囲設定、取得
     current_date = get_current_date()
     start_date = get_start_date(end_date=current_date)
     provider_data_array = get_provider_data_array(institution=institution, start_date=start_date, end_date=current_date)
-    # stat html作成
-    # template
     template_name = 'rdm_statistics/statistics_report.html'
     # context data
     ctx = {}
@@ -817,13 +677,12 @@ def get_pdf_data(institution):
     ctx['current_date'] = current_date
     ctx['provider_data_array'] = provider_data_array
     html_string = render_to_string(template_name, ctx)
-    # # if PDF
+    # if PDF
     converted_pdf = convert_to_pdf(html_string=html_string, file=False)
     return converted_pdf
 
 def get_current_date(is_str=False):
     current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-    # print(current_datetime.year, current_datetime.month, current_datetime.day)
     current_date = datetime.date(current_datetime.year, current_datetime.month, current_datetime.day)
     if is_str:
         return current_datetime.strftime('%Y/%m/%d')
@@ -833,23 +692,19 @@ def get_current_date(is_str=False):
 class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
     """index view of statistics module."""
     template_name = 'rdm_statistics/mail.html'
-    # permission_required = 'rdm.view_statistics'
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
-#        user = self.request.user
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
-        # ログインチェック
         if not self.is_authenticated:
             return False
-        # 統合管理者または機関管理者なら許可
         if self.is_super_admin or self.is_admin:
             return self.has_auth(institution_id)
         return False
 
     def get_context_data(self, **kwargs):
-        """コンテキスト取得"""
+        """get contexts"""
         ret = {'is_success': True, 'error': ''}
         ctx = super(SendView, self).get_context_data(**kwargs)
         user = self.request.user
@@ -859,7 +714,6 @@ class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
         else:
             institution = get_dummy_institution()
         all_superusers_list = list(OSFUser.objects.filter(is_superuser=True).values_list('username', flat=True))
-        # print(all_superusers_list)
         to_list = [user.username]
         cc_list = all_superusers_list
         if user.is_superuser:
@@ -912,9 +766,6 @@ def approximate_size(size, a_kilobyte_is_1024_bytes=True):
 
     raise ValueError('number too large')
 
-# if __name__ == '__main__':
-#     print(approximate_size(1000000000000, False))
-#     print(approximate_size(1000000000000))
 
 ############################################
 ### views or funcs for development and test
@@ -922,10 +773,7 @@ def approximate_size(size, a_kilobyte_is_1024_bytes=True):
 
 class IndexView(TemplateView):
     """index view of statistics module."""
-    # model = RdmAnnouncement
-    # form_class = PreviewForm
     template_name = 'rdm_statistics/index.html'
-    # permission_required = 'rdm.view_statistics'
     raise_exception = True
 
     def find_bookmark_collection(self, user):
@@ -934,59 +782,15 @@ class IndexView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         user = self.request.user
-        # user = OSFUser.objects.filter(username=request.user)
-        # pprint(user)
-        # user_addons = addon_utils.get_addons_by_config_type('users', user)
-        # user_addons = addon_utils.get_addons_by_config_type('accounts', user)
         user_addons = utils.get_addons_by_config_type('users', self.request.user)
-        # user_addons = utils.get_addons_by_config_type('accounts', self.request.user)
         accounts_addons = [addon for addon in website_settings.ADDONS_AVAILABLE
                            if 'accounts' in addon.configs]
-        print([addon.short_name for addon in accounts_addons])
-        # addon_settings = utils.get_addons_by_config_type('accounts', self.request.user)
-        for accounts_addon in accounts_addons:
-            print(accounts_addon)
-            print(dir(accounts_addon))
-            print(accounts_addon.short_name)
-            # settings = accounts_addon.user_settings()
-            # print(type(settings))
-            # print(dir(settings))
-            # pprint(settings)
-        # user_addons = addon_utils.get_addons_by_config_type('accounts', user)
-        # for account_addon in accounts_addons:
-        #     print(vars(account_addon.node_settings))
         js = []
-        #filename = 'files.js'
-        # config_entry='files'
-        # # for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
-        # for addon_config in accounts_addons:
-        #     # JS modules configured in each addon's __init__ file
-        #     js.extend(addon_config.include_js.get(config_entry, []))
-        #     # Webpack bundle
-        #     js_path = paths.resolve_addon_path(addon_config, filename)
-        #     if js_path:
-        #         js.append(js_path)
         bookmark_collection = self.find_bookmark_collection(user)
         my_projects_id = bookmark_collection._id
-        print(bookmark_collection)
-        print(vars(bookmark_collection))
-        print(dir(bookmark_collection))
-        # nodes = AbstractNode.objects.all().filter(creator_id=user, category='project')
         nodes = AbstractNode.objects.all().select_related().filter(creator_id=user, category='project')
-        for node in nodes:
-            print(node)
-            print(node.creator)
-            print(node.get_addons())
-            # print(dir(node))
-            # print(node.guids.all())
-            # print(dir(node.guids))
-            # print(vars(node))
-            # pprint(node)
-        # print(nodes)
         data = {
             'test': 'test',
-            # 'my_projects': my_projects
-            # 'addon': addon.to_json(user)
             'user': user,
             'addon': user_addons,
             'accounts_addons': accounts_addons,
@@ -1005,16 +809,15 @@ class IndexView(TemplateView):
 class DummyCreateView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
     """simulate data collecting."""
     template_name = 'rdm_statistics/index.html'
-    # permission_required = 'rdm.view_statistics'
     raise_exception = True
 
     def test_func(self):
-        """権限等のチェック"""
+        """check user permissions"""
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     def get_context_data(self, **kwargs):
-        """コンテキスト取得"""
+        """get contexts"""
         ctx = super(DummyCreateView, self).get_context_data(**kwargs)
         user = self.request.user
         institution_id = int(kwargs['institution_id'])
@@ -1037,32 +840,20 @@ class DummyCreateView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
         accounts_addons = [addon for addon in website_settings.ADDONS_AVAILABLE
                            if 'accounts' in addon.configs]
         addon_list = [addon.short_name for addon in accounts_addons]
-        # print([addon.short_name for addon in accounts_addons])
-        # print(addon_list)
         provider_list = np.random.choice(addon_list, 3, replace=False)
-        # provider = 'S3'
         TEST_TIMES = 2
         TEST_RANGE = RANGE_STATISTICS * TEST_TIMES
-        # RdmStatistics.objects.all().delete()
-        # RdmStatistics.objects.filter(owner=user).delete()
         RdmStatistics.objects.filter(institution=institution).delete()
         for provider in provider_list:
-            # print(provider)
-            # print(size_list)
-            # print(count_list)
             current_date = get_current_date()
             ext_list = ['jpg', 'png', 'docx', 'xlsx']
             for ext_type in ext_list:
-                # print(ext_type)
                 x = np.random.randint(1000 * TEST_RANGE / 10, size=TEST_RANGE)
                 y = np.random.randint(100 * TEST_RANGE / 10, size=TEST_RANGE)
                 count_list = np.sort(y)
                 size_list = np.sort(x)
                 for i in range(TEST_RANGE):
-                    # print(i)
                     date = current_date - datetime.timedelta(weeks=(TEST_RANGE - 1 - i))
-                    # print(date)
-                    # RdmStatistics.objects.update_or_create(project_id=7,owner_id=user.id,institution_id=institution.id,
                     RdmStatistics.objects.create(project_id=7,
                                                  owner=user,
                                                  institution=institution,
@@ -1088,7 +879,6 @@ def test_mail(request, status=None):
     content = 'test regular mail sending'
     try:
         connection = mail.get_connection(backend='django.core.mail.backends.smtp.EmailBackend')
-        # connection = mail.get_connection(backend='django.core.mail.backends.console.EmailBackend')
         message = EmailMessage(
             subject,
             content,
@@ -1096,8 +886,7 @@ def test_mail(request, status=None):
             to=to_list,
             cc=cc_list
         )
-        # message.send()
-        print(message)
+        message.send()
         connection.send_messages([message])
         connection.close()
     except Exception as e:

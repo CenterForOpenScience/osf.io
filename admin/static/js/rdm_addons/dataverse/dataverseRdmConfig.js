@@ -5,7 +5,6 @@
 
 var ko = require('knockout');
 var $ = require('jquery');
-var bootstrap = require('bootstrap');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 var toggleHeight = require('js/osfToggleHeight');

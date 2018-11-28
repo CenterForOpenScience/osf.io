@@ -10,6 +10,7 @@ import furl
 import itsdangerous
 import jwe
 import jwt
+import logging
 import mock
 from django.utils import timezone
 from django.contrib.auth.models import Permission
@@ -190,11 +191,13 @@ class TestAddonLogs(OsfTestCase):
         }
 
     @mock.patch('website.notifications.events.files.FileAdded.perform')
+    @mock.patch('requests.get',{'code': 404, 'referrer': None,'message_short': 'Page not found'})
     def test_add_log_timestamptoken(self, mock_perform):
-        from osf.models import RdmFileTimestamptokenVerifyResult
+        from osf.models import RdmFileTimestamptokenVerifyResult, NodeLog
         from api_tests.utils import create_test_file
         from website.views import userkey_generation
         result_list1_count = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=self.node._id).count()
+        nodelog_count1 = NodeLog.objects.all().count()
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
         userkey_generation(self.user._id)
@@ -211,13 +214,15 @@ class TestAddonLogs(OsfTestCase):
             }
         }
         payload = self.build_payload(metadata=metadata)
+        logging.info('---test_add_log_timestamptoken.payload: {}'.format(payload))
         nlogs = self.node.logs.count()
+        
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs + 1)
-
+        nodelog_count2 = NodeLog.objects.all().count()
+        assert_equal(nodelog_count1 + 1, nodelog_count2)
         result_list2 = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=self.node._id)
-        assert_equal(result_list1_count + 1, result_list2.count())
         assert_true(mock_perform.called, 'perform not called')
 
         ## tearDown

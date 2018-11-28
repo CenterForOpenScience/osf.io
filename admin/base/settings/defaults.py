@@ -112,6 +112,22 @@ INSTALLED_APPS = (
     'admin.institutions',
     'admin.preprint_providers',
 
+    # Additional addons
+    'addons.bitbucket',
+    'addons.box',
+    'addons.dataverse',
+    'addons.dropbox',
+    'addons.figshare',
+    'addons.forward',
+    'addons.github',
+    'addons.googledrive',
+    'addons.mendeley',
+    'addons.owncloud',
+    'addons.s3',
+    'addons.zotero',
+    #     'addons.swift',
+    #     'addons.azureblobstorage',
+    #     'addons.weko',
 )
 
 MIGRATION_MODULES = {
@@ -120,6 +136,21 @@ MIGRATION_MODULES = {
     'addons_osfstorage': None,
     'addons_wiki': None,
     'addons_twofactor': None,
+    'addons_bitbucket': None,
+    'addons_box': None,
+    'addons_dataverse': None,
+    'addons_dropbox': None,
+    'addons_figshare': None,
+    'addons_forward': None,
+    'addons_github': None,
+    'addons_googledrive': None,
+    'addons_mendeley': None,
+    'addons_owncloud': None,
+    'addons_s3': None,
+    'addons_zotero': None,
+    #    'addons.swift': None,
+    #    'addons.azureblobstorage': None,
+    #    'addons.weko': None,
 }
 
 USE_TZ = True
@@ -252,3 +283,9 @@ if DEBUG:
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+FCM_SETTINGS = {
+    'FCM_SERVER_KEY': ''
+}
+SHIB_EPPN_SCOPING_SEPARATOR = '@'
+ENABLE_SHB_LOGIN = True
+ENABLE_LOGIN_FORM = False
