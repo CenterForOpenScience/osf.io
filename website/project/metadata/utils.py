@@ -238,7 +238,7 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
                     'sizeInt': {'type': 'integer'},
                 }
             },
-            'fileId': {'type': 'string'},
+            'fileId': {'type': ['string', 'object']},
             'descriptionValue': {'type': 'string'},
             'sha256': {'type': 'string'},
             'selectedFileName': {'type': 'string'},
@@ -257,9 +257,6 @@ COMMENTS_SCHEMA = {
         'properties': {
             'seenBy': {
                 'type': 'array',
-                'items': {
-                    'type': 'integer'
-                }
             },
             'canDelete': {'type': 'boolean'},
             'created': {'type': 'string'},
