@@ -4,11 +4,11 @@
 * This MUST run to completion without errors. If an error occurs, delete
   the existing osf_preprint* indices, fix the error, and re-run the script.
 """
+from __future__ import division
 import logging
 import sys
 import argparse
 import datetime
-import progressbar
 from time import sleep
 
 from website.app import setup_django
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 CHUNK_SIZE = 100
-MAX_BATCH_SIZE = 1000
+MAX_BATCH_SIZE = 500
 THROTTLE_PERIOD = 3  # seconds
 REQUEST_TIMEOUT = 30  # seconds
 
@@ -40,12 +40,11 @@ def main():
     preprints = PreprintService.objects.all().values_list('node__guids___id', 'node__preprint_file___id', 'guids___id',
                                               'provider___id')
 
-    logger.info('Collecting data on {} preprints...'.format(preprints.count()))
+    total_preprints = preprints.count()
+    logger.info('Collecting data on {} preprints...'.format(total_preprints))
 
-    progress_bar = progressbar.ProgressBar(maxval=preprints.count()).start()
     batch_to_update = []
     for i, preprint in enumerate(preprints, 1):
-        progress_bar.update(i)
         node__id, file_id, preprint__id, provider__id = preprint
         page_counters = PageCounter.objects.filter(_id__startswith='download:{node__id}:{file_id}:'.format(node__id=node__id,
                                                                                                       file_id=file_id)).values_list('_id', 'date')
@@ -73,6 +72,7 @@ def main():
                         bulk(es, batch_to_update, max_retries=3, chunk_size=CHUNK_SIZE, request_timeout=REQUEST_TIMEOUT)
                     batch_to_update = []
                     # Allow elasticsearch to catch up
+                    print('{}/{} preprints completed ({:.2f}%)'.format(i + 1, total_preprints, (i + 1) / total_preprints * 100))
                     sleep(THROTTLE_PERIOD)
 
     # Index final batch
@@ -81,7 +81,6 @@ def main():
         if not dry:
             bulk(es, batch_to_update, max_retries=3, chunk_size=CHUNK_SIZE, request_timeout=REQUEST_TIMEOUT)
 
-    progress_bar.finish()
     logger.info('This will migrate {} Pagecounter entries to Elasticsearch'.format(len(batch_to_update)))
 
 
