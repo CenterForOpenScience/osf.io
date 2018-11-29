@@ -18,7 +18,7 @@ def remove_waffle_switch(*args, **kwargs):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0141_merge_20181023_1526'),
+        ('osf', '0143_merge_20181115_1458'),
     ]
 
     operations = [

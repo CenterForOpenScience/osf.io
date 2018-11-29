@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from django.db import migrations
 from waffle.models import Switch
 
@@ -12,16 +13,17 @@ def add_prereg_switch(*args, **kwargs):
     switch.save()
     ensure_schemas()
 
-
 def remove_prereg_switch(*args, **kwargs):
     Switch.objects.get(name=OSF_PREREGISTRATION).delete()
     ensure_schemas()
 
 
 class Migration(migrations.Migration):
+
     dependencies = [
-        ('osf', '0143_merge_20181115_1458'),
+        ('osf', '0144_enable_inactive_schemas_switch'),
     ]
+
     operations = [
         migrations.RunPython(add_prereg_switch, remove_prereg_switch)
     ]
