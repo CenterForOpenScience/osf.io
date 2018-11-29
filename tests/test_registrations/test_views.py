@@ -384,15 +384,15 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_not_equal(metadata, self.draft.registration_metadata)
         payload = {
             'schema_data': metadata,
-            'schema_name': 'OSF-Standard Pre-Data Collection Registration',
-            'schema_version': 1
+            'schema_name': 'Open-Ended Registration',
+            'schema_version': 2
         }
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
 
-        open_ended_schema = RegistrationSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=1)
+        open_ended_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
         self.draft.reload()
         assert_equal(open_ended_schema, self.draft.registration_schema)
