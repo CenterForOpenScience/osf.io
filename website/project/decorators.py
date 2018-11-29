@@ -209,7 +209,7 @@ def check_can_access(node, user, key=None, api_node=None):
                 return True
 
         if node.is_deleted:
-            raise HTTPError(http.NOT_FOUND)
+            raise HTTPError(http.GONE, data={'message_long': 'The node for this file has been deleted.'})
 
         if key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
