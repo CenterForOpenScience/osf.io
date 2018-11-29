@@ -359,11 +359,11 @@
        <div style="margin-top: 5px; margin-bottom: 5px;">
            Has supplemental materials for <a href="${preprint['url']}" target="_blank">${preprint['title']}</a>
            on ${preprint['provider']['name']}
-         % if user['is_contributor']:
+         % if user['is_admin_parent']:
             &nbsp;<span id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}"></span>
         % endif
        </div>
-       % if user['is_contributor']:
+       % if user['is_admin_parent']:
            <div id="metadatapreprint${i}" class="collection-details collapse">
                <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
                     <li>
