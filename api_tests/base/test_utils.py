@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import mock  # noqa
 import unittest
 

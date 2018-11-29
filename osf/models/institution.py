@@ -126,7 +126,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         if saved_fields and bool(self.pk):
             for node in self.nodes.filter(is_deleted=False):
                 try:
-                    update_node(node, async=False)
+                    update_node(node, async_update=False)
                 except SearchUnavailableError as e:
                     logger.exception(e)
 

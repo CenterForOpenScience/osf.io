@@ -13,7 +13,7 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated
 from api.files.serializers import QuickFilesSerializer
-from osf.exceptions import ValidationValueError, ValidationError
+from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
 from osf.models import OSFUser, QuickFilesNode
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
@@ -510,6 +510,8 @@ class UserEmailsSerializer(JSONAPISerializer):
                 send_confirm_email(user, email=address)
         except ValidationError as e:
             raise exceptions.ValidationError(e.args[0])
+        except BlacklistedEmailError:
+            raise exceptions.ValidationError('This email address domain is blacklisted.')
 
         return UserEmail(email_id=token, address=address, confirmed=False, primary=False)
 

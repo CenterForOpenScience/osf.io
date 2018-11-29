@@ -741,8 +741,8 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         rely upon a flask context and placed in utils (or elsewhere).
 
         :param bool registered: Indicates which sender to call (passed in as keyword)
-        :param \*args: Positional arguments passed to senders
-        :param \*\*kwargs: Keyword arguments passed to senders
+        :param *args: Positional arguments passed to senders
+        :param **kwargs: Keyword arguments passed to senders
         :return: None
         """
         from website.app import app

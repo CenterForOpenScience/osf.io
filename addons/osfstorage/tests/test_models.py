@@ -266,6 +266,13 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         assert_is(OsfStorageFileNode.load(child._id), None)
 
+    def test_file_deleted_when_node_deleted(self):
+        child = self.node_settings.get_root().append_file('Test')
+        self.node.remove_node(auth=Auth(self.user))
+
+        assert OsfStorageFileNode.load(child._id) is None
+        assert models.TrashedFileNode.load(child._id) is not None
+
     def test_materialized_path(self):
         child = self.node_settings.get_root().append_file('Test')
         assert_equals('/Test', child.materialized_path)

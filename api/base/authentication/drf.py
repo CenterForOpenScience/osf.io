@@ -147,7 +147,7 @@ class OSFBasicAuthentication(BasicAuthentication):
             self.authenticate_twofactor_credentials(user_auth_tuple[0], request)
         return user_auth_tuple
 
-    def authenticate_credentials(self, userid, password):
+    def authenticate_credentials(self, userid, password, request=None):
         """
         Authenticate the user by userid (email) and password.
 
