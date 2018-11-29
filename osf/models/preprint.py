@@ -190,6 +190,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
 
     @property
+    def is_deleted(self):
+        return bool(self.deleted)
+
+    @property
     def root_folder(self):
         try:
             return OsfStorageFolder.objects.get(name='', target_object_id=self.id, target_content_type_id=ContentType.objects.get_for_model(Preprint).id, is_root=True)
