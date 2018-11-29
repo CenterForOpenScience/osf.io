@@ -21,6 +21,8 @@ from osf.utils.permissions import ADMIN
 from osf.utils.functional import rapply
 from osf.models import NodeLog, RegistrationSchema, DraftRegistration, Sanction
 
+import waffle
+
 from website.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project,
@@ -121,6 +123,9 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     :rtype: dict
     :raises: HTTPError if embargo end date is invalid
     """
+    if waffle.switch_is_active(features.OSF_PREREGISTRATION):
+        raise NotImplementedError()
+
     data = request.get_json()
     meta = {}
     registration_choice = data.get('registrationChoice', 'immediate')

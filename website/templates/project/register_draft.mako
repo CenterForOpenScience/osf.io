@@ -25,7 +25,15 @@
     <div class="row-md-12 scripted">
         <span data-bind="ifnot: draft.isPendingApproval">
           <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
-
+          %if waffle.switch_is_active(features.OSF_PREREGISTRATION):
+          <button type="button" class="btn btn-success pull-right"
+                  data-toggle="tooltip" data-placement="top" title="The Prereg Challenge has expired"
+                  style="margin-left: 5px;
+                  box-shadow: none;
+                  opacity: .45;">
+             <span data-toggle="tooltip" data-placement="top" title="The Prereg Challenge has expired"> Submit for review</span>
+          </button>
+         %else:
           <button id="register-submit" type="button" class="btn btn-success pull-right"
                   style="margin-left: 5px;"
                   data-bind="visible: draft.requiresApproval,
@@ -33,6 +41,7 @@
                              enable: editor.canSubmit">
             Submit for review
           </button>
+        %endif
         </span>
         <span data-bind="if: draft.isPendingApproval">
           <a type="button" class="btn btn-default pull-left" href="${web_url_for('node_registrations', pid=node['id'], tab='drafts', _guid=True)}"> Back </a>
