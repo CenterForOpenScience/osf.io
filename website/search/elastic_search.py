@@ -443,6 +443,7 @@ def serialize_cgm(cgm):
         'abstract': getattr(obj, 'description', ''),
         'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
         'provider': getattr(cgm.collection.provider, '_id', None),
+        'modified': max(cgm.modified, obj.modified),
         'collectedType': cgm.collected_type,
         'status': cgm.status,
         'volume': cgm.volume,
