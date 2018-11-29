@@ -154,7 +154,7 @@ class OsfStorageFileNode(BaseFileNode):
     @property
     def is_preprint_primary(self):
         return (
-            getattr(self.target, 'preprint_file', None) == self and
+            getattr(self.target, 'primary_file', None) == self and
             not getattr(self.target, 'is_deleted', None)
         )
 
