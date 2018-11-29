@@ -1293,13 +1293,13 @@ class JSONAPISerializer(BaseAPISerializer):
         # failsafe, let python do it if something bad happened in the ESI construction
         return super(JSONAPISerializer, self).to_representation(data)
 
-    def run_validation(self, *args, **kwargs):
+    def run_validation(self, data):
         # Overrides construtor for validated_data to allow writes to a SerializerMethodField
         # Validation for writeable SMFs is expected to happen in the model
-        _validated_data = super(JSONAPISerializer, self).run_validation(*args, **kwargs)
+        _validated_data = super(JSONAPISerializer, self).run_validation(data)
         for field in self.writeable_method_fields:
-            if field in self.initial_data:
-                _validated_data[field] = self.initial_data[field]
+            if field in data:
+                _validated_data[field] = data[field]
         return _validated_data
 
     # overrides Serializer

@@ -80,7 +80,6 @@ class TestOSFGroupDetail:
         assert data['id'] == osf_group._id
         assert data['type'] == 'osf_groups'
         assert data['attributes']['name'] == osf_group.name
-        assert 'managers' in data['relationships']
         assert 'members' in data['relationships']
 
         # test authenticated user
@@ -90,7 +89,6 @@ class TestOSFGroupDetail:
         assert data['id'] == osf_group._id
         assert data['type'] == 'osf_groups'
         assert data['attributes']['name'] == osf_group.name
-        assert 'managers' in data['relationships']
         assert 'members' in data['relationships']
 
         # test authenticated member
@@ -100,7 +98,6 @@ class TestOSFGroupDetail:
         assert data['id'] == osf_group._id
         assert data['type'] == 'osf_groups'
         assert data['attributes']['name'] == osf_group.name
-        assert 'managers' in data['relationships']
         assert 'members' in data['relationships']
 
         # test authenticated manager
@@ -110,7 +107,6 @@ class TestOSFGroupDetail:
         assert data['id'] == osf_group._id
         assert data['type'] == 'osf_groups'
         assert data['attributes']['name'] == osf_group.name
-        assert 'managers' in data['relationships']
         assert 'members' in data['relationships']
 
         # test invalid group
@@ -168,188 +164,6 @@ class TestOSFGroupUpdate:
         name_payload['data']['id'] = '12345_bad_id'
         res = app.patch_json_api(url, name_payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 409
-
-    def test_patch_osf_group_relationships_add_member(self, app, osf_group, manager, member, user, name_payload, url, members_url, managers_url):
-        # Test add member - members overwritten
-        assert osf_group.has_permission(manager, 'manage') is True
-        assert osf_group.has_permission(manager, 'member') is True
-
-        assert osf_group.has_permission(user, 'manage') is False
-        assert osf_group.has_permission(user, 'member') is False
-
-        assert osf_group.has_permission(member, 'manage') is False
-        assert osf_group.has_permission(member, 'member') is True
-
-        name_payload['data']['relationships'] = {
-            'members': build_member_relationship_payload([user._id])
-        }
-        res = app.patch_json_api(url, name_payload, auth=manager.auth, expect_errors=True)
-        assert res.status_code == 200
-        osf_group.reload()
-        assert osf_group.has_permission(manager, 'manage') is True
-        assert osf_group.has_permission(manager, 'member') is True
-
-        assert osf_group.has_permission(user, 'manage') is False
-        assert osf_group.has_permission(user, 'member') is True
-
-        assert osf_group.has_permission(member, 'manage') is False
-        assert osf_group.has_permission(member, 'member') is False
-        res = app.get(managers_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        assert manager._id in [man['id'] for man in res.json['data']]
-
-        res = app.get(members_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        assert user._id in [mem['id'] for mem in res.json['data']]
-
-    def test_patch_osf_group_relationships_add_manager(
-        self, app, osf_group, manager, member, user, name_payload,
-        url, members_url, managers_url
-    ):
-        name_payload['data']['relationships'] = {
-            'managers': build_member_relationship_payload([manager._id, user._id])
-        }
-        res = app.patch_json_api(url, name_payload, auth=manager.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        res = app.get(managers_url, auth=manager.auth)
-        assert len(res.json['data']) == 2
-        manager_ids = [man['id'] for man in res.json['data']]
-        assert manager._id in manager_ids
-        assert user._id in manager_ids
-
-        res = app.get(members_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        member_ids = [mem['id'] for mem in res.json['data']]
-        assert member._id in member_ids
-
-    def test_patch_osf_group_relationships_remove_all_managers(
-        self, app, osf_group, manager, member, user, name_payload,
-        url, members_url, managers_url
-    ):
-        name_payload['data']['relationships'] = {
-            'managers': {
-                'data': []
-            }
-        }
-        res = app.patch_json_api(url, name_payload, auth=manager.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Group must have at least one manager.'
-
-        res = app.get(managers_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        manager_ids = [man['id'] for man in res.json['data']]
-        assert manager._id in manager_ids
-
-        res = app.get(members_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        member_ids = [mem['id'] for mem in res.json['data']]
-        assert member._id in member_ids
-
-    def test_patch_osf_group_relationships_remove_all_members(
-        self, app, osf_group, manager, member, user, name_payload,
-        url, members_url, managers_url
-    ):
-        name_payload['data']['relationships'] = {
-            'members': {
-                'data': []
-            }
-        }
-        res = app.patch_json_api(url, name_payload, auth=manager.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        res = app.get(managers_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        manager_ids = [man['id'] for man in res.json['data']]
-        assert manager._id in manager_ids
-
-        res = app.get(members_url, auth=manager.auth)
-        assert len(res.json['data']) == 0
-
-    def test_patch_osf_group_relationships_double_specified(
-        self, app, osf_group, manager, member, user, name_payload,
-        url, members_url, managers_url
-    ):
-        name_payload['data']['relationships'] = {
-            'managers': build_member_relationship_payload([manager._id, user._id]),
-            'members': build_member_relationship_payload([user._id]),
-        }
-        res = app.patch_json_api(url, name_payload, auth=manager.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You cannot specify a user as both a member and a manager of an OSF Group.'
-
-    def test_patch_osf_group_relationships_remove_self_as_manager(
-        self, app, osf_group, manager, member, user, name_payload,
-        url, members_url, managers_url
-    ):
-        name_payload['data']['relationships'] = {
-            'managers': build_member_relationship_payload([user._id]),
-        }
-        res = app.patch_json_api(url, name_payload, auth=manager.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        res = app.get(managers_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        manager_ids = [man['id'] for man in res.json['data']]
-        assert user._id in manager_ids
-
-        res = app.get(members_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        member_ids = [mem['id'] for mem in res.json['data']]
-        assert member._id in member_ids
-
-    def test_patch_osf_group_relationships_user_not_found(
-        self, app, osf_group, manager, member, user, name_payload,
-        url, members_url, managers_url
-    ):
-        name_payload['data']['relationships'] = {
-            'managers': build_member_relationship_payload(['12345']),
-        }
-        res = app.patch_json_api(url, name_payload, auth=manager.auth, expect_errors=True)
-        assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == 'User was not found'
-
-        res = app.get(managers_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        manager_ids = [man['id'] for man in res.json['data']]
-        assert manager._id in manager_ids
-
-        res = app.get(members_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        member_ids = [mem['id'] for mem in res.json['data']]
-        assert member._id in member_ids
-
-    def test_can_update_relationships_without_attributes(
-        self, app, osf_group, manager, member, user,
-        url, members_url, managers_url, old_name
-    ):
-        relationships_payload = {
-            'data': {
-                'type': 'osf_groups',
-                'id': osf_group._id,
-                'relationships': {
-                    'managers': build_member_relationship_payload([member._id]),
-                    'members': build_member_relationship_payload([manager._id, user._id]),
-                }
-            }
-        }
-
-        res = app.patch_json_api(url, relationships_payload, auth=manager.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        res = app.get(managers_url, auth=manager.auth)
-        assert len(res.json['data']) == 1
-        manager_ids = [man['id'] for man in res.json['data']]
-        assert member._id in manager_ids
-
-        res = app.get(members_url, auth=manager.auth)
-        assert len(res.json['data']) == 2
-        member_ids = [mem['id'] for mem in res.json['data']]
-        assert manager._id in member_ids
-        assert user._id in member_ids
-
-        osf_group.reload()
-        assert osf_group.name == old_name
 
 
 @pytest.mark.django_db

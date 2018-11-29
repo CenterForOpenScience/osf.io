@@ -119,7 +119,6 @@ class TestOSFGroupMembersUpdate:
         assert res.json['data']['attributes']['full_name'] == member.fullname
         assert res.json['data']['id'] == '{}-{}'.format(osf_group._id, member._id)
 
-        # test role upgrade
         payload = build_update_payload(osf_group._id, member._id, MEMBER)
         res = app.patch_json_api(url, payload, auth=manager.auth)
         assert res.status_code == 200
