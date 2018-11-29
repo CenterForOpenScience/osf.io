@@ -208,6 +208,9 @@ def check_can_access(node, user, key=None, api_node=None):
             if check_can_download_preprint_file(user, node):
                 return True
 
+        if node.is_deleted:
+            raise HTTPError(http.NOT_FOUND)
+
         if key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
 
