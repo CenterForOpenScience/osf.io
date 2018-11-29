@@ -1247,6 +1247,24 @@ class TestPreprintBannerView(OsfTestCase):
         assert_not_in('Pending\n', res.body)
         assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
+    def test_implicit_admins_can_see_project_status(self):
+        project = ProjectFactory(creator=self.admin)
+        component = NodeFactory(creator=self.admin, parent=project)
+        project.add_contributor(self.write_contrib, ['read', 'write', 'admin'])
+        project.save()
+
+        preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=component, is_published=True)
+        preprint.machine_state = 'pending'
+        provider = PreprintProviderFactory(reviews_workflow='post-moderation')
+        preprint.provider = provider
+        preprint.save()
+        url = component.web_url_for('view_project')
+
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('{}'.format(preprint.provider.name), res.body)
+        assert_in('Pending\n', res.body)
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+
     def test_public_project_pending_preprint_pre_moderation(self):
         self.preprint.machine_state = 'pending'
         provider = PreprintProviderFactory(reviews_workflow='pre-moderation')
