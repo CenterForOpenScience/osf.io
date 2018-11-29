@@ -9,8 +9,11 @@ from framework.celery_tasks import app as celery_app
 from osf.models import DraftRegistration, QueuedMail
 from osf.models.queued_mail import PREREG_REMINDER, PREREG_REMINDER_TYPE, queue_mail
 
+import waffle
 from website.app import init_app
 from website import settings
+
+from osf import features
 
 from scripts.utils import add_file_logger
 
@@ -69,8 +72,9 @@ def find_neglected_prereg_within_reminder_limit():
 
 @celery_app.task(name='scripts.remind_draft_preregistrations')
 def run_main(dry_run=True):
-    init_app(routes=False)
-    if not dry_run:
-        add_file_logger(logger, __file__)
-    main(dry_run=dry_run)
+    if not waffle.switch_is_active(features.OSF_PREREGISTRATION):
+        init_app(routes=False)
+        if not dry_run:
+            add_file_logger(logger, __file__)
+        main(dry_run=dry_run)
 
