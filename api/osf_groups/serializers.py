@@ -67,6 +67,10 @@ class GroupCompoundIDField(CompoundIDField):
 
 
 class OSFGroupMemberSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'role',
+        'full_name',
+    ])
     writeable_method_fields = frozenset([
         'role',
     ])

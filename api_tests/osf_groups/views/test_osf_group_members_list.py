@@ -75,6 +75,55 @@ class TestOSFGroupMembersList:
         assert '{}-{}'.format(osf_group._id, manager._id) in member_ids
         assert '{}-{}'.format(osf_group._id, member._id) in member_ids
 
+
+@pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+class TestOSFGroupMembersFilter:
+    def test_filtering(self, app, member, manager, user, osf_group, url):
+        # test filter members
+        url_filter = url + '?filter[role]=member'
+        res = app.get(url_filter)
+        data = res.json['data']
+        assert len(data) == 1
+        member_ids = [mem['id'] for mem in data]
+        assert '{}-{}'.format(osf_group._id, member._id) in member_ids
+
+        # test filter managers
+        url_filter = url + '?filter[role]=manager'
+        res = app.get(url_filter)
+        data = res.json['data']
+        assert len(data) == 1
+        member_ids = [mem['id'] for mem in data]
+        assert '{}-{}'.format(osf_group._id, manager._id) in member_ids
+
+        # test invalid role
+        url_filter = url + '?filter[role]=bad_role'
+        res = app.get(url_filter, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "Value \'bad_role\' is not valid."
+
+        # test filter fullname
+        url_filter = url + '?filter[full_name]={}'.format(manager.fullname)
+        res = app.get(url_filter)
+        data = res.json['data']
+        assert len(data) == 1
+        member_ids = [mem['id'] for mem in data]
+        assert '{}-{}'.format(osf_group._id, manager._id) in member_ids
+
+        # test filter fullname
+        url_filter = url + '?filter[full_name]={}'.format(member.fullname)
+        res = app.get(url_filter)
+        data = res.json['data']
+        assert len(data) == 1
+        member_ids = [mem['id'] for mem in data]
+        assert '{}-{}'.format(osf_group._id, member._id) in member_ids
+
+        # test invalid filter
+        url_filter = url + '?filter[created]=2018-02-01'
+        res = app.get(url_filter, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "\'created\' is not a valid field for this endpoint."
+
 def make_create_payload(role, user=None, full_name=None, email=None):
     base_payload = {
         'data': {

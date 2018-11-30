@@ -1,10 +1,12 @@
 from django.apps import apps
+from django.db.models import Q
 
 from rest_framework import generics, permissions as drf_permissions, exceptions
 from rest_framework.exceptions import NotFound, ValidationError
 from guardian.shortcuts import get_perms
 
 from api.base import permissions as base_permissions
+from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
 from api.base.filters import ListFilterMixin
 from api.base.utils import get_object_or_error, get_user_auth, is_bulk_request
 from api.base.views import JSONAPIBaseView
@@ -21,7 +23,7 @@ from api.osf_groups.serializers import (
 from api.users.views import UserMixin
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import OSFGroup, OSFUser
-from osf.utils.permissions import MANAGER, MEMBER
+from osf.utils.permissions import MANAGER, MEMBER, GROUP_MEMBER_PERMISSIONS
 
 
 class OSFGroupMixin(object):
@@ -149,12 +151,12 @@ class OSFGroupMemberBaseView(JSONAPIBaseView, OSFGroupMixin):
             raise exceptions.ValidationError(detail=e)
 
 
-class OSFGroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView):
+class OSFGroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
     view_name = 'group-members'
 
     # Overrides ListAPIView
     def get_queryset(self):
-        queryset = self.get_osf_group().members
+        queryset = self.get_queryset_from_request()
         if is_bulk_request(self.request):
             user_ids = []
             for user in self.request.data:
@@ -166,6 +168,9 @@ class OSFGroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIVi
                     raise ValidationError('Member identifier incorrectly formatted')
             queryset = queryset.filter(guids___id__in=user_ids)
         return queryset
+
+    def get_default_queryset(self):
+        return self.get_osf_group().members
 
     def get_serializer_context(self):
         context = super(OSFGroupMembersList, self).get_serializer_context()
@@ -189,6 +194,18 @@ class OSFGroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIVi
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
 
         return resource_object_list
+
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'role':
+            group = self.get_osf_group(check_object_permissions=False)
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            # operation['value'] should be 'member' or 'manager'
+            query_val = operation['value'].lower().strip()
+            if query_val not in GROUP_MEMBER_PERMISSIONS:
+                raise InvalidFilterValue(value=operation['value'])
+            return Q(id__in=group.managers if query_val == MANAGER else group.members_only)
+        return super(OSFGroupMembersList, self).build_query_from_field(field_name, operation)
 
 
 class OSFGroupMemberDetail(OSFGroupMemberBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
