@@ -24,12 +24,12 @@ class TestSchemaList:
         with override_switch(ENABLE_INACTIVE_SCHEMAS, active=False):
             res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['meta']['total'] == schemas.filter(active=True).count()
+        assert res.json['meta']['total'] == schemas.filter(active=True, visible=True).count()
 
         with override_switch(ENABLE_INACTIVE_SCHEMAS, active=True):
             res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['meta']['total'] == schemas.count()
+        assert res.json['meta']['total'] == schemas.filter(visible=True).count()
 
         # test_cannot_update_metaschemas
         res = app.put_json_api(url, auth=user.auth, expect_errors=True)

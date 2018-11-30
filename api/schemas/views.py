@@ -33,9 +33,9 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
 
     def get_default_queryset(self):
         if waffle.switch_is_active(ENABLE_INACTIVE_SCHEMAS):
-            return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
+            return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, visible=True)
         else:
-            return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)
+            return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True, visible=True)
 
     # overrides ListAPIView
     def get_queryset(self):

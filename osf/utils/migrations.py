@@ -135,15 +135,18 @@ def ensure_schemas(*args):
     try:
         RegistrationSchema = args[0].get_model('osf', 'metaschema')
     except Exception:
-        # Working outside a migration
-        from osf.models import RegistrationSchema
+        try:
+            RegistrationSchema = args[0].get_model('osf', 'registrationschema')
+        except Exception:
+            # Working outside a migration
+            from osf.models import RegistrationSchema
     for schema in OSF_META_SCHEMAS:
         schema_obj, created = RegistrationSchema.objects.update_or_create(
             name=schema['name'],
             schema_version=schema.get('version', 1),
             defaults={
                 'schema': schema,
-                'active': schema.get('active', True)
+                'active': schema.get('active', True),
             }
         )
         schema_count += 1
