@@ -14,5 +14,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        AddWaffleSwitch(features.ENABLE_INACTIVE_SCHEMAS, active=False)
+        AddWaffleSwitch(features.ENABLE_INACTIVE_SCHEMAS, active=False),
+        AddWaffleSwitch(features.OSF_PREREGISTRATION, active=False)
     ]

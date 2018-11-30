@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0145_prereg_winddown_switch'),
+        ('osf', '0144_add_prereg_winddown_switches'),
     ]
 
     operations = [

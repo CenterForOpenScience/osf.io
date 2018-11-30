@@ -27,6 +27,8 @@ def main(dry_run=True):
     prereg_schema = RegistrationSchema.objects.get(name='OSF Preregistration')
     logger.info('Setting {} schema to active'.format(prereg_schema.name))
     prereg_schema.active = True
+    logger.info('Setting {} schema to visible'.format(prereg_schema.name))
+    prereg_schema.visible = True
     if dry_run:
         logger.warn('This is a dry run')
     else:
