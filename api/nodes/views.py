@@ -344,7 +344,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         node = self.get_object()
 
         if enforce_no_children(self.request) and Node.objects.get_children(node, active=True).exists():
-                raise ValidationError('Any child components must be deleted prior to deleting this project.')
+            raise ValidationError('Any child components must be deleted prior to deleting this project.')
 
         try:
             node.remove_node(auth=auth)
