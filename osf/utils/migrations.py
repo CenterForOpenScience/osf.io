@@ -133,10 +133,10 @@ def ensure_schemas(*args):
     """
     schema_count = 0
     try:
-        RegistrationSchema = args[0].get_model('osf', 'metaschema')
+        RegistrationSchema = args[0].get_model('osf', 'registrationschema')
     except Exception:
         try:
-            RegistrationSchema = args[0].get_model('osf', 'registrationschema')
+            RegistrationSchema = args[0].get_model('osf', 'metaschema')
         except Exception:
             # Working outside a migration
             from osf.models import RegistrationSchema
@@ -146,7 +146,6 @@ def ensure_schemas(*args):
             schema_version=schema.get('version', 1),
             defaults={
                 'schema': schema,
-                'active': schema.get('active', True),
             }
         )
         schema_count += 1
@@ -162,6 +161,24 @@ def remove_schemas(*args):
     RegistrationSchema.objects.all().delete()
 
     logger.info('Removed {} schemas from the database'.format(pre_count))
+
+
+class UpdateRegistrationSchemas(Operation):
+    """Custom migration operation to update registration schemas
+    """
+    reversible = True
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        ensure_schemas(to_state.apps)
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        pass
+
+    def describe(self):
+        return 'Updated registration schemas'
 
 
 class AddWaffleFlags(Operation):
@@ -218,3 +235,31 @@ class DeleteWaffleFlags(Operation):
 
     def describe(self):
         return 'Removes waffle flags: {}'.format(', '.join(self.flag_names))
+
+
+class AddWaffleSwitch(Operation):
+    """Custom migration operation to add a waffle switch
+
+    Params:
+    - name: string, the name of the switch to create
+    - active: boolean (default False), whether the switch should be active
+    """
+    reversible = True
+
+    def __init__(self, name, active=False):
+        self.name = name
+        self.active = active
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        Switch = to_state.apps.get_model('waffle', 'switch')
+        Switch.objects.get_or_create(name=self.name, active=self.active)
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        Switch = to_state.apps.get_model('waffle', 'switch')
+        Switch.objects.filter(name=self.name).delete()
+
+    def describe(self):
+        return 'Adds waffle switch: {}'.format(self.name)

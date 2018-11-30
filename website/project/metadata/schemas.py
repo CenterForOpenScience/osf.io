@@ -13,7 +13,6 @@ def ensure_schema_structure(schema):
     schema['pages'] = schema.get('pages', [])
     schema['title'] = schema['name']
     schema['version'] = schema.get('version', 1)
-    schema['active'] = schema.get('active', True)
     return schema
 
 here = os.path.split(os.path.abspath(__file__))[0]
