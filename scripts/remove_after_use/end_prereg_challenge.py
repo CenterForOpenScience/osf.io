@@ -19,10 +19,13 @@ logging.basicConfig(level=logging.INFO)
 def main(dry_run=True):
 
     switch = Switch.objects.get(name='osf_preregistration')
+    logger.info('Setting {} switch to active'.format(switch.name))
     switch.active = True
     prereg_challenge_schema = RegistrationSchema.objects.get(name='Prereg Challenge')
+    logger.info('Setting {} schema to inactive'.format(prereg_challenge_schema.name))
     prereg_challenge_schema.active = False
     prereg_schema = RegistrationSchema.objects.get(name='OSF Preregistration')
+    logger.info('Setting {} schema to active'.format(prereg_schema.name))
     prereg_schema.active = True
     if dry_run:
         logger.warn('This is a dry run')
