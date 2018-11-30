@@ -1048,8 +1048,8 @@ class TestPreprintBannerView(OsfTestCase):
         self.non_contrib = AuthUserFactory()
         self.provider_one = PreprintProviderFactory()
         self.project_one = ProjectFactory(creator=self.admin, is_public=True)
-        self.project_one.add_contributor(self.write_contrib, ['write', 'read'])
-        self.project_one.add_contributor(self.read_contrib, ['read'])
+        self.project_one.add_contributor(self.write_contrib, 'write')
+        self.project_one.add_contributor(self.read_contrib, 'read')
 
         self.subject_one = SubjectFactory()
         self.preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=self.project_one, is_published=True)
@@ -1250,7 +1250,7 @@ class TestPreprintBannerView(OsfTestCase):
     def test_implicit_admins_can_see_project_status(self):
         project = ProjectFactory(creator=self.admin)
         component = NodeFactory(creator=self.admin, parent=project)
-        project.add_contributor(self.write_contrib, ['read', 'write', 'admin'])
+        project.add_contributor(self.write_contrib, 'admin')
         project.save()
 
         preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=component, is_published=True)
