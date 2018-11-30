@@ -301,6 +301,8 @@ ELASTICSEARCH_DSL = {
         'retry_on_timeout': True,
     },
 }
+# Store yearly indices for time-series metrics
+ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
 
 # Prereg challenge data is uploaded to this project TODO: Delete when Prereg challenge ends
 PREREG_DATA_STORE_TOKEN = None

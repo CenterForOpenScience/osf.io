@@ -956,7 +956,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
     def test_multiple_choice_questions_incorrect_choice(
             self, app, user, payload, url_draft_registrations):
         payload['data']['attributes']['registration_metadata']['q15'] = {
-            'value': 'This is my answer.'
+            'value': ['This is my answer.']
         }
         res = app.put_json_api(
             url_draft_registrations,
@@ -972,11 +972,11 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
     def test_multiple_choice_questions(
             self, app, user, payload, url_draft_registrations):
         payload['data']['attributes']['registration_metadata']['q15'] = {
-            'value': 'No blinding is involved in this study.'
+            'value': ['No blinding is involved in this study.']
         }
         res = app.put_json_api(
             url_draft_registrations,
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q15']['value'] == 'No blinding is involved in this study.'
+        assert res.json['data']['attributes']['registration_metadata']['q15']['value'] == ['No blinding is involved in this study.']
