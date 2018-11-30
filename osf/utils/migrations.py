@@ -175,7 +175,7 @@ class UpdateRegistrationSchemas(Operation):
         ensure_schemas(to_state.apps)
 
     def database_backwards(self, app_label, schema_editor, from_state, to_state):
-        pass
+        logger.info('Reversing UpdateRegistrationSchemas is a noop')
 
     def describe(self):
         return 'Updated registration schemas'
