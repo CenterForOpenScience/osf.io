@@ -33,7 +33,7 @@ var MESSAGES = {
         tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.',
     },
     preprintPrivateWarning: 'This project/component contains supplemental materials for a preprint.'  +
-        '<p><strong>Making this project private will prevent others from accessing it.</strong></p>'
+        '<p><strong>Making this project/component private will prevent others from accessing it.</strong></p>'
 
 };
 
@@ -157,11 +157,11 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     });
 
     self.message = ko.computed(function() {
-        if (self.page() === self.WARNING &&  self.parentIsEmbargoed) {
+        if (self.page() === self.WARNING && self.parentIsEmbargoed) {
             return MESSAGES.makeEmbargoPublicWarning;
         }
 
-        if (self.page() === self.WARNING &&  self.isSupplementalProject) {
+        if (self.page() === self.WARNING && self.isSupplementalProject && self.parentIsPublic) {
               return MESSAGES.preprintPrivateWarning + MESSAGES.makeSupplementalProjectPrivateWarning;
         }
 
