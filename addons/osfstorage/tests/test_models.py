@@ -16,6 +16,7 @@ from osf_tests.factories import ProjectFactory, UserFactory, RegionFactory, Node
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
+from addons.osfstorage.listeners import delete_files_task
 
 import datetime
 
@@ -266,12 +267,12 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         assert_is(OsfStorageFileNode.load(child._id), None)
 
-    def test_file_deleted_when_node_deleted(self):
+    @mock.patch('addons.osfstorage.listeners.enqueue_task')
+    def test_file_deleted_when_node_deleted(self, mock_enqueue):
         child = self.node_settings.get_root().append_file('Test')
         self.node.remove_node(auth=Auth(self.user))
 
-        assert OsfStorageFileNode.load(child._id) is None
-        assert models.TrashedFileNode.load(child._id) is not None
+        mock_enqueue.assert_called_with(delete_files_task.s(self.node._id))
 
     def test_materialized_path(self):
         child = self.node_settings.get_root().append_file('Test')

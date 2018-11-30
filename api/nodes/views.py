@@ -318,8 +318,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             AbstractNode.bulk_update_search(resource_object_list)
         for node in nodes:
             project_signals.node_deleted.send(node)
-            for osfstorage_file in node.files.all():
-                osfstorage_file.delete()
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
