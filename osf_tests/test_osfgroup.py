@@ -1,6 +1,5 @@
 import mock
 import pytest
-from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
 
 from framework.auth import Auth
@@ -11,7 +10,7 @@ from osf.utils.permissions import MANAGER, MEMBER
 from .factories import (
     NodeFactory,
     ProjectFactory,
-    UserFactory,
+    AuthUserFactory,
     OSFGroupFactory
 )
 
@@ -19,19 +18,19 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture()
 def manager():
-    return UserFactory()
+    return AuthUserFactory()
 
 @pytest.fixture()
 def member():
-    return UserFactory()
+    return AuthUserFactory()
 
 @pytest.fixture()
 def user_two():
-    return UserFactory()
+    return AuthUserFactory()
 
 @pytest.fixture()
 def user_three():
-    return UserFactory()
+    return AuthUserFactory()
 
 @pytest.fixture()
 def auth(manager):
@@ -59,7 +58,7 @@ class TestOSFGroup:
         assert manager in osf_group.members
         assert manager not in osf_group.members_only
 
-    @mock.patch('osf.models.osf_group.mails.send_mail')
+    @mock.patch('website.osf_groups.views.mails.send_mail')
     def test_make_manager(self, mock_send_mail, manager, member, user_two, user_three, osf_group):
         # no permissions
         with pytest.raises(PermissionsError):
@@ -84,7 +83,7 @@ class TestOSFGroup:
         # upgrading an existing member does not re-send an email
         assert mock_send_mail.call_count == 1
 
-    @mock.patch('osf.models.osf_group.mails.send_mail')
+    @mock.patch('website.osf_groups.views.mails.send_mail')
     def test_make_member(self, mock_send_mail, manager, member, user_two, user_three, osf_group):
         # no permissions
         with pytest.raises(PermissionsError):
@@ -114,13 +113,14 @@ class TestOSFGroup:
         assert user_two in osf_group.members
         assert mock_send_mail.call_count == 1
 
-    def test_add_unregistered_member(self, manager, member, osf_group, user_two):
+    @mock.patch('website.osf_groups.views.mails.send_mail')
+    def test_add_unregistered_member(self, mock_send_mail, manager, member, osf_group, user_two):
         test_fullname = 'Test User'
         test_email = 'test_member@cos.io'
         test_manager_email = 'test_manager@cos.io'
 
         # Email already exists
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             osf_group.add_unregistered_member(test_fullname, user_two.username, auth=Auth(manager))
 
         # Test need manager perms to add
@@ -129,6 +129,7 @@ class TestOSFGroup:
 
         # Add member
         osf_group.add_unregistered_member(test_fullname, test_email, auth=Auth(manager))
+        assert mock_send_mail.call_count == 1
         unreg_user = OSFUser.objects.get(username=test_email)
         assert unreg_user in osf_group.members
         assert unreg_user not in osf_group.managers
@@ -137,11 +138,12 @@ class TestOSFGroup:
         assert osf_group._id in unreg_user.unclaimed_records
 
         # Attempt to add unreg user as a member
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             osf_group.add_unregistered_member(test_fullname, test_email, auth=Auth(manager))
 
         # Add unregistered manager
         osf_group.add_unregistered_member(test_fullname, test_manager_email, auth=Auth(manager), role='manager')
+        assert mock_send_mail.call_count == 2
         unreg_manager = OSFUser.objects.get(username=test_manager_email)
         assert unreg_manager in osf_group.members
         assert unreg_manager in osf_group.managers
@@ -150,7 +152,7 @@ class TestOSFGroup:
         assert osf_group._id in unreg_manager.unclaimed_records
 
     def test_remove_member(self, manager, member, user_three, osf_group):
-        new_member = UserFactory()
+        new_member = AuthUserFactory()
         osf_group.make_member(new_member)
         assert new_member not in osf_group.managers
         assert new_member in osf_group.members
@@ -179,7 +181,7 @@ class TestOSFGroup:
         assert member not in osf_group.members
 
     def test_remove_manager(self, manager, member, user_three, osf_group):
-        new_manager = UserFactory()
+        new_manager = AuthUserFactory()
         osf_group.make_manager(new_manager)
         # no permissions
         with pytest.raises(PermissionsError):
@@ -344,6 +346,24 @@ class TestOSFGroup:
             project.update_osf_group(osf_group, 'admin', auth=Auth(user_three))
         assert project.has_permission(member, 'admin') is False
 
+    def test_replace_contributor(self, manager, member, osf_group):
+        user = osf_group.add_unregistered_member('test_user', 'test@cos.io', auth=Auth(manager))
+        assert user in osf_group.members
+        assert user not in osf_group.managers
+        assert (
+            osf_group._id in
+            user.unclaimed_records.keys()
+        )
+        osf_group.replace_contributor(user, member)
+        assert user not in osf_group.members
+        assert user not in osf_group.managers
+
+        # test unclaimed_records is removed
+        assert (
+            osf_group._id not in
+            user.unclaimed_records.keys()
+        )
+
     def test_remove_osf_group_from_node(self, manager, member, user_two, osf_group, project):
         # noncontributor
         with pytest.raises(PermissionsError):
@@ -369,7 +389,7 @@ class TestOSFGroup:
         assert project.has_permission(member, 'read') is False
 
         # Manager who is not an admin can remove the group
-        user_three = UserFactory()
+        user_three = AuthUserFactory()
         osf_group.make_manager(user_three)
         project.add_osf_group(osf_group, 'write')
         assert project.has_permission(user_three, 'admin') is False
@@ -568,13 +588,13 @@ class TestOSFGroup:
     @pytest.mark.enable_quickfiles_creation
     def test_merge_users_transfers_group_membership(self, member, manager, osf_group):
         # merge member
-        other_user = UserFactory()
+        other_user = AuthUserFactory()
         other_user.merge_user(member)
         other_user.save()
         assert osf_group.is_member(other_user)
 
         # merge manager
-        other_other_user = UserFactory()
+        other_other_user = AuthUserFactory()
         other_other_user.merge_user(manager)
         other_other_user.save()
         assert osf_group.is_member(other_other_user)

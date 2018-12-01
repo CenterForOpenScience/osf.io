@@ -444,3 +444,8 @@ GROUP_MEMBER_ADDED = Mail(
     'group_member_added',
     subject='You have been added as a ${permission} of the group ${group_name}',
 )
+
+GROUP_MEMBER_UNREGISTERED_ADDED = Mail(
+    'group_member_unregistered_added',
+    subject='You have been added as a ${permission} of the group ${group_name}',
+)

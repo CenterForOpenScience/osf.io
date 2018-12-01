@@ -1,6 +1,5 @@
 from django.apps import apps
 from django.db import models
-from django.core.exceptions import ValidationError
 from guardian.shortcuts import assign_perm, remove_perm, get_perms, get_objects_for_group
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.exceptions import PermissionsError
@@ -11,7 +10,7 @@ from osf.models.mixins import GuardianMixin
 from osf.models import AbstractNode, OSFUser
 from osf.utils.permissions import ADMIN, MANAGER, MEMBER, MANAGE
 from osf.utils import sanitize
-from website import settings, mails
+from website.osf_groups import signals as group_signals
 from website.util import api_v2_url
 
 # TODO Add logging for OSFGroup actions
@@ -38,6 +37,10 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         'manager': ('manage_group',),
     }
     group_format = 'osfgroup_{self.id}_{group}'
+
+    @property
+    def _primary_key(self):
+        return self._id
 
     def __unicode__(self):
         return 'OSFGroup_{}_{}'.format(self.id, self.name)
@@ -86,6 +89,11 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    @property
+    def url(self):
+        # TODO - front end hasn't been set up
+        return '/{}/'.format(self._primary_key)
+
     def is_member(self, user):
         # Checking group membership instead of permissions, because unregistered
         # members have no perms
@@ -116,24 +124,7 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         return permissions
 
     def send_member_email(self, user, permission, auth=None):
-        # TODO - add a throttle?
-
-        if not user.is_registered:
-            # TODO - do something here for unregistered contribs added to a group?
-            return
-
-        mimetype = 'html'
-        email_template = mails.GROUP_MEMBER_ADDED
-        mails.send_mail(
-            to_addr=user.username,
-            mail=email_template,
-            mimetype=mimetype,
-            user=user,
-            group_name=self.name,
-            permission=permission,
-            referrer_name=auth.user.fullname if auth else '',
-            osf_contact_email=settings.OSF_CONTACT_EMAIL,
-        )
+        group_signals.member_added.send(self, user=user, permission=permission, auth=auth)
 
     def belongs_to_osfgroup(self, user):
         return user in self.members
@@ -183,19 +174,38 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         user = get_user(email=email)
         if user:
             if user.is_registered or self.is_member(user):
-                raise ValidationError('User already exists.')
+                raise ValueError('User already exists.')
         else:
             user = OSFUser.create_unregistered(fullname=fullname, email=email)
 
         user.add_unclaimed_record(self, referrer=auth.user, given_name=fullname, email=email)
         user.save()
-
         if role == MANAGER:
             self.make_manager(user, auth=auth)
         else:
             self.make_member(user, auth=auth)
 
         return user
+
+    def replace_contributor(self, old, new):
+        """
+        Replacing unregistered member with a verified user
+
+        Using "replace_contributor" language to mimic Node model
+        """
+        if not self.is_member(old):
+            return False
+
+        # Remove unclaimed record for the group
+        if self._id in old.unclaimed_records:
+            del old.unclaimed_records[self._id]
+            old.save()
+
+        for group_name in self.groups.keys():
+            if self.get_group(group_name).user_set.filter(id=old.id).exists():
+                self.get_group(group_name).user_set.remove(old)
+                self.get_group(group_name).user_set.add(new)
+        return True
 
     def remove_member(self, user, auth=None):
         """Remove member

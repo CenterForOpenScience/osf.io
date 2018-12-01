@@ -155,7 +155,7 @@ class OSFGroupMemberCreateSerializer(OSFGroupMemberSerializer):
                 self.get_member_method(group, role)(user, auth)
             else:
                 if not full_name or not email:
-                    raise exceptions.ValidationError(detail='You must provide a fullname/email combination to add an unconfirmed member.')
+                    raise exceptions.ValidationError(detail='You must provide a full_name/email combination to add an unconfirmed member.')
                 else:
                     user = group.add_unregistered_member(full_name, email, auth, role)
         except ValueError as e:

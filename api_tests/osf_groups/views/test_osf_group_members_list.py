@@ -189,6 +189,11 @@ class TestOSFGroupMembersCreate:
         assert user in osf_group.members_only
         assert user not in osf_group.managers
 
+        # test unregistered user is already a member
+        res = app.post_json_api(url, payload, auth=manager.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'User already exists.'
+
     def test_create_member_perms(self, app, manager, member, osf_group, user3, url):
         payload = make_create_payload(MEMBER, user3)
         # Unauthenticated
@@ -227,13 +232,13 @@ class TestOSFGroupMembersCreate:
         unregistered_payload = make_create_payload(MEMBER, user=None, full_name=None, email='eight@cos.io')
         res = app.post_json_api(url, unregistered_payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You must provide a fullname/email combination to add an unconfirmed member.'
+        assert res.json['errors'][0]['detail'] == 'You must provide a full_name/email combination to add an unconfirmed member.'
 
         # email not included
         unregistered_payload = make_create_payload(MEMBER, user=None, full_name='Crazy 8s', email=None)
         res = app.post_json_api(url, unregistered_payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You must provide a fullname/email combination to add an unconfirmed member.'
+        assert res.json['errors'][0]['detail'] == 'You must provide a full_name/email combination to add an unconfirmed member.'
 
         # user is already a member
         existing_member_payload = make_create_payload(MEMBER, user=member)
@@ -374,7 +379,7 @@ class TestOSFGroupMembersBulkCreate:
         unregistered_payload = make_bulk_create_payload(MEMBER, user=None, full_name=None, email='eight@cos.io')
         res = app.post_json_api(url, {'data': [payload_user, unregistered_payload]}, auth=manager.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You must provide a fullname/email combination to add an unconfirmed member.'
+        assert res.json['errors'][0]['detail'] == 'You must provide a full_name/email combination to add an unconfirmed member.'
         assert osf_group.is_member(user) is False
         assert osf_group.is_manager(user) is False
 
@@ -382,7 +387,7 @@ class TestOSFGroupMembersBulkCreate:
         unregistered_payload = make_bulk_create_payload(MEMBER, user=None, full_name='Crazy 8s', email=None)
         res = app.post_json_api(url, {'data': [payload_user, unregistered_payload]}, auth=manager.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You must provide a fullname/email combination to add an unconfirmed member.'
+        assert res.json['errors'][0]['detail'] == 'You must provide a full_name/email combination to add an unconfirmed member.'
         assert osf_group.is_member(user) is False
         assert osf_group.is_manager(user) is False
 
