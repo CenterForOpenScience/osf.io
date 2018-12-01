@@ -79,16 +79,16 @@ class NodesFilterMixin(ListFilterMixin):
 class UserNodesFilterMixin(NodesFilterMixin):
     def build_query_from_field(self, field_name, operation):
         if field_name == 'current_user_permissions':
-            if not operation['value'] in API_CONTRIBUTOR_PERMISSIONS:
+            if operation['value'] not in API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
             perm = operation['value']
             user = self.get_user()
             if perm == READ:
-                query = Q(id__in=get_objects_for_user(user, 'read_node', AbstractNode))
+                query = Q(id__in=get_objects_for_user(user, 'read_node', AbstractNode, with_superuser=False).values_list('id', flat=True))
             elif perm == WRITE:
-                query = Q(id__in=get_objects_for_user(user, 'write_node', AbstractNode))
+                query = Q(id__in=get_objects_for_user(user, 'write_node', AbstractNode, with_superuser=False).values_list('id', flat=True))
             elif perm == ADMIN:
-                query = Q(id__in=get_objects_for_user(user, 'admin_node', AbstractNode))
+                query = Q(id__in=get_objects_for_user(user, 'admin_node', AbstractNode, with_superuser=False).values_list('id', flat=True))
             else:
                 raise InvalidFilterValue(value=operation['value'])
             return query

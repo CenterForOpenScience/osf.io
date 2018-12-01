@@ -113,6 +113,16 @@ class TestPreprintProperties:
         preprint.deleted = None
         assert preprint.verified_publishable is True
 
+    def test_is_deleted(self, preprint):
+        assert preprint.deleted is None
+        assert preprint.is_deleted is False
+
+        preprint.deleted = timezone.now()
+        preprint.save()
+
+        assert preprint.deleted is not None
+        assert preprint.is_deleted is True
+
     def test_is_preprint_orphan(self, preprint):
         assert preprint.is_preprint_orphan is False
         preprint.primary_file = None

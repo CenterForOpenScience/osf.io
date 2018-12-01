@@ -11,7 +11,7 @@
                   <% from osf.models import Guid %>
                 ${Guid.objects.get(_id=key).referent.title}
                 %if parent :
-                    <small style="font-size: 14px;color: #999;"> in ${AbstractNode.load(parent).title}</small>
+                  <small style="font-size: 14px;color: #999;"> in ${Guid.objects.get(_id=parent).referent.title}</small>
                 %endif
                 </h3>
             </th>
