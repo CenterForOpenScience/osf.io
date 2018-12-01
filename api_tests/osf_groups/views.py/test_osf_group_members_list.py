@@ -177,13 +177,13 @@ class TestOSFGroupMembersCreate:
         unregistered_payload = make_create_payload(MEMBER, user=None, full_name=None, email='eight@cos.io')
         res = app.post_json_api(url, unregistered_payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You must provide a fullname/email combination to add an unconfirmed member.'
+        assert res.json['errors'][0]['detail'] == 'You must provide a full_name/email combination to add an unconfirmed member.'
 
         # email not included
         unregistered_payload = make_create_payload(MEMBER, user=None, full_name='Crazy 8s', email=None)
         res = app.post_json_api(url, unregistered_payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You must provide a fullname/email combination to add an unconfirmed member.'
+        assert res.json['errors'][0]['detail'] == 'You must provide a full_name/email combination to add an unconfirmed member.'
 
         # user is already a member
         existing_member_payload = make_create_payload(MEMBER, user=member)
