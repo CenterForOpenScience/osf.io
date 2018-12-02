@@ -665,7 +665,7 @@ def check_external_auth(user):
 
 @block_bing_preview
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(preprints_valid=True)
 def claim_user_registered(auth, node, **kwargs):
     """
     View that prompts user to enter their password in order to claim being a contributor on a project.

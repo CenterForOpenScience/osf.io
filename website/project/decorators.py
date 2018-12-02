@@ -84,6 +84,8 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             if preprints_valid and Preprint.load(kwargs.get('pid')):
+                _inject_nodes(kwargs)
+
                 return func(*args, **kwargs)
 
             _inject_nodes(kwargs)
