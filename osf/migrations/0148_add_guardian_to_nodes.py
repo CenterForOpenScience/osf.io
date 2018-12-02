@@ -6,7 +6,6 @@ import logging
 from django.db import migrations, connection
 from django.core.management.sql import emit_post_migrate_signal
 from bulk_update.helper import bulk_update
-from django.contrib.auth.models import Group
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +13,7 @@ def reverse_func(apps, schema_editor):
     # Reverse data migration - written in Django for now, can rewrite in SQL if necessary
     AbstractNode = apps.get_model('osf.AbstractNode')
     Contributor = apps.get_model('osf.Contributor')
+    Group = apps.get_model('auth.Group')
 
     contributors = []
 
