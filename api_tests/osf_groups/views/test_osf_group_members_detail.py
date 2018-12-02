@@ -70,6 +70,7 @@ class TestOSFGroupMembersDetail:
         assert data['type'] == 'group_members'
         assert data['attributes']['role'] == MEMBER
         assert data['attributes']['unregistered_member'] is None
+        assert data['attributes']['full_name'] == member.fullname
         assert member._id in data['relationships']['users']['links']['related']['href']
 
         user = osf_group.add_unregistered_member('Crazy 8s', 'eight@cos.io', Auth(manager), MANAGER)
@@ -80,6 +81,7 @@ class TestOSFGroupMembersDetail:
         assert data['type'] == 'group_members'
         assert data['attributes']['role'] == MANAGER
         assert data['attributes']['unregistered_member'] == 'Crazy 8s'
+        assert data['attributes']['full_name'] == 'Crazy 8s'
         assert res.json['data']['attributes']['full_name'] == 'Crazy 8s'
 
 

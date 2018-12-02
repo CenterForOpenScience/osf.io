@@ -159,6 +159,8 @@ class TestOSFGroupMembersCreate:
         assert res.status_code == 201
         data = res.json['data']
         assert data['attributes']['role'] == MANAGER
+        assert data['attributes']['full_name'] == user3.fullname
+        assert data['attributes']['unregistered_member'] is None
         assert data['id'] == '{}-{}'.format(osf_group._id, user3._id)
         assert user3._id in data['relationships']['users']['links']['related']['href']
         assert osf_group.has_permission(user3, MANAGE) is True
@@ -169,13 +171,17 @@ class TestOSFGroupMembersCreate:
         assert res.status_code == 201
         data = res.json['data']
         assert data['attributes']['role'] == MEMBER
+        assert data['attributes']['full_name'] == user3.fullname
+        assert data['attributes']['unregistered_member'] is None
+        assert data['id'] == '{}-{}'.format(osf_group._id, user3._id)
         assert data['id'] == '{}-{}'.format(osf_group._id, user3._id)
         assert user3._id in data['relationships']['users']['links']['related']['href']
         assert osf_group.has_permission(user3, MANAGE) is False
         assert osf_group.has_permission(user3, MEMBER) is True
 
     def test_add_unregistered_member(self, app, manager, osf_group, url):
-        payload = make_create_payload(MEMBER, user=None, full_name='Crazy 8s', email='eight@cos.io')
+        full_name = 'Crazy 8s'
+        payload = make_create_payload(MEMBER, user=None, full_name=full_name, email='eight@cos.io')
         res = app.post_json_api(url, payload, auth=manager.auth)
         assert res.status_code == 201
         data = res.json['data']
@@ -184,7 +190,8 @@ class TestOSFGroupMembersCreate:
         assert user._id in data['relationships']['users']['links']['related']['href']
         assert osf_group.has_permission(user, MANAGE) is False
         # unregistered members have no perms until account is claimed
-        assert data['attributes']['unregistered_member'] == 'Crazy 8s'
+        assert data['attributes']['full_name'] == full_name
+        assert data['attributes']['unregistered_member'] == full_name
         assert osf_group.has_permission(user, MEMBER) is False
         assert user in osf_group.members_only
         assert user not in osf_group.managers

@@ -130,6 +130,14 @@ class OSFGroupMemberCreateSerializer(OSFGroupMemberSerializer):
     full_name = ser.CharField(required=False)
     email = ser.EmailField(required=False, write_only=True)
 
+    def to_representation(self, instance, envelope='data'):
+        """
+        Use OSFGroupMemberSerializer for the response, but OSFGroupMemberCreateSerializer
+        for the request.  We only want full_name to be writable on create member (for unregistered members).
+        User serializer endpoints should be used to edit user's full_name.
+        """
+        return OSFGroupMemberSerializer(instance=instance, context=self.context).data
+
     def get_user_object(self, user_id, group):
         if user_id:
             user = OSFUser.load(user_id)
