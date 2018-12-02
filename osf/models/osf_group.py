@@ -208,28 +208,17 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
         return True
 
     def remove_member(self, user, auth=None):
-        """Remove member
+        """Remove member or manager
 
-        :param user: OSFUser object, member to remove
+        :param user: OSFUser object, member/manager to remove
         :param auth: Auth object
         """
         if not (auth and user == auth.user):
             self._require_manager_permission(auth)
 
-        if user in self.managers:
-            raise ValueError('Cannot remove manager using this method.')
-        self.member_group.user_set.remove(user)
-
-    def remove_manager(self, user, auth=None):
-        """Remove manager
-
-        :param user: OSFUser object, manager to remove
-        :param auth: Auth object
-        """
-        self._require_manager_permission(auth)
         self._enforce_one_manager(user)
         self.manager_group.user_set.remove(user)
-        self.remove_member(user)
+        self.member_group.user_set.remove(user)
 
     def set_group_name(self, name, auth=None):
         """Set the name of the group.

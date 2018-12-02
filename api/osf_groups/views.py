@@ -23,7 +23,7 @@ from api.osf_groups.serializers import (
 from api.users.views import UserMixin
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import OSFGroup, OSFUser
-from osf.utils.permissions import MANAGER, MEMBER, GROUP_MEMBER_PERMISSIONS
+from osf.utils.permissions import MANAGER, GROUP_MEMBER_PERMISSIONS
 
 
 class OSFGroupMixin(object):
@@ -141,12 +141,8 @@ class OSFGroupMemberBaseView(JSONAPIBaseView, OSFGroupMixin):
     def perform_destroy(self, instance):
         group = self.get_osf_group()
         auth = get_user_auth(self.request)
-        methods = {
-            MANAGER: group.remove_manager,
-            MEMBER: group.remove_member,
-        }
         try:
-            methods[instance.group_role(group)](instance, auth)
+            group.remove_member(instance, auth)
         except ValueError as e:
             raise exceptions.ValidationError(detail=e)
 

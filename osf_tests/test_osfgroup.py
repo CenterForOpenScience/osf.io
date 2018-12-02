@@ -170,11 +170,6 @@ class TestOSFGroup:
         assert new_member not in osf_group.managers
         assert new_member not in osf_group.members
 
-        # Attempt to remove manager using this method
-        osf_group.make_manager(user_three)
-        with pytest.raises(ValueError):
-            osf_group.remove_member(user_three)
-
         # Remove self - member can remove themselves
         osf_group.remove_member(member, Auth(member))
         assert member not in osf_group.managers
@@ -185,20 +180,20 @@ class TestOSFGroup:
         osf_group.make_manager(new_manager)
         # no permissions
         with pytest.raises(PermissionsError):
-            osf_group.remove_manager(new_manager, Auth(user_three))
+            osf_group.remove_member(new_manager, Auth(user_three))
 
         # member only
         with pytest.raises(PermissionsError):
-            osf_group.remove_manager(new_manager, Auth(member))
+            osf_group.remove_member(new_manager, Auth(member))
 
         # manage permissions
-        osf_group.remove_manager(new_manager, Auth(manager))
+        osf_group.remove_member(new_manager, Auth(manager))
         assert new_manager not in osf_group.managers
         assert new_manager not in osf_group.members
 
         # can't remove last manager
         with pytest.raises(ValueError):
-            osf_group.remove_manager(manager, Auth(manager))
+            osf_group.remove_member(manager, Auth(manager))
         assert manager in osf_group.managers
         assert manager in osf_group.members
 
