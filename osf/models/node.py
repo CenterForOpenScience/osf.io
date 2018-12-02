@@ -137,12 +137,12 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
 
         if user is not None and not isinstance(user, AnonymousUser):
-            read_user_query = get_objects_for_user(user, 'read_node', self)
+            read_user_query = get_objects_for_user(user, 'read_node', self, with_superuser=False)
             qs |= read_user_query
             qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
-                        SELECT DISTINCT N.id as node_id
+                        SELECT N.id as node_id
                         FROM osf_abstractnode as N, auth_permission as P, osf_nodegroupobjectpermission as G, osf_osfuser_groups as UG
                         WHERE P.codename = 'admin_node'
                         AND G.permission_id = P.id
