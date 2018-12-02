@@ -12,7 +12,7 @@ from api.base.utils import get_object_or_error, get_user_auth, is_bulk_request
 from api.base.views import JSONAPIBaseView
 from api.base import generic_bulk_views as bulk_views
 from api.base.parsers import JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON
-from api.osf_groups.permissions import IsGroupManager
+from api.osf_groups.permissions import IsGroupManager, GroupMemberManagement
 from api.osf_groups.serializers import (
     OSFGroupSerializer,
     OSFGroupDetailSerializer,
@@ -205,6 +205,11 @@ class OSFGroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIVi
 
 
 class OSFGroupMemberDetail(OSFGroupMemberBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        GroupMemberManagement,
+    )
     view_name = 'group-member-detail'
 
     def get_object(self):

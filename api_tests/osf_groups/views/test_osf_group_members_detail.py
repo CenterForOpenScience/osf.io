@@ -193,7 +193,9 @@ class TestOSFGroupMembersDelete:
         assert res.status_code == 403
 
         # test member
-        res = app.delete_json_api(url, auth=member.auth, expect_errors=True)
+        osf_group.make_member(user)
+        user_url = '/{}osf_groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id)
+        res = app.delete_json_api(user_url, auth=member.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test manager
@@ -214,6 +216,14 @@ class TestOSFGroupMembersDelete:
         assert res.status_code == 204
         assert osf_group.is_member(user) is False
         assert osf_group.is_manager(user) is False
+
+    def test_delete_yourself(self, app, member, manager, user, osf_group, url):
+        assert osf_group.is_member(member) is True
+        assert osf_group.is_manager(member) is False
+        res = app.delete_json_api(url, auth=member.auth, expect_errors=True)
+        assert res.status_code == 204
+        assert osf_group.is_member(member) is False
+        assert osf_group.is_manager(member) is False
 
     def test_delete_errors(self, app, member, manager, user, osf_group, url, bad_url):
         # test invalid user
