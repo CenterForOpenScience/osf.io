@@ -705,6 +705,37 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         # unclaimed record for the project has been deleted
         assert_not_in(self.project, self.user.unclaimed_records)
 
+    def test_claim_user_registered_preprint_with_correct_password(self):
+        preprint = PreprintFactory(creator=self.referrer)
+        name, email = fake.name(), fake_email()
+        unreg_user = preprint.add_unregistered_contributor(
+            fullname=name,
+            email=email,
+            auth=Auth(user=self.referrer)
+        )
+        reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'queenfan86'
+        url = unreg_user.get_claim_url(preprint._id)
+        # Follow to password re-enter page
+        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
+        form = res.forms['claimContributorForm']
+        form['password'] = 'queenfan86'
+        res = form.submit(auth=reg_user.auth)
+
+        preprint.reload()
+        unreg_user.reload()
+        # user is now a contributor to the project
+        assert_in(reg_user, preprint.contributors)
+
+        # the unregistered user (unreg_user) is removed as a contributor, and their
+        assert_not_in(unreg_user, preprint.contributors)
+
+        # unclaimed record for the project has been deleted
+        assert_not_in(preprint, unreg_user.unclaimed_records)
+
 
 @pytest.mark.enable_implicit_clean
 class TestExplorePublicActivity(OsfTestCase):
