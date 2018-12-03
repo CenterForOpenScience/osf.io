@@ -495,7 +495,7 @@ class TestOSFGroupMembersBulkUpdate:
         payload['id'] = 'abcde'
         res = app.patch_json_api(url, {'data': [payload]}, auth=manager.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Member identifier incorrectly formatted'
+        assert res.json['errors'][0]['detail'] == 'Member identifier incorrectly formatted.'
 
         # test improper type
         payload = build_bulk_update_payload(osf_group._id, member._id, MANAGER)

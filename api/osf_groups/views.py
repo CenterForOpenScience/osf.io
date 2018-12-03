@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.db.models import Q
 
-from rest_framework import generics, permissions as drf_permissions, exceptions
+from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError
 from guardian.shortcuts import get_perms
 
@@ -144,7 +144,7 @@ class OSFGroupMemberBaseView(JSONAPIBaseView, OSFGroupMixin):
         try:
             group.remove_member(instance, auth)
         except ValueError as e:
-            raise exceptions.ValidationError(detail=e)
+            raise ValidationError(detail=str(e.message))
 
 
 class GroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
@@ -161,7 +161,7 @@ class GroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView,
                 except AttributeError:
                     raise ValidationError('Member identifier not provided.')
                 except IndexError:
-                    raise ValidationError('Member identifier incorrectly formatted')
+                    raise ValidationError('Member identifier incorrectly formatted.')
             queryset = queryset.filter(guids___id__in=user_ids)
         return queryset
 

@@ -157,8 +157,6 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
         role = self.get_group_role(validated_data, MEMBER)
 
         try:
-            # Making someone a member has the potential to violate the one-manager rule
-            # (This either adds a new user as a member or downgrades a manager to a member)
             if user:
                 self.get_member_method(group, role)(user, auth)
             else:
@@ -167,7 +165,8 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
                 else:
                     user = group.add_unregistered_member(full_name, email, auth, role)
         except ValueError as e:
-            raise exceptions.ValidationError(detail=e)
+            # Making someone a member has the potential to violate the one-manager rule
+            raise exceptions.ValidationError(detail=str(e.message))
 
         return user
 
@@ -187,6 +186,6 @@ class GroupMemberDetailSerializer(GroupMemberSerializer):
             # Making sure the one-manager rule isn't violated
             self.get_member_method(self.context['group'], role)(user, auth)
         except ValueError as e:
-            raise exceptions.ValidationError(detail=e)
+            raise exceptions.ValidationError(detail=str(e.message))
 
         return user
