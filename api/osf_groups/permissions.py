@@ -26,12 +26,12 @@ class GroupMemberManagement(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if not isinstance(obj, OSFGroup):
             obj = OSFGroup.load(request.parser_context['kwargs']['group_id'])
-        user = OSFUser.load(request.parser_context['kwargs']['user_id'])
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return True
         elif request.method == 'DELETE':
+            user = OSFUser.load(request.parser_context['kwargs']['user_id'])
             return obj.has_permission(auth.user, MANAGE) or auth.user == user
         else:
             return auth.user and obj.has_permission(auth.user, MANAGE)

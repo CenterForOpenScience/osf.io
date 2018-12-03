@@ -1205,6 +1205,14 @@ class NodeGroupsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Lis
         else:
             return NodeGroupsSerializer
 
+    def get_serializer_context(self):
+        """
+        Extra context for NodeGroupsSerializer
+        """
+        context = super(NodeGroupsList, self).get_serializer_context()
+        context['node'] = self.get_node()
+        return context
+
 
 class NodeGroupsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, OSFGroupMixin):
     """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_groups_read)
@@ -1237,6 +1245,14 @@ class NodeGroupsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, N
             node.remove_osf_group(instance, auth)
         except PermissionsError:
             raise PermissionDenied('Not authorized to remove this group.')
+
+    def get_serializer_context(self):
+        """
+        Extra context for NodeGroupsSerializer
+        """
+        context = super(NodeGroupsDetail, self).get_serializer_context()
+        context['node'] = self.get_node()
+        return context
 
 
 class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin, AddonSettingsMixin):

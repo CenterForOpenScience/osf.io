@@ -1757,7 +1757,7 @@ class NodeGroupsSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        node = self.context['view'].get_node()
+        node = self.context['node']
         return absolute_reverse(
             'nodes:node-group-detail', kwargs={
                 'group_id': obj._id,
@@ -1767,7 +1767,7 @@ class NodeGroupsSerializer(JSONAPISerializer):
         )
 
     def get_permission(self, obj):
-        node = self.context['view'].get_node()
+        node = self.context['node']
         permissions = self.context['view'].get_node_group_perms(obj, node)
         return osf_permissions.reduce_permissions(permissions)
 
@@ -1801,7 +1801,7 @@ class NodeGroupsCreateSerializer(NodeGroupsSerializer):
 
     def create(self, validated_data):
         auth = get_user_auth(self.context['request'])
-        node = self.context['view'].get_node()
+        node = self.context['node']
         permission = validated_data.get('permission', osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS)
         group = self.load_osf_group(validated_data.get('_id'))
         if group in node.osf_groups:
@@ -1827,7 +1827,7 @@ class NodeGroupsDetailSerializer(NodeGroupsSerializer):
 
     def update(self, obj, validated_data):
         auth = get_user_auth(self.context['request'])
-        node = self.context['view'].get_node()
+        node = self.context['node']
         permission = validated_data.get('permission')
         if not permission:
             return obj

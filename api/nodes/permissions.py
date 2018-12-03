@@ -151,7 +151,7 @@ class NodeGroupDetailPermissions(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         elif request.method == 'DELETE':
-            # If deleting, an OSF group from a node, you either need admin perms
+            # If deleting an OSF group from a node, you either need admin perms
             # or you need to be an OSF group manager
             return node.has_permission(auth.user, osf_permissions.ADMIN) or obj.has_permission(auth.user, 'manage')
         else:
