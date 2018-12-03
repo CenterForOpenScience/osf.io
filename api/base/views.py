@@ -572,7 +572,21 @@ class WaterButlerMixin(object):
 
             # mirrors BaseFileNode get_or_create
             try:
-                file_obj = base_class.objects.get(target_object_id=node.id, target_content_type=content_type, _path='/' + attrs['path'].lstrip('/'))
+                if attrs['kind'] == 'file':
+                    file_obj = base_class.objects.get(
+                        target_object_id=node.id,
+                        target_content_type=content_type,
+                        _path='/' + attrs['path'].lstrip('/'),
+                        created=attrs['created_utc'],
+                        modified=attrs['modified_utc'],
+                    )
+                else:
+                    file_obj = base_class.objects.get(
+                        target_object_id=node.id,
+                        target_content_type=content_type,
+                        _path='/' + attrs['path'].lstrip('/'),
+                    )
+
             except base_class.DoesNotExist:
                 # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
                 file_obj = base_class(target=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
