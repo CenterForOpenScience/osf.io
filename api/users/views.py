@@ -25,7 +25,7 @@ from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationSerializer
 from api.nodes.utils import NodeOptimizationMixin
-from api.osf_groups.serializers import OSFGroupSerializer
+from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 
@@ -334,7 +334,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         )
 
 
-class UserOSFGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
+class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -343,9 +343,9 @@ class UserOSFGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilter
     required_write_scopes = [CoreScopes.NULL]
 
     model_class = apps.get_model('osf.OSFGroup')
-    serializer_class = OSFGroupSerializer
+    serializer_class = GroupSerializer
     view_category = 'users'
-    view_name = 'user-osf-groups'
+    view_name = 'user-groups'
     ordering = ('-modified', )
 
     def get_default_queryset(self):

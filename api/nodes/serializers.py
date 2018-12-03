@@ -1746,8 +1746,8 @@ class NodeGroupsSerializer(JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
 
-    osf_groups = RelationshipField(
-        related_view='osf_groups:group-detail',
+    groups = RelationshipField(
+        related_view='groups:group-detail',
         related_view_kwargs={'group_id': '<_id>'},
         required=False,
     )
@@ -1784,19 +1784,19 @@ class NodeGroupsCreateSerializer(NodeGroupsSerializer):
     """
     id = IDField(source='_id', required=False, allow_null=True)
 
-    osf_groups = RelationshipField(
-        related_view='osf_groups:group-detail',
+    groups = RelationshipField(
+        related_view='groups:group-detail',
         related_view_kwargs={'group_id': '<_id>'},
         required=False,
     )
 
     def load_osf_group(self, _id):
         if not _id:
-            raise exceptions.ValidationError(detail='OSFGroup relationship must be specified.')
+            raise exceptions.ValidationError(detail='Group relationship must be specified.')
         try:
             osf_group = OSFGroup.objects.get(_id=_id)
         except OSFGroup.DoesNotExist:
-            raise exceptions.NotFound(detail='OSFGroup {} is invalid.'.format(_id))
+            raise exceptions.NotFound(detail='Group {} is invalid.'.format(_id))
         return osf_group
 
     def create(self, validated_data):
@@ -1806,7 +1806,7 @@ class NodeGroupsCreateSerializer(NodeGroupsSerializer):
         group = self.load_osf_group(validated_data.get('_id'))
         if group in node.osf_groups:
             raise exceptions.ValidationError(
-                'The OSF group {} has already been added to the node {}'.format(group._id, node._id),
+                'The group {} has already been added to the node {}'.format(group._id, node._id),
             )
 
         try:

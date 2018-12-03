@@ -39,12 +39,12 @@ def osf_group(manager, member, old_name):
 
 @pytest.fixture()
 def url(osf_group):
-    return '/{}osf_groups/{}/members/'.format(API_BASE, osf_group._id)
+    return '/{}groups/{}/members/'.format(API_BASE, osf_group._id)
 
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
-class TestOSFGroupMembersList:
+class TestGroupMembersList:
     def test_return_perms(self, app, member, manager, user, osf_group, url):
         # test unauthenticated
         res = app.get(url)
@@ -63,7 +63,7 @@ class TestOSFGroupMembersList:
         assert res.status_code == 200
 
         # test invalid group
-        url = '/{}osf_groups/{}/members/'.format(API_BASE, '12345_bad_id')
+        url = '/{}groups/{}/members/'.format(API_BASE, '12345_bad_id')
         res = app.get(url, auth=manager.auth, expect_errors=True)
         assert res.status_code == 404
 

@@ -103,8 +103,8 @@ class UserSerializer(JSONAPISerializer):
         related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
-    osf_groups = HideIfDisabled(RelationshipField(
-        related_view='users:user-osf-groups',
+    groups = HideIfDisabled(RelationshipField(
+        related_view='users:user-groups',
         related_view_kwargs={'user_id': '<_id>'},
     ))
 

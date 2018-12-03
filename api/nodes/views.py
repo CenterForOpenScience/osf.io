@@ -74,7 +74,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
-    OSFGroupDetailPermissions,
+    NodeGroupDetailPermissions,
     IsContributorOrGroupMember,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
@@ -1212,7 +1212,7 @@ class NodeGroupsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, N
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        OSFGroupDetailPermissions,
+        NodeGroupDetailPermissions,
         base_permissions.TokenHasScope,
     )
 
@@ -1227,7 +1227,7 @@ class NodeGroupsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, N
         node = self.get_node(check_object_permissions=False)
         group = self.get_osf_group(self.kwargs.get('group_id'))
         if not self.get_node_group_perms(group, node):
-            raise NotFound('OSF Group {} does not have permissions to node {}.'.format(group._id, node._id))
+            raise NotFound('Group {} does not have permissions to node {}.'.format(group._id, node._id))
         return group
 
     def perform_destroy(self, instance):

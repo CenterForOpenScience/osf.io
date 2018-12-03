@@ -182,9 +182,9 @@ class TestNodeGroupCreate:
                                 public_project, write_contrib, make_node_group_payload):
         attributes = {'permission': 'write'}
         relationships = {
-            'osf_groups': {
+            'groups': {
                 'data': {
-                    'type': 'osf_groups',
+                    'type': 'groups',
                     'id': osf_group._id,
                 }
             }
@@ -211,7 +211,7 @@ class TestNodeGroupCreate:
         res = app.post_json_api(public_url, relationship_only, auth=manager.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['permission'] == 'write'
-        assert osf_group._id in res.json['data']['relationships']['osf_groups']['links']['related']['href']
+        assert osf_group._id in res.json['data']['relationships']['groups']['links']['related']['href']
 
         public_project.remove_osf_group(osf_group)
 
@@ -219,19 +219,33 @@ class TestNodeGroupCreate:
         attributes_only = make_node_group_payload(attributes=attributes)
         res = app.post_json_api(public_url, attributes_only, auth=manager.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'OSFGroup relationship must be specified.'
+        assert res.json['errors'][0]['detail'] == 'Group relationship must be specified.'
+
+        # test_group_is_invalid
+        relationships = {
+            'groups': {
+                'data': {
+                    'type': 'groups',
+                    'id': '12345',
+                }
+            }
+        }
+        invalid_group = make_node_group_payload(attributes=attributes, relationships=relationships)
+        res = app.post_json_api(public_url, invalid_group, auth=manager.auth, expect_errors=True)
+        assert res.status_code == 404
+        assert res.json['errors'][0]['detail'] == 'Group {} is invalid.'.format('12345')
 
         # test_admin_perms
         res = app.post_json_api(public_url, payload, auth=manager.auth)
         assert public_project in osf_group.nodes
         assert public_project.has_permission(member, 'write')
         assert res.json['data']['attributes']['permission'] == 'write'
-        assert osf_group._id in res.json['data']['relationships']['osf_groups']['links']['related']['href']
+        assert osf_group._id in res.json['data']['relationships']['groups']['links']['related']['href']
 
         # test creating group a second time fails
         res = app.post_json_api(public_url, payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The OSF group {} has already been added to the node {}'.format(
+        assert res.json['errors'][0]['detail'] == 'The group {} has already been added to the node {}'.format(
             osf_group._id, public_project._id
         )
 
@@ -249,7 +263,7 @@ class TestNodeGroupCreate:
 
         # test not a real group
         payload['data']['type'] = 'node_groups'
-        payload['data']['relationships']['osf_groups']['data']['id'] = 'not_a_real_group_id'
+        payload['data']['relationships']['groups']['data']['id'] = 'not_a_real_group_id'
         res = app.post_json_api(public_url, payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -261,7 +275,7 @@ class TestNodeGroupDetail:
         # res for group not attached to node raised permissions error
         res = app.get(public_detail_url, expect_errors=True)
         assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == 'OSF Group {} does not have permissions to node {}.'.format(osf_group._id, public_project._id)
+        assert res.json['errors'][0]['detail'] == 'Group {} does not have permissions to node {}.'.format(osf_group._id, public_project._id)
 
         public_project.add_osf_group(osf_group, 'write')
 
@@ -275,8 +289,8 @@ class TestNodeGroupDetail:
 
         # test relationships
         relationships = res.json['data']['relationships']
-        assert relationships.keys() == ['osf_groups']
-        assert osf_group._id in relationships['osf_groups']['links']['related']['href']
+        assert relationships.keys() == ['groups']
+        assert osf_group._id in relationships['groups']['links']['related']['href']
 
         # get group that does not exist
         res = app.get(public_detail_url.replace(osf_group._id, 'hellonotarealroute'), expect_errors=True)

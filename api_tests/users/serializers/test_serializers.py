@@ -58,4 +58,4 @@ class TestUserSerializer:
         assert 'institutions' in relationships
         assert 'preprints' in relationships
         assert 'registrations' in relationships
-        assert 'osf_groups' in relationships
+        assert 'groups' in relationships

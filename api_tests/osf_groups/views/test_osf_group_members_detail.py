@@ -32,11 +32,11 @@ def osf_group(manager, member, old_name):
 
 @pytest.fixture()
 def url(osf_group, member):
-    return '/{}osf_groups/{}/members/{}/'.format(API_BASE, osf_group._id, member._id)
+    return '/{}groups/{}/members/{}/'.format(API_BASE, osf_group._id, member._id)
 
 @pytest.fixture()
 def bad_url(osf_group):
-    return '/{}osf_groups/{}/members/{}/'.format(API_BASE, osf_group._id, '12345')
+    return '/{}groups/{}/members/{}/'.format(API_BASE, osf_group._id, '12345')
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
@@ -74,7 +74,7 @@ class TestOSFGroupMembersDetail:
         assert member._id in data['relationships']['users']['links']['related']['href']
 
         user = osf_group.add_unregistered_member('Crazy 8s', 'eight@cos.io', Auth(manager), MANAGER)
-        res = app.get('/{}osf_groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id))
+        res = app.get('/{}groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id))
         assert res.status_code == 200
         data = res.json['data']
         assert data['id'] == '{}-{}'.format(osf_group._id, user._id)
@@ -162,14 +162,14 @@ class TestOSFGroupMembersUpdate:
 
         # test user is not a member
         payload = build_update_payload(osf_group._id, user._id, MEMBER)
-        bad_url = '/{}osf_groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id)
+        bad_url = '/{}groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id)
         res = app.patch_json_api(bad_url, payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == '{} cannot be found in this OSFGroup'.format(user._id)
 
         # test cannot downgrade remaining manager
         payload = build_update_payload(osf_group._id, manager._id, MEMBER)
-        manager_url = '/{}osf_groups/{}/members/{}/'.format(API_BASE, osf_group._id, manager._id)
+        manager_url = '/{}groups/{}/members/{}/'.format(API_BASE, osf_group._id, manager._id)
         res = app.patch_json_api(manager_url, payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Group must have at least one manager.'
@@ -196,7 +196,7 @@ class TestOSFGroupMembersDelete:
 
         # test member
         osf_group.make_member(user)
-        user_url = '/{}osf_groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id)
+        user_url = '/{}groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id)
         res = app.delete_json_api(user_url, auth=member.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -213,7 +213,7 @@ class TestOSFGroupMembersDelete:
         osf_group.make_manager(user)
         assert osf_group.is_member(user) is True
         assert osf_group.is_manager(user) is True
-        user_url = '/{}osf_groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id)
+        user_url = '/{}groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id)
         res = app.delete_json_api(user_url, auth=user.auth)
         assert res.status_code == 204
         assert osf_group.is_member(user) is False
@@ -233,13 +233,13 @@ class TestOSFGroupMembersDelete:
         assert res.status_code == 404
 
         # test user does not belong to group
-        bad_url = '/{}osf_groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id)
+        bad_url = '/{}groups/{}/members/{}/'.format(API_BASE, osf_group._id, user._id)
         res = app.delete_json_api(bad_url, auth=manager.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == '{} cannot be found in this OSFGroup'.format(user._id)
 
         # test user is last manager
-        manager_url = '/{}osf_groups/{}/members/{}/'.format(API_BASE, osf_group._id, manager._id)
+        manager_url = '/{}groups/{}/members/{}/'.format(API_BASE, osf_group._id, manager._id)
         res = app.delete_json_api(manager_url, auth=manager.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Group must have at least one manager.'

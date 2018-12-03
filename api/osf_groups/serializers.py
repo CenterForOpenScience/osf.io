@@ -16,7 +16,7 @@ from osf.models.osf_group import OSFGroup
 from osf.utils.permissions import GROUP_MEMBER_PERMISSIONS, MEMBER, MANAGER
 
 
-class OSFGroupSerializer(JSONAPISerializer):
+class GroupSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'name',
     ])
@@ -35,12 +35,12 @@ class OSFGroupSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     members = RelationshipField(
-        related_view='osf_groups:group-members',
+        related_view='groups:group-members',
         related_view_kwargs={'group_id': '<_id>'},
     )
 
     class Meta:
-        type_ = 'osf_groups'
+        type_ = 'groups'
 
     def create(self, validated_data):
         group = OSFGroup(creator=validated_data['creator'], name=validated_data['name'])
@@ -54,9 +54,9 @@ class OSFGroupSerializer(JSONAPISerializer):
         return instance
 
 
-class OSFGroupDetailSerializer(OSFGroupSerializer):
+class GroupDetailSerializer(GroupSerializer):
     """
-    Overrides OSFGroupSerializer to make id required.
+    Overrides GroupSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
 
@@ -66,7 +66,7 @@ class GroupCompoundIDField(CompoundIDField):
         return self.context['request'].parser_context['kwargs']['group_id']
 
 
-class OSFGroupMemberSerializer(JSONAPISerializer):
+class GroupMemberSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'role',
         'full_name',
@@ -115,7 +115,7 @@ class OSFGroupMemberSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'osf_groups:group-member-detail',
+            'groups:group-member-detail',
             kwargs={
                 'user_id': obj._id,
                 'group_id': self.context['request'].parser_context['kwargs']['group_id'],
@@ -124,7 +124,7 @@ class OSFGroupMemberSerializer(JSONAPISerializer):
         )
 
 
-class OSFGroupMemberCreateSerializer(OSFGroupMemberSerializer):
+class GroupMemberCreateSerializer(GroupMemberSerializer):
     id = GroupCompoundIDField(source='_id', required=False, allow_null=True)
     type = TypeField()
     full_name = ser.CharField(required=False)
@@ -132,11 +132,11 @@ class OSFGroupMemberCreateSerializer(OSFGroupMemberSerializer):
 
     def to_representation(self, instance, envelope='data'):
         """
-        Use OSFGroupMemberSerializer for the response, but OSFGroupMemberCreateSerializer
+        Use GroupMemberSerializer for the response, but GroupMemberCreateSerializer
         for the request.  We only want full_name to be writable on create member (for unregistered members).
         User serializer endpoints should be used to edit user's full_name.
         """
-        return OSFGroupMemberSerializer(instance=instance, context=self.context).data
+        return GroupMemberSerializer(instance=instance, context=self.context).data
 
     def get_user_object(self, user_id, group):
         if user_id:
@@ -175,7 +175,7 @@ class OSFGroupMemberCreateSerializer(OSFGroupMemberSerializer):
         type_ = 'group_members'
 
 
-class OSFGroupMemberDetailSerializer(OSFGroupMemberSerializer):
+class GroupMemberDetailSerializer(GroupMemberSerializer):
     id = GroupCompoundIDField(source='_id', required=True)
 
     def update(self, user, validated_data):

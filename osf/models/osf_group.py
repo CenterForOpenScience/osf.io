@@ -83,7 +83,7 @@ class OSFGroup(GuardianMixin, base.ObjectIDMixin, base.BaseModel):
 
     @property  # TODO Separate out for submodels
     def absolute_api_v2_url(self):
-        path = '/osf_groups/{}/'.format(self._id)
+        path = '/groups/{}/'.format(self._id)
         return api_v2_url(path)
 
     def get_absolute_url(self):

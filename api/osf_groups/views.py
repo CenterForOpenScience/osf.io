@@ -14,11 +14,11 @@ from api.base import generic_bulk_views as bulk_views
 from api.base.parsers import JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON
 from api.osf_groups.permissions import IsGroupManager, GroupMemberManagement
 from api.osf_groups.serializers import (
-    OSFGroupSerializer,
-    OSFGroupDetailSerializer,
-    OSFGroupMemberSerializer,
-    OSFGroupMemberDetailSerializer,
-    OSFGroupMemberCreateSerializer,
+    GroupSerializer,
+    GroupDetailSerializer,
+    GroupMemberSerializer,
+    GroupMemberDetailSerializer,
+    GroupMemberCreateSerializer,
 )
 from api.users.views import UserMixin
 from framework.auth.oauth_scopes import CoreScopes
@@ -49,7 +49,7 @@ class OSFGroupMixin(object):
         return get_perms(group.member_group, node)
 
 
-class OSFGroupList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, OSFGroupMixin):
+class GroupList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, OSFGroupMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -59,8 +59,8 @@ class OSFGroupList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin,
     model_class = apps.get_model('osf.OSFGroup')
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
-    serializer_class = OSFGroupSerializer
-    view_category = 'osf_groups'
+    serializer_class = GroupSerializer
+    view_category = 'groups'
     view_name = 'group-list'
     ordering = ('-modified', )
 
@@ -82,7 +82,7 @@ class OSFGroupList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin,
         serializer.save(creator=user)
 
 
-class OSFGroupDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, OSFGroupMixin):
+class GroupDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, OSFGroupMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -93,8 +93,8 @@ class OSFGroupDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, OSF
     model_class = apps.get_model('osf.OSFGroup')
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
-    serializer_class = OSFGroupDetailSerializer
-    view_category = 'osf_groups'
+    serializer_class = GroupDetailSerializer
+    view_category = 'groups'
     view_name = 'group-detail'
     ordering = ('-modified', )
 
@@ -118,8 +118,8 @@ class OSFGroupMemberBaseView(JSONAPIBaseView, OSFGroupMixin):
     required_write_scopes = [CoreScopes.OSF_GROUPS_WRITE]
 
     model_class = apps.get_model('osf.OSFUser')
-    serializer_class = OSFGroupMemberSerializer
-    view_category = 'osf_groups'
+    serializer_class = GroupMemberSerializer
+    view_category = 'groups'
     ordering = ('-modified', )
 
     def _assert_member_belongs_to_group(self, user):
@@ -131,11 +131,11 @@ class OSFGroupMemberBaseView(JSONAPIBaseView, OSFGroupMixin):
 
     def get_serializer_class(self):
         if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
-            return OSFGroupMemberDetailSerializer
+            return GroupMemberDetailSerializer
         elif self.request.method == 'POST':
-            return OSFGroupMemberCreateSerializer
+            return GroupMemberCreateSerializer
         else:
-            return OSFGroupMemberSerializer
+            return GroupMemberSerializer
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
@@ -147,7 +147,7 @@ class OSFGroupMemberBaseView(JSONAPIBaseView, OSFGroupMixin):
             raise exceptions.ValidationError(detail=e)
 
 
-class OSFGroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
+class GroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
     view_name = 'group-members'
 
     # Overrides ListAPIView
@@ -169,7 +169,7 @@ class OSFGroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIVi
         return self.get_osf_group().members
 
     def get_serializer_context(self):
-        context = super(OSFGroupMembersList, self).get_serializer_context()
+        context = super(GroupMembersList, self).get_serializer_context()
         context['group'] = self.get_osf_group()
         return context
 
@@ -201,10 +201,10 @@ class OSFGroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIVi
             if query_val not in GROUP_MEMBER_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
             return Q(id__in=group.managers if query_val == MANAGER else group.members_only)
-        return super(OSFGroupMembersList, self).build_query_from_field(field_name, operation)
+        return super(GroupMembersList, self).build_query_from_field(field_name, operation)
 
 
-class OSFGroupMemberDetail(OSFGroupMemberBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+class GroupMemberDetail(OSFGroupMemberBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -219,6 +219,6 @@ class OSFGroupMemberDetail(OSFGroupMemberBaseView, generics.RetrieveUpdateDestro
         return user
 
     def get_serializer_context(self):
-        context = super(OSFGroupMemberDetail, self).get_serializer_context()
+        context = super(GroupMemberDetail, self).get_serializer_context()
         context['group'] = self.get_osf_group()
         return context

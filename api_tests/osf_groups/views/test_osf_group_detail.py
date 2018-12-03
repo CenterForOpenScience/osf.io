@@ -45,7 +45,7 @@ def osf_group(manager, member, old_name):
 
 @pytest.fixture()
 def url(osf_group):
-    return '/{}osf_groups/{}/'.format(API_BASE, osf_group._id)
+    return '/{}groups/{}/'.format(API_BASE, osf_group._id)
 
 @pytest.fixture()
 def managers_url(url):
@@ -60,7 +60,7 @@ def name_payload(osf_group, new_name):
     return {
         'data': {
             'id': osf_group._id,
-            'type': 'osf_groups',
+            'type': 'groups',
             'attributes': {
                 'name': new_name
             }
@@ -70,7 +70,7 @@ def name_payload(osf_group, new_name):
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
-class TestOSFGroupDetail:
+class TestGroupDetail:
 
     def test_return(self, app, member, manager, user, osf_group, url):
         # test unauthenticated
@@ -78,7 +78,7 @@ class TestOSFGroupDetail:
         assert res.status_code == 200
         data = res.json['data']
         assert data['id'] == osf_group._id
-        assert data['type'] == 'osf_groups'
+        assert data['type'] == 'groups'
         assert data['attributes']['name'] == osf_group.name
         assert 'members' in data['relationships']
 
@@ -87,7 +87,7 @@ class TestOSFGroupDetail:
         assert res.status_code == 200
         data = res.json['data']
         assert data['id'] == osf_group._id
-        assert data['type'] == 'osf_groups'
+        assert data['type'] == 'groups'
         assert data['attributes']['name'] == osf_group.name
         assert 'members' in data['relationships']
 
@@ -96,7 +96,7 @@ class TestOSFGroupDetail:
         assert res.status_code == 200
         data = res.json['data']
         assert data['id'] == osf_group._id
-        assert data['type'] == 'osf_groups'
+        assert data['type'] == 'groups'
         assert data['attributes']['name'] == osf_group.name
         assert 'members' in data['relationships']
 
@@ -105,12 +105,12 @@ class TestOSFGroupDetail:
         assert res.status_code == 200
         data = res.json['data']
         assert data['id'] == osf_group._id
-        assert data['type'] == 'osf_groups'
+        assert data['type'] == 'groups'
         assert data['attributes']['name'] == osf_group.name
         assert 'members' in data['relationships']
 
         # test invalid group
-        url = '/{}osf_groups/{}/'.format(API_BASE, '12345_bad_id')
+        url = '/{}groups/{}/'.format(API_BASE, '12345_bad_id')
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
 
@@ -160,7 +160,7 @@ class TestOSFGroupUpdate:
         assert res.status_code == 409
 
         # test_id_mismatch
-        name_payload['data']['type'] = 'osf_groups'
+        name_payload['data']['type'] = 'groups'
         name_payload['data']['id'] = '12345_bad_id'
         res = app.patch_json_api(url, name_payload, auth=manager.auth, expect_errors=True)
         assert res.status_code == 409

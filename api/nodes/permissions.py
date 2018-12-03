@@ -135,8 +135,9 @@ class ContributorDetailPermissions(permissions.BasePermission):
             return node.has_permission(auth.user, osf_permissions.ADMIN)
 
 
-class OSFGroupDetailPermissions(permissions.BasePermission):
-    """Permissions for osf group detail page."""
+class NodeGroupDetailPermissions(permissions.BasePermission):
+    """Permissions for node group detail - involving who can update the relationship
+    between a node and an OSF Group."""
 
     acceptable_models = (OSFGroup, AbstractNode,)
 

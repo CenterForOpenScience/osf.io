@@ -31,15 +31,15 @@ def second_osf_group(manager, member):
 
 
 @pytest.mark.django_db
-class TestUserOSFGroupList:
+class TestUserGroupList:
 
     @pytest.fixture()
     def manager_url(self, manager):
-        return '/{}users/{}/osf_groups/'.format(API_BASE, manager._id)
+        return '/{}users/{}/groups/'.format(API_BASE, manager._id)
 
     @pytest.fixture()
     def member_url(self, member):
-        return '/{}users/{}/osf_groups/'.format(API_BASE, member._id)
+        return '/{}users/{}/groups/'.format(API_BASE, member._id)
 
     def test_return_manager_groups(self, app, member, manager, user, osf_group, second_osf_group, manager_url):
         # test nonauthenticated
@@ -96,7 +96,7 @@ class TestUserOSFGroupList:
         data = res.json['data']
         assert len(data) == 1
         assert data[0]['id'] == osf_group._id
-        assert data[0]['type'] == 'osf_groups'
+        assert data[0]['type'] == 'groups'
         assert data[0]['attributes']['name'] == osf_group.name
 
         # test authenticated user

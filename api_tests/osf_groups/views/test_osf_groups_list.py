@@ -26,11 +26,11 @@ def osf_group(manager, member):
     return group
 
 @pytest.mark.django_db
-class TestOSFGroupList:
+class TestGroupList:
 
     @pytest.fixture()
     def url(self):
-        return '/{}osf_groups/'.format(API_BASE)
+        return '/{}groups/'.format(API_BASE)
 
     def test_return(self, app, member, manager, user, osf_group, url):
         # test nonauthenticated
@@ -39,7 +39,7 @@ class TestOSFGroupList:
         data = res.json['data']
         assert len(data) == 1
         assert data[0]['id'] == osf_group._id
-        assert data[0]['type'] == 'osf_groups'
+        assert data[0]['type'] == 'groups'
         assert data[0]['attributes']['name'] == osf_group.name
 
         # test authenticated user
@@ -85,13 +85,13 @@ class TestOSFGroupList:
 class TestOSFGroupCreate:
     @pytest.fixture()
     def url(self):
-        return '/{}osf_groups/'.format(API_BASE)
+        return '/{}groups/'.format(API_BASE)
 
     @pytest.fixture()
     def simple_payload(self):
         return {
             'data': {
-                'type': 'osf_groups',
+                'type': 'groups',
                 'attributes': {
                     'name': 'My New Lab'
                 },
@@ -106,7 +106,7 @@ class TestOSFGroupCreate:
         # Authenticated
         res = app.post_json_api(url, simple_payload, auth=manager.auth)
         assert res.status_code == 201
-        assert res.json['data']['type'] == 'osf_groups'
+        assert res.json['data']['type'] == 'groups'
         assert res.json['data']['attributes']['name'] == 'My New Lab'
         group = OSFGroup.objects.get(_id=res.json['data']['id'])
         assert group.creator_id == manager.id
@@ -127,7 +127,7 @@ class TestOSFGroupCreate:
         # Required name field
         payload = {
             'data': {
-                'type': 'osf_groups'
+                'type': 'groups'
             }
         }
         res = app.post_json_api(url, payload, auth=manager.auth, expect_errors=True)
