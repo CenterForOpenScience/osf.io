@@ -2,6 +2,7 @@ import os
 import itertools
 import json
 import logging
+import warnings
 
 from contextlib import contextmanager
 from django.apps import apps
@@ -175,7 +176,7 @@ class UpdateRegistrationSchemas(Operation):
         ensure_schemas(to_state.apps)
 
     def database_backwards(self, app_label, schema_editor, from_state, to_state):
-        logger.info('Reversing UpdateRegistrationSchemas is a noop')
+        warnings.warn('Reversing UpdateRegistrationSchemas is a noop')
 
     def describe(self):
         return 'Updated registration schemas'
@@ -237,17 +238,17 @@ class DeleteWaffleFlags(Operation):
         return 'Removes waffle flags: {}'.format(', '.join(self.flag_names))
 
 
-class AddWaffleSwitch(Operation):
-    """Custom migration operation to add a waffle switch
+class AddWaffleSwitches(Operation):
+    """Custom migration operation to add waffle switches
 
     Params:
-    - name: string, the name of the switch to create
-    - active: boolean (default False), whether the switch should be active
+    - switch_names: iterable of strings, the names of the switches to create
+    - active: boolean (default False), whether the switches should be active
     """
     reversible = True
 
-    def __init__(self, name, active=False):
-        self.name = name
+    def __init__(self, switch_names, active=False):
+        self.switch_names = switch_names
         self.active = active
 
     def state_forwards(self, app_label, state):
@@ -255,11 +256,12 @@ class AddWaffleSwitch(Operation):
 
     def database_forwards(self, app_label, schema_editor, from_state, to_state):
         Switch = to_state.apps.get_model('waffle', 'switch')
-        Switch.objects.get_or_create(name=self.name, active=self.active)
+        for switch in self.switch_names:
+            Switch.objects.get_or_create(name=switch, defaults={'active': self.active})
 
     def database_backwards(self, app_label, schema_editor, from_state, to_state):
         Switch = to_state.apps.get_model('waffle', 'switch')
-        Switch.objects.filter(name=self.name).delete()
+        Switch.objects.filter(name__in=self.switch_names).delete()
 
     def describe(self):
-        return 'Adds waffle switch: {}'.format(self.name)
+        return 'Adds waffle switches: {}'.format(', '.join(self.switch_names))
