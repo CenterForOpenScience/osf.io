@@ -160,11 +160,13 @@ class GroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView,
             user_ids = []
             for user in self.request.data:
                 try:
-                    user_ids.append(user['id'].split('-')[1])
+                    user_id = user_ids.append(user['id'].split('-')[1])
                 except AttributeError:
                     raise ValidationError('Member identifier not provided.')
                 except IndexError:
                     raise ValidationError('Member identifier incorrectly formatted.')
+                else:
+                    user_ids.append(user_id)
             queryset = queryset.filter(guids___id__in=user_ids)
         return queryset
 
