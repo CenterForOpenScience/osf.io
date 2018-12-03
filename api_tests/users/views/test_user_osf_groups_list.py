@@ -46,28 +46,22 @@ class TestUserGroupList:
         res = app.get(manager_url)
         assert res.status_code == 200
         ids = [group['id'] for group in res.json['data']]
-        assert len(ids) == 2
-        assert osf_group._id in ids
-        assert second_osf_group._id in ids
+        assert len(ids) == 0
 
         # test authenticated user
-        res = app.get(manager_url, auth=user)
+        res = app.get(manager_url, auth=user.auth)
         assert res.status_code == 200
         ids = [group['id'] for group in res.json['data']]
-        assert len(ids) == 2
-        assert osf_group._id in ids
-        assert second_osf_group._id in ids
+        assert len(ids) == 0
 
         # test authenticated member
-        res = app.get(manager_url, auth=member)
+        res = app.get(manager_url, auth=member.auth)
         assert res.status_code == 200
         ids = [group['id'] for group in res.json['data']]
-        assert len(ids) == 2
-        assert osf_group._id in ids
-        assert second_osf_group._id in ids
+        assert len(ids) == 1
 
         # test authenticated manager
-        res = app.get(manager_url, auth=manager)
+        res = app.get(manager_url, auth=manager.auth)
         assert res.status_code == 200
         ids = [group['id'] for group in res.json['data']]
         assert len(ids) == 2
@@ -75,18 +69,18 @@ class TestUserGroupList:
         assert second_osf_group._id in ids
 
     def test_groups_filter(self, app, member, manager, user, osf_group, second_osf_group, manager_url):
-        res = app.get(manager_url + '?filter[name]=Platform')
+        res = app.get(manager_url + '?filter[name]=Platform', auth=manager.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 1
         assert data[0]['id'] == osf_group._id
 
-        res = app.get(manager_url + '?filter[name]=Apple')
+        res = app.get(manager_url + '?filter[name]=Apple', auth=manager.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 0
 
-        res = app.get(manager_url + '?filter[bad_field]=Apple', expect_errors=True)
+        res = app.get(manager_url + '?filter[bad_field]=Apple', auth=manager.auth, expect_errors=True)
         assert res.status_code == 400
 
     def test_return_member_groups(self, app, member, manager, user, osf_group, second_osf_group, member_url):
@@ -94,28 +88,26 @@ class TestUserGroupList:
         res = app.get(member_url)
         assert res.status_code == 200
         data = res.json['data']
-        assert len(data) == 1
-        assert data[0]['id'] == osf_group._id
-        assert data[0]['type'] == 'groups'
-        assert data[0]['attributes']['name'] == osf_group.name
+        assert len(data) == 0
 
         # test authenticated user
-        res = app.get(member_url, auth=user)
+        res = app.get(member_url, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
-        assert len(data) == 1
-        assert data[0]['id'] == osf_group._id
+        assert len(data) == 0
 
         # test authenticated member
-        res = app.get(member_url, auth=member)
+        res = app.get(member_url, auth=member.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 1
         assert data[0]['id'] == osf_group._id
 
         # test authenticated manager
-        res = app.get(member_url, auth=manager)
+        res = app.get(member_url, auth=manager.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 1
         assert data[0]['id'] == osf_group._id
+        assert data[0]['type'] == 'groups'
+        assert data[0]['attributes']['name'] == osf_group.name

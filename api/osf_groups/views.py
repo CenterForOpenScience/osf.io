@@ -65,7 +65,10 @@ class GroupList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, OS
     ordering = ('-modified', )
 
     def get_default_queryset(self):
-        return OSFGroup.objects.all()
+        user = self.request.user
+        if user.is_anonymous:
+            return OSFGroup.objects.none()
+        return user.osf_groups
 
     # overrides ListCreateAPIView
     def get_queryset(self):

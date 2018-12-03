@@ -37,48 +37,58 @@ class TestGroupList:
         res = app.get(url)
         assert res.status_code == 200
         data = res.json['data']
+        assert len(data) == 0
+
+        # test authenticated user
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 0
+
+        # test authenticated member
+        res = app.get(url, auth=member.auth)
+        assert res.status_code == 200
+        data = res.json['data']
         assert len(data) == 1
         assert data[0]['id'] == osf_group._id
         assert data[0]['type'] == 'groups'
         assert data[0]['attributes']['name'] == osf_group.name
 
-        # test authenticated user
-        res = app.get(url, auth=user)
-        assert res.status_code == 200
-        data = res.json['data']
-        assert len(data) == 1
-        assert data[0]['id'] == osf_group._id
-
-        # test authenticated member
-        res = app.get(url, auth=member)
-        assert res.status_code == 200
-        data = res.json['data']
-        assert len(data) == 1
-        assert data[0]['id'] == osf_group._id
-
         # test authenticated manager
-        res = app.get(url, auth=manager)
+        res = app.get(url, auth=manager.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 1
         assert data[0]['id'] == osf_group._id
+        assert data[0]['type'] == 'groups'
+        assert data[0]['attributes']['name'] == osf_group.name
 
     def test_groups_filter(self, app, member, manager, user, osf_group, url):
-        second_group = OSFGroupFactory(name='Apples')
-        res = app.get(url + '?filter[name]=Platform')
+        second_group = OSFGroupFactory(name='Apples', creator=manager)
+        res = app.get(url + '?filter[name]=Platform', auth=manager.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 1
         assert data[0]['id'] == osf_group._id
 
-        res = app.get(url + '?filter[name]=Apple')
+        res = app.get(url + '?filter[name]=Apple', auth=manager.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 1
         assert data[0]['id'] == second_group._id
 
-        res = app.get(url + '?filter[bad_field]=Apple', expect_errors=True)
+        res = app.get(url + '?filter[bad_field]=Apple', auth=manager.auth, expect_errors=True)
         assert res.status_code == 400
+
+        res = app.get(url + '?filter[name]=Platform')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 0
+
+        res = app.get(url + '?filter[name]=Apple')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 0
 
 
 @pytest.mark.django_db

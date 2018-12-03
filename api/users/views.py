@@ -75,6 +75,7 @@ from osf.models import (
     Preprint,
     Node,
     Registration,
+    OSFGroup,
     OSFUser,
     Email,
 )
@@ -349,7 +350,11 @@ class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMix
     ordering = ('-modified', )
 
     def get_default_queryset(self):
-        return self.get_user().osf_groups
+        requested_user = self.get_user()
+        current_user = self.request.user
+        if current_user.is_anonymous:
+            return OSFGroup.objects.none()
+        return requested_user.osf_groups.filter(id__in=current_user.osf_groups.values_list('id', flat=True))
 
     # overrides ListAPIView
     def get_queryset(self):
