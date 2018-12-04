@@ -551,11 +551,6 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
                 'kwargs': {'dry_run': False},
             },
-            'prereg_reminder': {
-                'task': 'scripts.remind_draft_preregistrations',
-                'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
-                'kwargs': {'dry_run': False},
-            },
             'new-and-noteworthy': {
                 'task': 'scripts.populate_new_and_noteworthy_projects',
                 'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
