@@ -15,7 +15,7 @@ from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
-    UnregUserFactory
+    UnregUserFactory, OSFGroupFactory
 )
 from website import tokens
 from website.exceptions import (
@@ -194,6 +194,15 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         with assert_raises(PermissionsError):
             self.registration.retraction.approve_retraction(non_admin, approval_token)
+        assert_true(self.registration.is_pending_retraction)
+        assert_false(self.registration.is_retracted)
+
+        # group admin on node cannot retract registration
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        self.registration.registered_from.add_osf_group(group, 'admin')
+        with assert_raises(PermissionsError):
+            self.registration.retraction.approve_retraction(group_mem, approval_token)
         assert_true(self.registration.is_pending_retraction)
         assert_false(self.registration.is_retracted)
 
@@ -777,6 +786,10 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
         self.justification = fake.sentence()
 
+        self.group_mem = AuthUserFactory()
+        self.group = OSFGroupFactory(creator=self.group_mem)
+        self.registration.registered_from.add_osf_group(self.group, 'admin')
+
     def test_GET_retraction_page_when_pending_retraction_returns_HTTPError_BAD_REQUEST(self):
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -869,6 +882,10 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert_is_none(self.registration.retraction)
 
+        # group admin POST fails
+        res = self.app.post_json(self.retraction_post_url, auth=self.group_mem.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
     @mock.patch('website.mails.send_mail')
     def test_POST_retraction_without_justification_returns_HTTPOK(self, mock_send):
         res = self.app.post_json(
@@ -931,6 +948,10 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_true(self.registration.is_pending_retraction)
         assert_false(self.registration.is_retracted)
 
+        # group admin on node fails disapproval GET
+        res = self.app.get(approval_url, auth=self.group_mem.auth, expect_errors=True)
+        assert_equal(res.status_code, http.UNAUTHORIZED)
+
     def test_non_contributor_GET_disapproval_returns_HTTPError_UNAUTHORIZED(self):
         non_contributor = AuthUserFactory()
         self.registration.retract_registration(self.user)
@@ -941,3 +962,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_equal(res.status_code, http.UNAUTHORIZED)
         assert_true(self.registration.is_pending_retraction)
         assert_false(self.registration.is_retracted)
+
+        # group admin on node fails disapproval GET
+        res = self.app.get(disapproval_url, auth=self.group_mem.auth, expect_errors=True)
+        assert_equal(res.status_code, http.UNAUTHORIZED)

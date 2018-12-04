@@ -233,18 +233,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
 
-    #   test_osf_group_mem_admin_can_update
-        # TODO may remove
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, 'admin')
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload,
-            auth=group_mem.auth
-        )
-        assert res.status_code == 200
-
     def test_draft_must_be_branched_from_node(
             self, app, user, project_other, draft_registration, payload):
         url = '/{}nodes/{}/draft_registrations/{}/'.format(
@@ -295,6 +283,16 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
         project_public.add_osf_group(group, 'write')
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload, expect_errors=True,
+            auth=group_mem.auth
+        )
+        assert res.status_code == 403
+
+    #   test_osf_group_member_admin_cannot_update_draft
+        project_public.remove_osf_group(group)
+        project_public.add_osf_group(group, 'admin')
         res = app.put_json_api(
             url_draft_registrations,
             payload, expect_errors=True,
@@ -708,13 +706,6 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         res = app.delete_json_api(url_draft_registrations, auth=user.auth)
         assert res.status_code == 204
 
-    def test_group_member_admin_can_delete_draft(self, app, url_draft_registrations, project_public):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, 'admin')
-        res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
-        assert res.status_code == 204
-
     def test_cannot_delete_draft(
             self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
@@ -749,6 +740,12 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
         project_public.add_osf_group(group, 'write')
+        res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
+        assert res.status_code == 403
+
+    #   test_group_member_admin_cannot_delete_draft
+        project_public.remove_osf_group(group)
+        project_public.add_osf_group(group, 'admin')
         res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
         assert res.status_code == 403
 

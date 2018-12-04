@@ -307,6 +307,27 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
+    #   test_group_admin_cannot_create_draft
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, 'admin')
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_group_write_contrib_cannot_create_draft
+        project_public.remove_osf_group(group)
+        project_public.add_osf_group(group, 'write')
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
     def test_registration_supplement_errors(
             self, app, user, provider, url_draft_registrations):
 
