@@ -49,10 +49,14 @@
       <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
           <div class="spinner-loading-wrapper">
+            % if target_deleted:
+            <p class="m-t-sm fg-load-message">No files</p>
+            %else:
             <div class="ball-scale ball-scale-blue">
                 <div></div>
             </div>
             <p class="m-t-sm fg-load-message"> Loading files...  </p>
+            %endif
           </div>
         </div>
       </div>

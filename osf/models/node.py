@@ -2816,9 +2816,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # Add log to parents
             node.is_deleted = True
             node.deleted_date = date
-            self.add_remove_node_log(auth=auth, date=log_date)
-            for osfstorage_file in node.files.all():
-                osfstorage_file.delete()
+            node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
 
         bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
