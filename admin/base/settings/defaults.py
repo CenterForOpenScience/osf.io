@@ -286,6 +286,12 @@ NPLUSONE_RAISE = False
 FCM_SETTINGS = {
     'FCM_SERVER_KEY': ''
 }
+# separator to devide domain from eppn
 SHIB_EPPN_SCOPING_SEPARATOR = '@'
+
+# hide embededDS, login user form in Adoministrator login page
 ENABLE_SHB_LOGIN = True
 ENABLE_LOGIN_FORM = False
+
+# mail address uses mail from rdm_announcement
+ANNOUNCEMENT_EMAIL_FROM = 'noreply@rdm.rcos.nii.ac.jp'
