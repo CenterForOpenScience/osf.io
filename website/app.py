@@ -6,7 +6,7 @@ import importlib
 import json
 import logging
 import os
-import thread
+import threading
 from collections import OrderedDict
 
 import django
@@ -96,7 +96,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         return app
 
     logger.info('Initializing the application from process {}, thread {}.'.format(
-        os.getpid(), thread.get_ident()
+        os.getpid(), threading.get_ident()
     ))
     setup_django()
 
