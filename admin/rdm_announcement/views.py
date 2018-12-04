@@ -247,7 +247,7 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
                 subject=data['title'],
                 body=data['body'],
                 from_email=ANNOUNCEMENT_EMAIL_FROM
-                to=[SUPPORT_EMAIL or now_user.username],
+                to=[SUPPORT_EMAIL or now_user.username]
                 bcc=to_list
             )
             email.send(fail_silently=False)
