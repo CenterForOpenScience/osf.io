@@ -124,7 +124,10 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     :raises: HTTPError if embargo end date is invalid
     """
     if waffle.switch_is_active(features.OSF_PREREGISTRATION):
-        raise DeprecationWarning('The Prereg Challenge is over this endpoint is deprecated.')
+        raise HTTPError(http.GONE, data={
+            'message_short': 'The Prereg Challenge has ended.',
+            'message_long': 'The Prereg Challenge has ended. This endpoint is currently depreciated.'
+        })
 
     data = request.get_json()
     meta = {}
