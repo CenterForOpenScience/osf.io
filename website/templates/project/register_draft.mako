@@ -27,7 +27,7 @@
           <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
           %if waffle.switch_is_active(features.OSF_PREREGISTRATION):
           <button type="button" class="btn btn-success pull-right"
-                  data-toggle="tooltip" data-placement="top" title="The Prereg Challenge has expired"
+                  data-toggle="tooltip" data-placement="top" title="The Prereg Challenge has ended"
                   style="margin-left: 5px;
                   box-shadow: none;
                   opacity: .65;">
