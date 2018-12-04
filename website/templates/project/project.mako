@@ -213,7 +213,7 @@
                       <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
-                % if waffle.switch_is_active('ezid'):
+                % if waffle.switch_is_active(features.EZID_SWITCH):
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
                     <p>
@@ -306,9 +306,7 @@
                 % if 'admin' in user['permissions']:
                   <a href="${collection['url']}${node['id']}/edit"><i class="fa fa-edit" aria-label="Edit in Collection"></i></a>
                 % endif
-            % if any([collection['type'], collection['status']]):
-              &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
-            % endif
+            &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
             </div>
             <div id="metadata${i}" class="collection-details collapse">
                 <ul style="margin-left: 30px; padding: 0; margin-bottom: 0;" class="list-unstyled">

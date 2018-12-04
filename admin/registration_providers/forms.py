@@ -6,10 +6,16 @@ from osf.models import RegistrationProvider, Subject
 from admin.base.utils import (
     get_nodelicense_choices,
     get_defaultlicense_choices,
+    validate_slug,
 )
 
 
 class RegistrationProviderForm(forms.ModelForm):
+    _id = forms.SlugField(
+        required=True,
+        help_text='URL Slug',
+        validators=[validate_slug]
+    )
 
     class Meta:
         model = RegistrationProvider

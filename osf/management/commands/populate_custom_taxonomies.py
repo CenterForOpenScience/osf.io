@@ -254,7 +254,7 @@ class Command(BaseCommand):
             action='store',
             type=str,
             dest='provider_type',
-            help='Specifies provider type [`osf.preprintprovider`, `osf.registrationprovider`]'
+            help='Specifies provider type [`osf.preprintprovider`, `osf.registrationprovider`, `osf.collectionprovider`]'
         )
 
     def handle(self, *args, **options):

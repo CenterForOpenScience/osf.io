@@ -21,6 +21,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
 from website import settings
+from website.institutions.views import serialize_institution
 
 from addons.osfstorage.models import Region
 from osf import features
@@ -133,7 +134,12 @@ def index():
     # Check if we're on an institution landing page
     institution = Institution.objects.filter(domains__icontains=request.host, is_deleted=False)
     if institution.exists():
-        return redirect('{}institutions/{}/'.format(DOMAIN, institution.get()._id))
+        institution = institution.get()
+        inst_dict = serialize_institution(institution)
+        inst_dict.update({
+            'redirect_url': '{}institutions/{}/'.format(DOMAIN, institution._id),
+        })
+        return inst_dict
     else:
         return use_ember_app()
 
@@ -292,7 +298,7 @@ def resolve_guid(guid, suffix=None):
             return send_from_directory(ember_osf_web_dir, 'index.html')
 
         if isinstance(referent, Registration) and not suffix:
-            if waffle.flag_is_active(request, 'ember_registries_detail_page'):
+            if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
                 # Route only the base detail view to ember
                 if PROXY_EMBER_APPS:
                     resp = requests.get(EXTERNAL_EMBER_APPS['registries']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)

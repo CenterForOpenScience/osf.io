@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 from django.db import DataError
@@ -51,10 +52,12 @@ class TestTags:
     def auth(self, project):
         return Auth(project.creator)
 
-    def test_add_tag(self, project, auth):
+    @mock.patch('website.project.tasks.update_node_share')
+    def test_add_tag(self, mock_update_share, project, auth):
         project.add_tag('scientific', auth=auth)
         assert 'scientific' in list(project.tags.values_list('name', flat=True))
         assert project.logs.latest().action == 'tag_added'
+        mock_update_share.assert_called_once_with(project)
 
     @pytest.mark.skip('TODO: 128 is no longer max length, consider shortening')
     def test_add_tag_too_long(self, project, auth):
@@ -65,9 +68,15 @@ class TestTags:
         with pytest.raises(DataError):
             project.add_tag('asdf' * 257, auth=auth)
 
-    def test_remove_tag(self, project, auth):
+    @mock.patch('website.project.tasks.update_node_share')
+    def test_remove_tag(self, mock_update_share, project, auth):
         project.add_tag('scientific', auth=auth)
+        mock_update_share.assert_called_once_with(project)
+
         project.remove_tag('scientific', auth=auth)
+        assert mock_update_share.call_count == 2
+        assert mock_update_share.call_args_list[1][0][0] == project
+
         assert 'scientific' not in list(project.tags.values_list('name', flat=True))
         assert project.logs.latest().action == 'tag_removed'
 

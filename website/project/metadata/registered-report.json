@@ -31,7 +31,8 @@
         "questions": [{
             "qid": "q3",
             "title": "In order to complete this registration your study must be granted an \"in-principle acceptance\" from a journal that offers Registered Reports.",
-            "type": "multiselect",
+            "format": "singleselect",
+            "type": "choose",
             "options": ["I confirm this study has been granted in-principle acceptance."],
             "nav": "In-principle acceptance?",
             "required": true

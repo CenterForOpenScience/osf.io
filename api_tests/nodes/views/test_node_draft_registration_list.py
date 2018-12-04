@@ -57,10 +57,13 @@ class DraftRegistrationTestCase:
 
             for key, value in json_schema['properties'].items():
                 response = 'Test response'
-                if value['properties']['value'].get('enum'):
-                    response = value['properties']['value']['enum'][0]
-
-                if value['properties']['value'].get('properties'):
+                items = value['properties']['value'].get('items')
+                enum = value['properties']['value'].get('enum')
+                if items:  # multiselect
+                    response = [items['enum'][0]]
+                elif enum:  # singleselect
+                    response = enum[0]
+                elif value['properties']['value'].get('properties'):
                     response = {'question': {'value': 'Test Response'}}
 
                 test_metadata[key] = {'value': response}

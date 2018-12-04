@@ -25,7 +25,7 @@ def has_anonymous_link(node, auth):
 def validate_contributor(guid, contributors):
     OSFUser = apps.get_model('osf.OSFUser')
     user = OSFUser.load(guid)
-    if not user or not user.is_claimed:
+    if not user or not user.is_registered:
         raise ValidationError('User does not exist or is not active.')
     elif user not in contributors:
         raise ValidationError('Mentioned user is not a contributor.')

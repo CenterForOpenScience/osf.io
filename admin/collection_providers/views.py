@@ -11,7 +11,7 @@ from django.forms.models import model_to_dict
 from admin.collection_providers.forms import CollectionProviderForm
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from osf.models import CollectionProvider, NodeLicense
+from osf.models import Collection, CollectionProvider, NodeLicense
 
 
 class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
@@ -244,7 +244,6 @@ class ExportColectionProvider(PermissionRequiredMixin, View):
         data = serializers.serialize('json', [collection_provider])
         cleaned_data = json.loads(data)[0]
         cleaned_fields = cleaned_data['fields']
-        cleaned_fields.pop('primary_collection', None)
         cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in collection_provider.licenses_acceptable.all()]
         cleaned_fields['default_license'] = collection_provider.default_license.license_id if collection_provider.default_license else ''
         cleaned_fields['primary_collection'] = self.serialize_primary_collection(cleaned_fields['primary_collection'])
@@ -253,6 +252,12 @@ class ExportColectionProvider(PermissionRequiredMixin, View):
         response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
+
+    def serialize_primary_collection(self, primary_collection):
+        primary_collection = Collection.objects.get(id=primary_collection)
+        data = serializers.serialize('json', [primary_collection])
+        cleaned_data = json.loads(data)[0]
+        return cleaned_data
 
 
 class ImportCollectionProvider(PermissionRequiredMixin, View):
@@ -283,7 +288,7 @@ class ImportCollectionProvider(PermissionRequiredMixin, View):
         provider = self.get_page_provider()
         licenses = [NodeLicense.objects.get(license_id=license_id) for license_id in provider_data.pop('licenses_acceptable', [])]
         default_license = provider_data.pop('default_license', False)
-        primary_collection = provider_data.pop('primary_collection', '')
+        primary_collection = provider_data.pop('primary_collection', None)
         provider_data.pop('additional_providers')
 
         if provider:
@@ -294,13 +299,14 @@ class ImportCollectionProvider(PermissionRequiredMixin, View):
             provider = CollectionProvider(**provider_data)
             provider._creator = self.request.user
             provider.save()
+
+        if primary_collection:
             provider.primary_collection.collected_type_choices = primary_collection['fields']['collected_type_choices']
             provider.primary_collection.status_choices = primary_collection['fields']['status_choices']
             provider.primary_collection.issue_choices = primary_collection['fields']['issue_choices']
             provider.primary_collection.volume_choices = primary_collection['fields']['volume_choices']
             provider.primary_collection.program_area_choices = primary_collection['fields']['program_area_choices']
             provider.primary_collection.save()
-
         if licenses:
             provider.licenses_acceptable = licenses
         if default_license:

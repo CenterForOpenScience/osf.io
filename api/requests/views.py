@@ -80,9 +80,9 @@ class RequestDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         request_id = self.kwargs['request_id']
         if NodeRequest.objects.filter(_id=request_id).exists():
-            return NodeRequestDetail.as_view()(request, *args, **kwargs)
+            return NodeRequestDetail.as_view()(request._request, *args, **kwargs)
         elif PreprintRequest.objects.filter(_id=request_id).exists():
-            return PreprintRequestDetail.as_view()(request, *args, **kwargs)
+            return PreprintRequestDetail.as_view()(request._request, *args, **kwargs)
         else:
             raise NotFound
 
@@ -137,7 +137,7 @@ class RequestActionList(JSONAPIBaseView, generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         request_id = self.kwargs['request_id']
         if PreprintRequest.objects.filter(_id=request_id).exists():
-            return PreprintRequestActionList.as_view()(request, *args, **kwargs)
+            return PreprintRequestActionList.as_view()(request._request, *args, **kwargs)
         else:
             raise NotFound
 

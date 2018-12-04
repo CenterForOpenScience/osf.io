@@ -517,11 +517,12 @@ class PreprintFilterMixin(ListFilterMixin):
                 operation['source_field_name'] = 'subjects__text'
                 operation['op'] = 'iexact'
 
-    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
+    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
         sub_qs = Node.objects.filter(preprints=OuterRef('pk'), is_deleted=False)
         no_user_query = Q(is_published=True, node__is_public=True)
 
-        if auth_user:
+        include_non_public = auth_user and not public_only
+        if include_non_public:
             moderator_for = get_objects_for_user(auth_user, 'view_submissions', PreprintProvider)
             admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             reviews_user_query = Q(node__is_public=True, provider__in=moderator_for)
@@ -537,4 +538,8 @@ class PreprintFilterMixin(ListFilterMixin):
         if not moderator_for.exists():
             base_queryset = base_queryset.exclude(date_withdrawn__isnull=False, ever_public=False)
 
-        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query).distinct('id', 'created')
+        ret = base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query)
+        # The auth subquery currently results in duplicates returned
+        # https://openscience.atlassian.net/browse/OSF-9058
+        # TODO: Remove need for .distinct using correct subqueries
+        return ret.distinct('id', 'created') if include_non_public else ret

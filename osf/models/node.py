@@ -260,7 +260,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     PRIVATE = 'private'
     PUBLIC = 'public'
 
-    LICENSE_QUERY = re.sub('\s+', ' ', """WITH RECURSIVE ascendants AS (
+    LICENSE_QUERY = re.sub(r'\s+', ' ', """WITH RECURSIVE ascendants AS (
             SELECT
                 N.node_license_id,
                 R.parent_id
@@ -731,7 +731,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def bulk_update_search(cls, nodes, index=None):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_node, index=index, bulk=True, async=False)
+            serialize = functools.partial(search.search.update_node, index=index, bulk=True, async_update=False)
             search.search.bulk_update_nodes(serialize, nodes, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
@@ -741,7 +741,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         from website import search
 
         try:
-            search.search.update_node(self, bulk=False, async=True)
+            search.search.update_node(self, bulk=False, async_update=True)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1111,6 +1111,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Override Taggable
     def on_tag_added(self, tag):
         self.update_search()
+        node_tasks.update_node_share(self)
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
@@ -1133,6 +1134,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
             self.update_search()
+            node_tasks.update_node_share(self)
+
             return True
 
     def remove_tags(self, tags, auth, save=True):
@@ -1159,6 +1162,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
         self.update_search()
+        node_tasks.update_node_share(self)
+
         return True
 
     def is_contributor(self, user):
@@ -1746,7 +1751,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contribs.append(contrib)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None, provider=None):
+    def register_node(self, schema, auth, data, parent=None, child_ids=None, provider=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1821,21 +1826,29 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
-            # Register child nodes
-            if not node_relation.is_node_link:
+
+            if node_relation.is_node_link:
+                NodeRelation.objects.get_or_create(
+                    is_node_link=True,
+                    parent=registered,
+                    child=node_contained
+                )
+                continue
+            else:
+                if child_ids and node_contained._id not in child_ids:
+                    if node_contained.node_relations.filter(child__is_deleted=False, child__guids___id__in=child_ids, is_node_link=False).exists():
+                        # We can't skip a node with children that we have to register.
+                        raise NodeStateError('The parents of all child nodes being registered must be registered.')
+                    continue
+
+                # Register child nodes
                 node_contained.register_node(
                     schema=schema,
                     auth=auth,
                     data=data,
                     provider=provider,
                     parent=registered,
-                )
-            else:
-                # Copy linked nodes
-                NodeRelation.objects.get_or_create(
-                    is_node_link=True,
-                    parent=registered,
-                    child=node_contained
+                    child_ids=child_ids,
                 )
 
         registered.root = None  # Recompute root on save
@@ -2036,11 +2049,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         forked.root = None  # Recompute root on save
 
-        forked.save()
-
-        # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
-
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
@@ -2056,11 +2064,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Clone each log from the original node for this fork.
         self.clone_logs(forked)
-        forked.refresh_from_db()
 
         # After fork callback
         for addon in original.get_addons():
             addon.after_fork(original, forked, user)
+
+        forked.save()
+
+        # Need to call this after save for the notifications to be created with the _primary_key
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
 
         return forked
 

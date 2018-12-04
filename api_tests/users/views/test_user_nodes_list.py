@@ -10,6 +10,7 @@ from osf_tests.factories import (
     PreprintFactory,
     ProjectFactory,
     RegistrationFactory,
+    UserFactory,
 )
 from website.views import find_bookmark_collection
 
@@ -245,10 +246,66 @@ class TestNodeListFiltering(NodesListFilteringMixin):
     def url(self):
         return '/{}users/me/nodes/?'.format(API_BASE)
 
-
 @pytest.mark.django_db
 class TestNodeListDateFiltering(NodesListDateFilteringMixin):
 
     @pytest.fixture()
     def url(self):
         return '/{}users/me/nodes/?'.format(API_BASE)
+
+@pytest.mark.django_db
+class TestNodeListPermissionFiltering:
+
+    @pytest.fixture()
+    def creator(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def no_perm_node(self, creator):
+        return ProjectFactory(creator=creator)
+
+    @pytest.fixture()
+    def read_node(self, creator, contrib):
+        node = ProjectFactory(creator=creator)
+        node.add_contributor(contrib, permissions=['read'], save=True)
+        return node
+
+    @pytest.fixture()
+    def write_node(self, creator, contrib):
+        node = ProjectFactory(creator=creator)
+        node.add_contributor(contrib, permissions=['read', 'write'], save=True)
+        return node
+
+    @pytest.fixture()
+    def admin_node(self, creator, contrib):
+        node = ProjectFactory(creator=creator)
+        node.add_contributor(contrib, permissions=['read', 'write', 'admin'], save=True)
+        return node
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}users/me/nodes/?filter[current_user_permissions]='.format(API_BASE)
+
+    def test_current_user_permissions_filter(self, app, url, contrib, no_perm_node, read_node, write_node, admin_node):
+        # test filter read
+        res = app.get('{}read'.format(url), auth=contrib.auth)
+        assert len(res.json['data']) == 3
+        assert set([read_node._id, write_node._id, admin_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter write
+        res = app.get('{}write'.format(url), auth=contrib.auth)
+        assert len(res.json['data']) == 2
+        assert set([admin_node._id, write_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter admin
+        res = app.get('{}admin'.format(url), auth=contrib.auth)
+        assert len(res.json['data']) == 1
+        assert [admin_node._id] == [node['id'] for node in res.json['data']]
+
+        # test filter null
+        res = app.get('{}null'.format(url), auth=contrib.auth, expect_errors=True)
+        assert res.status_code == 400

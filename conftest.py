@@ -28,6 +28,7 @@ SILENT_LOGGERS = [
     'raven.contrib.django.client.DjangoClient',
     'transitions.core',
     'MARKDOWN',
+    'elasticsearch',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)

@@ -9,6 +9,7 @@ from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.metrics import MetricsViewMixin
 from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
@@ -25,6 +26,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode, CollectionProvider, CollectionSubmission, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from osf.utils.workflows import RequestTypes
+from osf.metrics import PreprintDownload, PreprintView
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -61,7 +63,7 @@ class RegistrationProviderList(GenericProviderList):
     view_name = 'registration-providers-list'
 
 
-class PreprintProviderList(GenericProviderList):
+class PreprintProviderList(MetricsViewMixin, GenericProviderList):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
     """
 
@@ -69,6 +71,21 @@ class PreprintProviderList(GenericProviderList):
     serializer_class = PreprintProviderSerializer
     view_category = 'preprint-providers'
     view_name = 'preprint-providers-list'
+    metric_map = {
+        'downloads': PreprintDownload,
+        'views': PreprintView,
+    }
+
+    # overrides MetricsViewMixin
+    def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
+        return metric_class.get_top_by_count(
+            qs=queryset,
+            model_field='_id',
+            metric_field='provider_id',
+            annotation=metric_name,
+            after=after,
+            size=None,
+        )
 
     def get_renderer_context(self):
         context = super(PreprintProviderList, self).get_renderer_context()

@@ -10,6 +10,7 @@ from osf_tests.factories import (
 )
 from osf.models import Email
 from framework.auth.views import auth_email_logout
+from website.settings.defaults import BLACKLISTED_DOMAINS
 
 @pytest.fixture()
 def user_one():
@@ -322,6 +323,13 @@ class TestUserEmailsList:
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Enter a valid email address.'
+
+    def test_create_blacklisted_email(self, app, url, payload, user_one):
+        new_email = 'freddie@{}'.format(BLACKLISTED_DOMAINS[0])
+        payload['data']['attributes']['email_address'] = new_email
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This email address domain is blacklisted.'
 
     def test_unconfirmed_email_with_expired_token_not_in_results(self, app, url, payload, user_one):
         unconfirmed = 'notyet@unconfirmed.test'
