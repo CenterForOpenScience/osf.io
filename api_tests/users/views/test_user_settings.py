@@ -623,21 +623,24 @@ class TestUserEmailDetail:
     def test_resend_confirmation_email(self, mock_send_confirm_email, app, user_one, unconfirmed_url, confirmed_url):
         url = '{}?resend_confirmation=True'.format(unconfirmed_url)
         res = app.get(url, auth=user_one.auth)
-        assert res.status_code == 200
+        assert res.status_code == 202
         assert mock_send_confirm_email.called
         call_count = mock_send_confirm_email.call_count
 
         # make sure setting false does not send confirm email
         url = '{}?resend_confirmation=False'.format(unconfirmed_url)
         res = app.get(url, auth=user_one.auth)
+        # should return 200 instead of 202 because nothing has been done
         assert res.status_code == 200
         assert mock_send_confirm_email.call_count
 
         # make sure normal GET request does not re-send confirmation email
         res = app.get(unconfirmed_url, auth=user_one.auth)
         assert mock_send_confirm_email.call_count == call_count
+        assert res.status_code == 200
 
         # resend confirmation with confirmed email address does not send confirmation email
         url = '{}?resend_confirmation=True'.format(confirmed_url)
         res = app.get(url, auth=user_one.auth)
         assert mock_send_confirm_email.call_count == call_count
+        assert res.status_code == 200
