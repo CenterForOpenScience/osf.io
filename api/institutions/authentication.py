@@ -160,9 +160,7 @@ class InstitutionAuthentication(BaseAuthentication):
             ### the user is not available when have_email is False.
 
         # update every login.
-        if USE_EPPN:
-            user.affiliated_institutions.clear()
-        elif not user.is_affiliated_with_institution(institution):
+        if not user.is_affiliated_with_institution(institution):
             user.affiliated_institutions.add(institution)
             user.save()
 
