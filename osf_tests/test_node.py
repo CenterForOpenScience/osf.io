@@ -1761,7 +1761,7 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=1)
+        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
         data = {'some': 'data'}
         reg = root.register_node(

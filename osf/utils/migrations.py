@@ -2,6 +2,7 @@ import os
 import itertools
 import json
 import logging
+import warnings
 
 from contextlib import contextmanager
 from django.apps import apps
@@ -133,17 +134,19 @@ def ensure_schemas(*args):
     """
     schema_count = 0
     try:
-        RegistrationSchema = args[0].get_model('osf', 'metaschema')
+        RegistrationSchema = args[0].get_model('osf', 'registrationschema')
     except Exception:
-        # Working outside a migration
-        from osf.models import RegistrationSchema
+        try:
+            RegistrationSchema = args[0].get_model('osf', 'metaschema')
+        except Exception:
+            # Working outside a migration
+            from osf.models import RegistrationSchema
     for schema in OSF_META_SCHEMAS:
         schema_obj, created = RegistrationSchema.objects.update_or_create(
             name=schema['name'],
             schema_version=schema.get('version', 1),
             defaults={
                 'schema': schema,
-                'active': schema.get('active', True)
             }
         )
         schema_count += 1
@@ -159,6 +162,24 @@ def remove_schemas(*args):
     RegistrationSchema.objects.all().delete()
 
     logger.info('Removed {} schemas from the database'.format(pre_count))
+
+
+class UpdateRegistrationSchemas(Operation):
+    """Custom migration operation to update registration schemas
+    """
+    reversible = True
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        ensure_schemas(to_state.apps)
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        warnings.warn('Reversing UpdateRegistrationSchemas is a noop')
+
+    def describe(self):
+        return 'Updated registration schemas'
 
 
 class AddWaffleFlags(Operation):
@@ -215,3 +236,32 @@ class DeleteWaffleFlags(Operation):
 
     def describe(self):
         return 'Removes waffle flags: {}'.format(', '.join(self.flag_names))
+
+
+class AddWaffleSwitches(Operation):
+    """Custom migration operation to add waffle switches
+
+    Params:
+    - switch_names: iterable of strings, the names of the switches to create
+    - active: boolean (default False), whether the switches should be active
+    """
+    reversible = True
+
+    def __init__(self, switch_names, active=False):
+        self.switch_names = switch_names
+        self.active = active
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        Switch = to_state.apps.get_model('waffle', 'switch')
+        for switch in self.switch_names:
+            Switch.objects.get_or_create(name=switch, defaults={'active': self.active})
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        Switch = to_state.apps.get_model('waffle', 'switch')
+        Switch.objects.filter(name__in=self.switch_names).delete()
+
+    def describe(self):
+        return 'Adds waffle switches: {}'.format(', '.join(self.switch_names))
