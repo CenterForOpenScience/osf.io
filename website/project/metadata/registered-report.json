@@ -4,7 +4,7 @@
     "config": {
       "hasFiles": true
     },
-    "description": "You will be asked a few simple questions about your study and given the chance to attach your accepted manuscript to the form. Use this form after receiving an \"in-principle acceptance\" from a journal the offers the Registered Reports format. See https://cos.io/rr for more information. This form is not eligible for a Prereg Prize.",
+    "description": "You will be asked a few simple questions about your study and given the chance to attach your accepted manuscript to the form. Use this form after receiving an \"in-principle acceptance\" from a journal the offers the Registered Reports format. See https://cos.io/rr for more information.",
     "pages": [{
         "id": "page1",
         "title": "Study Information",
