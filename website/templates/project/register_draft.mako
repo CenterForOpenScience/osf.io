@@ -43,7 +43,7 @@
             <span data-bind="if: (draft.metaSchema.name === 'Prereg Challenge' && !draft.isPendingApproval)">
               <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview.bind(draft)">Register without review</button>
             </span>
-        %endif:
+        %endif
 
         %if waffle.switch_is_active(features.OSF_PREREGISTRATION):
             <button id="register-submit" type="button" class="btn btn-success pull-right"
