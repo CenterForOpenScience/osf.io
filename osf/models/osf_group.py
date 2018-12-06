@@ -138,6 +138,8 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         self._require_manager_permission(auth)
         self._disabled_user_check(user)
         adding_member = not self.belongs_to_osfgroup(user)
+        if user in self.members_only:
+            return False
         self.member_group.user_set.add(user)
         if self.has_permission(user, MANAGE):
             self._enforce_one_manager(user)
@@ -164,23 +166,24 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         self._require_manager_permission(auth)
         self._disabled_user_check(user)
         adding_member = not self.belongs_to_osfgroup(user)
-        if not self.is_manager(user):
-            if not self.is_member(user):
-                self.add_log(
-                    OSFGroupLog.MANAGER_ADDED,
-                    params={
-                        'group': self._id,
-                        'user': user._id,
-                    },
-                    auth=auth)
+        if self.is_manager(user):
+            return False
+        if not self.is_member(user):
+            self.add_log(
+                OSFGroupLog.MANAGER_ADDED,
+                params={
+                    'group': self._id,
+                    'user': user._id,
+                },
+                auth=auth)
 
-            else:
-                self.add_role_updated_log(user, MANAGER, auth)
-            self.manager_group.user_set.add(user)
-            self.member_group.user_set.add(user)
+        else:
+            self.add_role_updated_log(user, MANAGER, auth)
+        self.manager_group.user_set.add(user)
+        self.member_group.user_set.add(user)
 
-            if adding_member:
-                self.send_member_email(user, MANAGER, auth)
+        if adding_member:
+            self.send_member_email(user, MANAGER, auth)
 
     def add_unregistered_member(self, fullname, email, auth, role=MEMBER):
         """Add unregistered member or manager to OSFGroup
@@ -237,6 +240,8 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         if not (auth and user == auth.user):
             self._require_manager_permission(auth)
 
+        if not self.is_member(user):
+            return False
         self._enforce_one_manager(user)
         self.manager_group.user_set.remove(user)
         self.member_group.user_set.remove(user)
@@ -280,6 +285,12 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         """
         self._require_manager_permission(auth)
 
+        perms = get_group_perms(self.member_group, node)
+        if perms:
+            if reduce_permissions(perms) == permission:
+                return False
+            return self.update_group_permissions_to_node(node, permission, auth)
+
         permissions = self._get_node_group_perms(node, permission)
         for perm in permissions:
             assign_perm(perm, self.member_group, node)
@@ -305,32 +316,34 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         :param auth: Auth object
         """
         current_permissions = reduce_permissions(get_group_perms(self.member_group, node))
-        if current_permissions != permission:
-            permissions = self._get_node_group_perms(node, permission)
-            to_remove = set(get_perms(self.member_group, node)).difference(permissions)
-            for perm in to_remove:
-                remove_perm(perm, self.member_group, node)
-            for perm in permissions:
-                assign_perm(perm, self.member_group, node)
-            params = {
-                'group': self._id,
-                'node': node._id,
-                'permission': permission
-            }
-            self.add_log(
-                OSFGroupLog.NODE_PERMS_UPDATED,
-                params=params,
-                auth=auth
-            )
+        if current_permissions == permission:
+            return False
+        permissions = self._get_node_group_perms(node, permission)
+        to_remove = set(get_perms(self.member_group, node)).difference(permissions)
+        for perm in to_remove:
+            remove_perm(perm, self.member_group, node)
+        for perm in permissions:
+            assign_perm(perm, self.member_group, node)
+        params = {
+            'group': self._id,
+            'node': node._id,
+            'permission': permission
+        }
+        self.add_log(
+            OSFGroupLog.NODE_PERMS_UPDATED,
+            params=params,
+            auth=auth
+        )
 
-            self.add_corresponding_node_log(node, NodeLog.GROUP_UPDATED, params, auth)
+        self.add_corresponding_node_log(node, NodeLog.GROUP_UPDATED, params, auth)
 
     def remove_group_from_node(self, node, auth):
         """Removes the OSFGroup from the node. Called from node model.
 
         :param obj AbstractNode
         """
-        # Just removes all permissions to the node, if they exist
+        if not get_group_perms(self.member_group, node):
+            return False
         for perm in node.groups[ADMIN]:
             remove_perm(perm, self.member_group, node)
         params = {

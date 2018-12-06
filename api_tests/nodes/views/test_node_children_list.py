@@ -252,7 +252,7 @@ class TestNodeChildCreate:
         )
         assert res.status_code == 403
 
-        project.add_osf_group(group, 'write')
+        project.update_osf_group(group, 'write')
         res = app.post_json_api(
             url, child, auth=group_mem.auth,
             expect_errors=True

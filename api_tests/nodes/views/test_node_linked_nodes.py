@@ -175,7 +175,7 @@ class TestNodeRelationshipNodeLinks:
         )
         assert res.status_code == 403
 
-        node_linking_private.add_osf_group(group, 'write')
+        node_linking_private.update_osf_group(group, 'write')
         node_other.add_osf_group(group, 'write')
         res = app.post_json_api(
             url_private,

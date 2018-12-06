@@ -233,6 +233,14 @@ class TestOSFGroup:
 
         assert project.has_permission(member, 'admin') is False
 
+    def test_add_osf_group_to_node_already_connected(self, manager, member, osf_group, project):
+        project.add_osf_group(osf_group, 'admin')
+        assert project.has_permission(member, 'admin') is True
+
+        project.add_osf_group(osf_group, 'write')
+        assert project.has_permission(member, 'admin') is False
+        assert project.has_permission(member, 'write') is True
+
     def test_user_groups_property(self, manager, member, osf_group):
         assert osf_group in manager.osf_groups
         assert osf_group in member.osf_groups
@@ -279,12 +287,12 @@ class TestOSFGroup:
         assert project.has_permission(member, 'write') is False
         assert project.has_permission(member, 'read') is True
 
-        project.add_osf_group(osf_group, 'write', auth=Auth(manager))
+        project.update_osf_group(osf_group, 'write', auth=Auth(manager))
         assert project.has_permission(member, 'admin') is False
         assert project.has_permission(member, 'write') is True
         assert project.has_permission(member, 'read') is True
 
-        project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
+        project.update_osf_group(osf_group, 'admin', auth=Auth(manager))
         assert project.has_permission(member, 'admin') is True
         assert project.has_permission(member, 'write') is True
         assert project.has_permission(member, 'read') is True
@@ -612,14 +620,14 @@ class TestOSFGroup:
         project.add_osf_group(osf_group, 'write')
         assert child.is_admin_parent(user_three) is False
 
-        project.add_osf_group(osf_group, 'admin')
+        project.update_osf_group(osf_group, 'admin')
         assert child.is_admin_parent(user_three) is True
         assert child.is_admin_parent(user_three, include_group_admin=False) is False
         project.remove_osf_group(osf_group)
 
         child.add_osf_group(osf_group, 'write')
         assert child.is_admin_parent(user_three) is False
-        child.add_osf_group(osf_group, 'admin')
+        child.update_osf_group(osf_group, 'admin')
         assert child.is_admin_parent(user_three) is True
         assert child.is_admin_parent(user_three, include_group_admin=False) is False
 
@@ -639,6 +647,8 @@ class TestOSFGroupLogging:
         assert log.params['group'] == group._id
 
         group.make_member(member, Auth(manager))
+        group.make_member(member, Auth(manager))
+        assert group.logs.count() == 3
         log = group.logs.first()
         assert log.action == OSFGroupLog.MEMBER_ADDED
         assert log.user == manager
@@ -646,6 +656,8 @@ class TestOSFGroupLogging:
         assert log.params['user'] == member._id
 
         group.make_manager(member, Auth(manager))
+        group.make_manager(member, Auth(manager))
+        assert group.logs.count() == 4
         log = group.logs.first()
         assert log.action == OSFGroupLog.ROLE_UPDATED
         assert log.user == manager
@@ -654,7 +666,9 @@ class TestOSFGroupLogging:
         assert log.params['new_role'] == MANAGER
 
         group.make_member(member, Auth(manager))
+        group.make_member(member, Auth(manager))
         log = group.logs.first()
+        assert group.logs.count() == 5
         assert log.action == OSFGroupLog.ROLE_UPDATED
         assert log.user == manager
         assert log.params['group'] == group._id
@@ -662,6 +676,8 @@ class TestOSFGroupLogging:
         assert log.params['new_role'] == MEMBER
 
         group.remove_member(member, Auth(manager))
+        group.remove_member(member, Auth(manager))
+        assert group.logs.count() == 6
         log = group.logs.first()
         assert log.action == OSFGroupLog.MEMBER_REMOVED
         assert log.user == manager
@@ -669,6 +685,8 @@ class TestOSFGroupLogging:
         assert log.params['user'] == member._id
 
         group.set_group_name('New Name', Auth(manager))
+        group.set_group_name('New Name', Auth(manager))
+        assert group.logs.count() == 7
         log = group.logs.first()
         assert log.action == OSFGroupLog.EDITED_NAME
         assert log.user == manager
@@ -676,6 +694,8 @@ class TestOSFGroupLogging:
         assert log.params['name_original'] == 'My Lab'
 
         project.add_osf_group(group, 'write', Auth(manager))
+        project.add_osf_group(group, 'write', Auth(manager))
+        assert group.logs.count() == 8
         log = group.logs.first()
         assert log.action == OSFGroupLog.NODE_CONNECTED
         assert log.user == manager
@@ -691,7 +711,9 @@ class TestOSFGroupLogging:
         assert node_log.params['permission'] == 'write'
 
         project.update_osf_group(group, 'read', Auth(manager))
+        project.update_osf_group(group, 'read', Auth(manager))
         log = group.logs.first()
+        assert group.logs.count() == 9
         assert log.action == OSFGroupLog.NODE_PERMS_UPDATED
         assert log.user == manager
         assert log.params['group'] == group._id
@@ -706,6 +728,8 @@ class TestOSFGroupLogging:
         assert node_log.params['permission'] == 'read'
 
         project.remove_osf_group(group, Auth(manager))
+        project.remove_osf_group(group, Auth(manager))
+        assert group.logs.count() == 10
         log = group.logs.first()
         assert log.action == OSFGroupLog.NODE_DISCONNECTED
         assert log.user == manager
