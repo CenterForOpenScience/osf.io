@@ -67,14 +67,15 @@ from api.logs.serializers import NodeLogSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
-    IsAdminAndContributor,
+    IsAdminContributor,
     IsPublic,
     AdminOrPublic,
     ContributorOrPublic,
+    AdminContributorOrPublic,
     RegistrationAndPermissionCheckForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
-    IsAdminAndContributorOrReviewer,
+    IsAdminContributorOrReviewer,
     IsContributorOrGroupMember,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
@@ -553,7 +554,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_list).
     """
     permission_classes = (
-        IsAdminAndContributor,
+        IsAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -585,7 +586,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
     """
     permission_classes = (
-        IsAdminAndContributorOrReviewer,
+        IsAdminContributorOrReviewer,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -610,7 +611,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_registrations_list).
     """
     permission_classes = (
-        AdminOrPublic,
+        AdminContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,

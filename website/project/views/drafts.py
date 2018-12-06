@@ -316,6 +316,7 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
     return ret
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def update_draft_registration(auth, node, draft, *args, **kwargs):
     """Update an existing draft registration
@@ -343,6 +344,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     return serialize_draft_registration(draft, auth), http.OK
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def delete_draft_registration(auth, node, draft, *args, **kwargs):
     """Permanently delete a draft registration

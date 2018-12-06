@@ -10,7 +10,6 @@ from osf_tests.factories import (
     ProjectFactory,
     DraftRegistrationFactory,
     AuthUserFactory,
-    OSFGroupFactory,
     RegistrationFactory,
 )
 from rest_framework import exceptions
@@ -46,7 +45,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     def test_admin_can_view_draft(
             self, app, user, draft_registration, project_public,
-            schema, url_draft_registrations):
+            schema, url_draft_registrations, group_mem):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
@@ -55,16 +54,13 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['attributes']['registration_metadata'] == {}
 
     #   test_group_mem_admin_can_view
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, 'admin')
         res = app.get(url_draft_registrations, auth=group_mem.auth)
         assert res.status_code == 200
 
     def test_cannot_view_draft(
             self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
-            url_draft_registrations):
+            url_draft_registrations, group, group_mem):
 
         #   test_read_only_contributor_cannot_view_draft
         res = app.get(
@@ -92,8 +88,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert res.status_code == 401
 
     #   test_group_mem_read_cannot_view
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
+        project_public.remove_osf_group(group)
         project_public.add_osf_group(group, 'read')
         res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
@@ -247,7 +242,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
     def test_cannot_update_draft(
             self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
-            payload, url_draft_registrations):
+            payload, url_draft_registrations, group, group_mem):
 
         #   test_read_only_contributor_cannot_update_draft
         res = app.put_json_api(
@@ -279,10 +274,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             payload, expect_errors=True)
         assert res.status_code == 401
 
-    #   test_osf_group_member_write_cannot_update_draft
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, 'write')
+    #   test_osf_group_member_admin_cannot_update_draft
         res = app.put_json_api(
             url_draft_registrations,
             payload, expect_errors=True,
@@ -290,9 +282,9 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         )
         assert res.status_code == 403
 
-    #   test_osf_group_member_admin_cannot_update_draft
+    #   test_osf_group_member_write_cannot_update_draft
         project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, 'admin')
+        project_public.add_osf_group(group, 'write')
         res = app.put_json_api(
             url_draft_registrations,
             payload, expect_errors=True,
@@ -643,7 +635,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
     def test_cannot_update_draft(
             self, app, user_write_contrib,
             user_read_contrib, user_non_contrib,
-            payload, url_draft_registrations):
+            payload, url_draft_registrations, group_mem):
 
         #   test_read_only_contributor_cannot_update_draft
         res = app.patch_json_api(
@@ -675,6 +667,13 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
             payload, expect_errors=True)
         assert res.status_code == 401
 
+        # group admin cannot update draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
 
 @pytest.mark.django_db
 class TestDraftRegistrationDelete(DraftRegistrationTestCase):
@@ -709,7 +708,7 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
     def test_cannot_delete_draft(
             self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
-            url_draft_registrations):
+            url_draft_registrations, group, group_mem):
 
         #   test_read_only_contributor_cannot_delete_draft
         res = app.delete_json_api(
@@ -736,16 +735,13 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         res = app.delete_json_api(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
 
-    #   test_group_member_write_cannot_delete_draft
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, 'write')
+    #   test_group_member_admin_cannot_delete_draft
         res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
         assert res.status_code == 403
 
-    #   test_group_member_admin_cannot_delete_draft
+    #   test_group_member_write_cannot_delete_draft
         project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, 'admin')
+        project_public.add_osf_group(group, 'write')
         res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
         assert res.status_code == 403
 

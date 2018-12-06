@@ -435,6 +435,10 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.put_json(url, payload, auth=self.non_admin.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
+        # group admin cannot update draft registration
+        res = self.app.put_json(url, payload, auth=self.group_mem.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
     def test_delete_draft_registration(self):
         assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
@@ -450,6 +454,10 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.delete(url, auth=self.non_admin.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
+
+        # group admin cannot delete draft registration
+        res = self.app.delete(url, auth=self.group_mem.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
     @mock.patch('website.archiver.tasks.archive')
     def test_delete_draft_registration_registered(self, mock_register_draft):
