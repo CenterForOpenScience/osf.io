@@ -125,8 +125,8 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     """
     if waffle.switch_is_active(features.OSF_PREREGISTRATION):
         raise HTTPError(http.GONE, data={
-            'message_short': 'The Prereg Challenge has ended.',
-            'message_long': 'The Prereg Challenge has ended. This endpoint is currently depreciated.'
+            'message_short': 'The Prereg Challenge has ended',
+            'message_long': 'The Prereg Challenge has ended. No new submissions are accepted at this time.'
         })
 
     json_data = request.get_json()

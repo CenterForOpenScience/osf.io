@@ -593,4 +593,4 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             )
         assert_equal(res.status_code, http.GONE)
         data = res.json
-        assert_equal(data['message_short'], 'The Prereg Challenge has ended.')
+        assert_equal(data['message_short'], 'The Prereg Challenge has ended')
