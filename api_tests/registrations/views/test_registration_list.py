@@ -812,7 +812,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'u\'question\' is a required property'
+        assert res.json['errors'][0]['detail'] == 'For your registration the \'Manipulated variables\' field is invalid.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_third_level_questions_must_be_answered_on_draft(
@@ -849,7 +849,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '\'value\' is a required property'
+        assert res.json['errors'][0]['detail'] == 'For your registration the \'Manipulated variables\' field is invalid.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_multiple_choice_in_registration_schema_must_match_one_of_choices(
@@ -871,8 +871,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert (
-            res.json['errors'][0]['detail'] == 'u\'success!\' is not one of [u\'success\', u\'informative failure to replicate\','
-            ' u\'practical failure to replicate\', u\'inconclusive\']')
+            res.json['errors'][0]['detail'] == 'For your registration the \'I judge the replication to be a(n)\''
+                                               ' field is invalid, your response must be one of the provided options.')
 
     def test_invalid_registration_choice(
             self, app, user, draft_registration, url_registrations):
