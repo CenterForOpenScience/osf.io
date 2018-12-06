@@ -777,7 +777,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'u\'q1\' is a required property'
+        assert res.json['errors'][0]['detail'] == 'For your registration the \'Title\' field is required'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_second_level_questions_must_be_answered_on_draft(
@@ -1082,22 +1082,6 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'All files attached to this form must be registered to complete the' \
                                                   ' process. The following file(s) are attached, but are not part of' \
                                                   ' a component being registered: <b>file 1</b>'
-
-    def test_400s_with_bad_metadata(
-            self, app, user, payload, draft_registration, url_registrations):
-        draft_registration.registration_metadata['item29'] = {
-            'value': ['Yes', '1']
-        }
-        draft_registration.save()
-        res = app.post_json_api(
-            url_registrations,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration the \'The finalized materials, procedures, ' \
-                                                  'analysis plan etc of the replication are registered here\'' \
-                                                  ' field is invalid.'
 
 
 @pytest.mark.django_db

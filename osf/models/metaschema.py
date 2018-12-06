@@ -77,7 +77,11 @@ class RegistrationSchema(AbstractSchema):
         except jsonschema.ValidationError as e:
             for page in self.schema['pages']:
                 for question in page['questions']:
-                    if e.relative_path[0] == question['qid']:
+                    if e.relative_schema_path[0] == 'required':
+                        raise ValidationError(
+                            'For your registration the \'{}\' field is required'.format(question['title'])
+                        )
+                    elif e.relative_path[0] == question['qid']:
                         if 'options' in question:
                             raise ValidationError(
                                 'For your registration the \'{}\' field is invalid, your response must be one of the provided options.'.format(
