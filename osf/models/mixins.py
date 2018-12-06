@@ -99,17 +99,23 @@ class Loggable(models.Model):
             log.date = log_date
         log.save()
 
+        self._complete_add_log(log, action, user, save)
+
+        return log
+
+    def _complete_add_log(self, log, action, user=None, save=True):
         if self.logs.count() == 1:
-            self.last_logged = log.date.replace(tzinfo=pytz.utc)
+            log_date = log.date if hasattr(log, 'date') else log.created
+            self.last_logged = log_date.replace(tzinfo=pytz.utc)
         else:
-            self.last_logged = self.logs.first().date
+            recent_log = self.logs.first()
+            log_date = recent_log.date if hasattr(log, 'date') else recent_log.created
+            self.last_logged = log_date
 
         if save:
             self.save()
-        if user and not self.is_collection:
-            increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
-
-        return log
+        if user and not getattr(self, 'is_collection', None):
+            increment_user_activity_counters(user._primary_key, action, self.last_logged.isoformat())
 
     class Meta:
         abstract = True

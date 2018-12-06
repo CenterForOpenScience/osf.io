@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group
 from framework.auth import Auth
 from django.contrib.auth.models import AnonymousUser
 from framework.exceptions import PermissionsError
-from osf.models import OSFGroup, Node, OSFUser
+from osf.models import OSFGroup, Node, OSFUser, OSFGroupLog, NodeLog
 from osf.utils.permissions import MANAGER, MEMBER
 from .factories import (
     NodeFactory,
@@ -622,3 +622,98 @@ class TestOSFGroup:
         child.add_osf_group(osf_group, 'admin')
         assert child.is_admin_parent(user_three) is True
         assert child.is_admin_parent(user_three, include_group_admin=False) is False
+
+
+class TestOSFGroupLogging:
+    def test_logging(self, project, manager, member):
+        group = OSFGroup.objects.create(name='My Lab', creator_id=manager.id)
+        assert group.logs.count() == 2
+        log = group.logs.last()
+        assert log.action == OSFGroupLog.GROUP_CREATED
+        assert log.user == manager
+        assert log.user == manager
+        assert log.params['group'] == group._id
+
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.MANAGER_ADDED
+        assert log.params['group'] == group._id
+
+        group.make_member(member, Auth(manager))
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.MEMBER_ADDED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['user'] == member._id
+
+        group.make_manager(member, Auth(manager))
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.ROLE_UPDATED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['user'] == member._id
+        assert log.params['new_role'] == MANAGER
+
+        group.make_member(member, Auth(manager))
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.ROLE_UPDATED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['user'] == member._id
+        assert log.params['new_role'] == MEMBER
+
+        group.remove_member(member, Auth(manager))
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.MEMBER_REMOVED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['user'] == member._id
+
+        group.set_group_name('New Name', Auth(manager))
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.EDITED_NAME
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['name_original'] == 'My Lab'
+
+        project.add_osf_group(group, 'write', Auth(manager))
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.NODE_CONNECTED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['node'] == project._id
+        assert log.params['permission'] == 'write'
+        node_log = project.logs.first()
+
+        assert node_log.action == NodeLog.GROUP_ADDED
+        assert node_log.user == manager
+        assert node_log.params['group'] == group._id
+        assert node_log.params['node'] == project._id
+        assert node_log.params['permission'] == 'write'
+
+        project.update_osf_group(group, 'read', Auth(manager))
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.NODE_PERMS_UPDATED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['node'] == project._id
+        assert log.params['permission'] == 'read'
+        node_log = project.logs.first()
+
+        assert node_log.action == NodeLog.GROUP_UPDATED
+        assert node_log.user == manager
+        assert node_log.params['group'] == group._id
+        assert node_log.params['node'] == project._id
+        assert node_log.params['permission'] == 'read'
+
+        project.remove_osf_group(group, Auth(manager))
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.NODE_DISCONNECTED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['node'] == project._id
+        node_log = project.logs.first()
+
+        assert node_log.action == NodeLog.GROUP_REMOVED
+        assert node_log.user == manager
+        assert node_log.params['group'] == group._id
+        assert node_log.params['node'] == project._id
