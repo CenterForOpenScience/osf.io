@@ -313,7 +313,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'incorrect_key\' was unexpected)'
+        assert errors['detail'] == 'For your registration the \'Has data collection begun for this project?\'' \
+                                   ' field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_metadata_must_be_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -327,7 +328,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'q11\' was unexpected)'
+        assert errors['detail'] == 'For your registration the \'datacompletion\' field is extraneous and not' \
+                                   ' permitted in your response.'
 
     def test_multiple_choice_question_value_must_match_value_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -455,7 +457,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == ' For your registration the \'Authors\' field is invalid.'
+            'detail'] == 'For your registration the \'Authors\' field is invalid.'
 
     def test_reviewer_can_update_nested_comment_fields_draft_registration(
             self, app, project_public, draft_registration_prereg, administer_permission):

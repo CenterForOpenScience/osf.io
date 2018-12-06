@@ -81,6 +81,10 @@ class RegistrationSchema(AbstractSchema):
                         raise ValidationError(
                             'For your registration the \'{}\' field is required'.format(question['title'])
                         )
+                    elif e.relative_schema_path[0] == 'additionalProperties':
+                        raise ValidationError(
+                            'For your registration the \'{}\' field is extraneous and not permitted in your response.'.format(question['qid'])
+                        )
                     elif e.relative_path[0] == question['qid']:
                         if 'options' in question:
                             raise ValidationError(
