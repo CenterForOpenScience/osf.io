@@ -84,6 +84,13 @@ class ShibLoginView(RedirectView):
             return redirect('auth:login')
         eppn_user = get_user(eppn=eppn)
         if eppn_user:
+            try:
+                others = eppn_user.affiliated_institutions.exclude(id=institution.id).get()
+            except Institution.DoesNotExist:
+                pass
+            else:
+                eppn_user.affiliated_institutions.remove(others)
+
             eppn_user.affiliated_institutions.add(institution)
             if 'GakuninRDMAdmin' in request.environ['HTTP_AUTH_ENTITLEMENT']:
                 # login success
