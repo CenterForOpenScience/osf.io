@@ -1083,6 +1083,22 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
                                                   ' process. The following file(s) are attached, but are not part of' \
                                                   ' a component being registered: <b>file 1</b>'
 
+    def test_400s_with_bad_metadata(
+            self, app, user, payload, draft_registration, url_registrations):
+        draft_registration.registration_metadata['item29'] = {
+            'value': ['Yes', '1']
+        }
+        draft_registration.save()
+        res = app.post_json_api(
+            url_registrations,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'For your registration the \'The finalized materials, procedures, ' \
+                                                  'analysis plan etc of the replication are registered here\'' \
+                                                  ' field is invalid.'
+
 
 @pytest.mark.django_db
 class TestRegistrationBulkUpdate:
