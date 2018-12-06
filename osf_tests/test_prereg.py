@@ -1,8 +1,6 @@
 from nose.tools import *  # noqa: F403
 
 from waffle.testutils import override_switch
-from waffle.models import Switch
-from django.core.cache import cache
 
 from osf.models import RegistrationSchema
 from osf.features import OSF_PREREGISTRATION
@@ -31,8 +29,6 @@ class TestPreregLandingPage(OsfTestCase):
             }
         )
 
-        cache.delete(Switch._cache_key(OSF_PREREGISTRATION))
-
         with override_switch(name=OSF_PREREGISTRATION, active=True):
             assert_equal(
                 landing_page(),
@@ -44,8 +40,6 @@ class TestPreregLandingPage(OsfTestCase):
                     'is_logged_in': False,
                 }
             )
-
-        cache.delete(Switch._cache_key(OSF_PREREGISTRATION))
 
     def test_no_projects(self):
         assert_equal(
@@ -59,8 +53,6 @@ class TestPreregLandingPage(OsfTestCase):
             }
         )
 
-        cache.delete(Switch._cache_key(OSF_PREREGISTRATION))
-
         with override_switch(name=OSF_PREREGISTRATION, active=True):
             assert_equal(
                 landing_page(user=self.user),
@@ -72,8 +64,6 @@ class TestPreregLandingPage(OsfTestCase):
                     'is_logged_in': True,
                 }
             )
-
-        cache.delete(Switch._cache_key(OSF_PREREGISTRATION))
 
     def test_has_project(self):
         factories.ProjectFactory(creator=self.user)
@@ -88,7 +78,6 @@ class TestPreregLandingPage(OsfTestCase):
                 'is_logged_in': True,
             }
         )
-        cache.delete(Switch._cache_key(OSF_PREREGISTRATION))
 
         with override_switch(name=OSF_PREREGISTRATION, active=True):
             assert_equal(
@@ -101,8 +90,6 @@ class TestPreregLandingPage(OsfTestCase):
                     'is_logged_in': True,
                 }
             )
-
-        cache.delete(Switch._cache_key(OSF_PREREGISTRATION))
 
     def test_has_project_and_draft_registration(self):
         prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge')
@@ -122,8 +109,6 @@ class TestPreregLandingPage(OsfTestCase):
             }
         )
 
-        cache.delete(Switch._cache_key(OSF_PREREGISTRATION))
-
         with override_switch(name=OSF_PREREGISTRATION, active=True):
             prereg_schema = RegistrationSchema.objects.get(name='OSF Preregistration')
             factories.DraftRegistrationFactory(
@@ -140,8 +125,6 @@ class TestPreregLandingPage(OsfTestCase):
                     'is_logged_in': True,
                 }
             )
-
-        cache.delete(Switch._cache_key(OSF_PREREGISTRATION))
 
     def test_drafts_for_user_omits_registered(self):
         prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
