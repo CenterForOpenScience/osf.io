@@ -1,4 +1,5 @@
 from guardian.core import ObjectPermissionChecker
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
@@ -413,7 +414,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        node_ids = self.get_collection().guid_links.all().values_list('object_id', flat=True)
+        node_ids = self.get_collection().guid_links.filter(content_type_id=ContentType.objects.get_for_model(Node).id).values_list('object_id', flat=True)
         nodes = Node.objects.filter(id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
         return self.optimize_node_queryset(nodes)
 

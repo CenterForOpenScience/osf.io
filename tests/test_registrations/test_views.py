@@ -110,8 +110,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         self.draft.reload()
         assert_is_not_none(self.draft.approval)
         assert_equal(self.draft.approval.meta, {
-            u'registration_choice': unicode(self.embargo_payload['registrationChoice']),
-            u'embargo_end_date': unicode(self.embargo_payload['embargoEndDate'])
+            u'registration_choice': 'embargo',
+            u'embargo_end_date': unicode(self.embargo_payload['data']['attributes']['lift_embargo'])
         })
 
     def test_submit_draft_for_review_invalid_registrationChoice(self):
@@ -157,7 +157,11 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         res = self.app.post_json(url, {
-            'registrationChoice': 'immediate'
+            'data': {
+                'attributes': {
+                    'registration_choice': 'immediate',
+                },
+            },
         }, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
@@ -199,8 +203,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.post_json(
             url,
             {
-                'registrationChoice': 'embargo',
-                'embargoEndDate': end_date.strftime('%c'),
+                'data': {
+                    'attributes': {
+                        'children': [self.node._id],
+                        'registration_choice': 'embargo',
+                        'lift_embargo': end_date.strftime('%c'),
+                    },
+                    'type': 'registrations',
+                }
             },
             auth=self.user.auth)
 

@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+18.7.0 (2018-12-05)
+===================
+
+- Add "OSF Preregistration" registration schema. It will automatically become active on Jan 1, 2019.
+- Add ENABLE_INACTIVE_SCHEMAS waffle switch. When active, APIv2 will return both active and inactive schemas.
+- Remove invalid registration schemas.
+
 18.6.0 (2018-11-15)
 ===================
 

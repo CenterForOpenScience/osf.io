@@ -1,6 +1,6 @@
 {
   "name": "OSF",
-  "version": "18.6.0",
+  "version": "18.7.0",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
@@ -9,7 +9,7 @@
     "@centerforopenscience/list-of-licenses": "1.1.0",
     "@centerforopenscience/markdown-it-atrules": "^0.1.1",
     "@centerforopenscience/markdown-it-toc": "~1.1.1",
-    "@centerforopenscience/osf-style": "https://github.com/CenterForOpenScience/osf-style#370b544affcdafc5734cdd388587575895e4b33a",
+    "@centerforopenscience/osf-style": "1.8.0",
     "URIjs": "^1.14.1",
     "assets-webpack-plugin": "^0.1.0",
     "babel-loader": "^4.1.0",

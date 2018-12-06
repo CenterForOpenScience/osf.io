@@ -653,7 +653,9 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     preRegisterPrompts.unshift('Registrations cannot be modified or deleted once completed.');
 
     var registrationModal = new RegistrationModal.ViewModel(
-        confirm, preRegisterPrompts, validator
+        confirm, preRegisterPrompts, validator, {
+            requiresApproval: self.requiresApproval()
+        }
     );
     registrationModal.show();
 };

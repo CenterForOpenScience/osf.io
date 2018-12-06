@@ -19,9 +19,10 @@
   resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-toc/-/markdown-it-toc-1.1.1.tgz#633c6367cf783a51a080e75a9cd62fd62037e140"
   integrity sha512-xzfwi99vziqpE8cEmcAWiSNGA2pCg/F5XO/GsWo89J1qzFt4udlOiqzW8+yjtfEPQhDY3KLB62QVN4yudeBUYA==
 
-"@centerforopenscience/osf-style@https://github.com/CenterForOpenScience/osf-style#370b544affcdafc5734cdd388587575895e4b33a":
-  version "1.7.0"
-  resolved "https://github.com/CenterForOpenScience/osf-style#370b544affcdafc5734cdd388587575895e4b33a"
+"@centerforopenscience/osf-style@1.8.0":
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/@centerforopenscience/osf-style/-/osf-style-1.8.0.tgz#adde9771ec09d930b408a39a121ff10b925f2fd5"
+  integrity sha512-s6rwcQN44CVUuRpRihZHEMaDiQ7SBj6rXxisKORCGCq8BEd0GlogGYGHnTIUnNF/aJxufaVwjmLXRcI63FavJA==
 
 "@samverschueren/stream-to-observable@^0.3.0":
   version "0.3.0"
