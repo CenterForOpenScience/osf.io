@@ -360,6 +360,13 @@ class PreregCallbackMixin(object):
                             registration_url=registration.absolute_url,
                             mimetype='html')
 
+    def _email_template_context(self,  # TODO: remove after prereg challenge
+                                user,
+                                node,
+                                is_authorizer=False,
+                                urls=None):
+        return {}
+
 
 class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
