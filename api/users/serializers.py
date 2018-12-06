@@ -103,6 +103,11 @@ class UserSerializer(JSONAPISerializer):
         related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
+    groups = HideIfDisabled(RelationshipField(
+        related_view='users:user-groups',
+        related_view_kwargs={'user_id': '<_id>'},
+    ))
+
     quickfiles = HideIfDisabled(QuickFilesRelationshipField(
         related_view='users:user-quickfiles',
         related_view_kwargs={'user_id': '<_id>'},

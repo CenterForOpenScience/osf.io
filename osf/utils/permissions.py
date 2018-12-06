@@ -11,6 +11,13 @@ API_CONTRIBUTOR_PERMISSIONS = [READ, WRITE, ADMIN]
 CREATOR_PERMISSIONS = ADMIN
 DEFAULT_CONTRIBUTOR_PERMISSIONS = WRITE
 
+# Roles
+MANAGER = 'manager'
+MEMBER = 'member'
+
+MANAGE = 'manage'
+GROUP_MEMBER_PERMISSIONS = [MANAGER, MEMBER]
+
 # Permissions for ReviewableProviderMixin(GuardianMixin)
 REVIEW_PERMISSIONS = (
     ('set_up_moderation', 'Can set up moderation for this provider'),

@@ -1,16 +1,16 @@
 import mock
 import pytest
-from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
 
 from framework.auth import Auth
 from django.contrib.auth.models import AnonymousUser
 from framework.exceptions import PermissionsError
 from osf.models import OSFGroup, Node, OSFUser
+from osf.utils.permissions import MANAGER, MEMBER
 from .factories import (
     NodeFactory,
     ProjectFactory,
-    UserFactory,
+    AuthUserFactory,
     OSFGroupFactory
 )
 
@@ -18,19 +18,19 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture()
 def manager():
-    return UserFactory()
+    return AuthUserFactory()
 
 @pytest.fixture()
 def member():
-    return UserFactory()
+    return AuthUserFactory()
 
 @pytest.fixture()
 def user_two():
-    return UserFactory()
+    return AuthUserFactory()
 
 @pytest.fixture()
 def user_three():
-    return UserFactory()
+    return AuthUserFactory()
 
 @pytest.fixture()
 def auth(manager):
@@ -56,8 +56,9 @@ class TestOSFGroup:
 
         assert manager in osf_group.managers
         assert manager in osf_group.members
+        assert manager not in osf_group.members_only
 
-    @mock.patch('osf.models.osf_group.mails.send_mail')
+    @mock.patch('website.osf_groups.views.mails.send_mail')
     def test_make_manager(self, mock_send_mail, manager, member, user_two, user_three, osf_group):
         # no permissions
         with pytest.raises(PermissionsError):
@@ -82,7 +83,7 @@ class TestOSFGroup:
         # upgrading an existing member does not re-send an email
         assert mock_send_mail.call_count == 1
 
-    @mock.patch('osf.models.osf_group.mails.send_mail')
+    @mock.patch('website.osf_groups.views.mails.send_mail')
     def test_make_member(self, mock_send_mail, manager, member, user_two, user_three, osf_group):
         # no permissions
         with pytest.raises(PermissionsError):
@@ -112,13 +113,14 @@ class TestOSFGroup:
         assert user_two in osf_group.members
         assert mock_send_mail.call_count == 1
 
-    def test_add_unregistered_member(self, manager, member, osf_group, user_two):
+    @mock.patch('website.osf_groups.views.mails.send_mail')
+    def test_add_unregistered_member(self, mock_send_mail, manager, member, osf_group, user_two):
         test_fullname = 'Test User'
         test_email = 'test_member@cos.io'
         test_manager_email = 'test_manager@cos.io'
 
         # Email already exists
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             osf_group.add_unregistered_member(test_fullname, user_two.username, auth=Auth(manager))
 
         # Test need manager perms to add
@@ -127,6 +129,7 @@ class TestOSFGroup:
 
         # Add member
         osf_group.add_unregistered_member(test_fullname, test_email, auth=Auth(manager))
+        assert mock_send_mail.call_count == 1
         unreg_user = OSFUser.objects.get(username=test_email)
         assert unreg_user in osf_group.members
         assert unreg_user not in osf_group.managers
@@ -135,11 +138,12 @@ class TestOSFGroup:
         assert osf_group._id in unreg_user.unclaimed_records
 
         # Attempt to add unreg user as a member
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             osf_group.add_unregistered_member(test_fullname, test_email, auth=Auth(manager))
 
         # Add unregistered manager
         osf_group.add_unregistered_member(test_fullname, test_manager_email, auth=Auth(manager), role='manager')
+        assert mock_send_mail.call_count == 2
         unreg_manager = OSFUser.objects.get(username=test_manager_email)
         assert unreg_manager in osf_group.members
         assert unreg_manager in osf_group.managers
@@ -148,7 +152,7 @@ class TestOSFGroup:
         assert osf_group._id in unreg_manager.unclaimed_records
 
     def test_remove_member(self, manager, member, user_three, osf_group):
-        new_member = UserFactory()
+        new_member = AuthUserFactory()
         osf_group.make_member(new_member)
         assert new_member not in osf_group.managers
         assert new_member in osf_group.members
@@ -166,35 +170,30 @@ class TestOSFGroup:
         assert new_member not in osf_group.managers
         assert new_member not in osf_group.members
 
-        # Attempt to remove manager using this method
-        osf_group.make_manager(user_three)
-        with pytest.raises(ValueError):
-            osf_group.remove_member(user_three)
-
         # Remove self - member can remove themselves
         osf_group.remove_member(member, Auth(member))
         assert member not in osf_group.managers
         assert member not in osf_group.members
 
     def test_remove_manager(self, manager, member, user_three, osf_group):
-        new_manager = UserFactory()
+        new_manager = AuthUserFactory()
         osf_group.make_manager(new_manager)
         # no permissions
         with pytest.raises(PermissionsError):
-            osf_group.remove_manager(new_manager, Auth(user_three))
+            osf_group.remove_member(new_manager, Auth(user_three))
 
         # member only
         with pytest.raises(PermissionsError):
-            osf_group.remove_manager(new_manager, Auth(member))
+            osf_group.remove_member(new_manager, Auth(member))
 
         # manage permissions
-        osf_group.remove_manager(new_manager, Auth(manager))
+        osf_group.remove_member(new_manager, Auth(manager))
         assert new_manager not in osf_group.managers
         assert new_manager not in osf_group.members
 
         # can't remove last manager
         with pytest.raises(ValueError):
-            osf_group.remove_manager(manager, Auth(manager))
+            osf_group.remove_member(manager, Auth(manager))
         assert manager in osf_group.managers
         assert manager in osf_group.members
 
@@ -226,6 +225,14 @@ class TestOSFGroup:
 
         assert manager_group_name not in manager.groups.values_list('name', flat=True)
 
+    def test_remove_group_node_perms(self, manager, member, osf_group, project):
+        project.add_osf_group(osf_group, 'admin')
+        assert project.has_permission(member, 'admin') is True
+
+        osf_group.remove_group(Auth(manager))
+
+        assert project.has_permission(member, 'admin') is False
+
     def test_user_groups_property(self, manager, member, osf_group):
         assert osf_group in manager.osf_groups
         assert osf_group in member.osf_groups
@@ -245,6 +252,11 @@ class TestOSFGroup:
         project_two.add_osf_group(osf_group, 'write')
         assert len(osf_group.nodes) == 2
         assert project_two in osf_group.nodes
+
+    def test_user_group_roles(self, manager, member, user_three, osf_group):
+        assert manager.group_role(osf_group) == MANAGER
+        assert member.group_role(osf_group) == MEMBER
+        assert user_three.group_role(osf_group) is None
 
     def test_add_osf_group_to_node(self, manager, member, user_two, osf_group, project):
         # noncontributor
@@ -329,6 +341,24 @@ class TestOSFGroup:
             project.update_osf_group(osf_group, 'admin', auth=Auth(user_three))
         assert project.has_permission(member, 'admin') is False
 
+    def test_replace_contributor(self, manager, member, osf_group):
+        user = osf_group.add_unregistered_member('test_user', 'test@cos.io', auth=Auth(manager))
+        assert user in osf_group.members
+        assert user not in osf_group.managers
+        assert (
+            osf_group._id in
+            user.unclaimed_records.keys()
+        )
+        osf_group.replace_contributor(user, member)
+        assert user not in osf_group.members
+        assert user not in osf_group.managers
+
+        # test unclaimed_records is removed
+        assert (
+            osf_group._id not in
+            user.unclaimed_records.keys()
+        )
+
     def test_remove_osf_group_from_node(self, manager, member, user_two, osf_group, project):
         # noncontributor
         with pytest.raises(PermissionsError):
@@ -353,6 +383,18 @@ class TestOSFGroup:
         assert project.has_permission(member, 'write') is False
         assert project.has_permission(member, 'read') is False
 
+        # Manager who is not an admin can remove the group
+        user_three = AuthUserFactory()
+        osf_group.make_manager(user_three)
+        project.add_osf_group(osf_group, 'write')
+        assert project.has_permission(user_three, 'admin') is False
+        assert project.has_permission(user_three, 'write') is True
+        assert project.has_permission(user_three, 'read') is True
+        project.remove_osf_group(osf_group, auth=Auth(user_three))
+        assert project.has_permission(user_three, 'admin') is False
+        assert project.has_permission(user_three, 'write') is False
+        assert project.has_permission(user_three, 'read') is False
+
     def test_node_groups_property(self, manager, member, osf_group, project):
         project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
         project.save()
@@ -364,6 +406,29 @@ class TestOSFGroup:
         project.save()
         assert group_two in project.osf_groups
         assert len(project.osf_groups) == 2
+
+    def test_get_osf_groups_with_perms_property(self, manager, member, osf_group, project):
+        second_group = OSFGroupFactory(creator=manager)
+        third_group = OSFGroupFactory(creator=manager)
+        fourth_group = OSFGroupFactory(creator=manager)
+        OSFGroupFactory(creator=manager)
+
+        project.add_osf_group(osf_group, 'admin')
+        project.add_osf_group(second_group, 'write')
+        project.add_osf_group(third_group, 'write')
+        project.add_osf_group(fourth_group, 'read')
+
+        read_groups = project.get_osf_groups_with_perms('read')
+        assert len(read_groups) == 4
+
+        write_groups = project.get_osf_groups_with_perms('write')
+        assert len(write_groups) == 3
+
+        admin_groups = project.get_osf_groups_with_perms('admin')
+        assert len(admin_groups) == 1
+
+        with pytest.raises(ValueError):
+            project.get_osf_groups_with_perms('crazy')
 
     def test_belongs_to_osfgroup_property(self, manager, member, user_two, osf_group):
         assert osf_group.belongs_to_osfgroup(manager) is True
@@ -518,13 +583,13 @@ class TestOSFGroup:
     @pytest.mark.enable_quickfiles_creation
     def test_merge_users_transfers_group_membership(self, member, manager, osf_group):
         # merge member
-        other_user = UserFactory()
+        other_user = AuthUserFactory()
         other_user.merge_user(member)
         other_user.save()
         assert osf_group.is_member(other_user)
 
         # merge manager
-        other_other_user = UserFactory()
+        other_other_user = AuthUserFactory()
         other_other_user.merge_user(manager)
         other_other_user.save()
         assert osf_group.is_member(other_other_user)

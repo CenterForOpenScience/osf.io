@@ -8,7 +8,7 @@
     %>
     Hello ${user.fullname},<br>
     <br>
-    ${referrer_name + ' has added you' if referrer_name else 'You have been added'} as a ${permission} of the group "${group_name}" on the OSF.<br>
+    ${referrer_name + ' has added you' if referrer_name else 'You have been added'} as a ${permission} of the group "${group_name}" on OSF.<br>
     <br>
     If you have erroneously been added to the group "${group_name}," please contact a group administrator.<br>
     <br>

@@ -49,7 +49,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
-from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -559,6 +559,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def osf_groups(self):
         OSFGroup = apps.get_model('osf.OSFGroup')
         return get_objects_for_user(self, 'member_group', OSFGroup)
+
+    def group_role(self, group):
+        if group.is_manager(self):
+            return MANAGER
+        elif group.is_member(self):
+            return MEMBER
+        else:
+            return None
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -1594,6 +1602,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                                          'have an external account for {} attached to Node {}, '
                                          'which has other contributors.'.format(addon.short_name, node._id))
 
+        for group in self.osf_groups:
+            if not group.managers.exclude(id=self.id).filter(is_registered=True).exists() and group.members.exclude(id=self.id).exists():
+                raise UserStateError('You cannot delete this user because they are the only registered manager of OSFGroup {} that contains other members.'.format(group._id))
+
         for node in shared_nodes.all():
             logger.info('Removing {self._id} as a contributor to node (pk:{node_id})...'.format(self=self, node_id=node.pk))
             node.remove_contributor(self, auth=Auth(self), log=False)
@@ -1605,6 +1617,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for node in personal_nodes.all():
             logger.info('Soft-deleting node (pk: {node_id})...'.format(node_id=node.pk))
             node.remove_node(auth=Auth(self))
+
+        for group in self.osf_groups:
+            if len(group.managers) == 1 and group.managers[0] == self:
+                group.remove_group()
+            else:
+                group.remove_member(self)
 
         logger.info('Clearing identifying information...')
         # This removes identifying info

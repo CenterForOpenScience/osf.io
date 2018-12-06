@@ -6,6 +6,7 @@ import datetime as dt
 import urlparse
 
 from django.db import connection, transaction
+from django.contrib.auth.models import Group
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 import mock
@@ -25,7 +26,7 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
+from osf.models import AbstractNode, OSFGroup, OSFUser, Tag, Contributor, Session
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
@@ -42,6 +43,7 @@ from .factories import (
     ExternalAccountFactory,
     InstitutionFactory,
     NodeFactory,
+    OSFGroupFactory,
     PreprintProviderFactory,
     ProjectFactory,
     SessionFactory,
@@ -2106,6 +2108,47 @@ class TestUserGdprDelete:
 
         assert exc_info.value.args[0] == 'You cannot delete node {} because it would' \
                                          ' be a node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
+
+    def test_cant_gdpr_delete_osf_group_if_only_manager(self, user):
+        group = OSFGroupFactory(name='My Group', creator=user)
+        osf_group_name = group.name
+        manager_group_name = group.manager_group.name
+        member_group_name = group.member_group.name
+        member = AuthUserFactory()
+        group.make_member(member)
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because ' \
+                                        'they are the only registered manager of OSFGroup ' \
+                                        '{} that contains other members.'.format(group._id)
+
+        unregistered = group.add_unregistered_member('fake_user', 'fake_email@cos.io', Auth(user), 'manager')
+        assert len(group.managers) == 2
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because ' \
+                                        'they are the only registered manager of OSFGroup ' \
+                                        '{} that contains other members.'.format(group._id)
+
+        group.remove_member(member)
+        member.gdpr_delete()
+        # User is not the last member in the group, so they are just removed
+        assert OSFGroup.objects.filter(name=osf_group_name).exists()
+        assert Group.objects.filter(name=manager_group_name).exists()
+        assert Group.objects.filter(name=member_group_name).exists()
+        assert group.is_member(member) is False
+        assert group.is_manager(member) is False
+
+        group.remove_member(unregistered)
+        user.gdpr_delete()
+        # Group was deleted because user was the only member
+        assert not OSFGroup.objects.filter(name=osf_group_name).exists()
+        assert not Group.objects.filter(name=manager_group_name).exists()
+        assert not Group.objects.filter(name=member_group_name).exists()
 
     def test_cant_gdpr_delete_with_addon_credentials(self, user, project_with_two_admins_and_addon_credentials):
 

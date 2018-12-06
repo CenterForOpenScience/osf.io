@@ -12,7 +12,7 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
-from osf.models import AbstractNode, Guid, Preprint
+from osf.models import AbstractNode, Guid, Preprint, OSFGroup
 from website import settings, language
 from website.util import web_url_for
 
@@ -75,7 +75,7 @@ def must_not_be_rejected(func):
 
     return wrapped
 
-def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=False, preprints_valid=False):
+def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=False, preprints_valid=False, groups_valid=False):
     """ Ensures permissions to retractions are never implicitly granted. """
 
     # TODO: Check private link
@@ -84,6 +84,10 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             if preprints_valid and Preprint.load(kwargs.get('pid')):
+                return func(*args, **kwargs)
+
+            if groups_valid and OSFGroup.load(kwargs.get('pid')):
+                kwargs['node'] = OSFGroup.load(kwargs.get('pid'))
                 return func(*args, **kwargs)
 
             _inject_nodes(kwargs)
