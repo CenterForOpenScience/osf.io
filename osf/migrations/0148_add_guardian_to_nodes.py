@@ -5,6 +5,7 @@ import logging
 
 from django.db import migrations, connection
 from django.core.management.sql import emit_post_migrate_signal
+from guardian.models import GroupObjectPermission
 from bulk_update.helper import bulk_update
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,8 @@ def reverse_func(apps, schema_editor):
             contributor.admin = True
             contributors.append(contributor)
 
+        node_groups = Group.objects.filter(id__in=[read_group.id, write_group.id, admin_group.id])
+        GroupObjectPermission.objects.filter(group__id__in=node_groups).delete()
         read_group.delete()
         write_group.delete()
         admin_group.delete()

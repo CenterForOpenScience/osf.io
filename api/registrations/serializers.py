@@ -164,6 +164,11 @@ class RegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_forks_count'},
     ))
 
+    groups = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-groups',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
+
     node_links = ShowIfVersion(
         HideIfWithdrawal(RelationshipField(
             related_view='registrations:registration-pointers',

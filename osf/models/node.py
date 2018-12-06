@@ -137,12 +137,12 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
 
         if user is not None and not isinstance(user, AnonymousUser):
-            read_user_query = get_objects_for_user(user, 'read_node', self)
+            read_user_query = get_objects_for_user(user, 'read_node', self, with_superuser=False)
             qs |= read_user_query
             qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
-                        SELECT DISTINCT N.id as node_id
+                        SELECT N.id as node_id
                         FROM osf_abstractnode as N, auth_permission as P, osf_nodegroupobjectpermission as G, osf_osfuser_groups as UG
                         WHERE P.codename = 'admin_node'
                         AND G.permission_id = P.id
@@ -803,8 +803,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # TODO Log that osf_group's permissions were updated
 
     def remove_osf_group(self, group, auth=None):
-        if auth and not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Must be an admin to remove an OSF Group.')
+        if auth and not (self.has_permission(auth.user, ADMIN) or group.has_permission(auth.user, 'manage')):
+            raise PermissionsError('Must be an admin or an OSF Group manager to remove an OSF Group.')
         group.remove_group_from_node(self)
         # TODO Log that osf_group was removed from project
 
@@ -816,6 +816,24 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         member_groups = get_groups_with_perms(self).filter(name__icontains='osfgroup')
         return OSFGroup.objects.filter(id__in=OSFGroupGroupObjectPermission.objects.filter(group_id__in=member_groups).values_list('content_object_id'))
+
+    def get_osf_groups_with_perms(self, permission):
+        """Returns a queryset of OSF Groups whose members have the specified permission to the node
+        """
+        from osf.models.osf_group import OSFGroup
+        from osf.models.node import NodeGroupObjectPermission
+        try:
+            perm_id = Permission.objects.get(codename=permission + '_node').id
+        except Permission.DoesNotExist:
+            raise ValueError('Specified permission does not exist.')
+        member_groups = NodeGroupObjectPermission.objects.filter(
+            permission_id=perm_id, content_object_id=self.id
+        ).filter(
+            group__name__icontains='osfgroup'
+        ).values_list(
+            'group_id', flat=True
+        )
+        return OSFGroup.objects.filter(osfgroupgroupobjectpermission__group_id__in=member_groups)
 
     def get_aggregate_logs_query(self, auth):
         return (

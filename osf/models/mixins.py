@@ -1089,7 +1089,7 @@ class ContributorMixin(models.Model):
 
     def replace_contributor(self, old, new):
         """
-        Replacing unregistered ontributor with a verified user
+        Replacing unregistered contributor with a verified user
         """
         try:
             contrib_obj = self.contributor_set.get(user=old)

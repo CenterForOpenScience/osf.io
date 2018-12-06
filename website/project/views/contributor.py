@@ -18,7 +18,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import AbstractNode, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
+from osf.models import AbstractNode, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
 from website import mails, language, settings
@@ -665,7 +665,7 @@ def check_external_auth(user):
 
 @block_bing_preview
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(groups_valid=True)
 def claim_user_registered(auth, node, **kwargs):
     """
     View that prompts user to enter their password in order to claim being a contributor on a project.
@@ -679,11 +679,20 @@ def claim_user_registered(auth, node, **kwargs):
         return redirect(sign_out_url)
 
     # Logged in user should not be a contributor the project
-    if node.is_contributor(current_user):
+    if hasattr(node, 'is_contributor') and node.is_contributor(current_user):
         data = {
             'message_short': 'Already a contributor',
             'message_long': ('The logged-in user is already a contributor to this '
                 'project. Would you like to <a href="{}">log out</a>?').format(sign_out_url)
+        }
+        raise HTTPError(http.BAD_REQUEST, data=data)
+
+    # Logged in user is already a member of the OSF Group
+    if hasattr(node, 'is_member') and node.is_member(current_user):
+        data = {
+            'message_short': 'Already a member',
+            'message_long': ('The logged-in user is already a member of this OSF Group. '
+                'Would you like to <a href="{}">log out</a>?').format(sign_out_url)
         }
         raise HTTPError(http.BAD_REQUEST, data=data)
 
@@ -717,11 +726,18 @@ def claim_user_registered(auth, node, **kwargs):
     if should_claim:
         node.replace_contributor(old=unreg_user, new=current_user)
         node.save()
-        status.push_status_message(
-            'You are now a contributor to this project.',
-            kind='success',
-            trust=False
-        )
+        if isinstance(node, OSFGroup):
+            status.push_status_message(
+                'You are now a member of this OSFGroup.',
+                kind='success',
+                trust=False
+            )
+        else:
+            status.push_status_message(
+                'You are now a contributor to this project.',
+                kind='success',
+                trust=False
+            )
         return redirect(node.url)
     if is_json_request():
         form_ret = forms.utils.jsonify(form)

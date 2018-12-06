@@ -10,6 +10,7 @@ from osf.models import (
     Institution,
     Node,
     NodeRelation,
+    OSFGroup,
     OSFUser,
     Preprint,
     PrivateLink,
@@ -154,6 +155,29 @@ class ContributorDetailPermissions(permissions.BasePermission):
             return node.is_public or node.can_view(auth)
         elif request.method == 'DELETE':
             return node.has_permission(auth.user, osf_permissions.ADMIN) or auth.user == user
+        else:
+            return node.has_permission(auth.user, osf_permissions.ADMIN)
+
+
+class NodeGroupDetailPermissions(permissions.BasePermission):
+    """Permissions for node group detail - involving who can update the relationship
+    between a node and an OSF Group."""
+
+    acceptable_models = (OSFGroup, AbstractNode,)
+
+    def load_resource(self, context, view):
+        return AbstractNode.load(context[view.node_lookup_url_kwarg])
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        node = self.load_resource(request.parser_context['kwargs'], view)
+        if request.method in permissions.SAFE_METHODS:
+            return node.is_public or node.can_view(auth)
+        elif request.method == 'DELETE':
+            # If deleting an OSF group from a node, you either need admin perms
+            # or you need to be an OSF group manager
+            return node.has_permission(auth.user, osf_permissions.ADMIN) or obj.has_permission(auth.user, 'manage')
         else:
             return node.has_permission(auth.user, osf_permissions.ADMIN)
 
