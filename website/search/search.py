@@ -45,9 +45,26 @@ def update_node(node, index=None, bulk=False, async_update=True, saved_fields=No
         return search_engine.update_node(node, **kwargs)
 
 @requires_search
-def bulk_update_nodes(serialize, nodes, index=None):
+def update_preprint(preprint, index=None, bulk=False, async_update=True, saved_fields=None):
+    kwargs = {
+        'index': index,
+        'bulk': bulk
+    }
+    if async_update:
+        preprint_id = preprint._id
+        # We need the transaction to be committed before trying to run celery tasks.
+        if settings.USE_CELERY:
+            enqueue_task(search_engine.update_preprint_async.s(preprint_id=preprint_id, **kwargs))
+        else:
+            search_engine.update_preprint_async(preprint_id=preprint_id, **kwargs)
+    else:
+        index = index or settings.ELASTIC_INDEX
+        return search_engine.update_preprint(preprint, **kwargs)
+
+@requires_search
+def bulk_update_nodes(serialize, nodes, index=None, category=None):
     index = index or settings.ELASTIC_INDEX
-    search_engine.bulk_update_nodes(serialize, nodes, index=index)
+    search_engine.bulk_update_nodes(serialize, nodes, index=index, category=category)
 
 @requires_search
 def delete_node(node, index=None):
@@ -55,8 +72,6 @@ def delete_node(node, index=None):
     doc_type = node.project_or_component
     if node.is_registration:
         doc_type = 'registration'
-    elif node.is_preprint:
-        doc_type = 'preprint'
     search_engine.delete_doc(node._id, node, index=index, category=doc_type)
 
 @requires_search

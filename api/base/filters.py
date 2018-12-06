@@ -4,7 +4,6 @@ import operator
 import re
 
 import pytz
-from guardian.shortcuts import get_objects_for_user
 from api.base import utils
 from api.base.exceptions import (
     InvalidFilterComparisonType,
@@ -16,12 +15,11 @@ from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject, PreprintProvider, Node
+from osf.models import Subject, Preprint
 from osf.models.base import GuidMixin
-from osf.utils.workflows import DefaultStates
 
 
 def lowercase(lower):
@@ -121,6 +119,10 @@ class FilterMixin(object):
         if field_name not in serializer_class._declared_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
         if field_name not in getattr(serializer_class, 'filterable_fields', set()):
+            raise InvalidFilterFieldError(parameter='filter', value=field_name)
+        field = serializer_class._declared_fields[field_name]
+        # You cannot filter on deprecated fields.
+        if isinstance(field, ShowIfVersion) and utils.is_deprecated(self.request.version, field.min_version, field.max_version):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
         return serializer_class._declared_fields[field_name]
 
@@ -500,7 +502,6 @@ class PreprintFilterMixin(ListFilterMixin):
     """View mixin that uses ListFilterMixin, adding postprocessing for preprint querying
 
        Subclasses must define `get_default_queryset()`.
-
     """
     def postprocess_query_param(self, key, field_name, operation):
         if field_name == 'provider':
@@ -518,28 +519,9 @@ class PreprintFilterMixin(ListFilterMixin):
                 operation['op'] = 'iexact'
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
-        sub_qs = Node.objects.filter(preprints=OuterRef('pk'), is_deleted=False)
-        no_user_query = Q(is_published=True, node__is_public=True)
-
-        include_non_public = auth_user and not public_only
-        if include_non_public:
-            moderator_for = get_objects_for_user(auth_user, 'view_submissions', PreprintProvider)
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            reviews_user_query = Q(node__is_public=True, provider__in=moderator_for)
-            if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
-                query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
-            else:
-                query = (no_user_query | admin_user_query | reviews_user_query)
-        else:
-            moderator_for = PreprintProvider.objects.none()
-            query = no_user_query
-
-        if not moderator_for.exists():
-            base_queryset = base_queryset.exclude(date_withdrawn__isnull=False, ever_public=False)
-
-        ret = base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query)
-        # The auth subquery currently results in duplicates returned
-        # https://openscience.atlassian.net/browse/OSF-9058
-        # TODO: Remove need for .distinct using correct subqueries
-        return ret.distinct('id', 'created') if include_non_public else ret
+        return Preprint.objects.can_view(
+            base_queryset=base_queryset,
+            user=auth_user,
+            allow_contribs=allow_contribs,
+            public_only=public_only,
+        )

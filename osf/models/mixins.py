@@ -1,32 +1,40 @@
 import pytz
+import markupsafe
+import logging
 
 from django.apps import apps
 from django.contrib.auth.models import Group
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.functional import cached_property
-from guardian.shortcuts import assign_perm
-from guardian.shortcuts import get_perms
-from guardian.shortcuts import remove_perm
+from guardian.shortcuts import assign_perm, get_perms, remove_perm
+
 from include import IncludeQuerySet
 
 from api.providers.workflows import Workflows, PUBLIC_STATES
+from framework import status
+from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
-from osf.exceptions import InvalidTriggerError
+from osf.exceptions import InvalidTriggerError, ValidationValueError, UserStateError
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
+from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
-from osf.utils.permissions import ADMIN, REVIEW_GROUPS
+from osf.utils.permissions import ADMIN, READ, WRITE, reduce_permissions, expand_permissions, REVIEW_GROUPS
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
+from osf.utils.requests import get_request_and_user_id
 from website.exceptions import NodeStateError
-from website import settings
+from website.project import signals as project_signals
+from website import settings, mails, language
 
+
+logger = logging.getLogger(__name__)
 
 class Versioned(models.Model):
     """A Model mixin class that saves delta versions."""
@@ -624,7 +632,7 @@ class GuardianMixin(models.Model):
 
     @property
     def group_names(self):
-        return [self.format_group(name) for name in self.groups]
+        return [self.format_group(name) for name in self.groups.keys()]
 
     @property
     def group_objects(self):
@@ -676,7 +684,7 @@ class ReviewProviderMixin(GuardianMixin):
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
-        qs = qs.filter(node__isnull=False, node__is_deleted=False, node__is_public=True).values('machine_state').annotate(count=models.Count('*'))
+        qs = qs.filter(deleted__isnull=True, is_public=True).values('machine_state').annotate(count=models.Count('*'))
         counts = {state.value: 0 for state in ReviewStates}
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts
@@ -743,11 +751,11 @@ class TaxonomizableMixin(models.Model):
         :return: None
         """
         AbstractNode = apps.get_model('osf.AbstractNode')
-        PreprintService = apps.get_model('osf.PreprintService')
+        Preprint = apps.get_model('osf.Preprint')
         CollectionSubmission = apps.get_model('osf.CollectionSubmission')
         if getattr(self, 'is_registration', False):
             raise PermissionsError('Registrations may not be modified.')
-        if isinstance(self, (AbstractNode, PreprintService)):
+        if isinstance(self, (AbstractNode, Preprint)):
             if not self.has_permission(auth.user, ADMIN):
                 raise PermissionsError('Only admins can change subjects.')
         elif isinstance(self, CollectionSubmission):
@@ -777,3 +785,823 @@ class TaxonomizableMixin(models.Model):
             )
 
         self.save(old_subjects=old_subjects)
+
+
+class ContributorMixin(models.Model):
+    """
+    ContributorMixin containing methods for managing contributors.
+
+    Works for both Nodes and Preprints.  Some methods are overridden on Preprint
+    model.
+    """
+    class Meta:
+        abstract = True
+
+    @property
+    def log_class(self):
+        # PreprintLog or NodeLog, for example
+        raise NotImplementedError()
+
+    @property
+    def contributor_class(self):
+        # PreprintContributor or Contributor, for example
+        raise NotImplementedError()
+
+    @property
+    def contributor_kwargs(self):
+        # Dictionary with object type as the key, self as the value
+        raise NotImplementedError()
+
+    @property
+    def log_params(self):
+        # Generic params to build log
+        raise NotImplementedError()
+
+    @property
+    def order_by_contributor_field(self):
+        # 'contributor___order', for example
+        raise NotImplementedError()
+
+    @property
+    def contributor_email_template(self):
+        # default contributor email template as a string
+        raise NotImplementedError()
+
+    def expand_permissions(self):
+        # Transforms the permissions into the form the contributor methods expect
+        raise NotImplementedError()
+
+    def belongs_to_permission_group(self, user, permission):
+        # Boolean, whether the user belongs to this permission get_group
+        raise NotImplementedError()
+
+    def get_addons(self):
+        raise NotImplementedError()
+
+    def update_or_enqueue_on_resource_updated(self):
+        raise NotImplementedError()
+
+    @property
+    def contributors(self):
+        # NOTE: _order field is generated by order_with_respect_to = 'node'
+        return self._contributors.order_by(self.order_by_contributor_field)
+
+    @property
+    def admin_contributor_ids(self):
+        return self._get_admin_contributor_ids(include_self=True)
+
+    def clear_permissions(self, user):
+        return
+
+    def is_contributor(self, user):
+        """Return whether ``user`` is a contributor on the object."""
+        kwargs = self.contributor_kwargs
+        kwargs['user'] = user
+        return user is not None and self.contributor_class.objects.filter(**kwargs).exists()
+
+    def active_contributors(self, include=lambda n: True):
+        for contrib in self.contributors.filter(is_active=True):
+            if include(contrib):
+                yield contrib
+
+    def get_admin_contributors(self, users):
+        """Return a set of all admin contributors for this node. Excludes contributors on node links and
+        inactive users.
+        """
+        return (each.user for each in self._get_admin_contributors_query(users))
+
+    def _get_admin_contributors_query(self, users):
+        return self.contributor_class.objects.select_related('user').filter(
+            node=self,
+            user__in=users,
+            user__is_active=True,
+            admin=True
+        )
+
+    def add_contributor(self, contributor, permissions=None, visible=True,
+                        send_email=None, auth=None, log=True, save=False):
+        """Add a contributor to the project.
+
+        :param User contributor: The contributor to be added
+        :param list permissions: Permissions to grant to the contributor. Array of all permissions if node,
+         highest permission to grant, if contributor, as a string.
+        :param bool visible: Contributor is visible in project dashboard
+        :param str send_email: Email preference for notifying added contributor
+        :param Auth auth: All the auth information including user, API key
+        :param bool log: Add log to self
+        :param bool save: Save after adding contributor
+        :returns: Whether contributor was added
+        """
+        send_email = send_email or self.contributor_email_template
+        # If user is merged into another account, use master account
+        contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if contrib_to_add.is_disabled:
+            raise ValidationValueError('Deactivated users cannot be added as contributors.')
+
+        if not contrib_to_add.is_registered and not contrib_to_add.unclaimed_records:
+            raise UserStateError('This contributor cannot be added. If the problem persists please report it '
+                                       'to ' + language.SUPPORT_LINK)
+
+        if self.is_contributor(contrib_to_add):
+            if permissions is None:
+                return False
+            # Permissions must be overridden if changed when contributor is
+            # added to parent he/she is already on a child of.
+            else:
+                self.set_permissions(contrib_to_add, permissions)
+                if save:
+                    self.save()
+                return False
+        else:
+            kwargs = self.contributor_kwargs
+            kwargs['user'] = contrib_to_add
+            contributor_obj, created = self.contributor_class.objects.get_or_create(**kwargs)
+            contributor_obj.visible = visible
+
+            # Add default contributor permissions
+            permissions = permissions or self.DEFAULT_CONTRIBUTOR_PERMISSIONS
+
+            if not isinstance(permissions, basestring):
+                # Currently node permissions are passed in as a list
+                for perm in permissions:
+                    setattr(contributor_obj, perm, True)
+            else:
+                # Preprint permissions passed in as a string
+                self.add_permission(contrib_to_add, permissions, save=True)
+            contributor_obj.save()
+
+            if log:
+                params = self.log_params
+                params['contributors'] = [contrib_to_add._id]
+                self.add_log(
+                    action=self.log_class.CONTRIB_ADDED,
+                    params=params,
+                    auth=auth,
+                    save=False,
+                )
+            if save:
+                self.save()
+
+            if self._id and contrib_to_add:
+                project_signals.contributor_added.send(self,
+                                                       contributor=contributor,
+                                                       auth=auth, email_template=send_email, permissions=permissions)
+
+            # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
+            if self.get_identifier_value('doi'):
+                request, user_id = get_request_and_user_id()
+                self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
+            return contrib_to_add
+
+    def add_contributors(self, contributors, auth=None, log=True, save=False):
+        """Add multiple contributors
+
+        :param list contributors: A list of dictionaries of the form:
+            {
+                'user': <User object>,
+                'permissions': <Permissions list, e.g. ['read', 'write']>, or string (for preprints), e.g. 'read'
+                'visible': <Boolean indicating whether or not user is a bibliographic contributor>
+            }
+        :param auth: All the auth information including user, API key.
+        :param log: Add log to self
+        :param save: Save after adding contributor
+        """
+        for contrib in contributors:
+            self.add_contributor(
+                contributor=contrib['user'], permissions=contrib['permissions'],
+                visible=contrib['visible'], auth=auth, log=False, save=False,
+            )
+        if log and contributors:
+            params = self.log_params
+            params['contributors'] = [
+                contrib['user']._id
+                for contrib in contributors
+            ]
+            self.add_log(
+                action=self.log_class.CONTRIB_ADDED,
+                params=params,
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
+
+    def add_unregistered_contributor(self, fullname, email, auth, send_email=None,
+                                     visible=True, permissions=None, save=False, existing_user=None):
+        """Add a non-registered contributor to the project.
+
+        :param str fullname: The full name of the person.
+        :param str email: The email address of the person.
+        :param Auth auth: Auth object for the user adding the contributor.
+        :param User existing_user: the unregister_contributor if it is already created, otherwise None
+        :returns: The added contributor
+        :raises: DuplicateEmailError if user with given email is already in the database.
+        """
+        OSFUser = apps.get_model('osf.OSFUser')
+        send_email = send_email or self.contributor_email_template
+
+        # Create a new user record if you weren't passed an existing user
+        contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
+
+        contributor.add_unclaimed_record(self, referrer=auth.user,
+                                         given_name=fullname, email=email)
+        try:
+            contributor.save()
+        except ValidationError:  # User with same email already exists
+            contributor = get_user(email=email)
+            # Unregistered users may have multiple unclaimed records, so
+            # only raise error if user is registered.
+            if contributor.is_registered or self.is_contributor(contributor):
+                raise
+
+            contributor.add_unclaimed_record(
+                self, referrer=auth.user, given_name=fullname, email=email
+            )
+
+            contributor.save()
+
+        self.add_contributor(
+            contributor, permissions=permissions, auth=auth,
+            visible=visible, send_email=send_email, log=True, save=False
+        )
+        self.save()
+        return contributor
+
+    def add_contributor_registered_or_not(self, auth, user_id=None,
+                                          full_name=None, email=None, send_email=None,
+                                          permissions=None, bibliographic=True, index=None, save=False):
+        OSFUser = apps.get_model('osf.OSFUser')
+        send_email = send_email or self.contributor_email_template
+
+        if user_id:
+            contributor = OSFUser.load(user_id)
+            if not contributor:
+                raise ValueError('User with id {} was not found.'.format(user_id))
+
+            if self.contributor_set.filter(user=contributor).exists():
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+
+            if contributor.is_registered:
+                contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                     permissions=permissions, send_email=send_email, save=True)
+            else:
+                if not full_name:
+                    raise ValueError(
+                        'Cannot add unconfirmed user {} to resource {}. You need to provide a full_name.'
+                        .format(user_id, self._id)
+                    )
+                contributor = self.add_unregistered_contributor(
+                    fullname=full_name, email=contributor.username, auth=auth,
+                    send_email=send_email, permissions=permissions,
+                    visible=bibliographic, existing_user=contributor, save=True
+                )
+
+        else:
+            contributor = get_user(email=email)
+            if contributor and self.contributor_set.filter(user=contributor).exists():
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+
+            if contributor and contributor.is_registered:
+                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                    send_email=send_email, permissions=permissions, save=True)
+            else:
+                contributor = self.add_unregistered_contributor(
+                    fullname=full_name, email=email, auth=auth,
+                    send_email=send_email, permissions=permissions,
+                    visible=bibliographic, save=True
+                )
+
+        auth.user.email_last_sent = timezone.now()
+        auth.user.save()
+
+        if index is not None:
+            self.move_contributor(contributor=contributor, index=index, auth=auth, save=True)
+
+        contributor_obj = self.contributor_set.get(user=contributor)
+        return contributor_obj
+
+    def replace_contributor(self, old, new):
+        try:
+            contrib_obj = self.contributor_set.get(user=old)
+        except self.contributor_class.DoesNotExist:
+            return False
+        contrib_obj.user = new
+        contrib_obj.save()
+
+        # Remove unclaimed record for the project
+        if self._id in old.unclaimed_records:
+            del old.unclaimed_records[self._id]
+            old.save()
+        return True
+
+    # TODO: optimize me
+    def update_contributor(self, user, permission, visible, auth, save=False):
+        """ TODO: this method should be updated as a replacement for the main loop of
+        Node#manage_contributors. Right now there are redundancies, but to avoid major
+        feature creep this will not be included as this time.
+
+        Also checks to make sure unique admin is not removing own admin privilege.
+        """
+        OSFUser = apps.get_model('osf.OSFUser')
+
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can modify contributor permissions')
+
+        if permission:
+            permissions = self.expand_permissions(permission=permission)
+            admins = OSFUser.objects.filter(id__in=self._get_admin_contributors_query(self._contributors.all()).values_list('user_id', flat=True))
+            if not admins.count() > 1:
+                # has only one admin
+                admin = admins.first()
+                if (admin == user or getattr(admin, 'user', None) == user) and ADMIN not in permissions:
+                    error_msg = '{} is the only admin.'.format(user.fullname)
+                    raise self.state_error(error_msg)
+            if not self.contributor_set.filter(user=user).exists():
+                raise ValueError(
+                    'User {0} not in contributors'.format(user.fullname)
+                )
+            if (isinstance(permissions, list) and set(permissions) != set(self.get_permissions(user))) or (
+                    isinstance(permissions, basestring) and not self.get_group(permissions).user_set.filter(id=user.id).exists()):
+                self.set_permissions(user, permissions, save=False)
+                permissions_changed = {
+                    user._id: permissions
+                }
+                params = self.log_params
+                params['contributors'] = permissions_changed
+                self.add_log(
+                    action=self.log_class.PERMISSIONS_UPDATED,
+                    params=params,
+                    auth=auth,
+                    save=False
+                )
+                with transaction.atomic():
+                    if ['read'] in permissions_changed.values():
+                        project_signals.write_permissions_revoked.send(self)
+        if visible is not None:
+            self.set_visible(user, visible, auth=auth)
+
+        if save:
+            self.save()
+
+    def remove_contributor(self, contributor, auth, log=True):
+        """Remove a contributor from this node.
+
+        :param contributor: User object, the contributor to be removed
+        :param auth: All the auth information including user, API key.
+        """
+        if isinstance(contributor, self.contributor_class):
+            contributor = contributor.user
+
+        # remove unclaimed record if necessary
+        if self._id in contributor.unclaimed_records:
+            del contributor.unclaimed_records[self._id]
+            contributor.save()
+
+        # If user is the only visible contributor, return False
+        if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
+            return False
+
+        # Node must have at least one registered admin user
+        admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
+        if not admin_query.exists():
+            return False
+
+        contrib_obj = self.contributor_set.get(user=contributor)
+        contrib_obj.delete()
+
+        self.clear_permissions(contributor)
+        # After remove callback
+        for addon in self.get_addons():
+            message = addon.after_remove_contributor(self, contributor, auth)
+            if message:
+                # Because addons can return HTML strings, addons are responsible
+                # for markupsafe-escaping any messages returned
+                status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
+                    'addon': markupsafe.escape(addon.config.full_name),
+                    'category': markupsafe.escape(self.category_display),
+                    'title': markupsafe.escape(self.title),
+                    'user': markupsafe.escape(contributor.fullname)
+                })
+
+        if log:
+            params = self.log_params
+            params['contributors'] = [contributor._id]
+            self.add_log(
+                action=self.log_class.CONTRIB_REMOVED,
+                params=params,
+                auth=auth,
+                save=False,
+            )
+
+        self.save()
+        # send signal to remove this user from project subscriptions
+        project_signals.contributor_removed.send(self, user=contributor)
+
+        # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is removed
+        if self.get_identifier_value('doi'):
+            request, user_id = get_request_and_user_id()
+            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
+        return True
+
+    def remove_contributors(self, contributors, auth=None, log=True, save=False):
+
+        results = []
+        removed = []
+
+        for contrib in contributors:
+            outcome = self.remove_contributor(
+                contributor=contrib, auth=auth, log=False,
+            )
+            results.append(outcome)
+            removed.append(contrib._id)
+        if log:
+            params = self.log_params
+            params['contributors'] = removed
+            self.add_log(
+                action=self.log_class.CONTRIB_REMOVED,
+                params=params,
+                auth=auth,
+                save=False,
+            )
+
+        if save:
+            self.save()
+
+        return all(results)
+
+    def move_contributor(self, contributor, auth, index, save=False):
+        OSFUser = apps.get_model('osf.OSFUser')
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can modify contributor order')
+        if isinstance(contributor, OSFUser):
+            contributor = self.contributor_set.get(user=contributor)
+        contributor_ids = list(self.get_contributor_order())
+        old_index = contributor_ids.index(contributor.id)
+        contributor_ids.insert(index, contributor_ids.pop(old_index))
+        self.set_contributor_order(contributor_ids)
+        params = self.log_params
+        params['contributors'] = contributor.user._id
+        self.add_log(
+            action=self.log_class.CONTRIB_REORDERED,
+            params=params,
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+        # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is moved
+        if self.get_identifier_value('doi'):
+            request, user_id = get_request_and_user_id()
+            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
+
+    # TODO: Optimize me
+    def manage_contributors(self, user_dicts, auth, save=False):
+        """Reorder and remove contributors.
+
+        :param list user_dicts: Ordered list of contributors represented as
+            dictionaries of the form:
+            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>, 'visible': bool}
+        :param Auth auth: Consolidated authentication information
+        :param bool save: Save changes
+        :raises: ValueError if any users in `users` not in contributors or if
+            no admin contributors remaining
+        """
+        OSFUser = apps.get_model('osf.OSFUser')
+
+        with transaction.atomic():
+            users = []
+            user_ids = []
+            permissions_changed = {}
+            visibility_removed = []
+            to_retain = []
+            to_remove = []
+            for user_dict in user_dicts:
+                user = OSFUser.load(user_dict['id'])
+                if user is None:
+                    raise ValueError('User not found')
+                if not self.contributors.filter(id=user.id).exists():
+                    raise ValueError(
+                        'User {0} not in contributors'.format(user.fullname)
+                    )
+
+                permission = user_dict.get('permission', None) or user_dict.get('permissions', None)
+                if not self.belongs_to_permission_group(user, permission):
+                    # Validate later
+                    permissions = self.expand_permissions(permission)
+                    self.set_permissions(user, permissions, validate=False, save=False)
+                    permissions_changed[user._id] = permissions
+
+                # visible must be added before removed to ensure they are validated properly
+                if user_dict['visible']:
+                    self.set_visible(user,
+                                     visible=True,
+                                     auth=auth)
+                else:
+                    visibility_removed.append(user)
+                users.append(user)
+                user_ids.append(user_dict['id'])
+
+            for user in visibility_removed:
+                self.set_visible(user,
+                                 visible=False,
+                                 auth=auth)
+
+            for user in self.contributors.all():
+                if user._id in user_ids:
+                    to_retain.append(user)
+                else:
+                    to_remove.append(user)
+
+            if users is None or not self._get_admin_contributors_query(users).exists():
+                error_message = 'Must have at least one registered admin contributor'
+                raise self.state_error(error_message)
+
+            if to_retain != users:
+                # Ordered Contributor PKs, sorted according to the passed list of user IDs
+                sorted_contrib_ids = [
+                    each.id for each in sorted(self.contributor_set.all(), key=lambda c: user_ids.index(c.user._id))
+                ]
+                self.set_contributor_order(sorted_contrib_ids)
+                params = self.log_params
+                params['contributors'] = [
+                    user._id
+                    for user in users
+                ]
+                self.add_log(
+                    action=self.log_class.CONTRIB_REORDERED,
+                    params=params,
+                    auth=auth,
+                    save=False,
+                )
+
+            if to_remove:
+                self.remove_contributors(to_remove, auth=auth, save=False)
+
+            if permissions_changed:
+                params = self.log_params
+                params['contributors'] = permissions_changed
+                self.add_log(
+                    action=self.log_class.PERMISSIONS_UPDATED,
+                    params=params,
+                    auth=auth,
+                    save=False,
+                )
+            if save:
+                self.save()
+
+            with transaction.atomic():
+                if to_remove or permissions_changed and ['read'] in permissions_changed.values():
+                    project_signals.write_permissions_revoked.send(self)
+
+    @property
+    def visible_contributors(self):
+        OSFUser = apps.get_model('osf.OSFUser')
+        return OSFUser.objects.filter(
+            contributor__node=self,
+            contributor__visible=True
+        ).order_by('contributor___order')
+
+    # visible_contributor_ids was moved to this property
+    @property
+    def visible_contributor_ids(self):
+        return self.contributor_set.filter(visible=True) \
+            .order_by('_order') \
+            .values_list('user__guids___id', flat=True)
+
+    def get_visible(self, user):
+        try:
+            contributor = self.contributor_set.get(user=user)
+        except self.contributor_class.DoesNotExist:
+            raise ValueError(u'User {0} not in contributors'.format(user))
+        return contributor.visible
+
+    def set_visible(self, user, visible, log=True, auth=None, save=False):
+        if not self.is_contributor(user):
+            raise ValueError(u'User {0} not in contributors'.format(user))
+        kwargs = self.contributor_kwargs
+        kwargs['user'] = user
+        kwargs['visible'] = True
+        if visible and not self.contributor_class.objects.filter(**kwargs).exists():
+            set_visible_kwargs = kwargs
+            set_visible_kwargs['visible'] = False
+            self.contributor_class.objects.filter(**set_visible_kwargs).update(visible=True)
+        elif not visible and self.contributor_class.objects.filter(**kwargs).exists():
+            num_visible_kwargs = self.contributor_kwargs
+            num_visible_kwargs['visible'] = True
+            if self.contributor_class.objects.filter(**num_visible_kwargs).count() == 1:
+                raise ValueError('Must have at least one visible contributor')
+            self.contributor_class.objects.filter(**kwargs).update(visible=False)
+        else:
+            return
+        message = (
+            self.log_class.MADE_CONTRIBUTOR_VISIBLE if visible else self.log_class.MADE_CONTRIBUTOR_INVISIBLE
+        )
+        params = self.log_params
+        params['contributors'] = [user._id]
+        if log:
+            self.add_log(
+                message,
+                params=params,
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
+        # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is hidden/made visible
+        if self.get_identifier_value('doi'):
+            request, user_id = get_request_and_user_id()
+            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
+
+    def has_permission(self, user, permission, check_parent=True):
+        """Check whether user has permission.
+
+        :param User user: User to test
+        :param str permission: Required permission
+        :returns: User has required permission
+        """
+        if not user:
+            return False
+        query = {'node': self, permission: True}
+        has_permission = user.contributor_set.filter(**query).exists()
+        if not has_permission and permission == 'read' and check_parent:
+            return self.is_admin_parent(user)
+        return has_permission
+
+    # TODO: Remove save parameter
+    def add_permission(self, user, permission, save=False):
+        """Grant permission to a user.
+
+        :param User user: User to grant permission to
+        :param str permission: Permission to grant
+        :param bool save: Save changes
+        :raises: ValueError if user already has permission
+        """
+        contributor = user.contributor_set.get(node=self)
+        if not getattr(contributor, permission, False):
+            for perm in expand_permissions(permission):
+                setattr(contributor, perm, True)
+            contributor.save()
+        else:
+            if getattr(contributor, permission, False):
+                raise ValueError('User already has permission {0}'.format(permission))
+        if save:
+            self.save()
+
+    def set_permissions(self, user, permissions, validate=True, save=False):
+        # Ensure that user's permissions cannot be lowered if they are the only admin
+        if isinstance(user, self.contributor_class):
+            user = user.user
+
+        if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
+                                 reduce_permissions(permissions) != ADMIN):
+            admin_contribs = self.contributor_class.objects.filter(node=self, admin=True)
+            if admin_contribs.count() <= 1:
+                raise NodeStateError('Must have at least one registered admin contributor')
+
+        contrib_obj = self.contributor_class.objects.get(node=self, user=user)
+
+        for permission_level in [READ, WRITE, ADMIN]:
+            if permission_level in permissions:
+                setattr(contrib_obj, permission_level, True)
+            else:
+                setattr(contrib_obj, permission_level, False)
+        contrib_obj.save()
+        if save:
+            self.save()
+
+    # TODO: Remove save parameter
+    def remove_permission(self, user, permission, save=False):
+        """Revoke permission from a user.
+
+        :param User user: User to revoke permission from
+        :param str permission: Permission to revoke
+        :param bool save: Save changes
+        :raises: ValueError if user does not have permission
+        """
+        contributor = user.contributor_set.get(node=self)
+        if getattr(contributor, permission, False):
+            for perm in expand_permissions(permission):
+                setattr(contributor, perm, False)
+            contributor.save()
+        else:
+            raise ValueError('User does not have permission {0}'.format(permission))
+        if save:
+            self.save()
+
+
+class SpamOverrideMixin(SpamMixin):
+    """
+    Contains overrides to SpamMixin that are common to the node and preprint models
+    """
+    class Meta:
+        abstract = True
+
+    # Override on model
+    SPAM_CHECK_FIELDS = {}
+
+    @property
+    def log_class(self):
+        return NotImplementedError()
+
+    @property
+    def log_params(self):
+        return NotImplementedError()
+
+    def get_spam_fields(self):
+        return NotImplementedError()
+
+    def confirm_spam(self, save=False):
+        super(SpamOverrideMixin, self).confirm_spam(save=False)
+        self.set_privacy('private', auth=None, log=False, save=False)
+        log = self.add_log(
+            action=self.log_class.MADE_PRIVATE,
+            params=self.log_params,
+            auth=None,
+            save=False
+        )
+        log.should_hide = True
+        log.save()
+        if save:
+            self.save()
+
+    def _get_spam_content(self, saved_fields):
+        spam_fields = self.get_spam_fields(saved_fields)
+        content = []
+        for field in spam_fields:
+            content.append((getattr(self, field, None) or '').encode('utf-8'))
+        if self.all_tags.exists():
+            content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
+        if not content:
+            return None
+        return ' '.join(content)
+
+    def check_spam(self, user, saved_fields, request_headers):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
+        if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
+            return False
+        if 'ham_confirmed' in user.system_tags:
+            return False
+
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            user.fullname,
+            user.username,
+            content,
+            request_headers
+        )
+        logger.info("{} ({}) '{}' smells like {} (tip: {})".format(
+            self.__class__.__name__, self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+        ))
+        if is_spam:
+            self._check_spam_user(user)
+        return is_spam
+
+    def _check_spam_user(self, user):
+        if (
+            settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
+            and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+        ):
+            self.set_privacy('private', log=False, save=False)
+
+            # Suspend the flagged user for spam.
+            if 'spam_flagged' not in user.system_tags:
+                user.add_system_tag('spam_flagged')
+            if not user.is_disabled:
+                user.disable_account()
+                user.is_registered = False
+                mails.send_mail(
+                    to_addr=user.username,
+                    mail=mails.SPAM_USER_BANNED,
+                    user=user,
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                    can_change_preferences=False,
+                )
+            user.save()
+
+            # Make public nodes private from this contributor
+            for node in user.contributed:
+                if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
+                    node.set_privacy('private', log=False, save=True)
+
+            # Make preprints private from this contributor
+            for preprint in user.preprints.all():
+                if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
+                    preprint.set_privacy('private', log=False, save=True)
+
+    def flag_spam(self):
+        """ Overrides SpamMixin#flag_spam.
+        """
+        super(SpamOverrideMixin, self).flag_spam()
+        if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
+            self.set_privacy('private', auth=None, log=False, save=False, check_addons=False)
+            log = self.add_log(
+                action=self.log_class.MADE_PRIVATE,
+                params=self.log_params,
+                auth=None,
+                save=False
+            )
+            log.should_hide = True
+            log.save()
