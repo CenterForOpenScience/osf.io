@@ -300,7 +300,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'No, data collection has not begun\' is not of type \'object\''
+        assert errors['detail'] == 'For your registration the \'Has data collection begun for this project?\'' \
+                                   ' field is invalid, your response must be one of the provided options.'
 
     def test_registration_metadata_question_keys_must_be_value(
             self, app, user, payload, url_draft_registrations):
@@ -956,7 +957,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'selectedFileNames\' was unexpected)'
+            'detail'] == 'For your registration the \'Data collection procedures\' field is invalid.'
 
     def test_multiple_choice_questions_incorrect_choice(
             self, app, user, payload, url_draft_registrations):
@@ -968,11 +969,8 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert (
-            res.json['errors'][0]['detail'] == 'u\'This is my answer.\' is not one of [u\'No blinding is involved in this study.\', '
-            'u\'For studies that involve human subjects, they will not know the treatment group to which they have been assigned.\', '
-            'u\'Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.\', '
-            'u\'Research personnel who analyze the data collected from the study are not aware of the treatment applied to any given group.\']')
+        assert res.json['errors'][0]['detail'] == 'For your registration the \'Blinding\' field is invalid, your ' \
+                                                  'response must be one of the provided options.'
 
     def test_multiple_choice_questions(
             self, app, user, payload, url_draft_registrations):

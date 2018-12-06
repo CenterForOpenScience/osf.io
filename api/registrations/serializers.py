@@ -383,9 +383,9 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
-        except ValidationValueError as exc:
+        except ValidationValueError as e:
             log_exception()  # Probably indicates a bug on our end, so log to sentry
-            raise exceptions.ValidationError(exc.message)
+            raise exceptions.ValidationError(e.message)
 
         try:
             registration = draft.register(auth, save=True, child_ids=children)
