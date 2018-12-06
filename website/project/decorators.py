@@ -200,7 +200,7 @@ def check_can_download_preprint_file(user, node):
     return user.has_perm('view_submissions', node.provider)
 
 
-def check_can_access(node, user, key=None, api_node=None):
+def check_can_access(node, user, key=None, api_node=None, include_groups=True):
     """View helper that returns whether a given user can access a node.
     If ``user`` is None, returns False.
 
@@ -213,7 +213,7 @@ def check_can_access(node, user, key=None, api_node=None):
         if check_can_download_preprint_file(user, node):
             return True
 
-    if not node.can_view(Auth(user=user)) and api_node != node:
+    if (not node.can_view(Auth(user=user)) and api_node != node) or (not include_groups and not node.is_contributor(user)):
         if getattr(node, 'private_link_keys_deleted', False) and key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
 
@@ -256,7 +256,7 @@ def check_key_expired(key, node, url):
     return url
 
 
-def _must_be_contributor_factory(include_public, include_view_only_anon=True):
+def _must_be_contributor_factory(include_public, include_view_only_anon=True, include_groups=True):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
     whether the current project is public.
@@ -281,7 +281,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
 
-            response = check_contributor_auth(target, kwargs['auth'], include_public, include_view_only_anon)
+            response = check_contributor_auth(target, kwargs['auth'], include_public, include_view_only_anon, include_groups)
 
             return response or func(*args, **kwargs)
 
@@ -293,6 +293,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
 must_be_contributor = _must_be_contributor_factory(False)
 must_be_contributor_or_public = _must_be_contributor_factory(True)
 must_be_contributor_or_public_but_not_anonymized = _must_be_contributor_factory(include_public=True, include_view_only_anon=False)
+must_be_contributor_and_not_group_member = _must_be_contributor_factory(include_public=True, include_view_only_anon=False, include_groups=False)
 
 
 def must_have_addon(addon_name, model):
@@ -446,7 +447,7 @@ def http_error_if_disk_saving_mode(func):
         return func(*args, **kwargs)
     return wrapper
 
-def check_contributor_auth(node, auth, include_public, include_view_only_anon):
+def check_contributor_auth(node, auth, include_public, include_view_only_anon, include_groups=True):
     response = None
 
     user = auth.user
@@ -462,10 +463,10 @@ def check_contributor_auth(node, auth, include_public, include_view_only_anon):
 
     if not node.is_public or not include_public:
         if not include_view_only_anon and link_anon:
-            if not check_can_access(node=node, user=user):
+            if not check_can_access(node=node, user=user, include_groups=include_groups):
                 raise HTTPError(http.UNAUTHORIZED)
         elif not getattr(node, 'private_link_keys_active', False) or auth.private_key not in node.private_link_keys_active:
-            if not check_can_access(node=node, user=user, key=auth.private_key):
+            if not check_can_access(node=node, user=user, key=auth.private_key, include_groups=include_groups):
                 redirect_url = check_key_expired(key=auth.private_key, node=node, url=request.url)
                 if request.headers.get('Content-Type') == 'application/json':
                     raise HTTPError(http.UNAUTHORIZED)

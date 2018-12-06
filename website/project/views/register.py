@@ -17,7 +17,7 @@ from website import settings
 from website.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
-    must_have_permission,
+    must_have_permission, must_be_contributor_and_not_group_member,
     must_not_be_registration, must_be_registration,
     must_not_be_retracted_registration
 )
@@ -57,12 +57,14 @@ def node_register_page(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 def node_registration_retraction_redirect(auth, node, **kwargs):
     return redirect(node.web_url_for('node_registration_retraction_get', _guid=True))
 
 @must_be_valid_project
 @must_not_be_retracted_registration
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 def node_registration_retraction_get(auth, node, **kwargs):
     """Prepares node object for registration retraction page.
 
@@ -85,6 +87,7 @@ def node_registration_retraction_get(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 def node_registration_retraction_post(auth, node, **kwargs):
     """Handles retraction of public registrations
 
@@ -159,6 +162,7 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
 
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_not_be_registration
 def project_before_register(auth, node, **kwargs):
     """Returns prompt informing user that addons, if any, won't be registered."""
