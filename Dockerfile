@@ -205,6 +205,11 @@ RUN cd ./admin \
 # Copy the rest of the code over
 COPY ./ ./
 
+RUN invoke requirements --quick
+RUN invoke assets --dev
+
+RUN invoke admin.assets --dev
+
 ARG GIT_COMMIT=
 ENV GIT_COMMIT ${GIT_COMMIT}
 
@@ -222,10 +227,5 @@ RUN for module in \
         touch $file && chmod o+w $file \
     ; done \
     && rm ./website/settings/local.py ./api/base/settings/local.py ./api/timestamp/local.py
-
-RUN invoke requirements --quick
-RUN invoke assets --dev
-
-RUN invoke admin.assets --dev
 
 CMD ["gosu", "nobody", "invoke", "--list"]
