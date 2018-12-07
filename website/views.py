@@ -128,19 +128,20 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
 
 @email_required
 def index():
-    try:  # Check if we're on an institution landing page
-        #TODO : make this way more robust
-        institution = Institution.objects.get(domains__contains=[request.host.lower()], is_deleted=False)
-        inst_dict = serialize_institution(institution)
-        inst_dict.update({
-            'home': False,
-            'institution': True,
-            'redirect_url': '{}institutions/{}/'.format(DOMAIN, institution._id),
-        })
+    if request.host_url != settings.DOMAIN:
+        try:  # Check if we're on an institution landing page
+            #TODO : make this way more robust
+            institution = Institution.objects.get(domains__contains=[request.host.lower()], is_deleted=False)
+            inst_dict = serialize_institution(institution)
+            inst_dict.update({
+                'home': False,
+                'institution': True,
+                'redirect_url': '{}institutions/{}/'.format(DOMAIN, institution._id),
+            })
 
-        return inst_dict
-    except Institution.DoesNotExist:
-        pass
+            return inst_dict
+        except Institution.DoesNotExist:
+            pass
 
     user_id = get_current_user_id()
     if user_id:  # Logged in: return either landing page or user home page
