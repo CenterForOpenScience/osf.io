@@ -20,7 +20,7 @@ from api.base.utils import get_user_auth
 from api.chronos.permissions import SubmissionOnPreprintPublishedOrAdmin, SubmissionAcceptedOrPublishedOrPreprintAdmin
 from api.chronos.serializers import ChronosJournalSerializer, ChronosSubmissionSerializer, ChronosSubmissionCreateSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import ChronosJournal, ChronosSubmission, PreprintService
+from osf.models import ChronosJournal, ChronosSubmission, Preprint
 from osf.external.tasks import update_submissions_status_async
 
 
@@ -97,7 +97,7 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
         queryset = ChronosSubmission.objects.filter(
             Q(preprint__guids___id=self.kwargs['preprint_id']) &
             (
-                Q(preprint__node__contributor__user__id=user.id if user else None) |
+                Q(preprint___contributors__id=user.id if user else None) |
                 Q(status__in=[3, 4])
             ),
         ).distinct()
@@ -111,7 +111,7 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
 
     def perform_create(self, serializer):
         user = self.request.user
-        preprint = PreprintService.load(self.kwargs['preprint_id'])
+        preprint = Preprint.load(self.kwargs['preprint_id'])
         if not preprint:
             raise NotFound
         self.check_object_permissions(self.request, preprint)

@@ -56,17 +56,17 @@ class ChronosSerializer(object):
         return {
             'AUTHORS': [
                 cls.serialize_author(contrib)
-                for contrib in preprint.node.contributor_set.filter(visible=True).select_related('user')
+                for contrib in preprint.contributor_set.filter(visible=True).select_related('user')
             ],
             'MANUSCRIPT_FILES': [
                 cls.serialize_file(preprint, file_node)
-                for file_node in OsfStorageFile.objects.filter(abstractnode=preprint.node)
+                for file_node in OsfStorageFile.objects.filter(preprint=preprint)
             ],
             'STATUS_CODE': status,
-            'ABSTRACT': preprint.node.description,
+            'ABSTRACT': preprint.description,
             'ARTICLE_TYPE': 'research-article',  # ??
             'DOI': preprint.preprint_doi,
-            'MANUSCRIPT_TITLE': preprint.node.title,
+            'MANUSCRIPT_TITLE': preprint.title,
             'PROVIDER_MANUSCRIPT_ID': preprint._id,
             'CHRONOS_JOURNAL_ID': journal_id,
             'MANUSCRIPT_URL': preprint.url,
@@ -207,7 +207,7 @@ class ChronosClient(object):
             submitter.chronos_user_id = response['USER']['CHRONOS_USER_ID']
             submitter.save()
 
-            for contrib, author in zip(preprint.node.contributor_set.filter(visible=True).select_related('user'), response['AUTHORS']):
+            for contrib, author in zip(preprint.contributor_set.filter(visible=True).select_related('user'), response['AUTHORS']):
                 assert author['PARTNER_USER_ID'] == contrib.user._id
                 contrib.user.chronos_user_id = author['CHRONOS_USER_ID']
                 contrib.user.save()
@@ -259,10 +259,10 @@ class ChronosRestClient(object):
         return self._do_request('GET', '/partners/manuscript/{}'.format(manuscript_id)).json()
 
     def get_journals_by_publisher(self, publisher):
-        raise NotImplemented()
+        raise NotImplementedError
 
     def get_journals_by_issn(self, issn):
-        raise NotImplemented()
+        raise NotImplementedError
 
     def _refresh_auth_key(self):
         if not self._auth_key:
