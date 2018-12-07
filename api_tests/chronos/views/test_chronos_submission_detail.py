@@ -30,7 +30,7 @@ class TestChronosSubmissionDetail:
     @pytest.fixture()
     def preprint(self, submitter, preprint_contributor, moderator):
         pp = PreprintFactory(creator=submitter)
-        pp.node.add_contributor(preprint_contributor, save=True)
+        pp.add_contributor(preprint_contributor, save=True)
         pp.provider.get_group('moderator').user_set.add(moderator)
         return pp
 

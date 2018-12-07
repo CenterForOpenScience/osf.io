@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
                 ('raw_response', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder)),
                 ('submission_url', models.TextField()),
                 ('journal', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.ChronosJournal')),
-                ('preprint', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.PreprintService')),
+                ('preprint', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.Preprint')),
             ],
         ),
         migrations.AddField(
