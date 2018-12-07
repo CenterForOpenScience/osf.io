@@ -6,7 +6,7 @@
   <li role="presentation" class="active">
     <a id="registrationsControl" aria-controls="registrations" href="#registrations">Registrations</a>
   </li>
-  % if 'admin' in user['permissions'] and node['has_draft_registrations']:
+  % if 'admin' in user['permissions'] and user['is_contributor'] and node['has_draft_registrations']:
   <li role="presentation" data-bind="visible: hasDrafts">
       <a id="draftsControl" aria-controls="drafts" href="#drafts">Draft Registrations</a>
   </li>
@@ -26,7 +26,7 @@
     ##          There have been no registrations of the parent project (<a href="${parent_node['url']}">${parent_node['title']}</a>).
     ##      %endif
         % else:
-          % if 'admin' in user['permissions']:
+          % if 'admin' in user['permissions'] and user['is_contributor']:
             <p>There have been no completed registrations of this project.
             You can start a new registration by clicking the “New registration” button, and you have the option of saving as a draft registration before submission.</p>
           % else:
@@ -41,7 +41,7 @@
         To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a>
         %endif
       </div>
-      % if 'admin' in user['permissions'] and not disk_saving_mode:
+      % if 'admin' in user['permissions'] and user['is_contributor'] and not disk_saving_mode:
       <div class="col-xs-3 col-sm-4">
         <a id="registerNode" class="btn btn-success disabled" type="button">
           Loading ...
