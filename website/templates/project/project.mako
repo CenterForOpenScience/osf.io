@@ -160,6 +160,14 @@
                     </ol>
                 % endif
                 </div>
+                % if node['groups']:
+                    <div>
+                        Groups:
+                        %for group_name in node['groups']:
+                            <ol>${group_name}</ol>
+                        %endfor
+                    </div>
+                % endif
                 % if enable_institutions and not node['anonymous']:
                     % if ('admin' in user['permissions'] and not node['is_registration']) and (len(node['institutions']) != 0 or len(user['institutions']) != 0):
                         <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institutions:</a>
