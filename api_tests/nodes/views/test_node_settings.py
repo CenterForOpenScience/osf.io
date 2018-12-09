@@ -173,7 +173,7 @@ class TestNodeSettingsPUT:
         assert res.status_code == 403
 
         # group member write
-        project.add_osf_group(osf_group, 'write')
+        project.update_osf_group(osf_group, 'write')
         project.save()
         res = app.put_json_api(url, payload, auth=group_member.auth, expect_errors=True)
         assert res.status_code == 403
@@ -183,7 +183,7 @@ class TestNodeSettingsPUT:
         assert res.status_code == 200
 
         # group member admin
-        project.add_osf_group(osf_group, 'admin')
+        project.update_osf_group(osf_group, 'admin')
         project.save()
         res = app.put_json_api(url, payload, auth=group_member.auth, expect_errors=True)
         assert res.status_code == 200

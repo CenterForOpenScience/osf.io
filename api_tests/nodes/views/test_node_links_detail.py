@@ -304,7 +304,7 @@ class TestDeleteNodeLink:
         private_project.add_osf_group(group, 'read')
         res = app.delete(private_url, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
-        private_project.add_osf_group(group, 'write')
+        private_project.update_osf_group(group, 'write')
         res = app.delete(private_url, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 204
 
