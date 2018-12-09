@@ -51,6 +51,20 @@ class IsPublic(permissions.BasePermission):
         return obj.is_public or obj.can_view(auth)
 
 
+class IsAdminContributor(permissions.BasePermission):
+    acceptable_models = (AbstractNode, DraftRegistration)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        if isinstance(obj, DraftRegistration):
+            obj = obj.branched_from
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.has_permission(auth.user, osf_permissions.ADMIN)
+        else:
+            return obj.has_permission(auth.user, osf_permissions.ADMIN) and obj.is_contributor(auth.user)
+
+
 class IsAdmin(permissions.BasePermission):
     acceptable_models = (AbstractNode, PrivateLink)
 
@@ -72,7 +86,7 @@ class IsContributorOrGroupMember(permissions.BasePermission):
             return obj.has_permission(auth.user, 'write')
 
 
-class IsAdminOrReviewer(permissions.BasePermission):
+class IsAdminContributorOrReviewer(IsAdminContributor):
     """
     Prereg admins can update draft registrations.
     """
@@ -82,9 +96,7 @@ class IsAdminOrReviewer(permissions.BasePermission):
         auth = get_user_auth(request)
         if request.method != 'DELETE' and is_prereg_admin(auth.user):
             return True
-        if isinstance(obj, DraftRegistration):
-            obj = obj.branched_from
-        return obj.has_permission(auth.user, osf_permissions.ADMIN)
+        return super(IsAdminContributorOrReviewer, self).has_object_permission(request, view, obj)
 
 
 class AdminOrPublic(permissions.BasePermission):
@@ -98,6 +110,18 @@ class AdminOrPublic(permissions.BasePermission):
             return obj.is_public or obj.can_view(auth)
         else:
             return obj.has_permission(auth.user, osf_permissions.ADMIN)
+
+class AdminContributorOrPublic(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode, DraftRegistration)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.is_public or obj.can_view(auth)
+        else:
+            return obj.has_permission(auth.user, osf_permissions.ADMIN) and obj.is_contributor(auth.user)
 
 
 class ExcludeWithdrawals(permissions.BasePermission):

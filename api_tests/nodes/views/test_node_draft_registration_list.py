@@ -38,7 +38,15 @@ class DraftRegistrationTestCase:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def project_public(self, user, user_write_contrib, user_read_contrib):
+    def group_mem(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def group(self, group_mem):
+        return OSFGroupFactory(creator=group_mem)
+
+    @pytest.fixture()
+    def project_public(self, user, user_write_contrib, user_read_contrib, group, group_mem):
         project_public = ProjectFactory(is_public=True, creator=user)
         project_public.add_contributor(
             user_write_contrib,
@@ -47,6 +55,7 @@ class DraftRegistrationTestCase:
             user_read_contrib,
             permissions=permissions.READ)
         project_public.save()
+        project_public.add_osf_group(group, 'admin')
         return project_public
 
     @pytest.fixture()
@@ -119,7 +128,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     def test_cannot_view_draft_list(
             self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
-            url_draft_registrations):
+            url_draft_registrations, group, group_mem):
 
         #   test_read_only_contributor_cannot_view_draft_list
         res = app.get(
@@ -147,8 +156,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert res.status_code == 401
 
     #   test_osf_group_with_read_permissions
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
+        project_public.remove_osf_group(group)
         project_public.add_osf_group(group, 'read')
         res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
@@ -272,8 +280,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def test_cannot_create_draft(
             self, app, user_write_contrib,
             user_read_contrib, user_non_contrib,
-            project_public, payload,
-            url_draft_registrations):
+            project_public, payload, group,
+            url_draft_registrations, group_mem):
 
         #   test_write_only_contributor_cannot_create_draft
         assert user_write_contrib in project_public.contributors.all()
@@ -304,6 +312,24 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             url_draft_registrations,
             payload,
             auth=user_non_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_group_admin_cannot_create_draft
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_group_write_contrib_cannot_create_draft
+        project_public.remove_osf_group(group)
+        project_public.add_osf_group(group, 'write')
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
             expect_errors=True)
         assert res.status_code == 403
 
