@@ -18,7 +18,9 @@ def serialize_user(user):
         'osf_link': user.absolute_url,
         'system_tags': user.system_tags,
         'unclaimed': bool(user.unclaimed_records),
-        'requested_deactivation': bool(user.requested_deactivation)
+        'requested_deactivation': bool(user.requested_deactivation),
+        'osf_groups': list(user.osf_groups.all())
+
     }
 
 
