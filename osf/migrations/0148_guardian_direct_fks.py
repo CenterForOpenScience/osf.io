@@ -10,8 +10,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('auth', '0008_alter_user_username_max_length'),
-        ('osf', '0150_osfgroup'),
+        ('osf', '0147_add_permissions_to_node'),
     ]
 
     operations = [
@@ -32,30 +31,6 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('content_object', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.AbstractNode')),
-                ('permission', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='auth.Permission')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
-            name='OSFGroupGroupObjectPermission',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_object', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.OSFGroup')),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='auth.Group')),
-                ('permission', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='auth.Permission')),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
-            name='OSFGroupUserObjectPermission',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_object', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.OSFGroup')),
                 ('permission', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='auth.Permission')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
@@ -93,14 +68,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='preprintgroupobjectpermission',
-            unique_together=set([('group', 'permission', 'content_object')]),
-        ),
-        migrations.AlterUniqueTogether(
-            name='osfgroupuserobjectpermission',
-            unique_together=set([('user', 'permission', 'content_object')]),
-        ),
-        migrations.AlterUniqueTogether(
-            name='osfgroupgroupobjectpermission',
             unique_together=set([('group', 'permission', 'content_object')]),
         ),
         migrations.AlterUniqueTogether(
