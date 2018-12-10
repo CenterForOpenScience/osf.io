@@ -7,6 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 from framework.exceptions import PermissionsError
 from osf.models import OSFGroup, Node, OSFUser, OSFGroupLog, NodeLog
 from osf.utils.permissions import MANAGER, MEMBER
+from website.notifications.utils import get_all_node_subscriptions
 from .factories import (
     NodeFactory,
     ProjectFactory,
@@ -266,7 +267,8 @@ class TestOSFGroup:
         assert member.group_role(osf_group) == MEMBER
         assert user_three.group_role(osf_group) is None
 
-    def test_add_osf_group_to_node(self, manager, member, user_two, osf_group, project):
+    @mock.patch('website.osf_groups.views.mails.send_mail')
+    def test_add_osf_group_to_node(self, mock_send_mail, manager, member, user_two, osf_group, project):
         # noncontributor
         with pytest.raises(PermissionsError):
             project.add_osf_group(osf_group, 'write', auth=Auth(member))
@@ -278,6 +280,7 @@ class TestOSFGroup:
             project.add_osf_group(osf_group, 'write', auth=Auth(user_two))
 
         project.add_osf_group(osf_group, 'read', auth=Auth(manager))
+        assert mock_send_mail.call_count == 1
         # Manager was already a node admin
         assert project.has_permission(manager, 'admin') is True
         assert project.has_permission(manager, 'write') is True
@@ -301,6 +304,55 @@ class TestOSFGroup:
         other_group = OSFGroupFactory()
         with pytest.raises(PermissionsError):
             project.add_osf_group(other_group, 'admin', auth=Auth(project.creator))
+
+    @mock.patch('website.osf_groups.views.mails.send_mail')
+    def test_add_osf_group_to_node_emails_and_subscriptions(self, mock_send_mail, manager, member, user_two, osf_group, project):
+        osf_group.make_member(user_two)
+
+        # Manager is already a node contributor - already has subscriptions
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 0
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+        assert mock_send_mail.call_count == 1
+
+        project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
+        # Three members of group, but user adding group to node doesn't get email
+        assert mock_send_mail.call_count == 3
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
+
+        project.remove_osf_group(osf_group, auth=Auth(manager))
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 0
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+
+        # Member is a contributor
+        project.add_contributor(member, 'write', save=True)
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+
+        project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
+
+        project.remove_osf_group(osf_group, auth=Auth(manager))
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+
+        project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
+
+        # Don't unsubscribe member because they belong to a group that has perms
+        project.remove_contributor(member, Auth(manager))
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
 
     def test_add_osf_group_to_node_default_permission(self, manager, member, osf_group, project):
         project.add_osf_group(osf_group, auth=Auth(manager))
