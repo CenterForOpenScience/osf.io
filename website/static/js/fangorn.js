@@ -141,6 +141,12 @@ function cancelUpload(row) {
     tb.isUploading(handled && filesArr.length > 1);
 }
 
+function removeFromUI(file, tb) {
+    var parent = file.treebeardParent || tb.dropzoneItemCache;
+    var item = findByTempID(parent, file.tmpID);
+    tb.deleteNode(parent.id, item.id);
+}
+
 /**
  * Cancel all pending uploads
  * @this Treebeard.controller
@@ -152,12 +158,6 @@ function cancelAllUploads() {
     var filesArr = tb.dropzone.files.filter(function(file) {
         return cancelableStatuses.indexOf(file.status) > -1 || !file.accepted;
     });
-    // Remove all queued files
-    var removeFromUI = function(file) {
-        var parent = file.treebeardParent || tb.dropzoneItemCache;
-        var item = findByTempID(parent, file.tmpID);
-        tb.deleteNode(parent.id, item.id);
-    };
     // Clear all synchronous uploads
     if (tb.dropzone.syncFileCache !== undefined) {
         SYNC_UPLOAD_ADDONS.forEach(function(provider) {
@@ -173,7 +173,7 @@ function cancelAllUploads() {
     filesArr.forEach(function(file, index) {
         // Ignore completed files
         if (file.upload.progress === 100) return;
-        removeFromUI(file);
+        removeFromUI(file, tb);
         // Cancel currently uploading file
         tb.dropzone.removeFile(file);
     });
@@ -2978,9 +2978,10 @@ tbOptions = {
                 maxSize = item.data.accept.maxSize;
                 if (size > maxSize) {
                     displaySize = Math.round(file.size / 10000) / 100;
-                    msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
-                    item.notify.update(msgText, 'warning', undefined, 3000);
-                    addFileStatus(treebeard, file, false, 'File is too large. Max file size is ' + item.data.accept.maxSize + ' MB.', '');
+                    msgText = 'This file is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
+                    $osf.growl(msgText);
+                    addFileStatus(treebeard, file, false, msgText, '');
+                    removeFromUI(file, treebeard);
                     return false;
                 }
             }
