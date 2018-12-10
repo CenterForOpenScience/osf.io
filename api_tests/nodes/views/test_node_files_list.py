@@ -252,7 +252,10 @@ class TestNodeFilesList(ApiTestCase):
     @responses.activate
     def test_vol_node_files_list(self):
         self._prepare_mock_wb_response(
-            provider='github', files=[{'name': 'NewFile'}])
+            provider='github', files=[{'name': 'NewFile',
+                                       'created_utc': '2018-12-10 19:46:38.180342',
+                                       'modified_utc': '2018-12-10 19:46:38.180342'
+                                       }])
         self.add_github()
         vol = self.view_only_link()
         url = '/{}nodes/{}/files/github/?view_only={}'.format(
@@ -273,7 +276,9 @@ class TestNodeFilesList(ApiTestCase):
     @responses.activate
     def test_returns_node_files_list(self):
         self._prepare_mock_wb_response(
-            provider='github', files=[{'name': 'NewFile'}])
+            provider='github', files=[{'name': 'NewFile',
+                                       'created_utc': '2018-12-10 19:46:38.180342',
+                                       'modified_utc': '2018-12-10 19:46:38.180342'}])
         self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
 
@@ -447,7 +452,13 @@ class TestNodeFilesListFiltering(ApiTestCase):
             node=self.project, provider='github',
             files=[
                 {'name': 'abc', 'path': '/abc/', 'materialized': '/abc/', 'kind': 'folder'},
-                {'name': 'xyz', 'path': '/xyz', 'materialized': '/xyz', 'kind': 'file'},
+                {'name': 'xyz',
+                 'path': '/xyz',
+                 'materialized': '/xyz',
+                 'kind': 'file',
+                 'created_utc': '2018-12-10 19:46:38.180342',
+                 'modified_utc': '2018-12-10 19:46:38.180342'
+                 },
             ]
         )
 
@@ -616,29 +627,29 @@ class TestNodeFilesListPagination(ApiTestCase):
             node=self.project, provider='github',
             files=[
                 {'name': '01', 'path': '/01/', 'materialized': '/01/', 'kind': 'folder'},
-                {'name': '02', 'path': '/02', 'materialized': '/02', 'kind': 'file'},
+                {'name': '02', 'path': '/02', 'materialized': '/02', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '03', 'path': '/03/', 'materialized': '/03/', 'kind': 'folder'},
-                {'name': '04', 'path': '/04', 'materialized': '/04', 'kind': 'file'},
+                {'name': '04', 'path': '/04', 'materialized': '/04', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '05', 'path': '/05/', 'materialized': '/05/', 'kind': 'folder'},
-                {'name': '06', 'path': '/06', 'materialized': '/06', 'kind': 'file'},
+                {'name': '06', 'path': '/06', 'materialized': '/06', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '07', 'path': '/07/', 'materialized': '/07/', 'kind': 'folder'},
-                {'name': '08', 'path': '/08', 'materialized': '/08', 'kind': 'file'},
+                {'name': '08', 'path': '/08', 'materialized': '/08', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '09', 'path': '/09/', 'materialized': '/09/', 'kind': 'folder'},
-                {'name': '10', 'path': '/10', 'materialized': '/10', 'kind': 'file'},
+                {'name': '10', 'path': '/10', 'materialized': '/10', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '11', 'path': '/11/', 'materialized': '/11/', 'kind': 'folder'},
-                {'name': '12', 'path': '/12', 'materialized': '/12', 'kind': 'file'},
+                {'name': '12', 'path': '/12', 'materialized': '/12', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '13', 'path': '/13/', 'materialized': '/13/', 'kind': 'folder'},
-                {'name': '14', 'path': '/14', 'materialized': '/14', 'kind': 'file'},
+                {'name': '14', 'path': '/14', 'materialized': '/14', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '15', 'path': '/15/', 'materialized': '/15/', 'kind': 'folder'},
-                {'name': '16', 'path': '/16', 'materialized': '/16', 'kind': 'file'},
+                {'name': '16', 'path': '/16', 'materialized': '/16', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '17', 'path': '/17/', 'materialized': '/17/', 'kind': 'folder'},
-                {'name': '18', 'path': '/18', 'materialized': '/18', 'kind': 'file'},
+                {'name': '18', 'path': '/18', 'materialized': '/18', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '19', 'path': '/19/', 'materialized': '/19/', 'kind': 'folder'},
-                {'name': '20', 'path': '/20', 'materialized': '/20', 'kind': 'file'},
+                {'name': '20', 'path': '/20', 'materialized': '/20', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '21', 'path': '/21/', 'materialized': '/21/', 'kind': 'folder'},
-                {'name': '22', 'path': '/22', 'materialized': '/22', 'kind': 'file'},
+                {'name': '22', 'path': '/22', 'materialized': '/22', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
                 {'name': '23', 'path': '/23/', 'materialized': '/23/', 'kind': 'folder'},
-                {'name': '24', 'path': '/24', 'materialized': '/24', 'kind': 'file'},
+                {'name': '24', 'path': '/24', 'materialized': '/24', 'kind': 'file', 'created_utc': '2018-12-10 19:46:38.180342', 'modified_utc': '2018-12-10 19:46:38.180342'},
             ]
         )
         self.add_github()
