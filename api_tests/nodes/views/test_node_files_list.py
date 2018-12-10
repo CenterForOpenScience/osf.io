@@ -10,6 +10,8 @@ from framework.auth.core import Auth
 
 from addons.github.models import GithubFolder
 from addons.github.tests.factories import GitHubAccountFactory
+from addons.googledrive.models import GoogleDriveFile
+from addons.googledrive.tests.factories import GoogleDriveAccountFactory
 from api.base.settings.defaults import API_BASE
 from api.base.utils import waterbutler_api_url_for
 from api_tests import utils as api_utils
@@ -658,6 +660,26 @@ class TestNodeStorageProviderDetail(ApiTestCase):
         self.private_url = '/{}nodes/{}/files/providers/osfstorage/'.format(
             API_BASE, self.private_project._id)
 
+    def add_googledrive(self):
+        user_auth = Auth(self.user)
+
+        self.public_project.add_addon('googledrive', auth=user_auth)
+        oauth_settings = GoogleDriveAccountFactory()
+        oauth_settings.save()
+        self.user.add_addon('googledrive')
+        self.user.external_accounts.add(oauth_settings)
+        self.user.save()
+        addon = self.public_project.get_addon('googledrive')
+        addon.folder_id = '/'
+        addon.user_settings = self.user.get_addon('googledrive')
+        addon.external_account = oauth_settings
+        addon.save()
+        self.public_project.save()
+        addon.user_settings.oauth_grants[self.public_project._id] = {
+            oauth_settings._id: {'folder': '/'}
+        }
+        addon.user_settings.save()
+
     def test_can_view_if_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -677,3 +699,38 @@ class TestNodeStorageProviderDetail(ApiTestCase):
     def test_cannot_view_if_private(self):
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
+
+    @responses.activate
+    def test_files_have_the_same_path(self):
+        self.add_googledrive()
+
+        file_node = GoogleDriveFile(name='test_name', path='/test_name', target=self.public_project)
+        file_node2 = GoogleDriveFile(name='test_name', path='/test_name', target=self.public_project)
+        file_node.save()
+        file_node2.save()
+
+        prepare_mock_wb_response(
+            node=self.public_project,
+            provider='googledrive',
+            files=[
+                {'name': 'test_name',
+                 'path': '/test_name',
+                 'materialized': '/test_name',
+                 'created_utc': str(file_node.created),
+                 'modified_utc': str(file_node.modified),
+                 'kind': 'file'
+                 },
+                {'name': 'test_name',
+                 'path': '/test_name',
+                 'materialized': '/test_name',
+                 'created_utc': str(file_node2.created),
+                 'modified_utc': str(file_node2.modified),
+                 'kind': 'file'},
+            ]
+        )
+        url = '/{}nodes/{}/files/googledrive/'.format(
+            API_BASE, self.public_project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        assert len(res.json['data']) == 2
