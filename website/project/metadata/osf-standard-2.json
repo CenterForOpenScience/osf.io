@@ -11,7 +11,7 @@
             "nav": "Data Completion",
             "type": "choose",
             "format": "singleselect",
-            "options": ["No, data collection has not begun", "Yes, data collection is underway or complete"],
+            "options": ["No, data collection has not begun", "Yes, data collection is underway or complete", ""],
             "description": "Please choose"
         },{
             "qid": "looked",
@@ -19,7 +19,7 @@
             "nav": "Looked at Data",
             "type": "choose",
             "format": "singleselect",
-            "options": ["Yes", "No"],
+            "options": ["Yes", "No", ""],
             "description": "Please choose"
         },{
             "qid": "comments",

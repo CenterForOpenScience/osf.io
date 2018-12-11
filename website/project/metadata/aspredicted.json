@@ -13,7 +13,8 @@
             "format": "singleselect",
             "options": [
                 "Yes, at least some data have been collected for this study already",
-                "No, no data have been collected for this study yet"
+                "No, no data have been collected for this study yet",
+                ""
             ],
             "description": "Please choose"
         },{

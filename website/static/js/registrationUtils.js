@@ -173,6 +173,11 @@ var Question = function(questionSchema, data) {
 
     self.data = data || {};
 
+    var options = [];
+    if (questionSchema.options) {
+        options = questionSchema.options.filter(function(el) { return el !== ''; });
+    }
+
     self.id = questionSchema.qid;
     self.title = questionSchema.title || 'Untitled';
     self.nav = questionSchema.nav || 'Untitled';
@@ -181,7 +186,7 @@ var Question = function(questionSchema, data) {
     self.required = questionSchema.required || false;
     self.description = questionSchema.description || '';
     self.help = questionSchema.help;
-    self.options = questionSchema.options || [];
+    self.options = options;
     self.fileLimit = questionSchema.fileLimit;
     self.fileDescription = questionSchema.fileDescription;
     self.properties = questionSchema.properties || [];

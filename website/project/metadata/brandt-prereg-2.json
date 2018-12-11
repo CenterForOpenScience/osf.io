@@ -68,7 +68,7 @@
             "title": "Are the original materials for the study available from the author?",
             "type": "choose",
             "format": "singleselect",
-            "options": ["yes", "no"],
+            "options": ["Yes", "No", ""],
             "nav": "Materials available?"
         }, {
             "qid": "item11",
@@ -115,49 +115,49 @@
             "title": "The similarities/differences in the instructions are",
             "type": "choose",
             "format": "singleselect",
-            "options": ["Exact", "Close", "Different"],
+            "options": ["Exact", "Close", "Different", ""],
             "nav": "Differences in instructions"
         }, {
             "qid": "item18",
             "title": "The similarities/differences in the measures are",
             "type": "choose",
             "format": "singleselect",
-            "options": ["Exact", "Close", "Different"],
+            "options": ["Exact", "Close", "Different", ""],
             "nav": "Differences in measures"
         }, {
             "qid": "item19",
             "title": "The similarities/differences in the stimuli are",
             "type": "choose",
             "format": "singleselect",
-            "options": ["Exact", "Close", "Different"],
+            "options": ["Exact", "Close", "Different", ""],
             "nav": "Differences in stimuli"
         }, {
             "qid": "item20",
             "title": "The similarities/differences in the procedure are",
             "type": "choose",
             "format": "singleselect",
-            "options": ["Exact", "Close", "Different"],
+            "options": ["Exact", "Close", "Different", ""],
             "nav": "Differences in procedure"
         }, {
             "qid": "item21",
             "title": "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are",
             "type": "choose",
             "format": "singleselect",
-            "options": ["Exact", "Close", "Different"],
+            "options": ["Exact", "Close", "Different", ""],
             "nav": "Differences in location"
         }, {
             "qid": "item22",
             "title": "The similarities/difference in remuneration are",
             "type": "choose",
             "format": "singleselect",
-            "options": ["Exact", "Close", "Different"],
+            "options": ["Exact", "Close", "Different", ""],
             "nav": "Differences in remuneration"
         }, {
             "qid": "item23",
             "title": "The similarities/differences between participant populations are",
             "type": "choose",
             "format": "singleselect",
-            "options": ["Exact", "Close", "Different"],
+            "options": ["Exact", "Close", "Different", ""],
             "nav": "Differences in populations"
         }, {
             "qid": "item24",

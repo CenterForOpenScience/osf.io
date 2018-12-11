@@ -32,14 +32,14 @@
             "type": "choose",
             "format": "singleselect",
             "title": "The replication effect size is",
-            "options": ["significantly different from the original effect size", "not significantly different from the original effect size"],
+            "options": ["Significantly different from the original effect size", "Not significantly different from the original effect size", ""],
             "nav": "Difference in effect size"
         },{
             "qid": "item33",
             "type": "choose",
             "format": "singleselect",
             "title": "I judge the replication to be a(n)",
-            "options": ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
+            "options": ["Success", "Informative failure to replicate", "Practical failure to replicate", "Inconclusive", ""],
             "nav": "Outcome"
         },{
             "qid": "item34",
