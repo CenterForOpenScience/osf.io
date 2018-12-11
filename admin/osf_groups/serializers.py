@@ -10,5 +10,5 @@ def serializer_group(osf_group):
         'creator': osf_group.creator,
         'managers': list(osf_group.managers.all()),
         'members': list(osf_group.members.all()),
-        'nodes': osf_group.nodes
+        'nodes': list(osf_group.nodes)
     }

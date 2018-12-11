@@ -5,6 +5,7 @@ from django.views.generic import FormView, DetailView, ListView
 from osf.models import OSFGroup
 from admin.osf_groups.forms import OSFGroupSearchForm
 from django.core.urlresolvers import reverse
+from django.contrib import messages
 
 
 class OSFGroupsView(PermissionRequiredMixin, DetailView):
@@ -30,19 +31,31 @@ class OSFGroupsFormView(PermissionRequiredMixin, FormView):
     raise_exception = True
     form_class = OSFGroupSearchForm
 
-    @property
-    def success_url(self):
-        id = self.get_form().data.get('id').strip()
-        name = self.get_form().data.get('name').strip()
+    def __init__(self):
+        self.redirect_url = None
+        super(OSFGroupsFormView, self).__init__()
+
+    def form_valid(self, form):
+        id = form.data.get('id').strip()
+        name = form.data.get('name').strip()
 
         if id:
-            return reverse('osf_groups:osf_group', kwargs={'id': id})
+            self.redirect_url = reverse('osf_groups:osf_group', kwargs={'id': id})
         elif name:
-            groups = OSFGroup.objects.filter(name=name)
-            if len(groups) == 1:
-                return reverse('osf_groups:osf_group', kwargs={'id': groups[0].id})
-            else:
-                return reverse('osf_groups:osf_groups_list',) + '?name={}'.format(name)
+            try:
+                group = OSFGroup.objects.get(name__contains=name)
+                self.redirect_url = reverse('osf_groups:osf_group', kwargs={'id': group.id})
+            except OSFGroup.MultipleObjectsReturned:
+                self.redirect_url = reverse('osf_groups:osf_groups_list',) + '?name={}'.format(name)
+            except OSFGroup.DoesNotExist:
+                messages.error(self.request, 'That OSF Group could not be found')
+                self.redirect_url = reverse('osf_groups:search')
+
+        return super(OSFGroupsFormView, self).form_valid(form)
+
+    @property
+    def success_url(self):
+        return self.redirect_url
 
 class OSFGroupsListView(PermissionRequiredMixin, ListView):
     """ Allow authorized admin user to view list of registrations
