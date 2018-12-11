@@ -141,7 +141,7 @@ NodeActions.beforeTemplate = function(url, done) {
 };
 
 NodeActions.redirectForkPage = function(){
-    window.location.href = '/project/' + ctx.node.id + '/forks/';
+    window.location.href = '/' + ctx.node.id + '/forks/';
     return true;
 };
 

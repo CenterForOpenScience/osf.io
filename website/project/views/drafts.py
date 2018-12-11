@@ -121,13 +121,19 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     :rtype: dict
     :raises: HTTPError if embargo end date is invalid
     """
-    data = request.get_json()
+    json_data = request.get_json()
+    if 'data' not in json_data:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Payload must include "data".'))
+    data = json_data['data']
+    if 'attributes' not in data:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Payload must include "data/attributes".'))
+    attributes = data['attributes']
     meta = {}
-    registration_choice = data.get('registrationChoice', 'immediate')
+    registration_choice = attributes['registration_choice']
     validate_registration_choice(registration_choice)
     if registration_choice == 'embargo':
         # Initiate embargo
-        end_date_string = data['embargoEndDate']
+        end_date_string = attributes['lift_embargo']
         validate_embargo_end_date(end_date_string, node)
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
@@ -162,10 +168,12 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
                         trust=False,
                         id='registration_submitted')
     return {
+        'data': {
+            'links': {
+                'html': node.web_url_for('node_registrations', _guid=True)
+            }
+        },
         'status': 'initiated',
-        'urls': {
-            'registrations': node.web_url_for('node_registrations', _guid=True)
-        }
     }, http.ACCEPTED
 
 @must_have_permission(ADMIN)
@@ -191,8 +199,14 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     :return: success message; url to registrations page
     :rtype: dict
     """
-    data = request.get_json()
-    registration_choice = data.get('registrationChoice', 'immediate')
+    json_data = request.get_json()
+    if 'data' not in json_data:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Payload must include "data".'))
+    data = json_data['data']
+    if 'attributes' not in data:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Payload must include "data/attributes".'))
+    attributes = data['attributes']
+    registration_choice = attributes['registration_choice']
     validate_registration_choice(registration_choice)
 
     # Don't allow resubmission unless submission was rejected
@@ -204,7 +218,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
 
     if registration_choice == 'embargo':
         # Initiate embargo
-        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
+        embargo_end_date = parse_date(attributes['lift_embargo'], ignoretz=True).replace(tzinfo=pytz.utc)
         try:
             register.embargo_registration(auth.user, embargo_end_date)
         except ValidationError as err:

@@ -120,7 +120,11 @@ class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView
             metric_field='preprint_id',
             annotation=metric_name,
             after=after,
-            size=None,
+            # Limit the bucket size
+            # of the ES aggregation. Otherwise,
+            # the number of buckets == the number of total preprints,
+            # which is too many for ES to handle
+            size=200,
         )
 
 
@@ -226,7 +230,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
             try:
                 citation = render_citation(node=preprint, style=style)
             except ValueError as err:  # style requested could not be found
-                csl_name = re.findall('[a-zA-Z]+\.csl', str(err))[0]
+                csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
                 raise NotFound('{} is not a known style.'.format(csl_name))
 
             return {'citation': citation, 'id': style}

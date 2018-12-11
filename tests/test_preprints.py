@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from nose.tools import *  # noqa: F403
 import mock
 import pytest
 import urlparse

@@ -263,6 +263,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             )
     # login or register with next parameter
     elif next_url:
+        # TODO - logout is no longer used by claim_user_registered, see [#PLAT-1151]
         if logout:
             # handle `claim_user_registered`
             data['next_url'] = next_url
@@ -346,7 +347,7 @@ def auth_register(auth):
     campaign = request.args.get('campaign')
     # the service url for CAS login or redirect url for OSF
     next_url = request.args.get('next')
-    # used only for `claim_user_registered`
+    # TODO: no longer used for `claim_user_registered`, see [#PLAT-1151]
     logout = request.args.get('logout')
 
     # logout must have next_url
@@ -551,6 +552,7 @@ def external_login_confirm_email_get(auth, uid, token):
             mail=mails.WELCOME,
             mimetype='html',
             user=user,
+            domain=settings.DOMAIN,
             osf_support_email=settings.OSF_SUPPORT_EMAIL,
             storage_flag_is_active=storage_i18n_flag_active(),
         )
@@ -831,7 +833,7 @@ def register_user(**kwargs):
         framework_auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(
-            http.BAD_REQUEST,
+            http.CONFLICT,
             data=dict(
                 message_long=language.ALREADY_REGISTERED.format(
                     email=markupsafe.escape(request.json['email1'])
