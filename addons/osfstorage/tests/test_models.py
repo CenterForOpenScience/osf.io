@@ -267,12 +267,12 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         assert_is(OsfStorageFileNode.load(child._id), None)
 
-    @mock.patch('addons.osfstorage.listeners.enqueue_task')
+    @mock.patch('addons.osfstorage.listeners.enqueue_postcommit_task')
     def test_file_deleted_when_node_deleted(self, mock_enqueue):
         child = self.node_settings.get_root().append_file('Test')
         self.node.remove_node(auth=Auth(self.user))
 
-        mock_enqueue.assert_called_with(delete_files_task.s(self.node._id))
+        mock_enqueue.assert_called_with(delete_files_task, (self.node._id, ), {}, celery=True)
 
     def test_materialized_path(self):
         child = self.node_settings.get_root().append_file('Test')
