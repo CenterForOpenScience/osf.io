@@ -191,15 +191,11 @@ class Registration(AbstractNode):
 
     @property
     def date_withdrawn(self):
-        if self.root.retraction is None:
-            return None
-        return self.root.retraction.date_retracted
+        return getattr(self.root.retraction, 'date_retracted', None)
 
     @property
     def withdrawal_justification(self):
-        if self.root.retraction is None:
-            return None
-        return self.root.retraction.justification
+        return getattr(self.root.retraction, 'justification', None)
 
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):
