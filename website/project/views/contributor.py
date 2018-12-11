@@ -287,7 +287,7 @@ def project_manage_contributors(auth, node, **kwargs):
 
     # If user has removed herself from project, alert; redirect to
     # node summary if node is public, else to user's dashboard page
-    if not node.is_contributor(auth.user):
+    if not node.is_contributor_or_group_member(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
             kind='success',
@@ -349,7 +349,7 @@ def project_remove_contributor(auth, **kwargs):
 
         # On parent node, if user has removed herself from project, alert; redirect to
         # node summary if node is public, else to user's dashboard page
-        if not node.is_contributor(auth.user) and node_id == parent_id:
+        if not node.is_contributor_or_group_member(auth.user) and node_id == parent_id:
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
                 kind='success',
