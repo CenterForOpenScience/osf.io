@@ -1401,6 +1401,14 @@ class TestPermissionMethods:
             node.set_permissions(node.creator, permissions=WRITE)
         assert excinfo.value.args[0] == 'Must have at least one registered admin contributor'
 
+        new_user = AuthUserFactory()
+        osf_group = OSFGroupFactory(creator=new_user)
+        node.add_osf_group(osf_group, 'admin')
+        # A group member being added as a contributor doesn't throw any errors, even if that
+        # group member is being downgraded to write.  Group members don't count towards
+        # the one registered admin contributor tally
+        node.set_permissions(new_user, 'write')
+
     def test_add_permission_with_admin_also_grants_read_and_write(self, node):
         user = UserFactory()
         Contributor.objects.create(

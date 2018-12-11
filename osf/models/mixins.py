@@ -1469,7 +1469,7 @@ class ContributorMixin(models.Model):
         if isinstance(user, self.contributor_class):
             user = user.user
 
-        if validate and (self.has_permission(user, 'admin') and 'admin' not in permissions):
+        if validate and (self.has_permission(user, 'admin') and self.is_contributor(user) and 'admin' not in permissions):
             if self.get_group('admin').user_set.count() <= 1:
                 raise self.state_error('Must have at least one registered admin contributor')
         self.clear_permissions(user)

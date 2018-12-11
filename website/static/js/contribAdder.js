@@ -57,7 +57,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             var childrenToChange = [];
             for (var key in newValue) {
                 newValue[key].changed = newValue[key].checked !== self.nodesOriginal[key].checked;
-                if (newValue[key].changed && key !== self.nodeId) {
+                if (newValue[key].changed && newValue[key].enabled && key !== self.nodeId) {
                     childrenToChange.push(key);
                 }
             }
