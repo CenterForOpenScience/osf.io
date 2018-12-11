@@ -1078,7 +1078,9 @@ class TestNotificationUtils(OsfTestCase):
         self.node.save()
 
         # set up how it was in original test - remove existing subscriptions
-        utils.remove_contributor_from_subscriptions(self.node, user)
+        node_subscriptions = utils.get_all_node_subscriptions(user, self.node)
+        for subscription in node_subscriptions:
+            subscription.remove_user_from_subscription(user)
 
         node_subscriptions = utils.get_all_node_subscriptions(user, self.node)
         data = utils.serialize_event(user=user, event_description='comments',

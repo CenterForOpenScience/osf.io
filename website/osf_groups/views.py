@@ -1,6 +1,18 @@
+import logging
 
 from website import mails, settings
-from website.osf_groups.signals import unreg_member_added, member_added
+from website.notifications.exceptions import InvalidSubscriptionError
+from website.notifications.utils import (
+    check_if_all_global_subscriptions_are_none,
+    subscribe_user_to_notifications,
+)
+from website.osf_groups.signals import (
+    unreg_member_added,
+    member_added,
+    group_added_to_node,
+)
+logger = logging.getLogger(__name__)
+
 
 @member_added.connect
 def notify_added_group_member(group, user, permission, auth=None, throttle=None, email_template='default', *args, **kwargs):
@@ -65,3 +77,30 @@ def finalize_invitation(group, user, permission, auth, email_template='default')
     else:
         if record['email']:
             send_claim_member_email(record['email'], user, group, permission, auth=auth, email_template=email_template)
+
+
+@group_added_to_node.connect
+def notify_added_node_group_member(group, node, user, permission, auth):
+    if (not auth or auth.user != user) and user.is_registered:
+        email_template = mails.GROUP_ADDED_TO_NODE
+        mails.send_mail(
+            to_addr=user.username,
+            mail=email_template,
+            mimetype='html',
+            user=user,
+            node=node,
+            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(user),
+            group_name=group.name,
+            permission=permission,
+            referrer_name=auth.user.fullname if auth else '',
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+        )
+
+
+@group_added_to_node.connect
+def subscribe_group_member(group, node, user, permission, auth):
+    try:
+        subscribe_user_to_notifications(node, user)
+    except InvalidSubscriptionError as err:
+        logger.warn('Skipping subscription of user {} to node {}'.format(user, node._id))
+        logger.warn('Reason: {}'.format(str(err)))

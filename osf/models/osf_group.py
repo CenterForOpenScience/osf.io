@@ -13,6 +13,7 @@ from osf.models import AbstractNode, OSFUser, NodeLog
 from osf.models.osf_grouplog import OSFGroupLog
 from osf.utils.permissions import ADMIN, MANAGER, MEMBER, MANAGE, reduce_permissions
 from osf.utils import sanitize
+from website.project import signals as project_signals
 from website.osf_groups import signals as group_signals
 from website.util import api_v2_url
 
@@ -307,6 +308,8 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             auth=auth)
 
         self.add_corresponding_node_log(node, NodeLog.GROUP_ADDED, params, auth)
+        for user in self.members:
+            group_signals.group_added_to_node.send(self, node=node, user=user, permission=permission, auth=auth)
 
     def update_group_permissions_to_node(self, node, permission='write', auth=None):
         """Updates the OSF Group permissions to the node.  Called from node model.
@@ -356,6 +359,10 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             auth=auth)
 
         self.add_corresponding_node_log(node, NodeLog.GROUP_REMOVED, params, auth)
+        for user in self.members:
+            # send signal to remove this user from project subscriptions,
+            # provided the user doesn't have node perms some other way
+            project_signals.contributor_removed.send(node, user=user)
 
     def has_permission(self, user, permission):
         if not user:
