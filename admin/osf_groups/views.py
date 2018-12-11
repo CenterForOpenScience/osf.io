@@ -38,6 +38,7 @@ class OSFGroupsFormView(PermissionRequiredMixin, FormView):
     def form_valid(self, form):
         id = form.data.get('id').strip()
         name = form.data.get('name').strip()
+        self.redirect_url = reverse('osf_groups:search')
 
         if id:
             self.redirect_url = reverse('osf_groups:osf_group', kwargs={'id': id})
@@ -49,13 +50,13 @@ class OSFGroupsFormView(PermissionRequiredMixin, FormView):
                 self.redirect_url = reverse('osf_groups:osf_groups_list',) + '?name={}'.format(name)
             except OSFGroup.DoesNotExist:
                 messages.error(self.request, 'That OSF Group could not be found')
-                self.redirect_url = reverse('osf_groups:search')
 
         return super(OSFGroupsFormView, self).form_valid(form)
 
     @property
     def success_url(self):
         return self.redirect_url
+
 
 class OSFGroupsListView(PermissionRequiredMixin, ListView):
     """ Allow authorized admin user to view list of registrations
