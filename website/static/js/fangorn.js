@@ -2977,8 +2977,9 @@ tbOptions = {
                 size = file.size / 1000000;
                 maxSize = item.data.accept.maxSize;
                 if (size > maxSize) {
-                    displaySize = Math.round(file.size / 10000) / 100;
-                    msgText = 'This file is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
+                    displaySize = $osf.humanFileSize(file.size, true);
+                    maxSize = $osf.humanFileSize(maxSize * 1000000, true);
+                    msgText = 'This file is too large (' + displaySize + '). Max file size is ' + maxSize + '.';
                     $osf.growl(msgText);
                     addFileStatus(treebeard, file, false, msgText, '');
                     removeFromUI(file, treebeard);
