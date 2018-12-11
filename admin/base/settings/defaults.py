@@ -300,3 +300,6 @@ ENABLE_LOGIN_FORM = False
 
 # mail address uses mail from rdm_announcement
 ANNOUNCEMENT_EMAIL_FROM = 'noreply@rdm.rcos.nii.ac.jp'
+
+# Addon Controls
+ENABLE_FORCE_CHECK = False

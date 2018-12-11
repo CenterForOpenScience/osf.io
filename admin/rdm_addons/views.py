@@ -83,6 +83,9 @@ class AddonListView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
     def get_context_data(self, **kwargs):
         """get contexts"""
         ctx = super(AddonListView, self).get_context_data(**kwargs)
+
+        ctx['enable_force'] = admin_settings.ENABLE_FORCE_CHECK
+
         institution_id = int(kwargs['institution_id'])
 
         if Institution.objects.filter(pk=institution_id).exists():
