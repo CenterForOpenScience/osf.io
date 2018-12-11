@@ -15,7 +15,7 @@ class OSFGroupsView(PermissionRequiredMixin, DetailView):
     """
     template_name = 'osf_groups/osf_groups.html'
     context_object_name = 'group'
-    permission_required = 'osf.view_osf_groups'
+    permission_required = 'osf.groups_read'
     raise_exception = True
 
     def get_object(self, queryset=None):
@@ -27,7 +27,7 @@ class OSFGroupsView(PermissionRequiredMixin, DetailView):
 class OSFGroupsFormView(PermissionRequiredMixin, FormView):
     template_name = 'osf_groups/search.html'
     object_type = 'osf_group'
-    permission_required = 'osf.view_osf_groups'
+    permission_required = 'osf.groups_read'
     raise_exception = True
     form_class = OSFGroupSearchForm
 
@@ -67,7 +67,7 @@ class OSFGroupsListView(PermissionRequiredMixin, ListView):
     paginate_by = 10
     paginate_orphans = 1
     context_object_name = 'osf_groups'
-    permission_required = 'osf.view_osf_groups'
+    permission_required = 'osf.groups_read'
     raise_exception = True
 
     def get_queryset(self):
