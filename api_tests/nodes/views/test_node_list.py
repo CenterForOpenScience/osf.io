@@ -1632,6 +1632,35 @@ class TestNodeCreate:
             new_component.contributors
         ) == len(parent_project.contributors)
 
+    def test_create_component_inherit_groups(
+            self, app, user_one, user_two, title, category):
+        parent_project = ProjectFactory(creator=user_one)
+        group = OSFGroupFactory(creator=user_one)
+        second_group = OSFGroupFactory()
+        third_group = OSFGroupFactory(creator=user_two)
+        third_group.make_member(user_one)
+        parent_project.add_osf_group(group, 'write')
+        parent_project.add_osf_group(second_group, 'write')
+        url = '/{}nodes/{}/children/?inherit_contributors=true'.format(
+            API_BASE, parent_project._id)
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': title,
+                    'category': category,
+                }
+            }
+        }
+        res = app.post_json_api(url, component_data, auth=user_one.auth)
+        assert res.status_code == 201
+        json_data = res.json['data']
+        new_component_id = json_data['id']
+        new_component = AbstractNode.load(new_component_id)
+        assert group in new_component.osf_groups
+        assert second_group not in new_component.osf_groups
+        assert third_group not in new_component.osf_groups
+
     def test_create_component_with_tags(self, app, user_one, title, category):
         parent_project = ProjectFactory(creator=user_one)
         url = '/{}nodes/{}/children/'.format(API_BASE, parent_project._id)
