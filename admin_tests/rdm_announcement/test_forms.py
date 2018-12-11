@@ -49,14 +49,14 @@ class TestPreviewForm(AdminTestCase):
         form = PreviewForm(data=mod_data)
         nt.assert_false(form.is_valid())
         nt.assert_in('Body should be at most 2000 characters', form.errors['__all__'])
-
+    ''' disable #GRDM-6902
     def test_clean_from_facebook_okay(self):
         mod_data = dict(data)
         facebook_body = self.random_body(10000)
         mod_data.update({'body': facebook_body, 'announcement_type': 'SNS (Facebook)'})
         form = PreviewForm(data=mod_data)
         self.assertTrue(form.is_valid())
-
+    '''
     def random_body(self, count):
         body = ''
         chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789-_'

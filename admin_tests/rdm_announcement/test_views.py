@@ -124,6 +124,7 @@ class TestIndexView(AdminTestCase):
         nt.assert_true(self.form.is_valid())
         nt.assert_false(ret)
 
+    ''' disable #GRDM-6902
     def test_post_option_check_raise2(self):
         mod_data = dict(option_data)
         mod_data.update({'user_id': self.user.id, 'facebook_api_key': None})
@@ -136,7 +137,7 @@ class TestIndexView(AdminTestCase):
         nt.assert_is_instance(test_option, RdmAnnouncementOption)
         nt.assert_true(self.form.is_valid())
         nt.assert_false(ret)
-
+    '''
 
 class TestSettingsView(AdminTestCase):
     def setUp(self):
