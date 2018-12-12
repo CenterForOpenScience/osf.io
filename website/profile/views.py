@@ -155,6 +155,9 @@ def update_user(auth):
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+                if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                    raise HTTPError(httplib.BAD_REQUEST,
+                                    data={'message_long': 'Too many requests. Please wait a while before adding an email to your account.'})
                 send_confirm_email(user, email=address)
 
         ############
