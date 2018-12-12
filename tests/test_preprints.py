@@ -686,6 +686,11 @@ class TestPermissionMethods:
         assert contributor.user in preprint.contributors
         assert preprint.has_permission(user, WRITE) is True
 
+        user.is_superuser = True
+        user.save()
+
+        assert preprint.has_permission(user, ADMIN) is False
+
     def test_has_permission_passed_non_contributor_returns_false(self, preprint):
         noncontrib = UserFactory()
         assert preprint.has_permission(noncontrib, READ) is False

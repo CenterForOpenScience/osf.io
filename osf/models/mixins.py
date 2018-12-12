@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.functional import cached_property
-from guardian.shortcuts import assign_perm, get_perms, remove_perm
+from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
 
 from include import IncludeQuerySet
 
@@ -1441,7 +1441,10 @@ class ContributorMixin(models.Model):
 
         if not user:
             return False
-        has_permission = user.has_perm('{}_{}'.format(permission, object_type), self)
+        perm = '{}_{}'.format(permission, object_type)
+        # Using get_group_perms to get permissions that are inferred through
+        # group membership - not inherited from superuser status
+        has_permission = perm in get_group_perms(user, self)
         if object_type == 'node':
             if not has_permission and permission == 'read' and check_parent:
                 return self.is_admin_parent(user)

@@ -1336,6 +1336,13 @@ class TestPermissionMethods:
         assert contributor.user in node.contributors
         assert node.has_permission(user, WRITE) is True
 
+        user.is_superuser = True
+        user.save()
+
+        # has_permission doesn't return permissions that are Inherited
+        # because the user is a superuser
+        assert node.has_permission(user, ADMIN) is False
+
     def test_has_permission_passed_non_contributor_returns_false(self, node):
         noncontrib = UserFactory()
         assert node.has_permission(noncontrib, READ) is False
