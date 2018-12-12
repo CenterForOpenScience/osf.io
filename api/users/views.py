@@ -808,6 +808,8 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
+    throttle_classes = (SendEmailThrottle, )
+
     view_category = 'users'
     view_name = 'user-emails'
 
