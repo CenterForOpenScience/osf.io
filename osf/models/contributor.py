@@ -54,22 +54,6 @@ class PreprintContributor(AbstractBaseContributor):
     @property
     def permission(self):
         return get_contributor_permission(self, self.preprint.id, 'preprint')
-        # Checking group membership instead of permissions since unregistered
-        # contributors technically have no permissions
-        preprint_id = self.preprint.id
-        user = self.user
-        read = 'preprint_{}_read'.format(preprint_id)
-        write = 'preprint_{}_write'.format(preprint_id)
-        admin = 'preprint_{}_admin'.format(preprint_id)
-        user_groups = user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
-        if admin in user_groups:
-            return 'admin'
-        elif write in user_groups:
-            return 'write'
-        elif read in user_groups:
-            return 'read'
-        else:
-            return None
 
     class Meta:
         unique_together = ('user', 'preprint')
