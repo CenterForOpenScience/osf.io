@@ -149,7 +149,7 @@ def update_user(auth):
                     message_long='Invalid Email')
                 )
             except BlacklistedEmailError:
-                sentry.log_message('User {} attempted to add a blacklisted email: {}'.format(address))
+                sentry.log_message('User {} attempted to add a blacklisted email: {}'.format(user._id, address))
                 raise HTTPError(http.BAD_REQUEST, data=dict(
                     message_long=language.BLACKLISTED_EMAIL)
                 )
