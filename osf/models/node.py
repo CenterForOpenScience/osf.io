@@ -27,7 +27,7 @@ from guardian.models import (
     GroupObjectPermissionBase,
     UserObjectPermissionBase,
 )
-from guardian.shortcuts import get_perms, get_objects_for_user, get_groups_with_perms
+from guardian.shortcuts import get_objects_for_user, get_groups_with_perms, get_group_perms
 
 from framework import status
 from framework.auth import oauth_scopes
@@ -855,7 +855,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Overrides guardian mixin - displays user's explicit permissions to the node
         if isinstance(user, AnonymousUser):
             return []
-        return list(set(get_perms(user, self)) & set(['read_node', 'write_node', 'admin_node']))
+        return list(set(get_group_perms(user, self)) & set(['read_node', 'write_node', 'admin_node']))
 
     def has_permission_on_children(self, user, permission):
         """Checks if the given user has a given permission on any child nodes

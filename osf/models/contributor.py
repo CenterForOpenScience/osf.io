@@ -78,20 +78,26 @@ class RecentlyAddedContributor(models.Model):
         unique_together = ('user', 'contributor')
 
 def get_contributor_permission(contributor, object_id, model_type):
-        read = '{}_{}_read'.format(model_type, object_id)
-        write = '{}_{}_write'.format(model_type, object_id)
-        admin = '{}_{}_admin'.format(model_type, object_id)
-        user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
-        if admin in user_groups:
-            return 'admin'
-        elif write in user_groups:
-            return 'write'
-        elif read in user_groups:
-            return 'read'
-        else:
-            return None
+    """
+    Returns a contributor's permissions - perms through contributorship only. No group membership.
+    """
+    read = '{}_{}_read'.format(model_type, object_id)
+    write = '{}_{}_write'.format(model_type, object_id)
+    admin = '{}_{}_admin'.format(model_type, object_id)
+    user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
+    if admin in user_groups:
+        return 'admin'
+    elif write in user_groups:
+        return 'write'
+    elif read in user_groups:
+        return 'read'
+    else:
+        return None
 
-def get_contributor_permissions(contributor, as_list=True, node=None):
+def get_contributor_or_group_member_permissions(contributor, as_list=True, node=None):
+    """
+    Returns a user's perms to the node - can be through contributorship or group membership
+    """
     # Can pull permissions off of contributor object, or user/node can be passed in
     if isinstance(contributor, Contributor):
         node = contributor.node

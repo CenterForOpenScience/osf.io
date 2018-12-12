@@ -547,6 +547,23 @@ class TestNodeDetail:
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
         assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
 
+        # superusers current permissions are None
+        superuser = AuthUserFactory()
+        superuser.is_superuser = True
+        superuser.save()
+
+        res = app.get(url, auth=superuser.auth)
+        assert not project_public.has_permission(superuser, permissions.READ)
+        assert permissions.READ not in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
+
+        res = app.get(url_public, auth=superuser.auth)
+        assert not project_public.has_permission(superuser, permissions.READ)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
+
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:

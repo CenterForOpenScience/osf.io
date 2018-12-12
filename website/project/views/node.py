@@ -43,7 +43,7 @@ from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from addons.wiki.models import WikiPage
 from osf.models import AbstractNode, Collection, Guid, PrivateLink, Node, NodeRelation, Preprint
-from osf.models.contributor import get_contributor_permissions
+from osf.models.contributor import get_contributor_or_group_member_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS, reduce_permissions
@@ -796,7 +796,7 @@ def _view_project(node, auth, primary=False,
             'can_edit': node.has_permission(user, WRITE) and not node.is_registration,
             'can_edit_tags': node.has_permission(user, WRITE),
             'has_read_permissions': node.has_permission(user, READ),
-            'permissions': get_contributor_permissions(user, as_list=True, node=node),
+            'permissions': get_contributor_or_group_member_permissions(user, as_list=True, node=node),
             'id': user._id if user else None,
             'username': user.username if user else None,
             'fullname': user.fullname if user else '',
