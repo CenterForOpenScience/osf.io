@@ -163,8 +163,14 @@
                 % if node['groups']:
                     <div>
                         Groups:
-                        %for group_name in node['groups']:
-                            <ol>${group_name}</ol>
+                        %for i, group_name in enumerate(node['groups']):
+                            <ol>
+                                % if i == len(node['groups']) - 1:
+                                    ${group_name}
+                                % else:
+                                    ${group_name},
+                                % endif
+                            </ol>
                         %endfor
                     </div>
                 % endif

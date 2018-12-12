@@ -159,6 +159,24 @@ class TestContributorDetail:
         assert res.json['data']['attributes'].get(
             'unregistered_contributor') == 'Nesiehr Sinned'
 
+    def test_node_contributor_detail_serializes_contributor_perms(self, app, user):
+        project = ProjectFactory(creator=user, is_public=True)
+        user_two = AuthUserFactory()
+        project.add_contributor(user_two, 'write')
+        project.save()
+
+        osf_group = OSFGroupFactory(creator=user)
+        osf_group.make_member(user_two)
+        project.add_osf_group(osf_group, 'admin')
+
+        url = '/{}nodes/{}/contributors/{}/'.format(
+            API_BASE, project._id, user_two._id)
+        res = app.get(url, auth=user.auth)
+        # Even though user_two has admin perms through group membership,
+        # contributor endpoints return contributor permissions
+        assert res.json['data']['attributes']['permission'] == 'write'
+        assert project.has_permission(user_two, 'admin') is True
+
     def test_detail_includes_index(
             self,
             app,

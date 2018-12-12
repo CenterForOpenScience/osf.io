@@ -1439,7 +1439,7 @@ class ContributorMixin(models.Model):
         Preprint = apps.get_model('osf.Preprint')
         object_type = 'preprint' if isinstance(self, Preprint) else 'node'
 
-        if not user:
+        if not user or user.is_anonymous:
             return False
         perm = '{}_{}'.format(permission, object_type)
         # Using get_group_perms to get permissions that are inferred through
