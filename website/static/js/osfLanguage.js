@@ -18,7 +18,6 @@ module.exports = {
         beforeEditIsPendingReview: 'This draft registration is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.',
         loadDraftsFail: 'There was a problem loading draft registrations at this time. ' + $osf.refreshOrSupport(),
         deleteDraftFail: 'There was a problem deleting this draft. ' + $osf.refreshOrSupport(),
-        loadMetaSchemaFail: 'There was a problem loading registration templates at this time. ' + $osf.refreshOrSupport()
     },
     Addons: {
         dataverse: {

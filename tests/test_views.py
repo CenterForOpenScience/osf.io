@@ -230,7 +230,8 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         url = self.project_url + 'registrations/?view_only={}'.format(self.link.key)
         res = self.app.get(url)
 
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 302)
+        assert_in(url.replace('/project/', ''), res.location)
 
     def test_check_can_access_valid(self):
         contributor = AuthUserFactory()
