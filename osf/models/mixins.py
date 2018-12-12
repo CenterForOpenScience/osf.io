@@ -14,7 +14,7 @@ from include import IncludeQuerySet
 from api.providers.workflows import Workflows, PUBLIC_STATES
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
-from osf.exceptions import InvalidTriggerError
+from osf.exceptions import InvalidTriggerError, NodeStateError
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
@@ -24,7 +24,6 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
-from website.exceptions import NodeStateError
 from website import settings
 
 

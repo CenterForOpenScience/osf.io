@@ -17,8 +17,8 @@ from api.nodes.serializers import (
 from api.base.metrics import MetricsSerializerMixin
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
-from website.exceptions import NodeStateError
 from website.project import signals as project_signals
+from osf.exceptions import NodeStateError
 from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 from osf.utils import permissions
 

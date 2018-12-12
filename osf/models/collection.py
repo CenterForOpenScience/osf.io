@@ -15,7 +15,7 @@ from osf.models.base import BaseModel, GuidMixin
 from osf.models.mixins import GuardianMixin, TaxonomizableMixin
 from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
 

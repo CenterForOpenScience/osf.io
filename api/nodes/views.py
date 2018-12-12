@@ -119,8 +119,8 @@ from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.models.node import remove_addons
 from osf.utils.permissions import ADMIN, PERMISSIONS
+from osf.exceptions import NodeStateError
 from website import mails
-from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 
 # This is used to rethrow v1 exceptions as v2

@@ -25,7 +25,7 @@ from website import language
 
 from website.util import rubeus
 from website.ember_osf_web.views import use_ember_app
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.project import new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
