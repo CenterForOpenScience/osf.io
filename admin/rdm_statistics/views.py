@@ -633,7 +633,7 @@ def send_error_mail(err):
         'subject': '[[GakuNin RDM]] ERROR in statistic information collection at ' + current_date.strftime('%Y/%m/%d'),
         'content': 'ERROR OCCURED at ' + current_date.strftime('%Y/%m/%d') + '.\r\nERROR: \r\n' + str(err),
     }
-    send_email(to_list=to_list, cc_list=None, data=mail_data)
+    send_email(to_list=to_list, cc_list=None, user=None, data=mail_data)
     response_hash = {'state': 'fail', 'error': str(err)}
     response_json = json.dumps(response_hash)
     response = HttpResponse(response_json, content_type='application/json')
