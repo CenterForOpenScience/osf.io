@@ -992,9 +992,11 @@ def serialize_child_tree(child_list, user, nested):
     serialized_children = []
     for child in child_list:
         if child.has_permission(user, READ) or child.has_permission_on_children(user, READ):
+            # is_admin further restricted here to mean user is a traditional admin group contributor -
+            # admin group membership not sufficient
             contributors = [{
                 'id': contributor.user._id,
-                'is_admin': child.has_permission(contributor.user, 'admin'),
+                'is_admin': child.has_permission(contributor.user, 'admin') and child.get_group('admin') in contributor.user.groups.all(),
                 'is_confirmed': contributor.user.is_confirmed,
                 'visible': contributor.visible
             } for contributor in child.contributor_set.all()]
@@ -1044,7 +1046,7 @@ def node_child_tree(user, node):
 
     contributors = [{
         'id': contributor.user._id,
-        'is_admin': node.has_permission(contributor.user, ADMIN),
+        'is_admin': node.has_permission(contributor.user, 'admin') and node.get_group('admin') in contributor.user.groups.all(),
         'is_confirmed': contributor.user.is_confirmed,
         'visible': contributor.visible
     } for contributor in node.contributor_set.all().include('user__guids')]
