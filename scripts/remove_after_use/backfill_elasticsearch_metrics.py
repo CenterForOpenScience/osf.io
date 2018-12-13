@@ -10,10 +10,12 @@ import sys
 import argparse
 import datetime
 from time import sleep
+import pytz
 
 from website.app import setup_django
 setup_django()
 
+from django.conf import settings
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl.connections import connections
 
@@ -24,9 +26,9 @@ from website.search.elastic_search import client
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-CHUNK_SIZE = 100
-MAX_BATCH_SIZE = 500
-THROTTLE_PERIOD = 3  # seconds
+CHUNK_SIZE = 5000
+MAX_BATCH_SIZE = 25000
+THROTTLE_PERIOD = 1  # seconds
 REQUEST_TIMEOUT = 30  # seconds
 
 
@@ -52,14 +54,15 @@ def main():
             page_counter__id, date = page_counter
             version_num = page_counter__id.split(':')[-1]
             for date, totals in date.items():
+                timestamp = datetime.datetime.strptime(date, '%Y/%m/%d').replace(tzinfo=pytz.utc)
                 batch_to_update.append({
-                    '_index': 'osf_preprintdownload-{}'.format(date.replace('/', '.')),
+                    '_index': 'osf_preprintdownload_{}'.format(timestamp.strftime(settings.ELASTICSEARCH_METRICS_DATE_FORMAT)),
                     '_source': {
                         'count': totals['total'],
                         'path': '/{}'.format(file_id),
                         'preprint_id': preprint__id,
                         'provider_id': provider__id,
-                        'timestamp': datetime.datetime.strptime(date, '%Y/%m/%d'),
+                        'timestamp': timestamp,
                         'user_id': None,  # Pagecounter never tracked this
                         'version': int(version_num) + 1
                     },

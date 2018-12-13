@@ -1,9 +1,11 @@
 DISABLE_ENGAGEMENT_EMAILS = 'disable_engagement_emails'
 ELASTICSEARCH_METRICS = 'elasticsearch_metrics'
+ENABLE_INACTIVE_SCHEMAS = 'enable_inactive_schemas'
 ENFORCE_CSRF = 'enforce_csrf'
 EZID_SWITCH = 'ezid'
 INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
 STORAGE_I18N = 'storage_i18n'
+OSF_PREREGISTRATION = 'osf_preregistration'
 
 EMBER_AUTH_REGISTER = 'ember_auth_register'
 EMBER_CREATE_DRAFT_REGISTRATION = 'ember_create_draft_registration_page'

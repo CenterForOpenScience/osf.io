@@ -155,9 +155,10 @@ function NodesRegisterTreebeard(divID, data, nodesState, nodesOriginal) {
 }
 
 
-var RegistrationViewModel = function(confirm, prompts, validator) {
+var RegistrationViewModel = function(confirm, prompts, validator, options) {
     var self = this;
     // Wire up the registration options.
+    self.requiresApproval = options.requiresApproval;
 
     self.registrationOptions = [
         MAKE_PUBLIC,
@@ -286,7 +287,11 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
         self.clear();
     });
 
-    self.page = ko.observable();
+    // FIXME: Metaschemas that require approval (e.g. prereg)
+    // go through APIv1 for submission, which doesn't support
+    // partial registrations. This check avoids showing
+    // the partial reg UI.
+    self.page = ko.observable(self.requiresApproval ? self.EMBARGO : self.SELECT);
 
     self.pageTitle = ko.computed(function() {
         return {
@@ -303,9 +308,11 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
         }[self.page()];
     });
 
-    self.fetchNodeTree().done(function(response) {
-        new NodesRegisterTreebeard('nodesRegisterTreebeard', response, self.nodesState, self.nodesOriginal);
-    });
+    if (!self.requiresApproval) {
+        self.fetchNodeTree().done(function(response) {
+            new NodesRegisterTreebeard('nodesRegisterTreebeard', response, self.nodesState, self.nodesOriginal);
+        });
+    }
 
     self.noComponents = ko.computed(function() {
         return Object.keys(self.nodesState()).length === 1;

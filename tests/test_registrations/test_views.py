@@ -107,8 +107,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         self.draft.reload()
         assert_is_not_none(self.draft.approval)
         assert_equal(self.draft.approval.meta, {
-            u'registration_choice': unicode(self.embargo_payload['registrationChoice']),
-            u'embargo_end_date': unicode(self.embargo_payload['embargoEndDate'])
+            u'registration_choice': 'embargo',
+            u'embargo_end_date': unicode(self.embargo_payload['data']['attributes']['lift_embargo'])
         })
 
     def test_submit_draft_for_review_invalid_registrationChoice(self):
@@ -154,7 +154,11 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         res = self.app.post_json(url, {
-            'registrationChoice': 'immediate'
+            'data': {
+                'attributes': {
+                    'registration_choice': 'immediate',
+                },
+            },
         }, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
@@ -196,8 +200,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.post_json(
             url,
             {
-                'registrationChoice': 'embargo',
-                'embargoEndDate': end_date.strftime('%c'),
+                'data': {
+                    'attributes': {
+                        'children': [self.node._id],
+                        'registration_choice': 'embargo',
+                        'lift_embargo': end_date.strftime('%c'),
+                    },
+                    'type': 'registrations',
+                }
             },
             auth=self.user.auth)
 
@@ -384,15 +394,15 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_not_equal(metadata, self.draft.registration_metadata)
         payload = {
             'schema_data': metadata,
-            'schema_name': 'OSF-Standard Pre-Data Collection Registration',
-            'schema_version': 1
+            'schema_name': 'Open-Ended Registration',
+            'schema_version': 2
         }
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
 
-        open_ended_schema = RegistrationSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=1)
+        open_ended_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
         self.draft.reload()
         assert_equal(open_ended_schema, self.draft.registration_schema)

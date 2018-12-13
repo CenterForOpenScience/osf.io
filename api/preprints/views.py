@@ -142,7 +142,11 @@ class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView
             metric_field='preprint_id',
             annotation=metric_name,
             after=after,
-            size=None,
+            # Limit the bucket size
+            # of the ES aggregation. Otherwise,
+            # the number of buckets == the number of total preprints,
+            # which is too many for ES to handle
+            size=200,
         )
 
 

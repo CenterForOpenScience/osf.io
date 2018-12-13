@@ -212,6 +212,9 @@ def check_can_access(node, user, key=None, api_node=None):
             return True
 
     if not node.can_view(Auth(user=user)) and api_node != node:
+        if node.is_deleted:
+            raise HTTPError(http.GONE, data={'message_long': 'The node for this file has been deleted.'})
+
         if getattr(node, 'private_link_keys_deleted', False) and key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
 
