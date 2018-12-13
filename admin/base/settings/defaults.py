@@ -293,5 +293,8 @@ SHIB_EPPN_SCOPING_SEPARATOR = '@'
 ENABLE_SHB_LOGIN = True
 ENABLE_LOGIN_FORM = False
 
+# Addon Controls
+ENABLE_FORCE_CHECK = False
+
 # mail address uses mail from rdm_announcement
 ANNOUNCEMENT_EMAIL_FROM = 'noreply@rdm.rcos.nii.ac.jp'
