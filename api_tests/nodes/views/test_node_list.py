@@ -203,7 +203,7 @@ class TestNodeList:
             auth=Auth(public_project.creator)
         )
         res = app.get(url_public, auth=new_user.auth)
-        assert set(res.json['data'][0]['attributes']['current_user_permissions']) == set([permissions.READ, permissions.WRITE])
+        assert res.json['data'][0]['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]
         assert res.json['data'][0]['attributes']['current_user_is_contributor'] is True
 
         # make sure 'read' is there for implicit read contributors
@@ -242,7 +242,7 @@ class TestNodeList:
         osf_group = OSFGroupFactory(creator=group_member)
         public_project.add_osf_group(osf_group, 'write')
         res = app.get(url_public, auth=group_member.auth)
-        assert set(res.json['data'][0]['attributes']['current_user_permissions']) == set([permissions.READ, permissions.WRITE])
+        assert res.json['data'][0]['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]
         assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
         assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is True
 
@@ -251,7 +251,7 @@ class TestNodeList:
         osf_group = OSFGroupFactory(creator=group_member)
         public_project.add_osf_group(osf_group, 'admin')
         res = app.get(url_public, auth=group_member.auth)
-        assert set(res.json['data'][0]['attributes']['current_user_permissions']) == set([permissions.READ, permissions.WRITE, permissions.ADMIN])
+        assert res.json['data'][0]['attributes']['current_user_permissions'] == [permissions.ADMIN, permissions.WRITE, permissions.READ]
         assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
         assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is True
 

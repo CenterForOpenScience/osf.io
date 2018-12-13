@@ -81,7 +81,7 @@ class TestNodeDetail:
 
     @pytest.fixture()
     def permissions_write(self):
-        return ['read', 'write']
+        return ['write', 'read']
 
     @pytest.fixture()
     def permissions_admin(self):
@@ -100,7 +100,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is False
-        assert set(res.json['data']['attributes']['current_user_permissions']) == set(permissions_read)
+        assert res.json['data']['attributes']['current_user_permissions'] == ['read']
 
     #   test_return_public_project_details_contributor_logged_in
         res = app.get(url_public, auth=user.auth)
@@ -110,7 +110,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert set(res.json['data']['attributes']['current_user_permissions']) == set(permissions_admin)
+        assert res.json['data']['attributes']['current_user_permissions'] == ['admin', 'write', 'read']
 
     #   test_return_public_project_details_non_contributor_logged_in
         res = app.get(url_public, auth=user_two.auth)
@@ -120,7 +120,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is False
-        assert set(res.json['data']['attributes']['current_user_permissions']) == set(permissions_read)
+        assert res.json['data']['attributes']['current_user_permissions'] == ['read']
 
     #   test_return_private_project_details_logged_in_admin_contributor
         res = app.get(url_private, auth=user.auth)
@@ -130,7 +130,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert set(res.json['data']['attributes']['current_user_permissions']) == set(permissions_admin)
+        assert res.json['data']['attributes']['current_user_permissions'] == ['admin', 'write', 'read']
 
     #   test_return_private_project_details_logged_out
         res = app.get(url_private, expect_errors=True)
@@ -485,7 +485,7 @@ class TestNodeDetail:
             auth=Auth(project_public.creator)
         )
         res = app.get(url, auth=new_user.auth)
-        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.READ, permissions.WRITE]
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]
         assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is True
 
         # make sure 'read' is there for implicit read contributors
@@ -521,7 +521,7 @@ class TestNodeDetail:
         osf_group = OSFGroupFactory(creator=group_member)
         project_public.add_osf_group(osf_group, 'write')
         res = app.get(url, auth=group_member.auth)
-        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.READ, permissions.WRITE]
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]
         assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is True
 
         # Admin group member has "read" and "write" and "admin" permissions
@@ -529,7 +529,7 @@ class TestNodeDetail:
         osf_group = OSFGroupFactory(creator=group_member)
         project_public.add_osf_group(osf_group, 'admin')
         res = app.get(url, auth=group_member.auth)
-        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.READ, permissions.WRITE, permissions.ADMIN]
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.ADMIN, permissions.WRITE, permissions.READ]
         assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is True
 
         # make sure 'read' is there for implicit read group members
