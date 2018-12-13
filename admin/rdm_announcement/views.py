@@ -13,7 +13,7 @@ from osf.models.user import OSFUser
 from django.core.mail import EmailMessage
 from website.settings import SUPPORT_EMAIL
 from admin.base.settings import FCM_SETTINGS
-from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS  # noqa
+from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS, ANNOUNCEMENT_EMAIL_FROM  # noqa
 from redminelib import Redmine
 from pyfcm import FCMNotification
 import facebook
@@ -246,7 +246,7 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
             email = EmailMessage(
                 subject=data['title'],
                 body=data['body'],
-                from_email=SUPPORT_EMAIL or now_user.username,
+                from_email=ANNOUNCEMENT_EMAIL_FROM,
                 to=[SUPPORT_EMAIL or now_user.username],
                 bcc=to_list
             )
@@ -315,7 +315,7 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
             api_key = FCM_SETTINGS.get('FCM_SERVER_KEY')
             FCMNotification(api_key=api_key)
             push_service = FCMNotification(api_key=api_key)
-            registration_ids = to_list
+            registration_ids = list(set(to_list))  # Remove duplicates
             message_title = data['title']
             message_body = data['body']
             push_service.notify_multiple_devices(registration_ids=registration_ids, message_title=message_title,
