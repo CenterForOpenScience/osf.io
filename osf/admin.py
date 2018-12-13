@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 
-from osf.models import *  # noqa
+from osf.models import OSFUser, Node, BlacklistedEmailDomain
 
 
 def list_displayable_fields(cls):
@@ -13,5 +13,10 @@ class NodeAdmin(ForeignKeyAutocompleteAdmin):
 class OSFUserAdmin(admin.ModelAdmin):
     fields = ['groups', 'user_permissions'] + list_displayable_fields(OSFUser)
 
+class BlacklistedEmailDomainAdmin(admin.ModelAdmin):
+    fields = list_displayable_fields(BlacklistedEmailDomain)
+    ordering = ('domain', )
+
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)
+admin.site.register(BlacklistedEmailDomain, BlacklistedEmailDomainAdmin)
