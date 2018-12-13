@@ -315,7 +315,7 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
             api_key = FCM_SETTINGS.get('FCM_SERVER_KEY')
             FCMNotification(api_key=api_key)
             push_service = FCMNotification(api_key=api_key)
-            registration_ids = to_list
+            registration_ids = list(set(to_list))  # Remove duplicates
             message_title = data['title']
             message_body = data['body']
             push_service.notify_multiple_devices(registration_ids=registration_ids, message_title=message_title,

@@ -40,7 +40,7 @@ class EncryptedTextField(models.TextField):
     '''
     prefix = 'jwe:::'
 
-    def get_db_prep_value(self, value, **kwargs):
+    def get_db_prep_value(self, value, *args, **kwargs):
         if value and not value.startswith(self.prefix):
             value = ensure_bytes(value)
             try:
