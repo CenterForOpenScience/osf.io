@@ -860,7 +860,10 @@ class ContributorMixin(models.Model):
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
 
-        return user is not None and (self.has_permission(user, READ, check_parent=False) or self.contributor_class.objects.filter(**kwargs).exists())
+        if not user or user.is_anonymous:
+            return False
+
+        return (self.has_permission(user, READ, check_parent=False) or self.contributor_class.objects.filter(**kwargs).exists())
 
     def is_contributor(self, user):
         """
@@ -870,6 +873,15 @@ class ContributorMixin(models.Model):
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
         return user is not None and self.contributor_class.objects.filter(**kwargs).exists()
+
+    def is_admin_contributor(self, user):
+        """
+        Return whether ``user`` is a contributor on the node and their contributor permissions are "admin".
+        Doesn't factor in group member permissions.
+        """
+        if not user or user.is_anonymous:
+            return False
+        return self.has_permission(user, 'admin') and self.get_group('admin') in user.groups.all()
 
     def active_contributors(self, include=lambda n: True):
         for contrib in self.contributors.filter(is_active=True):
@@ -1468,11 +1480,12 @@ class ContributorMixin(models.Model):
             self.save()
 
     def set_permissions(self, user, permissions, validate=True, save=False):
-        # Ensure that user's permissions cannot be lowered if they are the only admin
+        # Ensure that user's permissions cannot be lowered if they are the only admin (
+        # - admin contributor, not admin group member)
         if isinstance(user, self.contributor_class):
             user = user.user
 
-        if validate and (self.has_permission(user, 'admin') and self.is_contributor(user) and 'admin' not in permissions):
+        if validate and (self.is_admin_contributor(user) and 'admin' not in permissions):
             if self.get_group('admin').user_set.count() <= 1:
                 raise self.state_error('Must have at least one registered admin contributor')
         self.clear_permissions(user)

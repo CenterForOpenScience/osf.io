@@ -920,6 +920,22 @@ class TestContributorMethods:
         assert node.is_contributor(noncontrib) is False
         assert node.is_contributor_or_group_member(noncontrib) is True
 
+    def test_is_admin_contributor(self, node):
+        contrib = AuthUserFactory()
+        Contributor.objects.create(user=contrib, node=node)
+        node.add_permission(contrib, READ)
+
+        node.is_admin_contributor(contrib) is False
+        node.set_permissions(contrib, ADMIN)
+        assert node.is_admin_contributor(contrib) is True
+
+        node.set_permissions(contrib, WRITE)
+
+        group = OSFGroupFactory(creator=contrib)
+        node.add_osf_group(group, 'admin')
+        assert node.has_permission(contrib, 'admin')
+        assert node.is_admin_contributor(contrib) is False
+
     def test_visible_contributor_ids(self, node, user):
         visible_contrib = UserFactory()
         invisible_contrib = UserFactory()
@@ -1384,7 +1400,7 @@ class TestPermissionMethods:
         with pytest.raises(ValueError):
             node.remove_permission(contrib, ADMIN)
 
-    def test_set_permissions(self, node):
+    def test_set_permissions(self, node, user):
         low, high = UserFactory(), UserFactory()
 
         node.set_permissions(low, READ)
@@ -1396,6 +1412,14 @@ class TestPermissionMethods:
         assert node.has_permission(low, READ) is True
         assert node.has_permission(low, WRITE) is True
         assert node.has_permission(low, ADMIN) is False
+
+        with pytest.raises(NodeStateError):
+            node.set_permissions(user, WRITE)
+
+        group = OSFGroupFactory(creator=user)
+        node.add_osf_group(group, ADMIN)
+        with pytest.raises(NodeStateError):
+            node.set_permissions(user, WRITE)
 
         node.set_permissions(high, ADMIN)
         assert node.has_permission(high, permissions.READ) is True
@@ -2361,6 +2385,9 @@ class TestManageContributors:
             {'id': node.creator._id, 'permission': READ, 'visible': True},
             {'id': unregistered._id, 'permission': ADMIN, 'visible': True},
         ]
+
+        group = OSFGroupFactory(creator=node.creator)
+        node.add_osf_group(group, 'admin')
         with pytest.raises(NodeStateError):
             node.manage_contributors(
                 users, auth=auth, save=True,

@@ -729,7 +729,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 if not contributor.user.is_registered:
                     node.add_unregistered_contributor(
                         fullname=contributor.user.fullname, email=contributor.user.email, auth=auth,
-                        permissions=parent.get_permissions(contributor.user), existing_user=contributor.user,
+                        permissions=osf_permissions.reduce_permissions(parent.get_permissions(contributor.user)), existing_user=contributor.user,
                     )
             node.add_contributors(contributors, auth=auth, log=True, save=True)
             for group in parent.osf_groups:

@@ -1537,7 +1537,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def require_approval(self, user, notify_initiator_on_complete=False):
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')
-        if not self.has_permission(user, 'admin'):
+        if not self.is_admin_contributor(user):
             raise PermissionsError('Only admins can initiate a registration approval')
 
         approval = self._initiate_approval(user, notify_initiator_on_complete)
