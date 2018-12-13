@@ -221,6 +221,30 @@ class TestOSFUser:
         assert project.get_visible(user) is True
         assert project.is_contributor(user2) is False
 
+    def test_merged_user_group_member_permissions_are_ignored(self, user):
+        user2 = UserFactory.build()
+        user2.save()
+        group = OSFGroupFactory(creator=user2)
+
+        project = ProjectFactory(is_public=True)
+        project.add_osf_group(group, 'admin')
+        assert project.has_permission(user2, 'admin')
+        # Both the master and dupe are contributors
+        project.add_contributor(user2, log=False)
+        project.add_contributor(user, log=False)
+        project.set_permissions(user=user, permissions='read')
+        project.set_permissions(user=user2, permissions='write')
+        project.save()
+        user.merge_user(user2)
+        user.save()
+        project.reload()
+
+        assert project.has_permission(user, 'admin') is True
+        assert project.is_admin_contributor(user) is False
+        assert project.is_contributor(user2) is False
+        assert group.is_member(user) is True
+        assert group.is_member(user2) is False
+
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given
         with pytest.raises(ValidationError):

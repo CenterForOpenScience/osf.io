@@ -655,6 +655,14 @@ class TestOSFGroup:
         assert osf_group.is_member(other_other_user)
         assert osf_group.has_permission(other_other_user, 'manage')
 
+    @pytest.mark.enable_quickfiles_creation
+    def test_merge_users_already_group_manager(self, member, manager, osf_group):
+        # merge users - both users have group membership - different roles
+        manager.merge_user(member)
+        manager.save()
+        assert osf_group.has_permission(manager, 'manage')
+        assert osf_group.is_member(member) is False
+
     def test_osf_group_is_admin_parent(self, project, manager, member, osf_group, user_two, user_three):
         child = NodeFactory(parent=project, creator=manager)
         assert project.is_admin_parent(manager) is True

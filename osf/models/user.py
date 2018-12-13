@@ -781,10 +781,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # transfer group membership
         for group in user.osf_groups:
-            if group.has_permission(user, 'manage'):
-                group.make_manager(self)
-            else:
-                group.make_member(self)
+            if not group.is_manager(self):
+                if group.has_permission(user, 'manage'):
+                    group.make_manager(self)
+                else:
+                    group.make_member(self)
+            group.remove_member(user)
 
         # finalize the merge
 

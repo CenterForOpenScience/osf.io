@@ -842,6 +842,22 @@ class TestContributorMethods:
 
         assert user2 in user.recently_added.all()
 
+    def test_add_contributor_already_group_member(self, node, user, auth):
+        group = OSFGroupFactory(creator=user)
+        user2 = UserFactory()
+        group.make_member(user2)
+        node.add_osf_group(group, 'admin')
+
+        assert node.is_contributor_or_group_member(user2) is True
+        assert node.is_contributor(user2) is False
+        assert node.has_permission(user2, 'admin')
+
+        node.add_contributor(contributor=user2, auth=auth)
+        node.save()
+        assert node.is_contributor(user2) is True
+        assert node.has_permission(user2, 'admin')
+        assert node.is_admin_contributor(user2) is False
+
     def test_add_contributors(self, node, auth):
         user1 = UserFactory()
         user2 = UserFactory()
@@ -920,6 +936,12 @@ class TestContributorMethods:
         assert node.is_contributor(noncontrib) is False
         assert node.is_contributor_or_group_member(noncontrib) is True
 
+        superuser = AuthUserFactory()
+        superuser.is_superuser = True
+        superuser.save()
+
+        assert node.is_contributor_or_group_member(superuser) is False
+
     def test_is_admin_contributor(self, node):
         contrib = AuthUserFactory()
         Contributor.objects.create(user=contrib, node=node)
@@ -993,6 +1015,14 @@ class TestContributorMethods:
         with pytest.raises(ValueError):
             node.set_visible(UserFactory(), True)
 
+    def test_set_visible_group_member(self, node, user):
+        user2 = AuthUserFactory()
+        group = OSFGroupFactory(creator=user2)
+        node.add_osf_group(group, 'admin')
+
+        with pytest.raises(ValueError):
+            node.set_visible(user2, True)
+
     def test_copy_contributors_from_adds_contributors(self, node):
         contrib, contrib2 = UserFactory(), UserFactory()
         node.add_contributor(contrib, visible=True)
@@ -1020,9 +1050,10 @@ class TestContributorMethods:
 
     def test_copy_contributors_from_preserves_permissions(self, node):
         read, admin = UserFactory(), UserFactory()
-
+        group = OSFGroupFactory(creator=read)
         node.add_contributor(read, 'read', visible=True)
         node.add_contributor(admin, 'admin', visible=False)
+        node.add_osf_group(group, 'write')
         node2 = NodeFactory()
         node2.copy_contributors_from(node)
 
@@ -1044,6 +1075,17 @@ class TestContributorMethods:
         assert node.get_permissions(user2) == []
         assert node.logs.latest().action == 'contributor_removed'
         assert node.logs.latest().params['contributors'] == [user2._id]
+
+    def test_remove_contributor_admin_group_members(self, node, user, auth):
+        user2 = UserFactory()
+        group = OSFGroupFactory(creator=user2)
+        node.add_osf_group(group, 'admin')
+        assert node.has_permission(user2, 'admin') is True
+
+        removed = node.remove_contributor(contributor=user, auth=auth)
+        assert removed is False
+        assert node.has_permission(user, 'admin') is True
+        assert node.is_contributor(user) is True
 
     def test_remove_contributors(self, node, auth):
         user1 = UserFactory()
@@ -1870,6 +1912,25 @@ class TestAddUnregisteredContributor:
                 fullname=user.fullname,
                 auth=auth
             )
+
+    def test_add_unregistered_contributor_already_group_member(self, node, user, auth):
+        given_name = 'Grapes McGee'
+        username = 'fake@cos.io'
+        group = OSFGroupFactory(creator=user)
+        unreg_user = group.add_unregistered_member(given_name, username, auth=Auth(user))
+        assert unreg_user.get_unclaimed_record(group._id)['email'] == username
+
+        node.add_osf_group(group, 'admin')
+
+        node.add_unregistered_contributor(
+            email=username,
+            fullname=given_name,
+            auth=auth
+        )
+        node.save
+        unreg_user.reload()
+        unclaimed_data = unreg_user.get_unclaimed_record(node._primary_key)
+        assert unclaimed_data['email'] == username
 
 def test_find_by_institutions():
     inst1, inst2 = InstitutionFactory(), InstitutionFactory()

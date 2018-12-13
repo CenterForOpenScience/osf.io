@@ -1443,7 +1443,7 @@ class ContributorMixin(models.Model):
             self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
 
     def has_permission(self, user, permission, check_parent=True):
-        """Check whether user has permission.
+        """Check whether user has permission, through contributorship or group membership
         :param User user: User to test
         :param str permission: Required permission
         :returns: User has required permission

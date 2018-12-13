@@ -331,6 +331,8 @@ def get_auth(auth, **kwargs):
     # TODO: Add a signal here?
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
         user = auth.user
+        # Don't have to use is_contributor_or_group_members, because preprints
+        # don't have OSF groups
         if isinstance(node, Preprint) and not node.is_contributor(user):
             metric_class = get_metric_class_for_action(action)
             if metric_class:
