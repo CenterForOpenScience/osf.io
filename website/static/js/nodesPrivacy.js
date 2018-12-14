@@ -19,6 +19,9 @@ var MESSAGES = {
     makeProjectPrivateWarning:
     '<ul><li>Public forks and registrations of this project will remain public.</li>' +
     '<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>',
+    makeSupplementalProjectPrivateWarning:
+    '<ul><li>Preprints will remain public.</li><li>Public forks and registrations of this project will remain public.</li>' +
+    '<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>',
     makeEmbargoPublicWarning: 'By clicking confirm, an email will be sent to project administrator(s) to approve ending the embargo. If approved, this registration, including any components, will be made public immediately. This action is irreversible.',
     makeEmbargoPublicTitle: 'End embargo early',
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
@@ -27,10 +30,11 @@ var MESSAGES = {
         nodesPublic: 'The following projects and components will be made <b>public</b>.',
         nodesPrivate: 'The following projects and components will be made <b>private</b>.',
         nodesNotChangedWarning: 'No privacy settings were changed. Go back to make a change.',
-        tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.'
+        tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.',
     },
-    preprintPrivateWarning: 'The project you are attempting to make private currently represents a preprint.' +
-    '<p><strong>Making this project private will remove this preprint from circulation.</strong></p>'
+    preprintPrivateWarning: 'This project/component contains supplemental materials for a preprint.'  +
+        '<p><strong>Making this project/component private will prevent others from accessing it.</strong></p>'
+
 };
 
 function _flattenNodeTree(nodeTree) {
@@ -56,7 +60,8 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
             id: nodeMeta.node.id,
             title: nodeMeta.node.title,
             isAdmin: nodeMeta.node.is_admin,
-            changed: false
+            changed: false,
+            isSupplementalProject: nodeMeta.node.is_supplemental_project,
         };
     });
     nodesOriginal[nodeTree.node.id].isRoot = true;
@@ -106,7 +111,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     self.parentIsEmbargoed = node.is_embargoed;
     self.parentIsPublic = node.is_public;
     self.parentNodeType = node.node_type;
-    self.isPreprint = node.is_preprint;
+    self.isSupplementalProject = node.is_supplemental_project;
     self.dataType = node.is_registration ? 'registrations' : 'nodes';
     self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
@@ -152,12 +157,12 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     });
 
     self.message = ko.computed(function() {
-        if (self.page() === self.WARNING &&  self.parentIsEmbargoed) {
+        if (self.page() === self.WARNING && self.parentIsEmbargoed) {
             return MESSAGES.makeEmbargoPublicWarning;
         }
 
-        if (self.page() === self.WARNING &&  self.isPreprint) {
-            return MESSAGES.preprintPrivateWarning + MESSAGES.makeProjectPrivateWarning;
+        if (self.page() === self.WARNING && self.isSupplementalProject && self.parentIsPublic) {
+              return MESSAGES.preprintPrivateWarning + MESSAGES.makeSupplementalProjectPrivateWarning;
         }
 
         return {

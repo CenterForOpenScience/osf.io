@@ -1,7 +1,7 @@
 import datetime
 
 from osf_tests.factories import PreprintFactory, PreprintProviderFactory
-from osf.models import PreprintService
+from osf.models import Preprint
 import mock
 import pytest
 import pytz
@@ -16,7 +16,7 @@ def preprint_provider():
 
 @pytest.fixture()
 def preprint(preprint_provider):
-    return PreprintFactory._build(PreprintService, provider=preprint_provider)
+    return PreprintFactory._build(Preprint, provider=preprint_provider)
 
 
 @pytest.fixture()
@@ -44,7 +44,7 @@ class TestPreprintCount:
         resp._content = '{"hits" : {"total" : 1}}'
         requests.post.return_value = resp
 
-        field = PreprintService._meta.get_field('created')
+        field = Preprint._meta.get_field('created')
         field.auto_now_add = False  # We have to fudge the time because Keen doesn't allow same day queries.
 
         preprint.created = date['preprint_date_created']

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from django import forms
+from django.db.models import Q
 from django.contrib.auth.models import Group
 
 from osf.models import AdminProfile
@@ -23,7 +24,7 @@ class UserRegistrationForm(forms.Form):
 
     # TODO: Moving to guardian, find a better way to distinguish "admin-like" groups from object permission groups
     group_perms = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.exclude(name__startswith='collections_'),
+        queryset=Group.objects.exclude(Q(name__startswith='collections_') | Q(name__startswith='preprint_')),
         required=False,
         widget=forms.CheckboxSelectMultiple
     )

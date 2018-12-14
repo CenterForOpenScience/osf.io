@@ -42,6 +42,7 @@ from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
+from osf.utils.workflows import DefaultStates
 from framework.auth.core import Auth
 
 from osf_tests.factories import (
@@ -52,9 +53,9 @@ from osf_tests.factories import (
     NodeLogFactory,
     UserFactory,
     UnregUserFactory,
+    PreprintFactory,
     RegistrationFactory,
     DraftRegistrationFactory,
-    PreprintFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     NodeRelationFactory,
@@ -90,6 +91,10 @@ def auth(user):
 @pytest.fixture()
 def subject():
     return SubjectFactory()
+
+@pytest.fixture()
+def preprint(user):
+    return PreprintFactory(creator=user)
 
 
 class TestParentNode:
@@ -550,11 +555,11 @@ class TestNodeMODMCompat:
             node.save()
         assert excinfo.value.message_dict == {'title': ['This field cannot be blank.']}
 
-        too_long = 'a' * 201
+        too_long = 'a' * 513
         node = NodeFactory.build(title=too_long)
         with pytest.raises(ValidationError) as excinfo:
             node.save()
-        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
+        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 512 characters.']}
 
     def test_querying_on_guid_id(self):
         node = NodeFactory()
@@ -1999,7 +2004,7 @@ class TestNodeSpam:
                 project.set_privacy('private')
                 assert project.check_spam(user, None, None) is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail, project, user):
@@ -2027,7 +2032,7 @@ class TestNodeSpam:
                 project3.reload()
                 assert project3.is_public is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail, project, user):
@@ -3063,24 +3068,6 @@ def test_querying_on_contributors(node, user, auth):
     assert deleted not in result2
 
 
-@pytest.mark.enable_implicit_clean
-class TestDOIValidation:
-
-    def test_validate_bad_doi(self):
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='nope').save()
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='https://doi.org/10.123.456').save()  # should save the bare DOI, not a URL
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
-
-    def test_validate_good_doi(self, node):
-        doi = '10.11038/nwooo1170'
-        node.preprint_article_doi = doi
-        node.save()
-        assert node.preprint_article_doi == doi
-
-
 class TestLogMethods:
 
     @pytest.fixture()
@@ -3330,7 +3317,7 @@ class TestNodeUpdate:
 
     def test_set_title_fails_if_too_long(self, user, auth):
         proj = ProjectFactory(title='That Was Then', creator=user)
-        long_title = ''.join('a' for _ in range(201))
+        long_title = ''.join('a' for _ in range(513))
         with pytest.raises(ValidationValueError):
             proj.set_title(long_title, auth=auth)
 
@@ -3754,6 +3741,16 @@ class TestRemoveNode:
 
         # target node shouldn't be deleted
         assert target.is_deleted is False
+
+    def test_remove_supplemental_project_for_preprints(self, auth, user, project, preprint):
+        preprint.node = project
+        preprint.save()
+
+        project.remove_node(auth=auth)
+        preprint.reload()
+
+        assert project.is_deleted
+        assert preprint.node is None
 
 
 class TestTemplateNode:
@@ -4293,13 +4290,27 @@ class TestAdminImplicitRead(object):
         assert project not in qs
 
 
-class TestPreprintProperties:
+class TestNodeProperties:
+    def test_has_linked_published_preprints(self, project, preprint, user):
+        # If no preprints, is False
+        assert project.has_linked_published_preprints is False
 
-    def test_preprint_url_does_not_return_unpublished_preprint_url(self):
-        node = ProjectFactory(is_public=True)
-        published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
-        PreprintFactory(project=node, is_published=False, filename='file2.txt')
-        assert node.preprint_url == published.url
+        # A published preprint attached to a project is True
+        preprint.node = project
+        preprint.save()
+        assert project.has_linked_published_preprints is True
+
+        # Abandoned preprint is False
+        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.save()
+        assert project.has_linked_published_preprints is False
+
+        # Unpublished preprint is False
+        preprint.machine_state = DefaultStates.ACCEPTED.value
+        preprint.is_published = False
+        preprint.save()
+        assert project.has_linked_published_preprints is False
+
 
 @pytest.mark.enable_bookmark_creation
 class TestCollectionProperties:
