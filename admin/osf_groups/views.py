@@ -1,11 +1,10 @@
-from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.views.generic import FormView, DetailView, ListView
 
 from osf.models import OSFGroup
 from admin.osf_groups.forms import OSFGroupSearchForm
-from admin.osf_groups.serializers import serializer_group
+from admin.osf_groups.serializers import serialize_group
 from framework.auth.oauth_scopes import ComposedScopes
 
 
@@ -21,8 +20,8 @@ class OSFGroupsView(PermissionRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         id = self.kwargs.get('id')
-        osf_group = OSFGroup.objects.get(id=id)
-        return serializer_group(osf_group)
+        osf_group = OSFGroup.objects.get(_id=id)
+        return serialize_group(osf_group)
 
 
 class OSFGroupsFormView(PermissionRequiredMixin, FormView):
@@ -44,13 +43,7 @@ class OSFGroupsFormView(PermissionRequiredMixin, FormView):
         if id:
             self.redirect_url = reverse('osf_groups:osf_group', kwargs={'id': id})
         elif name:
-            try:
-                group = OSFGroup.objects.get(name__contains=name)
-                self.redirect_url = reverse('osf_groups:osf_group', kwargs={'id': group.id})
-            except OSFGroup.MultipleObjectsReturned:
                 self.redirect_url = reverse('osf_groups:osf_groups_list',) + '?name={}'.format(name)
-            except OSFGroup.DoesNotExist:
-                messages.error(self.request, 'That OSF Group could not be found')
 
         return super(OSFGroupsFormView, self).form_valid(form)
 
@@ -74,7 +67,7 @@ class OSFGroupsListView(PermissionRequiredMixin, ListView):
     def get_queryset(self):
         name = self.request.GET.get('name')
         if name:
-            return OSFGroup.objects.filter(name__contains=name)
+            return OSFGroup.objects.filter(name__icontains=name)
 
         return OSFGroup.objects.all()
 
@@ -85,6 +78,6 @@ class OSFGroupsListView(PermissionRequiredMixin, ListView):
             query_set, page_size)
 
         return {
-            'groups': list(query_set),
+            'groups': list(map(serialize_group, query_set)),
             'page': page,
         }

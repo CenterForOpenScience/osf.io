@@ -83,16 +83,9 @@ class TestOSFGroupsFormView(AdminTestCase):
         view = setup_log_view(self.view, request)
 
         redirect = view.post(request)
-        assert redirect.url == '/osf_groups/{}/'.format(self.group.id)
+        assert redirect.url == '/osf_groups/{}/'.format(self.group._id)
 
-    def test_post_name_single_object(self):
-        request = RequestFactory().post('/fake_path', data={'id': '', 'name': self.group.name})
-        view = setup_log_view(self.view, request)
-
-        redirect = view.post(request)
-        assert redirect.url == '/osf_groups/{}/'.format(self.group.id)
-
-    def test_post_name_multiple_objects(self):
+    def test_post_name(self):
         request = RequestFactory().post('/fake_path', data={'id': '', 'name': 'Brian'})
         view = setup_log_view(self.view, request)
 
