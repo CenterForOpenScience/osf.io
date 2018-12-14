@@ -1,14 +1,15 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
-from django.views.generic import FormView, DetailView, ListView
+from django.views.generic import FormView, ListView
 
 from osf.models import OSFGroup
 from admin.osf_groups.forms import OSFGroupSearchForm
+from admin.base.views import GuidView
 from admin.osf_groups.serializers import serialize_group
 from framework.auth.oauth_scopes import ComposedScopes
 
 
-class OSFGroupsView(PermissionRequiredMixin, DetailView):
+class OSFGroupsView(PermissionRequiredMixin, GuidView):
     """ Allow authorized admin user to view a osf group
 
     View of OSF database. No admin models.
