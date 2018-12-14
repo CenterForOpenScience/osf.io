@@ -251,7 +251,7 @@ def check_key_expired(key, node, url):
         :param str url: the url redirect to
         :return: url with pushed message added if key expired else just url
     """
-    if getattr(node, 'private_link_keys_deleted', False) and key in node.private_link_keys_deleted:
+    if key in node.private_link_keys_deleted:
         url = furl(url).add({'status': 'expired'}).url
 
     return url
