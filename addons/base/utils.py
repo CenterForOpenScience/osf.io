@@ -1,8 +1,30 @@
 import markupsafe
 from os.path import basename
+from framework import status
 from website.settings import MFR_SERVER_URL
 
 from website import settings
+
+def disconnect_addons(node, user, auth):
+    """
+    Loop through all the node's addons and remove user's authentication.
+    Used when removing users from nodes (either removing a contributor, removing an OSF Group,
+    or removing a member from an OSF group)
+    """
+    # After remove callback
+    if not node.is_contributor_or_group_member(user):
+        for addon in node.get_addons():
+            message = addon.after_remove_contributor(node, user, auth)
+            if message:
+                # Because addons can return HTML strings, addons are responsible
+                # for markupsafe-escaping any messages returned
+                status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
+                    'addon': markupsafe.escape(addon.config.full_name),
+                    'category': markupsafe.escape(node.category_display),
+                    'title': markupsafe.escape(node.title),
+                    'user': markupsafe.escape(user.fullname)
+                })
+
 
 def get_mfr_url(target, provider_name):
     if hasattr(target, 'osfstorage_region') and provider_name == 'osfstorage':

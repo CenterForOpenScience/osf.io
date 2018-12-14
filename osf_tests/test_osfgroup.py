@@ -2,8 +2,11 @@ import mock
 import pytest
 from django.contrib.auth.models import Group
 
+from addons.github.tests import factories
+from addons.osfstorage.models import OsfStorageFile
 from framework.auth import Auth
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.contenttypes.models import ContentType
 from framework.exceptions import PermissionsError
 from osf.models import OSFGroup, Node, OSFUser, OSFGroupLog, NodeLog
 from osf.utils.permissions import MANAGER, MEMBER
@@ -23,6 +26,10 @@ def manager():
 
 @pytest.fixture()
 def member():
+    return AuthUserFactory()
+
+@pytest.fixture()
+def user():
     return AuthUserFactory()
 
 @pytest.fixture()
@@ -801,3 +808,198 @@ class TestOSFGroupLogging:
         assert node_log.user == manager
         assert node_log.params['group'] == group._id
         assert node_log.params['node'] == project._id
+
+
+class TestRemovingContributorOrGroupMembers:
+    """
+    Post OSF-Groups, the same kinds of checks you run when removing a contributor,
+    need to be run when a group is removed from a node (or a user is removed from a group,
+    or the group is deleted altogether).
+
+    The actions are only executed if the user has no perms at all: no contributorship,
+    and no group membership
+    """
+
+    @pytest.fixture()
+    def project(self, user_two, user_three, external_account):
+        project = ProjectFactory(creator=user_two)
+        project.add_contributor(user_three, 'admin')
+        project.add_addon('github', auth=Auth(user_two))
+        project.creator.add_addon('github')
+        project.creator.external_accounts.add(external_account)
+        project.creator.save()
+        return project
+
+    @pytest.fixture()
+    def file(self, project, user_two):
+        filename = 'my_file.txt'
+        project_file = OsfStorageFile.create(
+            target_object_id=project.id,
+            target_content_type=ContentType.objects.get_for_model(project),
+            path='/{}'.format(filename),
+            name=filename,
+            materialized_path='/{}'.format(filename))
+
+        project_file.save()
+        from addons.osfstorage import settings as osfstorage_settings
+
+        project_file.create_version(user_two, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save
+        project_file.checkout = user_two
+        project_file.save()
+        return project_file
+
+    @pytest.fixture()
+    def external_account(self):
+        return factories.GitHubAccountFactory()
+
+    @pytest.fixture()
+    def node_settings(self, project, external_account):
+        node_settings = project.get_addon('github')
+        user_settings = project.creator.get_addon('github')
+        user_settings.oauth_grants[project._id] = {external_account._id: []}
+        user_settings.save()
+        node_settings.user_settings = user_settings
+        node_settings.user = 'Queen'
+        node_settings.repo = 'Sheer-Heart-Attack'
+        node_settings.external_account = external_account
+        node_settings.save()
+        node_settings.set_auth
+        return node_settings
+
+    def test_remove_contributor_no_member_perms(self, project, node_settings, user_two, user_three, request_context, file):
+        assert project.get_addon('github').user_settings is not None
+        assert file.checkout is not None
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
+        project.remove_contributor(user_two, Auth(user_three))
+        project.reload()
+
+        assert project.get_addon('github').user_settings is None
+        file.reload()
+        assert file.checkout is None
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+
+    def test_remove_group_from_node_no_contributor_perms(self, project, node_settings, user_two, user_three, request_context, file):
+        group = OSFGroupFactory(creator=user_two)
+        project.add_osf_group(group, 'admin')
+        # Manually removing contributor
+        contrib_obj = project.contributor_set.get(user=user_two)
+        contrib_obj.delete()
+        project.clear_permissions(user_two)
+
+        assert project.is_contributor(user_two) is False
+        assert project.is_contributor_or_group_member(user_two) is True
+        assert node_settings.user_settings is not None
+        project.remove_osf_group(group)
+        project.reload()
+
+        assert project.get_addon('github').user_settings is None
+        file.reload()
+        assert file.checkout is None
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+
+    def test_remove_member_no_contributor_perms(self, project, node_settings, user_two, user_three, request_context, file):
+        group = OSFGroupFactory(creator=user_two)
+        project.add_osf_group(group, 'admin')
+        group.make_manager(user_three)
+        # Manually removing contributor
+        contrib_obj = project.contributor_set.get(user=user_two)
+        contrib_obj.delete()
+        project.clear_permissions(user_two)
+
+        assert project.is_contributor(user_two) is False
+        assert project.is_contributor_or_group_member(user_two) is True
+        assert node_settings.user_settings is not None
+        group.remove_member(user_two)
+        project.reload()
+
+        assert project.get_addon('github').user_settings is None
+        file.reload()
+        assert file.checkout is None
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+
+    def test_delete_group_no_contributor_perms(self, project, node_settings, user_two, user_three, request_context, file):
+        group = OSFGroupFactory(creator=user_two)
+        project.add_osf_group(group, 'admin')
+        group.make_manager(user_three)
+        # Manually removing contributor
+        contrib_obj = project.contributor_set.get(user=user_two)
+        contrib_obj.delete()
+        project.clear_permissions(user_two)
+
+        assert project.is_contributor(user_two) is False
+        assert project.is_contributor_or_group_member(user_two) is True
+        assert node_settings.user_settings is not None
+        group.remove_group()
+        project.reload()
+
+        assert project.get_addon('github').user_settings is None
+        file.reload()
+        assert file.checkout is None
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+
+    def test_remove_contributor_also_member(self, project, node_settings, user_two, user_three, request_context, file):
+        group = OSFGroupFactory(creator=user_two)
+        project.add_osf_group(group, 'admin')
+
+        assert project.is_contributor(user_two) is True
+        assert project.is_contributor_or_group_member(user_two) is True
+        assert node_settings.user_settings is not None
+        project.remove_osf_group(group)
+        project.reload()
+
+        assert project.get_addon('github').user_settings is not None
+        file.reload()
+        assert file.checkout is not None
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
+
+    def test_remove_osf_group_from_node_also_member(self, project, node_settings, user_two, user_three, request_context, file):
+        group = OSFGroupFactory(creator=user_two)
+        project.add_osf_group(group, 'admin')
+
+        assert project.is_contributor(user_two) is True
+        assert project.is_contributor_or_group_member(user_two) is True
+        assert node_settings.user_settings is not None
+        project.remove_osf_group(group)
+        project.reload()
+
+        assert project.get_addon('github').user_settings is not None
+        file.reload()
+        assert file.checkout is not None
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
+
+    def test_remove_member_also_contributor(self, project, node_settings, user_two, user_three, request_context, file):
+        group = OSFGroupFactory(creator=user_two)
+        group.make_manager(user_three)
+        project.add_osf_group(group, 'admin')
+
+        assert project.is_contributor(user_two) is True
+        assert project.is_contributor_or_group_member(user_two) is True
+        assert node_settings.user_settings is not None
+        group.remove_member(user_two)
+        project.reload()
+        assert project.get_addon('github').user_settings is not None
+        file.reload()
+        assert file.checkout is not None
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
+
+    def test_delete_group_also_contributor(self, project, node_settings, user_two, user_three, request_context, file):
+        group = OSFGroupFactory(creator=user_two)
+        project.add_osf_group(group, 'admin')
+        group.make_manager(user_three)
+
+        assert project.is_contributor(user_two) is True
+        assert project.is_contributor_or_group_member(user_two) is True
+        assert node_settings.user_settings is not None
+        group.remove_group()
+        project.reload()
+        assert project.get_addon('github').user_settings is not None
+        file.reload()
+        assert file.checkout is not None
+        assert len(get_all_node_subscriptions(user_two, project)) == 2

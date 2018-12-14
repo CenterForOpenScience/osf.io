@@ -4,9 +4,10 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from guardian.shortcuts import assign_perm, remove_perm, get_perms, get_objects_for_group, get_group_perms
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
+
+from addons.base.utils import disconnect_addons
 from framework.exceptions import PermissionsError
 from framework.auth.core import get_user, Auth
-
 from osf.models import base
 from osf.models.mixins import GuardianMixin, Loggable
 from osf.models import AbstractNode, OSFUser, NodeLog
@@ -254,6 +255,10 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             },
             auth=auth)
 
+        for node in self.nodes:
+            project_signals.contributor_removed.send(node, user=user)
+            disconnect_addons(node, user, auth)
+
     def set_group_name(self, name, auth=None):
         """Set the name of the group.
 
@@ -361,6 +366,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         for user in self.members:
             # send signal to remove this user from project subscriptions,
             # provided the user doesn't have node perms some other way
+            disconnect_addons(node, user, auth)
             project_signals.contributor_removed.send(node, user=user)
 
     def has_permission(self, user, permission):
@@ -375,9 +381,19 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         :param auth: Auth object
         """
         self._require_manager_permission(auth)
+        members = list(self.members.values_list('id', flat=True))
+        nodes = self.nodes
+
         self.member_group.delete()
         self.manager_group.delete()
         self.delete()
+
+        for user in OSFUser.objects.filter(id__in=members):
+            for node in nodes:
+                # send signal to remove this user from project subscriptions,
+                # and disconnect addons if applicable.
+                disconnect_addons(node, user, auth)
+                project_signals.contributor_removed.send(node, user=user)
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)

@@ -1084,6 +1084,8 @@ class TestContributorMethods:
 
         removed = node.remove_contributor(contributor=user, auth=auth)
         assert removed is False
+        # Contributor could not be removed even though there was another
+        # user with admin perms - group membership insufficient
         assert node.has_permission(user, 'admin') is True
         assert node.is_contributor(user) is True
 
