@@ -293,7 +293,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
 
         # Permissions on the list objects are handled by the query
-        return self.preprints_queryset(provider.preprint_services.all(), auth_user)
+        return self.preprints_queryset(provider.preprints.all(), auth_user)
 
     # overrides ListAPIView
     def get_queryset(self):

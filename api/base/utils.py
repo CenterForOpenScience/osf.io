@@ -190,12 +190,11 @@ def has_admin_scope(request):
 
     return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
 
-
 def is_deprecated(request_version, min_version=None, max_version=None):
     if not min_version and not max_version:
         raise NotImplementedError('Must specify min or max version.')
-    min_version_deprecated = min_version and StrictVersion(request_version) < StrictVersion(min_version)
-    max_version_deprecated = max_version and StrictVersion(request_version) > StrictVersion(max_version)
+    min_version_deprecated = min_version and StrictVersion(request_version) < StrictVersion(str(min_version))
+    max_version_deprecated = max_version and StrictVersion(request_version) > StrictVersion(str(max_version))
     if min_version_deprecated or max_version_deprecated:
         return True
     return False
@@ -210,3 +209,18 @@ def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, base_u
     url.path.segments.extend([urlquote(x) for x in segments])
     url.args.update(kwargs)
     return url.url
+
+def assert_resource_type(obj, resource_tuple):
+    assert type(resource_tuple) is tuple, 'resources must be passed in as a tuple.'
+    if len(resource_tuple) == 1:
+        error_message = resource_tuple[0].__name__
+    elif len(resource_tuple) == 2:
+        error_message = resource_tuple[0].__name__ + ' or ' + resource_tuple[1].__name__
+    else:
+        error_message = ''
+        for resource in resource_tuple[:-1]:
+            error_message += resource.__name__ + ', '
+        error_message += 'or ' + resource_tuple[-1].__name__
+
+    a_or_an = 'an' if error_message[0].lower() in 'aeiou' else 'a'
+    assert isinstance(obj, resource_tuple), 'obj must be {} {}; got {}'.format(a_or_an, error_message, obj)

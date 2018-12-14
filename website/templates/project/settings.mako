@@ -117,7 +117,7 @@
                                 <span id="deleteNode">
                                     <button
                                     data-toggle="modal" data-target="#nodesDelete"
-                                    data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
+                                    data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_supplemental_project'] | sjson, n}, '${node['api_url']}')"
                                     class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
                                     <%include file="project/nodes_delete.mako"/>
                                 </span>
@@ -507,6 +507,7 @@
       window.contextVars.node = window.contextVars.node || {};
       window.contextVars.node.description = ${node['description'] | sjson, n };
       window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
+      window.contextVars.node.isSupplementalProject = ${ node['is_supplemental_project'] | sjson, n };
       window.contextVars.node.institutions = ${ node['institutions'] | sjson, n };
       window.contextVars.node.requestProjectAccessEnabled = ${node['access_requests_enabled'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
