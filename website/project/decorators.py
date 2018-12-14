@@ -207,9 +207,10 @@ def check_can_access(node, user, key=None, api_node=None):
     """
     if user is None:
         return False
-    if request.args.get('action', '') == 'download':
+    if isinstance(node, Preprint) and request.args.get('action', '') == 'download':
         if check_can_download_preprint_file(user, node):
             return True
+        raise HTTPError(http.FORBIDDEN)
 
     if not node.can_view(Auth(user=user)) and api_node != node:
         if node.is_deleted:
