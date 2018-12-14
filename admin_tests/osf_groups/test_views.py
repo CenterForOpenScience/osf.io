@@ -10,6 +10,7 @@ from django.test import RequestFactory
 from tests.base import AdminTestCase
 from osf_tests.factories import UserFactory, ProjectFactory, OSFGroupFactory
 
+from admin.osf_groups.serializers import serialize_node_for_groups
 
 class TestOSFGroupsView(AdminTestCase):
 
@@ -17,22 +18,26 @@ class TestOSFGroupsView(AdminTestCase):
         super(TestOSFGroupsView, self).setUp()
         self.user = UserFactory()
         self.project = ProjectFactory()
-        self.group = OSFGroupFactory(name='', creator=self.user)
+        self.group = OSFGroupFactory(name='test', creator=self.user)
         self.group.add_group_to_node(self.project)
         self.group.save()
         self.request = RequestFactory().post('/fake_path')
 
     def test_get_object(self):
         view = OSFGroupsView()
-        view = setup_log_view(view, self.request, id=self.group.id)
+        view = setup_log_view(view, self.request, id=self.group._id)
 
         group = view.get_object()
 
         nt.assert_equal(self.group.name, group['name'])
-        nt.assert_equal(self.group.creator, group['creator'])
-        nt.assert_equal(list(self.group.members.all()), group['members'])
-        nt.assert_equal(list(self.group.managers.all()), group['managers'])
-        nt.assert_equal(list(self.group.nodes), group['nodes'])
+        nt.assert_equal(self.user, group['creator'])
+        nt.assert_equal(len(group['members']), 1)
+        nt.assert_equal(group['members'][0]['username'], self.user.username)
+        nt.assert_equal(group['members'][0]['id'], self.user._id)
+        nt.assert_equal(len(group['managers']), 1)
+        nt.assert_equal(group['managers'][0]['username'], self.user.username)
+        nt.assert_equal(group['managers'][0]['id'], self.user._id)
+        nt.assert_equal([serialize_node_for_groups(self.project, self.group)], group['nodes'])
 
 
 class TestOSFGroupsListView(AdminTestCase):
@@ -79,7 +84,7 @@ class TestOSFGroupsFormView(AdminTestCase):
         self.view = OSFGroupsFormView()
 
     def test_post_id(self):
-        request = RequestFactory().post('/fake_path', data={'id': self.group.id, 'name': ''})
+        request = RequestFactory().post('/fake_path', data={'id': self.group._id, 'name': ''})
         view = setup_log_view(self.view, request)
 
         redirect = view.post(request)

@@ -2,6 +2,7 @@
 Serialize user
 """
 
+
 def serialize_group_for_user(group, user):
     return {
         'name': group.name,
