@@ -9,7 +9,7 @@ from django.contrib import messages
 
 
 class OSFGroupsView(PermissionRequiredMixin, DetailView):
-    """ Allow authorized admin user to view nodes
+    """ Allow authorized admin user to view a osf group
 
     View of OSF database. No admin models.
     """
@@ -59,7 +59,7 @@ class OSFGroupsFormView(PermissionRequiredMixin, FormView):
 
 
 class OSFGroupsListView(PermissionRequiredMixin, ListView):
-    """ Allow authorized admin user to view list of registrations
+    """ Allow authorized admin user to view list of osf groups
 
     View of OSF database. No admin models.
     """
