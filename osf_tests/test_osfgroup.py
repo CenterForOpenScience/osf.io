@@ -602,11 +602,11 @@ class TestOSFGroup:
 
     def test_node_get_permissions_override(self, project, manager, member, osf_group):
         project.add_osf_group(osf_group, 'write')
-        assert set(project.get_permissions(member)) == set(['write_node', 'read_node'])
+        assert set(project.get_permissions(member)) == set(['read', 'write'])
 
         project.remove_osf_group(osf_group)
         project.add_osf_group(osf_group, 'read')
-        assert set(project.get_permissions(member)) == set(['read_node'])
+        assert set(project.get_permissions(member)) == set(['read'])
 
         anon = AnonymousUser()
         assert project.get_permissions(anon) == []

@@ -504,7 +504,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             elif obj.contrib_read:
                 user_perms = ['read']
         else:
-            user_perms = [osf_permissions.CONTRIB_PERMISSIONS[perm] for perm in obj.get_permissions(user)]
+            user_perms = obj.get_permissions(user)[::-1]
 
         user_perms = user_perms or default_perm
         if not user_perms and user in obj.parent_admin_users:

@@ -1333,7 +1333,7 @@ class TestMergingUsers:
         project.save()
         merge_dupe()  # perform the merge
 
-        assert project.get_permissions(master) == ['read_node', 'write_node', 'admin_node']
+        assert project.get_permissions(master) == ['read', 'write', 'admin']
 
     def test_merge_user_with_lower_permissions_on_project(self, master, dupe, merge_dupe):
         # Both master and dupe are contributors on the same project
@@ -1344,7 +1344,7 @@ class TestMergingUsers:
         project.save()
         merge_dupe()  # perform the merge
 
-        assert project.get_permissions(master) == ['read_node', 'write_node', 'admin_node']
+        assert project.get_permissions(master) == ['read', 'write', 'admin']
 
     def test_merge_user_into_self_fails(self, master):
         with pytest.raises(ValueError):

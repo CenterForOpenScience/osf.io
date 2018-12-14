@@ -64,7 +64,7 @@ from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
 from osf.utils.requests import get_headers_from_request
-from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS
+from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, CONTRIB_PERMISSIONS, PERMISSIONS
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 
@@ -856,8 +856,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if isinstance(user, AnonymousUser):
             return []
 
-        permissions = ['admin_node', 'write_node', 'read_node']
-        return sorted(set(get_group_perms(user, self)).intersection(permissions), key=permissions.index)
+        user_perms = sorted(set(get_group_perms(user, self)).intersection(PERMISSIONS), key=PERMISSIONS.index)
+        return [CONTRIB_PERMISSIONS[perm] for perm in user_perms]
 
     def has_permission_on_children(self, user, permission):
         """Checks if the given user has a given permission on any child nodes

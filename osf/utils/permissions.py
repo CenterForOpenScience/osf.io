@@ -6,6 +6,7 @@ WRITE = 'write'
 ADMIN = 'admin'
 # NOTE: Ordered from most-restrictive to most permissive
 PERMISSIONS = ['read_node', 'write_node', 'admin_node']
+SHORTENED_PERMS = ['read', 'write', 'admin']
 CONTRIB_PERMISSIONS = {'admin_node': 'admin', 'write_node': 'write', 'read_node': 'read'}
 API_CONTRIBUTOR_PERMISSIONS = [READ, WRITE, ADMIN]
 CREATOR_PERMISSIONS = ADMIN
@@ -57,6 +58,13 @@ def expand_permissions(permission):
 
 
 def reduce_permissions(permissions):
+    """
+    Works if technical permissions are passed ['read_node', 'write_node'],
+    or short form are passed ['read', 'write']
+    """
+    for permission in SHORTENED_PERMS[::-1]:
+        if permission in permissions:
+            return permission
     for permission in PERMISSIONS[::-1]:
         if permission in permissions:
             return CONTRIB_PERMISSIONS[permission]

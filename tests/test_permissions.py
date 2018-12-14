@@ -27,6 +27,15 @@ def test_reduce_permissions():
     result3 = permissions.reduce_permissions(['read_node'])
     assert_equal(result3, 'read')
 
+    result = permissions.reduce_permissions(['read', 'write', 'admin'])
+    assert_equal(result, 'admin')
+
+    result2 = permissions.reduce_permissions(['read', 'write'])
+    assert_equal(result2, 'write')
+
+    result3 = permissions.reduce_permissions(['read'])
+    assert_equal(result3, 'read')
+
 
 def test_reduce_permissions_with_empty_list_raises_error():
     with assert_raises(ValueError):

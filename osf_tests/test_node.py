@@ -877,8 +877,8 @@ class TestContributorMethods:
         assert node.is_contributor(user2)
         assert user1._id in node.visible_contributor_ids
         assert user2._id not in node.visible_contributor_ids
-        assert set(node.get_permissions(user1)) == set(['admin_node', 'write_node', 'read_node'])
-        assert set(node.get_permissions(user2)) == set(['read_node', 'write_node'])
+        assert set(node.get_permissions(user1)) == set(['read', 'write', 'admin'])
+        assert set(node.get_permissions(user2)) == set(['read', 'write'])
         last_log = node.logs.all().order_by('-date')[0]
         assert (
             last_log.params['contributors'] ==
@@ -1155,7 +1155,7 @@ class TestContributorMethods:
         new_contrib = AuthUserFactory()
         node.add_contributor(new_contrib, permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS, auth=auth)
 
-        assert set(node.get_permissions(new_contrib)) == set(['read_node', 'write_node'])
+        assert set(node.get_permissions(new_contrib)) == set(['read', 'write'])
 
         assert node.get_visible(new_contrib) is True
 
@@ -1165,7 +1165,7 @@ class TestContributorMethods:
             False,
             auth=auth
         )
-        assert set(node.get_permissions(new_contrib)) == set(['read_node'])
+        assert set(node.get_permissions(new_contrib)) == set(['read'])
         assert node.get_visible(new_contrib) is False
 
     def test_update_contributor_non_admin_raises_error(self, node, auth):
@@ -1411,10 +1411,10 @@ class TestPermissionMethods:
             node=node, user=user,
         )
         node.add_permission(user, READ)
-        assert set(node.get_permissions(user)) == set(['read_node'])
+        assert set(node.get_permissions(user)) == set(['read'])
 
         node.add_permission(user, WRITE)
-        assert set(node.get_permissions(user)) == set(['read_node', 'write_node'])
+        assert set(node.get_permissions(user)) == set(['read', 'write'])
         assert contributor.user in node.contributors
 
     def test_add_permission(self, node):
@@ -2996,7 +2996,7 @@ class TestForkNode:
         assert bool(fork) is True
         # Forker has admin permissions
         assert fork.contributors.count() == 1
-        assert set(fork.get_permissions(user2)) == set(['read_node', 'write_node', 'admin_node'])
+        assert set(fork.get_permissions(user2)) == set(['read', 'write', 'admin'])
 
     def test_fork_preserves_license(self, node, auth):
         license = NodeLicenseRecordFactory()
@@ -4045,7 +4045,7 @@ class TestTemplateNode:
 
         templated = project.use_as_template(auth)
 
-        assert set(templated.get_permissions(user)) == set(['read_node', 'write_node', 'admin_node'])
+        assert set(templated.get_permissions(user)) == set(['read', 'write', 'admin'])
 
     def test_template_security(self, user, auth, project, pointee, component, subproject):
         """Create a templated node from a node with public and private children
@@ -4096,7 +4096,7 @@ class TestTemplateNode:
         for node in new.nodes:
             assert (
                 set(node.get_permissions(other_user)) ==
-                set(['read_node', 'write_node', 'admin_node'])
+                set(['read', 'write', 'admin'])
             )
 
 # copied from tests/test_models.py
