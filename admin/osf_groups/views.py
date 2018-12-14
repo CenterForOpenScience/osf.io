@@ -1,11 +1,11 @@
-from admin.osf_groups.serializers import serializer_group
-
+from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.urlresolvers import reverse
 from django.views.generic import FormView, DetailView, ListView
+
 from osf.models import OSFGroup
 from admin.osf_groups.forms import OSFGroupSearchForm
-from django.core.urlresolvers import reverse
-from django.contrib import messages
+from admin.osf_groups.serializers import serializer_group
 
 
 class OSFGroupsView(PermissionRequiredMixin, DetailView):
