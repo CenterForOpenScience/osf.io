@@ -5,8 +5,9 @@ from django.contrib.auth.models import Group
 from framework.auth import Auth
 from django.contrib.auth.models import AnonymousUser
 from framework.exceptions import PermissionsError
-from osf.models import OSFGroup, Node, OSFUser
+from osf.models import OSFGroup, Node, OSFUser, OSFGroupLog, NodeLog
 from osf.utils.permissions import MANAGER, MEMBER
+from website.notifications.utils import get_all_node_subscriptions
 from .factories import (
     NodeFactory,
     ProjectFactory,
@@ -233,6 +234,14 @@ class TestOSFGroup:
 
         assert project.has_permission(member, 'admin') is False
 
+    def test_add_osf_group_to_node_already_connected(self, manager, member, osf_group, project):
+        project.add_osf_group(osf_group, 'admin')
+        assert project.has_permission(member, 'admin') is True
+
+        project.add_osf_group(osf_group, 'write')
+        assert project.has_permission(member, 'admin') is False
+        assert project.has_permission(member, 'write') is True
+
     def test_user_groups_property(self, manager, member, osf_group):
         assert osf_group in manager.osf_groups
         assert osf_group in member.osf_groups
@@ -258,7 +267,8 @@ class TestOSFGroup:
         assert member.group_role(osf_group) == MEMBER
         assert user_three.group_role(osf_group) is None
 
-    def test_add_osf_group_to_node(self, manager, member, user_two, osf_group, project):
+    @mock.patch('website.osf_groups.views.mails.send_mail')
+    def test_add_osf_group_to_node(self, mock_send_mail, manager, member, user_two, osf_group, project):
         # noncontributor
         with pytest.raises(PermissionsError):
             project.add_osf_group(osf_group, 'write', auth=Auth(member))
@@ -270,6 +280,7 @@ class TestOSFGroup:
             project.add_osf_group(osf_group, 'write', auth=Auth(user_two))
 
         project.add_osf_group(osf_group, 'read', auth=Auth(manager))
+        assert mock_send_mail.call_count == 1
         # Manager was already a node admin
         assert project.has_permission(manager, 'admin') is True
         assert project.has_permission(manager, 'write') is True
@@ -279,12 +290,12 @@ class TestOSFGroup:
         assert project.has_permission(member, 'write') is False
         assert project.has_permission(member, 'read') is True
 
-        project.add_osf_group(osf_group, 'write', auth=Auth(manager))
+        project.update_osf_group(osf_group, 'write', auth=Auth(manager))
         assert project.has_permission(member, 'admin') is False
         assert project.has_permission(member, 'write') is True
         assert project.has_permission(member, 'read') is True
 
-        project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
+        project.update_osf_group(osf_group, 'admin', auth=Auth(manager))
         assert project.has_permission(member, 'admin') is True
         assert project.has_permission(member, 'write') is True
         assert project.has_permission(member, 'read') is True
@@ -293,6 +304,55 @@ class TestOSFGroup:
         other_group = OSFGroupFactory()
         with pytest.raises(PermissionsError):
             project.add_osf_group(other_group, 'admin', auth=Auth(project.creator))
+
+    @mock.patch('website.osf_groups.views.mails.send_mail')
+    def test_add_osf_group_to_node_emails_and_subscriptions(self, mock_send_mail, manager, member, user_two, osf_group, project):
+        osf_group.make_member(user_two)
+
+        # Manager is already a node contributor - already has subscriptions
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 0
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+        assert mock_send_mail.call_count == 1
+
+        project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
+        # Three members of group, but user adding group to node doesn't get email
+        assert mock_send_mail.call_count == 3
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
+
+        project.remove_osf_group(osf_group, auth=Auth(manager))
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 0
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+
+        # Member is a contributor
+        project.add_contributor(member, 'write', save=True)
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+
+        project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
+
+        project.remove_osf_group(osf_group, auth=Auth(manager))
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 0
+
+        project.add_osf_group(osf_group, 'admin', auth=Auth(manager))
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
+
+        # Don't unsubscribe member because they belong to a group that has perms
+        project.remove_contributor(member, Auth(manager))
+        assert len(get_all_node_subscriptions(manager, project)) == 2
+        assert len(get_all_node_subscriptions(member, project)) == 2
+        assert len(get_all_node_subscriptions(user_two, project)) == 2
 
     def test_add_osf_group_to_node_default_permission(self, manager, member, osf_group, project):
         project.add_osf_group(osf_group, auth=Auth(manager))
@@ -612,13 +672,124 @@ class TestOSFGroup:
         project.add_osf_group(osf_group, 'write')
         assert child.is_admin_parent(user_three) is False
 
-        project.add_osf_group(osf_group, 'admin')
+        project.update_osf_group(osf_group, 'admin')
         assert child.is_admin_parent(user_three) is True
         assert child.is_admin_parent(user_three, include_group_admin=False) is False
         project.remove_osf_group(osf_group)
 
         child.add_osf_group(osf_group, 'write')
         assert child.is_admin_parent(user_three) is False
-        child.add_osf_group(osf_group, 'admin')
+        child.update_osf_group(osf_group, 'admin')
         assert child.is_admin_parent(user_three) is True
         assert child.is_admin_parent(user_three, include_group_admin=False) is False
+
+
+class TestOSFGroupLogging:
+    def test_logging(self, project, manager, member):
+        group = OSFGroup.objects.create(name='My Lab', creator_id=manager.id)
+        assert group.logs.count() == 2
+        log = group.logs.last()
+        assert log.action == OSFGroupLog.GROUP_CREATED
+        assert log.user == manager
+        assert log.user == manager
+        assert log.params['group'] == group._id
+
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.MANAGER_ADDED
+        assert log.params['group'] == group._id
+
+        group.make_member(member, Auth(manager))
+        group.make_member(member, Auth(manager))
+        assert group.logs.count() == 3
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.MEMBER_ADDED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['user'] == member._id
+
+        group.make_manager(member, Auth(manager))
+        group.make_manager(member, Auth(manager))
+        assert group.logs.count() == 4
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.ROLE_UPDATED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['user'] == member._id
+        assert log.params['new_role'] == MANAGER
+
+        group.make_member(member, Auth(manager))
+        group.make_member(member, Auth(manager))
+        log = group.logs.first()
+        assert group.logs.count() == 5
+        assert log.action == OSFGroupLog.ROLE_UPDATED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['user'] == member._id
+        assert log.params['new_role'] == MEMBER
+
+        group.remove_member(member, Auth(manager))
+        group.remove_member(member, Auth(manager))
+        assert group.logs.count() == 6
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.MEMBER_REMOVED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['user'] == member._id
+
+        group.set_group_name('New Name', Auth(manager))
+        group.set_group_name('New Name', Auth(manager))
+        assert group.logs.count() == 7
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.EDITED_NAME
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['name_original'] == 'My Lab'
+
+        project.add_osf_group(group, 'write', Auth(manager))
+        project.add_osf_group(group, 'write', Auth(manager))
+        assert group.logs.count() == 8
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.NODE_CONNECTED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['node'] == project._id
+        assert log.params['permission'] == 'write'
+        node_log = project.logs.first()
+
+        assert node_log.action == NodeLog.GROUP_ADDED
+        assert node_log.user == manager
+        assert node_log.params['group'] == group._id
+        assert node_log.params['node'] == project._id
+        assert node_log.params['permission'] == 'write'
+
+        project.update_osf_group(group, 'read', Auth(manager))
+        project.update_osf_group(group, 'read', Auth(manager))
+        log = group.logs.first()
+        assert group.logs.count() == 9
+        assert log.action == OSFGroupLog.NODE_PERMS_UPDATED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['node'] == project._id
+        assert log.params['permission'] == 'read'
+        node_log = project.logs.first()
+
+        assert node_log.action == NodeLog.GROUP_UPDATED
+        assert node_log.user == manager
+        assert node_log.params['group'] == group._id
+        assert node_log.params['node'] == project._id
+        assert node_log.params['permission'] == 'read'
+
+        project.remove_osf_group(group, Auth(manager))
+        project.remove_osf_group(group, Auth(manager))
+        assert group.logs.count() == 10
+        log = group.logs.first()
+        assert log.action == OSFGroupLog.NODE_DISCONNECTED
+        assert log.user == manager
+        assert log.params['group'] == group._id
+        assert log.params['node'] == project._id
+        node_log = project.logs.first()
+
+        assert node_log.action == NodeLog.GROUP_REMOVED
+        assert node_log.user == manager
+        assert node_log.params['group'] == group._id
+        assert node_log.params['node'] == project._id

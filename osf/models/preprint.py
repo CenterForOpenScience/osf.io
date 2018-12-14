@@ -3,7 +3,6 @@ import functools
 import urlparse
 import logging
 import re
-import pytz
 
 from dirtyfields import DirtyFieldsMixin
 from include import IncludeManager
@@ -20,7 +19,6 @@ from django.db.models.signals import post_save
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
-from framework.analytics import increment_user_activity_counters
 from framework.auth import oauth_scopes
 
 from osf.models import Subject, Tag, OSFUser, PreprintProvider
@@ -406,16 +404,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         log.save()
 
-        if self.logs.count() == 1:
-            self.last_logged = log.created.replace(tzinfo=pytz.utc)
-        else:
-            self.last_logged = self.logs.first().created
-
-        if save:
-            self.save()
-        if user:
-            increment_user_activity_counters(user._primary_key, action, log.created.isoformat())
-
+        self._complete_add_log(log, action, user, save)
         return log
 
     def can_view_files(self, auth=None):
