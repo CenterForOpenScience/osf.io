@@ -213,7 +213,7 @@
                       <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
-                % if waffle.switch_is_active(features.EZID_SWITCH):
+                % if not waffle.switch_is_active(features.DISABLE_DATACITE_DOIS):
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
                     <p>
