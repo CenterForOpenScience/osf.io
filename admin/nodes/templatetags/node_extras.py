@@ -26,4 +26,4 @@ def reverse_user(user_id):
 
 @register.filter
 def reverse_osf_group(value):
-    return reverse('osf_groups:osf_group', kwargs={'id': value.id})
+    return reverse('osf_groups:osf_group', kwargs={'id': value})

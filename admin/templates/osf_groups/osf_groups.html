@@ -53,7 +53,7 @@
                         <td>
                             <select class="form-control" id="manager-select">
                                 {% for manager in group.managers %}
-                                    <option value="{{ manager.id | reverse_user }}">{{manager}}</option>
+                                    <option value="{{ manager.id | reverse_user }}">{{ manager.username }}</option>
                                 {% endfor %}
                             </select>
                         </td>
@@ -66,7 +66,20 @@
                         <td>
                             <select class="form-control" id="member-select">
                                 {% for member in group.members %}
-                                    <option value="{{ member.id | reverse_user }}">{{member}}</option>
+                                    <option value="{{ member.id | reverse_user }}">{{ member.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('member-select').value;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Members Only (no managers)</td>
+                        <td>
+                            <select class="form-control" id="member-select">
+                                {% for member in group.members_only %}
+                                    <option value="{{ member.id | reverse_user }}">{{ member.username }}</option>
                                 {% endfor %}
                             </select>
                         </td>
@@ -79,7 +92,7 @@
                         <td>
                             <select class="form-control" id="node-select">
                                 {% for node in group.nodes %}
-                                    <option value="{{ node | reverse_node }}">{{node.title}}</option>
+                                    <option value="{{ node.id | reverse_node }}">{{ node.title }} ({{ node.permission }})</option>
                                 {% endfor %}
                             </select>
                         </td>

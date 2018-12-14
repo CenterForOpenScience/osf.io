@@ -2,6 +2,12 @@
 Serialize user
 """
 
+def serialize_group_for_user(group, user):
+    return {
+        'name': group.name,
+        'id': group._id,
+        'role': user.group_role(group)
+    }
 
 def serialize_user(user):
     return {
@@ -19,8 +25,7 @@ def serialize_user(user):
         'system_tags': user.system_tags,
         'unclaimed': bool(user.unclaimed_records),
         'requested_deactivation': bool(user.requested_deactivation),
-        'osf_groups': list(user.osf_groups.all())
-
+        'osf_groups': [serialize_group_for_user(group, user) for group in user.osf_groups.all()]
     }
 
 
