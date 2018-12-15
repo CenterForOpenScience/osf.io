@@ -13,8 +13,9 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.dispatch import receiver
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
-from guardian.shortcuts import get_objects_for_user
+from guardian.shortcuts import get_objects_for_user, get_group_perms
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import AnonymousUser
 from django.db.models.signals import post_save
 
 from framework.auth import Auth
@@ -805,6 +806,15 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def get_spam_fields(self, saved_fields):
         return self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
+
+    def get_permissions(self, user):
+        # Overrides guardian mixin - doesn't return view_preprint perms, and
+        # returns readable perms instead of literal perms
+        if isinstance(user, AnonymousUser):
+            return []
+        perms = ['admin_preprint', 'write_preprint', 'read_preprint']
+        user_perms = sorted(set(get_group_perms(user, self)).intersection(perms), key=perms.index)
+        return [perm.split('_')[0] for perm in user_perms]
 
     def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False):
         """Set the permissions for this preprint - mainly for spam purposes.

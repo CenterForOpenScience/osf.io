@@ -852,7 +852,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        # Overrides guardian mixin - displays user's explicit permissions to the node
+        # Overrides guardian mixin - doesn't return view_node perms, and
+        # returns readable perms instead of literal perms
         if isinstance(user, AnonymousUser):
             return []
 

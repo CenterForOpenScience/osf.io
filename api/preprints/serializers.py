@@ -191,12 +191,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
-        all_perms = ['read', 'write', 'admin']
-        user_perms = []
-        for p in all_perms:
-            if obj.has_permission(user, p):
-                user_perms.append(p)
-        return user_perms
+        return obj.get_permissions(user)
 
     def get_preprint_doi_url(self, obj):
         doi = None
