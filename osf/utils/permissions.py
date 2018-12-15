@@ -50,12 +50,6 @@ REVIEW_GROUPS = {
     # 'reviewer': (),  # TODO Implement reviewers
 }
 
-def expand_permissions(permission):
-    if not permission:
-        return []
-    index = PERMISSIONS.index(permission) + 1
-    return PERMISSIONS[:index]
-
 
 def reduce_permissions(permissions):
     """
