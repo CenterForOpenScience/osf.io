@@ -10,7 +10,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0147_add_permissions_to_node'),
+        ('osf', '0151_add_permissions_to_node'),
     ]
 
     operations = [

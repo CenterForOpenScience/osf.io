@@ -26,7 +26,7 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFGroup, OSFUser, Tag, Contributor, Session
+from osf.models import AbstractNode, OSFUser, OSFGroup, Tag, Contributor, Session, BlacklistedEmailDomain
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
@@ -263,6 +263,7 @@ class TestOSFUser:
             u.save()
 
     def test_add_blacklisted_domain_unconfirmed_email(self, user):
+        BlacklistedEmailDomain.objects.get_or_create(domain='mailinator.com')
         with pytest.raises(BlacklistedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
         assert str(e.value) == 'Invalid Email'

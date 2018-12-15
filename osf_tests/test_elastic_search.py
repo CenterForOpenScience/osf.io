@@ -411,6 +411,7 @@ class TestPreprint(OsfTestCase):
             self.user = factories.UserFactory(fullname='John Deacon')
             self.preprint = Preprint(
                 title='Red Special',
+                description='We are the champions',
                 creator=self.user,
                 provider=factories.PreprintProviderFactory()
             )
@@ -421,7 +422,11 @@ class TestPreprint(OsfTestCase):
                 name='panda.txt',
                 materialized_path='/panda.txt')
             self.file.save()
-            self.published_preprint = factories.PreprintFactory(creator=self.user)
+            self.published_preprint = factories.PreprintFactory(
+                creator=self.user,
+                title='My Fairy King',
+                description='You take my breath away',
+            )
 
     def test_new_preprint_unsubmitted(self):
         # Verify that an unsubmitted preprint is not present in Elastic Search.

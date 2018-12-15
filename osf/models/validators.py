@@ -7,7 +7,6 @@ from django.utils.deconstruct import deconstructible
 from django.utils.six import string_types
 
 from website.notifications.constants import NOTIFICATION_TYPES
-from website import settings
 
 from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlacklistedEmailError
@@ -90,9 +89,11 @@ def validate_social(value):
             raise ValidationError('{} is not a valid key for social.'.format(soc_key))
 
 def validate_email(value):
+    from osf.models import BlacklistedEmailDomain
     with reraise_django_validation_errors():
         django_validate_email(value)
-    if value.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
+    domain = value.split('@')[1].lower()
+    if BlacklistedEmailDomain.objects.filter(domain=domain).exists():
         raise BlacklistedEmailError('Invalid Email')
 
 
