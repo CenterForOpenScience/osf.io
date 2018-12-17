@@ -15,7 +15,7 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <h3>OSF Group details</h3>
+            <h3>OSF Group Detail</h3>
         </div>
     </div>
     <div class="row">
@@ -46,14 +46,14 @@
                     </tr>
                     <tr>
                         <td>Creator</td>
-                        <td colspan="2"><a href="{{ group.creator.id | reverse_user }}">{{ group.creator }}</a></td>
+                        <td colspan="2"><a href="{{ group.creator.id | reverse_user }}">{{ group.creator.name }}</a></td>
                     </tr>
                     <tr>
-                        <td>Manager</td>
+                        <td>Managers</td>
                         <td>
                             <select class="form-control" id="manager-select">
                                 {% for manager in group.managers %}
-                                    <option value="{{ manager.id | reverse_user }}">{{ manager.username }}</option>
+                                    <option value="{{ manager.id | reverse_user }}">{{ manager.name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
@@ -66,20 +66,7 @@
                         <td>
                             <select class="form-control" id="member-select">
                                 {% for member in group.members %}
-                                    <option value="{{ member.id | reverse_user }}">{{ member.username }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                        <td>
-                            <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('member-select').value;" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Members Only (no managers)</td>
-                        <td>
-                            <select class="form-control" id="member-select">
-                                {% for member in group.members_only %}
-                                    <option value="{{ member.id | reverse_user }}">{{ member.username }}</option>
+                                    <option value="{{ member.id | reverse_user }}">{{ member.name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
