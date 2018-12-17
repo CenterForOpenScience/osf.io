@@ -809,6 +809,16 @@ class TestOSFGroupLogging:
         assert node_log.params['group'] == group._id
         assert node_log.params['node'] == project._id
 
+        project.add_osf_group(group, 'write', Auth(manager))
+        project.add_osf_group(group, 'write', Auth(manager))
+        group.remove_group(auth=Auth(manager))
+
+        node_log = project.logs.first()
+        assert node_log.action == NodeLog.GROUP_REMOVED
+        assert node_log.user == manager
+        assert node_log.params['group'] == group._id
+        assert node_log.params['node'] == project._id
+
 
 class TestRemovingContributorOrGroupMembers:
     """

@@ -409,9 +409,12 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
         for user in OSFUser.objects.filter(id__in=members):
             for node in nodes:
-                # send signal to remove this user from project subscriptions,
-                # and disconnect addons if applicable.
                 disconnect_addons(node, user, auth)
+                params = {
+                    'group': group_id,
+                    'node': node._id,
+                }
+                self.add_corresponding_node_log(node, NodeLog.GROUP_REMOVED, params, auth)
                 project_signals.contributor_removed.send(node, user=user)
                 node.update_search()
 
