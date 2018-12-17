@@ -62,6 +62,23 @@ def update_preprint(preprint, index=None, bulk=False, async_update=True, saved_f
         return search_engine.update_preprint(preprint, **kwargs)
 
 @requires_search
+def update_group(group, index=None, bulk=False, async_update=True, saved_fields=None, deleted_id=None):
+    kwargs = {
+        'index': index,
+        'bulk': bulk,
+        'deleted_id': deleted_id
+    }
+    if async_update:
+        # We need the transaction to be committed before trying to run celery tasks.
+        if settings.USE_CELERY:
+            enqueue_task(search_engine.update_group_async.s(group_id=group._id, **kwargs))
+        else:
+            search_engine.update_group_async(group_id=group._id, **kwargs)
+    else:
+        index = index or settings.ELASTIC_INDEX
+        return search_engine.update_group(group, **kwargs)
+
+@requires_search
 def bulk_update_nodes(serialize, nodes, index=None, category=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.bulk_update_nodes(serialize, nodes, index=index, category=category)

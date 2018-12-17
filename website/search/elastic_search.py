@@ -25,6 +25,7 @@ from osf.models import AbstractNode
 from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
+from osf.models import OSFGroup
 from osf.models import QuickFilesNode
 from osf.models import Preprint
 from osf.models import SpamStatus
@@ -51,6 +52,7 @@ ALIASES = {
     'file': 'Files',
     'institution': 'Institutions',
     'preprint': 'Preprints',
+    'group': 'Groups',
 }
 
 DOC_TYPE_TO_MODEL = {
@@ -62,6 +64,7 @@ DOC_TYPE_TO_MODEL = {
     'institution': Institution,
     'preprint': Preprint,
     'collectionSubmission': CollectionSubmission,
+    'group': OSFGroup
 }
 
 # Prevent tokenizing and stop word removal.
@@ -266,6 +269,7 @@ def format_result(result, parent_id=None):
     parent_info = load_parent(parent_id)
     formatted_result = {
         'contributors': result['contributors'],
+        'groups': result['groups'],
         'wiki_link': result['url'] + 'wiki/',
         # TODO: Remove unescape_entities when mako html safe comes in
         'title': unescape_entities(result['title']),
@@ -338,6 +342,8 @@ COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 def get_doctype_from_node(node):
     if isinstance(node, Preprint):
         return 'preprint'
+    if isinstance(node, OSFGroup):
+        return 'group'
     if node.is_registration:
         return 'registration'
     elif node.parent_node is None:
@@ -363,6 +369,15 @@ def update_preprint_async(self, preprint_id, index=None, bulk=False):
     preprint = Preprint.load(preprint_id)
     try:
         update_preprint(preprint=preprint, index=index, bulk=bulk, async_update=True)
+    except Exception as exc:
+        self.retry(exc=exc)
+
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_group_async(self, group_id, index=None, bulk=False, deleted_id=None):
+    OSFGroup = apps.get_model('osf.OSFGroup')
+    group = OSFGroup.load(group_id)
+    try:
+        update_group(group=group, index=index, bulk=bulk, async_update=True, deleted_id=deleted_id)
     except Exception as exc:
         self.retry(exc=exc)
 
@@ -393,6 +408,13 @@ def serialize_node(node, category):
             }
             for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
             .values('fullname', 'guids___id', 'is_active')
+        ],
+        'groups': [
+            {
+                'name': x['name'],
+                'url': '/{}/'.format(x['_id'])
+            }
+            for x in node.osf_groups.values('name', '_id')
         ],
         'title': node.title,
         'normalized_title': normalized_title,
@@ -458,6 +480,41 @@ def serialize_preprint(preprint, category):
 
     return elastic_document
 
+def serialize_group(group, category):
+    elastic_document = {}
+
+    try:
+        normalized_title = six.u(group.name)
+    except TypeError:
+        normalized_title = group.name
+    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+    elastic_document = {
+        'id': group._id,
+        'members': [
+            {
+                'fullname': x['fullname'],
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+            }
+            for x in group.members_only.values('fullname', 'guids___id', 'is_active')
+        ],
+        'managers': [
+            {
+                'fullname': x['fullname'],
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+            }
+            for x in group.managers.values('fullname', 'guids___id', 'is_active')
+        ],
+        'title': group.name,
+        'normalized_title': normalized_title,
+        'category': category,
+        'url': group.url,
+        'date_created': group.created,
+        'boost': 2,  # More relevant than a registration
+        'extra_search_terms': clean_splitters(group.name),
+    }
+
+    return elastic_document
+
 @requires_search
 def update_node(node, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
@@ -493,6 +550,20 @@ def update_preprint(preprint, index=None, bulk=False, async_update=False):
             return elastic_document
         else:
             client().index(index=index, doc_type=category, id=preprint._id, body=elastic_document, refresh=True)
+
+@requires_search
+def update_group(group, index=None, bulk=False, async_update=False, deleted_id=None):
+    index = index or INDEX
+
+    if deleted_id:
+        delete_group_doc(deleted_id, index=index)
+    else:
+        category = 'group'
+        elastic_document = serialize_group(group, category)
+        if bulk:
+            return elastic_document
+        else:
+            client().index(index=index, doc_type=category, id=group._id, body=elastic_document, refresh=True)
 
 def bulk_update_nodes(serialize, nodes, index=None, category=None):
     """Updates the list of input projects
@@ -871,6 +942,11 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
             category = node.project_or_component
     client().delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
+@requires_search
+def delete_group_doc(deleted_id, index=None):
+    index = index or INDEX
+    category = 'group'
+    client().delete(index=index, doc_type=category, id=deleted_id, refresh=True, ignore=[404])
 
 @requires_search
 def search_contributor(query, page=0, size=10, exclude=None, current_user=None):

@@ -1469,7 +1469,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         account. Return ``None`` if there is no unclaimed_record for the given
         project ID.
 
-        :param project_id: The project ID for the unclaimed record
+        :param project_id: The project ID/preprint ID/OSF group ID for the unclaimed record
         :raises: ValueError if a record doesn't exist for the given project ID
         :rtype: dict
         :returns: The unclaimed record for the project
