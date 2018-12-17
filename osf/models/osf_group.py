@@ -54,6 +54,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
     class Meta:
         permissions = (
+            ('view_group', 'Can view group details'),
             ('member_group', 'Has group membership'),
             ('manage_group', 'Can manage group membership'),
         )
