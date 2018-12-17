@@ -18,7 +18,7 @@ def drafts_for_user(user, campaign=None):
     if not user or user.is_anonymous:
         return None
 
-    node_qs = get_objects_for_user(user, 'admin_node', Node).exclude(is_deleted=True)
+    node_qs = get_objects_for_user(user, 'admin_node', Node, with_superuser=False).exclude(is_deleted=True)
 
     if campaign:
         drafts = DraftRegistration.objects.filter(

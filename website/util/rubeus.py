@@ -10,7 +10,7 @@ from framework import sentry
 from framework.auth.decorators import Auth
 
 from django.apps import apps
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Case, When, Value, IntegerField
 
 from website import settings
 from website.util import paths
@@ -174,13 +174,20 @@ class NodeFileCollector(object):
         Returns a generator of first descendant node(s) readable by <user>
         in each descendant branch.
         """
+        from guardian.shortcuts import get_objects_for_user
+
         new_branches = []
 
         linked_node_sqs = node.node_relations.filter(is_node_link=True, child=OuterRef('pk'))
+        if self.auth and self.auth.user:
+            can_write = get_objects_for_user(self.auth.user, 'write_node', node._nodes.all(), with_superuser=True)
+        else:
+            can_write = node._nodes.none()
         descendants_qs = (
             node._nodes
             .filter(is_deleted=False)
             .annotate(is_linked_node=Exists(linked_node_sqs))
+            .annotate(has_write_perm=Case(When(id__in=can_write, then=Value(1)), default=Value(0), output_field=IntegerField()))
             .order_by('_parents')
         )
 

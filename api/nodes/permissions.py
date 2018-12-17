@@ -52,6 +52,11 @@ class IsPublic(permissions.BasePermission):
 
 
 class IsAdminContributor(permissions.BasePermission):
+    """
+    Use on API views where the logged-in user needs to be an
+    admin contributor to make changes.  Admin group membership
+    is not sufficient.
+    """
     acceptable_models = (AbstractNode, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):

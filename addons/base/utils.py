@@ -9,11 +9,11 @@ def disconnect_addons(node, user, auth):
     """
     Loop through all the node's addons and remove user's authentication.
     Used when removing users from nodes (either removing a contributor, removing an OSF Group,
-    or removing a member from an OSF group)
+    removing an OSF Group from a node, or removing a member from an OSF group)
     """
-    # After remove callback
     if not node.is_contributor_or_group_member(user):
         for addon in node.get_addons():
+            # After remove callback
             message = addon.after_remove_contributor(node, user, auth)
             if message:
                 # Because addons can return HTML strings, addons are responsible

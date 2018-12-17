@@ -80,6 +80,7 @@ class RecentlyAddedContributor(models.Model):
 def get_contributor_permission(contributor, object_id, model_type):
     """
     Returns a contributor's permissions - perms through contributorship only. No group membership.
+    Checking group membership so you will get the intended permission of an unregistered contrib
     """
     read = '{}_{}_read'.format(model_type, object_id)
     write = '{}_{}_write'.format(model_type, object_id)

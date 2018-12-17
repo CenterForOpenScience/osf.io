@@ -495,13 +495,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if user.is_anonymous:
             return default_perm
 
-        if hasattr(obj, 'contrib_admin'):
+        if hasattr(obj, 'has_admin'):
             user_perms = []
-            if obj.contrib_admin:
+            if obj.has_admin:
                 user_perms = ['admin', 'write', 'read']
-            elif obj.contrib_write:
+            elif obj.has_write:
                 user_perms = ['write', 'read']
-            elif obj.contrib_read:
+            elif obj.has_read:
                 user_perms = ['read']
         else:
             user_perms = obj.get_permissions(user)[::-1]
@@ -515,13 +515,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
 
-        if hasattr(obj, 'contrib_read'):
+        if hasattr(obj, 'has_read'):
             if obj.comment_level == 'public':
                 return auth.logged_in and (
                     obj.is_public or
-                    (auth.user and obj.contrib_read)
+                    (auth.user and obj.has_read)
                 )
-            return obj.contrib_read or False
+            return obj.has_read or False
         else:
             return obj.can_comment(auth)
 
@@ -542,8 +542,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_current_user_is_contributor_or_group_member(self, obj):
         # Returns whether user is a contributor -or- a group member
-        if hasattr(obj, 'contrib_read'):
-            return obj.contrib_read
+        if hasattr(obj, 'has_read'):
+            return obj.has_read
 
         user = self.context['request'].user
         if user.is_anonymous:

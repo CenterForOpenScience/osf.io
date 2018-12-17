@@ -360,7 +360,6 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         )
 
         self.add_corresponding_node_log(node, NodeLog.GROUP_UPDATED, params, auth)
-        self.update_search()
 
     def remove_group_from_node(self, node, auth):
         """Removes the OSFGroup from the node. Called from node model.
@@ -384,8 +383,6 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         node.update_search()
 
         for user in self.members:
-            # send signal to remove this user from project subscriptions,
-            # provided the user doesn't have node perms some other way
             disconnect_addons(node, user, auth)
             project_signals.contributor_removed.send(node, user=user)
 
