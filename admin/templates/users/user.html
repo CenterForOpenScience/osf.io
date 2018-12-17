@@ -219,6 +219,19 @@
                     </td>
                 </tr>
                 <tr>
+                <td>
+                    OSF Groups
+                </td>
+                <td>
+                    <select class="form-control" style="width:90%; display:inherit;" id="groups-select">
+                        {% for group in user.osf_groups %}
+                            <option value="{{ group.id | reverse_osf_group }}">{{ group.name }} ({{ group.role }})</option>
+                        {% endfor %}
+                    </select>
+                    <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('groups-select').value;" />
+                </td>
+                </tr>
+                <tr>
                     <td>Nodes</td>
                     <td>
                         <table class="table table-hover table-bordered">

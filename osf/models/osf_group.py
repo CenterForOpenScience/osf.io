@@ -50,6 +50,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         permissions = (
             ('member_group', 'Has group membership'),
             ('manage_group', 'Can manage group membership'),
+            ('groups_read', 'Can view the group')
         )
 
     @property
