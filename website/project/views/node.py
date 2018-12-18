@@ -42,11 +42,11 @@ from website.project.model import has_anonymous_link, NodeUpdateError, validate_
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from addons.wiki.models import WikiPage
-from osf.models import AbstractNode, Collection, Guid, PrivateLink, Node, NodeRelation, Preprint
+from osf.models import AbstractNode, Collection, Contributor, Guid, PrivateLink, Node, NodeRelation, Preprint
 from osf.models.contributor import get_contributor_or_group_member_permissions
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
-from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS, reduce_permissions
+from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary, get_storage_region_list
@@ -192,7 +192,8 @@ def project_new_node(auth, node, **kwargs):
         ).format(component_url=new_component.url)
         if form.inherit_contributors.data and node.has_permission(user, WRITE):
             for contributor in node.contributors:
-                perm = CREATOR_PERMISSIONS if contributor._id == user._id else reduce_permissions(node.get_permissions(contributor))
+                # Using permission property off of Contributor model to get contributor permissions - not group member perms
+                perm = CREATOR_PERMISSIONS if contributor._id == user._id else Contributor.objects.get(user_id=contributor.id, node_id=node.id).permission
                 if contributor._id == user._id and not contributor.is_registered:
                     new_component.add_unregistered_contributor(
                         fullname=contributor.fullname, email=contributor.email,

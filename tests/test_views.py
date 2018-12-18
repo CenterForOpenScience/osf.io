@@ -4528,7 +4528,11 @@ class TestProjectCreation(OsfTestCase):
     def test_create_component_with_contributors_read_write(self):
         url = web_url_for('project_new_node', pid=self.project._id)
         non_admin = AuthUserFactory()
+        read_user = AuthUserFactory()
+        group = OSFGroupFactory(creator=read_user)
         self.project.add_contributor(non_admin, permissions='write')
+        self.project.add_contributor(read_user, permissions='read')
+        self.project.add_osf_group(group, 'admin')
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=non_admin.auth)
@@ -4538,9 +4542,15 @@ class TestProjectCreation(OsfTestCase):
         assert_in(non_admin, child.contributors)
         assert_in(self.user1, child.contributors)
         assert_in(self.user2, child.contributors)
+        assert_in(read_user, child.contributors)
         assert child.has_permission(non_admin, 'admin') is True
         assert child.has_permission(non_admin, 'write') is True
         assert child.has_permission(non_admin, 'read') is True
+        # read_user was a read contrib on the parent, but was an admin group member
+        # read contrib perms copied over
+        assert child.has_permission(read_user, 'admin') is False
+        assert child.has_permission(read_user, 'write') is False
+        assert child.has_permission(read_user, 'read') is True
         # check redirect url
         assert_in('/contributors/', res.location)
 
