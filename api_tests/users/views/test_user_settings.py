@@ -7,8 +7,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
-from osf.models import Email
-from website.settings.defaults import BLACKLISTED_DOMAINS
+from osf.models import Email, BlacklistedEmailDomain
 
 @pytest.fixture()
 def user_one():
@@ -311,7 +310,8 @@ class TestUserEmailsList:
         assert res.json['errors'][0]['detail'] == 'Enter a valid email address.'
 
     def test_create_blacklisted_email(self, app, url, payload, user_one):
-        new_email = 'freddie@{}'.format(BLACKLISTED_DOMAINS[0])
+        BlacklistedEmailDomain.objects.get_or_create(domain='mailinator.com')
+        new_email = 'freddie@mailinator.com'
         payload['data']['attributes']['email_address'] = new_email
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400

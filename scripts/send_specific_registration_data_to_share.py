@@ -33,7 +33,7 @@ def migrate(registrations):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Changes the provider of specified PreprintService objects'
+        description='Changes the provider of specified Preprint objects'
     )
 
     parser.add_argument(

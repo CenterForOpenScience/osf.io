@@ -7,7 +7,7 @@ from api.base.utils import get_user_auth
 from osf.models.action import NodeRequestAction, PreprintRequestAction
 from osf.models.mixins import NodeRequestableMixin, PreprintRequestableMixin
 from osf.models.node import Node
-from osf.models.preprint_service import PreprintService
+from osf.models.preprint import Preprint
 from osf.utils.workflows import DefaultTriggers
 from osf.utils import permissions as osf_permissions
 
@@ -74,7 +74,7 @@ class PreprintRequestPermission(drf_permissions.BasePermission):
             preprint = obj.target
             # Creating a Request is "submitting"
             trigger = request.data.get('trigger', DefaultTriggers.SUBMIT.value if request.method not in drf_permissions.SAFE_METHODS else None)
-        elif isinstance(obj, PreprintService):
+        elif isinstance(obj, Preprint):
             preprint = obj
             trigger = DefaultTriggers.SUBMIT.value if request.method not in drf_permissions.SAFE_METHODS else None
         else:

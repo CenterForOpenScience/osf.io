@@ -1438,6 +1438,7 @@ BLACKLISTED_DOMAINS = [
     'qisdo.com',
     'qisoa.com',
     'qoika.com',
+    'qq.com',
     'quickinbox.com',
     'quickmail.nl',
     'rainmail.biz',

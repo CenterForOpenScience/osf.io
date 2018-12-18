@@ -39,7 +39,7 @@ from osf.models import (
 )
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
-from osf.models.preprint_service import PreprintService
+from osf.models.preprint import Preprint
 from website.project import new_private_link
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
@@ -198,7 +198,7 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
         type_ = 'styled-citations'
 
 def get_license_details(node, validated_data):
-    license = node.license if isinstance(node, PreprintService) else node.node_license
+    license = node.license if isinstance(node, Preprint) else node.node_license
 
     license_id = license.node_license.license_id if license else None
     license_year = license.year if license else None
@@ -273,7 +273,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
-    preprint = ser.BooleanField(read_only=True, source='is_preprint')
+    preprint = ser.SerializerMethodField()
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = ser.ListField(source='tag_names', child=ser.CharField(), required=False)
@@ -513,6 +513,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             return obj.contrib_read or False
         else:
             return obj.can_comment(auth)
+
+    def get_preprint(self, obj):
+        # Whether the node has supplemental material for a preprint the user can view
+        user = self.context['request'].user if not self.context['request'].user.is_anonymous else None
+        return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
 
     def get_current_user_is_contributor(self, obj):
         if hasattr(obj, 'user_is_contrib'):
@@ -1045,7 +1050,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def get_unregistered_contributor(self, obj):
-        unclaimed_records = obj.user.unclaimed_records.get(obj.node._id, None)
+        # SerializerMethodField works for both Node and Preprint contributors
+        if hasattr(obj, 'preprint'):
+            unclaimed_records = obj.user.unclaimed_records.get(obj.preprint._id, None)
+        else:
+            unclaimed_records = obj.user.unclaimed_records.get(obj.node._id, None)
         if unclaimed_records:
             return unclaimed_records.get('name', None)
 
@@ -1067,13 +1076,16 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         required=False,
     )
 
-    email_preferences = ['default', 'preprint', 'false']
+    email_preferences = ['default', 'false']
+
+    def get_proposed_permissions(self, validated_data):
+        return osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
-        if user_id and (full_name or email):
-            raise Conflict(detail='Full name and/or email should not be included with a user ID.')
         if not user_id and not full_name:
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+        if user_id and email:
+            raise exceptions.ValidationError(detail='Do not provide an email when providing this user_id.')
         if index > len(node.contributors):
             raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
 
@@ -1083,12 +1095,12 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         index = None
         if '_order' in validated_data:
             index = validated_data.pop('_order')
-        node = self.context['view'].get_node()
+        node = self.context['resource']
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
         bibliographic = validated_data.get('bibliographic')
-        send_email = self.context['request'].GET.get('send_email') or 'default'
-        permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        send_email = self.context['request'].GET.get('send_email') or self.context['default_email']
+        permissions = self.get_proposed_permissions(validated_data)
 
         self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index)
 
@@ -1096,10 +1108,13 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail='{} is not a valid email preference.'.format(send_email))
 
         try:
-            contributor_obj = node.add_contributor_registered_or_not(
-                auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
-                permissions=permissions, bibliographic=bibliographic, index=index, save=True,
-            )
+            contributor_dict = {
+                'auth': auth, 'user_id': id, 'email': email, 'full_name': full_name, 'send_email': send_email,
+                'bibliographic': bibliographic, 'index': index, 'save': True,
+            }
+
+            contributor_dict['permissions'] = permissions
+            contributor_obj = node.add_contributor_registered_or_not(**contributor_dict)
         except ValidationError as e:
             raise exceptions.ValidationError(detail=e.messages[0])
         except ValueError as e:
@@ -1120,7 +1135,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             index = validated_data.pop('_order')
 
         auth = Auth(self.context['request'].user)
-        node = self.context['view'].get_node()
+        node = self.context['resource']
 
         if 'bibliographic' in validated_data:
             bibliographic = validated_data.get('bibliographic')
@@ -1131,7 +1146,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             if index is not None:
                 node.move_contributor(instance.user, auth, index, save=True)
             node.update_contributor(instance.user, permission, bibliographic, auth, save=True)
-        except NodeStateError as e:
+        except node.state_error as e:
             raise exceptions.ValidationError(detail=str(e))
         except ValueError as e:
             raise exceptions.ValidationError(detail=str(e))
@@ -1249,6 +1264,7 @@ class InstitutionRelated(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
     class Meta:
         type_ = 'institutions'
+
 
 class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=InstitutionRelated())

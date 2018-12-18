@@ -29,4 +29,4 @@ class NodeRequest(AbstractRequest, NodeRequestableMixin):
 
 
 class PreprintRequest(AbstractRequest, PreprintRequestableMixin):
-    target = models.ForeignKey('PreprintService', related_name='requests')
+    target = models.ForeignKey('Preprint', related_name='requests')

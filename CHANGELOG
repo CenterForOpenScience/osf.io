@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+18.8.0 (2018-12-13)
+===================
+
+- Remove the dependency of Preprints on Nodes, a.k.a. "The Node Preprint Divorce". Preprints no longer store metadata on nodes.
+  Nodes optionally provide supplemental materials for preprints, but other than that are independent of preprints.
+
 18.7.0 (2018-12-05)
 ===================
 
