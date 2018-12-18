@@ -16,8 +16,6 @@ module.exports = {
         submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + $osf.osfSupportLink() + '.',
         beforeEditIsApproved: 'This draft registration is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.',
         beforeEditIsPendingReview: 'This draft registration is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.',
-        loadDraftsFail: 'There was a problem loading draft registrations at this time. ' + $osf.refreshOrSupport(),
-        deleteDraftFail: 'There was a problem deleting this draft. ' + $osf.refreshOrSupport(),
     },
     Addons: {
         dataverse: {
