@@ -3,7 +3,6 @@ from django.db.models import Q
 
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError
-from guardian.shortcuts import get_perms
 
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
@@ -44,9 +43,6 @@ class OSFGroupMixin(object):
         if check_object_permissions:
             self.check_object_permissions(self.request, group)
         return group
-
-    def get_node_group_perms(self, group, node):
-        return get_perms(group.member_group, node)
 
 
 class GroupList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, OSFGroupMixin):

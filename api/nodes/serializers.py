@@ -1,6 +1,5 @@
 from django.db import connection
 from distutils.version import StrictVersion
-from guardian.shortcuts import get_group_perms
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -734,7 +733,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             node.add_contributors(contributors, auth=auth, log=True, save=True)
             for group in parent.osf_groups:
                 if group.is_manager(user):
-                    node.add_osf_group(group, osf_permissions.reduce_permissions(get_group_perms(group.member_group, parent)), auth=auth)
+                    node.add_osf_group(group, group.get_permission_to_node(parent), auth=auth)
         if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, 'write'):
             parent = validated_data['parent']
             node.subjects.add(parent.subjects.all())
@@ -1772,8 +1771,7 @@ class NodeGroupsSerializer(JSONAPISerializer):
 
     def get_permission(self, obj):
         node = self.context['node']
-        permissions = self.context['view'].get_node_group_perms(obj, node)
-        return osf_permissions.reduce_permissions(permissions)
+        return obj.get_permission_to_node(node)
 
     class Meta:
         type_ = 'node_groups'

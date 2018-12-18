@@ -305,9 +305,9 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         """
         self._require_manager_permission(auth)
 
-        perms = get_group_perms(self.member_group, node)
-        if perms:
-            if reduce_permissions(perms) == permission:
+        current_perm = self.get_permission_to_node(node)
+        if current_perm:
+            if current_perm == permission:
                 return False
             return self.update_group_permissions_to_node(node, permission, auth)
 
@@ -339,8 +339,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         :param str Highest permission to grant, 'read', 'write', or 'admin'
         :param auth: Auth object
         """
-        current_permissions = reduce_permissions(get_group_perms(self.member_group, node))
-        if current_permissions == permission:
+        if self.get_permission_to_node(node) == permission:
             return False
         permissions = self._get_node_group_perms(node, permission)
         to_remove = set(get_perms(self.member_group, node)).difference(permissions)
@@ -366,7 +365,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
         :param obj AbstractNode
         """
-        if not get_group_perms(self.member_group, node):
+        if not self.get_permission_to_node(node):
             return False
         for perm in node.groups[ADMIN]:
             remove_perm(perm, self.member_group, node)
@@ -385,6 +384,15 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         for user in self.members:
             disconnect_addons(node, user, auth)
             project_signals.contributor_removed.send(node, user=user)
+
+    def get_permission_to_node(self, node):
+        """
+        Returns the permission this OSF group has to the given node
+
+        :param node: Node object
+        """
+        perms = get_group_perms(self.member_group, node)
+        return reduce_permissions(perms) if perms else None
 
     def has_permission(self, user, permission):
         if not user:
