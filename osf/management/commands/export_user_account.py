@@ -21,7 +21,7 @@ from osf.models import (
     AbstractNode,
     FileVersion,
     OSFUser,
-    PreprintService,
+    Preprint,
     Registration,
 )
 from scripts.utils import Progress
@@ -66,7 +66,7 @@ def export_metadata(node, current_dir):
     export_fields = NODE_EXPORT_FIELDS
     if isinstance(node, Registration):
         export_fields = REGISTRATION_EXPORT_FIELDS
-    elif isinstance(node, PreprintService):
+    elif isinstance(node, Preprint):
         export_fields = PREPRINT_EXPORT_FIELDS
     with open(os.path.join(current_dir, 'metadata.json'), 'w') as f:
         # only write the fields dict, throw away pk and model_name
@@ -231,7 +231,7 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
     os.mkdir(projects_dir)
     os.mkdir(registrations_dir)
 
-    preprints_to_export = (PreprintService.objects
+    preprints_to_export = (Preprint.objects
         .filter(node___contributors__guids___id=user_id, guids___id__isnull=False)
         .select_related('node')
     )

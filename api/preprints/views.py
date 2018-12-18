@@ -1,40 +1,60 @@
 import re
 
 from rest_framework import generics
+from django.db.models import Q
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import ReviewAction, PreprintService
+from osf.models import ReviewAction, Preprint, PreprintContributor
 from osf.utils.requests import check_select_for_update
+from osf.utils.permissions import PERMISSIONS
 
 from api.actions.permissions import ReviewActionPermission
 from api.actions.serializers import ReviewActionSerializer
 from api.actions.views import get_review_actions_queryset
-from api.base.exceptions import Conflict
+from api.base.pagination import PreprintContributorPagination
+from api.base.exceptions import Conflict, InvalidFilterOperator, InvalidFilterValue
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
+    JSONAPIOnetoOneRelationshipParser,
+    JSONAPIOnetoOneRelationshipParserForRegularJSON,
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base import permissions as base_permissions
-from api.citations.utils import render_citation, preprint_csl
+from api.citations.utils import render_citation
 from api.preprints.serializers import (
     PreprintSerializer,
     PreprintCreateSerializer,
     PreprintCitationSerializer,
+    PreprintContributorDetailSerializer,
+    PreprintContributorsSerializer,
+    PreprintStorageProviderSerializer,
+    PreprintNodeRelationshipSerializer,
+    PreprintContributorsCreateSerializer,
 )
+from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import (
     NodeCitationStyleSerializer,
 )
 
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
-from api.nodes.views import NodeMixin, NodeContributorsList
-from api.nodes.permissions import ContributorOrPublic
-from api.preprints.permissions import PreprintPublishedOrAdmin, ModeratorIfNeverPublicWithdrawn
+from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList, NodeStorageProvidersList, NodeStorageProvider
+from api.preprints.permissions import (
+    PreprintPublishedOrAdmin,
+    PreprintPublishedOrWrite,
+    ModeratorIfNeverPublicWithdrawn,
+    AdminOrPublic,
+    ContributorDetailPermissions,
+    PreprintFilesPermissions,
+)
+from api.nodes.permissions import (
+    ContributorOrPublic,
+)
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
@@ -45,14 +65,16 @@ class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
     preprint_lookup_url_kwarg = 'preprint_id'
 
-    def get_preprint(self, check_object_permissions=True):
-        qs = PreprintService.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg], guids___id__isnull=False)
+    def get_preprint(self, check_object_permissions=True, ignore_404=False):
+        qs = Preprint.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg], guids___id__isnull=False)
         try:
             preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
-        except PreprintService.DoesNotExist:
+        except Preprint.DoesNotExist:
+            if ignore_404:
+                return
             raise NotFound
 
-        if preprint.node.is_deleted:
+        if preprint.deleted is not None:
             raise NotFound
 
         # May raise a permission denied
@@ -74,8 +96,8 @@ class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
-    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
-    required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
 
     serializer_class = PreprintSerializer
 
@@ -100,7 +122,7 @@ class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView
 
         # Permissions on the list objects are handled by the query
         public_only = self.metrics_requested
-        queryset = self.preprints_queryset(PreprintService.objects.all(), auth_user, public_only=public_only)
+        queryset = self.preprints_queryset(Preprint.objects.all(), auth_user, public_only=public_only)
         # Use get_metrics_queryset to return an queryset with annotated metrics
         # iff ?metrics query param is present
         if self.metrics_requested:
@@ -128,7 +150,7 @@ class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView
         )
 
 
-class PreprintDetail(MetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(MetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
     permission_classes = (
@@ -136,15 +158,15 @@ class PreprintDetail(MetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateD
         base_permissions.TokenHasScope,
         ModeratorIfNeverPublicWithdrawn,
         ContributorOrPublic,
-        PreprintPublishedOrAdmin,
+        PreprintPublishedOrWrite,
     )
     parser_classes = (
         JSONAPIMultipleRelationshipsParser,
         JSONAPIMultipleRelationshipsParserForRegularJSON,
     )
 
-    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
-    required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
 
     serializer_class = PreprintSerializer
 
@@ -167,11 +189,6 @@ class PreprintDetail(MetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateD
             self.add_metrics_to_object(preprint)
         return preprint
 
-    def perform_destroy(self, instance):
-        if instance.is_published:
-            raise Conflict('Published preprints cannot be deleted.')
-        PreprintService.delete(instance)
-
     def get_parser_context(self, http_request):
         """
         Tells parser that type is required in request
@@ -179,6 +196,33 @@ class PreprintDetail(MetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateD
         res = super(PreprintDetail, self).get_parser_context(http_request)
         res['legacy_type_allowed'] = True
         return res
+
+
+class PreprintNodeRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        PreprintPublishedOrWrite,
+    )
+
+    view_category = 'preprints'
+    view_name = 'preprint-node-relationship'
+
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
+
+    serializer_class = PreprintNodeRelationshipSerializer
+    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
+
+    def get_object(self):
+        preprint = self.get_preprint()
+        auth = get_user_auth(self.request)
+        obj = {
+            'data': {'id': preprint.node._id, 'type': 'linked_preprint_nodes'} if preprint.node and preprint.node.can_view(auth) else None,
+            'self': preprint,
+        }
+        return obj
 
 
 class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
@@ -189,7 +233,7 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_read_scopes = [CoreScopes.PREPRINT_CITATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = PreprintCitationSerializer
@@ -200,8 +244,8 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
         preprint = self.get_preprint()
         auth = get_user_auth(self.request)
 
-        if preprint.node.is_public or preprint.node.can_view(auth) or preprint.is_published:
-            return preprint_csl(preprint, preprint.node)
+        if preprint.can_view(auth):
+            return preprint.csl
 
         raise PermissionDenied if auth.user else NotAuthenticated
 
@@ -214,7 +258,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_read_scopes = [CoreScopes.PREPRINT_CITATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeCitationStyleSerializer
@@ -226,7 +270,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
         auth = get_user_auth(self.request)
         style = self.kwargs.get('style_id')
 
-        if preprint.node.is_public or preprint.node.can_view(auth) or preprint.is_published:
+        if preprint.can_view(auth):
             try:
                 citation = render_citation(node=preprint, style=style)
             except ValueError as err:  # style requested could not be found
@@ -292,10 +336,95 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
 
 
 class PreprintContributorsList(NodeContributorsList, PreprintMixin):
+    permission_classes = (
+        AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PreprintPublishedOrAdmin,
+    )
 
-    def create(self, request, *args, **kwargs):
-        self.kwargs['node_id'] = self.get_preprint(check_object_permissions=False).node._id
-        return super(PreprintContributorsList, self).create(request, *args, **kwargs)
+    pagination_class = PreprintContributorPagination
+
+    required_read_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_WRITE]
+
+    view_category = 'preprints'
+    view_name = 'preprint-contributors'
+    serializer_class = PreprintContributorsSerializer
+
+    def get_default_queryset(self):
+        preprint = self.get_preprint()
+        return preprint.preprintcontributor_set.all().include('user__guids')
+
+    # overrides NodeContributorsList
+    def get_serializer_class(self):
+        """
+        Use NodeContributorDetailSerializer which requires 'id'
+        """
+        if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
+            return PreprintContributorDetailSerializer
+        elif self.request.method == 'POST':
+            return PreprintContributorsCreateSerializer
+        else:
+            return PreprintContributorsSerializer
+
+    def get_resource(self):
+        return self.get_preprint(ignore_404=True)
+
+    # Overrides NodeContributorsList
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'permission':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            # operation['value'] should be 'admin', 'write', or 'read'
+            query_val = operation['value'].lower().strip()
+            if query_val not in PERMISSIONS:
+                raise InvalidFilterValue(value=operation['value'])
+            return Q(user__in=self.get_resource().get_group(query_val).user_set.all())
+        return super(PreprintContributorsList, self).build_query_from_field(field_name, operation)
+
+    # Overrides NodeContributorsList
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'preprint'
+        return context
+
+
+class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
+
+    permission_classes = (
+        ContributorDetailPermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    view_category = 'preprints'
+    view_name = 'preprint-contributor-detail'
+    serializer_class = PreprintContributorDetailSerializer
+
+    required_read_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_WRITE]
+
+    def get_resource(self):
+        return self.get_preprint(ignore_404=True)
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        preprint = self.get_preprint()
+        user = self.get_user()
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        try:
+            return preprint.preprintcontributor_set.get(user=user)
+        except PreprintContributor.DoesNotExist:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['resource'] = self.get_preprint()
+        context['default_email'] = 'preprint'
+        return context
 
 
 class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
@@ -378,6 +507,55 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class PreprintStorageProvidersList(NodeStorageProvidersList, PreprintMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        base_permissions.TokenHasScope,
+        PreprintFilesPermissions,
+    )
+
+    required_read_scopes = [CoreScopes.PREPRINT_FILE_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_FILE_WRITE]
+
+    serializer_class = PreprintStorageProviderSerializer
+    view_category = 'preprints'
+    view_name = 'preprint-storage-providers'
+
+    def get_provider_item(self, provider):
+        return NodeStorageProvider(provider, self.get_preprint())
+
+    def get_queryset(self):
+        # Preprints Providers restricted so only osfstorage is allowed
+        return [
+            self.get_provider_item('osfstorage'),
+        ]
+
+
+class PreprintFilesList(NodeFilesList, PreprintMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PreprintFilesPermissions,
+    )
+    required_read_scopes = [CoreScopes.PREPRINT_FILE_READ]
+    required_write_scopes = [CoreScopes.PREPRINT_FILE_WRITE]
+
+    view_category = 'preprints'
+    view_name = 'preprint-files'
+
+    serializer_class = OsfStorageFileSerializer
+
+    def get_queryset(self):
+        self.kwargs[self.path_lookup_url_kwarg] = '/'
+        self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
+        return super(PreprintFilesList, self).get_queryset()
+
+    def get_resource(self, check_object_permissions):
+        return self.get_preprint(check_object_permissions=check_object_permissions)
+
 
 class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintRequestMixin):
     permission_classes = (

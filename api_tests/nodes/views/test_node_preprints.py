@@ -1,5 +1,6 @@
 import pytest
 
+from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
@@ -32,7 +33,7 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
 
     @pytest.fixture()
     def project_one(self, user):
-        return ProjectFactory(creator=user)
+        return ProjectFactory(creator=user, is_public=True)
 
     @pytest.fixture()
     def project_two(self, project_one):
@@ -57,6 +58,51 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
             auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
+
+    def test_filter_withdrawn_preprint(self, app, url, user, project_one, provider_one, provider_two):
+        preprint_one = PreprintFactory(is_published=False, creator=user, project=project_one, provider=provider_one)
+        preprint_one.date_withdrawn = timezone.now()
+        preprint_one.is_public = True
+        preprint_one.is_published = True
+        preprint_one.date_published = timezone.now()
+        preprint_one.machine_state = 'accepted'
+        assert preprint_one.ever_public is False
+        # Putting this preprint in a weird state, is verified_publishable, but has been
+        # withdrawn and ever_public is False.  This is to isolate withdrawal portion of query
+        preprint_one.save()
+
+        preprint_two = PreprintFactory(creator=user, project=project_one, provider=provider_two)
+        preprint_two.date_withdrawn = timezone.now()
+        preprint_two.ever_public = True
+        preprint_two.save()
+
+        # Unauthenticated can only see withdrawn preprints that have been public
+        expected = [preprint_two._id]
+        res = app.get(url)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Noncontribs can only see withdrawn preprints that have been public
+        user2 = AuthUserFactory()
+        expected = [preprint_two._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # contribs can only see withdrawn preprints that have been public
+        user2 = AuthUserFactory()
+        preprint_one.add_contributor(user2, 'read')
+        preprint_two.add_contributor(user2, 'read')
+        expected = [preprint_two._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        expected = [preprint_two._id]
+        # Admins can only see withdrawn preprints that have been public
+        res = app.get(url, auth=user.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
 
 
 class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin):
@@ -100,6 +146,7 @@ class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin):
             provider=provider_one,
             subjects=[[subject._id]],
             project=project_published,
+            machine_state='pending',
             is_published=False)
 
     def test_unpublished_visible_to_admins(
@@ -157,10 +204,11 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
             self, app, project, preprint, url):
         res = app.get(url)
         assert len(res.json['data']) == 1
-        project.is_public = False
-        project.save()
-        res = app.get(url, expect_errors=True)
-        assert res.status_code == 401
+        preprint.is_public = False
+        preprint.save()
+        res = app.get(url)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
 
     # test override: custom exception checks because of node permission
     # failures
@@ -168,10 +216,11 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
             self, app, user_non_contrib, project, preprint, url):
         res = app.get(url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 1
-        project.is_public = False
-        project.save()
+        preprint.is_public = False
+        preprint.save()
         res = app.get(url, auth=user_non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
 
     # test override: custom exception checks because of node permission
     # failures
@@ -180,6 +229,7 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
             user_non_contrib, project, preprint, url):
         project.is_deleted = True
         project.save()
+
         # no auth
         res = app.get(url, expect_errors=True)
         assert res.status_code == 410
@@ -192,3 +242,44 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
         # admin
         res = app.get(url, auth=user_admin_contrib.auth, expect_errors=True)
         assert res.status_code == 410
+
+        project.is_deleted = False
+        project.save()
+        preprint.deleted = timezone.now()
+        preprint.save()
+        # no auth
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+        # contrib
+        res = app.get(url, auth=user_non_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+        # write_contrib
+        res = app.get(url, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+        # admin
+        res = app.get(url, auth=user_admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+
+    def test_preprint_node_null_invisible(
+            self, app,
+            user_admin_contrib, user_write_contrib,
+            user_non_contrib, preprint, url):
+        preprint.node = None
+        preprint.save()
+
+        # unauth
+        res = app.get(url)
+        assert len(res.json['data']) == 0
+        # non_contrib
+        res = app.get(url, auth=user_non_contrib.auth)
+        assert len(res.json['data']) == 0
+        # write_contrib
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 0
+        # admin
+        res = app.get(url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 0
