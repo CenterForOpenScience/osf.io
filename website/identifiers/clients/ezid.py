@@ -79,9 +79,9 @@ class EzidClient(BaseClient, DataCiteClient):
         return utils.from_anvl(resp.content)
 
     def get_status(self, object):
-        from osf.models import PreprintService
+        from osf.models import Preprint
 
-        if isinstance(object, PreprintService):
+        if isinstance(object, Preprint):
             status = 'public' if object.verified_publishable else 'unavailable'
         else:
             status = 'public' if object.is_public or not object.is_deleted else 'unavailable'

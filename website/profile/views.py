@@ -149,12 +149,22 @@ def update_user(auth):
                     message_long='Invalid Email')
                 )
             except BlacklistedEmailError:
+                sentry.log_message(
+                    'User attempted to add a blacklisted email',
+                    extra_data={
+                        'user_id': user.id,
+                        'address': address,
+                    }
+                )
                 raise HTTPError(http.BAD_REQUEST, data=dict(
                     message_long=language.BLACKLISTED_EMAIL)
                 )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+                if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                    raise HTTPError(httplib.BAD_REQUEST,
+                                    data={'message_long': 'Too many requests. Please wait a while before adding an email to your account.'})
                 send_confirm_email(user, email=address)
 
         ############
