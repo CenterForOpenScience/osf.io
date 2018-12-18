@@ -2331,10 +2331,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
+    """
+    Direct Foreign Key Table for guardian - User models - we typically add object
+    perms directly to Django groups instead of users, so this will be used infrequently
+    """
     content_object = models.ForeignKey(AbstractNode, on_delete=models.CASCADE)
 
 
 class NodeGroupObjectPermission(GroupObjectPermissionBase):
+    """
+    Direct Foreign Key Table for guardian - Group models. Makes permission checks faster.
+
+    This table gives a Django group a particular permission to an AbstractNode.
+    For example, every time a node is created, an admin, write, and read Django group
+    are created for the node. The "write" group has write/read perms to the node.
+
+    Those links are stored here:  content_object_id (node_id), group_id, permission_id
+    """
     content_object = models.ForeignKey(AbstractNode, on_delete=models.CASCADE)
 
 

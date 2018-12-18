@@ -497,11 +497,6 @@ class TestOSFGroup:
         with pytest.raises(ValueError):
             project.get_osf_groups_with_perms('crazy')
 
-    def test_belongs_to_osfgroup_property(self, manager, member, user_two, osf_group):
-        assert osf_group.belongs_to_osfgroup(manager) is True
-        assert osf_group.belongs_to_osfgroup(member) is True
-        assert osf_group.belongs_to_osfgroup(user_two) is False
-
     def test_node_object_can_view_osfgroups(self, manager, member, project, osf_group):
         project.add_contributor(member, ADMIN, save=True)  # Member is explicit admin contributor on project
         child = NodeFactory(parent=project, creator=manager)  # Member is implicit admin on child
