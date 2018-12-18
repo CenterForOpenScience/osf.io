@@ -409,7 +409,6 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         :param role: Member/Manager role
         :return Boolean
         """
-
         if not user:
             return False
         has_role = user.has_perm('{}_group'.format(role), self)

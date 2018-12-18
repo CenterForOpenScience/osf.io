@@ -1,4 +1,5 @@
 from copy import deepcopy
+from distutils.version import StrictVersion
 
 from django.db.models import Q, Exists, OuterRef
 from guardian.shortcuts import get_objects_for_user
@@ -7,7 +8,7 @@ from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
 from api.base.filters import ListFilterMixin
 from api.base import utils
 
-from osf.models import NodeRelation, AbstractNode, Preprint
+from osf.models import AbstractNode, NodeRelation, Node, Preprint
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 
 
@@ -82,14 +83,18 @@ class UserNodesFilterMixin(NodesFilterMixin):
             if operation['value'] not in API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
             perm = operation['value']
-            user = self.get_user()
-            if perm == READ:
-                query = Q(id__in=get_objects_for_user(user, 'read_node', AbstractNode, with_superuser=False).values_list('id', flat=True))
+            user = self.request.user
+
+            if user.is_anonymous:
+                query = Q() if StrictVersion(self.request.version) < StrictVersion('2.11') else Q(id__in=[])
+            elif perm == READ:
+                query = Q(id__in=self.build_node_list(user, 'read_node'))
             elif perm == WRITE:
-                query = Q(id__in=get_objects_for_user(user, 'write_node', AbstractNode, with_superuser=False).values_list('id', flat=True))
+                query = Q(id__in=self.build_node_list(user, 'write_node'))
             elif perm == ADMIN:
-                query = Q(id__in=get_objects_for_user(user, 'admin_node', AbstractNode, with_superuser=False).values_list('id', flat=True))
-            else:
-                raise InvalidFilterValue(value=operation['value'])
+                query = Q(id__in=self.build_node_list(user, 'admin_node'))
             return query
         return super(UserNodesFilterMixin, self).build_query_from_field(field_name, operation)
+
+    def build_node_list(self, user, perm):
+        return get_objects_for_user(user, perm, Node, with_superuser=False).values_list('id', flat=True)
