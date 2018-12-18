@@ -237,7 +237,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         old_tags = set(preprint.tags.values_list('name', flat=True))
-        if validated_data.get('tags'):
+        if 'tags' in validated_data:
             current_tags = set(validated_data.pop('tags', []))
         elif self.partial:
             current_tags = set(old_tags)
