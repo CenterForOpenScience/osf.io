@@ -7,7 +7,7 @@ var Raven = require('raven-js');
 var verify = function (params) {
     $('#btn-verify').attr('disabled', true);
     $('#btn-addtimestamp').attr('disabled', true);
-    $('#timestamp_errors_spinner').text('Storage files list gathering ...');
+    $('#timestamp_errors_spinner .fg-load-message').text('Storage files list gathering ...');
     $('#timestamp_errors_spinner').show();
 
     var postData = {};
@@ -38,6 +38,7 @@ var verify = function (params) {
                     'version': fileList[j].version
                 };
                 $.ajax({
+                    async: false,
                     url:  params.urlVerifyData,
                     data: postData,
                     dataType: 'json',
@@ -99,9 +100,10 @@ var add = function (params) {
 
     $('#btn-verify').attr('disabled', true);
     $('#btn-addtimestamp').attr('disabled', true);
-    $('#timestamp_errors_spinner').text('Addtimestamp loading ...');
+    $('#timestamp_errors_spinner .fg-load-message').text('Addtimestamp loading ...');
     $('#timestamp_errors_spinner').show();
 
+    setTimeout(function(){
     var successCnt = 0;
     for (var i = 0; i < fileList.length; i++) {
         var post_data = {
@@ -112,15 +114,16 @@ var add = function (params) {
             'version': fileList[i].version
         };
         $.ajax({
+            async: false,
             url: params.url,
             data: post_data,
             dataType: 'json',
             method: params.method
         }).done(function () {
             successCnt++;
-            $('#timestamp_errors_spinner').text('Adding Timestamp files : ' + successCnt + ' / ' + fileList.length + ' ...');
+            $('#timestamp_errors_spinner .fg-load-message').text('Adding Timestamp files : ' + successCnt + ' / ' + fileList.length + ' ...');
             if (successCnt === fileList.length) {
-                $('#timestamp_errors_spinner').text('Added Timestamp (100%) and Refreshing...');
+                $('#timestamp_errors_spinner .fg-load-message').text('Added Timestamp (100%) and Refreshing...');
                 window.location.reload();
             }
         }).fail(function (xhr, status, error) {
@@ -136,6 +139,7 @@ var add = function (params) {
             $('#timestamp_errors_spinner').text('Error : Timestamp Add Failed');
         });
     }
+    }, 1);
 };
 
 module.exports = {
