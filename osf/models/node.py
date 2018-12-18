@@ -794,19 +794,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to add an OSF Group.')
         group.add_group_to_node(self, permission, auth)
-        # TODO Log that osf_group was added to project
 
     def update_osf_group(self, group, permission='write', auth=None):
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to add an OSF Group.')
         group.update_group_permissions_to_node(self, permission, auth)
-        # TODO Log that osf_group's permissions were updated
 
     def remove_osf_group(self, group, auth=None):
         if auth and not (self.has_permission(auth.user, ADMIN) or group.has_permission(auth.user, 'manage')):
             raise PermissionsError('Must be an admin or an OSF Group manager to remove an OSF Group.')
         group.remove_group_from_node(self, auth)
-        # TODO Log that osf_group was removed from project
 
     @property
     def osf_groups(self):
