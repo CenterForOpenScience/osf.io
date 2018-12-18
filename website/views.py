@@ -68,6 +68,22 @@ def serialize_contributors_for_summary(node, max_count=3):
         'others_count': others_count,
     }
 
+def serialize_groups_for_summary(node):
+    groups = node.osf_groups
+    n_groups = len(groups)
+    group_string = ''
+    for index, group in enumerate(groups):
+        if index == n_groups - 1:
+            separator = ''
+        elif index == n_groups - 2:
+            separator = ' & '
+        else:
+            separator = ', '
+
+        group_string = group_string + group.name + separator
+
+    return group_string
+
 
 def serialize_node_summary(node, auth, primary=True, show_path=False):
     is_registration = node.is_registration
@@ -125,6 +141,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'show_path': show_path,
             'contributors': contributor_data['contributors'],
             'others_count': contributor_data['others_count'],
+            'groups': serialize_groups_for_summary(node),
             'description': node.description if len(node.description) <= 150 else node.description[0:150] + '...',
         })
     else:
@@ -254,22 +271,22 @@ def resolve_guid(guid, suffix=None):
         if suffix and suffix.rstrip('/').lower() == 'download':
             file_referent = None
             if isinstance(referent, Preprint) and referent.primary_file:
-                if not referent.is_published:
+                file_referent = referent.primary_file
+            elif isinstance(referent, BaseFileNode) and referent.is_file:
+                file_referent = referent
+
+            if file_referent:
+                if isinstance(file_referent.target, Preprint) and not file_referent.target.is_published:
                     # TODO: Ideally, permissions wouldn't be checked here.
                     # This is necessary to prevent a logical inconsistency with
                     # the routing scheme - if a preprint is not published, only
                     # admins and moderators should be able to know it exists.
                     auth = Auth.from_kwargs(request.args.to_dict(), {})
                     # Check if user isn't a nonetype or that the user has admin/moderator/superuser permissions
-                    if auth.user is None or not (auth.user.has_perm('view_submissions', referent.provider) or
-                            referent.has_permission(auth.user, permissions.ADMIN)):
+                    if auth.user is None or not (auth.user.has_perm('view_submissions', file_referent.target.provider) or
+                            file_referent.target.has_permission(auth.user, permissions.ADMIN)):
                         raise HTTPError(http.NOT_FOUND)
 
-                file_referent = referent.primary_file
-            elif isinstance(referent, BaseFileNode) and referent.is_file:
-                file_referent = referent
-
-            if file_referent:
                 # Extend `request.args` adding `action=download`.
                 request.args = request.args.copy()
                 request.args.update({'action': 'download'})

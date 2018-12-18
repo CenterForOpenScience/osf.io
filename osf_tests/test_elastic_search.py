@@ -20,6 +20,7 @@ from website.search_migration.migrate import migrate
 from osf.models import (
     Retraction,
     NodeLicense,
+    OSFGroup,
     Tag,
     Preprint,
     QuickFilesNode,
@@ -401,6 +402,77 @@ class TestProject(OsfTestCase):
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
+class TestOSFGroup(OsfTestCase):
+
+    def setUp(self):
+        with run_celery_tasks():
+            super(TestOSFGroup, self).setUp()
+            search.delete_index(elastic_search.INDEX)
+            search.create_index(elastic_search.INDEX)
+            self.user = factories.UserFactory(fullname='John Deacon')
+            self.user_two = factories.UserFactory(fullname='Grapes McGee')
+            self.group = OSFGroup(
+                name='Cornbread',
+                creator=self.user,
+            )
+            self.group.save()
+            self.project = factories.ProjectFactory(is_public=True, creator=self.user, title='Biscuits')
+            self.project.save()
+
+    def test_create_osf_group(self):
+        title = 'Butter'
+        group = OSFGroup(name=title, creator=self.user)
+        group.save()
+        docs = query(title)['results']
+        assert_equal(len(docs), 1)
+
+    def test_set_group_name(self):
+        title = 'Eggs'
+        self.group.set_group_name(title)
+        self.group.save()
+        docs = query(title)['results']
+        assert_equal(len(docs), 1)
+
+        docs = query('Cornbread')['results']
+        assert_equal(len(docs), 0)
+
+    def test_add_member(self):
+        self.group.make_member(self.user_two)
+        docs = query('category:group AND "{}"'.format(self.user_two.fullname))['results']
+        assert_equal(len(docs), 1)
+
+        self.group.make_manager(self.user_two)
+        docs = query('category:group AND "{}"'.format(self.user_two.fullname))['results']
+        assert_equal(len(docs), 1)
+
+        self.group.remove_member(self.user_two)
+        docs = query('category:group AND "{}"'.format(self.user_two.fullname))['results']
+        assert_equal(len(docs), 0)
+
+    def test_connect_to_node(self):
+        self.project.add_osf_group(self.group)
+        docs = query('category:project AND "{}"'.format(self.group.name))['results']
+        assert_equal(len(docs), 1)
+
+        self.project.remove_osf_group(self.group)
+        docs = query('category:project AND "{}"'.format(self.group.name))['results']
+        assert_equal(len(docs), 0)
+
+    def test_remove_group(self):
+        group_name = self.group.name
+        self.project.add_osf_group(self.group)
+        docs = query('category:project AND "{}"'.format(group_name))['results']
+        assert_equal(len(docs), 1)
+
+        self.group.remove_group()
+        docs = query('category:project AND "{}"'.format(group_name))['results']
+        assert_equal(len(docs), 0)
+        docs = query(group_name)['results']
+        assert_equal(len(docs), 0)
+
+
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestPreprint(OsfTestCase):
 
     def setUp(self):
@@ -411,6 +483,7 @@ class TestPreprint(OsfTestCase):
             self.user = factories.UserFactory(fullname='John Deacon')
             self.preprint = Preprint(
                 title='Red Special',
+                description='We are the champions',
                 creator=self.user,
                 provider=factories.PreprintProviderFactory()
             )
@@ -421,7 +494,11 @@ class TestPreprint(OsfTestCase):
                 name='panda.txt',
                 materialized_path='/panda.txt')
             self.file.save()
-            self.published_preprint = factories.PreprintFactory(creator=self.user)
+            self.published_preprint = factories.PreprintFactory(
+                creator=self.user,
+                title='My Fairy King',
+                description='You take my breath away',
+            )
 
     def test_new_preprint_unsubmitted(self):
         # Verify that an unsubmitted preprint is not present in Elastic Search.
@@ -459,7 +536,7 @@ class TestPreprint(OsfTestCase):
 
     def test_preprint_title_change(self):
         title_original = self.published_preprint.title
-        new_title = 'My new preprint title'
+        new_title = 'Pancakes'
         self.published_preprint.set_title(new_title, auth=Auth(self.user), save=True)
         docs = query('category:preprint AND ' + title_original)['results']
         assert_equal(len(docs), 0)

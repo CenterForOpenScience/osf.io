@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0149_add_guardian_to_nodes'),
+        ('osf', '0154_add_guardian_to_nodes'),
     ]
 
     operations = [

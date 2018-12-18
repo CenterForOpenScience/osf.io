@@ -17,8 +17,10 @@ class TestOSFGroupsView(AdminTestCase):
     def setUp(self):
         super(TestOSFGroupsView, self).setUp()
         self.user = UserFactory()
+        self.user_two = UserFactory()
         self.project = ProjectFactory()
         self.group = OSFGroupFactory(name='test', creator=self.user)
+        self.group.make_member(self.user_two)
         self.group.add_group_to_node(self.project)
         self.group.save()
         self.request = RequestFactory().post('/fake_path')
@@ -30,14 +32,16 @@ class TestOSFGroupsView(AdminTestCase):
         group = view.get_object()
 
         nt.assert_equal(self.group.name, group['name'])
-        nt.assert_equal(self.user, group['creator'])
+        nt.assert_equal(self.user.fullname, group['creator']['name'])
         nt.assert_equal(len(group['members']), 1)
-        nt.assert_equal(group['members'][0]['username'], self.user.username)
-        nt.assert_equal(group['members'][0]['id'], self.user._id)
+        nt.assert_equal(group['members'][0]['name'], self.user_two.fullname)
+        nt.assert_equal(group['members'][0]['id'], self.user_two._id)
         nt.assert_equal(len(group['managers']), 1)
-        nt.assert_equal(group['managers'][0]['username'], self.user.username)
+        nt.assert_equal(group['managers'][0]['name'], self.user.fullname)
         nt.assert_equal(group['managers'][0]['id'], self.user._id)
         nt.assert_equal([serialize_node_for_groups(self.project, self.group)], group['nodes'])
+        nt.assert_equal(group['nodes'][0]['title'], self.project.title)
+        nt.assert_equal(group['nodes'][0]['permission'], 'write')
 
 
 class TestOSFGroupsListView(AdminTestCase):

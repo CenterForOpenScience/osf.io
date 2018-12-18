@@ -54,22 +54,6 @@ class PreprintContributor(AbstractBaseContributor):
     @property
     def permission(self):
         return get_contributor_permission(self, self.preprint.id, 'preprint')
-        # Checking group membership instead of permissions since unregistered
-        # contributors technically have no permissions
-        preprint_id = self.preprint.id
-        user = self.user
-        read = 'preprint_{}_read'.format(preprint_id)
-        write = 'preprint_{}_write'.format(preprint_id)
-        admin = 'preprint_{}_admin'.format(preprint_id)
-        user_groups = user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
-        if admin in user_groups:
-            return 'admin'
-        elif write in user_groups:
-            return 'write'
-        elif read in user_groups:
-            return 'read'
-        else:
-            return None
 
     class Meta:
         unique_together = ('user', 'preprint')
@@ -94,20 +78,27 @@ class RecentlyAddedContributor(models.Model):
         unique_together = ('user', 'contributor')
 
 def get_contributor_permission(contributor, object_id, model_type):
-        read = '{}_{}_read'.format(model_type, object_id)
-        write = '{}_{}_write'.format(model_type, object_id)
-        admin = '{}_{}_admin'.format(model_type, object_id)
-        user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
-        if admin in user_groups:
-            return 'admin'
-        elif write in user_groups:
-            return 'write'
-        elif read in user_groups:
-            return 'read'
-        else:
-            return None
+    """
+    Returns a contributor's permissions - perms through contributorship only. No group membership.
+    Checking group membership so you will get the intended permission of an unregistered contrib
+    """
+    read = '{}_{}_read'.format(model_type, object_id)
+    write = '{}_{}_write'.format(model_type, object_id)
+    admin = '{}_{}_admin'.format(model_type, object_id)
+    user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
+    if admin in user_groups:
+        return 'admin'
+    elif write in user_groups:
+        return 'write'
+    elif read in user_groups:
+        return 'read'
+    else:
+        return None
 
-def get_contributor_permissions(contributor, as_list=True, node=None):
+def get_contributor_or_group_member_permissions(contributor, as_list=True, node=None):
+    """
+    Returns a user's perms to the node - can be through contributorship or group membership
+    """
     # Can pull permissions off of contributor object, or user/node can be passed in
     if isinstance(contributor, Contributor):
         node = contributor.node

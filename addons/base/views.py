@@ -331,6 +331,8 @@ def get_auth(auth, **kwargs):
     # TODO: Add a signal here?
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
         user = auth.user
+        # Don't have to use is_contributor_or_group_members, because preprints
+        # don't have OSF groups
         if isinstance(node, Preprint) and not node.is_contributor(user):
             metric_class = get_metric_class_for_action(action)
             if metric_class:
@@ -662,6 +664,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
             'file_path': file_path,
             'file_name_title': file_name_title,
             'file_name_ext': file_name_ext,
+            'target_deleted': getattr(target, 'is_deleted', False),
             'version_id': None,
             'file_guid': file_guid,
             'file_id': file_node._id,

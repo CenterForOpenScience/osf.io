@@ -20,7 +20,7 @@
           ${render_nodes.render_nodes(nodes=node['registrations'], sortable=False, user=user, pluralized_node_type='registrations', show_path=False, include_js=True)}
     ## Uncomment to disable registering Components
     ##% elif node['node_type'] != 'project':
-    ##      %if user['is_admin_parent']:
+    ##      %if user['is_admin_parent_contributor']:
     ##          To register this component, you must <a href="${parent_node['url']}registrations"><b>register its parent project</b></a> (<a href="${parent_node['url']}">${parent_node['title']}</a>).
     ##      %else:
     ##          There have been no registrations of the parent project (<a href="${parent_node['url']}">${parent_node['title']}</a>).
@@ -35,7 +35,7 @@
           % endif
           <p>For a list of the most viewed and most recent public registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.</p>
         % endif
-        %if parent_node['exists'] and user['is_admin_parent']:
+        %if parent_node['exists'] and user['is_admin_parent_contributor']:
         <br />
         <br />
         To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a>

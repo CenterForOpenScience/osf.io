@@ -9,16 +9,20 @@ from django.contrib.contenttypes.models import ContentType
 
 def reverse_func(state, schema):
     preprint_content_type = ContentType.objects.get(app_label='osf', model='preprint')
-    collections = Collection.objects.filter(collected_types__in=[preprint_content_type.id])
-    for collection in collections:
-        collection.collected_types.remove(preprint_content_type)
+    ThroughModel = Collection.collected_types.through
+    ThroughModel.objects.filter(contenttype_id=preprint_content_type.id).delete()
 
 
 def add_preprint_type_to_collections(state, schema):
-    preprint_content_type = ContentType.objects.get(app_label='osf', model='preprint')
-    collections = Collection.objects.exclude(collected_types__in=[preprint_content_type.id])
+    ThroughModel = Collection.collected_types.through
+    preprint_ct_id = ContentType.objects.get(app_label='osf', model='preprint').id
+
+    through_objects = []
+    collections = Collection.objects.exclude(collected_types__in=[preprint_ct_id])
     for collection in collections:
-        collection.collected_types.add(preprint_content_type)
+        through_objects.append(ThroughModel(collection_id=collection.id, contenttype_id=preprint_ct_id))
+
+    ThroughModel.objects.bulk_create(through_objects)
 
 
 class Migration(migrations.Migration):

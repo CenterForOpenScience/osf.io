@@ -95,7 +95,7 @@ class TestContributorDetail:
     #   test_get_private_node_osf_group_member
         group_mem = AuthUserFactory()
         osf_group = OSFGroupFactory(creator=group_mem)
-        project_private.add_osf_group(osf_group, 'read')
+        project_private.add_osf_group(osf_group, permissions.READ)
         res = app.get(url_private, auth=group_mem.auth)
         assert res.status_code == 200
         assert res.json['data']['id'] == '{}-{}'.format(
@@ -158,6 +158,24 @@ class TestContributorDetail:
         assert res.json['data']['embeds']['users']['data']['attributes']['full_name'] == 'Rheisen Dennis'
         assert res.json['data']['attributes'].get(
             'unregistered_contributor') == 'Nesiehr Sinned'
+
+    def test_node_contributor_detail_serializes_contributor_perms(self, app, user):
+        project = ProjectFactory(creator=user, is_public=True)
+        user_two = AuthUserFactory()
+        project.add_contributor(user_two, 'write')
+        project.save()
+
+        osf_group = OSFGroupFactory(creator=user)
+        osf_group.make_member(user_two)
+        project.add_osf_group(osf_group, 'admin')
+
+        url = '/{}nodes/{}/contributors/{}/'.format(
+            API_BASE, project._id, user_two._id)
+        res = app.get(url, auth=user.auth)
+        # Even though user_two has admin perms through group membership,
+        # contributor endpoints return contributor permissions
+        assert res.json['data']['attributes']['permission'] == 'write'
+        assert project.has_permission(user_two, 'admin') is True
 
     def test_detail_includes_index(
             self,
@@ -587,7 +605,7 @@ class TestNodeContributorUpdate:
             expect_errors=True)
         assert res.status_code == 400
         assert project.get_permissions(contrib) == [
-            'read_node', 'write_node']
+            permissions.READ, permissions.WRITE]
         assert project.get_visible(contrib)
 
     #   test_change_contributor_not_logged_in
@@ -606,7 +624,7 @@ class TestNodeContributorUpdate:
 
         project.reload()
         assert project.get_permissions(contrib) == [
-            'read_node', 'write_node']
+            permissions.READ, permissions.WRITE]
         assert project.get_visible(contrib)
 
     #   test_change_contributor_non_admin_auth
@@ -628,7 +646,7 @@ class TestNodeContributorUpdate:
 
         project.reload()
         assert project.get_permissions(contrib) == [
-            'read_node', 'write_node']
+            permissions.READ, permissions.WRITE]
         assert project.get_visible(contrib)
 
     #   test_change_contributor_non_admin_osf_group_member_auth
@@ -653,7 +671,7 @@ class TestNodeContributorUpdate:
 
         project.reload()
         assert project.get_permissions(contrib) == [
-            'read_node', 'write_node']
+            permissions.READ, permissions.WRITE]
         assert project.get_visible(contrib)
 
     def test_change_admin_self_without_other_admin(
@@ -677,7 +695,7 @@ class TestNodeContributorUpdate:
 
         project.reload()
         assert project.get_permissions(user) == [
-            'read_node', 'write_node', 'admin_node']
+            permissions.READ, permissions.WRITE, permissions.ADMIN]
 
     def test_node_update_invalid_data(self, app, user, url_creator):
         res = app.put_json_api(
@@ -781,7 +799,7 @@ class TestNodeContributorUpdate:
 
             project.reload()
             assert project.get_permissions(contrib) == [
-                'read_node', 'write_node', 'admin_node']
+                permissions.READ, permissions.WRITE, permissions.ADMIN]
 
         with assert_latest_log(NodeLog.PERMISSIONS_UPDATED, project):
             data = {
@@ -801,7 +819,7 @@ class TestNodeContributorUpdate:
 
             project.reload()
             assert project.get_permissions(contrib) == [
-                'read_node', 'write_node']
+                permissions.READ, permissions.WRITE]
 
         with assert_latest_log(NodeLog.PERMISSIONS_UPDATED, project):
             data = {
@@ -820,7 +838,7 @@ class TestNodeContributorUpdate:
             assert attributes['permission'] == permissions.READ
 
             project.reload()
-            assert project.get_permissions(contrib) == ['read_node']
+            assert project.get_permissions(contrib) == [permissions.READ]
 
     def test_change_contributor_bibliographic(
             self, app, user, contrib, project, url_contrib):
@@ -882,7 +900,7 @@ class TestNodeContributorUpdate:
             assert not attributes['bibliographic']
 
             project.reload()
-            assert project.get_permissions(contrib) == ['read_node']
+            assert project.get_permissions(contrib) == [permissions.READ]
             assert not project.get_visible(contrib)
 
     # @assert_not_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
@@ -908,7 +926,7 @@ class TestNodeContributorUpdate:
 
             project.reload()
             assert project.get_permissions(contrib) == [
-                'read_node', 'write_node']
+                permissions.READ, permissions.WRITE]
             assert project.get_visible(contrib)
 
     def test_change_admin_self_with_other_admin(
@@ -933,7 +951,7 @@ class TestNodeContributorUpdate:
 
             project.reload()
             assert project.get_permissions(user) == [
-                'read_node', 'write_node']
+                permissions.READ, permissions.WRITE]
 
 
 @pytest.mark.django_db
@@ -979,7 +997,7 @@ class TestNodeContributorPartialUpdate:
         assert res.status_code == 200
         project.reload()
         assert project.get_permissions(user) == [
-            'read_node', 'write_node', 'admin_node']
+            permissions.READ, permissions.WRITE, permissions.ADMIN]
         assert not project.get_visible(user)
 
     def test_patch_permission_only(self, app, user, project):
@@ -1004,7 +1022,7 @@ class TestNodeContributorPartialUpdate:
         res = app.patch_json_api(url_read_contrib, data, auth=user.auth)
         assert res.status_code == 200
         project.reload()
-        assert project.get_permissions(user_read_contrib) == ['read_node']
+        assert project.get_permissions(user_read_contrib) == [permissions.READ]
         assert not project.get_visible(user_read_contrib)
 
 
@@ -1058,7 +1076,7 @@ class TestNodeContributorDelete:
     #   test_remove_contributor_osf_group_member_read
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        project.add_osf_group(group, 'read')
+        project.add_osf_group(group, permissions.READ)
         res = app.delete(
             url_user_write_contrib,
             auth=group_mem.auth,

@@ -788,7 +788,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_private.reload()
             assert user_two in project_private.contributors
             assert project_private.get_permissions(user_two) == [
-                'read_node', 'write_node', 'admin_node']
+                'read', 'write', 'admin']
 
     def test_adds_write_contributor_private_project_admin(
             self, app, user, user_two, project_private, url_private):
@@ -818,7 +818,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_private.reload()
             assert user_two in project_private.contributors
             assert project_private.get_permissions(
-                user_two) == ['read_node', 'write_node']
+                user_two) == ['read', 'write']
 
     def test_adds_read_contributor_private_project_admin(
             self, app, user, user_two, project_private, url_private):
@@ -848,7 +848,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_private.reload()
             assert user_two in project_private.contributors
             assert project_private.get_permissions(user_two) == [
-                'read_node']
+                'read']
 
     def test_adds_invalid_permission_contributor_private_project_admin(
             self, app, user, user_two, project_private, url_private):
@@ -2111,7 +2111,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
+        assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
@@ -2529,7 +2529,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
+        assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']

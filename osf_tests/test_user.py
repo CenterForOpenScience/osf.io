@@ -26,7 +26,7 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFGroup, OSFUser, Tag, Contributor, Session
+from osf.models import AbstractNode, OSFUser, OSFGroup, Tag, Contributor, Session, BlacklistedEmailDomain
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
@@ -221,6 +221,30 @@ class TestOSFUser:
         assert project.get_visible(user) is True
         assert project.is_contributor(user2) is False
 
+    def test_merged_user_group_member_permissions_are_ignored(self, user):
+        user2 = UserFactory.build()
+        user2.save()
+        group = OSFGroupFactory(creator=user2)
+
+        project = ProjectFactory(is_public=True)
+        project.add_osf_group(group, 'admin')
+        assert project.has_permission(user2, 'admin')
+        # Both the master and dupe are contributors
+        project.add_contributor(user2, log=False)
+        project.add_contributor(user, log=False)
+        project.set_permissions(user=user, permissions='read')
+        project.set_permissions(user=user2, permissions='write')
+        project.save()
+        user.merge_user(user2)
+        user.save()
+        project.reload()
+
+        assert project.has_permission(user, 'admin') is True
+        assert project.is_admin_contributor(user) is False
+        assert project.is_contributor(user2) is False
+        assert group.is_member(user) is True
+        assert group.is_member(user2) is False
+
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given
         with pytest.raises(ValidationError):
@@ -239,6 +263,7 @@ class TestOSFUser:
             u.save()
 
     def test_add_blacklisted_domain_unconfirmed_email(self, user):
+        BlacklistedEmailDomain.objects.get_or_create(domain='mailinator.com')
         with pytest.raises(BlacklistedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
         assert str(e.value) == 'Invalid Email'
@@ -1309,7 +1334,7 @@ class TestMergingUsers:
         project.save()
         merge_dupe()  # perform the merge
 
-        assert project.get_permissions(master) == ['read_node', 'write_node', 'admin_node']
+        assert project.get_permissions(master) == ['read', 'write', 'admin']
 
     def test_merge_user_with_lower_permissions_on_project(self, master, dupe, merge_dupe):
         # Both master and dupe are contributors on the same project
@@ -1320,7 +1345,7 @@ class TestMergingUsers:
         project.save()
         merge_dupe()  # perform the merge
 
-        assert project.get_permissions(master) == ['read_node', 'write_node', 'admin_node']
+        assert project.get_permissions(master) == ['read', 'write', 'admin']
 
     def test_merge_user_into_self_fails(self, master):
         with pytest.raises(ValueError):

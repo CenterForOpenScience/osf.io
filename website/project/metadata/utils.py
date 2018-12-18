@@ -267,7 +267,7 @@ COMMENTS_SCHEMA = {
             'getAuthor': {'type': 'string'},
             'user': {
                 'type': 'object',
-                'additionalProperties': False,
+                'additionalProperties': True,
                 'properties': {
                     'fullname': {'type': 'string'},
                     'id': {'type': 'integer'}

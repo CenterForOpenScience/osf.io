@@ -558,7 +558,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def osf_groups(self):
         OSFGroup = apps.get_model('osf.OSFGroup')
-        return get_objects_for_user(self, 'member_group', OSFGroup)
+        return get_objects_for_user(self, 'member_group', OSFGroup, with_superuser=False)
 
     def group_role(self, group):
         if group.is_manager(self):
@@ -781,10 +781,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # transfer group membership
         for group in user.osf_groups:
-            if group.has_permission(user, 'manage'):
-                group.make_manager(self)
-            else:
-                group.make_member(self)
+            if not group.is_manager(self):
+                if group.has_permission(user, 'manage'):
+                    group.make_manager(self)
+                else:
+                    group.make_member(self)
+            group.remove_member(user)
 
         # finalize the merge
 
@@ -1467,7 +1469,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         account. Return ``None`` if there is no unclaimed_record for the given
         project ID.
 
-        :param project_id: The project ID for the unclaimed record
+        :param project_id: The project ID/preprint ID/OSF group ID for the unclaimed record
         :raises: ValueError if a record doesn't exist for the given project ID
         :rtype: dict
         :returns: The unclaimed record for the project

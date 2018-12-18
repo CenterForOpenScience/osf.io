@@ -287,7 +287,7 @@ def project_manage_contributors(auth, node, **kwargs):
 
     # If user has removed herself from project, alert; redirect to
     # node summary if node is public, else to user's dashboard page
-    if not node.is_contributor(auth.user):
+    if not node.is_contributor_or_group_member(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
             kind='success',
@@ -349,7 +349,7 @@ def project_remove_contributor(auth, **kwargs):
 
         # On parent node, if user has removed herself from project, alert; redirect to
         # node summary if node is public, else to user's dashboard page
-        if not node.is_contributor(auth.user) and node_id == parent_id:
+        if not node.is_contributor_or_group_member(auth.user) and node_id == parent_id:
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
                 kind='success',
@@ -665,7 +665,7 @@ def check_external_auth(user):
 
 @block_bing_preview
 @collect_auth
-@must_be_valid_project(groups_valid=True)
+@must_be_valid_project(preprints_valid=True, groups_valid=True)
 def claim_user_registered(auth, node, **kwargs):
     """
     View that prompts user to enter their password in order to claim being a contributor on a project.

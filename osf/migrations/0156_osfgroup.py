@@ -12,7 +12,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0150_remove_contributor_permission_fields'),
+        ('osf', '0155_remove_contributor_permission_fields'),
     ]
 
     operations = [
@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
             ],
             options={
-                'permissions': (('member_group', 'Has group membership'), ('manage_group', 'Can manage group membership'),),
+                'permissions': (('view_group', 'Can view group details'), ('member_group', 'Has group membership'), ('manage_group', 'Can manage group membership'),),
             },
         ),
         migrations.CreateModel(
@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.AlterUniqueTogether(
-            name='preprintgroupobjectpermission',
+            name='osfgroupgroupobjectpermission',
             unique_together=set([('group', 'permission', 'content_object')]),
         ),
         migrations.AlterUniqueTogether(

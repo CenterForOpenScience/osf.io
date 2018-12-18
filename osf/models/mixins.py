@@ -1,5 +1,4 @@
 import pytz
-import markupsafe
 import logging
 
 from django.apps import apps
@@ -8,12 +7,12 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.functional import cached_property
-from guardian.shortcuts import assign_perm, get_perms, remove_perm
+from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
 
 from include import IncludeQuerySet
 
+from addons.base.utils import disconnect_addons
 from api.providers.workflows import Workflows, PUBLIC_STATES
-from framework import status
 from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
@@ -860,7 +859,10 @@ class ContributorMixin(models.Model):
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
 
-        return user is not None and (self.has_permission(user, READ, check_parent=False) or self.contributor_class.objects.filter(**kwargs).exists())
+        if not user or user.is_anonymous:
+            return False
+
+        return (self.has_permission(user, READ, check_parent=False) or self.contributor_class.objects.filter(**kwargs).exists())
 
     def is_contributor(self, user):
         """
@@ -870,6 +872,15 @@ class ContributorMixin(models.Model):
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
         return user is not None and self.contributor_class.objects.filter(**kwargs).exists()
+
+    def is_admin_contributor(self, user):
+        """
+        Return whether ``user`` is a contributor on the node and their contributor permissions are "admin".
+        Doesn't factor in group member permissions.
+        """
+        if not user or user.is_anonymous:
+            return False
+        return self.has_permission(user, 'admin') and self.get_group('admin') in user.groups.all()
 
     def active_contributors(self, include=lambda n: True):
         for contrib in self.contributors.filter(is_active=True):
@@ -1190,17 +1201,7 @@ class ContributorMixin(models.Model):
 
         self.clear_permissions(contributor)
         # After remove callback
-        for addon in self.get_addons():
-            message = addon.after_remove_contributor(self, contributor, auth)
-            if message:
-                # Because addons can return HTML strings, addons are responsible
-                # for markupsafe-escaping any messages returned
-                status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
-                    'addon': markupsafe.escape(addon.config.full_name),
-                    'category': markupsafe.escape(self.category_display),
-                    'title': markupsafe.escape(self.title),
-                    'user': markupsafe.escape(contributor.fullname)
-                })
+        disconnect_addons(self, contributor, auth)
 
         if log:
             params = self.log_params
@@ -1431,7 +1432,7 @@ class ContributorMixin(models.Model):
             self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
 
     def has_permission(self, user, permission, check_parent=True):
-        """Check whether user has permission.
+        """Check whether user has permission, through contributorship or group membership
         :param User user: User to test
         :param str permission: Required permission
         :returns: User has required permission
@@ -1439,9 +1440,12 @@ class ContributorMixin(models.Model):
         Preprint = apps.get_model('osf.Preprint')
         object_type = 'preprint' if isinstance(self, Preprint) else 'node'
 
-        if not user:
+        if not user or user.is_anonymous:
             return False
-        has_permission = user.has_perm('{}_{}'.format(permission, object_type), self)
+        perm = '{}_{}'.format(permission, object_type)
+        # Using get_group_perms to get permissions that are inferred through
+        # group membership - not inherited from superuser status
+        has_permission = perm in get_group_perms(user, self)
         if object_type == 'node':
             if not has_permission and permission == 'read' and check_parent:
                 return self.is_admin_parent(user)
@@ -1465,11 +1469,12 @@ class ContributorMixin(models.Model):
             self.save()
 
     def set_permissions(self, user, permissions, validate=True, save=False):
-        # Ensure that user's permissions cannot be lowered if they are the only admin
+        # Ensure that user's permissions cannot be lowered if they are the only admin (
+        # - admin contributor, not admin group member)
         if isinstance(user, self.contributor_class):
             user = user.user
 
-        if validate and (self.has_permission(user, 'admin') and 'admin' not in permissions):
+        if validate and (self.is_admin_contributor(user) and 'admin' not in permissions):
             if self.get_group('admin').user_set.count() <= 1:
                 raise self.state_error('Must have at least one registered admin contributor')
         self.clear_permissions(user)

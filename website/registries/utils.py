@@ -18,23 +18,19 @@ def drafts_for_user(user, campaign=None):
     if not user or user.is_anonymous:
         return None
 
-    node_qs = get_objects_for_user(user, 'admin_node', Node).exclude(is_deleted=True)
+    node_qs = get_objects_for_user(user, 'admin_node', Node, with_superuser=False).exclude(is_deleted=True).values_list('id', flat=True)
+
+    drafts = DraftRegistration.objects.filter(
+        approval=None,
+        registered_node=None,
+        deleted__isnull=True,
+        branched_from__in=node_qs,
+        initiator=user
+    )
 
     if campaign:
-        drafts = DraftRegistration.objects.filter(
+        drafts = drafts.filter(
             registration_schema=get_campaign_schema(campaign),
-            approval=None,
-            registered_node=None,
-            deleted__isnull=True,
-            branched_from__in=list(node_qs),
-            initiator=user
         )
-    else:
-        drafts = DraftRegistration.objects.filter(
-            approval=None,
-            registered_node=None,
-            deleted__isnull=True,
-            branched_from__in=list(node_qs),
-            initiator=user
-        )
+
     return drafts

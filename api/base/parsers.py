@@ -49,6 +49,7 @@ class JSONAPIParser(JSONParser):
         if not isinstance(relationships[related_resource], dict) or related_resource == 'data':
             raise ParseError()
         data = relationships[related_resource].get('data')
+
         if not data:
             raise JSONAPIException(source={'pointer': 'data/relationships/{}/data'.format(related_resource)}, detail=NO_DATA_ERROR)
 
@@ -284,6 +285,14 @@ class SearchParser(JSONAPIParser):
                 'bool': {},
             },
         }
+
+        sort = parser_context['request'].query_params.get('sort')
+        if sort:
+            res['sort'] = [{
+                sort.lstrip('-'): {
+                    'order': 'desc' if sort.startswith('-') else 'asc',
+                },
+            }]
 
         try:
             q = data.pop('q')

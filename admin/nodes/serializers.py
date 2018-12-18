@@ -1,7 +1,7 @@
 import json
 
 from guardian.shortcuts import get_perms
-
+from osf.models import Contributor
 from osf.utils.permissions import reduce_permissions
 
 from admin.users.serializers import serialize_simple_node
@@ -38,7 +38,7 @@ def serialize_node(node):
         'is_public': node.is_public,
         'registrations': [serialize_node(registration) for registration in node.registrations.all()],
         'registered_from': node.registered_from._id if node.registered_from else None,
-        'osf_groups': [serialize_groups_for_node(node, group) for group in list(node.osf_groups.all())]
+        'osf_groups': [serialize_groups_for_node(node, group) for group in list(node.osf_groups)]
     }
 
 def serialize_log(log):
@@ -46,10 +46,13 @@ def serialize_log(log):
 
 
 def serialize_simple_user_and_node_permissions(node, user):
+    """
+    Permission is perm user has through contributorship, not group membership
+    """
     return {
         'id': user._id,
         'name': user.fullname,
-        'permission': reduce_permissions(node.get_permissions(user))
+        'permission': Contributor.objects.get(user_id=user.id, node_id=node.id).permission
     }
 
 def serialize_groups_for_node(node, osf_group):

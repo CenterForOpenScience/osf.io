@@ -49,14 +49,15 @@ REVIEW_GROUPS = {
     # 'reviewer': (),  # TODO Implement reviewers
 }
 
-def expand_permissions(permission):
-    if not permission:
-        return []
-    index = PERMISSIONS.index(permission) + 1
-    return PERMISSIONS[:index]
-
 
 def reduce_permissions(permissions):
+    """
+    Works if technical permissions are passed ['read_node', 'write_node'],
+    or short form are passed ['read', 'write']
+    """
+    for permission in API_CONTRIBUTOR_PERMISSIONS[::-1]:
+        if permission in permissions:
+            return permission
     for permission in PERMISSIONS[::-1]:
         if permission in permissions:
             return CONTRIB_PERMISSIONS[permission]

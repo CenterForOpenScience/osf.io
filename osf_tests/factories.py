@@ -359,7 +359,7 @@ class RegistrationFactory(BaseNodeFactory):
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
-        if project.has_permission(user, 'admin'):
+        if project.is_admin_contributor(user):
             project.add_contributor(
                 contributor=user,
                 permissions=permissions.CREATOR_PERMISSIONS,

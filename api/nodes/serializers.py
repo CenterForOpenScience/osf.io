@@ -1,5 +1,6 @@
 from django.db import connection
 from distutils.version import StrictVersion
+from guardian.shortcuts import get_group_perms
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -494,16 +495,16 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if user.is_anonymous:
             return default_perm
 
-        if hasattr(obj, 'contrib_admin'):
+        if hasattr(obj, 'has_admin'):
             user_perms = []
-            if obj.contrib_admin:
+            if obj.has_admin:
                 user_perms = ['admin', 'write', 'read']
-            elif obj.contrib_write:
+            elif obj.has_write:
                 user_perms = ['write', 'read']
-            elif obj.contrib_read:
+            elif obj.has_read:
                 user_perms = ['read']
         else:
-            user_perms = [osf_permissions.CONTRIB_PERMISSIONS[perm] for perm in obj.get_permissions(user)]
+            user_perms = obj.get_permissions(user)[::-1]
 
         user_perms = user_perms or default_perm
         if not user_perms and user in obj.parent_admin_users:
@@ -514,13 +515,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
 
-        if hasattr(obj, 'contrib_read'):
+        if hasattr(obj, 'has_read'):
             if obj.comment_level == 'public':
                 return auth.logged_in and (
                     obj.is_public or
-                    (auth.user and obj.contrib_read)
+                    (auth.user and obj.has_read)
                 )
-            return obj.contrib_read or False
+            return obj.has_read or False
         else:
             return obj.can_comment(auth)
 
@@ -541,8 +542,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_current_user_is_contributor_or_group_member(self, obj):
         # Returns whether user is a contributor -or- a group member
-        if hasattr(obj, 'contrib_read'):
-            return obj.contrib_read
+        if hasattr(obj, 'has_read'):
+            return obj.has_read
 
         user = self.context['request'].user
         if user.is_anonymous:
@@ -728,9 +729,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 if not contributor.user.is_registered:
                     node.add_unregistered_contributor(
                         fullname=contributor.user.fullname, email=contributor.user.email, auth=auth,
-                        permissions=parent.get_permissions(contributor.user), existing_user=contributor.user,
+                        permissions=osf_permissions.reduce_permissions(parent.get_permissions(contributor.user)), existing_user=contributor.user,
                     )
             node.add_contributors(contributors, auth=auth, log=True, save=True)
+            for group in parent.osf_groups:
+                if group.is_manager(user):
+                    node.add_osf_group(group, osf_permissions.reduce_permissions(get_group_perms(group.member_group, parent)), auth=auth)
         if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, 'write'):
             parent = validated_data['parent']
             node.subjects.add(parent.subjects.all())

@@ -842,6 +842,22 @@ class TestContributorMethods:
 
         assert user2 in user.recently_added.all()
 
+    def test_add_contributor_already_group_member(self, node, user, auth):
+        group = OSFGroupFactory(creator=user)
+        user2 = UserFactory()
+        group.make_member(user2)
+        node.add_osf_group(group, 'admin')
+
+        assert node.is_contributor_or_group_member(user2) is True
+        assert node.is_contributor(user2) is False
+        assert node.has_permission(user2, 'admin')
+
+        node.add_contributor(contributor=user2, auth=auth)
+        node.save()
+        assert node.is_contributor(user2) is True
+        assert node.has_permission(user2, 'admin')
+        assert node.is_admin_contributor(user2) is False
+
     def test_add_contributors(self, node, auth):
         user1 = UserFactory()
         user2 = UserFactory()
@@ -861,8 +877,8 @@ class TestContributorMethods:
         assert node.is_contributor(user2)
         assert user1._id in node.visible_contributor_ids
         assert user2._id not in node.visible_contributor_ids
-        assert set(node.get_permissions(user1)) == set(['admin_node', 'write_node', 'read_node'])
-        assert set(node.get_permissions(user2)) == set(['read_node', 'write_node'])
+        assert set(node.get_permissions(user1)) == set(['read', 'write', 'admin'])
+        assert set(node.get_permissions(user2)) == set(['read', 'write'])
         last_log = node.logs.all().order_by('-date')[0]
         assert (
             last_log.params['contributors'] ==
@@ -919,6 +935,28 @@ class TestContributorMethods:
         node.add_osf_group(group, 'read')
         assert node.is_contributor(noncontrib) is False
         assert node.is_contributor_or_group_member(noncontrib) is True
+
+        superuser = AuthUserFactory()
+        superuser.is_superuser = True
+        superuser.save()
+
+        assert node.is_contributor_or_group_member(superuser) is False
+
+    def test_is_admin_contributor(self, node):
+        contrib = AuthUserFactory()
+        Contributor.objects.create(user=contrib, node=node)
+        node.add_permission(contrib, READ)
+
+        node.is_admin_contributor(contrib) is False
+        node.set_permissions(contrib, ADMIN)
+        assert node.is_admin_contributor(contrib) is True
+
+        node.set_permissions(contrib, WRITE)
+
+        group = OSFGroupFactory(creator=contrib)
+        node.add_osf_group(group, 'admin')
+        assert node.has_permission(contrib, 'admin')
+        assert node.is_admin_contributor(contrib) is False
 
     def test_visible_contributor_ids(self, node, user):
         visible_contrib = UserFactory()
@@ -977,6 +1015,14 @@ class TestContributorMethods:
         with pytest.raises(ValueError):
             node.set_visible(UserFactory(), True)
 
+    def test_set_visible_group_member(self, node, user):
+        user2 = AuthUserFactory()
+        group = OSFGroupFactory(creator=user2)
+        node.add_osf_group(group, 'admin')
+
+        with pytest.raises(ValueError):
+            node.set_visible(user2, True)
+
     def test_copy_contributors_from_adds_contributors(self, node):
         contrib, contrib2 = UserFactory(), UserFactory()
         node.add_contributor(contrib, visible=True)
@@ -1004,9 +1050,10 @@ class TestContributorMethods:
 
     def test_copy_contributors_from_preserves_permissions(self, node):
         read, admin = UserFactory(), UserFactory()
-
+        group = OSFGroupFactory(creator=read)
         node.add_contributor(read, 'read', visible=True)
         node.add_contributor(admin, 'admin', visible=False)
+        node.add_osf_group(group, 'write')
         node2 = NodeFactory()
         node2.copy_contributors_from(node)
 
@@ -1028,6 +1075,19 @@ class TestContributorMethods:
         assert node.get_permissions(user2) == []
         assert node.logs.latest().action == 'contributor_removed'
         assert node.logs.latest().params['contributors'] == [user2._id]
+
+    def test_remove_contributor_admin_group_members(self, node, user, auth):
+        user2 = UserFactory()
+        group = OSFGroupFactory(creator=user2)
+        node.add_osf_group(group, 'admin')
+        assert node.has_permission(user2, 'admin') is True
+
+        removed = node.remove_contributor(contributor=user, auth=auth)
+        assert removed is False
+        # Contributor could not be removed even though there was another
+        # user with admin perms - group membership insufficient
+        assert node.has_permission(user, 'admin') is True
+        assert node.is_contributor(user) is True
 
     def test_remove_contributors(self, node, auth):
         user1 = UserFactory()
@@ -1097,7 +1157,7 @@ class TestContributorMethods:
         new_contrib = AuthUserFactory()
         node.add_contributor(new_contrib, permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS, auth=auth)
 
-        assert set(node.get_permissions(new_contrib)) == set(['read_node', 'write_node'])
+        assert set(node.get_permissions(new_contrib)) == set(['read', 'write'])
 
         assert node.get_visible(new_contrib) is True
 
@@ -1107,7 +1167,7 @@ class TestContributorMethods:
             False,
             auth=auth
         )
-        assert set(node.get_permissions(new_contrib)) == set(['read_node'])
+        assert set(node.get_permissions(new_contrib)) == set(['read'])
         assert node.get_visible(new_contrib) is False
 
     def test_update_contributor_non_admin_raises_error(self, node, auth):
@@ -1336,6 +1396,13 @@ class TestPermissionMethods:
         assert contributor.user in node.contributors
         assert node.has_permission(user, WRITE) is True
 
+        user.is_superuser = True
+        user.save()
+
+        # has_permission doesn't return permissions that are Inherited
+        # because the user is a superuser
+        assert node.has_permission(user, ADMIN) is False
+
     def test_has_permission_passed_non_contributor_returns_false(self, node):
         noncontrib = UserFactory()
         assert node.has_permission(noncontrib, READ) is False
@@ -1346,10 +1413,10 @@ class TestPermissionMethods:
             node=node, user=user,
         )
         node.add_permission(user, READ)
-        assert set(node.get_permissions(user)) == set(['read_node'])
+        assert set(node.get_permissions(user)) == set(['read'])
 
         node.add_permission(user, WRITE)
-        assert set(node.get_permissions(user)) == set(['read_node', 'write_node'])
+        assert set(node.get_permissions(user)) == set(['read', 'write'])
         assert contributor.user in node.contributors
 
     def test_add_permission(self, node):
@@ -1377,7 +1444,7 @@ class TestPermissionMethods:
         with pytest.raises(ValueError):
             node.remove_permission(contrib, ADMIN)
 
-    def test_set_permissions(self, node):
+    def test_set_permissions(self, node, user):
         low, high = UserFactory(), UserFactory()
 
         node.set_permissions(low, READ)
@@ -1390,6 +1457,14 @@ class TestPermissionMethods:
         assert node.has_permission(low, WRITE) is True
         assert node.has_permission(low, ADMIN) is False
 
+        with pytest.raises(NodeStateError):
+            node.set_permissions(user, WRITE)
+
+        group = OSFGroupFactory(creator=user)
+        node.add_osf_group(group, ADMIN)
+        with pytest.raises(NodeStateError):
+            node.set_permissions(user, WRITE)
+
         node.set_permissions(high, ADMIN)
         assert node.has_permission(high, permissions.READ) is True
         assert node.has_permission(high, permissions.WRITE) is True
@@ -1400,6 +1475,14 @@ class TestPermissionMethods:
         with pytest.raises(NodeStateError) as excinfo:
             node.set_permissions(node.creator, permissions=WRITE)
         assert excinfo.value.args[0] == 'Must have at least one registered admin contributor'
+
+        new_user = AuthUserFactory()
+        osf_group = OSFGroupFactory(creator=new_user)
+        node.add_osf_group(osf_group, 'admin')
+        # A group member being added as a contributor doesn't throw any errors, even if that
+        # group member is being downgraded to write.  Group members don't count towards
+        # the one registered admin contributor tally
+        node.set_permissions(new_user, 'write')
 
     def test_add_permission_with_admin_also_grants_read_and_write(self, node):
         user = UserFactory()
@@ -1770,7 +1853,7 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=1)
+        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
         data = {'some': 'data'}
         reg = root.register_node(
@@ -1831,6 +1914,25 @@ class TestAddUnregisteredContributor:
                 fullname=user.fullname,
                 auth=auth
             )
+
+    def test_add_unregistered_contributor_already_group_member(self, node, user, auth):
+        given_name = 'Grapes McGee'
+        username = 'fake@cos.io'
+        group = OSFGroupFactory(creator=user)
+        unreg_user = group.add_unregistered_member(given_name, username, auth=Auth(user))
+        assert unreg_user.get_unclaimed_record(group._id)['email'] == username
+
+        node.add_osf_group(group, 'admin')
+
+        node.add_unregistered_contributor(
+            email=username,
+            fullname=given_name,
+            auth=auth
+        )
+        node.save
+        unreg_user.reload()
+        unclaimed_data = unreg_user.get_unclaimed_record(node._primary_key)
+        assert unclaimed_data['email'] == username
 
 def test_find_by_institutions():
     inst1, inst2 = InstitutionFactory(), InstitutionFactory()
@@ -2346,6 +2448,9 @@ class TestManageContributors:
             {'id': node.creator._id, 'permission': READ, 'visible': True},
             {'id': unregistered._id, 'permission': ADMIN, 'visible': True},
         ]
+
+        group = OSFGroupFactory(creator=node.creator)
+        node.add_osf_group(group, 'admin')
         with pytest.raises(NodeStateError):
             node.manage_contributors(
                 users, auth=auth, save=True,
@@ -2893,7 +2998,7 @@ class TestForkNode:
         assert bool(fork) is True
         # Forker has admin permissions
         assert fork.contributors.count() == 1
-        assert set(fork.get_permissions(user2)) == set(['read_node', 'write_node', 'admin_node'])
+        assert set(fork.get_permissions(user2)) == set(['read', 'write', 'admin'])
 
     def test_fork_preserves_license(self, node, auth):
         license = NodeLicenseRecordFactory()
@@ -3942,7 +4047,7 @@ class TestTemplateNode:
 
         templated = project.use_as_template(auth)
 
-        assert set(templated.get_permissions(user)) == set(['read_node', 'write_node', 'admin_node'])
+        assert set(templated.get_permissions(user)) == set(['read', 'write', 'admin'])
 
     def test_template_security(self, user, auth, project, pointee, component, subproject):
         """Create a templated node from a node with public and private children
@@ -3993,7 +4098,7 @@ class TestTemplateNode:
         for node in new.nodes:
             assert (
                 set(node.get_permissions(other_user)) ==
-                set(['read_node', 'write_node', 'admin_node'])
+                set(['read', 'write', 'admin'])
             )
 
 # copied from tests/test_models.py

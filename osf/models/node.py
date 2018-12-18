@@ -27,7 +27,7 @@ from guardian.models import (
     GroupObjectPermissionBase,
     UserObjectPermissionBase,
 )
-from guardian.shortcuts import get_perms, get_objects_for_user, get_groups_with_perms
+from guardian.shortcuts import get_objects_for_user, get_groups_with_perms, get_group_perms
 
 from framework import status
 from framework.auth import oauth_scopes
@@ -64,7 +64,7 @@ from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
 from osf.utils.requests import get_headers_from_request
-from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS
+from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, CONTRIB_PERMISSIONS, PERMISSIONS
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 
@@ -794,19 +794,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to add an OSF Group.')
         group.add_group_to_node(self, permission, auth)
-        # TODO Log that osf_group was added to project
 
     def update_osf_group(self, group, permission='write', auth=None):
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to add an OSF Group.')
         group.update_group_permissions_to_node(self, permission, auth)
-        # TODO Log that osf_group's permissions were updated
 
     def remove_osf_group(self, group, auth=None):
         if auth and not (self.has_permission(auth.user, ADMIN) or group.has_permission(auth.user, 'manage')):
             raise PermissionsError('Must be an admin or an OSF Group manager to remove an OSF Group.')
         group.remove_group_from_node(self, auth)
-        # TODO Log that osf_group was removed from project
 
     @property
     def osf_groups(self):
@@ -852,10 +849,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        # Overrides guardian mixin - displays user's explicit permissions to the node
+        # Overrides guardian mixin - doesn't return view_node perms, and
+        # returns readable perms instead of literal perms
         if isinstance(user, AnonymousUser):
             return []
-        return list(set(get_perms(user, self)) & set(['read_node', 'write_node', 'admin_node']))
+
+        user_perms = sorted(set(get_group_perms(user, self)).intersection(PERMISSIONS), key=PERMISSIONS.index)
+        return [CONTRIB_PERMISSIONS[perm] for perm in user_perms]
 
     def has_permission_on_children(self, user, permission):
         """Checks if the given user has a given permission on any child nodes
@@ -1537,7 +1537,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def require_approval(self, user, notify_initiator_on_complete=False):
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')
-        if not self.has_permission(user, 'admin'):
+        if not self.is_admin_contributor(user):
             raise PermissionsError('Only admins can initiate a registration approval')
 
         approval = self._initiate_approval(user, notify_initiator_on_complete)
@@ -2190,10 +2190,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.is_deleted = True
         self.deleted_date = date
         self.save()
-
-        # mark node's files as deleted
-        for osfstorage_file in self.files.all():
-            osfstorage_file.delete()
 
         project_signals.node_deleted.send(self)
 

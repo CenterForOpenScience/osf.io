@@ -810,8 +810,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
 
             preprint_unpublished.reload()
             assert user_two in preprint_unpublished.contributors
-            assert set(preprint_unpublished.get_permissions(user_two)) == set([
-                'read_preprint', 'write_preprint', 'admin_preprint'])
+            assert preprint_unpublished.get_permissions(user_two) == ['admin', 'write', 'read']
 
     def test_adds_write_contributor_unpublished_preprint_admin(
             self, app, user, user_two, preprint_unpublished, url_unpublished):
@@ -840,8 +839,8 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
 
             preprint_unpublished.reload()
             assert user_two in preprint_unpublished.contributors
-            assert set(preprint_unpublished.get_permissions(
-                user_two)) == set(['read_preprint', 'write_preprint'])
+            assert preprint_unpublished.get_permissions(
+                user_two) == ['write', 'read']
 
     def test_adds_read_contributor_unpublished_preprint_admin(
             self, app, user, user_two, preprint_unpublished, url_unpublished):
@@ -870,8 +869,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
 
             preprint_unpublished.reload()
             assert user_two in preprint_unpublished.contributors
-            assert set(preprint_unpublished.get_permissions(user_two)) == set([
-                'read_preprint'])
+            assert preprint_unpublished.get_permissions(user_two) == ['read']
 
     def test_adds_invalid_permission_contributor_unpublished_preprint_admin(
             self, app, user, user_two, preprint_unpublished, url_unpublished):
@@ -2156,7 +2154,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
+        assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
@@ -2573,7 +2571,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
+        assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']

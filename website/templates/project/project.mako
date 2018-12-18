@@ -163,8 +163,14 @@
                 % if node['groups']:
                     <div>
                         Groups:
-                        %for group_name in node['groups']:
-                            <ol>${group_name}</ol>
+                        %for i, group_name in enumerate(node['groups']):
+                            <ol>
+                                % if i == len(node['groups']) - 1:
+                                    ${group_name}
+                                % else:
+                                    ${group_name},
+                                % endif
+                            </ol>
                         %endfor
                     </div>
                 % endif
@@ -221,7 +227,7 @@
                       <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
-                % if waffle.switch_is_active(features.EZID_SWITCH):
+                % if not waffle.switch_is_active(features.DISABLE_DATACITE_DOIS):
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
                     <p>
@@ -367,11 +373,11 @@
        <div style="margin-top: 5px; margin-bottom: 5px;">
            Has supplemental materials for <a href="${preprint['url']}" target="_blank">${preprint['title']}</a>
            on ${preprint['provider']['name']}
-         % if user['is_admin_parent'] or user['is_contributor']:
+         % if user['is_admin_parent_contributor_or_group_member'] or user['is_contributor_or_group_member']:
             &nbsp;<span id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}"></span>
         % endif
        </div>
-       % if user['is_admin_parent'] or user['is_contributor']:
+       % if user['is_admin_parent_contributor_or_group_member'] or user['is_contributor_or_group_member']:
            <div id="metadatapreprint${i}" class="collection-details collapse">
                <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
                     <li>
