@@ -5,7 +5,6 @@ from website import settings
 from osf.models import Contributor
 from addons.osfstorage.models import Region
 from website.filters import profile_image_url
-from osf.models.contributor import get_contributor_or_group_member_permissions
 
 from osf.utils import workflows
 from website.ember_osf_web.decorators import storage_i18n_flag_active
@@ -165,7 +164,7 @@ def add_contributor_json(user, current_user=None, node=None):
 
     if node:
         contributor_info = user.contributor_set.get(node=node.parent_node)
-        contributor_json['permission'] = get_contributor_or_group_member_permissions(contributor_info, as_list=False)
+        contributor_json['permission'] = contributor_info.permission
         contributor_json['visible'] = contributor_info.visible
 
     return contributor_json
