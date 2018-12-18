@@ -19,7 +19,7 @@ from django.conf import settings
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl.connections import connections
 
-from osf.models import PageCounter, PreprintService
+from osf.models import PageCounter, Preprint
 from scripts import utils
 from website.search.elastic_search import client
 
@@ -39,17 +39,24 @@ def main():
     dry = '--dry' in sys.argv
     if not dry:
         utils.add_file_logger(logger, __file__)
-    preprints = PreprintService.objects.all().values_list('node__guids___id', 'node__preprint_file___id', 'guids___id',
-                                              'provider___id')
-
+    preprints = Preprint.objects.filter(primary_file__isnull=False).select_related('primary_file', 'provider')
     total_preprints = preprints.count()
     logger.info('Collecting data on {} preprints...'.format(total_preprints))
 
     batch_to_update = []
     for i, preprint in enumerate(preprints, 1):
-        node__id, file_id, preprint__id, provider__id = preprint
-        page_counters = PageCounter.objects.filter(_id__startswith='download:{node__id}:{file_id}:'.format(node__id=node__id,
-                                                                                                      file_id=file_id)).values_list('_id', 'date')
+        preprint_id = preprint._id
+        provider_id = preprint.provider._id
+        file_id = preprint.primary_file._id
+        page_counters = (
+            PageCounter.objects
+            .filter(
+                _id__startswith='download:{preprint_id}:{file_id}:'.format(
+                    preprint_id=preprint_id,
+                    file_id=file_id
+                )
+            ).values_list('_id', 'date')
+        )
         for page_counter in page_counters:
             page_counter__id, date = page_counter
             version_num = page_counter__id.split(':')[-1]
@@ -60,8 +67,8 @@ def main():
                     '_source': {
                         'count': totals['total'],
                         'path': '/{}'.format(file_id),
-                        'preprint_id': preprint__id,
-                        'provider_id': provider__id,
+                        'preprint_id': preprint_id,
+                        'provider_id': provider_id,
                         'timestamp': timestamp,
                         'user_id': None,  # Pagecounter never tracked this
                         'version': int(version_num) + 1

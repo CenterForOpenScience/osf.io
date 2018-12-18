@@ -98,7 +98,7 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
         settings = {
             'number_of_shards': 1,
             'number_of_replicas': 1,
-            'refresh_interval': '1s',
+            'refresh_interval': '30s',
         }
 
     class Meta:
