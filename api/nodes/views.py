@@ -1212,7 +1212,7 @@ class NodeGroupsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Lis
         Extra context for NodeGroupsSerializer
         """
         context = super(NodeGroupsList, self).get_serializer_context()
-        context['node'] = self.get_node()
+        context['node'] = self.get_node(check_object_permissions=False)
         return context
 
 
