@@ -425,7 +425,7 @@ class TestPreprint(OsfTestCase):
             self.published_preprint = factories.PreprintFactory(
                 creator=self.user,
                 title='My Fairy King',
-                description='You take my breath away',
+                description='Under pressure',
             )
 
     def test_new_preprint_unsubmitted(self):
@@ -464,7 +464,7 @@ class TestPreprint(OsfTestCase):
 
     def test_preprint_title_change(self):
         title_original = self.published_preprint.title
-        new_title = 'My new preprint title'
+        new_title = 'New preprint title'
         self.published_preprint.set_title(new_title, auth=Auth(self.user), save=True)
         docs = query('category:preprint AND ' + title_original)['results']
         assert_equal(len(docs), 0)
