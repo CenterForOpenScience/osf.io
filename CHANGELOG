@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+18.9.0 (2018-12-18)
+===================
+
+- Disable Prereg Challenge UI when osf_preregistration flag is active.
+
 18.8.0 (2018-12-13)
 ===================
 
