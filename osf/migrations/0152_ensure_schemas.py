@@ -1,18 +1,13 @@
 from __future__ import unicode_literals
 
-import logging
-
 from django.db import migrations
 from osf.utils.migrations import ensure_schemas
-
-
-logger = logging.getLogger(__file__)
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0146_update_registration_schemas'),
+        ('osf', '0151_auto_20181215_1911'),
     ]
 
     operations = [
