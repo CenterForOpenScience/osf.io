@@ -1,12 +1,12 @@
 <form class="well" method="post"
-      action="{% url 'nodes:remove_user' node_id=node_id user_id=user.id %}">
+      action="{% url link guid=guid guid=guid user_id=user.id %}">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
         <h3>Removing contributor: {{ user.name }}</h3>
     </div>
     <div class="modal-body">
         User will be removed. Currently only
-        an admin on the project will be able to
+        an admin on the {{ resource_type }} will be able to
         add them back.
         {% csrf_token %}
     </div>

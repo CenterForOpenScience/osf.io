@@ -8,7 +8,7 @@ from faker import Faker
 
 from django.core.management.base import BaseCommand
 
-from osf.models import ReviewAction, PreprintService, OSFUser
+from osf.models import ReviewAction, Preprint, OSFUser
 from osf.utils.workflows import DefaultStates, DefaultTriggers
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class Command(BaseCommand):
         fake = Faker()
         triggers = [a.value for a in DefaultTriggers]
         states = [s.value for s in DefaultStates]
-        for preprint in PreprintService.objects.filter(actions__isnull=True):
+        for preprint in Preprint.objects.filter(actions__isnull=True):
             for i in range(num_actions):
                 action = ReviewAction(
                     target=preprint,
