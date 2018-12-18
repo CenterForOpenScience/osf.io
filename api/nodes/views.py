@@ -1212,7 +1212,7 @@ class NodeGroupsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Lis
         Extra context for NodeGroupsSerializer
         """
         context = super(NodeGroupsList, self).get_serializer_context()
-        context['node'] = self.get_node()
+        context['node'] = self.get_node(check_object_permissions=False)
         return context
 
 
@@ -1236,7 +1236,7 @@ class NodeGroupsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, N
     def get_object(self):
         node = self.get_node(check_object_permissions=False)
         group = self.get_osf_group(self.kwargs.get('group_id'))
-        if not self.get_node_group_perms(group, node):
+        if not group.get_permission_to_node(node):
             raise NotFound('Group {} does not have permissions to node {}.'.format(group._id, node._id))
         return group
 

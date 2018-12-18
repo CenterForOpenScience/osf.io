@@ -965,7 +965,20 @@ def create_file_node(sender, instance, **kwargs):
 
 
 class PreprintUserObjectPermission(UserObjectPermissionBase):
+    """
+    Direct Foreign Key Table for guardian - User models - we typically add object
+    perms directly to Django groups instead of users, so this will be used infrequently
+    """
     content_object = models.ForeignKey(Preprint, on_delete=models.CASCADE)
 
 class PreprintGroupObjectPermission(GroupObjectPermissionBase):
+    """
+    Direct Foreign Key Table for guardian - Group models. Makes permission checks faster.
+
+    This table gives a Django group a particular permission to a Preprint.
+    For example, every time a preprint is created, an admin, write, and read Django group
+    are created for the preprint. The "write" group has write/read perms to the preprint.
+
+    Those links are stored here:  content_object_id (preprint_id), group_id, permission_id
+    """
     content_object = models.ForeignKey(Preprint, on_delete=models.CASCADE)
