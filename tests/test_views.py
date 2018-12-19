@@ -5197,7 +5197,7 @@ def create_rdmfiletimestamptokenverifyresult(self, filename='test_file_timestamp
     ## create tmp_dir
     current_datetime = dt.datetime.now(pytz.timezone('Asia/Tokyo'))
     current_datetime_str = current_datetime.strftime("%Y%m%d%H%M%S%f")
-    tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
+    tmp_dir = '/tmp/tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
     os.mkdir(tmp_dir)
     ## create tmp_file (file_node)
     tmp_file = os.path.join(tmp_dir, filename)
@@ -5360,7 +5360,7 @@ class TestAddonFileViewTimestampFunc(OsfTestCase):
         user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
         filename='tests.test_views.test_timestamptoken_verify'
         file_node = create_test_file(node=self.node, user=self.user, filename=filename) 
-        tmp_dir = 'tmp_{}'.format(ret['user']['id'])
+        tmp_dir = '/tmp/tmp_{}'.format(ret['user']['id'])
         os.mkdir(tmp_dir)
         tmp_file = os.path.join(tmp_dir, file_node.name)
         with open(tmp_file, "wb") as file:

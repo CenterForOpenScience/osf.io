@@ -61,7 +61,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
         current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
+        tmp_dir = '/tmp/tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
@@ -108,7 +108,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
         current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
+        tmp_dir = '/tmp/tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
@@ -159,7 +159,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
         current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
+        tmp_dir = '/tmp/tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
@@ -202,7 +202,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
         current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
+        tmp_dir = '/tmp/tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
@@ -245,7 +245,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
         current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
+        tmp_dir = '/tmp/tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)
@@ -287,7 +287,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         ## create tmp_dir
         current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
         current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
+        tmp_dir = '/tmp/tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
 
         ## create tmp_file (file_node)

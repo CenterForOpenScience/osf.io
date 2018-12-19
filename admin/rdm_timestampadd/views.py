@@ -327,7 +327,7 @@ class AddTimestampData(RdmPermissionMixin, View):
                                               '/' + request_data['file_id'][0],
                                               action='download', direct=None)
             res = requests.get(url, headers=headers, cookies=cookies)
-            tmp_dir = 'tmp_{}'.format(self.request.user._id)
+            tmp_dir = '/tmp/tmp_{}'.format(self.request.user._id)
             if os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir)
             os.mkdir(tmp_dir)
