@@ -20,6 +20,7 @@ from admin.rdm_addons.api_v1.views import disconnect
 from website.oauth.utils import get_service
 from website.routes import make_url_map
 from website import settings as website_settings
+from framework.sessions import get_session
 
 class RdmAddonRequestContextMixin(object):
     app = flask.Flask(__name__)
@@ -78,14 +79,19 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
 
     def test_func(self):
         """check user permissions"""
+        institution_id = None
         addon_name = self.kwargs.get('addon_name')
-        session = self.get_session(addon_name)
-        if 'oauth_states' in session.data:
-            institution_id = int(session.data['oauth_states'][addon_name]['institution_id'])
+        session = get_session()
+        session_data = {}
+        try:
+            session_data = session.data
+        except RuntimeError:
+            print('Unable to access session data')
+
+        if 'oauth_states' in session_data:
+            institution_id = int(session_data['oauth_states'][addon_name]['institution_id'])
         elif 'institution_id' in self.kwargs:
             institution_id = int(self.kwargs.get('institution_id'))
-        else:
-            institution_id = None
         return self.has_auth(institution_id)
 
     def get(self, request, *args, **kwargs):
