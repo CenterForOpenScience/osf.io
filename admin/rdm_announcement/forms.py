@@ -15,7 +15,8 @@ class PreviewForm(forms.Form):
         choices=[('Email', 'Email'),
                  ('SNS (Twitter)', 'SNS (Twitter)'),
                  #('SNS (Facebook)', 'SNS (Facebook)'),   ## GRDM-6902
-                 ('Push notification', 'Push notification')],
+                 #('Push notification', 'Push notification')
+                 ],
         widget=forms.RadioSelect,
         label='Type',
         initial='Email',

@@ -80,7 +80,9 @@ def osfadmin_oauth_callback(service_name):
     f.path = '/addons/oauth/callback/{}/'.format(service_name)
     f.args = flask.request.args.to_dict(flat=False)
     try:
-        r = requests.get(f.url, headers=dict(flask.request.headers))
+        headers = dict(flask.request.headers)
+        headers['Content-Length'] = str(0)
+        r = requests.get(f.url, headers=headers)
     except ConnectionError:
         return None
     if not r.ok:
