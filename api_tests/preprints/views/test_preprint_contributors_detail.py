@@ -684,7 +684,7 @@ class TestPreprintContributorUpdate:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert preprint.get_permissions(contrib) == ['write', 'read']
+        assert preprint.get_permissions(contrib) == ['read', 'write']
         assert preprint.get_visible(contrib)
 
     #   test_change_contributor_not_logged_in
@@ -702,7 +702,7 @@ class TestPreprintContributorUpdate:
         assert res.status_code == 401
 
         preprint.reload()
-        assert preprint.get_permissions(contrib) == ['write', 'read']
+        assert preprint.get_permissions(contrib) == ['read', 'write']
         assert preprint.get_visible(contrib)
 
     #   test_change_contributor_non_admin_auth
@@ -723,7 +723,7 @@ class TestPreprintContributorUpdate:
         assert res.status_code == 403
 
         preprint.reload()
-        assert preprint.get_permissions(contrib) == ['write', 'read']
+        assert preprint.get_permissions(contrib) == ['read', 'write']
         assert preprint.get_visible(contrib)
 
     def test_change_admin_self_without_other_admin(
@@ -746,7 +746,7 @@ class TestPreprintContributorUpdate:
         assert res.status_code == 400
 
         preprint.reload()
-        assert preprint.get_permissions(user) == ['admin', 'write', 'read']
+        assert preprint.get_permissions(user) == ['read', 'write', 'admin']
 
     def test_node_update_invalid_data(self, app, user, url_creator):
         res = app.put_json_api(
@@ -827,7 +827,7 @@ class TestPreprintContributorUpdate:
             assert attributes['permission'] == permissions.ADMIN
 
             preprint.reload()
-            assert preprint.get_permissions(contrib) == ['admin', 'write', 'read']
+            assert preprint.get_permissions(contrib) == ['read', 'write', 'admin']
 
         with assert_latest_log(PreprintLog.PERMISSIONS_UPDATED, preprint):
             data = {
@@ -846,7 +846,7 @@ class TestPreprintContributorUpdate:
             assert attributes['permission'] == permissions.WRITE
 
             preprint.reload()
-            assert preprint.get_permissions(contrib) == ['write', 'read']
+            assert preprint.get_permissions(contrib) == ['read', 'write']
 
         with assert_latest_log(PreprintLog.PERMISSIONS_UPDATED, preprint):
             data = {
@@ -952,7 +952,7 @@ class TestPreprintContributorUpdate:
             assert attributes['bibliographic']
 
             preprint.reload()
-            assert preprint.get_permissions(contrib) == ['write', 'read']
+            assert preprint.get_permissions(contrib) == ['read', 'write']
             assert preprint.get_visible(contrib)
 
     def test_change_admin_self_with_other_admin(
@@ -976,7 +976,7 @@ class TestPreprintContributorUpdate:
             assert attributes['permission'] == permissions.WRITE
 
             preprint.reload()
-            assert preprint.get_permissions(user) == ['write', 'read']
+            assert preprint.get_permissions(user) == ['read', 'write']
 
 
 @pytest.mark.django_db
@@ -1021,7 +1021,7 @@ class TestPreprintContributorPartialUpdate:
         res = app.patch_json_api(url_creator, data, auth=user.auth)
         assert res.status_code == 200
         preprint.reload()
-        assert preprint.get_permissions(user) == ['admin', 'write', 'read']
+        assert preprint.get_permissions(user) == ['read', 'write', 'admin']
         assert not preprint.get_visible(user)
 
     def test_patch_permission_only(self, app, user, preprint):

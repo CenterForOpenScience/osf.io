@@ -319,9 +319,10 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         default_queryset = get_objects_for_user(user, 'read_node', Node, with_superuser=False).filter(is_deleted=False)
         if user != self.request.user:
             if self.request.user.is_anonymous:
+                # Further restrict UserNodes to public nodes
                 return self.optimize_node_queryset(default_queryset.filter(Q(is_public=True)))
             else:
-                # Requested user nodes that the logged in user can view
+                # Further restrict UserNodes to nodes the logged-in user can view
                 read_user_query = Q(id__in=get_objects_for_user(self.request.user, 'read_node', default_queryset))
                 return self.optimize_node_queryset(default_queryset.filter(read_user_query | Q(is_public=True)))
         return self.optimize_node_queryset(default_queryset)

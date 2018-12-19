@@ -25,8 +25,8 @@ class OSFUserAdmin(admin.ModelAdmin):
 
     def save_related(self, request, form, formsets, change):
         """
-        Since m2m fields overridden with new form data in admin app, preprint groups (which are now excluded from being selections)
-        are removed.  Manually re-adds preprint groups after adding new groups in form.
+        Since m2m fields overridden with new form data in admin app, preprint groups/node groups (which are now excluded from being selections)
+        are removed.  Manually re-adds preprint/node groups after adding new groups in form.
         """
         preprint_groups = list(form.instance.groups.filter(Q(name__startswith='preprint_') | Q(name__startswith='node_')))
         super(OSFUserAdmin, self).save_related(request, form, formsets, change)

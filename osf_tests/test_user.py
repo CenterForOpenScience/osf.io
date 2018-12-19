@@ -2073,6 +2073,7 @@ class TestUserGdprDelete:
         non_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(non_admin_contrib)
+        project.add_unregistered_contributor('lisa', 'lisafrank@cos.io', permissions='admin', auth=Auth(user))
         project.save()
         return project
 

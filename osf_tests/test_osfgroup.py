@@ -419,6 +419,8 @@ class TestOSFGroup:
         osf_group.replace_contributor(user, member)
         assert user not in osf_group.members
         assert user not in osf_group.managers
+        assert osf_group.has_permission(member, MEMBER) is True
+        assert osf_group.has_permission(user, MEMBER) is False
 
         # test unclaimed_records is removed
         assert (
@@ -651,6 +653,10 @@ class TestOSFGroup:
         assert project.is_contributor_or_group_member(member) is True
 
         project.remove_osf_group(osf_group, auth=Auth(manager))
+        osf_group.add_unregistered_member('jane', 'janedoe@cos.io', Auth(manager))
+        unreg = osf_group.members.get(username='janedoe@cos.io')
+        project.add_osf_group(osf_group, READ, auth=Auth(project.creator))
+        assert project.is_contributor_or_group_member(unreg) is True
 
     @pytest.mark.enable_quickfiles_creation
     def test_merge_users_transfers_group_membership(self, member, manager, osf_group):

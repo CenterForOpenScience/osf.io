@@ -355,25 +355,6 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         linked_registrations = [r['id'] for r in res.json['data']]
         assert registration._id in linked_registrations
 
-    def test_can_create_linked_registration_relationship_to_private_registration_if_rw_group_mem(
-            self, make_request, user_admin_contrib, node_private):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        registration = RegistrationFactory()
-        registration.add_osf_group(
-            group,
-            'write')
-        registration.save()
-        node_private.add_osf_group(group, 'write')
-        res = make_request(
-            node_id=node_private._id,
-            reg_id=registration._id,
-            auth=group_mem.auth
-        )
-        assert res.status_code == 201
-        linked_registrations = [r['id'] for r in res.json['data']]
-        assert registration._id in linked_registrations
-
     def test_can_create_linked_registration_relationship_to_private_registration_if_read_only(
             self, make_request, user_admin_contrib, node_private):
         registration = RegistrationFactory()

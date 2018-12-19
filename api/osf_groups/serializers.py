@@ -13,7 +13,7 @@ from api.base.utils import absolute_reverse
 from api.nodes.serializers import CompoundIDField
 from osf.models import OSFUser
 from osf.models.osf_group import OSFGroup
-from osf.utils.permissions import GROUP_MEMBER_PERMISSIONS, MEMBER, MANAGER
+from osf.utils.permissions import GROUP_ROLES, MEMBER, MANAGER
 
 
 class GroupSerializer(JSONAPISerializer):
@@ -106,7 +106,7 @@ class GroupMemberSerializer(JSONAPISerializer):
 
     def get_group_role(self, validated_data, default_role):
         role = validated_data.get('role', default_role)
-        if role not in GROUP_MEMBER_PERMISSIONS:
+        if role not in GROUP_ROLES:
             raise exceptions.ValidationError('{} is not a valid role; choose manager or member.'.format(role))
         return role
 

@@ -856,6 +856,7 @@ class TestContributorMethods:
         node.save()
         assert node.is_contributor(user2) is True
         assert node.has_permission(user2, 'admin')
+        # Even though user2 has admin perms, they don't have it through admin contributorship
         assert node.is_admin_contributor(user2) is False
 
     def test_add_contributors(self, node, auth):
@@ -1117,6 +1118,7 @@ class TestContributorMethods:
         node.add_contributor(contrib, auth=Auth(node.creator))
         node.save()
         assert contrib in node.contributors.all()  # sanity check
+        assert node.has_permission(contrib, 'write') is True
         replacer = UserFactory()
         old_length = node.contributors.count()
         node.replace_contributor(contrib, replacer)
@@ -1125,6 +1127,8 @@ class TestContributorMethods:
         assert contrib not in node.contributors.all()
         assert replacer in node.contributors.all()
         assert old_length == new_length
+        assert node.has_permission(replacer, 'write') is True
+        assert node.has_permission(contrib, 'write') is False
 
         # test unclaimed_records is removed
         assert (
@@ -1296,17 +1300,31 @@ class TestContributorProperties:
 
     def test_admin_contributor_ids(self, user):
         project = ProjectFactory(creator=user)
-        assert project.admin_contributor_ids == {user._id}
+        assert project.admin_contributor_or_group_member_ids == {user._id}
         child1 = ProjectFactory(parent=project)
         child2 = ProjectFactory(parent=child1)
-        assert child1.admin_contributor_ids == {project.creator._id, child1.creator._id}
-        assert child2.admin_contributor_ids == {project.creator._id, child1.creator._id, child2.creator._id}
+        assert child1.admin_contributor_or_group_member_ids == {project.creator._id, child1.creator._id}
+        assert child2.admin_contributor_or_group_member_ids == {project.creator._id, child1.creator._id, child2.creator._id}
         admin = UserFactory()
         project.add_contributor(admin, auth=Auth(project.creator), permissions=ADMIN)
         project.set_permissions(project.creator, WRITE)
         project.save()
-        assert child1.admin_contributor_ids == {child1.creator._id, admin._id}
-        assert child2.admin_contributor_ids == {child2.creator._id, child1.creator._id, admin._id}
+        assert child1.admin_contributor_or_group_member_ids == {child1.creator._id, admin._id}
+        assert child2.admin_contributor_or_group_member_ids == {child2.creator._id, child1.creator._id, admin._id}
+
+        # OSFGroup added with write perms
+        group_member = UserFactory()
+        group = OSFGroupFactory(creator=group_member)
+        project.add_osf_group(group, 'write')
+        project.save()
+        assert child1.admin_contributor_or_group_member_ids == {child1.creator._id, admin._id}
+        assert child2.admin_contributor_or_group_member_ids == {child2.creator._id, child1.creator._id, admin._id}
+
+        # OSFGroup updated to admin perms
+        project.update_osf_group(group, 'admin')
+        project.save()
+        assert child1.admin_contributor_or_group_member_ids == {child1.creator._id, admin._id, group_member._id}
+        assert child2.admin_contributor_or_group_member_ids == {child2.creator._id, child1.creator._id, admin._id, group_member._id}
 
 
 class TestContributorAddedSignal:

@@ -40,7 +40,7 @@ SELECT json_agg(
                                 FROM auth_group AG
                                     INNER JOIN osf_nodegroupobjectpermission NGOP
                                     ON (AG.id = NGOP.group_id)
-                                WHERE (NGOP.content_object_id = 4 AND UPPER(AG.name::text) LIKE UPPER('%osfgroup_%'))
+                                WHERE (NGOP.content_object_id = N.id AND UPPER(AG.name::text) LIKE UPPER('%osfgroup_%'))
                                 )
                             ))
             , 'extra_search_terms', CASE

@@ -170,6 +170,10 @@ def project_new_from_template(auth, node, **kwargs):
 @must_have_permission(WRITE)
 @must_not_be_registration
 def project_new_node(auth, node, **kwargs):
+    """
+    There's an APIv2 endpoint that does this same thing!
+    If you make changes here, see if they need to be made there.
+    """
     form = NewNodeForm(request.form)
     user = auth.user
     if form.validate():
@@ -201,6 +205,10 @@ def project_new_node(auth, node, **kwargs):
                     )
                 else:
                     new_component.add_contributor(contributor, permissions=perm, auth=auth)
+
+            for group in node.osf_groups:
+                if group.is_manager(user):
+                    new_component.add_osf_group(group, group.get_permission_to_node(node), auth=auth)
 
             new_component.save()
             redirect_url = new_component.url + 'contributors/'

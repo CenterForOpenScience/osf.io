@@ -1699,6 +1699,10 @@ class TestNodeCreate:
             fullname='far', email='foo@bar.baz',
             permissions=permissions.READ,
             auth=Auth(user=user_one), save=True)
+        osf_group = OSFGroupFactory(creator=user_one)
+        osf_group.add_unregistered_member(fullname='far', email='foo@bar.baz', auth=Auth(user_one))
+        osf_group.save()
+        parent_project.add_osf_group(osf_group, 'admin')
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(
             API_BASE, parent_project._id)
         component_data = {
@@ -1720,6 +1724,9 @@ class TestNodeCreate:
         assert len(
             new_component.contributors
         ) == len(parent_project.contributors)
+        expected_perms = set(['read', 'admin'])
+        actual_perms = set([contributor.permission for contributor in new_component.contributor_set.all()])
+        assert actual_perms == expected_perms
 
     def test_create_project_with_region_relationship(
             self, app, user_one, region, institution_one, private_project, url):

@@ -810,7 +810,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
 
             preprint_unpublished.reload()
             assert user_two in preprint_unpublished.contributors
-            assert preprint_unpublished.get_permissions(user_two) == ['admin', 'write', 'read']
+            assert preprint_unpublished.get_permissions(user_two) == ['read', 'write', 'admin']
 
     def test_adds_write_contributor_unpublished_preprint_admin(
             self, app, user, user_two, preprint_unpublished, url_unpublished):
@@ -840,7 +840,7 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             preprint_unpublished.reload()
             assert user_two in preprint_unpublished.contributors
             assert preprint_unpublished.get_permissions(
-                user_two) == ['write', 'read']
+                user_two) == ['read', 'write']
 
     def test_adds_read_contributor_unpublished_preprint_admin(
             self, app, user, user_two, preprint_unpublished, url_unpublished):
