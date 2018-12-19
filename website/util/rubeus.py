@@ -180,7 +180,7 @@ class NodeFileCollector(object):
 
         linked_node_sqs = node.node_relations.filter(is_node_link=True, child=OuterRef('pk'))
         if self.auth and self.auth.user:
-            can_write = get_objects_for_user(self.auth.user, 'write_node', node._nodes.all(), with_superuser=True)
+            can_write = get_objects_for_user(self.auth.user, 'write_node', node._nodes.all(), with_superuser=False)
         else:
             can_write = node._nodes.none()
         descendants_qs = (
