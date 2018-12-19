@@ -845,8 +845,9 @@ class ContributorMixin(models.Model):
         return self._contributors.order_by(self.order_by_contributor_field)
 
     @property
-    def admin_contributor_ids(self):
-        return self._get_admin_contributor_ids(include_self=True)
+    def admin_contributor_or_group_member_ids(self):
+        # Admin contributors or group members on parent, or current resource
+        return self._get_admin_user_ids(include_self=True)
 
     def is_contributor_or_group_member(self, user):
         """

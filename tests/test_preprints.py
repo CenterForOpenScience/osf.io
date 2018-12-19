@@ -155,13 +155,13 @@ class TestPreprintProperties:
 
     def test_admin_contributor_ids(self, preprint, user):
         user2 = UserFactory()
-        assert len(preprint.admin_contributor_ids) == 1
-        assert user._id in preprint.admin_contributor_ids
+        assert len(preprint.admin_contributor_or_group_member_ids) == 1
+        assert user._id in preprint.admin_contributor_or_group_member_ids
 
         preprint.add_permission(user2, ADMIN, save=True)
 
-        assert len(preprint.admin_contributor_ids) == 2
-        assert user2._id in preprint.admin_contributor_ids
+        assert len(preprint.admin_contributor_or_group_member_ids) == 2
+        assert user2._id in preprint.admin_contributor_or_group_member_ids
 
     def test_visible_contributor_ids(self, preprint):
         assert preprint.visible_contributor_ids[0] == preprint.creator._id

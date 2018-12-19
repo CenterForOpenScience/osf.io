@@ -343,8 +343,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return self.absolute_api_v2_url + 'relationships/node/'
 
     @property
-    def admin_contributor_ids(self):
+    def admin_contributor_or_group_member_ids(self):
         # Overrides ContributorMixin
+        # Preprints don't have parents or group members at the moment, so we override here.
+        # Called when removing project subscriptions
         return self.get_group('admin').user_set.filter(is_active=True).values_list('guids___id', flat=True)
 
     @property

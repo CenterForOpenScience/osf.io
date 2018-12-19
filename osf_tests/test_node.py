@@ -1300,17 +1300,31 @@ class TestContributorProperties:
 
     def test_admin_contributor_ids(self, user):
         project = ProjectFactory(creator=user)
-        assert project.admin_contributor_ids == {user._id}
+        assert project.admin_contributor_or_group_member_ids == {user._id}
         child1 = ProjectFactory(parent=project)
         child2 = ProjectFactory(parent=child1)
-        assert child1.admin_contributor_ids == {project.creator._id, child1.creator._id}
-        assert child2.admin_contributor_ids == {project.creator._id, child1.creator._id, child2.creator._id}
+        assert child1.admin_contributor_or_group_member_ids == {project.creator._id, child1.creator._id}
+        assert child2.admin_contributor_or_group_member_ids == {project.creator._id, child1.creator._id, child2.creator._id}
         admin = UserFactory()
         project.add_contributor(admin, auth=Auth(project.creator), permissions=ADMIN)
         project.set_permissions(project.creator, WRITE)
         project.save()
-        assert child1.admin_contributor_ids == {child1.creator._id, admin._id}
-        assert child2.admin_contributor_ids == {child2.creator._id, child1.creator._id, admin._id}
+        assert child1.admin_contributor_or_group_member_ids == {child1.creator._id, admin._id}
+        assert child2.admin_contributor_or_group_member_ids == {child2.creator._id, child1.creator._id, admin._id}
+
+        # OSFGroup added with write perms
+        group_member = UserFactory()
+        group = OSFGroupFactory(creator=group_member)
+        project.add_osf_group(group, 'write')
+        project.save()
+        assert child1.admin_contributor_or_group_member_ids == {child1.creator._id, admin._id}
+        assert child2.admin_contributor_or_group_member_ids == {child2.creator._id, child1.creator._id, admin._id}
+
+        # OSFGroup updated to admin perms
+        project.update_osf_group(group, 'admin')
+        project.save()
+        assert child1.admin_contributor_or_group_member_ids == {child1.creator._id, admin._id, group_member._id}
+        assert child2.admin_contributor_or_group_member_ids == {child2.creator._id, child1.creator._id, admin._id, group_member._id}
 
 
 class TestContributorAddedSignal:

@@ -942,7 +942,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         Returns node contributors who are admins on the current node
         """
         return OSFUser.objects.filter(
-            guids___id__in=self.admin_contributor_ids
+            guids___id__in=self.admin_contributor_or_group_member_ids
         ).order_by('family_name')
 
     @property
