@@ -396,6 +396,22 @@ class TestNodeDetail:
         res = app.get(node_children_url, auth=user_three.auth)
         assert len(res.json['data']) == 1
 
+        # Grandchildren not shown. Children show one level.
+        grandparent = AuthUserFactory()
+        NodeFactory(parent=child, creator=user)
+        project_public.add_contributor(grandparent, 'admin')
+        project_public.save()
+        res = app.get(node_children_url, auth=grandparent.auth)
+        assert len(res.json['data']) == 1
+        res = app.get(url, auth=grandparent.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+        NodeFactory(parent=project_public, creator=user)
+        res = app.get(node_children_url, auth=grandparent.auth)
+        assert len(res.json['data']) == 2
+        res = app.get(url, auth=grandparent.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 2
+
     def test_node_shows_related_count_for_linked_by_relationships(self, app, user, project_public, url_public, project_private):
         url = url_public + '?related_counts=true'
         res = app.get(url)

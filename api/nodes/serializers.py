@@ -571,21 +571,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                WITH RECURSIVE parents AS (
-                  SELECT parent_id, child_id
-                  FROM osf_noderelation
-                  WHERE child_id = %s AND is_node_link IS FALSE
-                UNION ALL
-                  SELECT osf_noderelation.parent_id, parents.parent_id AS child_id
-                  FROM parents JOIN osf_noderelation ON parents.PARENT_ID = osf_noderelation.child_id
-                  WHERE osf_noderelation.is_node_link IS FALSE
-                )
                 SELECT DISTINCT
                   COUNT(child_id)
                 FROM
                   osf_noderelation
                 JOIN osf_abstractnode ON osf_noderelation.child_id = osf_abstractnode.id
-                JOIN osf_contributor ON osf_abstractnode.id = osf_contributor.node_id
                 LEFT JOIN osf_privatelink_nodes ON osf_abstractnode.id = osf_privatelink_nodes.abstractnode_id
                 LEFT JOIN osf_privatelink ON osf_privatelink_nodes.privatelink_id = osf_privatelink.id
                 WHERE parent_id = %s AND is_node_link IS FALSE
@@ -615,12 +605,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                       WHERE (P.content_type_id = CT.id
                              AND P.codename = 'admin_node'
                              AND G.permission_id = P.id
-                             AND G.content_object_id = osf_noderelation.parent_id
+                             AND G.content_object_id = parent_id
                              AND UG.osfuser_id = %s)
                       )
                   )
                 );
-            """, [obj.id, obj.id, user_id, auth.private_key, user_id],
+            """, [obj.id, user_id, auth.private_key, user_id],
             )
 
             return int(cursor.fetchone()[0])
