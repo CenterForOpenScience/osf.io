@@ -233,7 +233,7 @@ def do_get_timestamp_error_data(auth, node, headers, cookies, data):
         res = requests.get(url, headers=headers, cookies=cookies)
         current_datetime = datetime.now(pytz.timezone('Asia/Tokyo'))
         current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(auth.user._id, file_node._id, current_datetime_str)
+        tmp_dir = '/tmp/tmp_{}_{}_{}'.format(auth.user._id, file_node._id, current_datetime_str)
 
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)
@@ -298,7 +298,7 @@ def add_timestamp_token(auth, node, **kwargs):
 
         # Request To Download File
         res = requests.get(url, headers=headers, cookies=cookies)
-        tmp_dir = 'tmp_{}'.format(auth.user._id)
+        tmp_dir = '/tmp/tmp_{}'.format(auth.user._id)
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, data['file_name'])
