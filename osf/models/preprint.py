@@ -812,7 +812,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         # returns readable perms instead of literal perms
         if isinstance(user, AnonymousUser):
             return []
-        perms = ['admin_preprint', 'write_preprint', 'read_preprint']
+        perms = ['read_preprint', 'write_preprint', 'admin_preprint']
         user_perms = sorted(set(get_group_perms(user, self)).intersection(perms), key=perms.index)
         return [perm.split('_')[0] for perm in user_perms]
 

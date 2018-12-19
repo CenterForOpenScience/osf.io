@@ -1207,6 +1207,7 @@ class NodeGroupsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Lis
         else:
             return NodeGroupsSerializer
 
+    # overrides ListCreateAPIView
     def get_serializer_context(self):
         """
         Extra context for NodeGroupsSerializer
@@ -1233,13 +1234,16 @@ class NodeGroupsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, N
     view_category = 'nodes'
     view_name = 'node-group-detail'
 
+    # Overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         node = self.get_node(check_object_permissions=False)
+        # Node permissions checked when group is loaded
         group = self.get_osf_group(self.kwargs.get('group_id'))
         if not group.get_permission_to_node(node):
             raise NotFound('Group {} does not have permissions to node {}.'.format(group._id, node._id))
         return group
 
+    # Overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
         node = self.get_node(check_object_permissions=False)
         auth = get_user_auth(self.request)
@@ -1248,12 +1252,13 @@ class NodeGroupsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, N
         except PermissionsError:
             raise PermissionDenied('Not authorized to remove this group.')
 
+    # Overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
         """
         Extra context for NodeGroupsSerializer
         """
         context = super(NodeGroupsDetail, self).get_serializer_context()
-        context['node'] = self.get_node()
+        context['node'] = self.get_node(check_object_permissions=False)
         return context
 
 

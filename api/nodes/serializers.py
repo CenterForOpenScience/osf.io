@@ -723,7 +723,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 if not contributor.user.is_registered:
                     node.add_unregistered_contributor(
                         fullname=contributor.user.fullname, email=contributor.user.email, auth=auth,
-                        permissions=osf_permissions.reduce_permissions(parent.get_permissions(contributor.user)), existing_user=contributor.user,
+                        permissions=contributor.permission, existing_user=contributor.user,
                     )
             node.add_contributors(contributors, auth=auth, log=True, save=True)
             for group in parent.osf_groups:
@@ -1016,11 +1016,11 @@ class NodeForksSerializer(NodeSerializer):
 
 
 class CompoundIDField(IDField):
-    """ID field to use with another resource related to the node. CompoundIDField IDs have the form "<node-id>-<related-id>"."""
+    """ID field to use with another resource related to the node. CompoundIDField IDs have the form "<resource-id>-<related-id>"."""
 
     def __init__(self, *args, **kwargs):
         kwargs['source'] = kwargs.pop('source', '_id')
-        kwargs['help_text'] = kwargs.get('help_text', 'Unique ID that is a compound of two objects. Has the form "<node-id>-<related-id>". Example: "abc12-xyz34"')
+        kwargs['help_text'] = kwargs.get('help_text', 'Unique ID that is a compound of two objects. Has the form "<resource-id>-<related-id>". Example: "abc12-xyz34"')
         super(CompoundIDField, self).__init__(*args, **kwargs)
 
     def _get_resource_id(self):

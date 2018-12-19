@@ -366,8 +366,8 @@ class TestContributorMethods:
         assert preprint.is_contributor(user2)
         assert user1._id in preprint.visible_contributor_ids
         assert user2._id not in preprint.visible_contributor_ids
-        assert preprint.get_permissions(user1) == ['admin', 'write', 'read']
-        assert preprint.get_permissions(user2) == ['write', 'read']
+        assert preprint.get_permissions(user1) == ['read', 'write', 'admin']
+        assert preprint.get_permissions(user2) == ['read', 'write']
         last_log = preprint.logs.all().order_by('-created')[0]
         assert (
             last_log.params['contributors'] ==
@@ -536,7 +536,7 @@ class TestContributorMethods:
         new_contrib = AuthUserFactory()
         preprint.add_contributor(new_contrib, permissions=WRITE, auth=auth)
 
-        assert preprint.get_permissions(new_contrib) == ['write', 'read']
+        assert preprint.get_permissions(new_contrib) == ['read', 'write']
         assert preprint.get_visible(new_contrib) is True
 
         preprint.update_contributor(
@@ -704,7 +704,7 @@ class TestPermissionMethods:
         assert preprint.get_permissions(user) == ['read']
 
         preprint.add_permission(user, WRITE)
-        assert preprint.get_permissions(user) == ['write', 'read']
+        assert preprint.get_permissions(user) == ['read', 'write']
         assert contributor.user in preprint.contributors
 
     def test_add_permission(self, preprint):

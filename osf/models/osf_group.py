@@ -136,7 +136,9 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
     def _get_node_group_perms(self, node, permission):
         """
         Gets expanded permissions for a node.  The expanded permissions can be used
-        to add to the member group
+        to add to the member group.
+
+        Raises error if permission is invalid.
         """
         permissions = node.groups.get(permission)
         if not permissions:

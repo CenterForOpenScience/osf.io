@@ -16,7 +16,7 @@ MANAGER = 'manager'
 MEMBER = 'member'
 
 MANAGE = 'manage'
-GROUP_MEMBER_PERMISSIONS = [MANAGER, MEMBER]
+GROUP_ROLES = [MANAGER, MEMBER]
 
 # Permissions for ReviewableProviderMixin(GuardianMixin)
 REVIEW_PERMISSIONS = (
