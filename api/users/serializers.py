@@ -373,6 +373,7 @@ class UserSettingsSerializer(JSONAPISerializer):
     two_factor_enabled = ser.SerializerMethodField()
     subscribe_osf_general_email = ser.SerializerMethodField()
     subscribe_osf_help_email = ser.SerializerMethodField()
+    secret = ser.SerializerMethodField(read_only=True)
 
     def get_two_factor_enabled(self, obj):
         try:
@@ -380,6 +381,12 @@ class UserSettingsSerializer(JSONAPISerializer):
             return not two_factor.deleted
         except TwoFactorUserSettings.DoesNotExist:
             return False
+
+    def get_secret(self, obj):
+        if self.context['request'].method in ('PUT', 'PATCH'):
+            two_factor_addon = obj.get_addon('twofactor')
+            if two_factor_addon and not two_factor_addon.is_confirmed:
+                return two_factor_addon.totp_secret_b32
 
     def get_subscribe_osf_general_email(self, obj):
         return obj.mailchimp_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
