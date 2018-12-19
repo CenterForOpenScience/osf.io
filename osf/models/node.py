@@ -853,7 +853,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # returns readable perms instead of literal perms
         if isinstance(user, AnonymousUser):
             return []
-
+        # Returns perms either through contributorship or group membership
         user_perms = sorted(set(get_group_perms(user, self)).intersection(PERMISSIONS), key=PERMISSIONS.index)
         return [CONTRIB_PERMISSIONS[perm] for perm in user_perms]
 
@@ -907,15 +907,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return []
 
     def get_users_with_perm(self, permission):
-        # Returns queryset of all User objects a specific permission for the given node
-        # Explicit permissions only
+        # Returns queryset of all User objects with a specific permission for the given node
+        # Can either have these perms through contributorship or group membership.
+        # Implicit admin not included here, and superusers not included.
         if permission not in self.groups:
             return False
 
         perm = Permission.objects.get(codename='{}_node'.format(permission))
-        admin_groups = NodeGroupObjectPermission.objects.filter(permission_id=perm.id,
+        node_group_objects = NodeGroupObjectPermission.objects.filter(permission_id=perm.id,
                                                             content_object_id=self.id).values_list('group_id', flat=True)
-        return OSFUser.objects.filter(groups__id__in=admin_groups).distinct('id', 'family_name')
+        return OSFUser.objects.filter(groups__id__in=node_group_objects).distinct('id', 'family_name')
 
     @property
     def parent_admin_contributor_ids(self):
@@ -973,7 +974,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         Returns users who are admins on the current node
 
-        Includes .contributors and members of OSF Groups
+        Includes contributors and members of OSF Groups
         """
         return self.get_users_with_perm('admin')
 

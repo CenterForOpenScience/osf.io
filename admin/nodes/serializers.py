@@ -1,8 +1,6 @@
 import json
 
-from guardian.shortcuts import get_perms
 from osf.models import Contributor
-from osf.utils.permissions import reduce_permissions
 
 from admin.users.serializers import serialize_simple_node
 
@@ -59,5 +57,5 @@ def serialize_groups_for_node(node, osf_group):
     return {
         'name': osf_group.name,
         'id': osf_group._id,
-        'permission': reduce_permissions(get_perms(osf_group.member_group, node))
+        'permission': osf_group.get_permissions_to_node(node)
     }

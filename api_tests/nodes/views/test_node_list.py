@@ -224,6 +224,12 @@ class TestNodeList:
         assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
         assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
 
+        superuser = AuthUserFactory()
+        superuser.is_superuser = True
+        superuser.save()
+        res = app.get(url_public, auth=superuser.auth)
+        assert permissions.READ not in res.json['data'][0]['attributes']['current_user_permissions']
+
     def test_current_user_permissions_group_member(self, app, user, url, public_project):
         # in most recent API version, read isn't implicit for public nodes
         url_public = url + '?version=2.11'

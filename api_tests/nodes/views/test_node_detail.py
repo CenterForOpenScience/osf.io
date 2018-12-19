@@ -355,11 +355,14 @@ class TestNodeDetail:
         assert res.json['meta']['templated_by_count'] == 1
 
     def test_node_show_correct_children_count(self, app, user, user_two, project_public, url_public):
+        node_children_url = url_public + 'children/'
         url = url_public + '?related_counts=true'
         child = NodeFactory(parent=project_public, creator=user)
         res = app.get(url, auth=user.auth)
         # Child admin can view child
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+        res = app.get(node_children_url, auth=user.auth)
+        assert len(res.json['data']) == 1
 
         # Implicit admin on parent can view child count
         res = app.get(url, auth=user_two.auth)
@@ -368,6 +371,8 @@ class TestNodeDetail:
         project_public.save()
         res = app.get(url, auth=user_two.auth)
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+        res = app.get(node_children_url, auth=user_two.auth)
+        assert len(res.json['data']) == 1
 
         # Explicit Member of OSFGroup can view child count
         user_three = AuthUserFactory()
@@ -377,15 +382,35 @@ class TestNodeDetail:
         child.add_osf_group(group, 'read')
         res = app.get(url, auth=user_three.auth)
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+        res = app.get(node_children_url, auth=user_three.auth)
+        assert len(res.json['data']) == 1
 
         # Implicit admin group member can view child count
         child.remove_osf_group(group)
         res = app.get(url, auth=user_three.auth)
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
-        project_public.add_osf_group(group, 'admin')
 
+        project_public.add_osf_group(group, 'admin')
         res = app.get(url, auth=user_three.auth)
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+        res = app.get(node_children_url, auth=user_three.auth)
+        assert len(res.json['data']) == 1
+
+        # Grandchildren not shown. Children show one level.
+        grandparent = AuthUserFactory()
+        NodeFactory(parent=child, creator=user)
+        project_public.add_contributor(grandparent, 'admin')
+        project_public.save()
+        res = app.get(node_children_url, auth=grandparent.auth)
+        assert len(res.json['data']) == 1
+        res = app.get(url, auth=grandparent.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+        NodeFactory(parent=project_public, creator=user)
+        res = app.get(node_children_url, auth=grandparent.auth)
+        assert len(res.json['data']) == 2
+        res = app.get(url, auth=grandparent.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 2
 
     def test_node_shows_related_count_for_linked_by_relationships(self, app, user, project_public, url_public, project_private):
         url = url_public + '?related_counts=true'

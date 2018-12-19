@@ -351,3 +351,52 @@ class TestNodeListPermissionFiltering:
         res = app.get('{}admin'.format(url), auth=user2.auth)
         assert len(res.json['data']) == 1
         assert [admin_node._id] == [node['id'] for node in res.json['data']]
+
+    def test_filter_my_current_user_permissions_to_other_users_nodes(self, app, contrib, no_perm_node, read_node, write_node, admin_node):
+        url = '/{}users/{}/nodes/?filter[current_user_permissions]='.format(API_BASE, contrib._id)
+
+        me = AuthUserFactory()
+
+        # test filter read
+        res = app.get('{}read'.format(url), auth=me.auth)
+        assert len(res.json['data']) == 0
+
+        read_node.add_contributor(me, 'read')
+        read_node.save()
+        res = app.get('{}read'.format(url), auth=me.auth)
+        assert len(res.json['data']) == 1
+        assert set([read_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter write
+        res = app.get('{}write'.format(url), auth=me.auth)
+        assert len(res.json['data']) == 0
+        write_node.add_contributor(me, 'write')
+        write_node.save()
+        res = app.get('{}write'.format(url), auth=me.auth)
+        assert len(res.json['data']) == 1
+        assert set([write_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter admin
+        res = app.get('{}admin'.format(url), auth=me.auth)
+        assert len(res.json['data']) == 0
+
+        res = app.get('{}admin'.format(url), auth=me.auth)
+        admin_node.add_contributor(me, 'admin')
+        admin_node.save()
+        res = app.get('{}admin'.format(url), auth=me.auth)
+        assert len(res.json['data']) == 1
+        assert set([admin_node._id]) == set([node['id'] for node in res.json['data']])
+        res = app.get('{}read'.format(url), auth=me.auth)
+        assert len(res.json['data']) == 3
+        assert set([read_node._id, write_node._id, admin_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter nonauthenticated_user v2.11
+        read_node.is_public = True
+        read_node.save()
+        res = app.get('{}read&version=2.11'.format(url))
+        assert len(res.json['data']) == 0
+
+        # test filter nonauthenticated_user v2.2
+        res = app.get('{}read&version=2.2'.format(url))
+        assert len(res.json['data']) == 1
+        assert set([read_node._id]) == set([node['id'] for node in res.json['data']])
