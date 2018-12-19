@@ -987,8 +987,8 @@ def main(env):
             },
             {
                 '_id': 'tiqr',
-                'name': 'tiQr',
-                'description': 'tiQr',
+                'name': 'GakuNin RDM IdP',
+                'description': 'GakuNin RDM IdP',
                 'banner_name': 'tiQr-logo.png',
                 'logo_name': 'tiQr-logo.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.rdm.nii.ac.jp/idp/shibboleth')),
