@@ -136,6 +136,12 @@ class UserSerializer(JSONAPISerializer):
         read_only=True,
     ))
 
+    settings = ShowIfCurrentUser(RelationshipField(
+        related_view='users:user_settings',
+        related_view_kwargs={'user_id': '<_id>'},
+        read_only=True,
+    ))
+
     class Meta:
         type_ = 'users'
 
