@@ -839,7 +839,7 @@ def upload_file_add_timestamptoken(payload, node):
 
         current_datetime = timezone.now()
         current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(auth_id, file_node._id, current_datetime_str)
+        tmp_dir = '/tmp/tmp_{}_{}_{}'.format(auth_id, file_node._id, current_datetime_str)
         os.mkdir(tmp_dir)
         download_file_path = os.path.join(tmp_dir, metadata['name'])
         with open(download_file_path, 'wb') as fout:
@@ -876,7 +876,7 @@ def adding_timestamp(auth, node, file_node, version):
         res = requests.get(file_node.generate_waterbutler_url(**dict(action='download',
                            version=version.identifier, mode=None, _internal=False)),
                            headers=headers, cookies=cookies)
-        tmp_dir = 'tmp_{}'.format(ret['user']['id'])
+        tmp_dir = '/tmp/tmp_{}'.format(ret['user']['id'])
         os.mkdir(tmp_dir)
         tmp_file = os.path.join(tmp_dir, file_node.name)
         with open(tmp_file, 'wb') as fout:
@@ -905,10 +905,9 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
     from osf.models import Guid
     import shutil
 
-    tmp_dir = 'tmp_{}'.format(guid)
     current_datetime = timezone.now()
     current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-    tmp_dir = 'tmp_{}_{}_{}'.format(guid, file_node._id, current_datetime_str)
+    tmp_dir = '/tmp/tmp_{}_{}_{}'.format(guid, file_node._id, current_datetime_str)
     tmp_file = None
     try:
         ret = serialize_node(node, auth, primary=True)
