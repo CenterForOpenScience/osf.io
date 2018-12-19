@@ -488,6 +488,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
+        """
+        Returns the logged-in user's permissions to the
+        current node.  Implicit admin factored in.
+        Can have contributor or group member permissions.
+        """
         user = self.context['request'].user
         request_version = self.context['request'].version
         default_perm = ['read'] if StrictVersion(request_version) < StrictVersion('2.11') else []

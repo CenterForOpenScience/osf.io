@@ -521,7 +521,7 @@ class TestOSFGroup:
         assert len(can_view) == 5
         assert grandchild_two not in can_view
 
-    def test_parent_admin_users_osf_groups(self, manager, member, project, osf_group):
+    def test_parent_admin_users_osf_groups(self, manager, member, user_two, project, osf_group):
         child = NodeFactory(parent=project, creator=manager)
         project.add_osf_group(osf_group, ADMIN)
         # Manager has explict admin to child, member has implicit admin.
@@ -532,6 +532,12 @@ class TestOSFGroup:
 
         assert manager not in child.parent_admin_users
         assert member in child.parent_admin_users
+
+        user_two.is_superuser = True
+        user_two.save()
+
+        assert user_two not in child.admin_users
+        assert user_two not in child.parent_admin_users
 
     def test_get_users_with_perm_osf_groups(self, project, manager, member, osf_group):
         # Explicitly added as a contributor
