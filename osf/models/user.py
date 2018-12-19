@@ -1592,7 +1592,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
         for node in shared_nodes.exclude(type='osf.quickfilesnode'):
-            alternate_admins = OSFUser.objects.filter(groups__name=node.format_group('admin')).exclude(id=self.id)
+            alternate_admins = OSFUser.objects.filter(groups__name=node.format_group('admin')).filter(is_active=True).exclude(id=self.id)
             if not alternate_admins:
                 raise UserStateError(
                     'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(
