@@ -81,9 +81,9 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
         """check user permissions"""
         institution_id = None
         addon_name = self.kwargs.get('addon_name')
-        session = get_session()
         session_data = {}
         try:
+        session = get_session()
             session_data = session.data
         except RuntimeError:
             print('Unable to access session data')
