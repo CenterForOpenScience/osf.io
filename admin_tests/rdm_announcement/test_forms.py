@@ -35,6 +35,7 @@ class TestPreviewForm(AdminTestCase):
         nt.assert_false(form.is_valid())
         nt.assert_in('Body should be at most 140 characters', form.errors['__all__'])
 
+    '''
     def test_clean_from_push_okay(self):
         mod_data = dict(data)
         twitter_body = self.random_body(2000)
@@ -49,6 +50,8 @@ class TestPreviewForm(AdminTestCase):
         form = PreviewForm(data=mod_data)
         nt.assert_false(form.is_valid())
         nt.assert_in('Body should be at most 2000 characters', form.errors['__all__'])
+    '''
+
     ''' disable #GRDM-6902
     def test_clean_from_facebook_okay(self):
         mod_data = dict(data)
