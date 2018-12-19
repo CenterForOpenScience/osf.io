@@ -15,7 +15,9 @@
 <h3>TimeStamp Add ({{ project_title }})</h3>
 <form action "" id="addTimestampForm">
     <a class="btn btn-success" id="btn-verify">Verify</a>
+{% comment GRDM 7117 disable some timestamp features %}
     <a class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</a>
+{% endcomment %}
     <font color="red">
         <h4 id="timestamp_errors_spinner"></h4>
     </font>
