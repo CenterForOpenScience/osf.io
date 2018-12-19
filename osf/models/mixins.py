@@ -894,6 +894,10 @@ class ContributorMixin(models.Model):
         return (each.user for each in self._get_admin_contributors_query(users))
 
     def _get_admin_contributors_query(self, users):
+        """
+        Returns Contributor queryset whose objects have admin permissions to the node.
+        Group permissions not included.
+        """
         Preprint = apps.get_model('osf.Preprint')
 
         query_dict = {
@@ -1120,6 +1124,9 @@ class ContributorMixin(models.Model):
             del old.unclaimed_records[self._id]
             old.save()
 
+        # For the read, write, and admin Django group attached to the node/preprint,
+        # add the new user to the group, and remove the old.  This
+        # will give the new user the appropriate permissions.
         for group_name in self.groups.keys():
             if self.belongs_to_permission_group(old, group_name):
                 self.get_group(group_name).user_set.remove(old)

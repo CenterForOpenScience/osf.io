@@ -856,6 +856,7 @@ class TestContributorMethods:
         node.save()
         assert node.is_contributor(user2) is True
         assert node.has_permission(user2, 'admin')
+        # Even though user2 has admin perms, they don't have it through admin contributorship
         assert node.is_admin_contributor(user2) is False
 
     def test_add_contributors(self, node, auth):
@@ -1117,6 +1118,7 @@ class TestContributorMethods:
         node.add_contributor(contrib, auth=Auth(node.creator))
         node.save()
         assert contrib in node.contributors.all()  # sanity check
+        assert node.has_permission(contrib, 'write') is True
         replacer = UserFactory()
         old_length = node.contributors.count()
         node.replace_contributor(contrib, replacer)
@@ -1125,6 +1127,8 @@ class TestContributorMethods:
         assert contrib not in node.contributors.all()
         assert replacer in node.contributors.all()
         assert old_length == new_length
+        assert node.has_permission(replacer, 'write') is True
+        assert node.has_permission(contrib, 'write') is False
 
         # test unclaimed_records is removed
         assert (

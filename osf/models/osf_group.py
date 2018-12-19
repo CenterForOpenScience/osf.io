@@ -235,7 +235,8 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         """
         Replacing unregistered member with a verified user
 
-        Using "replace_contributor" language to mimic Node model
+        Using "replace_contributor" language to mimic Node model, so this can be called in
+        the same views using to claim accounts on nodes.
         """
         if not self.is_member(old):
             return False
@@ -245,6 +246,9 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             del old.unclaimed_records[self._id]
             old.save()
 
+        # For the manager and member Django group attached to the OSFGroup,
+        # add the new user to the group, and remove the old.  This
+        # will give the new user the appropriate permissions to the OSFGroup
         for group_name in self.groups.keys():
             if self.get_group(group_name).user_set.filter(id=old.id).exists():
                 self.get_group(group_name).user_set.remove(old)
