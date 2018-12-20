@@ -48,11 +48,11 @@ class TestUserSettingsGet:
         assert res.json['data']['attributes']['secret'] is None
         assert res.json['data']['type'] == 'user_settings'
 
-        # unconfirmed two_factor does not include secret
-        user_one.add_addon('twofactor')
+        # unconfirmed two_factor includes secret
+        addon = user_one.add_addon('twofactor')
         res = app.get(url, auth=user_one.auth)
         assert res.json['data']['attributes']['two_factor_enabled'] is True
-        assert res.json['data']['attributes']['secret'] is None
+        assert res.json['data']['attributes']['secret'] == addon.totp_secret_b32
 
 @pytest.mark.django_db
 class TestUserSettingsUpdateTwoFactor:
