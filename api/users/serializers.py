@@ -377,6 +377,7 @@ class UserSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     two_factor_enabled = ser.SerializerMethodField()
+    two_factor_confirmed = ser.SerializerMethodField(read_only=True)
     subscribe_osf_general_email = ser.SerializerMethodField()
     subscribe_osf_help_email = ser.SerializerMethodField()
     secret = ser.SerializerMethodField(read_only=True)
@@ -387,6 +388,12 @@ class UserSettingsSerializer(JSONAPISerializer):
             return not two_factor.deleted
         except TwoFactorUserSettings.DoesNotExist:
             return False
+
+    def get_two_factor_confirmed(self, obj):
+        two_factor_addon = obj.get_addon('twofactor')
+        if two_factor_addon and two_factor_addon.is_confirmed:
+            return True
+        return False
 
     def get_secret(self, obj):
         two_factor_addon = obj.get_addon('twofactor')

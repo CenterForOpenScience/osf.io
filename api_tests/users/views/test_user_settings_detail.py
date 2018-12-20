@@ -45,6 +45,7 @@ class TestUserSettingsGet:
         assert res.json['data']['attributes']['subscribe_osf_help_email'] is True
         assert res.json['data']['attributes']['subscribe_osf_general_email'] is False
         assert res.json['data']['attributes']['two_factor_enabled'] is False
+        assert res.json['data']['attributes']['two_factor_confirmed'] is False
         assert res.json['data']['attributes']['secret'] is None
         assert res.json['data']['type'] == 'user_settings'
 
@@ -52,6 +53,7 @@ class TestUserSettingsGet:
         addon = user_one.add_addon('twofactor')
         res = app.get(url, auth=user_one.auth)
         assert res.json['data']['attributes']['two_factor_enabled'] is True
+        assert res.json['data']['attributes']['two_factor_confirmed'] is False
         assert res.json['data']['attributes']['secret'] == addon.totp_secret_b32
 
 @pytest.mark.django_db
@@ -94,6 +96,7 @@ class TestUserSettingsUpdateTwoFactor:
         assert res.status_code == 200
         assert res.json['data']['attributes']['two_factor_enabled'] is False
         assert res.json['data']['attributes']['secret'] is None
+        assert res.json['data']['attributes']['two_factor_confirmed'] is False
 
         # Test enabling two factor
         payload['data']['attributes']['two_factor_enabled'] = True
@@ -105,6 +108,7 @@ class TestUserSettingsUpdateTwoFactor:
         assert addon.deleted is False
         assert addon.is_confirmed is False
         assert res.json['data']['attributes']['secret'] == addon.totp_secret_b32
+        assert res.json['data']['attributes']['two_factor_confirmed'] is False
 
         # Test already enabled - nothing happens, still enabled
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
@@ -117,6 +121,7 @@ class TestUserSettingsUpdateTwoFactor:
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 200
         assert res.json['data']['attributes']['two_factor_enabled'] is False
+        assert res.json['data']['attributes']['two_factor_confirmed'] is False
         assert res.json['data']['attributes']['secret'] is None
         user_one.reload()
         addon = user_one.get_addon('twofactor')
@@ -155,6 +160,7 @@ class TestUserSettingsUpdateTwoFactor:
 
         assert res.json['data']['attributes']['two_factor_enabled'] is True
         assert res.json['data']['attributes']['secret'] is None
+        assert res.json['data']['attributes']['two_factor_confirmed'] is True
         assert res.status_code == 200
         user_one.reload()
         addon = user_one.get_addon('twofactor')
