@@ -38,7 +38,7 @@ def parse_args():
 
     parser.add_argument('-r', '--reverse', dest='reverse', action='store_true')
 
-    parser.add_argument('-re', '--removeevent', dest="remove_event")
+    parser.add_argument('-re', '--removeevent', dest='remove_event')
 
     parsed = parser.parse_args()
 
@@ -190,7 +190,7 @@ def extract_events_from_keen(client, event_collection, start_date=None, end_date
     timeframe = VERY_LONG_TIMEFRAME
     if start_date and end_date:
         logger.info('Gathering events from the {} collection between {} and {}'.format(event_collection, start_date, end_date))
-        timeframe = {"start": start_date.isoformat(), "end": end_date.isoformat()}
+        timeframe = {'start': start_date.isoformat(), 'end': end_date.isoformat()}
     else:
         logger.info('Gathering events from the {} collection using timeframe {}'.format(event_collection, VERY_LONG_TIMEFRAME))
 
@@ -287,7 +287,7 @@ def remove_events_from_keen(client, source_collection, events, dry):
 
 
 def import_old_events_from_spreadsheet():
-    home = os.path.expanduser("~")
+    home = os.path.expanduser('~')
     spreadsheet_path = home + '/daily_user_counts.csv'
 
     key_map = {
@@ -306,7 +306,7 @@ def import_old_events_from_spreadsheet():
 
     with open(spreadsheet_path) as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
-        col_names = reader.next()
+        col_names = next(reader)
 
     dictReader = csv.DictReader(open(spreadsheet_path, 'rb'), fieldnames=col_names, delimiter=',')
 
@@ -330,7 +330,7 @@ def import_old_events_from_spreadsheet():
         node_event = {}
         user_event = {}
         addon_event = {}
-        for key, value in event.iteritems():
+        for key, value in event.items():
             if key in node_summary_cols:
                 node_event[key] = value
             if key in user_summary_cols:
@@ -367,19 +367,19 @@ def comma_int(value):
 
 def format_event(event, analytics_type):
     user_event_template = {
-        "status": {},
-        "keen": {}
+        'status': {},
+        'keen': {}
     }
 
     node_event_template = {
-        "projects": {},
-        "registered_projects": {},
-        "keen": {}
+        'projects': {},
+        'registered_projects': {},
+        'keen': {}
     }
 
     addon_event_template = {
-        "keen": {},
-        "users": {}
+        'keen': {},
+        'users': {}
     }
 
     template_to_use = None
@@ -414,7 +414,7 @@ def format_event(event, analytics_type):
             template_to_use['users']['linked'] = comma_int(event['linked'])
 
         if event['authorized'] or event['enabled'] or event['linked']:
-            template_to_use["provider"] = {"name": "dropbox"}
+            template_to_use['provider'] = {'name': 'dropbox'}
 
     template_to_use['keen']['timestamp'] = parse(event['timestamp']).replace(hour=12, tzinfo=pytz.UTC).isoformat()
     template_to_use['imported'] = True
@@ -432,7 +432,7 @@ def remove_event_from_keen(client, source_collection, event_id):
 def parse_and_send_old_events_to_keen(client, dry, reverse):
     old_events = import_old_events_from_spreadsheet()
 
-    for key, value in old_events.iteritems():
+    for key, value in old_events.items():
         if reverse:
             remove_events_from_keen(client, key, value, dry)
         else:

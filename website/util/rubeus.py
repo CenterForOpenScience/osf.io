@@ -116,6 +116,11 @@ def build_addon_root(node_settings, name, permissions=None,
         'nodeApiUrl': node_settings.owner.api_url,
     }
     ret.update(kwargs)
+
+    if hasattr(node_settings, 'region'):
+        ret.update({'nodeRegion': node_settings.region.name})
+        ret.update({'waterbutlerURL': node_settings.region.waterbutler_url})
+
     return ret
 
 

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+{% block top_includes %}
+    <script src="/static/js/collection_providers/collectionProviders.js"></script>
+    <script src="https://cloud.tinymce.com/stable/tinymce.min.js?apiKey={{ tinymce_apikey }}"></script>
+{% endblock %}
+{% load render_bundle from webpack_loader %}
+{% block title %}
+    <title>Collection Provider</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href={% url 'collection_providers:export' collection_provider.id %}>Export collection provider metadata</a>
+                <a class="btn btn-danger" href={% url 'collection_providers:delete' collection_provider.id %}>Delete collection provider</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h2>{{ collection_provider.name }}</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <button id="show-modify-form" class="btn btn-link" type="button">
+                    Modify Collection Provider
+                </button>
+            </div>
+        </div>
+        <div class="row" id="table-view">
+            <div class="col-md-12">
+                <table class="table table-striped">
+                    {% for field, value in collection_provider.items %}
+                        <tr>
+                            <th>{{ field }}</th>
+                            <td>{{ value | safe }}</td>
+                        </tr>
+                    {% endfor %}
+                    <tr>
+                        <th>collected_type_choices</th>
+                        <td>{{ collected_type_choices | safe }}</td>
+                    </tr>
+                    <tr>
+                        <th>status_choices</th>
+                        <td>{{ status_choices | safe }}</td>
+                    </tr>
+                    <tr>
+                        <th>issue_choices</th>
+                        <td>{{ issue_choices | safe }}</td>
+                    </tr>
+                    <tr>
+                        <th>volume_choices</th>
+                        <td>{{ volume_choices | safe }}</td>
+                    </tr>
+                    <tr>
+                        <th>program_area_choices</th>
+                        <td>{{ program_area_choices | safe }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div id="form-view" style="display:none">
+            {% include 'collection_providers/update_collection_provider_form.html' %}
+        </div>
+    </div>
+{% endblock content %}
+{% block bottom_js %}
+    {% render_bundle 'collection-provider-page' %}
+{% endblock %}

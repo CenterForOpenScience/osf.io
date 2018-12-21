@@ -195,6 +195,7 @@ def _do_get_file_map(file_tree):
 
 def _memoize_get_file_map(func):
     cache = {}
+
     @functools.wraps(func)
     def wrapper(node):
         if node._id not in cache:

@@ -1,6 +1,5 @@
 {
     "name": "EGAP Project",
-    "active": false,
     "version": 2,
     "pages": [{
         "id": "page1",

@@ -1,12 +1,14 @@
 import django
 django.setup()
 
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 import logging
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 from django.utils import timezone
 
+from osf.models import AbstractNode
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 
@@ -27,12 +29,19 @@ class FileSummary(SummaryAnalytics):
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=timezone.utc)
-        query_datetime = timestamp_datetime + timedelta(days=1)
 
         file_qs = OsfStorageFile.objects
+        abstract_node_content_type = ContentType.objects.get_for_model(AbstractNode)
 
-        public_query = Q(node__is_public=True)
-        private_query = Q(node__is_public=False)
+        public_query = Q(
+            target_object_id__in=AbstractNode.objects.filter(is_public=True).values('id'),
+            target_content_type=abstract_node_content_type
+        )
+
+        private_query = Q(
+            target_object_id__in=AbstractNode.objects.filter(is_public=False).values('id'),
+            target_content_type=abstract_node_content_type
+        )
 
         daily_query = Q(created__gte=timestamp_datetime)
 

@@ -11,6 +11,7 @@ import os
 from celery.canvas import Signature
 from celery.local import PromiseProxy
 from gevent.pool import Pool
+from flask import _app_ctx_stack as context_stack
 
 from website import settings
 
@@ -60,7 +61,7 @@ def postcommit_after_request(response, base_status_error_code=500):
 
 def get_task_from_postcommit_queue(name, predicate, celery=True):
     queue = postcommit_celery_queue() if celery else postcommit_queue()
-    matches = [task for key, task in queue.iteritems() if task.type.name == name and predicate(task)]
+    matches = [task for key, task in queue.items() if task.type.name == name and predicate(task)]
     if len(matches) == 1:
         return matches[0]
     elif len(matches) > 1:
@@ -68,23 +69,27 @@ def get_task_from_postcommit_queue(name, predicate, celery=True):
     return False
 
 def enqueue_postcommit_task(fn, args, kwargs, celery=False, once_per_request=True):
-    '''
+    """
     Any task queued with this function where celery=True will be run asynchronously.
-    '''
-    # make a hash of the pertinent data
-    raw = [fn.__name__, fn.__module__, args, kwargs]
-    m = hashlib.md5()
-    m.update('-'.join([x.__repr__() for x in raw]))
-    key = m.hexdigest()
-
-    if not once_per_request:
-        # we want to run it once for every occurrence, add a random string
-        key = '{}:{}'.format(key, binascii.hexlify(os.urandom(8)))
-
-    if celery and isinstance(fn, PromiseProxy):
-        postcommit_celery_queue().update({key: fn.si(*args, **kwargs)})
+    """
+    if context_stack.top and context_stack.top.app.testing:
+        # For testing purposes only: run fn directly
+        fn(*args, **kwargs)
     else:
-        postcommit_queue().update({key: functools.partial(fn, *args, **kwargs)})
+        # make a hash of the pertinent data
+        raw = [fn.__name__, fn.__module__, args, kwargs]
+        m = hashlib.md5()
+        m.update('-'.join([x.__repr__() for x in raw]))
+        key = m.hexdigest()
+
+        if not once_per_request:
+            # we want to run it once for every occurrence, add a random string
+            key = '{}:{}'.format(key, binascii.hexlify(os.urandom(8)))
+
+        if celery and isinstance(fn, PromiseProxy):
+            postcommit_celery_queue().update({key: fn.si(*args, **kwargs)})
+        else:
+            postcommit_queue().update({key: functools.partial(fn, *args, **kwargs)})
 
 handlers = {
     'before_request': postcommit_before_request,
@@ -92,17 +97,18 @@ handlers = {
 }
 
 def run_postcommit(once_per_request=True, celery=False):
-    '''
+    """
     Delays function execution until after the request's transaction has been committed.
     If you set the celery kwarg to True args and kwargs must be JSON serializable
     Tasks will only be run if the response's status code is < 500.
     Any task queued with this function where celery=True will be run asynchronously.
     :return:
-    '''
+    """
     def wrapper(func):
         # if we're local dev or running unit tests, run without queueing
         if settings.DEBUG_MODE:
             return func
+
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             enqueue_postcommit_task(func, args, kwargs, celery=celery, once_per_request=once_per_request)

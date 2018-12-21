@@ -45,6 +45,6 @@ class TestGitLabSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
             'profile_url': ea.profile_url,
             'nodes': [],
             'host': ea.oauth_secret,
-            'host_url': 'https://{0}'.format(ea.oauth_secret),
+            'host_url': ea.oauth_secret,
         }
         assert self.ser.serialize_account(ea) == expected

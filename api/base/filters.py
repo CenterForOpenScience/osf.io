@@ -4,22 +4,22 @@ import operator
 import re
 
 import pytz
-from guardian.shortcuts import get_objects_for_user
 from api.base import utils
-from api.base.exceptions import (InvalidFilterComparisonType,
-                                 InvalidFilterError, InvalidFilterFieldError,
-                                 InvalidFilterMatchType, InvalidFilterOperator,
-                                 InvalidFilterValue)
+from api.base.exceptions import (
+    InvalidFilterComparisonType,
+    InvalidFilterError, InvalidFilterFieldError,
+    InvalidFilterMatchType, InvalidFilterOperator,
+    InvalidFilterValue,
+)
 from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject, PreprintProvider, Node
+from osf.models import Subject, Preprint
 from osf.models.base import GuidMixin
-from osf.utils.workflows import DefaultStates
 
 
 def lowercase(lower):
@@ -30,6 +30,7 @@ def lowercase(lower):
 
 def sort_multiple(fields):
     fields = list(fields)
+
     def sort_fn(a, b):
         sort_direction = 1
         for field in fields:
@@ -119,6 +120,10 @@ class FilterMixin(object):
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
         if field_name not in getattr(serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
+        field = serializer_class._declared_fields[field_name]
+        # You cannot filter on deprecated fields.
+        if isinstance(field, ShowIfVersion) and utils.is_deprecated(self.request.version, field.min_version, field.max_version):
+            raise InvalidFilterFieldError(parameter='filter', value=field_name)
         return serializer_class._declared_fields[field_name]
 
     def _validate_operator(self, field, field_name, op):
@@ -136,13 +141,13 @@ class FilterMixin(object):
             if not isinstance(field, self.COMPARABLE_FIELDS):
                 raise InvalidFilterComparisonType(
                     parameter='filter',
-                    detail="Field '{0}' does not support comparison operators in a filter.".format(field_name)
+                    detail="Field '{0}' does not support comparison operators in a filter.".format(field_name),
                 )
         if op in self.MATCH_OPERATORS:
             if not isinstance(field, self.MATCHABLE_FIELDS):
                 raise InvalidFilterMatchType(
                     parameter='filter',
-                    detail="Field '{0}' does not support match operators in a filter.".format(field_name)
+                    detail="Field '{0}' does not support match operators in a filter.".format(field_name),
                 )
 
     def _parse_date_param(self, field, source_field_name, op, value):
@@ -157,7 +162,7 @@ class FilterMixin(object):
             return {
                 'op': op,
                 'value': self.convert_value(value, field),
-                'source_field_name': source_field_name
+                'source_field_name': source_field_name,
             }
         else:  # TODO: let times be as generic as possible (i.e. whole month, whole year)
             start = self.convert_value(value, field)
@@ -166,12 +171,12 @@ class FilterMixin(object):
                 {
                     'op': 'gte',
                     'value': start,
-                    'source_field_name': source_field_name
+                    'source_field_name': source_field_name,
                 }, {
                     'op': 'lt',
                     'value': stop,
-                    'source_field_name': source_field_name
-                }
+                    'source_field_name': source_field_name,
+                },
             ]
 
     def bulk_get_values(self, value, field):
@@ -198,7 +203,7 @@ class FilterMixin(object):
         }
         """
         query = {}
-        for key, value in query_params.iteritems():
+        for key, value in query_params.items():
             match = self.QUERY_PATTERN.match(key)
             if match:
                 match_dict = match.groupdict()
@@ -218,23 +223,23 @@ class FilterMixin(object):
                     # Special case date(time)s to allow for ambiguous date matches
                     if isinstance(field, self.DATE_FIELDS):
                         query.get(key).update({
-                            field_name: self._parse_date_param(field, source_field_name, op, value)
+                            field_name: self._parse_date_param(field, source_field_name, op, value),
                         })
                     elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id']:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
                                 'value': self.bulk_get_values(value, field),
-                                'source_field_name': source_field_name
-                            }
+                                'source_field_name': source_field_name,
+                            },
                         })
                     elif not isinstance(value, int) and source_field_name == 'root':
                         query.get(key).update({
                             field_name: {
                                 'op': op,
                                 'value': self.bulk_get_values(value, field),
-                                'source_field_name': source_field_name
-                            }
+                                'source_field_name': source_field_name,
+                            },
                         })
                     elif self.should_parse_special_query_params(field_name):
                         query = self.parse_special_query_params(field_name, key, value, query)
@@ -243,8 +248,8 @@ class FilterMixin(object):
                             field_name: {
                                 'op': op,
                                 'value': self.convert_value(value, field),
-                                'source_field_name': source_field_name
-                            }
+                                'source_field_name': source_field_name,
+                            },
                         })
                     self.postprocess_query_param(key, field_name, query[key][field_name])
 
@@ -293,7 +298,7 @@ class FilterMixin(object):
             else:
                 raise InvalidFilterValue(
                     value=value,
-                    field_type='bool'
+                    field_type='bool',
                 )
         elif isinstance(field, self.DATE_FIELDS):
             try:
@@ -304,7 +309,7 @@ class FilterMixin(object):
             except ValueError:
                 raise InvalidFilterValue(
                     value=value,
-                    field_type='date'
+                    field_type='date',
                 )
         elif isinstance(field, (self.RELATIONSHIP_FIELDS, ser.SerializerMethodField)):
             if value == 'null':
@@ -337,7 +342,7 @@ class ListFilterMixin(FilterMixin):
         'lt': operator.lt,
         'lte': operator.le,
         'gt': operator.gt,
-        'gte': operator.ge
+        'gte': operator.ge,
     }
 
     def __init__(self, *args, **kwargs):
@@ -363,20 +368,22 @@ class ListFilterMixin(FilterMixin):
         query_parts = []
 
         if filters:
-            for key, field_names in filters.iteritems():
+            for key, field_names in filters.items():
 
                 sub_query_parts = []
-                for field_name, data in field_names.iteritems():
+                for field_name, data in field_names.items():
                     operations = data if isinstance(data, list) else [data]
                     if isinstance(queryset, list):
                         for operation in operations:
                             queryset = self.get_filtered_queryset(field_name, operation, queryset)
                     else:
                         sub_query_parts.append(
-                            functools.reduce(operator.and_, [
-                                self.build_query_from_field(field_name, operation)
-                                for operation in operations
-                            ])
+                            functools.reduce(
+                                operator.and_, [
+                                    self.build_query_from_field(field_name, operation)
+                                    for operation in operations
+                                ],
+                            ),
                         )
                 if not isinstance(queryset, list):
                     sub_query = functools.reduce(operator.or_, sub_query_parts)
@@ -410,6 +417,7 @@ class ListFilterMixin(FilterMixin):
             elif operation['value'] == []:
                 operation['source_field_name'] = 'tags__isnull'
                 operation['value'] = True
+                operation['op'] = 'eq'
         # contributors iexact because guid matching
         if field_name == 'contributors':
             if operation['value'] not in (list(), tuple()):
@@ -494,7 +502,6 @@ class PreprintFilterMixin(ListFilterMixin):
     """View mixin that uses ListFilterMixin, adding postprocessing for preprint querying
 
        Subclasses must define `get_default_queryset()`.
-
     """
     def postprocess_query_param(self, key, field_name, operation):
         if field_name == 'provider':
@@ -511,19 +518,10 @@ class PreprintFilterMixin(ListFilterMixin):
                 operation['source_field_name'] = 'subjects__text'
                 operation['op'] = 'iexact'
 
-    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
-        sub_qs = Node.objects.filter(preprints=OuterRef('pk'), is_deleted=False)
-        no_user_query = Q(is_published=True, node__is_public=True)
-
-        if auth_user:
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
-            if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
-                query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
-            else:
-                query = (no_user_query | admin_user_query | reviews_user_query)
-        else:
-            query = no_user_query
-
-        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query).distinct('id', 'created')
+    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
+        return Preprint.objects.can_view(
+            base_queryset=base_queryset,
+            user=auth_user,
+            allow_contribs=allow_contribs,
+            public_only=public_only,
+        )

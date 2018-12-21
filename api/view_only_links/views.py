@@ -22,7 +22,7 @@ class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """
     permission_classes = (
         base_permissions.TokenHasScope,
-        drf_permissions.IsAuthenticatedOrReadOnly
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
     required_read_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_READ]
@@ -53,7 +53,7 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
         """
     permission_classes = (
         base_permissions.TokenHasScope,
-        drf_permissions.IsAuthenticatedOrReadOnly
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
     required_read_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_READ]
@@ -131,7 +131,7 @@ class ViewOnlyLinkNodesRelationships(JSONAPIBaseView, generics.RetrieveUpdateDes
     """
     permission_classes = (
         base_permissions.TokenHasScope,
-        drf_permissions.IsAuthenticatedOrReadOnly
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
     required_read_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_READ]
@@ -148,7 +148,7 @@ class ViewOnlyLinkNodesRelationships(JSONAPIBaseView, generics.RetrieveUpdateDes
         view_only_link = PrivateLink.load(link_id)
         return {
             'data': view_only_link.nodes.all(),
-            'self': view_only_link
+            'self': view_only_link,
         }
 
     def create(self, *args, **kwargs):

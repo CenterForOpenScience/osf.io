@@ -2,13 +2,12 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.response import Response
 
-from osf.models import AbstractNode
+from osf.models import Guid
 from rest_framework.views import APIView
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
-from api.base.utils import get_object_or_error
 from api.base.parsers import HMACSignedParser
 from api.wb.serializers import (
-    WaterbutlerMetadataSerializer
+    WaterbutlerMetadataSerializer,
 )
 
 class FileMetadataView(APIView):
@@ -18,28 +17,26 @@ class FileMetadataView(APIView):
     parser_classes = (HMACSignedParser,)
     serializer_class = WaterbutlerMetadataSerializer
     view_category = 'wb'
-    node_lookup_url_kwarg = 'node_id'
+    target_lookup_url_kwarg = 'target_id'
 
     def get_object(self):
-        return self.get_node(self.kwargs[self.node_lookup_url_kwarg])
+        return self.get_target(self.kwargs[self.target_lookup_url_kwarg])
 
-    def get_node(self, node_id):
-        node = get_object_or_error(
-            AbstractNode,
-            node_id,
-            self.request,
-            display_name='node'
-        )
-        if node.is_registration and not node.archiving:
+    def get_target(self, target_id):
+        guid = Guid.load(target_id)
+        if not guid:
+            raise NotFound
+        target = guid.referent
+        if getattr(target, 'is_registration', False) and not getattr(target, 'archiving', False):
             raise ValidationError('Registrations cannot be changed.')
-        return node
+        return target
 
     def get_serializer_context(self):
         """
         Extra context provided to the serializer class.
         """
         return {
-            'view': self
+            'view': self,
         }
 
     def post(self, request, *args, **kwargs):
@@ -48,14 +45,14 @@ class FileMetadataView(APIView):
             source = serializer.validated_data.pop('source')
             destination = serializer.validated_data.pop('destination')
             name = destination.get('name')
-            dest_node = self.get_node(node_id=destination.get('node'))
+            dest_target = self.get_target(target_id=destination.get('target'))
             try:
                 source = OsfStorageFileNode.get(source, self.get_object())
             except OsfStorageFileNode.DoesNotExist:
                 raise NotFound
 
             try:
-                dest_parent = OsfStorageFolder.get(destination.get('parent'), dest_node)
+                dest_parent = OsfStorageFolder.get(destination.get('parent'), dest_target)
             except OsfStorageFolder.DoesNotExist:
                 raise NotFound
             serializer.save(source=source, destination=dest_parent, name=name)

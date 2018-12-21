@@ -13,11 +13,21 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 if DEBUG:
     INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
-    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', 'nplusone.ext.django.NPlusOneMiddleware',)
+    MIDDLEWARE += (
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+        'nplusone.ext.django.NPlusOneMiddleware',
+    )
     DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda(_): True
+        'SHOW_TOOLBAR_CALLBACK': lambda(_): True,
     }
     ALLOWED_HOSTS.append('localhost')
+
+    # django-silk
+    INSTALLED_APPS += ('silk',)
+    MIDDLEWARE += (
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'silk.middleware.SilkyMiddleware',
+    )
 
 
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
@@ -28,4 +38,9 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'root-anon-throttle': '1000000/second',
     'test-user': '2/hour',
     'test-anon': '1/hour',
+    'send-email': '2/minute',
 }
+
+# Prereg challenge data is uploaded to this project TODO: Delete when Prereg challenge ends
+PREREG_DATA_STORE_TOKEN = None
+PREREG_DATA_STORE_GUID = None

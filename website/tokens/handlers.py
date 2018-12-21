@@ -95,7 +95,7 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         except PermissionsError as e:
             raise HTTPError(http.UNAUTHORIZED, data={
                 'message_short': 'Unauthorized access',
-                'message_long': e.message
+                'message_long': str(e)
             })
         sanction.save()
         return {

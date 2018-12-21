@@ -4,6 +4,7 @@ import waffle
 from flask import request
 
 from framework.auth.core import _get_current_user
+from osf import features
 from website.ember_osf_web.views import use_ember_app
 
 
@@ -28,3 +29,8 @@ def ember_flag_is_active(flag_name):
                 return func(*args, **kwargs)
         return wrapped
     return decorator
+
+
+def storage_i18n_flag_active():
+    request.user = _get_current_user() or MockUser()
+    return waffle.flag_is_active(request, features.STORAGE_I18N)

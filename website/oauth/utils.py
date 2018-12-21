@@ -11,5 +11,5 @@ def get_service(name):
 
 def get_available_scopes():
     return sorted([(name, data.description)
-                   for name, data in public_scopes.iteritems()
+                   for name, data in public_scopes.items()
                    if data.is_public is True])

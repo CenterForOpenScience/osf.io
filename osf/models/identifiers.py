@@ -34,6 +34,12 @@ class IdentifierMixin(models.Model):
     for model objects.
     """
 
+    @property
+    def should_request_identifiers(self):
+        """Determines if a identifier should be requested, Bool.
+        """
+        raise NotImplementedError()
+
     def get_doi_client(self):
         """Return a BaseIdentifierClient if proper
         settings are configured, else return None
@@ -45,10 +51,10 @@ class IdentifierMixin(models.Model):
         if client:
             return client.create_identifier(self, category)
 
-    def request_identifier_update(self, category):
+    def request_identifier_update(self, category, status=None):
         client = self.get_doi_client()
         if client:
-            return client.update_identifier(self, category)
+            return client.update_identifier(self, category, status=status)
 
     def get_identifier(self, category):
         """Returns None of no identifier matches"""

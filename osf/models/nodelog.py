@@ -87,9 +87,9 @@ class NodeLog(ObjectIDMixin, BaseModel):
     COMMENT_UPDATED = 'comment_updated'
     COMMENT_RESTORED = 'comment_restored'
 
-    CITATION_ADDED = 'citation_added'
-    CITATION_EDITED = 'citation_edited'
-    CITATION_REMOVED = 'citation_removed'
+    CUSTOM_CITATION_ADDED = 'custom_citation_added'
+    CUSTOM_CITATION_EDITED = 'custom_citation_edited'
+    CUSTOM_CITATION_REMOVED = 'custom_citation_removed'
 
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
@@ -139,7 +139,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED,
                 REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
                 PREREG_REGISTRATION_INITIATED,
-                CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
                 PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')

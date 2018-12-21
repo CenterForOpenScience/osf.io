@@ -2,10 +2,10 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api.base.settings import REST_FRAMEWORK
-from api.providers.permissions import GroupHelper
 from api_tests.providers.mixins import ProviderExistsMixin
 from osf_tests.factories import (
     PreprintProviderFactory,
+    ProviderAssetFileFactory,
     AuthUserFactory,
 )
 
@@ -88,13 +88,13 @@ class TestPreprintProviderUpdate:
     @pytest.fixture()
     def admin(self, provider):
         user = AuthUserFactory()
-        user.groups.add(GroupHelper(provider).get_group('admin'))
+        user.groups.add(provider.get_group('admin'))
         return user
 
     @pytest.fixture()
     def moderator(self, provider):
         user = AuthUserFactory()
-        user.groups.add(GroupHelper(provider).get_group('moderator'))
+        user.groups.add(provider.get_group('moderator'))
         return user
 
     @pytest.fixture(params=['/{}preprint_providers/{}/', '/{}providers/preprints/{}/'])
@@ -179,3 +179,40 @@ class TestPreprintProviderUpdate:
         assert provider.reviews_workflow == 'pre-moderation'
         assert not provider.reviews_comments_private
         assert not provider.reviews_comments_anonymous
+
+
+@pytest.mark.django_db
+class TestPreprintProviderAssets:
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory(name='Hanarxiv')
+
+    @pytest.fixture()
+    def provider_two(self):
+        return PreprintProviderFactory(name='Leileirxiv')
+
+    @pytest.fixture()
+    def provider_asset_one(self, provider_one):
+        return ProviderAssetFileFactory(providers=[provider_one])
+
+    @pytest.fixture()
+    def provider_asset_two(self, provider_two):
+        return ProviderAssetFileFactory(providers=[provider_two])
+
+    @pytest.fixture()
+    def provider_one_url(self, provider_one):
+        return '/{}providers/preprints/{}/'.format(
+            API_BASE, provider_one._id)
+
+    @pytest.fixture()
+    def provider_two_url(self, provider_two):
+        return '/{}providers/preprints/{}/'.format(
+            API_BASE, provider_two._id)
+
+    def test_asset_attribute_correct(self, app, provider_one, provider_two, provider_asset_one, provider_asset_two,
+                                     provider_one_url, provider_two_url):
+        res = app.get(provider_one_url)
+        assert res.json['data']['attributes']['assets'][provider_asset_one.name] == provider_asset_one.file.url
+
+        res = app.get(provider_two_url)
+        assert res.json['data']['attributes']['assets'][provider_asset_two.name] == provider_asset_two.file.url

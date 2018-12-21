@@ -7,14 +7,14 @@ monkey.patch_all()
 # the final gevent 1.1 release (https://github.com/gevent/gevent/issues/349)
 # unicode('foo').encode('idna')  # noqa
 
-from psycogreen.gevent import patch_psycopg  # noqa
+from psycogreen.gevent import patch_psycopg
 patch_psycopg()
 
 
-import os  # noqa
+import os
 
-from website import settings  # noqa
-from website.app import init_app  # noqa
+from website import settings
+from website.app import init_app
 
 application = app = init_app('website.settings', set_backends=True, routes=True)
 

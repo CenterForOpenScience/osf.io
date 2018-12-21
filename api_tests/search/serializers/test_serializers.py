@@ -2,7 +2,7 @@ import pytest
 
 from api.search.serializers import SearchSerializer
 from api_tests import utils
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
@@ -13,6 +13,7 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestSearchSerializer:
 
     def test_search_serializer_mixed_model(self):
@@ -22,7 +23,7 @@ class TestSearchSerializer:
         component = NodeFactory(parent=project, creator=user, is_public=True)
         file_component = utils.create_test_file(component, user)
         context = {'request': make_drf_request_with_version(version='2.0')}
-        schema = MetaSchema.objects.filter(
+        schema = RegistrationSchema.objects.filter(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
             schema_version=LATEST_SCHEMA_VERSION).first()
 

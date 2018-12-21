@@ -59,13 +59,17 @@ class TokenHasScope(permissions.BasePermission):
             try:
                 read_scopes = set(view.required_read_scopes)
             except AttributeError:
-                raise ImproperlyConfigured('TokenHasScope requires the view to define the '
-                                           'required_read_scopes attribute')
+                raise ImproperlyConfigured(
+                    'TokenHasScope requires the view to define the '
+                    'required_read_scopes attribute',
+                )
             assert is_iterable_but_not_string(view.required_read_scopes), \
                 'The required_read_scopes must be an iterable of CoreScopes'
             if view.required_read_scopes and isinstance(view.required_read_scopes[0], tuple):
-                raise ImproperlyConfigured('TokenHasScope requires the view to define the '
-                                           'required_read_scopes attribute using CoreScopes rather than ComposedScopes')
+                raise ImproperlyConfigured(
+                    'TokenHasScope requires the view to define the '
+                    'required_read_scopes attribute using CoreScopes rather than ComposedScopes',
+                )
 
             return read_scopes
         else:
@@ -73,13 +77,17 @@ class TokenHasScope(permissions.BasePermission):
             try:
                 write_scopes = set(view.required_write_scopes)
             except AttributeError:
-                raise ImproperlyConfigured('TokenHasScope requires the view to define the '
-                                           'required_write_scopes attribute')
+                raise ImproperlyConfigured(
+                    'TokenHasScope requires the view to define the '
+                    'required_write_scopes attribute',
+                )
             assert is_iterable_but_not_string(view.required_read_scopes), \
                 'The required_write_scopes must be an iterable of CoreScopes'
             if view.required_write_scopes and isinstance(view.required_write_scopes[0], tuple):
-                raise ImproperlyConfigured('TokenHasScope requires the view to define the '
-                                           'required_write_scopes attribute using CoreScopes rather than ComposedScopes')
+                raise ImproperlyConfigured(
+                    'TokenHasScope requires the view to define the '
+                    'required_write_scopes attribute using CoreScopes rather than ComposedScopes',
+                )
             return write_scopes
 
 

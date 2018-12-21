@@ -3,6 +3,7 @@ import pytest
 
 from rest_framework import exceptions
 
+from addons.wiki.models import WikiPage
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
 from api_tests.wikis.views.test_wiki_detail import WikiCRUDTestCase
@@ -149,7 +150,7 @@ class TestNodeWikiList:
         res = app.get(private_registration_url, auth=user.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert private_registration.get_wiki_page('home')._id in wiki_ids
+        assert WikiPage.objects.get_for_node(private_registration, 'home')._id in wiki_ids
 
     def test_wikis_not_returned_for_withdrawn_registration(
             self, app, user, private_registration, private_registration_url):
@@ -332,7 +333,7 @@ class TestNodeWikiCreate(WikiCRUDTestCase):
         res = app.post_json_api(url_node_public, payload, auth=user_write_contributor.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['name'] == page_name
-        wiki_page = project_public.get_wiki_page(page_name)
+        wiki_page = WikiPage.objects.get_for_node(project_public, page_name)
         assert wiki_page.get_version().content == 'my first wiki page'
 
     def test_create_public_wiki_page_with_empty_content(self, app, user_write_contributor, url_node_public, project_public):

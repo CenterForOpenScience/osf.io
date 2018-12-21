@@ -51,7 +51,7 @@ def parse_citation_styles(state, schema):
 
             # Optional
             try:
-                fields['short_title'] = root.find(selector + "title-short").text
+                fields['short_title'] = root.find(selector + 'title-short').text
             except AttributeError:
                 pass
 

@@ -8,9 +8,11 @@ import unittest
 
 import markupsafe
 import mock
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
+import pytest
+from nose.tools import *  # noqa: F403
 import re
 
+from django.utils import timezone
 from addons.wiki.utils import to_mongo_key
 from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
@@ -30,6 +32,7 @@ from osf_tests.factories import (
     UnconfirmedUserFactory,
     UnregUserFactory,
 )
+from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from website import settings, language
 from addons.osfstorage.models import OsfStorageFile
@@ -76,6 +79,8 @@ class TestAnUnregisteredUser(OsfTestCase):
         assert_in('/login/', res.headers['Location'])
 
 
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_quickfiles_creation
 class TestAUser(OsfTestCase):
 
     def setUp(self):
@@ -86,11 +91,6 @@ class TestAUser(OsfTestCase):
     def test_can_see_profile_url(self):
         res = self.app.get(self.user.url).maybe_follow()
         assert_in(self.user.url, res)
-
-    def test_can_see_homepage(self):
-        # Goes to homepage
-        res = self.app.get('/').maybe_follow()  # Redirects
-        assert_equal(res.status_code, 200)
 
     # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
@@ -103,8 +103,7 @@ class TestAUser(OsfTestCase):
     def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
-        res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/dashboard/')
+        assert 'dashboard' in res.headers.get('Location')
 
     def test_register_page(self):
         res = self.app.get('/register/')
@@ -113,8 +112,7 @@ class TestAUser(OsfTestCase):
     def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
         res = self.app.get('/register/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
-        res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/dashboard/')
+        assert 'dashboard' in res.headers.get('Location')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
@@ -123,15 +121,6 @@ class TestAUser(OsfTestCase):
         project.save()
         res = self.app.get('/myprojects/', auth=self.user.auth)
         assert_in('Projects', res)  # Projects heading
-
-    def test_logged_in_index_route_renders_home_template(self):
-        res = self.app.get('/', auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_in('My Projects', res)  # Will change once home page populated
-
-    def test_logged_out_index_route_renders_landing_page(self):
-        res = self.app.get('/')
-        assert_in('Simplified Scholarly Collaboration', res)
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
@@ -145,13 +134,6 @@ class TestAUser(OsfTestCase):
             save=True)
         res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
-
-    def test_sees_correct_title_home_page(self):
-        # User goes to homepage
-        res = self.app.get('/', auto_follow=True)
-        title = res.html.title.string
-        # page title is correct
-        assert_equal('OSF | Home', title)
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
@@ -242,8 +224,8 @@ class TestAUser(OsfTestCase):
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
         non_ascii = to_mongo_key('WöRlÐé')
-        project.update_node_wiki('WöRlÐé', 'new content', Auth(self.user))
-        wv = project.get_wiki_version(non_ascii)
+        WikiPage.objects.create_for_node(project, 'WöRlÐé', 'new content', Auth(self.user))
+        wv = WikiVersion.objects.get_for_node(project, non_ascii)
         assert wv.wiki_page.page_name.upper() == non_ascii.decode('utf-8').upper()
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
@@ -277,6 +259,7 @@ class TestAUser(OsfTestCase):
         assert_equal(td2.text, user2.display_absolute_url)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestComponents(OsfTestCase):
 
     def setUp(self):
@@ -356,6 +339,7 @@ class TestComponents(OsfTestCase):
         assert_in('Components', res)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestPrivateLinkView(OsfTestCase):
 
     def setUp(self):
@@ -369,7 +353,7 @@ class TestPrivateLinkView(OsfTestCase):
 
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert_in("Anonymous Contributors", res.body)
+        assert_in('Anonymous Contributors', res.body)
         assert_not_in(self.user.fullname, res)
 
     def test_anonymous_link_hides_citations(self):
@@ -388,9 +372,9 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': link2.key},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            'is being viewed through a private, view-only link. '
+            'Anyone with the link can view this project. Keep '
+            'the link safe.',
             res.body
         )
 
@@ -400,16 +384,18 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=['read'],
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': "not_valid"},
+        res = self.app.get(self.project_url, {'view_only': 'not_valid'},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            'is being viewed through a private, view-only link. '
+            'Anyone with the link can view this project. Keep '
+            'the link safe.',
             res.body
         )
 
 
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_quickfiles_creation
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
@@ -451,58 +437,7 @@ class TestMergingAccounts(OsfTestCase):
         assert_in('This account has been merged', res)
 
 
-# FIXME: These affect search in development environment. So need to migrate solr after running.
-# # Remove this side effect.
-@unittest.skipIf(not settings.SEARCH_ENGINE, 'Skipping because search is disabled')
-class TestSearching(OsfTestCase):
-    '''Test searching using the search bar. NOTE: These may affect the
-    Solr database. May need to migrate after running these.
-    '''
-
-    def setUp(self):
-        super(TestSearching, self).setUp()
-        import website.search.search as search
-        search.delete_all()
-        self.user = AuthUserFactory()
-        self.auth = self.user.auth
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_user_from_home_page(self):
-        user = UserFactory()
-        # Goes to home page
-        res = self.app.get('/').maybe_follow()
-        # Fills search form
-        form = res.forms['searchBar']
-        form['q'] = user.fullname
-        res = form.submit().maybe_follow()
-        # The username shows as a search result
-        assert_in(user.fullname, res)
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_public_project_from_home_page(self):
-        project = ProjectFactory(title='Foobar Project', is_public=True)
-        # Searches a part of the name
-        res = self.app.get('/').maybe_follow()
-        project.reload()
-        form = res.forms['searchBar']
-        form['q'] = 'Foobar'
-        res = form.submit().maybe_follow()
-        # A link to the project is shown as a result
-        assert_in('Foobar Project', res)
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_public_component_from_home_page(self):
-        component = NodeFactory(title='Foobar Component', is_public=True)
-        # Searches a part of the name
-        res = self.app.get('/').maybe_follow()
-        component.reload()
-        form = res.forms['searchBar']
-        form['q'] = 'Foobar'
-        res = form.submit().maybe_follow()
-        # A link to the component is shown as a result
-        assert_in('Foobar Component', res)
-
-
+@pytest.mark.enable_bookmark_creation
 class TestShortUrls(OsfTestCase):
 
     def setUp(self):
@@ -549,6 +484,8 @@ class TestShortUrls(OsfTestCase):
         )
 
 
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_implicit_clean
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
@@ -628,7 +565,7 @@ class TestClaiming(OsfTestCase):
         res2 = self.app.get(project2.url)
         assert_in_html(name2, res2)
 
-    @unittest.skip("as long as E-mails cannot be changed")
+    @unittest.skip('as long as E-mails cannot be changed')
     def test_cannot_set_email_to_a_user_that_already_exists(self):
         reg_user = UserFactory()
         name, email = fake.name(), fake_email()
@@ -727,6 +664,8 @@ class TestConfirmingEmail(OsfTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
 
 
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_bookmark_creation
 class TestClaimingAsARegisteredUser(OsfTestCase):
 
     def setUp(self):
@@ -766,14 +705,46 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         # unclaimed record for the project has been deleted
         assert_not_in(self.project, self.user.unclaimed_records)
 
+    def test_claim_user_registered_preprint_with_correct_password(self):
+        preprint = PreprintFactory(creator=self.referrer)
+        name, email = fake.name(), fake_email()
+        unreg_user = preprint.add_unregistered_contributor(
+            fullname=name,
+            email=email,
+            auth=Auth(user=self.referrer)
+        )
+        reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'queenfan86'
+        url = unreg_user.get_claim_url(preprint._id)
+        # Follow to password re-enter page
+        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
 
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body)
+
+        form = res.forms['claimContributorForm']
+        form['password'] = 'queenfan86'
+        res = form.submit(auth=reg_user.auth)
+
+        preprint.reload()
+        unreg_user.reload()
+        # user is now a contributor to the project
+        assert_in(reg_user, preprint.contributors)
+
+        # the unregistered user (unreg_user) is removed as a contributor, and their
+        assert_not_in(unreg_user, preprint.contributors)
+
+        # unclaimed record for the project has been deleted
+        assert_not_in(preprint, unreg_user.unclaimed_records)
+
+
+@pytest.mark.enable_implicit_clean
 class TestExplorePublicActivity(OsfTestCase):
 
     def setUp(self):
         super(TestExplorePublicActivity, self).setUp()
         self.project = ProjectFactory(is_public=True)
         self.registration = RegistrationFactory(project=self.project)
-        self.private_project = ProjectFactory(title="Test private project")
+        self.private_project = ProjectFactory(title='Test private project')
         self.popular_project = ProjectFactory(is_public=True)
         self.popular_registration = RegistrationFactory(project=self.project, is_public=True)
 
@@ -1097,63 +1068,271 @@ class TestAUserProfile(OsfTestCase):
         assert_not_in(reg.nodes[0].title, res)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestPreprintBannerView(OsfTestCase):
     def setUp(self):
         super(TestPreprintBannerView, self).setUp()
 
         self.admin = AuthUserFactory()
+        self.write_contrib = AuthUserFactory()
+        self.read_contrib = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
         self.provider_one = PreprintProviderFactory()
-        self.provider_two = PreprintProviderFactory()
         self.project_one = ProjectFactory(creator=self.admin, is_public=True)
-        self.project_two = ProjectFactory(creator=self.admin, is_public=True)
-        self.project_three = ProjectFactory(creator=self.admin, is_public=True)
+        self.project_one.add_contributor(self.write_contrib, ['write', 'read'])
+        self.project_one.add_contributor(self.read_contrib, ['read'])
 
         self.subject_one = SubjectFactory()
-        self.subject_two = SubjectFactory()
-
-        self.file_one = test_utils.create_test_file(self.project_one, self.admin, 'mgla.pdf')
-        self.file_two = test_utils.create_test_file(self.project_two, self.admin, 'saor.pdf')
-
-        self.published_preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=self.project_one, is_published=True)
-        self.unpublished_preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider_two, subjects=[[self.subject_two._id]], project=self.project_two, is_published=False)
+        self.preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=self.project_one, is_published=True)
+        self.preprint.add_contributor(self.write_contrib, 'write')
+        self.preprint.add_contributor(self.read_contrib, 'read')
 
     def test_public_project_published_preprint(self):
         url = self.project_one.web_url_for('view_project')
-        res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
 
-    def test_private_project_published_preprint(self):
-        self.project_one.is_public = False
-        self.project_one.save()
-        url = self.project_one.web_url_for('view_project')
+        # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_in('Has supplemental materials for', res.body)
+
+    def test_public_project_abandoned_preprint(self):
+        self.preprint.machine_state = 'initial'
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_not_in('Has supplemental materials for', res.body)
+
+    def test_public_project_deleted_preprint(self):
+        self.preprint.deleted = timezone.now()
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_not_in('Has supplemental materials for', res.body)
+
+    def test_public_project_private_preprint(self):
+        self.preprint.is_public = False
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_not_in('Has supplemental materials for', res.body)
+
+    def test_public_project_orphaned_preprint(self):
+        self.preprint.primary_file = None
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_not_in('Has supplemental materials for', res.body)
 
     def test_public_project_unpublished_preprint(self):
-        url = self.project_two.web_url_for('view_project')
-        res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        self.preprint.is_published = False
+        self.preprint.save()
 
-    def test_private_project_unpublished_preprint(self):
-        # Do not show banner on unpublished preprints
-        self.project_two.is_public = False
-        self.project_two.save()
-        url = self.project_two.web_url_for('view_project')
-        res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        url = self.project_one.web_url_for('view_project')
 
-    def test_public_project_no_preprint(self):
-        url = self.project_three.web_url_for('view_project')
+        # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_in('Has supplemental materials for', res.body)
 
-    def test_private_project_no_preprint(self):
-        self.project_three.is_public = False
-        self.project_three.save()
-        url = self.project_three.web_url_for('view_project')
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('Has supplemental materials for', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_not_in('Has supplemental materials for', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_not_in('Has supplemental materials for', res.body)
+
+    def test_public_project_pending_preprint_post_moderation(self):
+        self.preprint.machine_state = 'pending'
+        provider = PreprintProviderFactory(reviews_workflow='post-moderation')
+        self.preprint.provider = provider
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending\n', res.body)
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
 
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending\n', res.body)
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending\n', res.body)
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_in('on {}'.format(self.preprint.provider.name), res.body)
+        assert_not_in('Pending\n', res.body)
+        assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_in('on {}'.format(self.preprint.provider.name), res.body)
+        assert_not_in('Pending\n', res.body)
+        assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+
+    def test_implicit_admins_can_see_project_status(self):
+        project = ProjectFactory(creator=self.admin)
+        component = NodeFactory(creator=self.admin, parent=project)
+        project.add_contributor(self.write_contrib, ['read', 'write', 'admin'])
+        project.save()
+
+        preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=component, is_published=True)
+        preprint.machine_state = 'pending'
+        provider = PreprintProviderFactory(reviews_workflow='post-moderation')
+        preprint.provider = provider
+        preprint.save()
+        url = component.web_url_for('view_project')
+
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('{}'.format(preprint.provider.name), res.body)
+        assert_in('Pending\n', res.body)
+        assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body)
+
+    def test_public_project_pending_preprint_pre_moderation(self):
+        self.preprint.machine_state = 'pending'
+        provider = PreprintProviderFactory(reviews_workflow='pre-moderation')
+        self.preprint.provider = provider
+        self.preprint.save()
+
+        url = self.project_one.web_url_for('view_project')
+
+        # Admin - preprint
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending\n', res.body)
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+
+        # Write - preprint
+        res = self.app.get(url, auth=self.write_contrib.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending\n', res.body)
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+
+        # Read - preprint
+        res = self.app.get(url, auth=self.read_contrib.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_in('Pending\n', res.body)
+        assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+
+        # Noncontrib - preprint
+        res = self.app.get(url, auth=self.non_contrib.auth)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_not_in('Pending\n', res.body)
+        assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
+
+        # Unauthenticated - preprint
+        res = self.app.get(url)
+        assert_in('{}'.format(self.preprint.provider.name), res.body)
+        assert_not_in('Pending\n', res.body)
+        assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body)
 
 if __name__ == '__main__':
     unittest.main()

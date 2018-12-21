@@ -3,6 +3,7 @@ var hljs = require('highlight.js');
 require('highlight-css');
 var MarkdownIt = require('markdown-it');
 
+var $ = require('jquery');
 var insDel = require('markdown-it-ins-del');
 var pymarkdownList = require('js/markdown-it-pymarkdown-lists');
 
@@ -30,12 +31,28 @@ var bootstrapTable = function(md) {
 var oldMarkdownList = function(md) {
     md.block.ruler.after('hr', 'pyMarkdownList', pymarkdownList);
 };
+var mfrURL = window.contextVars.node.urls.mfr;
+var osfURL = window.contextVars.osfURL;
+
+var getMfrUrl = function (guid) {
+    return mfrURL + 'render?url='+ osfURL + guid + '/?action=download%26mode=render';
+};
+
+var mfrId = 0;
 
 // Full markdown renderer for views / wiki pages / pauses between typing
 var markdown = new MarkdownIt('commonmark', {
     highlight: highlighter,
     linkify: true
-})
+    }).use(require('@centerforopenscience/markdown-it-atrules'), {
+        type: 'osf',
+        pattern: /^http(?:s?):\/\/(?:www\.)?[a-zA-Z0-9 .:]{1,}\/render\?url=http(?:s?):\/\/[a-zA-Z0-9 .:]{1,}\/([a-zA-Z0-9]{1,})\/\?action=download|(^[a-zA-Z0-9]{1,}$)/,
+        format: function(assetID) {
+             var id = '__markdown-it-atrules-' + mfrId++;
+             return '<div id="' + id + '" class="mfr mfr-file"></div>' +
+                 '<script>$(document).ready(function () {new mfr.Render("' + id + '", "' + getMfrUrl(assetID) + '");    }); </script>';
+        }
+    })
     .use(require('markdown-it-video'))
     .use(require('@centerforopenscience/markdown-it-toc'))
     .use(require('markdown-it-sanitizer'))

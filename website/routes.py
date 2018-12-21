@@ -5,12 +5,15 @@ import httplib as http
 import requests
 import urlparse
 import waffle
+import json
 
 from flask import request
 from flask import send_from_directory
 from flask import Response
 from flask import stream_with_context
+from flask import g
 from django.core.urlresolvers import reverse
+from django.conf import settings as api_settings
 
 from geolite2 import geolite2
 
@@ -27,6 +30,7 @@ from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
+from osf import features
 from osf.models import Institution
 from osf.utils import sanitize
 from website import util
@@ -41,6 +45,7 @@ from website import views as website_views
 from website.citations import views as citation_views
 from website.search import views as search_views
 from website.oauth import views as oauth_views
+from addons.osfstorage import views as osfstorage_views
 from website.profile.utils import get_profile_image_url
 from website.profile import views as profile_views
 from website.project import views as project_views
@@ -55,13 +60,14 @@ from website.notifications import views as notification_views
 from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
-from website.ember_osf_web.decorators import ember_flag_is_active
 from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
         status.push_status_message(
-            message=language.TERMS_OF_SERVICE.format(settings.API_DOMAIN, user._id),
+            message=language.TERMS_OF_SERVICE.format(api_domain=settings.API_DOMAIN,
+                                                     user_id=user._id,
+                                                     csrf_token=json.dumps(g.get('csrf_token'))),
             kind='default',
             dismissible=True,
             trust=True,
@@ -80,12 +86,13 @@ def get_globals():
     location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
-            inst_id = Institution.objects.get(domains__icontains=[request.host])._id
+            inst_id = Institution.objects.get(domains__icontains=request.host, is_deleted=False)._id
             request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
         except Institution.DoesNotExist:
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
         request_login_url = request.url
+
     return {
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
@@ -125,9 +132,10 @@ def get_globals():
         'sanitize': sanitize,
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
+        'osf_url': settings.INTERNAL_DOMAIN,
         'waterbutler_url': settings.WATERBUTLER_URL,
-        'mfr_url': settings.MFR_SERVER_URL,
         'login_url': cas.get_login_url(request_login_url),
+        'sign_up_url': util.web_url_for('auth_register', _absolute=True, next=request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
@@ -141,7 +149,7 @@ def get_globals():
                 'write_key': settings.KEEN['private']['write_key'],
             },
         },
-        'institutional_landing_flag': waffle.flag_is_active(request, settings.INSTITUTIONAL_LANDING_FLAG),
+        'institutional_landing_flag': waffle.flag_is_active(request, features.INSTITUTIONAL_LANDING_FLAG),
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS,
@@ -149,7 +157,9 @@ def get_globals():
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs')),
         'footer_links': settings.FOOTER_LINKS,
+        'features': features,
         'waffle': waffle,
+        'csrf_cookie_name': api_settings.CSRF_COOKIE_NAME,
     }
 
 
@@ -251,14 +261,13 @@ def ember_app(path=None):
 
     return send_from_directory(ember_app_folder, fp)
 
-@ember_flag_is_active('ember_home_page')
 def goodbye():
     # Redirect to dashboard if logged in
+    redirect_url = util.web_url_for('index')
     if _get_current_user():
-        return redirect(util.web_url_for('index'))
-    status.push_status_message(language.LOGOUT, kind='success', trust=False)
-    return {}
-
+        return redirect(redirect_url)
+    else:
+        return redirect(redirect_url + '?goodbye=true')
 
 def make_url_map(app):
     """Set up all the routes for the OSF app.
@@ -376,7 +385,7 @@ def make_url_map(app):
             '/dashboard/',
             'get',
             website_views.dashboard,
-            OsfWebRenderer('home.mako', trust=False)
+            notemplate
         ),
 
         Rule(
@@ -396,7 +405,6 @@ def make_url_map(app):
         Rule('/help/', 'get', website_views.redirect_help, notemplate),
         Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
-        Rule('/support/', 'get', website_views.support, OsfWebRenderer('public/pages/support.mako', trust=False)),
         Rule(
             '/explore/',
             'get',
@@ -925,6 +933,13 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/profile/region/',
+            'put',
+            osfstorage_views.update_region,
+            json_renderer,
+        ),
+
+        Rule(
             '/profile/deactivate/',
             'post',
             profile_views.request_deactivation,
@@ -1064,10 +1079,9 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-        # '/' route loads home.mako if logged in, otherwise loads landing.mako
-        Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako', trust=False)),
+        Rule('/', 'get', website_views.index, OsfWebRenderer('institution.mako', trust=False)),
 
-        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako', trust=False)),
+        Rule('/goodbye/', 'get', goodbye, notemplate),
 
         Rule(
             [
@@ -1121,8 +1135,6 @@ def make_url_map(app):
             OsfWebRenderer('project/project.mako', trust=False)
         ),
 
-        ### Logs ###
-
         # View forks
         Rule(
             [
@@ -1131,7 +1143,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.node_forks,
-            OsfWebRenderer('project/forks.mako', trust=False)
+            notemplate,
         ),
 
         # Registrations
@@ -1222,8 +1234,9 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.project_statistics,
-            OsfWebRenderer('project/statistics.mako', trust=False)
+            notemplate,
         ),
+
 
         ### Files ###
 
@@ -1242,6 +1255,7 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/<guid>/files/<provider>/<path:path>/',
                 '/project/<pid>/files/<provider>/<path:path>/',
                 '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
             ],
@@ -1257,6 +1271,7 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/api/v1/<guid>/files/<provider>/<path:path>/',
                 '/api/v1/project/<pid>/files/<provider>/<path:path>/',
                 '/api/v1/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
             ],
@@ -1720,6 +1735,7 @@ def make_url_map(app):
     # Set up static routing for addons and providers
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
+    provider_static_path = os.path.abspath('assets')
     if settings.DEV_MODE:
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
@@ -1728,8 +1744,7 @@ def make_url_map(app):
 
         @app.route('/assets/<filename>')
         def provider_static(filename):
-            assets_path = os.path.join(settings.BASE_PATH, 'assets')
-            return send_from_directory(assets_path, filename)
+            return send_from_directory(provider_static_path, filename)
 
         @app.route('/ember-cli-live-reload.js')
         def ember_cli_live_reload():

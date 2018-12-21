@@ -1,5 +1,4 @@
 import pytest
-import mock
 
 from api.users.serializers import UserSerializer
 from osf_tests.factories import (
@@ -22,6 +21,7 @@ def user_with_preprint():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestUserSerializer:
 
     def test_user_serializer(self, user):

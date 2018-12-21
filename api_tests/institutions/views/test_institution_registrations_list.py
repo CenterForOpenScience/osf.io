@@ -1,4 +1,5 @@
-from nose.tools import *  # flake8: noqa
+import pytest
+from nose.tools import *  # noqa:
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (
@@ -59,7 +60,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
     def test_doesnt_return_retractions_without_auth(self):
         self.registration2.is_public = True
         self.registration2.save()
-        retraction = WithdrawnRegistrationFactory(
+        WithdrawnRegistrationFactory(
             registration=self.registration2, user=self.user1)
         assert_true(self.registration2.is_retracted)
 
@@ -71,7 +72,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
         assert_not_in(self.registration2._id, ids)
 
     def test_doesnt_return_retractions_with_auth(self):
-        retraction = WithdrawnRegistrationFactory(
+        WithdrawnRegistrationFactory(
             registration=self.registration2, user=self.user1)
 
         assert_true(self.registration2.is_retracted)
@@ -83,6 +84,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
 
         assert_not_in(self.registration2._id, ids)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_total_biographic_contributor_in_institution_registration(self):
         user3 = AuthUserFactory()
         registration3 = RegistrationFactory(is_public=True, creator=self.user1)

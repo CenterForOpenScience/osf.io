@@ -1,6 +1,6 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '3'
+version: '3.4'
 
 volumes:
   postgres_data_vol:
@@ -8,6 +8,8 @@ volumes:
   mongo_data_vol:
     external: false
   elasticsearch_data_vol:
+    external: false
+  elasticsearch6_data_vol:
     external: false
   rabbitmq_vol:
     external: false
@@ -42,7 +44,6 @@ volumes:
   osf_admin_bower_components_vol:
     external: false
 
-
 services:
 
   ###################
@@ -55,6 +56,15 @@ services:
       - 9200:9200
     volumes:
       - elasticsearch_data_vol:/usr/share/elasticsearch/data
+    stdin_open: true
+
+  # Temporary: Remove when we've upgraded to ES6
+  elasticsearch6:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
+    ports:
+      - 9201:9200
+    volumes:
+      - elasticsearch6_data_vol:/usr/share/elasticsearch/data
     stdin_open: true
 
   postgres:
@@ -112,7 +122,6 @@ services:
 #      - 5555:5555
 #    environment:
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-
 
   #########################
   # Modular File Renderer #
@@ -353,7 +362,7 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke requirements --quick &&
+      - invoke requirements --all &&
         (python -m compileall /usr/local/lib/python2.7 || true) &&
         rm -Rf /python2.7/* &&
         cp -Rf -p /usr/local/lib/python2.7 /
@@ -361,6 +370,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/python2.7
 
   assets:
@@ -370,6 +380,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -382,6 +393,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
@@ -413,6 +425,7 @@ services:
 #    env_file:
 #      - .docker-compose.env
 #    volumes:
+#      - ./:/code
 #      - osf_requirements_vol:/usr/local/lib/python2.7
 #      - osf_bower_components_vol:/code/website/static/vendor/bower_components
 #      - osf_node_modules_vol:/code/node_modules
@@ -432,6 +445,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -456,6 +470,7 @@ services:
       - .docker-compose.env
     stdin_open: true
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -477,6 +492,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
@@ -498,6 +514,7 @@ services:
       - .docker-compose.env
       - .docker-compose.sharejs.env
     volumes:
+      - ./:/code:cached
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules

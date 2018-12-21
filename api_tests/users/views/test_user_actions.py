@@ -2,7 +2,6 @@ import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
@@ -13,6 +12,7 @@ from osf.utils import permissions as osf_permissions
 from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestReviewActionFilters(ReviewActionFilterMixin):
     @pytest.fixture()
     def url(self):
@@ -38,6 +38,7 @@ class TestReviewActionFilters(ReviewActionFilterMixin):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestReviewActionCreateRelated(object):
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {
@@ -73,14 +74,14 @@ class TestReviewActionCreateRelated(object):
         preprint = PreprintFactory(
             provider=provider,
             is_published=False)
-        preprint.node.add_contributor(
-            node_admin, permissions=[osf_permissions.ADMIN])
+        preprint.add_contributor(
+            node_admin, permissions=osf_permissions.ADMIN)
         return preprint
 
     @pytest.fixture()
     def moderator(self, provider):
         moderator = AuthUserFactory()
-        moderator.groups.add(GroupHelper(provider).get_group('moderator'))
+        moderator.groups.add(provider.get_group('moderator'))
         return moderator
 
     def test_create_permissions(
@@ -124,8 +125,7 @@ class TestReviewActionCreateRelated(object):
 
         # Moderator from another provider can't accept
         another_moderator = AuthUserFactory()
-        another_moderator.groups.add(GroupHelper(
-            PreprintProviderFactory()).get_group('moderator'))
+        another_moderator.groups.add(PreprintProviderFactory().get_group('moderator'))
         res = app.post_json_api(
             url, accept_payload,
             auth=another_moderator.auth,
@@ -239,7 +239,7 @@ class TestReviewActionCreateRelated(object):
                 ('rejected', 'submit', 'pending'),
             ],
         }
-        for workflow, transitions in valid_transitions.items():
+        for workflow, transitions in list(valid_transitions.items()):
             provider.reviews_workflow = workflow
             provider.save()
             for from_state, trigger, to_state in transitions:

@@ -12,8 +12,9 @@ from api.base.serializers import LinksField
 from api.base.serializers import RelationshipField
 from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
+from api.requests.serializers import PreprintRequestSerializer
 from osf.exceptions import InvalidTriggerError
-from osf.models import PreprintService, NodeRequest
+from osf.models import Preprint, NodeRequest, PreprintRequest
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils import permissions
 
@@ -69,6 +70,12 @@ class TargetRelationshipField(RelationshipField):
         return {'target': target}
 
 
+class PreprintRequestTargetRelationshipField(TargetRelationshipField):
+    def to_representation(self, value):
+        ret = super(TargetRelationshipField, self).to_representation(value)
+        ret['data']['type'] = PreprintRequestSerializer.Meta.type_
+        return ret
+
 class BaseActionSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -91,6 +98,7 @@ class BaseActionSerializer(JSONAPISerializer):
 
     date_created = ser.DateTimeField(source='created', read_only=True)
     date_modified = ser.DateTimeField(source='modified', read_only=True)
+    auto = ser.BooleanField(read_only=True)
 
     creator = RelationshipField(
         read_only=True,
@@ -103,7 +111,7 @@ class BaseActionSerializer(JSONAPISerializer):
     links = LinksField(
         {
             'self': 'get_action_url',
-        }
+        },
     )
 
     def get_absolute_url(self, obj):
@@ -130,7 +138,7 @@ class BaseActionSerializer(JSONAPISerializer):
                 return target.run_submit(user)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
-            raise Conflict(e.message)
+            raise Conflict(str(e))
         else:
             raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
 
@@ -174,7 +182,7 @@ class ReviewActionSerializer(BaseActionSerializer):
     ))
 
     target = TargetRelationshipField(
-        target_class=PreprintService,
+        target_class=Preprint,
         read_only=False,
         required=True,
         related_view='preprints:preprint-detail',
@@ -193,7 +201,7 @@ class ReviewActionSerializer(BaseActionSerializer):
             return target.run_withdraw(user=user, comment=comment)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
-            raise Conflict(e.message)
+            raise Conflict(str(e))
         else:
             raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
 
@@ -206,9 +214,22 @@ class NodeRequestActionSerializer(BaseActionSerializer):
         target_class=NodeRequest,
         read_only=False,
         required=True,
-        related_view='requests:node-request-detail',
+        related_view='requests:request-detail',
         related_view_kwargs={'request_id': '<target._id>'},
     )
 
     permissions = ser.ChoiceField(choices=permissions.PERMISSIONS, required=False)
     visible = ser.BooleanField(default=True, required=False)
+
+
+class PreprintRequestActionSerializer(BaseActionSerializer):
+    class Meta:
+        type_ = 'preprint-request-actions'
+
+    target = PreprintRequestTargetRelationshipField(
+        target_class=PreprintRequest,
+        read_only=False,
+        required=True,
+        related_view='requests:request-detail',
+        related_view_kwargs={'request_id': '<target._id>'},
+    )

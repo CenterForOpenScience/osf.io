@@ -11,6 +11,7 @@ from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
+from osf import features
 from osf.models import AbstractNode, Node, Conference, Tag, OSFUser
 from website import settings
 from website.conferences import utils, signals
@@ -77,6 +78,9 @@ def add_poster_by_email(conference, message):
             is_spam=message.is_spam,
         )
         if user_created:
+            if utils.is_valid_email(user.fullname):
+                user.fullname = user._id  # Users cannot use an email as their full name
+
             user.save()  # need to save in order to access m2m fields (e.g. tags)
             user.add_system_tag('osf4m')
             user.update_date_last_login()
@@ -212,12 +216,12 @@ def conference_submissions_sql(conf):
               LEFT JOIN LATERAL (
                 SELECT osf_basefilenode.*
                 FROM osf_basefilenode
-                WHERE (
-                  osf_basefilenode.type = 'osf.osfstoragefile'
-                  AND osf_basefilenode.provider = 'osfstorage'
-                  AND osf_basefilenode.node_id = osf_abstractnode.id
-                )
-                LIMIT 1   -- Joins file
+                WHERE (osf_basefilenode.type = 'osf.osfstoragefile'
+                       AND osf_basefilenode.provider = 'osfstorage'
+                       AND osf_basefilenode.target_content_type_id = %s -- Content type for AbstractNode
+                       AND osf_basefilenode.target_object_id = osf_abstractnode.id)
+                ORDER BY osf_basefilenode.id ASC
+                LIMIT 1 -- Joins file
               ) FILE ON TRUE
               LEFT JOIN LATERAL (
                 SELECT P.total AS DOWNLOAD_COUNT
@@ -245,6 +249,7 @@ def conference_submissions_sql(conf):
                 conference_url,
                 abstract_node_content_type_id,
                 osf_user_content_type_id,
+                abstract_node_content_type_id,
                 conf.endpoint
             ]
         )
@@ -274,7 +279,7 @@ def serialize_conference(conf):
         'talk': conf.talk,
     }
 
-@ember_flag_is_active('ember_meeting_detail_page')
+@ember_flag_is_active(features.EMBER_MEETING_DETAIL)
 def conference_results(meeting):
     """Return the data for the grid view for a conference.
 
@@ -313,7 +318,7 @@ def conference_submissions(**kwargs):
     bulk_update(conferences, update_fields=['num_submissions'])
     return {'success': True}
 
-@ember_flag_is_active('ember_meetings_page')
+@ember_flag_is_active(features.EMBER_MEETINGS)
 def conference_view(**kwargs):
     meetings = []
     for conf in Conference.objects.all():

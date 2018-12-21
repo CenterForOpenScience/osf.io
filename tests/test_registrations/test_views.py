@@ -8,11 +8,15 @@ import httplib as http
 import pytz
 from django.utils import timezone
 
+import pytest
 from nose.tools import *  # noqa PEP8 asserts
+from waffle.testutils import override_switch
+
 
 from framework.exceptions import HTTPError
 
-from osf.models import MetaSchema, DraftRegistration
+from osf import features
+from osf.models import RegistrationSchema, DraftRegistration
 from osf.utils import permissions
 from website.project.metadata.schemas import _name_to_id, LATEST_SCHEMA_VERSION
 from website.util import api_url_for
@@ -26,6 +30,7 @@ from tests.test_registrations.base import RegistrationsTestBase
 from tests.base import get_default_metaschema
 from osf.models import Registration
 
+@pytest.mark.enable_bookmark_creation
 class TestRegistrationViews(RegistrationsTestBase):
 
     def test_node_register_page_not_registration_redirects(self):
@@ -87,6 +92,7 @@ class TestRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.FOUND)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestDraftRegistrationViews(RegistrationsTestBase):
 
     def test_submit_draft_for_review(self):
@@ -104,8 +110,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         self.draft.reload()
         assert_is_not_none(self.draft.approval)
         assert_equal(self.draft.approval.meta, {
-            u'registration_choice': unicode(self.embargo_payload['registrationChoice']),
-            u'embargo_end_date': unicode(self.embargo_payload['embargoEndDate'])
+            u'registration_choice': 'embargo',
+            u'embargo_end_date': unicode(self.embargo_payload['data']['attributes']['lift_embargo'])
         })
 
     def test_submit_draft_for_review_invalid_registrationChoice(self):
@@ -151,7 +157,11 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         res = self.app.post_json(url, {
-            'registrationChoice': 'immediate'
+            'data': {
+                'attributes': {
+                    'registration_choice': 'immediate',
+                },
+            },
         }, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
@@ -193,8 +203,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.post_json(
             url,
             {
-                'registrationChoice': 'embargo',
-                'embargoEndDate': end_date.strftime('%c'),
+                'data': {
+                    'attributes': {
+                        'children': [self.node._id],
+                        'registration_choice': 'embargo',
+                        'lift_embargo': end_date.strftime('%c'),
+                    },
+                    'type': 'registrations',
+                }
             },
             auth=self.user.auth)
 
@@ -381,15 +397,15 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_not_equal(metadata, self.draft.registration_metadata)
         payload = {
             'schema_data': metadata,
-            'schema_name': 'OSF-Standard Pre-Data Collection Registration',
-            'schema_version': 1
+            'schema_name': 'Open-Ended Registration',
+            'schema_version': 2
         }
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
 
-        open_ended_schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=1)
+        open_ended_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
         self.draft.reload()
         assert_equal(open_ended_schema, self.draft.registration_schema)
@@ -464,7 +480,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.get(url).json
         assert_equal(
             len(res['meta_schemas']),
-            MetaSchema.objects.filter(active=True, schema_version=LATEST_SCHEMA_VERSION).count()
+            RegistrationSchema.objects.filter(active=True, schema_version=LATEST_SCHEMA_VERSION).count()
         )
 
     def test_get_metaschemas_all(self):
@@ -473,7 +489,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.OK)
         assert_equal(
             len(res.json['meta_schemas']),
-            MetaSchema.objects.filter(active=True).count()
+            RegistrationSchema.objects.filter(active=True).count()
         )
 
     def test_validate_embargo_end_date_too_soon(self):
@@ -565,3 +581,16 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
                 draft_views.check_draft_state(self.draft)
             except HTTPError:
                 self.fail()
+
+    def test_prereg_challenge_over(self):
+        url = self.draft_api_url('submit_draft_for_review')
+        with override_switch(features.OSF_PREREGISTRATION, active=True):
+            res = self.app.post_json(
+                url,
+                self.embargo_payload,
+                auth=self.user.auth,
+                expect_errors=True
+            )
+        assert_equal(res.status_code, http.GONE)
+        data = res.json
+        assert_equal(data['message_short'], 'The Prereg Challenge has ended')

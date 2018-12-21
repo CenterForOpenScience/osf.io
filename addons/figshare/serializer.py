@@ -12,7 +12,7 @@ class FigshareSerializer(StorageAddonSerializer):
             client = client or FigshareClient.from_account(user_settings.external_accounts[0])
             try:
                 client.userinfo()
-            except:
+            except Exception:
                 return False
             else:
                 return True

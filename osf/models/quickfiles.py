@@ -40,7 +40,12 @@ class QuickFilesNode(AbstractNode):
         super(QuickFilesNode, self).__init__(*args, **kwargs)
 
     def remove_node(self, auth, date=None):
-        raise NodeStateError('A QuickFilesNode may not be deleted.')
+        # QuickFilesNodes are only delete-able for disabled users
+        # This is only done when doing a GDPR-delete
+        if auth.user.is_disabled:
+            super(QuickFilesNode, self).remove_node(auth=auth, date=date)
+        else:
+            raise NodeStateError('A QuickFilesNode may not be deleted.')
 
     def set_privacy(self, permissions, *args, **kwargs):
         raise NodeStateError('You may not set privacy for a QuickFilesNode.')

@@ -25,12 +25,13 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
+from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session, BlacklistedEmailDomain
+from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
-from osf.exceptions import ValidationError, BlacklistedEmailError
+from osf.exceptions import ValidationError, BlacklistedEmailError, UserStateError
 
 from .utils import capture_signals
 from .factories import (
@@ -48,8 +49,11 @@ from .factories import (
     UnconfirmedUserFactory,
     UnregUserFactory,
     UserFactory,
+    RegistrationFactory,
+    PreprintFactory
 )
 from tests.base import OsfTestCase
+from tests.utils import run_celery_tasks
 
 
 pytestmark = pytest.mark.django_db
@@ -68,6 +72,8 @@ def auth(user):
     return Auth(user)
 
 # Tests copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
 class TestOSFUser:
 
     def test_create(self):
@@ -123,7 +129,6 @@ class TestOSFUser:
         )
         user.save()
         assert user.is_registered is True
-        assert user.is_claimed is True
         assert user.date_registered == user.date_confirmed
 
     def test_update_guessed_names(self):
@@ -147,7 +152,6 @@ class TestOSFUser:
         u.save()
         assert u.username == email
         assert u.is_registered is False
-        assert u.is_claimed is False
         assert u.is_invited is True
         assert not u.emails.filter(address=email).exists()
         parsed = impute_names_model(name)
@@ -233,9 +237,10 @@ class TestOSFUser:
             u.save()
 
     def test_add_blacklisted_domain_unconfirmed_email(self, user):
+        BlacklistedEmailDomain.objects.get_or_create(domain='mailinator.com')
         with pytest.raises(BlacklistedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
-        assert e.value.message == 'Invalid Email'
+        assert str(e.value) == 'Invalid Email'
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url_for_external_service(self, random_string):
@@ -340,7 +345,6 @@ class TestOSFUser:
         assert len(u.email_verifications.keys()) == 0
         assert u.emails.filter(address=u.username).exists()
         assert bool(u.is_registered) is True
-        assert bool(u.is_claimed) is True
 
     def test_confirm_email(self, user):
         token = user.add_unconfirmed_email('foo@bar.com')
@@ -718,7 +722,7 @@ class TestChangePassword:
         with pytest.raises(ChangePasswordError) as excinfo:
             user.change_password(old_password, new_password, confirm_password)
             user.save()
-        assert error_message in excinfo.value.message
+        assert error_message in str(excinfo)
         assert bool(user.check_password(new_password)) is False
 
     def test_change_password_invalid_old_password(self):
@@ -729,12 +733,21 @@ class TestChangePassword:
             'Old password is invalid',
         )
 
-    def test_change_password_invalid_new_password_length(self):
+    def test_change_password_invalid_too_short(self):
         self.test_change_password_invalid(
             'password',
             '12345',
             '12345',
             'Password should be at least eight characters',
+        )
+
+    def test_change_password_invalid_too_long(self):
+        too_long = 'X' * 257
+        self.test_change_password_invalid(
+            'password',
+            too_long,
+            too_long,
+            'Password should not be longer than 256 characters',
         )
 
     def test_change_password_invalid_confirm_password(self):
@@ -955,7 +968,7 @@ class TestUnregisteredUser:
             unreg_user.add_unclaimed_record(project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
-        assert e.value.message == 'Referrer does not have permission to add a contributor to project {}'.format(project._primary_key)
+        assert str(e.value) == 'Referrer does not have permission to add a contributor to project {}'.format(project._primary_key)
 
         # test_referrer_is_not_admin_or_moderator
         referrer = UserFactory()
@@ -963,18 +976,16 @@ class TestUnregisteredUser:
             unreg_moderator.add_unclaimed_record(provider,
                 given_name='hodor', referrer=referrer)
             unreg_user.save()
-        assert e.value.message == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
+        assert str(e.value) == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
 
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     @mock.patch('osf.models.OSFUser.update_search')
     def test_register(self, mock_search, mock_search_nodes):
         user = UnregUserFactory()
         assert user.is_registered is False  # sanity check
-        assert user.is_claimed is False
         email = fake_email()
         user.register(username=email, password='killerqueen')
         user.save()
-        assert user.is_claimed is True
         assert user.is_registered is True
         assert user.check_password('killerqueen') is True
         assert user.username == email
@@ -1151,6 +1162,9 @@ class TestCitationProperties:
         )
 
 # copied from tests/test_models.py
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
 class TestMergingUsers:
 
     @pytest.yield_fixture()
@@ -1177,7 +1191,7 @@ class TestMergingUsers:
     @pytest.fixture()
     def merge_dupe(self, master, dupe):
         def f():
-            '''Do the actual merge.'''
+            """Do the actual merge."""
             master.merge_user(dupe)
             master.save()
         return f
@@ -1217,6 +1231,7 @@ class TestMergingUsers:
             merge_dupe()
             assert mock_signals.signals_sent() == set([user_merged])
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
     def test_merged_user_unsubscribed_from_mailing_lists(self, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
         list_name = 'foo'
@@ -1375,6 +1390,8 @@ class TestDisablingUsers(OsfTestCase):
             self.user.disable_account()
 
 # Copied from tests/modes/test_user.py
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_bookmark_creation
 class TestUser(OsfTestCase):
     def setUp(self):
         super(TestUser, self).setUp()
@@ -1448,7 +1465,7 @@ class TestUser(OsfTestCase):
     def test_cannot_remove_primary_email_from_email_list(self):
         with pytest.raises(PermissionsError) as e:
             self.user.remove_email(self.user.username)
-        assert e.value.message == 'Can\'t remove primary email'
+        assert str(e.value) == 'Can\'t remove primary email'
 
     def test_add_same_unconfirmed_email_twice(self):
         email = 'test@mail.com'
@@ -1516,6 +1533,9 @@ class TestUser(OsfTestCase):
 
 
 # Copied from tests/models/test_user.py
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_quickfiles_creation
 class TestUserMerging(OsfTestCase):
     def setUp(self):
         super(TestUserMerging, self).setUp()
@@ -1542,6 +1562,7 @@ class TestUserMerging(OsfTestCase):
         )
         self.project_with_unreg_contrib.save()
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merge(self, mock_get_mailchimp_api):
         def is_mrm_field(value):
@@ -1610,7 +1631,6 @@ class TestUserMerging(OsfTestCase):
             'family_name',
             'fullname',
             'given_name',
-            'is_claimed',
             'is_invited',
             'is_registered',
             'jobs',
@@ -1688,15 +1708,15 @@ class TestUserMerging(OsfTestCase):
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
 
-        # perform the merge
-        self.user.merge_user(other_user)
-        self.user.save()
-        handlers.celery_teardown_request()
+        with run_celery_tasks():
+            # perform the merge
+            self.user.merge_user(other_user)
+            self.user.save()
 
         self.user.reload()
 
         # check each field/value pair
-        for k, v in expected.iteritems():
+        for k, v in expected.items():
             if is_mrm_field(getattr(self.user, k)):
                 assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, '{} doesn\'t match expectations'.format(k)
             else:
@@ -1717,7 +1737,7 @@ class TestUserMerging(OsfTestCase):
         assert self.unconfirmed.is_merged is True
         assert self.unconfirmed.merged_by == self.user
 
-        assert self.user.is_claimed is True
+        assert self.user.is_registered is True
         assert self.user.is_invited is False
 
         # TODO: test profile fields - jobs, schools, social
@@ -1784,6 +1804,7 @@ class TestUserMerging(OsfTestCase):
         assert mock_notify.called is False
 
 
+@pytest.mark.enable_implicit_clean
 class TestUserValidation(OsfTestCase):
 
     def setUp(self):
@@ -1966,3 +1987,130 @@ class TestUserValidation(OsfTestCase):
             }]
             with pytest.raises(ValidationError):
                 self.user.save()
+
+
+@pytest.mark.enable_quickfiles_creation
+class TestUserGdprDelete:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project_with_two_admins(self, user):
+        second_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_contributor(second_admin_contrib)
+        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def project_with_two_admins_and_addon_credentials(self, user):
+        second_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_contributor(second_admin_contrib)
+        project.set_permissions(user=second_admin_contrib, permissions=['read', 'write', 'admin'])
+        user = project.creator
+
+        node_settings = project.add_addon('github', auth=None)
+        user_settings = user.add_addon('github')
+        node_settings.user_settings = user_settings
+        github_account = GitHubAccountFactory()
+        github_account.save()
+        node_settings.external_account = github_account
+        node_settings.save()
+        user.save()
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def registration(self, user):
+        registration = RegistrationFactory(creator=user)
+        registration.save()
+        return registration
+
+    @pytest.fixture()
+    def project(self, user):
+        project = ProjectFactory(creator=user)
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def preprint(self, user):
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        return preprint
+
+    @pytest.fixture()
+    def project_user_is_only_admin(self, user):
+        non_admin_contrib = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_contributor(non_admin_contrib)
+        project.save()
+        return project
+
+    def test_can_gdpr_delete(self, user):
+        user.social = ['fake social']
+        user.schools = ['fake schools']
+        user.jobs = ['fake jobs']
+        user.external_identity = ['fake external identity']
+        user.external_accounts.add(ExternalAccountFactory())
+
+        user.gdpr_delete()
+
+        assert user.fullname == 'Deleted user'
+        assert user.suffix == ''
+        assert user.social == []
+        assert user.schools == []
+        assert user.jobs == []
+        assert user.external_identity == {}
+        assert not user.emails.exists()
+        assert not user.external_accounts.exists()
+        assert user.is_disabled
+        assert user.deleted is not None
+
+    def test_can_gdpr_delete_personal_nodes(self, user):
+
+        user.gdpr_delete()
+
+        # user still has nodes because we did a soft delete
+        assert user.nodes.all().count()
+        # but they're all deleted
+        assert user.nodes.exclude(is_deleted=True).count() == 0
+
+    def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
+
+        user.gdpr_delete()
+
+        # The deleted user is still associated with the node, though their name still appears as 'Deleted User'
+        assert user.nodes.all().count() == 1
+
+    def test_cant_gdpr_delete_registrations(self, user, registration):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
+
+    def test_cant_gdpr_delete_preprints(self, user, preprint):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more preprints.'
+
+    def test_cant_gdpr_delete_shared_node_if_only_admin(self, user, project_user_is_only_admin):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete node {} because it would' \
+                                         ' be a node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
+
+    def test_cant_gdpr_delete_with_addon_credentials(self, user, project_with_two_admins_and_addon_credentials):
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have an external account for' \
+                                         ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)

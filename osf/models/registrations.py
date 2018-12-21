@@ -15,7 +15,7 @@ from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
-    OSFUser, MetaSchema, RegistrationApproval,
+    OSFUser, RegistrationSchema,
     Retraction, Embargo, DraftRegistrationApproval,
     EmbargoTerminationApproval,
 )
@@ -24,6 +24,7 @@ from osf.models.archive import ArchiveJob
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
+from osf.models.provider import RegistrationProvider
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -31,20 +32,16 @@ logger = logging.getLogger(__name__)
 
 class Registration(AbstractNode):
 
+    provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,
                                         null=True, blank=True)
 
-    registered_schema = models.ManyToManyField(MetaSchema)
+    registered_schema = models.ManyToManyField(RegistrationSchema)
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
-    # TODO Add back in once dependencies are resolved
-    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True, on_delete=models.CASCADE)
-    retraction = models.ForeignKey(Retraction, null=True, blank=True, on_delete=models.CASCADE)
-    embargo = models.ForeignKey(Embargo, null=True, blank=True, on_delete=models.CASCADE)
-
     registered_from = models.ForeignKey('self',
                                         related_name='registrations',
                                         on_delete=models.SET_NULL,
@@ -69,7 +66,7 @@ class Registration(AbstractNode):
 
     @staticmethod
     def find_failed_registrations():
-        expired_if_before = datetime.datetime.utcnow() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
+        expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
         node_id_list = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).values_list('dst_node', flat=True)
         root_nodes_id = AbstractNode.objects.filter(id__in=node_id_list).values_list('root', flat=True).distinct()
         stuck_regs = AbstractNode.objects.filter(id__in=root_nodes_id, is_deleted=False)
@@ -389,15 +386,6 @@ class Registration(AbstractNode):
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
 
-    def delete_node_wiki(self, name_or_page, auth):
-        raise NodeStateError('Registered wiki pages cannot be deleted.')
-
-    def rename_node_wiki(self, name, new_name, auth):
-        raise NodeStateError('Registered wiki pages cannot be renamed.')
-
-    def update_node_wiki(self, name, content, auth):
-        raise NodeStateError('Registered wiki pages cannot be edited.')
-
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
@@ -441,6 +429,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
                                       null=True, on_delete=models.CASCADE)
 
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
+    provider = models.ForeignKey('RegistrationProvider', related_name='draft_registrations', null=True)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -457,13 +446,13 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #   }
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_schema = models.ForeignKey('MetaSchema', null=True, on_delete=models.CASCADE)
+    registration_schema = models.ForeignKey('RegistrationSchema', null=True, on_delete=models.CASCADE)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,
                                         related_name='draft_registration', on_delete=models.CASCADE)
 
     approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True, on_delete=models.CASCADE)
 
-    # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
+    # Dictionary field mapping extra fields defined in the RegistrationSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
     # TODO: Use "FIELD_ALIASES"?
@@ -484,7 +473,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
             schema = meta_schema.schema
             flags = schema.get('flags', {})
             dirty = False
-            for flag, value in flags.iteritems():
+            for flag, value in flags.items():
                 if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
                     dirty = True
@@ -551,12 +540,15 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         return self.logs.all().order_by('date')
 
     @classmethod
-    def create_from_node(cls, node, user, schema, data=None):
+    def create_from_node(cls, node, user, schema, data=None, provider=None):
+        if not provider:
+            provider = RegistrationProvider.load('osf')
         draft = cls(
             initiator=user,
             branched_from=node,
             registration_schema=schema,
             registration_metadata=data or {},
+            provider=provider,
         )
         draft.save()
         return draft
@@ -565,7 +557,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         changes = []
         # Prevent comments on approved drafts
         if not self.is_approved:
-            for question_id, value in metadata.iteritems():
+            for question_id, value in metadata.items():
                 old_value = self.registration_metadata.get(question_id)
                 if old_value:
                     old_comments = {
@@ -598,14 +590,16 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         if save:
             self.save()
 
-    def register(self, auth, save=False):
+    def register(self, auth, save=False, child_ids=None):
         node = self.branched_from
 
         # Create the registration
         register = node.register_node(
             schema=self.registration_schema,
             auth=auth,
-            data=self.registration_metadata
+            data=self.registration_metadata,
+            child_ids=child_ids,
+            provider=self.provider
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)

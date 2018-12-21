@@ -37,8 +37,8 @@ class OSFStorageAddonAppConfig(BaseAddonAppConfig):
 
     get_hgrid_data = osf_storage_root
 
-    max_file_size = 5 * 1024  # 5 GB
-    high_max_file_size = 5 * 1024  # 5 GB
+    max_file_size = addon_settings.MAX_UPLOAD_SIZE
+    high_max_file_size = addon_settings.HIGH_MAX_UPLOAD_SIZE
 
     owners = ['node']
 

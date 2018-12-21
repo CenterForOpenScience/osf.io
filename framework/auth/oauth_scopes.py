@@ -31,6 +31,9 @@ class CoreScopes(object):
     USERS_WRITE = 'users_write'
     USERS_CREATE = 'users_create'
 
+    USER_SETTINGS_READ = 'user.settings_read'
+    USER_SETTINGS_WRITE = 'user.settings_write'
+
     USER_EMAIL_READ = 'users.email_read'
 
     USER_ADDON_READ = 'users.addon_read'
@@ -50,8 +53,14 @@ class CoreScopes(object):
     NODE_CONTRIBUTORS_READ = 'nodes.contributors_read'
     NODE_CONTRIBUTORS_WRITE = 'nodes.contributors_write'
 
+    PREPRINT_CONTRIBUTORS_READ = 'preprints.contributors_read'
+    PREPRINT_CONTRIBUTORS_WRITE = 'preprints.contributors_write'
+
     NODE_FILE_READ = 'nodes.files_read'
     NODE_FILE_WRITE = 'nodes.files_write'
+
+    PREPRINT_FILE_READ = 'preprints.files_read'
+    PREPRINT_FILE_WRITE = 'preprints.files_write'
 
     NODE_ADDON_READ = 'nodes.addon_read'
     NODE_ADDON_WRITE = 'nodes.addon_write'
@@ -65,10 +74,13 @@ class CoreScopes(object):
     NODE_PREPRINTS_READ = 'node.preprints_read'
     NODE_PREPRINTS_WRITE = 'node.preprints_write'
 
+    PREPRINTS_READ = 'preprint.preprints_read'
+    PREPRINTS_WRITE = 'preprint.preprints_write'
+
     REGISTRATION_VIEW_ONLY_LINKS_READ = 'registration.view_only_links_read'
     REGISTRATION_VIEW_ONLY_LINKS_WRITE = 'registration.view_only_links_write'
 
-    METASCHEMA_READ = 'metaschemas.read'
+    SCHEMA_READ = 'schemas.read'
 
     NODE_DRAFT_REGISTRATIONS_READ = 'nodes.draft_registrations_read'
     NODE_DRAFT_REGISTRATIONS_WRITE = 'nodes.draft_registrations_write'
@@ -78,6 +90,9 @@ class CoreScopes(object):
 
     NODE_CITATIONS_READ = 'nodes.citations_read'
     NODE_CITATIONS_WRITE = 'nodes.citations_write'
+
+    PREPRINT_CITATIONS_READ = 'preprints.citations_read'
+    PREPRINT_CITATIONS_WRITE = 'preprints.citations_write'
 
     NODE_COMMENTS_READ = 'comments.data_read'
     NODE_COMMENTS_WRITE = 'comments.data_write'
@@ -111,6 +126,12 @@ class CoreScopes(object):
 
     NODE_REQUESTS_READ = 'node_requests_read'
     NODE_REQUESTS_WRITE = 'node_requests_write'
+
+    NODE_SETTINGS_READ = 'node_settings_read'
+    NODE_SETTINGS_WRITE = 'node_settings_write'
+
+    PREPRINT_REQUESTS_READ = 'preprint_requests_read'
+    PREPRINT_REQUESTS_WRITE = 'preprint_requests_write'
 
     PROVIDERS_WRITE = 'providers_write'
 
@@ -147,8 +168,8 @@ class ComposedScopes(object):
     # All views should be based on selections from CoreScopes, above
 
     # Users collection
-    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ, CoreScopes.ALERTS_READ)
-    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE, CoreScopes.ALERTS_WRITE)
+    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ, CoreScopes.ALERTS_READ, CoreScopes.USER_SETTINGS_READ)
+    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE, CoreScopes.ALERTS_WRITE, CoreScopes.USER_SETTINGS_WRITE)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # User extensions
@@ -166,7 +187,7 @@ class ComposedScopes(object):
     GUIDS_READ = (CoreScopes.GUIDS_READ, )
 
     # Metaschemas collection
-    METASCHEMAS_READ = (CoreScopes.METASCHEMA_READ, )
+    METASCHEMAS_READ = (CoreScopes.SCHEMA_READ, )
 
     # Draft registrations
     DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, )
@@ -184,11 +205,15 @@ class ComposedScopes(object):
     NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
                           CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
                           CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
-                          CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ)
+                          CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
-                     CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
+                     CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
+
+    # Preprints collection
+    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ,)
+    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE,)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
@@ -200,26 +225,40 @@ class ComposedScopes(object):
     NODE_DATA_WRITE = NODE_DATA_READ + \
                         (CoreScopes.NODE_FILE_WRITE, CoreScopes.WIKI_BASE_WRITE)
 
+    # Privileges relating to editing content uploaded under that preprint
+    PREPRINT_DATA_READ = (CoreScopes.PREPRINT_FILE_READ,)
+    PREPRINT_DATA_WRITE = PREPRINT_DATA_READ + \
+                        (CoreScopes.PREPRINT_FILE_WRITE,)
+
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
                         CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
-                        CoreScopes.NODE_REQUESTS_READ)
+                        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
                             (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
                              CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
-                             CoreScopes.NODE_REQUESTS_WRITE)
+                             CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE)
+
+    # Privileges relating to who can access a preprint via contributors
+    PREPRINT_ACCESS_READ = (CoreScopes.PREPRINT_CONTRIBUTORS_READ,)
+    PREPRINT_ACCESS_WRITE = PREPRINT_ACCESS_READ + \
+                            (CoreScopes.PREPRINT_CONTRIBUTORS_WRITE,)
 
     # Combine all sets of node permissions into one convenience level
     NODE_ALL_READ = NODE_METADATA_READ + NODE_DATA_READ + NODE_ACCESS_READ
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
+
+    # Combine preprint permissions
+    PREPRINT_ALL_READ = PREPRINT_METADATA_READ + PREPRINT_ACCESS_READ + PREPRINT_DATA_READ
+    PREPRINT_ALL_WRITE = PREPRINT_ALL_READ + PREPRINT_METADATA_WRITE + PREPRINT_ACCESS_WRITE + PREPRINT_DATA_WRITE
 
     # Reviews
     REVIEWS_READ = (CoreScopes.ACTIONS_READ, CoreScopes.MODERATORS_READ)
     REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.MODERATORS_WRITE, CoreScopes.PROVIDERS_WRITE)
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
-    FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + PREPRINT_ALL_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
+    FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE + PREPRINT_ALL_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\
@@ -238,7 +277,7 @@ public_scopes = {
                                         'private projects.',
                             is_public=True),
     'osf.users.profile_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
-                                description='Read your profile data',
+                                description='Read your profile data.',
                                 is_public=True),
     'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
                                         description='Read your primary email address.',
@@ -248,18 +287,18 @@ public_scopes = {
 if settings.DEV_MODE:
     public_scopes.update({
         'osf.users.profile_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
-                                     description='Read and edit your profile data',
+                                     description='Read and edit your profile data.',
                                      is_public=True),
 
         'osf.nodes.metadata_read': scope(parts_=frozenset(ComposedScopes.NODE_METADATA_READ),
                                          description='Read a list of all public and private nodes accessible to this '
                                                      'account, and view associated metadata such as project descriptions '
-                                                     'and titles',
+                                                     'and titles.',
                                          is_public=True),
         'osf.nodes.metadata_write': scope(parts_=frozenset(ComposedScopes.NODE_METADATA_WRITE),
                                           description='Read a list of all public and private nodes accessible to this '
                                                       'account, and view and edit associated metadata such as project '
-                                                      'descriptions and titles',
+                                                      'descriptions and titles.',
                                           is_public=True),
 
         'osf.nodes.data_read': scope(parts_=frozenset(ComposedScopes.NODE_DATA_READ),
@@ -273,7 +312,7 @@ if settings.DEV_MODE:
 
         'osf.nodes.access_read': scope(parts_=frozenset(ComposedScopes.NODE_ACCESS_READ),
                                        description='View the contributors list and any established registrations '
-                                                   'associated with public or private projects',
+                                                   'associated with public or private projects.',
                                        is_public=True),
         'osf.nodes.access_write': scope(parts_=frozenset(ComposedScopes.NODE_ACCESS_WRITE),
                                         description='View and edit the contributors list associated with public or '
@@ -327,4 +366,4 @@ if __name__ == '__main__':
     # Although represented internally as a set, print as a sorted list for readability.
     from pprint import pprint as pp
     pp({k: sorted(v.parts)
-        for k, v in public_scopes.iteritems()})
+        for k, v in public_scopes.items()})

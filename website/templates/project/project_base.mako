@@ -6,18 +6,14 @@
     else:
         prefix = ''
     if node.get('is_registration', False):
-        return prefix + 'registration'
-    elif node.get('is_preprint', False):
-        return prefix + 'preprint'
-    elif parent_node['exists']:
-        return prefix + 'component'
+        return prefix + 'registrations'
     else:
-        return prefix + 'project'
+        return prefix + 'nodes'
     %>
 </%def>
 
 <%def name="public()"><%
-    return node.get('is_public', False)
+    return 'public' if node.get('is_public', False) else 'private'
     %>
 </%def>
 
@@ -94,7 +90,6 @@
         relations.extend([
             node['registered_from_url'],
             node['forked_from_display_absolute_url'],
-            node['preprint_url'] or '',
             parent_node['absolute_url'] if parent_node['exists'] else ''
         ])
         return relations
@@ -116,7 +111,7 @@
 <%def name="image_meta()">
     <%
         from website import settings
-        return settings.DOMAIN.rstrip('/') + settings.PREPRINTS_ASSETS + 'osf/sharing.png'
+        return '{}{}/img/osf-sharing.png'.format(settings.DOMAIN.rstrip('/'), settings.STATIC_URL_PATH)
     %>
 </%def>
 
@@ -146,8 +141,8 @@
 <% from website import settings %>
 <script src="/static/vendor/citeproc-js/xmldom.js"></script>
 <script src="/static/vendor/citeproc-js/citeproc.js"></script>
-<link href="${mfr_url}/static/css/mfr.css" media="all" rel="stylesheet" />
-<script src="${mfr_url}/static/js/mfr.js"></script>
+<link href="${ node['mfr_url'] }/static/css/mfr.css" media="all" rel="stylesheet" />
+<script src="${ node['mfr_url'] }/static/js/mfr.js"></script>
 
 <script>
 
@@ -194,13 +189,14 @@
             urls: {
                 api: nodeApiUrl,
                 web: ${ node['url'] | sjson, n },
-                update: ${ node['update_url'] | sjson, n }
+                update: ${ node['update_url'] | sjson, n },
+                waterbutler: ${node['waterbutler_url']| sjson, n },
+                mfr: ${ node['mfr_url'].rstrip('/') + '/'| sjson, n }
             },
             isPublic: ${ node.get('is_public', False) | sjson, n },
             isRegistration: ${ node.get('is_registration', False) | sjson, n },
             isRetracted: ${ node.get('is_retracted', False) | sjson, n },
-            isPreprint: ${ node.get('is_preprint', False) | sjson, n },
-            preprintFileId: ${ node.get('preprint_file_id', None) | sjson, n },
+            isSupplementalProject: ${ node.get('is_supplemental_project', False) | sjson, n },
             anonymous: ${ node['anonymous'] | sjson, n },
             category: ${node['category_short'] | sjson, n },
             rootId: ${ root_id | sjson, n },
@@ -211,7 +207,7 @@
             childExists: ${ node['child_exists'] | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
-            contributors: ${ node['contributors'] | sjson, n }
+            contributors: ${ node['contributors'] | sjson, n },
         }
     });
 </script>

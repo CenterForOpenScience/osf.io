@@ -38,6 +38,8 @@ var config = Object.assign({}, common, {
         'banners': staticAdminPath('js/banners/banners.js'),
         'maintenance': staticAdminPath('js/maintenance/maintenance.js'),
         'whitelist-page': staticAdminPath('js/pages/whitelist-page.js'),
+        'collection-provider-page': staticAdminPath('js/pages/collection-provider-page.js'),
+        'registration-provider-page': staticAdminPath('js/pages/registration-provider-page.js'),
     },
     plugins: plugins,
     devtool: 'source-map',

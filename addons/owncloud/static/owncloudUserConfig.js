@@ -71,7 +71,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
             if (self.useCustomHost()){
                 self.setMessage('Please enter an ownCloud server.', 'text-danger');
             } else {
-                self.setMessage('Please select an ownCloud server.', 'text-danger');            
+                self.setMessage('Please select an ownCloud server.', 'text-danger');
             }
             return;
         }

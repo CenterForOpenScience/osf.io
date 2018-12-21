@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import itsdangerous
 import mock
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import unittest
 from django.utils import timezone
 
+import pytest
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     AuthUserFactory
@@ -18,6 +19,7 @@ from website import settings
 from osf.models import ApiOAuth2PersonalToken, Session
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
         super(TestWelcomeToApi, self).setUp()

@@ -46,7 +46,7 @@ class CitationsNodeTestCase(OsfTestCase):
         assert_equal(
             self.node.csl,
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [{
                     'given': self.node.creator.given_name,
                     'family': self.node.creator.family_name,
@@ -68,7 +68,7 @@ class CitationsNodeTestCase(OsfTestCase):
         assert_equal(
             self.node.csl,
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [
                     {
                         'given': self.node.creator.given_name,
@@ -198,5 +198,5 @@ class CitationsViewsTestCase(OsfTestCase):
         user = AuthUserFactory()
         node.add_contributor(user)
         node.save()
-        response = self.app.get("/api/v1" + "/project/" + node._id + "/citation/", auto_follow=True, auth=user.auth)
+        response = self.app.get('/api/v1' + '/project/' + node._id + '/citation/', auto_follow=True, auth=user.auth)
         assert_true(response.json)

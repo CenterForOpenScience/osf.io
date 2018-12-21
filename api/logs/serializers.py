@@ -11,7 +11,7 @@ from api.base.serializers import (
     HideIfNotRegistrationPointerLog,
 )
 
-from osf.models import OSFUser, AbstractNode, PreprintService
+from osf.models import OSFUser, AbstractNode, Preprint
 from osf.utils.names import impute_names_model
 from osf.utils import permissions as osf_permissions
 
@@ -37,7 +37,7 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
     def get_node_title(self, obj):
         user = self.context['request'].user
         node_title = obj['node']['title']
-        node = AbstractNode.load(obj['node']['_id'])
+        node = AbstractNode.load(obj['node']['_id']) or Preprint.load(obj['node']['_id'])
         if not user.is_authenticated:
             if node.is_public:
                 return node_title
@@ -49,7 +49,6 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 
     addon = ser.CharField(read_only=True)
     bucket = ser.CharField(read_only=True)
-    citation_name = ser.CharField(read_only=True, source='citation.name')
     contributors = ser.SerializerMethodField(read_only=True)
     data_set = ser.CharField(read_only=True, source='dataset')
     destination = NodeLogFileParamsSerializer(read_only=True)
@@ -147,9 +146,11 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 
             users = (
                 OSFUser.objects.filter(guids___id__in=contributor_ids)
-                .only('fullname', 'given_name',
-                      'middle_names', 'family_name',
-                      'unclaimed_records', 'is_active')
+                .only(
+                    'fullname', 'given_name',
+                    'middle_names', 'family_name',
+                    'unclaimed_records', 'is_active',
+                )
                 .order_by('fullname')
             )
             for user in users:
@@ -164,7 +165,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                     'middle_names': user.middle_names,
                     'family_name': user.family_name,
                     'unregistered_name': unregistered_name,
-                    'active': user.is_active
+                    'active': user.is_active,
                 })
 
             # Add unregistered contributor data
@@ -186,7 +187,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     def get_preprint_provider(self, obj):
         preprint_id = obj.get('preprint', None)
         if preprint_id:
-            preprint = PreprintService.load(preprint_id)
+            preprint = Preprint.load(preprint_id)
             if preprint:
                 provider = preprint.provider
                 return {'url': provider.external_url, 'name': provider.name}
@@ -229,20 +230,20 @@ class NodeLogSerializer(JSONAPISerializer):
     linked_node = HideIfNotNodePointerLog(
         RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<params.pointer.id>'}
-        )
+            related_view_kwargs={'node_id': '<params.pointer.id>'},
+        ),
     )
 
     linked_registration = HideIfNotRegistrationPointerLog(
         RelationshipField(
             related_view='registrations:registration-detail',
-            related_view_kwargs={'node_id': '<params.pointer.id>'}
-        )
+            related_view_kwargs={'node_id': '<params.pointer.id>'},
+        ),
     )
 
     template_node = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<params.template_node.id>'}
+        related_view_kwargs={'node_id': '<params.template_node.id>'},
     )
 
     def get_absolute_url(self, obj):

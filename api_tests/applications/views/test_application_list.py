@@ -61,7 +61,7 @@ class TestApplicationList:
     def test_other_user_should_see_only_their_applications(self, app, url):
         other_user = AuthUserFactory()
         other_user_apps = [
-            ApiOAuth2ApplicationFactory(owner=other_user) for i in xrange(2)
+            ApiOAuth2ApplicationFactory(owner=other_user) for i in range(2)
         ]
 
         res = app.get(url, auth=other_user.auth)

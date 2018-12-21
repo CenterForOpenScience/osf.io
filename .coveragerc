@@ -1,11 +1,11 @@
 [run]
-include =
-    api/*
-    framework/*
-    scripts/*
-    website/*
 omit =
     *tests/*
+    */migrations/*
+    */settings/*
+    */templates/*
+    */wsgi.py
+
 [report]
 exclude_lines =
     raise NotImplementedError

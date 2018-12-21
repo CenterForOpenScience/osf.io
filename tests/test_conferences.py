@@ -15,6 +15,7 @@ from framework.auth import get_or_create_user
 from framework.auth.core import Auth
 
 from osf.models import OSFUser, AbstractNode
+from addons.wiki.models import WikiVersion
 from osf.exceptions import BlacklistedEmailError
 from website import settings
 from website.conferences import views
@@ -126,7 +127,7 @@ class ContextTestCase(OsfTestCase):
         data.update(kwargs.pop('data', {}))
         data = {
             key: value
-            for key, value in data.iteritems()
+            for key, value in data.items()
             if value is not None
         }
         return self.app.app.test_request_context(method=method, data=data, **kwargs)
@@ -201,6 +202,7 @@ class TestProvisionNode(ContextTestCase):
             self.node._id,
             'osfstorage',
             _internal=True,
+            base_url=self.node.osfstorage_region.waterbutler_url,
             cookie=self.user.get_or_create_cookie(),
             name=file_name
         )
@@ -220,6 +222,7 @@ class TestProvisionNode(ContextTestCase):
             self.node._id,
             'osfstorage',
             _internal=True,
+            base_url=self.node.osfstorage_region.waterbutler_url,
             cookie=self.user.get_or_create_cookie(),
             name=settings.MISSING_FILE_NAME,
         )
@@ -227,6 +230,18 @@ class TestProvisionNode(ContextTestCase):
             mock_get_url.return_value,
             data=self.content,
         )
+
+    @mock.patch('website.conferences.utils.upload_attachments')
+    def test_add_poster_by_email(self, mock_upload_attachments):
+        conference = ConferenceFactory()
+
+        with self.make_context(data={'from': 'bdawk@sb52champs.com', 'subject': 'It\'s PARTY TIME!'}):
+            msg = message.ConferenceMessage()
+            views.add_poster_by_email(conference, msg)
+
+        user = OSFUser.objects.get(username='bdawk@sb52champs.com')
+        assert user.email == 'bdawk@sb52champs.com'
+        assert user.fullname == user._id  # user's shouldn't be able to use email as fullname, so we use the guid.
 
 
 class TestMessage(ContextTestCase):
@@ -589,7 +604,7 @@ class TestConferenceIntegration(ContextTestCase):
         nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
-        assert_equal(node.get_wiki_version('home').content, body)
+        assert_equal(WikiVersion.objects.get_for_node(node, 'home').content, body)
         assert_true(mock_send_mail.called)
         call_args, call_kwargs = mock_send_mail.call_args
         assert_absolute(call_kwargs['conf_view_url'])
@@ -678,7 +693,7 @@ class TestConferenceIntegration(ContextTestCase):
         nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
-        assert_equal(node.get_wiki_version('home').content, body)
+        assert_equal(WikiVersion.objects.get_for_node(node, 'home').content, body)
         assert_true(mock_send_mail.called)
         call_args, call_kwargs = mock_send_mail.call_args
         assert_absolute(call_kwargs['conf_view_url'])

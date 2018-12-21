@@ -20,6 +20,7 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestRegistrationForksList:
 
     @pytest.fixture()
@@ -193,6 +194,7 @@ class TestRegistrationForksList:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestRegistrationForkCreate:
 
     @pytest.fixture()

@@ -46,7 +46,7 @@ class WikiMixin(object):
             raise NotFound(detail='The wiki for this node has been disabled.')
 
         if wiki.deleted:
-            raise Gone
+            raise Gone(detail='The wiki for this node has been deleted.')
 
         if wiki.node.is_registration and self.request.method not in drf_permissions.SAFE_METHODS:
             raise MethodNotAllowed(method=self.request.method)
@@ -127,7 +127,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -138,7 +138,8 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
     view_name = 'wiki-detail'
 
     def get_serializer_class(self):
-        if self.get_wiki().node.is_registration:
+        wiki = self.get_wiki(check_permissions=False)
+        if wiki.node.is_registration:
             return RegistrationWikiDetailSerializer
         return NodeWikiDetailSerializer
 
@@ -151,7 +152,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
         auth = get_user_auth(self.request)
         wiki_page = self.get_object()
         try:
-            wiki_page.node.delete_node_wiki(wiki_page, auth)
+            wiki_page.delete(auth)
         except django_exceptions.ValidationError as err:
             raise ValidationError(err.message)
 
@@ -163,7 +164,7 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
@@ -190,7 +191,7 @@ class WikiVersions(JSONAPIBaseView, generics.ListCreateAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
     )
     view_category = 'wikis'
     view_name = 'wiki-versions'
@@ -214,7 +215,7 @@ class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublicWikiVersion,
-        ExcludeWithdrawalsWikiVersion
+        ExcludeWithdrawalsWikiVersion,
     )
 
     serializer_class = WikiVersionSerializer
@@ -239,7 +240,7 @@ class WikiVersionContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublicWikiVersion,
-        ExcludeWithdrawalsWikiVersion
+        ExcludeWithdrawalsWikiVersion,
     )
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]

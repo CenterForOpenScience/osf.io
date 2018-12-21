@@ -159,9 +159,9 @@ $.extend(DraftRegistrationsSearchViewModel.prototype, BaseSearchViewModel.protot
                             className: 'm-l-md text-muted',
                             text: 'Last updated: ' + dateUpdated.local
                         })
-                    )                    
+                    )
                 ]
-            )                
+            )
         ).html();
     },
     substringMatcher: function(strs) {

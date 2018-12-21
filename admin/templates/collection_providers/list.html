@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% block title %}
+    <title>List of Collection Providers</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Collection Providers</h2>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for collection_provider in collection_providers %}
+    <tr>
+        <td><a href="{% url 'collection_providers:detail' collection_provider_id=collection_provider.id %}">{{ collection_provider.name }}</a></td>
+        <td>{{ collection_provider.description | safe}}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}

@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -8,7 +8,7 @@ from osf.models import (
     Guid,
     BaseFileNode,
     FileVersion,
-    QuickFilesNode
+    QuickFilesNode,
 )
 
 from api.base.exceptions import Gone
@@ -44,8 +44,12 @@ class FileMixin(object):
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
 
-        if obj.node.is_quickfiles and obj.node.creator.is_disabled:
-            raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
+        if getattr(obj.target, 'deleted', None):
+            raise Gone(detail='The requested file is no longer available')
+
+        if getattr(obj.target, 'is_quickfiles', False) and getattr(obj.target, 'creator'):
+            if obj.target.creator.is_disabled:
+                raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
 
         if check_permissions:
             # May raise a permission denied
@@ -61,8 +65,8 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         IsPreprintFile,
         CheckedOutOrAdmin,
         base_permissions.TokenHasScope,
-        PermissionWithGetter(ContributorOrPublic, 'node'),
-        PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        PermissionWithGetter(ContributorOrPublic, 'target'),
+        PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
@@ -75,16 +79,16 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     def get_serializer_class(self):
         try:
-            node = self.get_node()
-        except (NotFound, Gone):
+            target = self.get_target()
+        except (NotFound, Gone, PermissionDenied):
             return FileDetailSerializer
         else:
-            if isinstance(node, QuickFilesNode):
+            if isinstance(target, QuickFilesNode):
                 return QuickFilesDetailSerializer
             return FileDetailSerializer
 
-    def get_node(self):
-        return self.get_file().node
+    def get_target(self):
+        return self.get_file().target
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -93,7 +97,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
         if self.request.GET.get('create_guid', False):
             # allows quickfiles to be given guids when another user wants a permanent link to it
-            if (self.get_node().has_permission(user, 'admin') and utils.has_admin_scope(self.request)) or file.node.is_quickfiles:
+            if (self.get_target().has_permission(user, 'admin') and utils.has_admin_scope(self.request)) or getattr(file.target, 'is_quickfiles', False):
                 file.get_guid(create=True)
         return file
 
@@ -104,7 +108,7 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PermissionWithGetter(ContributorOrPublic, 'node'),
+        PermissionWithGetter(ContributorOrPublic, 'target'),
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
@@ -127,7 +131,7 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
 
 
 def node_from_version(request, view, obj):
-    return view.get_file(check_permissions=False).node
+    return view.get_file(check_permissions=False).target
 
 
 class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
@@ -137,7 +141,7 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PermissionWithGetter(ContributorOrPublic, node_from_version)
+        PermissionWithGetter(ContributorOrPublic, node_from_version),
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
@@ -154,7 +158,7 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
 
         # May raise a permission denied
         # Kinda hacky but versions have no reference to node or file
-        self.check_object_permissions(self.request, file)
+        self.check_object_permissions(self.request, self.file)
         return utils.get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''), self.request)
 
     def get_serializer_context(self):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Custom exceptions for the framework.'''
+"""Custom exceptions for the framework."""
 import copy
 import httplib as http
 from flask import request
@@ -17,10 +17,6 @@ class HTTPError(FrameworkError):
             'message_short': 'Bad request',
             'message_long': ('If this should not have occurred and the issue persists, '
                              + language.SUPPORT_LINK),
-        },
-        http.UNAUTHORIZED: {
-            'message_short': 'Unauthorized',
-            'message_long': 'You must <a href="/login/">log in</a> to access this resource.',
         },
         http.FORBIDDEN: {
             'message_short': 'Forbidden',
@@ -83,6 +79,11 @@ class HTTPError(FrameworkError):
             data = {
                 'message_short': self.error_msgs[self.code]['message_short'],
                 'message_long': self.error_msgs[self.code]['message_long']
+            }
+        elif self.code == http.UNAUTHORIZED:
+            data = {
+                'message_short': 'Unauthorized',
+                'message_long': 'You must <a href="/login/?next={}">log in</a> to access this resource.'.format(request.url),
             }
         else:
             data['message_short'] = 'Unable to resolve'

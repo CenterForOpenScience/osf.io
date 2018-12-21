@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import json
 import requests
-import urlparse
 
 from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
@@ -13,7 +12,6 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect, render
 
-from website import settings as web_settings
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
@@ -23,7 +21,7 @@ from website import settings as osf_settings
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
-FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source', 'subjects_acceptable']
+FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source', 'subjects_acceptable', 'primary_collection']
 
 
 class PreprintProviderList(PermissionRequiredMixin, ListView):
@@ -130,7 +128,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
         kwargs['preprint_provider'] = preprint_provider_attributes
         kwargs['subject_ids'] = list(subject_ids)
-        kwargs['logohost'] = urlparse.urljoin(web_settings.DOMAIN, web_settings.PREPRINTS_ASSETS)
+        kwargs['logo'] = preprint_provider.get_asset_url('square_color_no_transparent')
         fields = model_to_dict(preprint_provider)
         fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
@@ -223,7 +221,7 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         data = serializers.serialize('json', [preprint_provider])
         cleaned_data = json.loads(data)[0]
-        cleaned_fields = {key: value for key, value in cleaned_data['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
+        cleaned_fields = {key: value for key, value in cleaned_data['fields'].items() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
         cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in preprint_provider.licenses_acceptable.all()]
         cleaned_fields['default_license'] = preprint_provider.default_license.license_id if preprint_provider.default_license else ''
         cleaned_fields['subjects'] = self.serialize_subjects(preprint_provider)
@@ -255,13 +253,13 @@ class DeletePreprintProvider(PermissionRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
-        if preprint_provider.preprint_services.count() > 0:
+        if preprint_provider.preprints.count() > 0:
             return redirect('preprint_providers:cannot_delete', preprint_provider_id=preprint_provider.pk)
         return super(DeletePreprintProvider, self).delete(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
-        if preprint_provider.preprint_services.count() > 0:
+        if preprint_provider.preprints.count() > 0:
             return redirect('preprint_providers:cannot_delete', preprint_provider_id=preprint_provider.pk)
         return super(DeletePreprintProvider, self).get(request, *args, **kwargs)
 
@@ -289,7 +287,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             file_json = json.loads(file_str)
             current_fields = [f.name for f in PreprintProvider._meta.get_fields()]
             # make sure not to import an exported access token for SHARE
-            cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT and key in current_fields}
+            cleaned_result = {key: value for key, value in file_json['fields'].items() if key not in FIELDS_TO_NOT_IMPORT_EXPORT and key in current_fields}
             preprint_provider = self.create_or_update_provider(cleaned_result)
             return redirect('preprint_providers:detail', preprint_provider_id=preprint_provider.id)
 
@@ -314,7 +312,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         subject_data = provider_data.pop('subjects', False)
 
         if provider:
-            for key, val in provider_data.iteritems():
+            for key, val in provider_data.items():
                 setattr(provider, key, val)
         else:
             provider = PreprintProvider(**provider_data)
@@ -352,6 +350,8 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
             raise ValueError('Cannot update share_source or access_token because one or the other already exists')
         if not osf_settings.SHARE_API_TOKEN or not osf_settings.SHARE_URL:
             raise ValueError('SHARE_API_TOKEN or SHARE_URL not set')
+        if not preprint_provider.get_asset_url('square_color_no_transparent'):
+            raise ValueError('Unable to find "square_color_no_transparent" icon for provider')
 
         debug_prepend = ''
         if osf_settings.DEBUG_MODE or osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND:
@@ -366,7 +366,7 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
                     'attributes': {
                         'homePage': preprint_provider.domain if preprint_provider.domain else '{}/preprints/{}/'.format(osf_settings.DOMAIN, preprint_provider._id),
                         'longTitle': debug_prepend + preprint_provider.name,
-                        'iconUrl': '{}{}{}/square_color_no_transparent.png'.format(settings.OSF_URL, osf_settings.PREPRINTS_ASSETS, preprint_provider._id)
+                        'iconUrl': preprint_provider.get_asset_url('square_color_no_transparent')
                     }
                 }
             },

@@ -186,7 +186,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'users': map(serialize_user, query_set),
+            'users': list(map(serialize_user, query_set)),
             'page': page,
         }
 
@@ -514,7 +514,7 @@ class GetUserClaimLinks(GetUserLink):
     def get_claim_links(self, user):
         links = []
 
-        for guid, value in user.unclaimed_records.iteritems():
+        for guid, value in user.unclaimed_records.items():
             node = Node.load(guid)
             url = '{base_url}user/{uid}/{project_id}/claim/?token={token}'.format(
                 base_url=DOMAIN,
@@ -608,7 +608,7 @@ class UserReindexElastic(UserDeleteView):
 
     def delete(self, request, *args, **kwargs):
         user = self.get_object()
-        search.search.update_user(user, async=False)
+        search.search.update_user(user, async_update=False)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=user._id,

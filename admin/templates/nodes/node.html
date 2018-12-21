@@ -29,7 +29,7 @@
                             {% if not node.deleted %}
                                 <a href="{% url 'nodes:remove' guid=node.id %}"
                                    data-toggle="modal" data-target="#deleteModal"
-                                   class="btn btn-danger">
+                                        class="btn btn-danger">
                                     Delete Node
                                 </a>
                                 <div class="modal" id="deleteModal">
@@ -52,6 +52,11 @@
                                    data-toggle="modal" data-target="#confirmRestartRegistration"
                                    class="btn btn-warning">
                                     Restart Registration
+                                </a>
+                                <a href="{% url 'nodes:remove-stuck-registrations' guid=node.id %}"
+                                   data-toggle="modal" data-target="#confirmRemoveRegistration"
+                                   class="btn btn-danger">
+                                    Remove Registration
                                 </a>
                             {% endif %}
 
@@ -93,6 +98,12 @@
                         </div>
                     </div>
                     <div class="modal" id="confirmRestartRegistration">
+                        <div class="modal-dialog">
+                            <div class="modal-content"></div>
+                            {# Data from above link #}
+                        </div>
+                    </div>
+                    <div class="modal" id="confirmRemoveRegistration">
                         <div class="modal-dialog">
                             <div class="modal-content"></div>
                             {# Data from above link #}
@@ -188,7 +199,7 @@
                             {%  if perms.osf.change_node %}
                                 <td>
                                 {% if not node.is_registration %}
-                                    <a href="{% url 'nodes:remove_user' node_id=node.id user_id=user.id %}"
+                                    <a href="{% url 'nodes:remove_user' guid=node.id user_id=user.id %}"
                                        data-toggle="modal"
                                        data-target="#{{ user.id }}Modal"
                                        class="btn btn-danger">

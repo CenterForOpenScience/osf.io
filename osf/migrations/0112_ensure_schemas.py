@@ -7,7 +7,6 @@ from osf.utils.migrations import ensure_schemas, remove_schemas
 
 
 logger = logging.getLogger(__file__)
-from osf.utils.migrations import ensure_schemas, remove_schemas
 
 
 class Migration(migrations.Migration):

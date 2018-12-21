@@ -22,6 +22,7 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
 class NodeCommentsListMixin(object):
 
     @pytest.fixture()
@@ -276,8 +277,7 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
 
     def test_comments_on_deleted_wikis_are_not_returned(self, app, user, project_private_dict, mock_update_search=None):
         # Delete wiki
-        project_private_dict['project'].delete_node_wiki(
-            project_private_dict['wiki'].page_name, core.Auth(user))
+        project_private_dict['wiki'].delete(core.Auth(user))
         res = app.get(project_private_dict['url'], auth=user.auth)
         assert res.status_code == 200
         comment_json = res.json['data']
@@ -286,6 +286,7 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
 class NodeCommentsCreateMixin(object):
 
     @pytest.fixture()

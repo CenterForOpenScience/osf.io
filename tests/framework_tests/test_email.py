@@ -3,7 +3,7 @@ import unittest
 import smtplib
 
 import mock
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from nose.tools import *  # noqa: F403
 import sendgrid
 
 from framework.email.tasks import send_email, _send_with_sendgrid
@@ -25,10 +25,10 @@ class TestEmail(unittest.TestCase):
     @unittest.skipIf(not SERVER_RUNNING,
                      "Mailserver isn't running. Run \"invoke mailserver\".")
     @unittest.skipIf(not settings.USE_EMAIL,
-                     "settings.USE_EMAIL is False")
+                     'settings.USE_EMAIL is False')
     def test_sending_email(self):
-        assert_true(send_email("foo@bar.com", "baz@quux.com", subject='no subject',
-                                 message="<h1>Greetings!</h1>", ttls=False, login=False))
+        assert_true(send_email('foo@bar.com', 'baz@quux.com', subject='no subject',
+                                 message='<h1>Greetings!</h1>', ttls=False, login=False))
 
     def test_send_with_sendgrid_success(self):
         mock_client = mock.MagicMock()

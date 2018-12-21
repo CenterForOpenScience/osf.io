@@ -4,8 +4,6 @@ SELECT json_agg(
         '_type', CASE
                  WHEN N.type = 'osf.registration'
                    THEN 'registration'
-                 WHEN PREPRINT.URL IS NOT NULL
-                   THEN 'preprint'
                  WHEN PARENT_GUID._id IS NULL
                    THEN 'project'
                  ELSE 'component'
@@ -40,8 +38,6 @@ SELECT json_agg(
             , 'category', CASE
                           WHEN N.type = 'osf.registration'
                             THEN 'registration'
-                          WHEN PREPRINT.URL IS NOT NULL
-                            THEN 'preprint'
                           WHEN PARENT_GUID._id IS NULL
                             THEN 'project'
                           ELSE 'component'
@@ -58,7 +54,6 @@ SELECT json_agg(
             , 'is_registration', N.type = 'osf.registration'
             , 'is_pending_retraction', RETRACTION.state = 'pending'
             , 'is_retracted', RETRACTION.state = 'approved'
-            , 'preprint_url', PREPRINT.URL
             , 'boost', CASE
                        WHEN N.type = 'osf.node'
                          THEN 2
@@ -277,36 +272,7 @@ FROM osf_abstractnode AS N
       SELECT FALSE AS PENDING
     ) END)
             ) REGISTRATION_APPROVAL ON TRUE
-  LEFT JOIN LATERAL (
-            SELECT
-              CASE WHEN ((osf_abstractprovider.domain_redirect_enabled AND osf_abstractprovider.domain IS NOT NULL) OR
-                         osf_abstractprovider._id = 'osf')
-                THEN
-                  '/' || (SELECT G._id
-                          FROM osf_guid G
-                          WHERE (G.object_id = P.id)
-                                AND (G.content_type_id = (SELECT id FROM django_content_type WHERE model = 'preprintservice'))
-                          ORDER BY created ASC, id ASC
-                          LIMIT 1) || '/'
-              ELSE
-                '/preprints/' || osf_abstractprovider._id || '/' || (SELECT G._id
-                                                                     FROM osf_guid G
-                                                                     WHERE (G.object_id = P.id)
-                                                                           AND (G.content_type_id = (SELECT id FROM django_content_type WHERE model = 'preprintservice'))
-                                                                     ORDER BY created ASC, id ASC
-                                                                     LIMIT 1) || '/'
-              END AS URL
-            FROM osf_preprintservice P
-              INNER JOIN osf_abstractprovider ON P.provider_id = osf_abstractprovider.id
-            WHERE P.node_id = N.id
-              AND P.machine_state != 'initial'  -- is_preprint
-              AND N.preprint_file_id IS NOT NULL
-              AND N.is_public = TRUE
-              AND N._is_preprint_orphan != TRUE
-            ORDER BY P.is_published DESC, P.created DESC
-            LIMIT 1
-            ) PREPRINT ON TRUE
-WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
+WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
   AND is_public IS TRUE
   AND is_deleted IS FALSE
   AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
@@ -449,12 +415,15 @@ FROM osf_basefilenode AS F
                          END)
                    ) AS DATA
             FROM osf_abstractnode N
-            WHERE N.id = F.node_id
+            WHERE (N.id = F.target_object_id AND (
+                SELECT id FROM "django_content_type" WHERE (
+                  "django_content_type"."model" = 'abstractnode' AND "django_content_type"."app_label" = 'osf'
+                )) = F.target_content_type_id)
             LIMIT 1
             ) NODE ON TRUE
 WHERE name IS NOT NULL
       AND name != ''
-      AND node_id = ANY (SELECT id
+      AND target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
                          WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
                                AND is_public IS TRUE
@@ -473,6 +442,7 @@ WHERE name IS NOT NULL
                                              WHERE (AJ.status != 'FAILURE' AND AJ.status != 'SUCCESS'
                                                 AND AJ.dst_node_id IS NOT NULL)))
                         )
+      AND target_content_type_id = (SELECT id FROM "django_content_type" WHERE ("django_content_type"."model" = 'abstractnode' AND "django_content_type"."app_label" = 'osf'))
       AND id > {page_start}
       AND id <= {page_end}
 LIMIT 1;
@@ -612,8 +582,6 @@ SELECT json_agg(
         '_type', CASE
                  WHEN N.type = 'osf.registration'
                    THEN 'registration'
-                 WHEN PREPRINT.is_preprint > 0
-                   THEN 'preprint'
                  WHEN PARENT_GUID._id IS NULL
                    THEN 'project'
                  ELSE 'component'
@@ -643,16 +611,6 @@ FROM osf_abstractnode AS N
                   AND content_type_id = (SELECT id FROM django_content_type WHERE model = 'abstractnode')
             LIMIT 1
             ) PARENT_GUID ON TRUE
-  LEFT JOIN LATERAL (
-          SELECT COUNT(P.id) as is_preprint
-          FROM osf_preprintservice P
-          WHERE P.node_id = N.id
-            AND P.machine_state != 'initial'
-            AND N.preprint_file_id IS NOT NULL
-            AND N.is_public = TRUE
-            AND N._is_preprint_orphan != TRUE
-          LIMIT 1
-          ) PREPRINT ON TRUE
 WHERE NOT ((TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
   AND N.is_public IS TRUE
   AND N.is_deleted IS FALSE
@@ -685,9 +643,9 @@ SELECT json_agg(json_build_object(
 FROM osf_basefilenode AS F
 WHERE NOT (name IS NOT NULL
       AND name != ''
-      AND node_id = ANY (SELECT id
+      AND target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
-                         WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
+                         WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
                                AND is_public IS TRUE
                                AND is_deleted IS FALSE
                                AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
@@ -707,6 +665,7 @@ WHERE NOT (name IS NOT NULL
                                                 AND AJ.dst_node_id IS NOT NULL)))
                         )
       )
+      AND target_content_type_id = (SELECT id FROM "django_content_type" WHERE ("django_content_type"."model" = 'abstractnode' AND "django_content_type"."app_label" = 'osf'))
       AND id > {page_start}
       AND id <= {page_end}
 LIMIT 1;

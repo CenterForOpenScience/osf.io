@@ -169,7 +169,7 @@ class Sciencer(BaseProvider):
         words = cls.science_words(nb_words)
         words[0] = words[0].title()
 
-        return " ".join(words) + '.'
+        return ' '.join(words) + '.'
 
     def science_sentences(cls, nb=3):
         """
@@ -195,7 +195,7 @@ class Sciencer(BaseProvider):
         if variable_nb_sentences:
             nb_sentences = cls.randomize_nb_elements(nb_sentences)
 
-        return " ".join(cls.science_sentences(nb_sentences))
+        return ' '.join(cls.science_sentences(nb_sentences))
 
     def science_paragraphs(cls, nb=3):
         """
@@ -252,7 +252,7 @@ class Sciencer(BaseProvider):
                     size += len(paragraph)
                 text.pop()
 
-        return "".join(text)
+        return ''.join(text)
 
 
 logger = logging.getLogger('create_fakes')
@@ -270,9 +270,8 @@ def create_fake_user():
     email = fake_email()
     name = fake.name()
     user = UserFactory(username=email, fullname=name,
-                       is_registered=True, is_claimed=True,
+                       is_registered=True, emails=[email],
                        date_registered=fake.date_time(tzinfo=pytz.UTC),
-                       emails=[email]
                    )
     user.set_password('faker123')
     user.save()
@@ -286,7 +285,7 @@ def parse_args():
     parser.add_argument('--nusers', dest='n_users', type=int, default=3)
     parser.add_argument('--nprojects', dest='n_projects', type=int, default=3)
     parser.add_argument('-c', '--components', dest='n_components', type=evaluate_argument, default='0')
-    parser.add_argument('-p', '--privacy', dest="privacy", type=str, default='private', choices=['public', 'private'])
+    parser.add_argument('-p', '--privacy', dest='privacy', type=str, default='private', choices=['public', 'private'])
     parser.add_argument('-n', '--name', dest='name', type=str, default=None)
     parser.add_argument('-t', '--tags', dest='n_tags', type=int, default=5)
     parser.add_argument('--presentation', dest='presentation_name', type=str, default=None)
@@ -349,7 +348,7 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
 
 def render_generations_from_parent(parent, creator, num_generations):
     current_gen = parent
-    for generation in xrange(0, num_generations):
+    for generation in range(0, num_generations):
         next_gen = NodeFactory(
             parent=current_gen,
             creator=creator,

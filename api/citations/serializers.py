@@ -8,7 +8,7 @@ class CitationSerializer(JSONAPISerializer):
         'title',
         'short_title',
         'summary',
-        'id'
+        'id',
     ])
     id = ser.CharField(source='_id', required=True)
     title = ser.CharField(max_length=200)

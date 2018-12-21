@@ -1,4 +1,4 @@
-body { 
+body {
 	width: 100%;
 }
 
@@ -16,7 +16,7 @@ body {
 
 #content-title{
 	text-align: center;
-	font-family: Novecentosanswide-Normal; 
+	font-family: Novecentosanswide-Normal;
 	font-size:6em;
 	color: #333;
 }

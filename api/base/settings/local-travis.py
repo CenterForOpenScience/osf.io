@@ -14,6 +14,7 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'root-anon-throttle': '1000000/second',
     'test-user': '2/hour',
     'test-anon': '1/hour',
+    'send-email': '2/minute',
 }
 
 ALLOWED_HOSTS.append('localhost')

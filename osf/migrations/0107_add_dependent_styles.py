@@ -65,7 +65,7 @@ def update_styles(state, schema):
 
             # Optional
             try:
-                fields['short_title'] = root.find(selector + "title-short").text
+                fields['short_title'] = root.find(selector + 'title-short').text
             except AttributeError:
                 pass
 
@@ -110,7 +110,7 @@ def update_styles(state, schema):
 
                         # Optional
                         try:
-                            fields['short_title'] = root.find(selector + "title-short").text
+                            fields['short_title'] = root.find(selector + 'title-short').text
                         except AttributeError:
                             pass
 
@@ -124,7 +124,7 @@ def update_styles(state, schema):
                         break
 
                     else:
-                        logger.debug("Unable to load parent_style object: parent {}, dependent style {}".format(parent_style_id, style_id))
+                        logger.debug('Unable to load parent_style object: parent {}, dependent style {}'.format(parent_style_id, style_id))
             else:
                 fields = {
                     '_id': style_id,

@@ -34,7 +34,7 @@ def get_related_view_kwargs(record):
     if singular == 'registration':
         singular = 'node'
     return {
-        '{}_id'.format(singular): '<_id>'
+        '{}_id'.format(singular): '<_id>',
     }
 
 class GuidSerializer(JSONAPISerializer):
@@ -51,22 +51,24 @@ class GuidSerializer(JSONAPISerializer):
         related_view=get_related_view,
         related_view_kwargs=get_related_view_kwargs,
         related_meta={
-            'type': 'get_type'
-        }
+            'type': 'get_type',
+        },
     )
     links = LinksField({
         'self': 'get_absolute_url',
-        'html': 'get_absolute_html_url'
+        'html': 'get_absolute_html_url',
     })
 
     def get_type(self, guid):
         return get_type(guid.referent)
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('guids:guid-detail', kwargs={
-            'guids': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'guids:guid-detail', kwargs={
+                'guids': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_absolute_html_url(self, obj):
         if not isinstance(obj.referent, BaseFileNode):
@@ -79,8 +81,8 @@ class GuidSerializer(JSONAPISerializer):
             obj = obj.referent
             ser = resolve(reverse(
                 get_related_view(obj),
-                kwargs={'node_id': obj._id, 'version': self.context['view'].kwargs.get('version', '2')}
+                kwargs={'node_id': obj._id, 'version': self.context['view'].kwargs.get('version', '2')},
             )).func.cls.serializer_class()
-            [ser.context.update({k: v}) for k, v in self.context.iteritems()]
+            [ser.context.update({k: v}) for k, v in self.context.items()]
             return ser.to_representation(obj)
         return super(GuidSerializer, self).to_representation(obj)

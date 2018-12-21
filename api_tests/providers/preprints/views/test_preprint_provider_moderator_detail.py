@@ -1,7 +1,6 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.providers.permissions import GroupHelper
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
@@ -14,7 +13,7 @@ class TestPreprintProviderModeratorDetail:
     @pytest.fixture()
     def provider(self):
         pp = PreprintProviderFactory(name='ModArxiv')
-        GroupHelper(pp).update_provider_auth_groups()
+        pp.update_group_permissions()
         return pp
 
     @pytest.fixture(params=['/{}preprint_providers/{}/moderators/{{}}/', '/{}providers/preprints/{}/moderators/{{}}/'])
@@ -25,13 +24,13 @@ class TestPreprintProviderModeratorDetail:
     @pytest.fixture()
     def admin(self, provider):
         user = AuthUserFactory()
-        GroupHelper(provider).get_group('admin').user_set.add(user)
+        provider.get_group('admin').user_set.add(user)
         return user
 
     @pytest.fixture()
     def moderator(self, provider):
         user = AuthUserFactory()
-        GroupHelper(provider).get_group('moderator').user_set.add(user)
+        provider.get_group('moderator').user_set.add(user)
         return user
 
     @pytest.fixture()

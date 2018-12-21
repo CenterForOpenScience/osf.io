@@ -2,10 +2,39 @@ import logging
 
 from django.db import migrations
 from django.contrib.auth.models import Group
-
-from api.providers.permissions import GroupHelper
+from guardian.shortcuts import assign_perm, get_perms, remove_perm
 
 logger = logging.getLogger(__file__)
+
+
+class GroupHelper(object):
+    """ Helper for managing permission groups for a given provider during migrations.
+
+        The mixed-in functionality from ReviewProviderMixin is unavailable during migrations
+    """
+
+    def __init__(self, provider):
+        self.provider = provider
+
+    def format_group(self, name):
+        from osf.models.mixins import ReviewProviderMixin
+        if name not in ReviewProviderMixin.groups:
+            raise ValueError('Invalid reviews group: "{}"'.format(name))
+        return ReviewProviderMixin.group_format.format(self=self.provider, group=name)
+
+    def get_group(self, name):
+        from django.contrib.auth.models import Group
+        return Group.objects.get(name=self.format_group(name))
+
+    def update_provider_auth_groups(self):
+        from osf.models.mixins import ReviewProviderMixin
+        for group_name, group_permissions in ReviewProviderMixin.groups.items():
+            group, created = Group.objects.get_or_create(name=self.format_group(group_name))
+            to_remove = set(get_perms(group, self.provider)).difference(group_permissions)
+            for p in to_remove:
+                remove_perm(p, group, self.provider)
+            for p in group_permissions:
+                assign_perm(p, group, self.provider)
 
 def populate_provider_notification_subscriptions(apps, schema_editor):
     NotificationSubscription = apps.get_model('osf', 'NotificationSubscription')

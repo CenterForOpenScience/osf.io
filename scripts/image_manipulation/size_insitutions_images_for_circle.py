@@ -47,5 +47,5 @@ def main():
             img.save(INSTITUTIONS_IMG_PATH + 'shields-rounded-corners/'+ shield[:-4] + '-rounded-corners.png')
 
     generateTestHTML(size=100)
-    print("This script removes transparency from images, check the test html to ensure a the quality has been maintained")
+    print('This script removes transparency from images, check the test html to ensure a the quality has been maintained')
 main()

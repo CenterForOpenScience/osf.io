@@ -196,3 +196,6 @@ docker-compose.override.yml
 .unison*
 .docker-sync/
 ssl/
+
+# pyenv
+.python-version

@@ -29,7 +29,7 @@ pytestmark = pytest.mark.django_db
 class TestAuthViews(BoxAddonTestCase, views_testing.OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
 
     def setUp(self):
-        self.mock_refresh = mock.patch("addons.box.models.Provider.refresh_oauth_key")
+        self.mock_refresh = mock.patch('addons.box.models.Provider.refresh_oauth_key')
         self.mock_refresh.return_value = True
         self.mock_refresh.start()
         super(TestAuthViews, self).setUp()

@@ -1,0 +1,62 @@
+{
+	"type": "array",
+	"items": {
+		"type": "object",
+		"properties": {
+			"title": {
+				"type": "string"
+			},
+			"startYear": {
+				"type": "integer",
+				"minimum": 1900
+			},
+			"startMonth": {
+				"type": "integer",
+				"minimum": 1,
+				"maximum": 12
+			},
+			"endMonth": {
+				"type": "integer",
+				"minimum": 1,
+				"maximum": 12
+			},
+			"endYear": {
+				"type": "integer",
+				"minimum": 1900
+			},
+			"ongoing": {
+				"oneOf": [{
+						"enum": [false],
+						"required": ["startYear", "endYear"]
+					},
+					{
+						"enum": [true],
+						"required": ["startYear"],
+						"not": {
+							"required": ["endYear"]
+						}
+					}
+				],
+				"type": "boolean"
+			},
+			"department": {
+				"type": "string"
+			},
+			"institution": {
+				"type": "string",
+				"minLength": 1
+			}
+		},
+		"required": [
+			"institution"
+		],
+		"additionalProperties": false,
+		"dependencies": {
+			"endMonth": ["endYear"],
+			"startMonth": ["startYear"],
+			"startYear": ["ongoing"],
+			"endYear": ["ongoing"],
+			"endYear": ["startYear"]
+		}
+	}
+}

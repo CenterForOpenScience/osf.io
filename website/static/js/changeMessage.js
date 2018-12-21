@@ -31,7 +31,7 @@ var ChangeMessageMixin = oop.defclass({
     },
     resetMessage: function() {
         this.message('');
-        this.messageClass('text-info');        
+        this.messageClass('text-info');
     }
 });
 

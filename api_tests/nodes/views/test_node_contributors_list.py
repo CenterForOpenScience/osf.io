@@ -4,7 +4,6 @@ import mock
 import pytest
 import random
 
-from api.base.exceptions import Conflict
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
@@ -30,6 +29,8 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class NodeCRUDTestCase:
 
     @pytest.fixture()
@@ -104,6 +105,8 @@ class NodeCRUDTestCase:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorList(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -319,6 +322,8 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorAdd(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -589,6 +594,16 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
+
+    def test_add_contributor_dont_expose_email(
+            self, app, user, user_two, project_public, data_user_two, url_public):
+
+        res = app.post_json_api(
+            url_public,
+            data_user_two,
+            auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes'].get('email') is None
 
     def test_add_contributor_is_visible_by_default(
             self, app, user, user_two, project_public,
@@ -946,7 +961,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_public.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] == 'John Doe'
-            assert res.json['data']['attributes']['email'] is None
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['embeds']['users']['data']['id'] in project_public.contributors.values_list(
                 'guids___id', flat=True)
 
@@ -966,7 +981,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_public.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] == 'John Doe'
-            assert res.json['data']['attributes']['email'] == 'john@doe.com'
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['attributes']['bibliographic'] is True
             assert res.json['data']['attributes']['permission'] == permissions.WRITE
             assert res.json['data']['embeds']['users']['data']['id'] in project_public.contributors.values_list(
@@ -990,7 +1005,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_public.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] == 'John Doe'
-            assert res.json['data']['attributes']['email'] == 'john@doe.com'
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['attributes']['bibliographic'] is False
             assert res.json['data']['attributes']['permission'] == permissions.READ
             assert res.json['data']['embeds']['users']['data']['id'] in project_public.contributors.values_list(
@@ -1013,7 +1028,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_public.reload()
             assert res.status_code == 201
             assert res.json['data']['attributes']['unregistered_contributor'] is None
-            assert res.json['data']['attributes']['email'] == user_contrib.username
+            assert res.json['data']['attributes'].get('email') is None
             assert res.json['data']['embeds']['users']['data']['id'] in project_public.contributors.values_list(
                 'guids___id', flat=True)
 
@@ -1232,13 +1247,23 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             url_public, payload,
             auth=user.auth, expect_errors=True)
         assert res.status_code == 404
+        # if adding unregistered contrib by guid, fullname must be supplied
         assert (
             res.json['errors'][0]['detail'] ==
-            'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
+            'Cannot add unconfirmed user {} to resource {}. You need to provide a full_name.'
             .format(unconfirmed_user._id, project_public._id))
+
+        payload['data']['attributes']['full_name'] = 'Susan B. Anthony'
+        res = app.post_json_api(
+            url_public, payload,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['unregistered_contributor'] == 'Susan B. Anthony'
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1254,26 +1279,25 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
             user_id='abcde')
 
     #   test_add_contributor_validation_user_id_fullname
-        with pytest.raises(Conflict):
-            validate_data(
-                NodeContributorsCreateSerializer(),
-                'fake',
-                user_id='abcde',
-                full_name='Kanye')
+        validate_data(
+            NodeContributorsCreateSerializer(),
+            project_public,
+            user_id='abcde',
+            full_name='Kanye')
 
     #   test_add_contributor_validation_user_id_email
-        with pytest.raises(Conflict):
+        with pytest.raises(exceptions.ValidationError):
             validate_data(
                 NodeContributorsCreateSerializer(),
-                'fake',
+                project_public,
                 user_id='abcde',
                 email='kanye@west.com')
 
     #   test_add_contributor_validation_user_id_fullname_email
-        with pytest.raises(Conflict):
+        with pytest.raises(exceptions.ValidationError):
             validate_data(
                 NodeContributorsCreateSerializer(),
-                'fake',
+                project_public,
                 user_id='abcde',
                 full_name='Kanye',
                 email='kanye@west.com')
@@ -1288,7 +1312,7 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
         with pytest.raises(exceptions.ValidationError):
             validate_data(
                 NodeContributorsCreateSerializer(),
-                'fake',
+                project_public,
                 email='kanye@west.com')
 
     #   test_add_contributor_validation_fullname_email
@@ -1300,6 +1324,8 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_enqueue_task
 class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1372,9 +1398,8 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         assert res.status_code == 201
         assert 'default' == kwargs['email_template']
 
-    @mock.patch('website.project.signals.contributor_added.send')
-    def test_add_contributor_signal_if_preprint(
-            self, mock_send, app, user, user_two, url_project_contribs):
+    def test_add_contributor_signal_preprint_email_disallowed(
+            self, app, user, user_two, url_project_contribs):
         url = '{}?send_email=preprint'.format(url_project_contribs)
         payload = {
             'data': {
@@ -1391,10 +1416,9 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
-        assert res.status_code == 201
-        assert 'preprint' == kwargs['email_template']
+        res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'preprint is not a valid email preference.'
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_sends_email(
@@ -1431,9 +1455,8 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         assert res.status_code == 201
         assert 'default' == kwargs['email_template']
 
-    @mock.patch('website.project.signals.unreg_contributor_added.send')
-    def test_add_unregistered_contributor_signal_if_preprint(
-            self, mock_send, app, user, url_project_contribs):
+    def test_add_unregistered_contributor_signal_preprint_email_disallowed(
+            self, app, user, url_project_contribs):
         url = '{}?send_email=preprint'.format(url_project_contribs)
         payload = {
             'data': {
@@ -1444,10 +1467,9 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
-        assert res.status_code == 201
-        assert 'preprint' == kwargs['email_template']
+        res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'preprint is not a valid email preference.'
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_invalid_send_email_param(
@@ -2850,6 +2872,8 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeContributorFiltering:
 
     @pytest.fixture()

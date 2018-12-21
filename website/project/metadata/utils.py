@@ -27,6 +27,7 @@ def serialize_meta_schemas(meta_schemas):
 
 def serialize_draft_registration(draft, auth=None):
     from website.project.utils import serialize_node  # noqa
+    from api.base.utils import absolute_reverse
 
     node = draft.branched_from
 
@@ -40,12 +41,12 @@ def serialize_draft_registration(draft, auth=None):
         'updated': utils.iso8601format(draft.datetime_updated),
         'flags': draft.flags,
         'urls': {
-            'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id),
+            'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id, _guid=True),
             'submit': node.api_url_for('submit_draft_for_review', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),
-            'register': node.api_url_for('register_draft_registration', draft_id=draft._id),
-            'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id),
-            'registrations': node.web_url_for('node_registrations')
+            'register': absolute_reverse('nodes:node-registrations', kwargs={'node_id': node._id, 'version': 'v2'}),
+            'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id, _guid=True),
+            'registrations': node.web_url_for('node_registrations', _guid=True)
         },
         'requires_approval': draft.requires_approval,
         'is_pending_approval': draft.is_pending_review,
@@ -122,7 +123,11 @@ def extract_question_values(question, required_fields, is_reviewer):
     elif question.get('type') == 'choose':
         options = question.get('options')
         if options:
-            response['value'] = get_options_jsonschema(options)
+            enum_options = get_options_jsonschema(options)
+            if question.get('format') == 'singleselect':
+                response['value'] = enum_options
+            elif question.get('format') == 'multiselect':
+                response['value'] = {'type': 'array', 'items': enum_options}
     elif question.get('type') == 'osf-upload':
         response['extra'] = OSF_UPLOAD_EXTRA_SCHEMA
 
@@ -176,6 +181,8 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
                         'properties': {
                             'downloads': {'type': 'integer'},
                             'version': {'type': 'integer'},
+                            'latestVersionSeen': {'type': 'string'},
+                            'guid': {'type': 'string'},
                             'checkout': {'type': 'string'},
                             'hashes': {
                                 'type': 'object',
@@ -193,9 +200,46 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
                     'etag': {'type': 'string'},
                     'provider': {'type': 'string'},
                     'path': {'type': 'string'},
-                    'size': {'type': 'integer'}
+                    'nodeUrl': {'type': 'string'},
+                    'waterbutlerURL': {'type': 'string'},
+                    'resource': {'type': 'string'},
+                    'nodeApiUrl': {'type': 'string'},
+                    'type': {'type': 'string'},
+                    'accept': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'acceptedFiles': {'type': 'boolean'},
+                            'maxSize': {'type': 'integer'},
+                        }
+                    },
+                    'links': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'download': {'type': 'string'},
+                            'move': {'type': 'string'},
+                            'upload': {'type': 'string'},
+                            'delete': {'type': 'string'}
+                        }
+                    },
+                    'permissions': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'edit': {'type': 'boolean'},
+                            'view': {'type': 'boolean'}
+                        }
+                    },
+                    'created_utc': {'type': 'string'},
+                    'id': {'type': 'string'},
+                    'modified_utc': {'type': 'string'},
+                    'size': {'type': 'integer'},
+                    'sizeInt': {'type': 'integer'},
                 }
             },
+            'fileId': {'type': ['string', 'object']},
+            'descriptionValue': {'type': 'string'},
             'sha256': {'type': 'string'},
             'selectedFileName': {'type': 'string'},
             'nodeId': {'type': 'string'},
@@ -203,6 +247,7 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
         }
     }
 }
+
 
 COMMENTS_SCHEMA = {
     'type': 'array',
@@ -212,9 +257,6 @@ COMMENTS_SCHEMA = {
         'properties': {
             'seenBy': {
                 'type': 'array',
-                'items': {
-                    'type': 'integer'
-                }
             },
             'canDelete': {'type': 'boolean'},
             'created': {'type': 'string'},
@@ -225,7 +267,7 @@ COMMENTS_SCHEMA = {
             'getAuthor': {'type': 'string'},
             'user': {
                 'type': 'object',
-                'additionalProperties': False,
+                'additionalProperties': True,
                 'properties': {
                     'fullname': {'type': 'string'},
                     'id': {'type': 'integer'}

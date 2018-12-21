@@ -8,7 +8,7 @@ from pytz import utc
 from datetime import datetime
 import urllib
 
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import re
 
 from tests.base import ApiTestCase, DbTestCase
@@ -36,7 +36,7 @@ for loader, name, _ in pkgutil.iter_modules(['api']):
 
 SER_CLASSES = []
 for mod in SER_MODULES:
-    for name, val in mod.__dict__.iteritems():
+    for name, val in mod.__dict__.items():
         try:
             if issubclass(val, BaseAPISerializer):
                 if 'JSONAPI' in name or 'BaseAPI' in name:
@@ -132,9 +132,10 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'current_user_can_comment',
             'current_user_is_contributor',
             'preprint',
-            'subjects']
+            'subjects',
+            'wiki_enabled']
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count']
+        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'children']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)
@@ -174,7 +175,6 @@ class TestNullLinks(ApiTestCase):
         assert_not_in('null_field', rep['links'])
         assert_in('valued_field', rep['links'])
         assert_not_in('null_link_field', rep['relationships'])
-        assert_in('valued_link_field', rep['relationships'])
 
 
 class TestApiBaseSerializers(ApiTestCase):
@@ -216,7 +216,7 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url)
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
-            if relation == {}:
+            if relation == {'data': None}:
                 continue
             if isinstance(relation, list):
                 for item in relation:
@@ -233,7 +233,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': True})
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -249,7 +249,7 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': False})
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
-            if relation == {}:
+            if relation == {'data': None}:
                 continue
             if isinstance(relation, list):
                 for item in relation:
@@ -279,7 +279,7 @@ class TestApiBaseSerializers(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "The following fields are not embeddable: foo"
+            'The following fields are not embeddable: foo'
         )
 
     def test_embed_does_not_remove_relationship(self):
@@ -295,7 +295,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': 'children'})
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -309,7 +309,7 @@ class TestApiBaseSerializers(ApiTestCase):
                         assert_in('count', link['meta'])
                     else:
                         assert_not_in('count', link.get('meta', {}))
-            else:
+            elif relation != {'data': None}:
                 link = relation['links'].values()[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children':
@@ -325,7 +325,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'children,contributors'}
         )
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -339,7 +339,7 @@ class TestApiBaseSerializers(ApiTestCase):
                         assert_in('count', link['meta'])
                     else:
                         assert_not_in('count', link.get('meta', {}))
-            else:
+            elif relation != {'data': None}:
                 link = relation['links'].values()[0]
                 related_meta = getattr(field, 'related_meta', {})
                 if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
@@ -391,12 +391,6 @@ class TestRelationshipField:
             related_view_kwargs={'node_id': '<_id>', 'node_link_id': '<_id>'},
         )
 
-        not_attribute_on_target = RelationshipField(
-            # fake url, for testing purposes
-            related_view='nodes:node-children',
-            related_view_kwargs={'node_id': '12345'}
-        )
-
         # If related_view_kwargs is a callable, this field _must_ match the property name on
         # the target record
         registered_from = RelationshipField(
@@ -433,6 +427,25 @@ class TestRelationshipField:
         assert_not_in('count', meta)
         assert_in('extra', meta)
         assert_equal(meta['extra'], 'foo')
+
+    def test_serializing_empty_to_one(self):
+        req = make_drf_request_with_version(version='2.2')
+        node = factories.NodeFactory()
+        data = self.BasicNodeSerializer(
+            node, context={'request': req}
+        ).data['data']
+        # This node is not registered_from another node hence it is an empty-to-one.
+        assert 'registered_from' not in data['relationships']
+
+        # In 2.9, API returns null for empty relationships
+        # https://openscience.atlassian.net/browse/PLAT-840
+        req = make_drf_request_with_version(version='2.9')
+        node = factories.NodeFactory()
+        data = self.BasicNodeSerializer(
+            node, context={'request': req}
+        ).data['data']
+
+        assert data['relationships']['registered_from']['data'] is None
 
     def test_self_and_related_fields(self):
         req = make_drf_request_with_version(version='2.0')
@@ -479,19 +492,6 @@ class TestRelationshipField:
         )
         assert_in(
             urllib.quote('filter[woop]=yea', safe='?='),
-            field['related']['href']
-        )
-
-    def test_field_with_non_attribute(self):
-        req = make_drf_request_with_version(version='2.0')
-        project = factories.ProjectFactory()
-        node = factories.NodeFactory(parent=project)
-        data = self.BasicNodeSerializer(
-            node, context={'request': req}
-        ).data['data']
-        field = data['relationships']['not_attribute_on_target']['links']
-        assert_in(
-            '/v2/nodes/{}/children/'.format('12345'),
             field['related']['href']
         )
 
@@ -568,7 +568,7 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(
-            datetime.strftime(self.old_date,self.old_format),
+            datetime.strftime(self.old_date, self.old_format),
             data['attributes']['date_modified']
         )
 
@@ -589,7 +589,7 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(
-            datetime.strftime(self.old_date,self.new_format),
+            datetime.strftime(self.old_date, self.new_format),
             data['attributes']['date_modified']
         )
 

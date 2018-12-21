@@ -6,7 +6,8 @@ from api.base.serializers import (
     JSONAPISerializer, IDField, RelationshipField,
     JSONAPIRelationshipSerializer, LinksField, relationship_diff,
     VersionedDateTimeField,
-    BaseAPISerializer)
+    BaseAPISerializer,
+)
 from api.base.utils import absolute_reverse
 
 from osf.models import AbstractNode
@@ -23,7 +24,7 @@ class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
         related_view='view-only-links:view-only-link-nodes',
         related_view_kwargs={'link_id': '<_id>'},
         self_view='view-only-links:view-only-link-nodes-relationships',
-        self_view_kwargs={'link_id': '<_id>'}
+        self_view_kwargs={'link_id': '<_id>'},
     )
 
     creator = RelationshipField(
@@ -36,8 +37,8 @@ class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
             'nodes:node-view-only-link-detail',
             kwargs={
                 'link_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     class Meta:
@@ -62,20 +63,20 @@ class ViewOnlyLinkNodesSerializer(BaseAPISerializer):
             'view-only-links:view-only-link-nodes',
             kwargs={
                 'link_id': obj['self']._id,
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     def make_instance_obj(self, obj):
         return {
             'data': obj.nodes.all(),
-            'self': obj
+            'self': obj,
         }
 
     def get_nodes_to_add_remove(self, nodes, new_nodes):
         diff = relationship_diff(
             current_items={node._id: node for node in nodes},
-            new_items={node['_id']: node for node in new_nodes}
+            new_items={node['_id']: node for node in new_nodes},
         )
 
         nodes_to_add = []
@@ -104,7 +105,7 @@ class ViewOnlyLinkNodesSerializer(BaseAPISerializer):
 
         add, remove = self.get_nodes_to_add_remove(
             nodes=nodes,
-            new_nodes=new_nodes
+            new_nodes=new_nodes,
         )
 
         if not len(add):
@@ -131,7 +132,7 @@ class ViewOnlyLinkNodesSerializer(BaseAPISerializer):
 
         add, remove = self.get_nodes_to_add_remove(
             nodes=nodes,
-            new_nodes=new_nodes
+            new_nodes=new_nodes,
         )
 
         for node in remove:

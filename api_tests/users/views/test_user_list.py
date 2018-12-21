@@ -20,6 +20,7 @@ from website import settings
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestUsers:
 
     @pytest.fixture()

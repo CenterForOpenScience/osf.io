@@ -310,6 +310,38 @@ class TestNodeDetail:
         res = app.get(url, auth=user.auth)
         assert 'wikis' in res.json['data']['relationships']
 
+    def test_preprint_field(self, app, user, user_two, project_public, url_public):
+        # Returns true if project holds supplemental material for a preprint a user can view
+        # Published preprint, admin_contrib
+        preprint = PreprintFactory(project=project_public, creator=user)
+        res = app.get(url_public, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['preprint'] is True
+
+        # Published preprint, non_contrib
+        res = app.get(url_public, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['preprint'] is True
+
+        # Unpublished preprint, admin contrib
+        preprint.is_published = False
+        preprint.save()
+        res = app.get(url_public, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['preprint'] is True
+
+        # Unpublished preprint, non_contrib
+        res = app.get(url_public, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['preprint'] is False
+
+    def test_shows_access_requests_enabled_field_based_on_version(self, app, user, project_public, url_public):
+        url = url_public + '?version=latest'
+        res = app.get(url, auth=user.auth)
+        assert 'access_requests_enabled' not in res.json['data']['attributes']
+        res = app.get(url_public + '?version=2.8', auth=user.auth)
+        assert 'access_requests_enabled' in res.json['data']['attributes']
+
     def test_node_shows_correct_templated_from_count(self, app, user, project_public, url_public):
         url = url_public
         res = app.get(url)
@@ -399,6 +431,42 @@ class TestNodeDetail:
         res = app.get(forks_url, auth=user.auth)
         assert len(res.json['data']) == 1
 
+    def test_current_user_permissions(self, app, user, url_public, project_public, user_two):
+        # in most recent API version, read isn't implicit for public nodes
+        url = url_public + '?version=2.11'
+        res = app.get(url, auth=user_two.auth)
+        assert not project_public.has_permission(user_two, permissions.READ)
+        assert permissions.READ not in res.json['data']['attributes']['current_user_permissions']
+
+        # ensure read is not included for an anonymous user
+        res = app.get(url)
+        assert permissions.READ not in res.json['data']['attributes']['current_user_permissions']
+
+        # ensure both read and write included for a write contributor
+        new_user = AuthUserFactory()
+        project_public.add_contributor(
+            new_user,
+            permissions=(permissions.READ, permissions.WRITE),
+            auth=Auth(project_public.creator)
+        )
+        res = app.get(url, auth=new_user.auth)
+        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.READ, permissions.WRITE]
+
+        # make sure 'read' is there for implicit read contributors
+        comp = NodeFactory(parent=project_public, is_public=True)
+        comp_url = '/{}nodes/{}/?version=2.11'.format(API_BASE, comp._id)
+        res = app.get(comp_url, auth=user.auth)
+        assert project_public.has_permission(user, permissions.ADMIN)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+
+        # ensure 'read' is still included with older versions
+        res = app.get(url_public, auth=user_two.auth)
+        assert not project_public.has_permission(user_two, permissions.READ)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
+
+        # check read permission is included with older versions for anon user
+        res = app.get(url_public)
+        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:
@@ -693,7 +761,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'type': 'nodes',
                 'id': project_public._id,
                 'attributes': {
-                    'title': 'A' * 201,
+                    'title': 'A' * 513,
                     'category': 'project',
                 }
             }
@@ -702,7 +770,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             url_public, project,
             auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
     #   test_update_public_project_logged_in_but_unauthorized
         res = app.put_json_api(url_public, {
@@ -1016,7 +1084,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'title': title_new,
             }
         }, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 200
 
     def test_partial_update_private_project_logged_in_contributor(
             self, app, user, title_new, description, category, project_private, url_private):
@@ -1085,6 +1153,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         mock_update_doi_metadata.assert_called_with(
             project_public._id, status='unavailable')
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
     def test_set_node_with_preprint_private_updates_doi(
             self, mock_update_doi_metadata, app, user,
@@ -1100,7 +1169,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_doi_metadata.assert_called_with(target_object._id)
+        # Turning supplemental_project private no longer turns preprint private
+        assert target_object.is_public
+        assert not mock_update_doi_metadata.called
 
     def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
         # test_write_contrib_cannot_set_subjects
@@ -1141,6 +1212,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
 class TestNodeDelete(NodeCRUDTestCase):
 
     def test_deletes_node_errors(
@@ -1226,7 +1298,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
         project_public.reload()
 
-        assert mock_update_doi_metadata_on_change.called
+        assert not mock_update_doi_metadata_on_change.called
 
     @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
     def test_delete_node_with_identifier_calls_preprint_update_status(

@@ -8,8 +8,10 @@ class TaxonomyField(ser.Field):
         if not isinstance(subject, Subject):
             subject = Subject.load(subject)
         if subject is not None:
-            return {'id': subject._id,
-                    'text': subject.text}
+            return {
+                'id': subject._id,
+                'text': subject.text,
+            }
         return None
 
     def to_internal_value(self, subject_id):
@@ -23,7 +25,7 @@ class TaxonomizableSerializerMixin(ser.Serializer):
     to handle subjects correctly.
     """
     writeable_method_fields = frozenset([
-        'subjects'
+        'subjects',
     ])
 
     subjects = ser.SerializerMethodField()
@@ -42,7 +44,7 @@ class TaxonomySerializer(JSONAPISerializer):
         'text',
         'parents',
         'parent',
-        'id'
+        'id',
     ])
     id = ser.CharField(source='_id', required=True)
     text = ser.CharField(max_length=200)

@@ -33,7 +33,7 @@ def migrate(registrations):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Changes the provider of specified PreprintService objects'
+        description='Changes the provider of specified Preprint objects'
     )
 
     parser.add_argument(
@@ -47,5 +47,5 @@ def main():
     setup_django()
     migrate(json.loads(pargs.targets))
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

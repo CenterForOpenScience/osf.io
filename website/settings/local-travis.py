@@ -35,6 +35,10 @@ EXTERNAL_EMBER_APPS = {
     'preprints': {
         'server': 'http://localhost:4201',
         'path': os.environ.get('HOME') + '/preprints/'
+    },
+    'registries': {
+        'server': 'http://localhost:4202/',
+        'path': os.environ.get('HOME') + '/registries/'
     }
 }
 
@@ -50,7 +54,7 @@ MAIL_PASSWORD = 'CHANGEME'
 
 # Session
 COOKIE_NAME = 'osf'
-SECRET_KEY = "CHANGEME"
+SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None

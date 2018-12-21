@@ -13,14 +13,15 @@ class GitLabSerializer(StorageAddonSerializer):
         host = external_account.oauth_secret
         ret.update({
             'host': host,
-            'host_url': 'https://{0}'.format(host),
+            'host_url': host,
         })
 
         return ret
 
     def credentials_are_valid(self, user_settings, client):
         if user_settings:
-            client = client or GitLabClient(external_account=user_settings.external_accounts.first())
+            external_account = user_settings.external_accounts.first()
+            client = client or GitLabClient(external_account=external_account)
             try:
                 client.user()
             except (GitLabError, IndexError):

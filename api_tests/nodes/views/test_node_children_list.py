@@ -267,15 +267,17 @@ class TestNodeChildCreate:
     #   test_creates_child_properties_not_nested
         child = {
             'data': {
-                'title': 'child',
-                'description': 'this is a child project',
-                'category': 'project',
+                'attributes': {
+                    'title': 'child',
+                    'description': 'this is a child project'
+                },
+                'category': 'project'
             }
         }
         res = app.post_json_api(url, child, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/category'
 
     def test_creates_child_logged_in_write_contributor(
             self, app, user, project, child, url):
@@ -618,8 +620,8 @@ class TestNodeChildrenBulkCreate:
             url, child, auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/category'
 
         project.reload()
         assert len(project.nodes) == 0

@@ -16,7 +16,9 @@ import tempfile
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, AbstractNode, PreprintService, PreprintProvider
+from django.db.models import Q
+from osf.models import OSFUser, AbstractNode, Preprint, PreprintProvider
+from osf.utils.workflows import DefaultStates
 from scripts import utils as script_utils
 from website import settings
 from website.app import init_app
@@ -74,7 +76,7 @@ class Sitemap(object):
         self.url = self.doc.createElement('url')
         self.urlset.appendChild(self.url)
 
-        for k, v in config.iteritems():
+        for k, v in config.items():
             self.add_tag(k, v)
         self.url_count += 1
 
@@ -86,7 +88,7 @@ class Sitemap(object):
         zip_file_path = file_path + '.gz'
         print('Writing and gzipping `{}`: url_count = {}'.format(file_path, str(self.url_count)))
 
-        xml_str = self.doc.toprettyxml(indent="  ", encoding='utf-8')
+        xml_str = self.doc.toprettyxml(indent='  ', encoding='utf-8')
         with open(file_path, 'wb') as f:
             f.write(xml_str)
 
@@ -132,7 +134,7 @@ class Sitemap(object):
         print('Writing `sitemap_index.xml`')
         file_name = 'sitemap_index.xml'
         file_path = os.path.join(self.sitemap_dir, file_name)
-        xml_str = doc.toprettyxml(indent="  ", encoding='utf-8')
+        xml_str = doc.toprettyxml(indent='  ', encoding='utf-8')
         with open(file_path, 'wb') as f:
             f.write(xml_str)
         if settings.SITEMAP_TO_S3:
@@ -182,7 +184,7 @@ class Sitemap(object):
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type__in=["osf.collection", "osf.quickfilesnode"])
+            .exclude(type__in=['osf.collection', 'osf.quickfilesnode'])
             .values('guids___id', 'modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:
@@ -197,9 +199,9 @@ class Sitemap(object):
         progress.stop()
 
         # Preprint urls
-        objs = (PreprintService.objects
-                    .filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
-                    .select_related('node', 'provider', 'node__preprint_file'))
+
+        objs = (Preprint.objects.can_view()
+                    .select_related('node', 'provider', 'primary_file'))
         progress.start(objs.count() * 2, 'PREP: ')
         osf = PreprintProvider.objects.get(_id='osf')
         for obj in objs:

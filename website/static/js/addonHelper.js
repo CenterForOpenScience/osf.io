@@ -60,7 +60,7 @@ var AddonHelper = (function() {
     };
 
     if (typeof module === 'object') {
-        module.exports = exports; 
-    } 
+        module.exports = exports;
+    }
     return exports;
 })();

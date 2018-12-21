@@ -59,12 +59,12 @@ def do_populate(clear=False):
     if clear:
         ApiOAuth2Scope.objects.all().delete()
 
-    for name, scope in scope_dict.iteritems():
+    for name, scope in scope_dict.items():
         # Update a scope if it exists, else populate
         if scope.is_public is True:
             get_or_create(name, scope.description, save=True)
         else:
-            logger.info("{} is not a publicly advertised scope; did not load into database".format(name))
+            logger.info('{} is not a publicly advertised scope; did not load into database'.format(name))
 
 
 def main(dry=True):

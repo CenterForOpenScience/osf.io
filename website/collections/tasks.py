@@ -10,7 +10,7 @@ def on_collection_updated(collection_id):
     Collection = apps.get_model('osf.Collection')
     coll = Collection.load(collection_id)
 
-    cgms = coll.collectedguidmetadata_set.all()
+    cgms = coll.collectionsubmission_set.all()
 
     if coll.is_public:
         # Add all collection submissions back to ES index
