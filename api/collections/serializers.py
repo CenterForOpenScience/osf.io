@@ -3,7 +3,7 @@ from rest_framework import exceptions
 from rest_framework import serializers as ser
 
 from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider
-from osf.exceptions import ValidationError
+from osf.exceptions import ValidationError, NodeStateError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
@@ -12,7 +12,6 @@ from api.nodes.serializers import NodeLinksSerializer
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from osf.utils.permissions import WRITE
-from website.exceptions import NodeStateError
 
 
 class CollectionProviderRelationshipField(RelationshipField):
