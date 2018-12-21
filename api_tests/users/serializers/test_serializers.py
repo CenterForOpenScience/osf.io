@@ -16,8 +16,8 @@ def user():
 def user_with_preprint():
     preprint = PreprintFactory(is_published=True)
     preprint.save()
-    preprint.node.creator.save()
-    return preprint.node.creator
+    preprint.creator.save()
+    return preprint.creator
 
 
 @pytest.mark.django_db
