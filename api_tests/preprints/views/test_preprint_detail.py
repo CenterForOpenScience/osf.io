@@ -628,6 +628,19 @@ class TestPreprintUpdate:
         ) == new_tags
         assert mock_update_doi_metadata.called
 
+        # No tags
+        update_tags_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'tags': []
+            }
+        )
+        res = app.patch_json_api(url, update_tags_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        preprint.reload()
+        assert preprint.tags.count() == 0
+
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_update_contributors(

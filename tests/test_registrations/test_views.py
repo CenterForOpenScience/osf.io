@@ -10,9 +10,12 @@ from django.utils import timezone
 
 import pytest
 from nose.tools import *  # noqa PEP8 asserts
+from waffle.testutils import override_switch
+
 
 from framework.exceptions import HTTPError
 
+from osf import features
 from osf.models import RegistrationSchema, DraftRegistration
 from osf.utils import permissions
 from website.project.metadata.schemas import _name_to_id, LATEST_SCHEMA_VERSION
@@ -578,3 +581,16 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
                 draft_views.check_draft_state(self.draft)
             except HTTPError:
                 self.fail()
+
+    def test_prereg_challenge_over(self):
+        url = self.draft_api_url('submit_draft_for_review')
+        with override_switch(features.OSF_PREREGISTRATION, active=True):
+            res = self.app.post_json(
+                url,
+                self.embargo_payload,
+                auth=self.user.auth,
+                expect_errors=True
+            )
+        assert_equal(res.status_code, http.GONE)
+        data = res.json
+        assert_equal(data['message_short'], 'The Prereg Challenge has ended')

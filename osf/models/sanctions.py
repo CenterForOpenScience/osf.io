@@ -360,20 +360,12 @@ class PreregCallbackMixin(object):
                             registration_url=registration.absolute_url,
                             mimetype='html')
 
-    def _email_template_context(self,
+    def _email_template_context(self,  # TODO: remove after prereg challenge
                                 user,
                                 node,
                                 is_authorizer=False,
                                 urls=None):
-        registration = self._get_registration()
-        prereg_schema = RegistrationSchema.get_prereg_schema()
-        if registration.registered_schema.filter(pk=prereg_schema.pk).exists():
-            return {
-                'custom_message':
-                    ' as part of the Preregistration Challenge (https://cos.io/prereg)'
-            }
-        else:
-            return {}
+        return {}
 
 
 class Embargo(PreregCallbackMixin, EmailApprovableSanction):
