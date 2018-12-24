@@ -293,6 +293,12 @@ DISK_SAVING_MODE = False
 # Seconds before another notification email can be sent to a contributor when added to a project
 CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 
+# Seconds before another notification email can be sent to a member when added to an OSFGroup
+GROUP_MEMBER_ADDED_EMAIL_THROTTLE = 24 * 3600
+
+# Seconds before another notification email can be sent to group members when added to a project
+GROUP_CONNECTED_EMAIL_THROTTLE = 24 * 3600
+
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
 GOOGLE_SITE_VERIFICATION = None
@@ -386,7 +392,6 @@ class CeleryConfig:
         'scripts.analytics.tasks',
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
-        'scripts.remind_draft_preregistrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'scripts.generate_prereg_csv',
@@ -457,7 +462,6 @@ class CeleryConfig:
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
         'scripts.refresh_addon_tokens',
-        'scripts.remind_draft_preregistrations',
         'scripts.retract_registrations',
         'scripts.embargo_registrations',
         'scripts.approve_registrations',
@@ -549,11 +553,6 @@ class CeleryConfig:
             'send_queued_mails': {
                 'task': 'scripts.send_queued_mails',
                 'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
-                'kwargs': {'dry_run': False},
-            },
-            'prereg_reminder': {
-                'task': 'scripts.remind_draft_preregistrations',
-                'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
                 'kwargs': {'dry_run': False},
             },
             'new-and-noteworthy': {

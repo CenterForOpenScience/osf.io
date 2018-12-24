@@ -1,5 +1,6 @@
 import mock
 import pytest
+import time
 from django.contrib.auth.models import Group
 
 from addons.github.tests import factories
@@ -11,6 +12,7 @@ from framework.exceptions import PermissionsError
 from osf.models import OSFGroup, Node, OSFUser, OSFGroupLog, NodeLog
 from osf.utils.permissions import MANAGER, MEMBER, MANAGE, READ, WRITE, ADMIN
 from website.notifications.utils import get_all_node_subscriptions
+from website.osf_groups import signals as group_signals
 from .factories import (
     NodeFactory,
     ProjectFactory,
@@ -205,6 +207,58 @@ class TestOSFGroup:
         assert manager in osf_group.managers
         assert manager in osf_group.members
 
+    @mock.patch('website.osf_groups.views.mails.send_mail')
+    def test_notify_group_member_email_does_not_send_before_throttle_expires(self, mock_send_mail, manager, osf_group):
+        member = AuthUserFactory()
+        assert member.member_added_email_records == {}
+        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager))
+        assert mock_send_mail.call_count == 1
+
+        record = member.member_added_email_records[osf_group._id]
+        assert record is not None
+        # 2nd call does not send email because throttle period has not expired
+        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager))
+        assert member.member_added_email_records[osf_group._id] == record
+        assert mock_send_mail.call_count == 1
+
+    @mock.patch('website.osf_groups.views.mails.send_mail')
+    def test_notify_group_member_email_sends_after_throttle_expires(self, mock_send_mail, osf_group, member, manager):
+        throttle = 0.5
+
+        member = AuthUserFactory()
+        assert member.member_added_email_records == {}
+        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
+        assert mock_send_mail.call_count == 1
+
+        time.sleep(1)  # throttle period expires
+        # 2nd call does not send email because throttle period has not expired
+        assert member.member_added_email_records[osf_group._id] is not None
+        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
+        assert mock_send_mail.call_count == 2
+
+    @mock.patch('website.osf_groups.views.mails.send_mail')
+    def test_notify_group_unregistered_member_throttle(self, mock_send_mail, osf_group, member, manager):
+        throttle = 0.5
+
+        member = AuthUserFactory()
+        member.is_registered = False
+        member.add_unclaimed_record(osf_group, referrer=manager, given_name='grapes mcgee', email='grapes@cos.io')
+        member.save()
+        assert member.member_added_email_records == {}
+        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
+        assert mock_send_mail.call_count == 1
+
+        assert member.member_added_email_records[osf_group._id] is not None
+        # 2nd call does not send email because throttle period has not expired
+        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager))
+        assert mock_send_mail.call_count == 1
+
+        time.sleep(1)  # throttle period expires
+        # 2nd call does not send email because throttle period has not expired
+        assert member.member_added_email_records[osf_group._id] is not None
+        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
+        assert mock_send_mail.call_count == 2
+
     def test_rename_osf_group(self, manager, member, user_two, osf_group):
         new_name = 'Platform Team'
         # no permissions
@@ -241,14 +295,6 @@ class TestOSFGroup:
 
         assert project.has_permission(member, ADMIN) is False
 
-    def test_add_osf_group_to_node_already_connected(self, manager, member, osf_group, project):
-        project.add_osf_group(osf_group, ADMIN)
-        assert project.has_permission(member, ADMIN) is True
-
-        project.add_osf_group(osf_group, WRITE)
-        assert project.has_permission(member, ADMIN) is False
-        assert project.has_permission(member, WRITE) is True
-
     def test_user_groups_property(self, manager, member, osf_group):
         assert osf_group in manager.osf_groups
         assert osf_group in member.osf_groups
@@ -257,6 +303,116 @@ class TestOSFGroup:
 
         assert other_group not in manager.osf_groups
         assert other_group not in member.osf_groups
+
+    def test_user_group_roles(self, manager, member, user_three, osf_group):
+        assert manager.group_role(osf_group) == MANAGER
+        assert member.group_role(osf_group) == MEMBER
+        assert user_three.group_role(osf_group) is None
+
+    def test_replace_contributor(self, manager, member, osf_group):
+        user = osf_group.add_unregistered_member('test_user', 'test@cos.io', auth=Auth(manager))
+        assert user in osf_group.members
+        assert user not in osf_group.managers
+        assert (
+            osf_group._id in
+            user.unclaimed_records.keys()
+        )
+        osf_group.replace_contributor(user, member)
+        assert user not in osf_group.members
+        assert user not in osf_group.managers
+        assert osf_group.has_permission(member, MEMBER) is True
+        assert osf_group.has_permission(user, MEMBER) is False
+
+        # test unclaimed_records is removed
+        assert (
+            osf_group._id not in
+            user.unclaimed_records.keys()
+        )
+
+    def test_get_users_with_perm_osf_groups(self, project, manager, member, osf_group):
+        # Explicitly added as a contributor
+        read_users = project.get_users_with_perm(READ)
+        write_users = project.get_users_with_perm(WRITE)
+        admin_users = project.get_users_with_perm(ADMIN)
+        assert len(project.get_users_with_perm(READ)) == 1
+        assert len(project.get_users_with_perm(WRITE)) == 1
+        assert len(project.get_users_with_perm(ADMIN)) == 1
+        assert manager in read_users
+        assert manager in write_users
+        assert manager in admin_users
+
+        # Added through osf groups
+        project.add_osf_group(osf_group, WRITE)
+        read_users = project.get_users_with_perm(READ)
+        write_users = project.get_users_with_perm(WRITE)
+        admin_users = project.get_users_with_perm(ADMIN)
+        assert len(project.get_users_with_perm(READ)) == 2
+        assert len(project.get_users_with_perm(WRITE)) == 2
+        assert len(project.get_users_with_perm(ADMIN)) == 1
+        assert member in read_users
+        assert member in write_users
+        assert member not in admin_users
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_merge_users_transfers_group_membership(self, member, manager, osf_group):
+        # merge member
+        other_user = AuthUserFactory()
+        other_user.merge_user(member)
+        other_user.save()
+        assert osf_group.is_member(other_user)
+
+        # merge manager
+        other_other_user = AuthUserFactory()
+        other_other_user.merge_user(manager)
+        other_other_user.save()
+        assert osf_group.is_member(other_other_user)
+        assert osf_group.has_permission(other_other_user, MANAGE)
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_merge_users_already_group_manager(self, member, manager, osf_group):
+        # merge users - both users have group membership - different roles
+        manager.merge_user(member)
+        manager.save()
+        assert osf_group.has_permission(manager, MANAGE)
+        assert osf_group.is_member(member) is False
+
+    def test_osf_group_is_admin_parent(self, project, manager, member, osf_group, user_two, user_three):
+        child = NodeFactory(parent=project, creator=manager)
+        assert project.is_admin_parent(manager) is True
+        assert project.is_admin_parent(member) is False
+
+        project.add_contributor(user_two, WRITE, save=True)
+        assert project.is_admin_parent(user_two) is False
+
+        assert child.is_admin_parent(manager) is True
+        child.add_contributor(user_two, ADMIN, save=True)
+        assert child.is_admin_parent(user_two) is True
+
+        assert child.is_admin_parent(user_three) is False
+        osf_group.make_member(user_three)
+        project.add_osf_group(osf_group, WRITE)
+        assert child.is_admin_parent(user_three) is False
+
+        project.update_osf_group(osf_group, ADMIN)
+        assert child.is_admin_parent(user_three) is True
+        assert child.is_admin_parent(user_three, include_group_admin=False) is False
+        project.remove_osf_group(osf_group)
+
+        child.add_osf_group(osf_group, WRITE)
+        assert child.is_admin_parent(user_three) is False
+        child.update_osf_group(osf_group, ADMIN)
+        assert child.is_admin_parent(user_three) is True
+        assert child.is_admin_parent(user_three, include_group_admin=False) is False
+
+
+class TestNodeGroups:
+    def test_add_osf_group_to_node_already_connected(self, manager, member, osf_group, project):
+        project.add_osf_group(osf_group, ADMIN)
+        assert project.has_permission(member, ADMIN) is True
+
+        project.add_osf_group(osf_group, WRITE)
+        assert project.has_permission(member, ADMIN) is False
+        assert project.has_permission(member, WRITE) is True
 
     def test_osf_group_nodes(self, manager, member, project, osf_group):
         nodes = osf_group.nodes
@@ -268,11 +424,6 @@ class TestOSFGroup:
         project_two.add_osf_group(osf_group, WRITE)
         assert len(osf_group.nodes) == 2
         assert project_two in osf_group.nodes
-
-    def test_user_group_roles(self, manager, member, user_three, osf_group):
-        assert manager.group_role(osf_group) == MANAGER
-        assert member.group_role(osf_group) == MEMBER
-        assert user_three.group_role(osf_group) is None
 
     @mock.patch('website.osf_groups.views.mails.send_mail')
     def test_add_osf_group_to_node(self, mock_send_mail, manager, member, user_two, osf_group, project):
@@ -361,6 +512,25 @@ class TestOSFGroup:
         assert len(get_all_node_subscriptions(member, project)) == 2
         assert len(get_all_node_subscriptions(user_two, project)) == 2
 
+    @mock.patch('website.osf_groups.views.mails.send_mail')
+    def test_add_group_to_node_throttle(self, mock_send_mail, osf_group, manager, member, project):
+        throttle = 0.5
+
+        assert manager.group_connected_email_records == {}
+        group_signals.group_added_to_node.send(osf_group, node=project, user=manager, permission=WRITE, auth=Auth(member), throttle=throttle)
+        assert mock_send_mail.call_count == 1
+
+        assert manager.group_connected_email_records[osf_group._id] is not None
+        # 2nd call does not send email because throttle period has not expired
+        group_signals.group_added_to_node.send(osf_group, node=project, user=manager, permission=WRITE, auth=Auth(member), throttle=throttle)
+        assert mock_send_mail.call_count == 1
+
+        time.sleep(1)  # throttle period expires
+        # 2nd call does not send email because throttle period has not expired
+        assert manager.group_connected_email_records[osf_group._id] is not None
+        group_signals.group_added_to_node.send(osf_group, node=project, user=manager, permission=WRITE, auth=Auth(member), throttle=throttle)
+        assert mock_send_mail.call_count == 2
+
     def test_add_osf_group_to_node_default_permission(self, manager, member, osf_group, project):
         project.add_osf_group(osf_group, auth=Auth(manager))
 
@@ -407,26 +577,6 @@ class TestOSFGroup:
         with pytest.raises(PermissionsError):
             project.update_osf_group(osf_group, ADMIN, auth=Auth(user_three))
         assert project.has_permission(member, ADMIN) is False
-
-    def test_replace_contributor(self, manager, member, osf_group):
-        user = osf_group.add_unregistered_member('test_user', 'test@cos.io', auth=Auth(manager))
-        assert user in osf_group.members
-        assert user not in osf_group.managers
-        assert (
-            osf_group._id in
-            user.unclaimed_records.keys()
-        )
-        osf_group.replace_contributor(user, member)
-        assert user not in osf_group.members
-        assert user not in osf_group.managers
-        assert osf_group.has_permission(member, MEMBER) is True
-        assert osf_group.has_permission(user, MEMBER) is False
-
-        # test unclaimed_records is removed
-        assert (
-            osf_group._id not in
-            user.unclaimed_records.keys()
-        )
 
     def test_remove_osf_group_from_node(self, manager, member, user_two, osf_group, project):
         # noncontributor
@@ -498,72 +648,6 @@ class TestOSFGroup:
 
         with pytest.raises(ValueError):
             project.get_osf_groups_with_perms('crazy')
-
-    def test_node_object_can_view_osfgroups(self, manager, member, project, osf_group):
-        project.add_contributor(member, ADMIN, save=True)  # Member is explicit admin contributor on project
-        child = NodeFactory(parent=project, creator=manager)  # Member is implicit admin on child
-        grandchild = NodeFactory(parent=child, creator=manager)  # Member is implicit admin on grandchild
-
-        project_two = ProjectFactory(creator=manager)
-        project_two.add_osf_group(osf_group, ADMIN)  # Member has admin permissions to project_two through osf_group
-        child_two = NodeFactory(parent=project_two, creator=manager)  # Member has implicit admin on child_two through osf_group
-        grandchild_two = NodeFactory(parent=child_two, creator=manager)  # Member has implicit admin perms on grandchild_two through osf_group
-        can_view = Node.objects.can_view(member)
-        assert len(can_view) == 6
-        assert set(list(can_view.values_list('id', flat=True))) == set((project.id,
-                                                                        child.id,
-                                                                        grandchild.id,
-                                                                        project_two.id,
-                                                                        child_two.id,
-                                                                        grandchild_two.id))
-
-        grandchild_two.is_deleted = True
-        grandchild_two.save()
-        can_view = Node.objects.can_view(member)
-        assert len(can_view) == 5
-        assert grandchild_two not in can_view
-
-    def test_parent_admin_users_osf_groups(self, manager, member, user_two, project, osf_group):
-        child = NodeFactory(parent=project, creator=manager)
-        project.add_osf_group(osf_group, ADMIN)
-        # Manager has explict admin to child, member has implicit admin.
-        # Manager should be in admin_contributors, member should be in parent_admin_contributors
-
-        assert manager in child.admin_users
-        assert member not in child.admin_users
-
-        assert manager not in child.parent_admin_users
-        assert member in child.parent_admin_users
-
-        user_two.is_superuser = True
-        user_two.save()
-
-        assert user_two not in child.admin_users
-        assert user_two not in child.parent_admin_users
-
-    def test_get_users_with_perm_osf_groups(self, project, manager, member, osf_group):
-        # Explicitly added as a contributor
-        read_users = project.get_users_with_perm(READ)
-        write_users = project.get_users_with_perm(WRITE)
-        admin_users = project.get_users_with_perm(ADMIN)
-        assert len(project.get_users_with_perm(READ)) == 1
-        assert len(project.get_users_with_perm(WRITE)) == 1
-        assert len(project.get_users_with_perm(ADMIN)) == 1
-        assert manager in read_users
-        assert manager in write_users
-        assert manager in admin_users
-
-        # Added through osf groups
-        project.add_osf_group(osf_group, WRITE)
-        read_users = project.get_users_with_perm(READ)
-        write_users = project.get_users_with_perm(WRITE)
-        admin_users = project.get_users_with_perm(ADMIN)
-        assert len(project.get_users_with_perm(READ)) == 2
-        assert len(project.get_users_with_perm(WRITE)) == 2
-        assert len(project.get_users_with_perm(ADMIN)) == 1
-        assert member in read_users
-        assert member in write_users
-        assert member not in admin_users
 
     def test_osf_group_node_can_view(self, project, manager, member, osf_group):
         assert project.can_view(Auth(member)) is False
@@ -658,56 +742,47 @@ class TestOSFGroup:
         project.add_osf_group(osf_group, READ, auth=Auth(project.creator))
         assert project.is_contributor_or_group_member(unreg) is True
 
-    @pytest.mark.enable_quickfiles_creation
-    def test_merge_users_transfers_group_membership(self, member, manager, osf_group):
-        # merge member
-        other_user = AuthUserFactory()
-        other_user.merge_user(member)
-        other_user.save()
-        assert osf_group.is_member(other_user)
+    def test_node_object_can_view_osfgroups(self, manager, member, project, osf_group):
+        project.add_contributor(member, ADMIN, save=True)  # Member is explicit admin contributor on project
+        child = NodeFactory(parent=project, creator=manager)  # Member is implicit admin on child
+        grandchild = NodeFactory(parent=child, creator=manager)  # Member is implicit admin on grandchild
 
-        # merge manager
-        other_other_user = AuthUserFactory()
-        other_other_user.merge_user(manager)
-        other_other_user.save()
-        assert osf_group.is_member(other_other_user)
-        assert osf_group.has_permission(other_other_user, MANAGE)
+        project_two = ProjectFactory(creator=manager)
+        project_two.add_osf_group(osf_group, ADMIN)  # Member has admin permissions to project_two through osf_group
+        child_two = NodeFactory(parent=project_two, creator=manager)  # Member has implicit admin on child_two through osf_group
+        grandchild_two = NodeFactory(parent=child_two, creator=manager)  # Member has implicit admin perms on grandchild_two through osf_group
+        can_view = Node.objects.can_view(member)
+        assert len(can_view) == 6
+        assert set(list(can_view.values_list('id', flat=True))) == set((project.id,
+                                                                        child.id,
+                                                                        grandchild.id,
+                                                                        project_two.id,
+                                                                        child_two.id,
+                                                                        grandchild_two.id))
 
-    @pytest.mark.enable_quickfiles_creation
-    def test_merge_users_already_group_manager(self, member, manager, osf_group):
-        # merge users - both users have group membership - different roles
-        manager.merge_user(member)
-        manager.save()
-        assert osf_group.has_permission(manager, MANAGE)
-        assert osf_group.is_member(member) is False
+        grandchild_two.is_deleted = True
+        grandchild_two.save()
+        can_view = Node.objects.can_view(member)
+        assert len(can_view) == 5
+        assert grandchild_two not in can_view
 
-    def test_osf_group_is_admin_parent(self, project, manager, member, osf_group, user_two, user_three):
+    def test_parent_admin_users_osf_groups(self, manager, member, user_two, project, osf_group):
         child = NodeFactory(parent=project, creator=manager)
-        assert project.is_admin_parent(manager) is True
-        assert project.is_admin_parent(member) is False
+        project.add_osf_group(osf_group, ADMIN)
+        # Manager has explict admin to child, member has implicit admin.
+        # Manager should be in admin_contributors, member should be in parent_admin_contributors
 
-        project.add_contributor(user_two, WRITE, save=True)
-        assert project.is_admin_parent(user_two) is False
+        assert manager in child.admin_users
+        assert member not in child.admin_users
 
-        assert child.is_admin_parent(manager) is True
-        child.add_contributor(user_two, ADMIN, save=True)
-        assert child.is_admin_parent(user_two) is True
+        assert manager not in child.parent_admin_users
+        assert member in child.parent_admin_users
 
-        assert child.is_admin_parent(user_three) is False
-        osf_group.make_member(user_three)
-        project.add_osf_group(osf_group, WRITE)
-        assert child.is_admin_parent(user_three) is False
+        user_two.is_superuser = True
+        user_two.save()
 
-        project.update_osf_group(osf_group, ADMIN)
-        assert child.is_admin_parent(user_three) is True
-        assert child.is_admin_parent(user_three, include_group_admin=False) is False
-        project.remove_osf_group(osf_group)
-
-        child.add_osf_group(osf_group, WRITE)
-        assert child.is_admin_parent(user_three) is False
-        child.update_osf_group(osf_group, ADMIN)
-        assert child.is_admin_parent(user_three) is True
-        assert child.is_admin_parent(user_three, include_group_admin=False) is False
+        assert user_two not in child.admin_users
+        assert user_two not in child.parent_admin_users
 
 
 class TestOSFGroupLogging:

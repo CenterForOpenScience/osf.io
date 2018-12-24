@@ -31,7 +31,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.osfstorage.models import Region
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, Institution,
     RegistrationSchema, AbstractNode, PrivateLink,

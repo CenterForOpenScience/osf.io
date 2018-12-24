@@ -25,28 +25,39 @@
     <div class="row-md-12 scripted">
         <span data-bind="ifnot: draft.isPendingApproval">
           <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
-
-          <button id="register-submit" type="button" class="btn btn-success pull-right"
-                  style="margin-left: 5px;"
-                  data-bind="visible: draft.requiresApproval,
-                             click: draft.submitForReview.bind(draft),
-                             enable: editor.canSubmit">
-            Submit for review
-          </button>
+          %if not waffle.switch_is_active(features.OSF_PREREGISTRATION):
+              <button id="register-submit" type="button" class="btn btn-success pull-right"
+                      style="margin-left: 5px;"
+                      data-bind="visible: draft.requiresApproval,
+                                 click: draft.submitForReview.bind(draft),
+                                 enable: editor.canSubmit">
+                Submit for review
+              </button>
+          %endif
         </span>
         <span data-bind="if: draft.isPendingApproval">
           <a type="button" class="btn btn-default pull-left" href="${web_url_for('node_registrations', pid=node['id'], tab='drafts', _guid=True)}"> Back </a>
         </span>
 
-        <span data-bind="if: (draft.metaSchema.name === 'Prereg Challenge' && !draft.isPendingApproval)">
-          <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview.bind(draft)">Register without review</button>
-        </span>
+        %if not waffle.switch_is_active(features.OSF_PREREGISTRATION):
+            <span data-bind="if: (draft.metaSchema.name === 'Prereg Challenge' && !draft.isPendingApproval)">
+              <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview.bind(draft)">Register without review</button>
+            </span>
+        %endif
 
+        %if waffle.switch_is_active(features.OSF_PREREGISTRATION):
+            <button id="register-submit" type="button" class="btn btn-success pull-right"
+                    style="margin-left: 5px;"
+                    data-bind="disable: !draft.isComplete(), click: draft.beforeRegister.bind(draft, null)">
+              Register
+            </button>
+        %else:
         <button id="register-submit" type="button" class="btn btn-success pull-right"
                 style="margin-left: 5px;"
                 data-bind="visible: !draft.requiresApproval(), disable: !draft.isComplete(), click: draft.beforeRegister.bind(draft, null)">
           Register
         </button>
+        %endif
     </div>
 </div>
 

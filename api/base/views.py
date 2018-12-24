@@ -36,8 +36,8 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
-from waffle.models import Flag
-from waffle import flag_is_active
+from waffle.models import Flag, Switch, Sample
+from waffle import flag_is_active, sample_is_active
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -405,14 +405,18 @@ def root(request, format=None, **kwargs):
         current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
+
     flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request, name)]
+    samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
+    switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
+
     kwargs = request.parser_context['kwargs']
     return_val = {
         'meta': {
             'message': 'Welcome to the OSF API.',
             'version': request.version,
             'current_user': current_user,
-            'active_flags': flags,
+            'active_flags': flags + samples + switches,
         },
         'links': {
             'nodes': utils.absolute_reverse('nodes:node-list', kwargs=kwargs),
