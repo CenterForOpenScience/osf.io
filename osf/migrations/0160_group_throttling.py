@@ -9,7 +9,7 @@ import osf.utils.datetime_aware_jsonfield
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0158_osfgroup_logging'),
+        ('osf', '0159_osfgroup_logging'),
     ]
 
     operations = [
