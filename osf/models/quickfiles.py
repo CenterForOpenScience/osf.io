@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import logging
 
 from osf.models.node import AbstractNode, AbstractNodeManager
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 
 
 logger = logging.getLogger(__name__)

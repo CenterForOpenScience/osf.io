@@ -9,7 +9,6 @@ from api.base.exceptions import Conflict
 
 from api.base.utils import absolute_reverse, get_user_auth
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
@@ -22,7 +21,7 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, NodeStateError
 from osf.models import Node
 from osf.utils import permissions
 

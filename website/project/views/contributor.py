@@ -18,6 +18,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
+from osf.exceptions import NodeStateError
 from osf.models import AbstractNode, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
@@ -30,7 +31,6 @@ from website.project.views.node import serialize_preprints
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import web_url_for, is_json_request
-from website.exceptions import NodeStateError
 
 
 @collect_auth

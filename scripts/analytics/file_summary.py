@@ -8,7 +8,7 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 from django.utils import timezone
 
-from osf.models import AbstractNode
+from osf.models import AbstractNode, Preprint
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 
@@ -32,15 +32,16 @@ class FileSummary(SummaryAnalytics):
 
         file_qs = OsfStorageFile.objects
         abstract_node_content_type = ContentType.objects.get_for_model(AbstractNode)
+        preprint_content_type = ContentType.objects.get_for_model(Preprint)
 
         public_query = Q(
             target_object_id__in=AbstractNode.objects.filter(is_public=True).values('id'),
-            target_content_type=abstract_node_content_type
+            target_content_type__in=[abstract_node_content_type, preprint_content_type],
         )
 
         private_query = Q(
             target_object_id__in=AbstractNode.objects.filter(is_public=False).values('id'),
-            target_content_type=abstract_node_content_type
+            target_content_type__in=[abstract_node_content_type, preprint_content_type],
         )
 
         daily_query = Q(created__gte=timestamp_datetime)
