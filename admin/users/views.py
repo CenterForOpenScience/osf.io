@@ -14,6 +14,7 @@ from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
 
+from osf.models.base import Guid
 from osf.models.user import OSFUser
 from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
@@ -515,14 +516,14 @@ class GetUserClaimLinks(GetUserLink):
         links = []
 
         for guid, value in user.unclaimed_records.items():
-            node = Node.load(guid)
+            obj = Guid.load(guid)
             url = '{base_url}user/{uid}/{project_id}/claim/?token={token}'.format(
                 base_url=DOMAIN,
                 uid=user._id,
                 project_id=guid,
                 token=value['token']
             )
-            links.append('Claim URL for node {}: {}'.format(node._id, url))
+            links.append('Claim URL for {} {}: {}'.format(obj.content_type.model, obj._id, url))
 
         return links or ['User currently has no active unclaimed records for any nodes.']
 
