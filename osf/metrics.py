@@ -1,14 +1,29 @@
+import datetime as dt
+
 from elasticsearch_metrics import metrics
 from django.db import models
+from django.utils import timezone
+import pytz
 
 class MetricMixin(object):
+
+    @classmethod
+    def _get_relevant_indices(cls, after):
+        # NOTE: This will only work for yearly indices. This logic
+        # will need to be updated if we change to monthly or daily indices
+        year_range = range(after.year, timezone.now().year + 1)
+        return [
+            # get_index_name takes a datetime, so get Jan 1 for each relevant year
+            cls.get_index_name(dt.datetime(year, 1, 1, tzinfo=pytz.utc))
+            for year in year_range
+        ]
 
     @classmethod
     def _get_id_to_count(cls, size, metric_field, count_field, after=None):
         """Performs the elasticsearch aggregation for get_top_by_count. Return a
         dict mapping ids to summed counts. If there's no data in the ES index, return None.
         """
-        search = cls.search()
+        search = cls.search(after=after)
         if after:
             search = search.filter('range', timestamp={'gte': after})
         search.aggs.\
@@ -25,6 +40,15 @@ class MetricMixin(object):
             bucket.key: int(bucket.sum_count.value)
             for bucket in buckets
         }
+
+    # Overrides Document.search to only search relevant
+    # indices, determined from `after`
+    @classmethod
+    def search(cls, using=None, index=None, after=None, *args, **kwargs):
+        if not index and after:
+            indices = cls._get_relevant_indices(after)
+            index = ','.join(indices)
+        return super(MetricMixin, cls).search(using=using, index=index, *args, **kwargs)
 
     @classmethod
     def get_top_by_count(cls, qs, model_field, metric_field,
@@ -117,7 +141,7 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
 
     @classmethod
     def get_count_for_preprint(cls, preprint, after=None):
-        search = cls.search().filter('match', preprint_id=preprint._id)
+        search = cls.search(after=after).filter('match', preprint_id=preprint._id)
         if after:
             search = search.filter('range', timestamp={'gte': after})
         search.aggs.metric('sum_count', 'sum', field='count')
