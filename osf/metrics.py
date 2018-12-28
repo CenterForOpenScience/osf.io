@@ -1,7 +1,32 @@
+import curator
 from elasticsearch_metrics import metrics
 from django.db import models
+from django.utils import timezone
+from django.conf import settings
 
 class MetricMixin(object):
+
+    @classmethod
+    def _get_relevant_indices(cls, after):
+        client = cls._get_connection()
+        ilo = curator.IndexList(client)
+        dt_format = '%Y-%m-%d'
+        ilo = ilo.filter_period(
+            source='name',
+            period_type='absolute',
+            # filter_period requires passing dates as strings
+            date_from=after.strftime(dt_format),
+            date_to=timezone.now().strftime(dt_format),
+            date_from_format=dt_format,
+            date_to_format=dt_format,
+            unit='days',
+            timestring=settings.ELASTICSEARCH_METRICS_DATE_FORMAT,
+        )
+        indices = ilo.indices
+        # filter_period is not inclusive, so need to append the
+        # corresponding index for `after`
+        indices.append(cls.get_index_name(after))
+        return indices
 
     @classmethod
     def _get_id_to_count(cls, size, metric_field, count_field, after=None):
@@ -25,6 +50,15 @@ class MetricMixin(object):
             bucket.key: int(bucket.sum_count.value)
             for bucket in buckets
         }
+
+    # Overrides Document.search to only search relevant
+    # indices, determined from `after`
+    @classmethod
+    def search(cls, using=None, index=None, after=None):
+        if not index and after:
+            indices = cls._get_relevant_indices(after)
+            index = ','.join(indices)
+        return super(cls, MetricMixin).search(using=using, index=index)
 
     @classmethod
     def get_top_by_count(cls, qs, model_field, metric_field,
