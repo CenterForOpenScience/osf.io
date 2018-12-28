@@ -514,8 +514,7 @@ class TestNodeGroups:
 
     @mock.patch('website.osf_groups.views.mails.send_mail')
     def test_add_group_to_node_throttle(self, mock_send_mail, osf_group, manager, member, project):
-        throttle = 0.5
-
+        throttle = 100
         assert manager.group_connected_email_records == {}
         group_signals.group_added_to_node.send(osf_group, node=project, user=manager, permission=WRITE, auth=Auth(member), throttle=throttle)
         assert mock_send_mail.call_count == 1
@@ -524,6 +523,8 @@ class TestNodeGroups:
         # 2nd call does not send email because throttle period has not expired
         group_signals.group_added_to_node.send(osf_group, node=project, user=manager, permission=WRITE, auth=Auth(member), throttle=throttle)
         assert mock_send_mail.call_count == 1
+
+        throttle = 0.5
 
         time.sleep(1)  # throttle period expires
         # 2nd call does not send email because throttle period has not expired
