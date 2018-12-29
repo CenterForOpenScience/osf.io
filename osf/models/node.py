@@ -921,14 +921,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def parent_admin_contributor_ids(self):
         """
-        Contributors who have admin permissions on a parent (excludes group members)
+        Contributors who have admin permissions on a parent (excludes group members),
+        and by default, don't have perms on the current node
+
         """
         return self._get_admin_contributor_ids()
 
     def _get_admin_contributor_ids(self, include_self=False):
         def get_admin_contributor_ids(node):
             return node.get_group('admin').user_set.filter(is_active=True).values_list('guids___id', flat=True)
-
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
         admin_ids = set(get_admin_contributor_ids(self)) if include_self else set()
         for parent in self.parents:
@@ -937,18 +938,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return admin_ids
 
     @property
-    def admin_contributors(self):
-        """
-        Returns node contributors who are admins on the current node
-        """
-        return OSFUser.objects.filter(
-            guids___id__in=self.admin_contributor_or_group_member_ids
-        ).order_by('family_name')
-
-    @property
     def parent_admin_contributors(self):
         """
-        Returns node contributors who are admins on the parent node (excludes group members)
+        Returns node contributors who are admins on the parent node and not the current
+        node (excludes group members)
         """
         return OSFUser.objects.filter(
             guids___id__in=self.parent_admin_contributor_ids
@@ -970,18 +963,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return admin_ids
 
     @property
-    def admin_users(self):
-        """
-        Returns users who are admins on the current node
-
-        Includes contributors and members of OSF Groups
-        """
-        return self.get_users_with_perm('admin')
-
-    @property
     def parent_admin_users(self):
         """
-        Returns users who are admins on the parent node
+        Returns users who are admins on the parent node (and not the current node)
 
         Includes contributors and members of OSF Groups
         """
@@ -1885,6 +1869,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
         descendant nodes. Excludes contributors on node links and inactive users.
+        Excludes group members.
 
         :param bool unique_users: If True, a given admin will only be yielded once
             during iteration.

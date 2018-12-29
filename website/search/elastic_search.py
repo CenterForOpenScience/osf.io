@@ -945,8 +945,7 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
 @requires_search
 def delete_group_doc(deleted_id, index=None):
     index = index or INDEX
-    category = 'group'
-    client().delete(index=index, doc_type=category, id=deleted_id, refresh=True, ignore=[404])
+    client().delete(index=index, doc_type='group', id=deleted_id, refresh=True, ignore=[404])
 
 @requires_search
 def search_contributor(query, page=0, size=10, exclude=None, current_user=None):

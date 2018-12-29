@@ -26,7 +26,6 @@ def drafts_for_user(user, campaign=None):
         registered_node=None,
         deleted__isnull=True,
         branched_from__in=node_qs,
-        initiator=user
     )
 
     if campaign:

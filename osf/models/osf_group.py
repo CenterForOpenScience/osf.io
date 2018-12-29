@@ -46,10 +46,6 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
     }
     group_format = 'osfgroup_{self.id}_{group}'
 
-    @property
-    def _primary_key(self):
-        return self._id
-
     def __unicode__(self):
         return 'OSFGroup_{}_{}'.format(self.id, self.name)
 
@@ -59,6 +55,10 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             ('member_group', 'Has group membership'),
             ('manage_group', 'Can manage group membership'),
         )
+
+    @property
+    def _primary_key(self):
+        return self._id
 
     @property
     def manager_group(self):
@@ -159,6 +159,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         adding_member = not self.is_member(user)
         if user in self.members_only:
             return False
+
         self.member_group.user_set.add(user)
         if self.is_manager(user):
             self._enforce_one_manager(user)
@@ -188,6 +189,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         adding_member = not self.is_member(user)
         if self.is_manager(user):
             return False
+
         if not self.is_member(user):
             self.add_log(
                 OSFGroupLog.MANAGER_ADDED,
@@ -224,6 +226,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
             user = OSFUser.create_unregistered(fullname=fullname, email=email)
         user.add_unclaimed_record(self, referrer=auth.user, given_name=fullname, email=email)
         user.save()
+
         if role == MANAGER:
             self.make_manager(user, auth=auth)
         else:
@@ -324,6 +327,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         if current_perm:
             if current_perm == permission:
                 return False
+            # If group already has perms to node, update permissions instead
             return self.update_group_permissions_to_node(node, permission, auth)
 
         permissions = self._get_node_group_perms(node, permission)
@@ -409,16 +413,18 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         perms = get_group_perms(self.member_group, node)
         return reduce_permissions(perms) if perms else None
 
-    def has_permission(self, user, role):
-        """Returns whether the user has the given role in the OSFGroup
+    def has_permission(self, user, permission):
+        """Returns whether the user has the given permission to the OSFGroup
         :param user: Auth object
-        :param role: Member/Manager role
+        :param role: member/manange permission
         :return Boolean
         """
-        if not user:
+        if not user or user.is_anonymous:
             return False
-        has_role = user.has_perm('{}_group'.format(role), self)
-        return has_role
+
+        # Using get_group_perms to get permissions that are inferred through
+        # group membership - not inherited from superuser status
+        return '{}_{}'.format(permission, 'group') in get_group_perms(user, self)
 
     def remove_group(self, auth=None):
         """Removes the OSFGroup and associated manager and member django groups
@@ -455,7 +461,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         return ret
 
     def add_role_updated_log(self, user, role, auth=None):
-        """Removes the OSFGroup and associated manager and member django groups
+        """Creates a log when role changes
         :param auth: Auth object
         """
         self.add_log(

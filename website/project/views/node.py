@@ -928,10 +928,10 @@ def _get_children(node, auth):
     children = (Node.objects.get_children(node)
                 .filter(is_deleted=False)
                 .annotate(parentnode_id=Subquery(parent_node_sqs[:1])))
-    admin_nodes = get_objects_for_user(auth.user, 'admin_node', children, with_superuser=False)
+    admin_children = get_objects_for_user(auth.user, 'admin_node', children, with_superuser=False)
 
     nested = defaultdict(list)
-    for child in admin_nodes:
+    for child in admin_children:
         nested[child.parentnode_id].append(child)
 
     return serialize_children(nested[node._id], nested)

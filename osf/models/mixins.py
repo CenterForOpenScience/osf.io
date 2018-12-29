@@ -884,6 +884,9 @@ class ContributorMixin(models.Model):
         return self.has_permission(user, 'admin') and self.get_group('admin') in user.groups.all()
 
     def active_contributors(self, include=lambda n: True):
+        """
+        Returns active contributors, group members excluded
+        """
         for contrib in self.contributors.filter(is_active=True):
             if include(contrib):
                 yield contrib

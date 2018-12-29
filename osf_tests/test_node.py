@@ -1279,26 +1279,27 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor.is_registered is False
         assert contributor.unclaimed_records[node._id]['name'] == contributor.fullname
 
+
 class TestContributorProperties:
 
-    def test_admin_contributors(self, user):
+    def test_parent_admin_contributors(self, user):
         project = ProjectFactory(creator=user)
-        assert list(project.admin_contributors) == [user]
-        child1 = ProjectFactory(parent=project)
-        child2 = ProjectFactory(parent=child1)
-        assert list(child1.admin_contributors) == sorted([project.creator, child1.creator], key=lambda user: user.family_name)
-        assert (
-            list(child2.admin_contributors) ==
-            sorted([project.creator, child1.creator, child2.creator], key=lambda user: user.family_name)
-        )
-        admin = UserFactory()
-        project.add_contributor(admin, auth=Auth(project.creator), permissions=ADMIN)
-        project.set_permissions(project.creator, WRITE)
-        project.save()
-        assert list(child1.admin_contributors) == sorted([child1.creator, admin], key=lambda user: user.family_name)
-        assert list(child2.admin_contributors) == sorted([child2.creator, child1.creator, admin], key=lambda user: user.family_name)
+        assert project.parent_admin_contributors.count() == 0
 
-    def test_admin_contributor_ids(self, user):
+        child = ProjectFactory(parent=project, creator=user)
+        assert child.parent_admin_contributors.count() == 0
+
+        user_two = UserFactory()
+        child_two = ProjectFactory(parent=project, creator=user_two)
+        assert child_two.parent_admin_contributors.count() == 1
+
+        user_three = UserFactory()
+        group = OSFGroupFactory(name='Platform', creator=user_three)
+        project.add_osf_group(group, 'admin')
+        assert child_two.parent_admin_contributors.count() == 1
+        assert child_two.parent_admin_users.count() == 2
+
+    def test_admin_contributor_or_group_member_ids(self, user):
         project = ProjectFactory(creator=user)
         assert project.admin_contributor_or_group_member_ids == {user._id}
         child1 = ProjectFactory(parent=project)
