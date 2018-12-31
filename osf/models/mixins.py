@@ -25,7 +25,7 @@ from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
-from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ
+from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
@@ -718,7 +718,7 @@ class ReviewProviderMixin(GuardianMixin):
 
     def remove_from_group(self, user, group, unsubscribe=True):
         _group = self.get_group(group)
-        if group == 'admin':
+        if group == ADMIN:
             if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
                 raise ValueError('Cannot remove last admin.')
         if unsubscribe:
@@ -795,13 +795,13 @@ class ContributorMixin(models.Model):
     """
     ContributorMixin containing methods for managing contributors.
 
-    Works for both Nodes and Preprints.  Some methods are overridden on Preprint
-    model.
+    Works for both Nodes and Preprints. Preprints don't have hierarchies
+    or OSF Groups, so there may be overrides for this.
     """
     class Meta:
         abstract = True
 
-    DEFAULT_CONTRIBUTOR_PERMISSIONS = 'write'
+    DEFAULT_CONTRIBUTOR_PERMISSIONS = WRITE
 
     @property
     def log_class(self):
@@ -870,10 +870,13 @@ class ContributorMixin(models.Model):
         """
         Return whether ``user`` is a contributor on the resource and their contributor permissions are "admin".
         Doesn't factor in group member permissions.
+
+        Important: having admin permissions through group membership but being a write contributor doesn't suffice.
         """
         if not user or user.is_anonymous:
             return False
-        return self.has_permission(user, 'admin') and self.get_group('admin') in user.groups.all()
+
+        return self.has_permission(user, ADMIN) and self.get_group(ADMIN) in user.groups.all()
 
     def active_contributors(self, include=lambda n: True):
         """
@@ -899,7 +902,7 @@ class ContributorMixin(models.Model):
         query_dict = {
             'user__in': users,
             'user__is_active': True,
-            'user__groups': self.get_group('admin').id
+            'user__groups': self.get_group(ADMIN).id
         }
         if isinstance(self, Preprint):
             query_dict['preprint'] = self
@@ -1168,7 +1171,7 @@ class ContributorMixin(models.Model):
                     save=False
                 )
                 with transaction.atomic():
-                    if ['read'] in permissions_changed.values():
+                    if [READ] in permissions_changed.values():
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
@@ -1372,7 +1375,7 @@ class ContributorMixin(models.Model):
                 self.save()
 
             with transaction.atomic():
-                if to_remove or permissions_changed and ['read'] in permissions_changed.values():
+                if to_remove or permissions_changed and [READ] in permissions_changed.values():
                     project_signals.write_permissions_revoked.send(self)
 
     @property
@@ -1450,7 +1453,7 @@ class ContributorMixin(models.Model):
         # group membership - not inherited from superuser status
         has_permission = perm in get_group_perms(user, self)
         if object_type == 'node':
-            if not has_permission and permission == 'read' and check_parent:
+            if not has_permission and permission == READ and check_parent:
                 return self.is_admin_parent(user)
         return has_permission
 
@@ -1486,7 +1489,7 @@ class ContributorMixin(models.Model):
             user = user.user
 
         if validate and (self.is_admin_contributor(user) and permissions != ADMIN):
-            if self.get_group('admin').user_set.filter(is_registered=True).count() <= 1:
+            if self.get_group(ADMIN).user_set.filter(is_registered=True).count() <= 1:
                 raise self.state_error('Must have at least one registered admin contributor')
         self.clear_permissions(user)
         self.add_permission(user, permissions)
