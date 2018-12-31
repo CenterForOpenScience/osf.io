@@ -153,7 +153,7 @@ class TestPreprintProperties:
     def test_absolute_api_v2_url(self, preprint):
         assert '/preprints/{}/'.format(preprint._id) in preprint.absolute_api_v2_url
 
-    def test_admin_contributor_ids(self, preprint, user):
+    def test_admin_contributor_or_group_member_ids(self, preprint, user):
         user2 = UserFactory()
         assert len(preprint.admin_contributor_or_group_member_ids) == 1
         assert user._id in preprint.admin_contributor_or_group_member_ids

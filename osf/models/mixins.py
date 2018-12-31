@@ -851,23 +851,15 @@ class ContributorMixin(models.Model):
 
     def is_contributor_or_group_member(self, user):
         """
-        Whether the was given specific permission to the object -
+        Whether the user has explicit permissions to the resource -
         They must be a contributor or a member of an osf group with permissions
-
-        Checking if contributor object exists because unregistered contributors are contributors,
-        but have no permissions until user object is claimed.
+        Implicit admins not included.
         """
-        kwargs = self.contributor_kwargs
-        kwargs['user'] = user
-
-        if not user or user.is_anonymous:
-            return False
-
-        return (self.has_permission(user, READ, check_parent=False) or self.contributor_class.objects.filter(**kwargs).exists())
+        return self.has_permission(user, READ, check_parent=False)
 
     def is_contributor(self, user):
         """
-        Return whether ``user`` is a contributor on the node.
+        Return whether ``user`` is a contributor on the resource.
         (Does not include whether user has permissions via a group.)
         """
         kwargs = self.contributor_kwargs
@@ -876,7 +868,7 @@ class ContributorMixin(models.Model):
 
     def is_admin_contributor(self, user):
         """
-        Return whether ``user`` is a contributor on the node and their contributor permissions are "admin".
+        Return whether ``user`` is a contributor on the resource and their contributor permissions are "admin".
         Doesn't factor in group member permissions.
         """
         if not user or user.is_anonymous:
@@ -892,7 +884,7 @@ class ContributorMixin(models.Model):
                 yield contrib
 
     def get_admin_contributors(self, users):
-        """Return a set of all admin contributors for this node. Excludes contributors on node links and
+        """Of the provided users, return the ones who are admin contributors on the node. Excludes contributors on node links and
         inactive users.
         """
         return (each.user for each in self._get_admin_contributors_query(users))
@@ -1480,13 +1472,21 @@ class ContributorMixin(models.Model):
             self.save()
 
     def set_permissions(self, user, permissions, validate=True, save=False):
+        """Set a user's permissions to a node.
+
+        :param User user: User to grant permission to
+        :param str permissions: Highest permission to grant, i.e. 'write'
+        :param bool validate: Validate admin contrib constraint
+        :param bool save: Save changes
+        :raises: StateError if contrib constraint is violated
+        """
         # Ensure that user's permissions cannot be lowered if they are the only admin (
         # - admin contributor, not admin group member)
         if isinstance(user, self.contributor_class):
             user = user.user
 
-        if validate and (self.is_admin_contributor(user) and 'admin' not in permissions):
-            if self.get_group('admin').user_set.count() <= 1:
+        if validate and (self.is_admin_contributor(user) and permissions != ADMIN):
+            if self.get_group('admin').user_set.filter(is_registered=True).count() <= 1:
                 raise self.state_error('Must have at least one registered admin contributor')
         self.clear_permissions(user)
         self.add_permission(user, permissions)

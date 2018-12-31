@@ -744,8 +744,13 @@ class TestNodeGroups:
         project.remove_osf_group(osf_group, auth=Auth(manager))
         osf_group.add_unregistered_member('jane', 'janedoe@cos.io', Auth(manager))
         unreg = osf_group.members.get(username='janedoe@cos.io')
+        assert unreg.is_registered is False
+        assert project.is_contributor_or_group_member(unreg) is False
         project.add_osf_group(osf_group, READ, auth=Auth(project.creator))
         assert project.is_contributor_or_group_member(unreg) is True
+
+        child = ProjectFactory(parent=project)
+        assert child.is_contributor_or_group_member(manager) is False
 
     def test_node_object_can_view_osfgroups(self, manager, member, project, osf_group):
         project.add_contributor(member, ADMIN, save=True)  # Member is explicit admin contributor on project
