@@ -531,11 +531,33 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def contributor_to(self):
+        """
+        Nodes that user has perms to through contributorship - group membership not factored in
+        """
         return self.nodes.filter(is_deleted=False, type__in=['osf.node', 'osf.registration'])
 
     @property
     def visible_contributor_to(self):
+        """
+        Nodes where user is a bibliographic contributor (group membership not factored in)
+        """
         return self.nodes.filter(is_deleted=False, contributor__visible=True, type__in=['osf.node', 'osf.registration'])
+
+    @property
+    def all_nodes(self):
+        """
+        Return all nodes that the user has explicit permissions to - either through contributorship or group membership
+        """
+        from osf.models import AbstractNode
+
+        return get_objects_for_user(self, 'read_node', AbstractNode, with_superuser=False)
+
+    @property
+    def contributor_or_group_member_to(self):
+        """
+        Nodes that user has perms to through contributorship - group membership not factored in
+        """
+        return self.all_nodes.filter(is_deleted=False, type__in=['osf.node', 'osf.registration'])
 
     def set_unusable_username(self):
         """Sets username to an unusable value. Used for, e.g. for invited contributors
@@ -1387,22 +1409,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
 
     def _projects_in_common_query(self, other_user):
-        sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user=other_user)
-        return (self.nodes
-                 .filter(is_deleted=False)
-                 .exclude(type='osf.collection')
-                 .annotate(contrib=models.Exists(sqs))
-                 .filter(contrib=True))
+        """
+        Returns projects that both self and other_user have in common; both are either contributors or group members
+        """
+        return get_objects_for_user(other_user, 'read_node', self.contributor_or_group_member_to.filter(type__in=['osf.node'], is_deleted=False), with_superuser=False)
 
     def get_projects_in_common(self, other_user):
-        """Returns either a collection of "shared projects" (projects that both users are contributors for)
+        """Returns either a collection of "shared projects" (projects that both users are contributors or group members for)
         or just their primary keys
         """
         query = self._projects_in_common_query(other_user)
         return set(query.all())
 
     def n_projects_in_common(self, other_user):
-        """Returns number of "shared projects" (projects that both users are contributors for)"""
+        """Returns number of "shared projects" (projects that both users are contributors or group members for)"""
         return self._projects_in_common_query(other_user).count()
 
     def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None):

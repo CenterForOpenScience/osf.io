@@ -15,7 +15,7 @@ def serialize_user(user):
         'username': user.username,
         'name': user.fullname,
         'id': user._id,
-        'nodes': list(map(serialize_simple_node, user.contributor_to)),
+        'nodes': list(map(serialize_simple_node, user.contributor_or_group_member_to)),
         'emails': user.emails.values_list('address', flat=True),
         'last_login': user.date_last_login,
         'confirmed': user.date_confirmed,

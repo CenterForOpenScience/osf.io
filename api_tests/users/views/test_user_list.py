@@ -12,6 +12,7 @@ from osf.models import OSFUser, Session, ApiOAuth2PersonalToken
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
+    OSFGroupFactory,
     ProjectFactory,
     Auth,
 )
@@ -105,6 +106,9 @@ class TestUsers:
         assert user_two._id not in ids
 
     def test_more_than_one_projects_in_common(self, app, user_one, user_two):
+        group = OSFGroupFactory(creator=user_one)
+        group.make_member(user_two)
+
         project1 = ProjectFactory(creator=user_one)
         project1.add_contributor(
             contributor=user_two,
@@ -119,6 +123,11 @@ class TestUsers:
             auth=Auth(user=user_one)
         )
         project2.save()
+
+        project3 = ProjectFactory()
+        project3.add_osf_group(group)
+        project3.save()
+
         url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
@@ -126,7 +135,7 @@ class TestUsers:
             if user['id'] == user_two._id:
                 meta = user['relationships']['nodes']['links']['related']['meta']
                 assert 'projects_in_common' in meta
-                assert meta['projects_in_common'] == 2
+                assert meta['projects_in_common'] == 3
 
     def test_users_projects_in_common(self, app, user_one, user_two):
         user_one.fullname = 'hello'

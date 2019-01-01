@@ -57,5 +57,5 @@ def serialize_groups_for_node(node, osf_group):
     return {
         'name': osf_group.name,
         'id': osf_group._id,
-        'permission': osf_group.get_permissions_to_node(node)
+        'permission': osf_group.get_permission_to_node(node)
     }

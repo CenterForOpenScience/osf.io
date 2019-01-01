@@ -120,7 +120,7 @@ class SpamUserDeleteView(UserDeleteView):
                     self.kwargs.get('guid')
                 ))
         if user:
-            for node in user.contributor_to:
+            for node in user.contributor_or_group_member_to:
                 if not node.is_registration and not node.is_spam:
                     node.confirm_spam(save=True)
                     update_admin_log(
@@ -152,7 +152,7 @@ class HamUserRestoreView(UserDeleteView):
                     self.kwargs.get('guid')
                 ))
         if user:
-            for node in user.contributor_to:
+            for node in user.contributor_or_group_member_to:
                 if node.is_spam:
                     node.confirm_ham(save=True)
                     update_admin_log(
