@@ -94,27 +94,3 @@ def get_contributor_permission(contributor, object_id, model_type):
         return 'read'
     else:
         return None
-
-def get_contributor_or_group_member_permissions(contributor, as_list=True, node=None):
-    """
-    Returns a user's perms to the node - can be through contributorship or group membership
-    """
-    # Can pull permissions off of contributor object, or user/node can be passed in
-    if isinstance(contributor, Contributor):
-        node = contributor.node
-        user = contributor.user
-    else:
-        user = contributor
-        if node is None:
-            raise ValueError('Must pass in node object to get user permissions to node')
-    perm = []
-    if node.has_permission(user, 'read'):
-        perm.append('read')
-    if node.has_permission(user, 'write'):
-        perm.append('write')
-    if node.has_permission(user, 'admin'):
-        perm.append('admin')
-    if as_list:
-        return perm
-    else:
-        return perm[-1]
