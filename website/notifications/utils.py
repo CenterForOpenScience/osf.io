@@ -65,7 +65,7 @@ def remove_contributor_from_subscriptions(node, user):
     Preprint = apps.get_model('osf.Preprint')
     # Preprints don't have subscriptions at this time
     if isinstance(node, Preprint):
-            return
+        return
 
     # If user still has permissions through being a contributor or group member, or has
     # admin perms on a parent, don't remove their subscription
