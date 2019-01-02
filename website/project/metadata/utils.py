@@ -64,12 +64,13 @@ def create_jsonschema_from_metaschema(metaschema, required_fields=False, is_revi
 
     for page in metaschema['pages']:
         for question in page['questions']:
-            if is_required(question) and required_fields:
+            is_required = get_required(question)
+            if is_required and required_fields:
                 required.append(question['qid'])
             json_schema['properties'][question['qid']] = {
                 'type': 'object',
                 'additionalProperties': False,
-                'properties': extract_question_values(question, required_fields, is_reviewer)
+                'properties': extract_question_values(question, required_fields, is_reviewer, is_required)
             }
             if required_fields:
                 json_schema['properties'][question['qid']]['required'] = ['value']
@@ -79,7 +80,7 @@ def create_jsonschema_from_metaschema(metaschema, required_fields=False, is_revi
 
     return json_schema
 
-def get_object_jsonschema(question, required_fields, is_reviewer):
+def get_object_jsonschema(question, required_fields, is_reviewer, is_required):
     """
     Returns jsonschema for nested objects within schema
     """
@@ -96,7 +97,7 @@ def get_object_jsonschema(question, required_fields, is_reviewer):
         for property in properties:
             if property.get('required', False) and required_fields:
                 required.append(property['id'])
-            values = extract_question_values(property, required_fields, is_reviewer)
+            values = extract_question_values(property, required_fields, is_reviewer, is_required)
             object_jsonschema['properties'][property['id']] = {
                 'type': 'object',
                 'additionalProperties': False,
@@ -104,12 +105,12 @@ def get_object_jsonschema(question, required_fields, is_reviewer):
             }
             if required_fields:
                 object_jsonschema['properties'][property['id']]['required'] = ['value']
-    if required_fields and is_required(question):
+    if required_fields and is_required:
         object_jsonschema['required'] = required
 
     return object_jsonschema
 
-def extract_question_values(question, required_fields, is_reviewer):
+def extract_question_values(question, required_fields, is_reviewer, is_required):
     """
     Pulls structure for 'value', 'comments', and 'extra' items
     """
@@ -119,11 +120,11 @@ def extract_question_values(question, required_fields, is_reviewer):
         'extra': {'type': 'array'}
     }
     if question.get('type') == 'object':
-        response['value'] = get_object_jsonschema(question, required_fields, is_reviewer)
+        response['value'] = get_object_jsonschema(question, required_fields, is_reviewer, is_required)
     elif question.get('type') == 'choose':
         options = question.get('options')
         if options:
-            enum_options = get_options_jsonschema(options)
+            enum_options = get_options_jsonschema(options, is_required)
             if question.get('format') == 'singleselect':
                 response['value'] = enum_options
             elif question.get('format') == 'multiselect':
@@ -138,7 +139,7 @@ def extract_question_values(question, required_fields, is_reviewer):
 
     return response
 
-def is_required(question):
+def get_required(question):
     """
     Returns True if metaschema question is required.
     """
@@ -152,7 +153,7 @@ def is_required(question):
                     break
     return required
 
-def get_options_jsonschema(options):
+def get_options_jsonschema(options, required):
     """
     Returns multiple choice options for schema questions
     """
@@ -160,6 +161,10 @@ def get_options_jsonschema(options):
         if isinstance(option, dict) and option.get('text'):
             options[item] = option.get('text')
     value = {'enum': options}
+
+    if not required:  # Non-required fields need to accept empty strings as a value.
+        value['enum'].append('')
+
     return value
 
 OSF_UPLOAD_EXTRA_SCHEMA = {
