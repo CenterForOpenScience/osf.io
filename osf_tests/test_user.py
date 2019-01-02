@@ -26,7 +26,7 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFUser, OSFGroup, Tag, Contributor, Session, BlacklistedEmailDomain
+from osf.models import AbstractNode, OSFUser, OSFGroup, Tag, Contributor, Session, BlacklistedEmailDomain, QuickFilesNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
@@ -624,12 +624,18 @@ class TestProjectsInCommon:
         project.add_contributor(contributor=user2, auth=auth)
         project.save()
 
-        project_keys = set([node._id for node in user.contributed])
-        projects = set(user.contributed)
-        user2_project_keys = set([node._id for node in user2.contributed])
+        group = OSFGroupFactory(creator=user, name='Platform')
+        group.make_member(user2)
+        group_project = ProjectFactory()
+        group_project.add_osf_group(group)
+        group_project.save()
+
+        project_keys = set([node._id for node in user.all_nodes])
+        projects = set(user.all_nodes)
+        user2_project_keys = set([node._id for node in user2.all_nodes])
 
         assert set(n._id for n in user.get_projects_in_common(user2)) == project_keys.intersection(user2_project_keys)
-        assert user.get_projects_in_common(user2) == projects.intersection(user2.contributed)
+        assert user.get_projects_in_common(user2) == projects.intersection(user2.all_nodes)
 
     def test_n_projects_in_common(self, user, auth):
         user2 = UserFactory()
@@ -639,8 +645,13 @@ class TestProjectsInCommon:
         project.add_contributor(contributor=user2, auth=auth)
         project.save()
 
+        group = OSFGroupFactory(name='Platform', creator=user)
+        group.make_member(user3)
+        project.add_osf_group(group)
+        project.save()
+
         assert user.n_projects_in_common(user2) == 1
-        assert user.n_projects_in_common(user3) == 0
+        assert user.n_projects_in_common(user3) == 1
 
 
 class TestCookieMethods:
@@ -1525,6 +1536,10 @@ class TestUser(OsfTestCase):
         project_to_be_invisible_on = ProjectFactory()
         project_to_be_invisible_on.add_contributor(self.user, visible=False)
         project_to_be_invisible_on.save()
+        group = OSFGroupFactory(creator=self.user, name='Platform')
+        group_project = ProjectFactory()
+        group_project.add_osf_group(group, 'read')
+
         contributor_to_nodes = [node._id for node in self.user.contributor_to]
 
         assert normal_node._id in contributor_to_nodes
@@ -1533,6 +1548,50 @@ class TestUser(OsfTestCase):
         assert deleted_node._id not in contributor_to_nodes
         assert bookmark_collection_node._id not in contributor_to_nodes
         assert collection_node._id not in contributor_to_nodes
+        assert group_project._id not in contributor_to_nodes
+
+    def test_contributor_or_group_member_to_property(self):
+        normal_node = ProjectFactory(creator=self.user)
+        normal_contributed_node = ProjectFactory()
+        normal_contributed_node.add_contributor(self.user)
+        normal_contributed_node.save()
+        deleted_node = ProjectFactory(creator=self.user, is_deleted=True)
+        bookmark_collection_node = find_bookmark_collection(self.user)
+        collection_node = CollectionFactory(creator=self.user)
+        project_to_be_invisible_on = ProjectFactory()
+        project_to_be_invisible_on.add_contributor(self.user, visible=False)
+        project_to_be_invisible_on.save()
+        group = OSFGroupFactory(creator=self.user, name='Platform')
+        group_project = ProjectFactory()
+        group_project.add_osf_group(group, 'read')
+
+        contributor_to_or_group_member_nodes = [node._id for node in self.user.contributor_or_group_member_to]
+
+        assert normal_node._id in contributor_to_or_group_member_nodes
+        assert normal_contributed_node._id in contributor_to_or_group_member_nodes
+        assert project_to_be_invisible_on._id in contributor_to_or_group_member_nodes
+        assert deleted_node._id not in contributor_to_or_group_member_nodes
+        assert bookmark_collection_node._id not in contributor_to_or_group_member_nodes
+        assert collection_node._id not in contributor_to_or_group_member_nodes
+        assert group_project._id in contributor_to_or_group_member_nodes
+
+    def test_all_nodes_property(self):
+        project = ProjectFactory(creator=self.user)
+        project_two = ProjectFactory()
+
+        group = OSFGroupFactory(creator=self.user)
+        project_two.add_osf_group(group)
+        project_two.save()
+
+        project_three = ProjectFactory()
+        project_three.save()
+
+        user_nodes = self.user.all_nodes
+        assert user_nodes.count() == 3
+        assert project in user_nodes
+        assert project_two in user_nodes
+        assert project_three not in user_nodes
+        assert QuickFilesNode.objects.get(creator=self.user) in user_nodes
 
     def test_visible_contributor_to_property(self):
         invisible_contributor = UserFactory()

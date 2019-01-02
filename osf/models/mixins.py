@@ -25,7 +25,7 @@ from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
-from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ
+from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
@@ -718,7 +718,7 @@ class ReviewProviderMixin(GuardianMixin):
 
     def remove_from_group(self, user, group, unsubscribe=True):
         _group = self.get_group(group)
-        if group == 'admin':
+        if group == ADMIN:
             if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
                 raise ValueError('Cannot remove last admin.')
         if unsubscribe:
@@ -795,13 +795,13 @@ class ContributorMixin(models.Model):
     """
     ContributorMixin containing methods for managing contributors.
 
-    Works for both Nodes and Preprints.  Some methods are overridden on Preprint
-    model.
+    Works for both Nodes and Preprints. Preprints don't have hierarchies
+    or OSF Groups, so there may be overrides for this.
     """
     class Meta:
         abstract = True
 
-    DEFAULT_CONTRIBUTOR_PERMISSIONS = 'write'
+    DEFAULT_CONTRIBUTOR_PERMISSIONS = WRITE
 
     @property
     def log_class(self):
@@ -851,23 +851,15 @@ class ContributorMixin(models.Model):
 
     def is_contributor_or_group_member(self, user):
         """
-        Whether the was given specific permission to the object -
+        Whether the user has explicit permissions to the resource -
         They must be a contributor or a member of an osf group with permissions
-
-        Checking if contributor object exists because unregistered contributors are contributors,
-        but have no permissions until user object is claimed.
+        Implicit admins not included.
         """
-        kwargs = self.contributor_kwargs
-        kwargs['user'] = user
-
-        if not user or user.is_anonymous:
-            return False
-
-        return (self.has_permission(user, READ, check_parent=False) or self.contributor_class.objects.filter(**kwargs).exists())
+        return self.has_permission(user, READ, check_parent=False)
 
     def is_contributor(self, user):
         """
-        Return whether ``user`` is a contributor on the node.
+        Return whether ``user`` is a contributor on the resource.
         (Does not include whether user has permissions via a group.)
         """
         kwargs = self.contributor_kwargs
@@ -876,20 +868,26 @@ class ContributorMixin(models.Model):
 
     def is_admin_contributor(self, user):
         """
-        Return whether ``user`` is a contributor on the node and their contributor permissions are "admin".
+        Return whether ``user`` is a contributor on the resource and their contributor permissions are "admin".
         Doesn't factor in group member permissions.
+
+        Important: having admin permissions through group membership but being a write contributor doesn't suffice.
         """
         if not user or user.is_anonymous:
             return False
-        return self.has_permission(user, 'admin') and self.get_group('admin') in user.groups.all()
+
+        return self.has_permission(user, ADMIN) and self.get_group(ADMIN) in user.groups.all()
 
     def active_contributors(self, include=lambda n: True):
+        """
+        Returns active contributors, group members excluded
+        """
         for contrib in self.contributors.filter(is_active=True):
             if include(contrib):
                 yield contrib
 
     def get_admin_contributors(self, users):
-        """Return a set of all admin contributors for this node. Excludes contributors on node links and
+        """Of the provided users, return the ones who are admin contributors on the node. Excludes contributors on node links and
         inactive users.
         """
         return (each.user for each in self._get_admin_contributors_query(users))
@@ -904,7 +902,7 @@ class ContributorMixin(models.Model):
         query_dict = {
             'user__in': users,
             'user__is_active': True,
-            'user__groups': self.get_group('admin').id
+            'user__groups': self.get_group(ADMIN).id
         }
         if isinstance(self, Preprint):
             query_dict['preprint'] = self
@@ -1173,7 +1171,7 @@ class ContributorMixin(models.Model):
                     save=False
                 )
                 with transaction.atomic():
-                    if ['read'] in permissions_changed.values():
+                    if [READ] in permissions_changed.values():
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
@@ -1377,7 +1375,7 @@ class ContributorMixin(models.Model):
                 self.save()
 
             with transaction.atomic():
-                if to_remove or permissions_changed and ['read'] in permissions_changed.values():
+                if to_remove or permissions_changed and [READ] in permissions_changed.values():
                     project_signals.write_permissions_revoked.send(self)
 
     @property
@@ -1455,7 +1453,7 @@ class ContributorMixin(models.Model):
         # group membership - not inherited from superuser status
         has_permission = perm in get_group_perms(user, self)
         if object_type == 'node':
-            if not has_permission and permission == 'read' and check_parent:
+            if not has_permission and permission == READ and check_parent:
                 return self.is_admin_parent(user)
         return has_permission
 
@@ -1477,13 +1475,21 @@ class ContributorMixin(models.Model):
             self.save()
 
     def set_permissions(self, user, permissions, validate=True, save=False):
+        """Set a user's permissions to a node.
+
+        :param User user: User to grant permission to
+        :param str permissions: Highest permission to grant, i.e. 'write'
+        :param bool validate: Validate admin contrib constraint
+        :param bool save: Save changes
+        :raises: StateError if contrib constraint is violated
+        """
         # Ensure that user's permissions cannot be lowered if they are the only admin (
         # - admin contributor, not admin group member)
         if isinstance(user, self.contributor_class):
             user = user.user
 
-        if validate and (self.is_admin_contributor(user) and 'admin' not in permissions):
-            if self.get_group('admin').user_set.count() <= 1:
+        if validate and (self.is_admin_contributor(user) and permissions != ADMIN):
+            if self.get_group(ADMIN).user_set.filter(is_registered=True).count() <= 1:
                 raise self.state_error('Must have at least one registered admin contributor')
         self.clear_permissions(user)
         self.add_permission(user, permissions)
@@ -1608,7 +1614,7 @@ class SpamOverrideMixin(SpamMixin):
             user.save()
 
             # Make public nodes private from this contributor
-            for node in user.contributed:
+            for node in user.all_nodes:
                 if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
                     node.set_privacy('private', log=False, save=True)
 

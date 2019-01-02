@@ -189,10 +189,9 @@ class TestOSFGroupMembersCreate:
         user = OSFUser.load(data['id'].split('-')[1])
         assert user._id in data['relationships']['users']['links']['related']['href']
         assert osf_group.has_permission(user, MANAGE) is False
-        # unregistered members have no perms until account is claimed
         assert data['attributes']['full_name'] == full_name
         assert data['attributes']['unregistered_member'] == full_name
-        assert osf_group.has_permission(user, MEMBER) is False
+        assert osf_group.has_permission(user, MEMBER) is True
         assert user in osf_group.members_only
         assert user not in osf_group.managers
 
@@ -345,7 +344,7 @@ class TestOSFGroupMembersBulkCreate:
         assert osf_group.has_permission(user, MANAGE) is False
         assert osf_group.has_permission(user, MEMBER) is True
         assert osf_group.has_permission(unreg_user, MANAGE) is False
-        assert osf_group.has_permission(unreg_user, MEMBER) is False
+        assert osf_group.has_permission(unreg_user, MEMBER) is True
         assert osf_group.is_member(unreg_user) is True
         assert osf_group.is_manager(unreg_user) is False
 

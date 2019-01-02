@@ -1059,7 +1059,11 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         self.registration.save()
 
         self.registration.set_privacy('public', Auth(self.registration.creator))
-        for admin in self.registration.admin_contributors:
+        admin_contributors = []
+        for contributor in self.registration.contributors:
+            if Contributor.objects.get(user_id=contributor.id, node_id=self.registration.id).permission == 'admin':
+                admin_contributors.append(contributor)
+        for admin in admin_contributors:
             assert_true(any([each[0][0] == admin.username for each in mock_send_mail.call_args_list]))
 
     @mock.patch('osf.models.sanctions.TokenApprovableSanction.ask')

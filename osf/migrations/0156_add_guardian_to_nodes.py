@@ -12,7 +12,7 @@ NODE MIGRATION
 3) Adds node contributors to corresponding django groups - a node write contributor is added to the node's write django group
  - Populates OSFUserGroups table with group id/user id pair
 
-PREPRINT MIGRATION (were already using guardian, but weren't using direct foreign keys)
+PREPRINT MIGRATION (we were already using guardian for preprints, but weren't using direct foreign keys)
 1) For each guardian GroupObjectPermission table entry that is related to a preprint, add entry to the
 PreprintGroupObjectPermission table
 """

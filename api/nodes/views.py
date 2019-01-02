@@ -580,12 +580,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     # overrides ListCreateAPIView
     def get_queryset(self):
         node = self.get_node()
-        return DraftRegistration.objects.filter(
-            Q(registered_node=None) |
-            Q(registered_node__is_deleted=True),
-            branched_from=node,
-            deleted__isnull=True,
-        )
+        return node.draft_registrations_active
 
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):

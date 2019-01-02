@@ -10,6 +10,8 @@ def _view_registries_landing_page(campaign=None, **kwargs):
     auth = kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
     is_logged_in = kwargs['auth'].logged_in
     if is_logged_in:
+        # Using contributor_to instead of contributor_to_or_group_member.
+        # You need to be an admin contributor to register a node
         registerable_nodes = [
             node for node
             in auth.user.contributor_to

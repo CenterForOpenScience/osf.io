@@ -147,7 +147,7 @@ class UserSerializer(JSONAPISerializer):
     def get_projects_in_common(self, obj):
         user = get_user_auth(self.context['request']).user
         if obj == user:
-            return user.contributor_to.count()
+            return user.contributor_or_group_member_to.filter(type__in=['osf.node']).count()
         return obj.n_projects_in_common(user)
 
     def absolute_url(self, obj):

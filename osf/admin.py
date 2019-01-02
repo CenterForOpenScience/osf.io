@@ -17,7 +17,7 @@ class OSFUserAdmin(admin.ModelAdmin):
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         """
-        Restricts preprint django groups from showing up in the user's groups list in the admin app
+        Restricts preprint/node django groups from showing up in the user's groups list in the admin app
         """
         if db_field.name == 'groups':
             kwargs['queryset'] = Group.objects.exclude(Q(name__startswith='preprint_') | Q(name__startswith='node_'))
@@ -28,10 +28,10 @@ class OSFUserAdmin(admin.ModelAdmin):
         Since m2m fields overridden with new form data in admin app, preprint groups/node groups (which are now excluded from being selections)
         are removed.  Manually re-adds preprint/node groups after adding new groups in form.
         """
-        preprint_groups = list(form.instance.groups.filter(Q(name__startswith='preprint_') | Q(name__startswith='node_')))
+        groups_to_preserve = list(form.instance.groups.filter(Q(name__startswith='preprint_') | Q(name__startswith='node_')))
         super(OSFUserAdmin, self).save_related(request, form, formsets, change)
         if 'groups' in form.cleaned_data:
-            for group in preprint_groups:
+            for group in groups_to_preserve:
                 form.instance.groups.add(group)
 
 class BlacklistedEmailDomainAdmin(admin.ModelAdmin):

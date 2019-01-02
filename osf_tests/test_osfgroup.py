@@ -68,6 +68,12 @@ class TestOSFGroup:
         assert manager in osf_group.members
         assert manager not in osf_group.members_only
 
+        user_two.is_superuser = True
+        user_two.save()
+
+        # Superusers don't have permission to group
+        assert osf_group.has_permission(user_two, MEMBER) is False
+
     @mock.patch('website.osf_groups.views.mails.send_mail')
     def test_make_manager(self, mock_send_mail, manager, member, user_two, user_three, osf_group):
         # no permissions
@@ -143,8 +149,7 @@ class TestOSFGroup:
         unreg_user = OSFUser.objects.get(username=test_email)
         assert unreg_user in osf_group.members
         assert unreg_user not in osf_group.managers
-        # Unreg user hasn't claimed account, so they have no permissions, even though they belong to member group
-        assert osf_group.has_permission(unreg_user, MEMBER) is False
+        assert osf_group.has_permission(unreg_user, MEMBER) is True
         assert osf_group._id in unreg_user.unclaimed_records
 
         # Attempt to add unreg user as a member
@@ -157,8 +162,7 @@ class TestOSFGroup:
         unreg_manager = OSFUser.objects.get(username=test_manager_email)
         assert unreg_manager in osf_group.members
         assert unreg_manager in osf_group.managers
-        # Unreg manager hasn't claimed account, so they have no permissions, even though they belong to member group
-        assert osf_group.has_permission(unreg_manager, MEMBER) is False
+        assert osf_group.has_permission(unreg_manager, MEMBER) is True
         assert osf_group._id in unreg_manager.unclaimed_records
 
     def test_remove_member(self, manager, member, user_three, osf_group):
@@ -740,8 +744,13 @@ class TestNodeGroups:
         project.remove_osf_group(osf_group, auth=Auth(manager))
         osf_group.add_unregistered_member('jane', 'janedoe@cos.io', Auth(manager))
         unreg = osf_group.members.get(username='janedoe@cos.io')
+        assert unreg.is_registered is False
+        assert project.is_contributor_or_group_member(unreg) is False
         project.add_osf_group(osf_group, READ, auth=Auth(project.creator))
         assert project.is_contributor_or_group_member(unreg) is True
+
+        child = ProjectFactory(parent=project)
+        assert child.is_contributor_or_group_member(manager) is False
 
     def test_node_object_can_view_osfgroups(self, manager, member, project, osf_group):
         project.add_contributor(member, ADMIN, save=True)  # Member is explicit admin contributor on project
@@ -771,10 +780,10 @@ class TestNodeGroups:
         child = NodeFactory(parent=project, creator=manager)
         project.add_osf_group(osf_group, ADMIN)
         # Manager has explict admin to child, member has implicit admin.
-        # Manager should be in admin_contributors, member should be in parent_admin_contributors
-
-        assert manager in child.admin_users
-        assert member not in child.admin_users
+        # Manager should be in admin_users, member should be in parent_admin_users
+        admin_users = child.get_users_with_perm('admin')
+        assert manager in admin_users
+        assert member not in admin_users
 
         assert manager not in child.parent_admin_users
         assert member in child.parent_admin_users
@@ -782,7 +791,7 @@ class TestNodeGroups:
         user_two.is_superuser = True
         user_two.save()
 
-        assert user_two not in child.admin_users
+        assert user_two not in admin_users
         assert user_two not in child.parent_admin_users
 
 

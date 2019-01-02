@@ -956,7 +956,7 @@ class TestContributorMethods:
 
         group = OSFGroupFactory(creator=contrib)
         node.add_osf_group(group, 'admin')
-        assert node.has_permission(contrib, 'admin')
+        assert node.has_permission(contrib, 'admin') is True
         assert node.is_admin_contributor(contrib) is False
 
     def test_visible_contributor_ids(self, node, user):
@@ -1279,26 +1279,27 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor.is_registered is False
         assert contributor.unclaimed_records[node._id]['name'] == contributor.fullname
 
+
 class TestContributorProperties:
 
-    def test_admin_contributors(self, user):
+    def test_parent_admin_contributors(self, user):
         project = ProjectFactory(creator=user)
-        assert list(project.admin_contributors) == [user]
-        child1 = ProjectFactory(parent=project)
-        child2 = ProjectFactory(parent=child1)
-        assert list(child1.admin_contributors) == sorted([project.creator, child1.creator], key=lambda user: user.family_name)
-        assert (
-            list(child2.admin_contributors) ==
-            sorted([project.creator, child1.creator, child2.creator], key=lambda user: user.family_name)
-        )
-        admin = UserFactory()
-        project.add_contributor(admin, auth=Auth(project.creator), permissions=ADMIN)
-        project.set_permissions(project.creator, WRITE)
-        project.save()
-        assert list(child1.admin_contributors) == sorted([child1.creator, admin], key=lambda user: user.family_name)
-        assert list(child2.admin_contributors) == sorted([child2.creator, child1.creator, admin], key=lambda user: user.family_name)
+        assert project.parent_admin_contributors.count() == 0
 
-    def test_admin_contributor_ids(self, user):
+        child = ProjectFactory(parent=project, creator=user)
+        assert child.parent_admin_contributors.count() == 0
+
+        user_two = UserFactory()
+        child_two = ProjectFactory(parent=project, creator=user_two)
+        assert child_two.parent_admin_contributors.count() == 1
+
+        user_three = UserFactory()
+        group = OSFGroupFactory(name='Platform', creator=user_three)
+        project.add_osf_group(group, 'admin')
+        assert child_two.parent_admin_contributors.count() == 1
+        assert child_two.parent_admin_users.count() == 2
+
+    def test_admin_contributor_or_group_member_ids(self, user):
         project = ProjectFactory(creator=user)
         assert project.admin_contributor_or_group_member_ids == {user._id}
         child1 = ProjectFactory(parent=project)
@@ -1421,6 +1422,15 @@ class TestPermissionMethods:
         # because the user is a superuser
         assert node.has_permission(user, ADMIN) is False
 
+        unreg = UnregUserFactory()
+        node.add_unregistered_contributor(
+            fullname='David Davidson',
+            email=unreg.username,
+            auth=Auth(node.creator)
+        )
+        node.save()
+        assert node.has_permission(unreg, 'write') is True
+
     def test_has_permission_passed_non_contributor_returns_false(self, node):
         noncontrib = UserFactory()
         assert node.has_permission(noncontrib, READ) is False
@@ -1474,6 +1484,18 @@ class TestPermissionMethods:
         assert node.has_permission(low, READ) is True
         assert node.has_permission(low, WRITE) is True
         assert node.has_permission(low, ADMIN) is False
+
+        with pytest.raises(NodeStateError):
+            node.set_permissions(user, WRITE)
+
+        unreg = UnregUserFactory()
+        node.add_unregistered_contributor(
+            fullname='David Davidson',
+            email=unreg.username,
+            permissions=ADMIN,
+            auth=Auth(user)
+        )
+        node.save()
 
         with pytest.raises(NodeStateError):
             node.set_permissions(user, WRITE)
@@ -2478,18 +2500,21 @@ class TestManageContributors:
         read, write, admin = UserFactory(), UserFactory(), UserFactory()
         nonactive_admin = UserFactory()
         noncontrib = UserFactory()
+        group_member = UserFactory()
+        group = OSFGroupFactory(creator=group_member)
         project = ProjectFactory(creator=user)
         project.add_contributor(read, auth=auth, permissions=READ)
         project.add_contributor(write, auth=auth, permissions=WRITE)
         project.add_contributor(admin, auth=auth, permissions=ADMIN)
         project.add_contributor(nonactive_admin, auth=auth, permissions=ADMIN)
+        project.add_osf_group(group, 'admin')
         project.save()
 
         nonactive_admin.is_disabled = True
         nonactive_admin.save()
 
         result = list(project.get_admin_contributors([
-            read, write, admin, noncontrib, nonactive_admin
+            read, write, admin, noncontrib, nonactive_admin, group_member
         ]))
 
         assert admin in result
@@ -2497,6 +2522,7 @@ class TestManageContributors:
         assert write not in result
         assert noncontrib not in result
         assert nonactive_admin not in result
+        assert group_member not in result
 
 # copied from tests/test_models.py
 class TestNodeTraversals:
