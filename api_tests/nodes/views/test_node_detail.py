@@ -1263,6 +1263,17 @@ class TestNodeDelete(NodeCRUDTestCase):
         assert project_private.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
+    def test_deletes_private_node_logged_in_write_contributor(
+            self, app, user_two, project_private, url_private):
+        project_private.add_contributor(
+            user_two, permissions=[permissions.WRITE, permissions.READ])
+        project_private.save()
+        res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
+        project_private.reload()
+        assert res.status_code == 403
+        assert project_private.is_deleted is False
+        assert 'detail' in res.json['errors'][0]
+
     def test_delete_project_with_component_returns_errors_pre_2_12(self, app, user):
         project = ProjectFactory(creator=user)
         NodeFactory(parent=project, creator=user)
