@@ -3787,8 +3787,9 @@ class TestRemoveNode:
 
         project.remove_node(auth=auth)
         preprint.reload()
+        project.reload()
 
-        assert project.is_deleted
+        assert project.is_deleted is True
         assert preprint.node is None
 
 
