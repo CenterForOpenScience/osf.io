@@ -323,7 +323,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
                 return self.optimize_node_queryset(default_queryset.filter(Q(is_public=True)))
             else:
                 # Further restrict UserNodes to nodes the logged-in user can view
-                read_user_query = Q(id__in=self.request.user._projects_in_common_query(user))
+                read_user_query = Q(id__in=self.request.user._projects_in_common_query(user).values_list('id', flat=True))
                 return self.optimize_node_queryset(default_queryset.filter(read_user_query | Q(is_public=True)))
         return self.optimize_node_queryset(default_queryset)
 

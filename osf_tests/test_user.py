@@ -26,7 +26,7 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFUser, OSFGroup, Tag, Contributor, Session, BlacklistedEmailDomain
+from osf.models import AbstractNode, OSFUser, OSFGroup, Tag, Contributor, Session, BlacklistedEmailDomain, QuickFilesNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
@@ -1574,6 +1574,24 @@ class TestUser(OsfTestCase):
         assert bookmark_collection_node._id not in contributor_to_or_group_member_nodes
         assert collection_node._id not in contributor_to_or_group_member_nodes
         assert group_project._id in contributor_to_or_group_member_nodes
+
+    def test_all_nodes_property(self):
+        project = ProjectFactory(creator=self.user)
+        project_two = ProjectFactory()
+
+        group = OSFGroupFactory(creator=self.user)
+        project_two.add_osf_group(group)
+        project_two.save()
+
+        project_three = ProjectFactory()
+        project_three.save()
+
+        user_nodes = self.user.all_nodes
+        assert user_nodes.count() == 3
+        assert project in user_nodes
+        assert project_two in user_nodes
+        assert project_three not in user_nodes
+        assert QuickFilesNode.objects.get(creator=self.user) in user_nodes
 
     def test_visible_contributor_to_property(self):
         invisible_contributor = UserFactory()

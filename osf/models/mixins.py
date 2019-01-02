@@ -1614,7 +1614,7 @@ class SpamOverrideMixin(SpamMixin):
             user.save()
 
             # Make public nodes private from this contributor
-            for node in user.contributed:
+            for node in user.all_nodes:
                 if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
                     node.set_privacy('private', log=False, save=True)
 

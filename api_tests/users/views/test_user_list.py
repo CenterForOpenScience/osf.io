@@ -14,6 +14,7 @@ from osf_tests.factories import (
     UserFactory,
     OSFGroupFactory,
     ProjectFactory,
+    RegistrationFactory,
     Auth,
 )
 from osf.utils.permissions import CREATOR_PERMISSIONS
@@ -125,8 +126,17 @@ class TestUsers:
         project2.save()
 
         project3 = ProjectFactory()
+        project4 = ProjectFactory()
         project3.add_osf_group(group)
+        project4.add_osf_group(group)
+        project4.is_deleted = True
         project3.save()
+        project4.save()
+
+        RegistrationFactory(
+            project=project1,
+            creator=user_one,
+            is_public=True)
 
         url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
         res = app.get(url, auth=user_two.auth)

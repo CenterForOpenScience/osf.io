@@ -731,7 +731,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             user_settings.merge(addon)
             user_settings.save()
 
-        # - projects where the user was a contributor
+        # - projects where the user was a contributor (group member only are not included).
         for node in user.contributed:
             # Skip quickfiles
             if node.is_quickfiles:
@@ -1288,10 +1288,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Call `update_search` on all nodes on which the user is a
         contributor. Needed to add self to contributor lists in search upon
         registration or claiming.
-
         """
+        # Group member names not listed on Node search result, just Group names, so don't
+        # need to update nodes where user has group member perms only
         for node in self.contributor_to:
             node.update_search()
+
+        for group in self.osf_groups:
+            group.update_search()
 
     def update_date_last_login(self):
         self.date_last_login = timezone.now()
