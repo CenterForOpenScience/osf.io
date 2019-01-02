@@ -386,7 +386,6 @@ class CeleryConfig:
         'scripts.analytics.tasks',
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
-        'scripts.remind_draft_preregistrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'scripts.generate_prereg_csv',
@@ -394,6 +393,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
+        'scripts.remove_after_use.end_prereg_challenge',
     }
 
     med_pri_modules = {
@@ -456,7 +456,6 @@ class CeleryConfig:
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
         'scripts.refresh_addon_tokens',
-        'scripts.remind_draft_preregistrations',
         'scripts.retract_registrations',
         'scripts.embargo_registrations',
         'scripts.approve_registrations',
@@ -471,6 +470,7 @@ class CeleryConfig:
         'scripts.premigrate_created_modified',
         'scripts.generate_prereg_csv',
         'scripts.add_missing_identifiers_to_preprints',
+        'scripts.remove_after_use.end_prereg_challenge',
     )
 
     # Modules that need metrics and release requirements
@@ -549,11 +549,6 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
                 'kwargs': {'dry_run': False},
             },
-            'prereg_reminder': {
-                'task': 'scripts.remind_draft_preregistrations',
-                'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
-                'kwargs': {'dry_run': False},
-            },
             'new-and-noteworthy': {
                 'task': 'scripts.populate_new_and_noteworthy_projects',
                 'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
@@ -586,6 +581,11 @@ class CeleryConfig:
                 'task': 'scripts.generate_prereg_csv',
                 'schedule': crontab(minute=0, hour=10, day_of_week=0),  # Sunday 5:00 a.m.
             },
+            'end_prereg_challenge': {  # TODO: remove after Dec 31st 2018
+                'task': 'scripts.remove_after_use.end_prereg_challenge',
+                'schedule': crontab(day_of_month=1, month_of_year=1, hour=5),  # Jan 1st 12:00 a.m.
+                'kwargs': {'dry_run': False}
+            }
         }
 
         # Tasks that need metrics and release requirements
@@ -1431,6 +1431,7 @@ BLACKLISTED_DOMAINS = [
     'qisdo.com',
     'qisoa.com',
     'qoika.com',
+    'qq.com',
     'quickinbox.com',
     'quickmail.nl',
     'rainmail.biz',

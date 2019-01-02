@@ -9,7 +9,6 @@ from api.base.exceptions import Conflict
 
 from api.base.utils import absolute_reverse, get_user_auth
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
@@ -22,7 +21,7 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, NodeStateError
 from osf.models import Node
 from osf.utils import permissions
 
@@ -383,9 +382,9 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
-        except ValidationValueError as e:
+        except ValidationValueError:
             log_exception()  # Probably indicates a bug on our end, so log to sentry
-            raise exceptions.ValidationError(e.message)
+            # TODO: Raise an error once our JSON schemas are updated
 
         try:
             registration = draft.register(auth, save=True, child_ids=children)

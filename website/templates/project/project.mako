@@ -213,7 +213,6 @@
                       <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
-                % if waffle.switch_is_active(features.EZID_SWITCH):
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
                     <p>
@@ -228,7 +227,6 @@
                   </p>
                   <!-- /ko -->
                 </span>
-                % endif
                 <p>
                     Category: <span data-bind="css: icon"></span>
                     <span id="nodeCategoryEditable">${node['category']}</span>
@@ -353,50 +351,52 @@
     </div>
 % endif
 
-% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']) and node['preprint_state'] != 'withdrawn':
+% for i, preprint in enumerate(node['visible_preprints']):
 <div class="row">
-    <div class="col-xs-12">
-        <div class="pp-notice m-b-md p-md clearfix">
-            % if node['has_moderated_preprint']:
-                This project represents ${'an ' if node['preprint_state'] == 'accepted' else 'a '}
-                ${node['preprint_state']} ${node['preprint_word']} submitted to ${node['preprint_provider']['name']}
-                <% icon_tooltip = ''%>
-                % if node['preprint_state'] == 'pending':
-                    % if node['preprint_provider']['workflow'] == 'post-moderation':
-                        <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
-                        ' removal by a moderator.'.format(preprint_word=node['preprint_word'])%>
-                    % else:
-                        <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
-                        'by a moderator.'.format(preprint_word=node['preprint_word'])%>
-                    % endif
-                % elif node['preprint_state'] == 'accepted':
-                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=node['preprint_word'])%>
-                % else:
-                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
-                % endif
-                <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>.
-            % else:
-                This project represents a ${node['preprint_word']}.
-            % endif
-            <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with ${node['preprint_word']} files.
-            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View ${node['preprint_word']}</a>
-            % if user['is_admin']:
-                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit ${node['preprint_word']}</a>
-            % endif
-        </div>
-    </div>
+   <div class="col-xs-12 col-md-6" style="margin-bottom:5px;">
+       <div style="margin-top: 5px; margin-bottom: 5px;">
+           Has supplemental materials for <a href="${preprint['url']}" target="_blank">${preprint['title']}</a>
+           on ${preprint['provider']['name']}
+         % if user['is_admin_parent'] or user['is_contributor']:
+            &nbsp;<span id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}"></span>
+        % endif
+       </div>
+       % if user['is_admin_parent'] or user['is_contributor']:
+           <div id="metadatapreprint${i}" class="collection-details collapse">
+               <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
+                    <li>
+                        Status:&nbsp;&nbsp;
+                            <b>
+                                % if preprint['is_withdrawn']:
+                                    Withdrawn
+                                % else:
+                                    ${preprint['state'].capitalize()}
+                                % endif
+                            </b>
+                        % if preprint['is_moderated'] and not preprint['is_withdrawn']:
+                            <% icon_tooltip = ''%>
+                            % if preprint['state'] == 'pending':
+                                % if preprint['provider']['workflow'] == 'post-moderation':
+                                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
+                                    ' removal by a moderator.'.format(preprint_word=preprint['word'])%>
+                                % else:
+                                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
+                                    'by a moderator.'.format(preprint_word=preprint['word'])%>
+                                % endif
+                            % elif preprint['state'] == 'accepted':
+                                <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>
+                            % else:
+                                <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>
+                            % endif
+                            <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
+                        % endif
+                    </li>
+               </ul>
+           </div>
+         % endif
+   </div>
 </div>
-% endif
-
-% if node['is_preprint_orphan'] and user['is_admin']:
-<div class="row">
-    <div class="col-xs-12">
-        <div class="pp-notice pp-warning m-b-md p-md clearfix">
-            This project used to represent a preprint, but the primary preprint file has been moved or deleted. <a href="/preprints/submit/" class="btn btn-default btn-sm m-r-xs pull-right">Create a new preprint</a>
-        </div>
-    </div>
-</div>
-% endif
+% endfor
 
 
 <div class="row">

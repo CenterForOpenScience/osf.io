@@ -10,7 +10,7 @@ import requests
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from addons.wiki.models import NodeSettings as WikiNodeSettings
-from osf.models import AbstractNode, Guid, NodeRelation, Contributor
+from osf.models import AbstractNode, Preprint, Guid, NodeRelation, Contributor
 
 from api.base.exceptions import ServiceUnavailableError
 from api.base.utils import get_object_or_error, waterbutler_api_url_for, get_user_auth, has_admin_scope
@@ -23,6 +23,8 @@ def get_file_object(target, path, provider, request):
         if path == '/':
             if isinstance(target, AbstractNode):
                 obj = target.get_addon('osfstorage').get_root()
+            elif isinstance(target, Preprint):
+                obj = target.root_folder
             else:
                 obj = target
         else:

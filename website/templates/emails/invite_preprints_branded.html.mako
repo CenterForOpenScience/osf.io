@@ -12,11 +12,11 @@
     <br>
     ${claim_url}<br>
     <br>
-    Once you have set a password, you will be able to make contributions to "${node.title}" and create your own ${branded_service.preprint_word}. You will automatically be subscribed to notification emails for this ${branded_service.preprint_word}. Each ${branded_service.preprint_word} is associated with a project on the Open Science Framework for managing the ${branded_service.preprint_word}.  To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}<br>
+    Once you have set a password, you will be able to make contributions to "${node.title}" and create your own ${branded_service.preprint_word}. You will automatically be subscribed to notification emails for this ${branded_service.preprint_word}. To change your email notification preferences, visit your user settings: ${settings.DOMAIN + "settings/notifications/"}<br>
     <br>
     To preview "${node.title}" click the following link: ${node.absolute_url}<br>
     <br>
-    (NOTE: if this project is private, you will not be able to view it until you have confirmed your account)<br>
+    (NOTE: if this preprint is unpublished, you will not be able to view it until you have confirmed your account)<br>
     <br>
     If you are not ${fullname} or you have been erroneously associated with "${node.title}", then email contact+${branded_service._id}@osf.io with the subject line "Claiming Error" to report the problem.<br>
     <br>

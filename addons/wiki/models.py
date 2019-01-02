@@ -22,12 +22,12 @@ from osf.models import NodeLog, OSFUser, Comment
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
+from osf.exceptions import NodeStateError
 from addons.wiki import utils as wiki_utils
 from addons.wiki.exceptions import (
     PageCannotRenameError,
     PageConflictError,
 )
-from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.files.exceptions import VersionNotFoundError
 from website import settings

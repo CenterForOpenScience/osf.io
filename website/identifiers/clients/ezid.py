@@ -2,9 +2,7 @@
 import logging
 import furl
 import requests
-import waffle
 
-from osf import features
 from website import settings
 from website.identifiers import utils
 from website.util.client import BaseClient
@@ -38,9 +36,6 @@ class EzidClient(BaseClient, DataCiteClient):
         return utils.from_anvl(resp.content.strip('\n'))
 
     def create_identifier(self, object, category):
-        if not waffle.switch_is_active(features.EZID_SWITCH):
-            logger.info('ezid waffle switch is off. Doing nothing...')
-            return None
         if category in ['doi', 'ark']:
             metadata = self.build_metadata(object)
             doi = self.build_doi(object)
@@ -63,9 +58,6 @@ class EzidClient(BaseClient, DataCiteClient):
             raise NotImplementedError('Create identifier method is not supported for category {}'.format(category))
 
     def update_identifier(self, object, category):
-        if not waffle.switch_is_active(features.EZID_SWITCH):
-            logger.info('ezid waffle switch is off. Doing nothing...')
-            return None
         metadata = self.build_metadata(object)
         status = self.get_status(object)
         metadata['_status'] = status
@@ -79,9 +71,9 @@ class EzidClient(BaseClient, DataCiteClient):
         return utils.from_anvl(resp.content)
 
     def get_status(self, object):
-        from osf.models import PreprintService
+        from osf.models import Preprint
 
-        if isinstance(object, PreprintService):
+        if isinstance(object, Preprint):
             status = 'public' if object.verified_publishable else 'unavailable'
         else:
             status = 'public' if object.is_public or not object.is_deleted else 'unavailable'

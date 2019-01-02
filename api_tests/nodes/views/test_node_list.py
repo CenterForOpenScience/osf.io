@@ -1,5 +1,6 @@
 import pytest
 
+from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from framework.auth.core import Auth
@@ -21,6 +22,7 @@ from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
 from tests.utils import assert_items_equal
 from website.views import find_bookmark_collection
+from osf.utils.workflows import DefaultStates
 
 
 @pytest.fixture()
@@ -217,7 +219,7 @@ class TestNodeFiltering:
 
     @pytest.fixture()
     def preprint(self, user_one):
-        return PreprintFactory(creator=user_one)
+        return PreprintFactory(project=ProjectFactory(creator=user_one), creator=user_one)
 
     @pytest.fixture()
     def folder(self):
@@ -316,10 +318,7 @@ class TestNodeFiltering:
         data = res.json['data']
         ids = [each['id'] for each in data]
 
-        preprints = Node.objects.filter(
-            preprint_file__isnull=False
-        ).exclude(_is_preprint_orphan=True)
-        assert len(data) == len(preprints)
+        assert len(data) == 1
         assert preprint.node._id in ids
         assert public_project_one._id not in ids
         assert public_project_two._id not in ids
@@ -801,93 +800,325 @@ class TestNodeFiltering:
         assert child_two._id not in guids
         assert grandchild._id not in guids
 
-    def test_preprint_filter_excludes_orphans(
-            self, app, user_one, preprint, public_project_one,
-            public_project_two, public_project_three):
-        orphan = PreprintFactory(creator=preprint.node.creator)
-        orphan._is_preprint_orphan = True
+    def test_unpublished_preprint_in_preprint_true_filter_results(
+            self, app, user_one, user_two):
+        unpublished = PreprintFactory(
+            creator=user_one,
+            project=ProjectFactory(creator=user_one))
+        unpublished.node.add_contributor(user_two, save=True)
+        unpublished.is_published = False
+        unpublished.save()
+        assert not unpublished.is_published
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        # Unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert unpublished.node._id not in [each['id'] for each in res.json['data']]
+
+        # non contrib
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert unpublished.node._id not in [each['id'] for each in res.json['data']]
+
+        # write contrib
+        unpublished.add_contributor(user_two, 'write', save=True)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert unpublished.node._id in [each['id'] for each in res.json['data']]
+
+        # admin
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        assert unpublished.node._id in [each['id'] for each in res.json['data']]
+
+    def test_unpublished_preprint_in_preprint_false_filter_results(
+            self, app, user_one, user_two):
+        unpublished = PreprintFactory(
+            creator=user_one,
+            project=ProjectFactory(creator=user_one))
+        unpublished.node.add_contributor(user_two, save=True)
+        unpublished.is_published = False
+        unpublished.save()
+        assert not unpublished.is_published
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        # Unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert unpublished.node._id not in [each['id'] for each in res.json['data']]
+
+        # non contrib (preprint)
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert unpublished.node._id in [each['id'] for each in res.json['data']]
+
+        # write contrib (preprint)
+        unpublished.add_contributor(user_two, 'write', save=True)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert unpublished.node._id not in [each['id'] for each in res.json['data']]
+
+        # admin (preprint)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        assert unpublished.node._id not in [each['id'] for each in res.json['data']]
+
+    def test_private_preprint_in_preprint_true_filter_results(
+            self, app, user_one, user_two):
+        private = PreprintFactory(
+            creator=user_one,
+            project=ProjectFactory(creator=user_one)
+        )
+        private.node.add_contributor(user_two, save=True)
+        private.is_public = False
+        private.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        # Unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert private.node._id not in [each['id'] for each in res.json['data']]
+
+        # non contrib (preprint)
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert private.node._id not in [each['id'] for each in res.json['data']]
+
+        # write contrib (preprint)
+        private.add_contributor(user_two, 'write', save=True)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert private.node._id in [each['id'] for each in res.json['data']]
+
+        # admin (preprint)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        assert private.node._id in [each['id'] for each in res.json['data']]
+
+    def test_private_preprint_in_preprint_false_filter_results(
+            self, app, user_one, user_two):
+        private = PreprintFactory(
+            creator=user_one,
+            project=ProjectFactory(creator=user_one)
+        )
+        private.node.add_contributor(user_two, save=True)
+        private.is_public = False
+        private.save()
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        # Unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert private.node._id not in [each['id'] for each in res.json['data']]
+
+        # non contrib (preprint)
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert private.node._id in [each['id'] for each in res.json['data']]
+
+        # write contrib (preprint)
+        private.add_contributor(user_two, 'write', save=True)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert private.node._id not in [each['id'] for each in res.json['data']]
+
+        # admin (preprint)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        assert private.node._id not in [each['id'] for each in res.json['data']]
+
+    def test_orphaned_preprint_in_preprint_true_filter_results(
+            self, app, user_one, user_two):
+        orphan = PreprintFactory(
+            creator=user_one,
+            project=ProjectFactory(creator=user_one)
+        )
+        orphan.node.add_contributor(user_two, save=True)
+        orphan.primary_file = None
         orphan.save()
 
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        # Unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert orphan.node._id not in [each['id'] for each in res.json['data']]
+
+        # non contrib (preprint)
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert orphan.node._id not in [each['id'] for each in res.json['data']]
+
+        # write contrib (preprint)
+        orphan.add_contributor(user_two, 'write', save=True)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert orphan.node._id in [each['id'] for each in res.json['data']]
+
+        # admin (preprint)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        data = res.json['data']
+        assert orphan.node._id in [each['id'] for each in res.json['data']]
 
-        ids = [each['id'] for each in data]
-
-        assert preprint.node._id in ids
-        assert orphan._id not in ids
-        assert public_project_one._id not in ids
-        assert public_project_two._id not in ids
-        assert public_project_three._id not in ids
-
-    def test_deleted_preprint_file_not_in_filtered_results(
-            self, app, user_one, preprint):
-        orphan = PreprintFactory(creator=preprint.node.creator)
-
-        # orphan the preprint by deleting the file
-        orphan.node.preprint_file = None
-        orphan.node.save()
-        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
-        res = app.get(url, auth=user_one.auth)
-        assert res.status_code == 200
-        data = res.json['data']
-
-        ids = [each['id'] for each in data]
-
-        assert preprint.node._id in ids
-        assert orphan.node._id not in ids
-
-    def test_deleted_preprint_file_in_preprint_false_filtered_results(
-            self, app, user_one, preprint):
-        orphan = PreprintFactory(creator=preprint.node.creator)
-
-        # orphan the preprint by deleting the file
-        orphan.node.preprint_file = None
-        orphan.node.save()
-        orphan.refresh_from_db()
+    def test_orphaned_preprint_in_preprint_false_filter_results(
+            self, app, user_one, user_two):
+        orphan = PreprintFactory(
+            creator=user_one,
+            project=ProjectFactory(creator=user_one)
+        )
+        orphan.node.add_contributor(user_two, save=True)
+        orphan.primary_file = None
+        orphan.save()
 
         url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        # Unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert orphan.node._id not in [each['id'] for each in res.json['data']]
+
+        # non contrib (preprint)
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert orphan.node._id in [each['id'] for each in res.json['data']]
+
+        # write contrib (preprint)
+        orphan.add_contributor(user_two, 'write', save=True)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert orphan.node._id not in [each['id'] for each in res.json['data']]
+
+        # admin (preprint)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        data = res.json['data']
+        assert orphan.node._id not in [each['id'] for each in res.json['data']]
 
-        ids = [each['id'] for each in data]
-
-        assert preprint.node._id not in ids
-        assert orphan.node._id in ids
-
-    def test_unpublished_preprint_not_in_preprint_true_filter_results(
-            self, app, user_one, preprint):
-        unpublished = PreprintFactory(
-            creator=preprint.node.creator,
-            is_published=False)
-        assert not unpublished.is_published
+    def test_abandonded_preprint_in_preprint_true_filter_results(
+            self, app, user_one, user_two):
+        abandoned = PreprintFactory(
+            creator=user_one,
+            project=ProjectFactory(creator=user_one)
+        )
+        abandoned.node.add_contributor(user_two, save=True)
+        abandoned.machine_state = DefaultStates.INITIAL.value
+        abandoned.save()
 
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        # Unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert abandoned.node._id not in [each['id'] for each in res.json['data']]
+
+        # non contrib (preprint)
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert abandoned.node._id not in [each['id'] for each in res.json['data']]
+
+        # write contrib (preprint)
+        abandoned.add_contributor(user_two, 'write', save=True)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert abandoned.node._id not in [each['id'] for each in res.json['data']]
+
+        # admin (preprint)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        data = res.json['data']
-        ids = [each['id'] for each in data]
+        assert abandoned.node._id in [each['id'] for each in res.json['data']]
 
-        assert preprint.node._id in ids
-        assert unpublished.node._id not in ids
-
-    def test_unpublished_preprint_in_preprint_false_filter_results(
-            self, app, user_one, preprint):
-        unpublished = PreprintFactory(
-            creator=preprint.node.creator,
-            is_published=False)
-        assert not unpublished.is_published
+    def test_abandonded_preprint_in_preprint_false_filter_results(
+            self, app, user_one, user_two):
+        abandoned = PreprintFactory(
+            creator=user_one,
+            project=ProjectFactory(creator=user_one)
+        )
+        abandoned.node.add_contributor(user_two, save=True)
+        abandoned.machine_state = DefaultStates.INITIAL.value
+        abandoned.save()
 
         url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        # Unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert abandoned.node._id not in [each['id'] for each in res.json['data']]
+
+        # non contrib (preprint)
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert abandoned.node._id in [each['id'] for each in res.json['data']]
+
+        # write contrib (preprint)
+        abandoned.add_contributor(user_two, 'write', save=True)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert abandoned.node._id in [each['id'] for each in res.json['data']]
+
+        # admin (preprint)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        data = res.json['data']
-        ids = [each['id'] for each in data]
+        assert abandoned.node._id not in [each['id'] for each in res.json['data']]
 
-        assert preprint.node._id not in ids
-        assert unpublished.node._id in ids
+    def test_deleted_preprint_in_preprint_true_filter_results(
+            self, app, user_one, user_two):
+        deleted = PreprintFactory(
+            creator=user_one,
+            project=ProjectFactory(creator=user_one)
+        )
+        deleted.node.add_contributor(user_two, save=True)
+        deleted.deleted = timezone.now()
+        deleted.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        # Unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert deleted.node._id not in [each['id'] for each in res.json['data']]
+
+        # non contrib (preprint)
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert deleted.node._id not in [each['id'] for each in res.json['data']]
+
+        # write contrib (preprint)
+        deleted.add_contributor(user_two, 'write', save=True)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert deleted.node._id not in [each['id'] for each in res.json['data']]
+
+        # admin (preprint)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        assert deleted.node._id not in [each['id'] for each in res.json['data']]
+
+    def test_deleted_preprint_in_preprint_false_filter_results(
+            self, app, user_one, user_two):
+        deleted = PreprintFactory(
+            creator=user_one,
+            project=ProjectFactory(creator=user_one)
+        )
+        deleted.node.add_contributor(user_two, save=True)
+        deleted.deleted = timezone.now()
+        deleted.save()
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        # Unauthenticated
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert deleted.node._id not in [each['id'] for each in res.json['data']]
+
+        # non contrib (preprint)
+        res = app.get(url, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert deleted.node._id in [each['id'] for each in res.json['data']]
+
+        # write contrib (preprint)
+        deleted.add_contributor(user_two, 'write', save=True)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+        assert deleted.node._id in [each['id'] for each in res.json['data']]
+
+        # admin (preprint)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        assert deleted.node._id in [each['id'] for each in res.json['data']]
 
     def test_nodes_list_filter_multiple_field(
             self, app, public_project_one, public_project_two,
@@ -905,6 +1136,108 @@ class TestNodeFiltering:
         assert public_project_two._id in ids
         assert 'One' in public_project_two.description
         assert public_project_three._id not in ids
+
+    def test_withdrawn_preprint_in_preprint_true_filter_results(
+            self, app, user_one, user_two):
+        project_one = ProjectFactory(creator=user_one, is_public=True)
+        preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
+        project_one.add_contributor(user_two, ['read', 'write'], save=True)
+        preprint_one.date_withdrawn = timezone.now()
+        preprint_one.is_public = True
+        preprint_one.is_published = True
+        preprint_one.machine_state = 'accepted'
+        preprint_one.date_published = timezone.now()
+        assert preprint_one.ever_public is False
+        # Putting this preprint in a weird state, is verified_publishable, but has been
+        # withdrawn and ever_public is False.  This is to isolate withdrawal portion of query
+        preprint_one.save()
+
+        project_two = ProjectFactory(creator=user_one, is_public=True)
+        project_two.add_contributor(user_two, ['read', 'write'], save=True)
+        preprint_two = PreprintFactory(creator=user_one, project=project_two)
+        preprint_two.date_withdrawn = timezone.now()
+        preprint_two.ever_public = True
+        preprint_two.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        # Unauthenticated can only see withdrawn preprints that have been public
+        expected = [project_two._id]
+        res = app.get(url)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Noncontribs can only see withdrawn preprints that have been public
+        user2 = AuthUserFactory()
+        expected = [project_two._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Read contribs can only see withdrawn preprints that have been public
+        user2 = AuthUserFactory()
+        preprint_one.add_contributor(user2, 'read')
+        preprint_two.add_contributor(user2, 'read')
+        expected = [project_two._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        expected = [project_two._id]
+        # Admin contribs can only see withdrawn preprints that have been public
+        res = app.get(url, auth=user_one.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+    def test_withdrawn_preprint_in_preprint_false_filter_results(
+            self, app, user_one, user_two):
+        project_one = ProjectFactory(creator=user_one, is_public=True)
+        preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
+        project_one.add_contributor(user_two, ['read', 'write'], save=True)
+        preprint_one.date_withdrawn = timezone.now()
+        preprint_one.is_public = True
+        preprint_one.is_published = True
+        preprint_one.date_published = timezone.now()
+        preprint_one.machine_state = 'accepted'
+        assert preprint_one.ever_public is False
+        # Putting this preprint in a weird state, is verified_publishable, but has been
+        # withdrawn and ever_public is False.  This is to isolate withdrawal portion of query
+        preprint_one.save()
+
+        project_two = ProjectFactory(creator=user_one, is_public=True)
+        project_two.add_contributor(user_two, ['read', 'write'], save=True)
+        preprint_two = PreprintFactory(creator=user_one, project=project_two)
+        preprint_two.date_withdrawn = timezone.now()
+        preprint_two.ever_public = True
+        preprint_two.save()
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        # Unauthenticated can only see withdrawn preprints that have been public
+        expected = [project_one._id]
+        res = app.get(url)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Noncontribs can only see withdrawn preprints that have been public
+        user2 = AuthUserFactory()
+        expected = [project_one._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        # Read contribs can only see withdrawn preprints that have been public
+        user2 = AuthUserFactory()
+        preprint_one.add_contributor(user2, 'read')
+        preprint_two.add_contributor(user2, 'read')
+        expected = [project_one._id]
+        res = app.get(url, auth=user2.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
+
+        expected = [project_one._id]
+        # Admin contribs can only see withdrawn preprints that have been public
+        res = app.get(url, auth=user_one.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert set(expected) == set(actual)
 
 
 @pytest.mark.django_db
@@ -1376,7 +1709,7 @@ class TestNodeCreate:
             'data': {
                 'type': 'nodes',
                 'attributes': {
-                    'title': 'A' * 201,
+                    'title': 'A' * 513,
                     'description': description,
                     'category': category,
                     'public': False,
@@ -1387,7 +1720,7 @@ class TestNodeCreate:
             url, project, auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
 
 @pytest.mark.django_db
