@@ -70,23 +70,27 @@
                                 {% endfor %}
                             </select>
                         </td>
-                        <td>
-                            <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('member-select').value;" />
-                        </td>
+                        {% if group.members %}
+                            <td>
+                                <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('member-select').value;" />
+                            </td>
+                        {% endif %}
                     </tr>
-                    <tr>
-                        <td>Nodes</td>
-                        <td>
-                            <select class="form-control" id="node-select">
-                                {% for node in group.nodes %}
-                                    <option value="{{ node.id | reverse_node }}">{{ node.title }} ({{ node.permission }})</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                        <td>
-                            <input type="submit" class="pull-right btn btn-default" value="Go to" onclick="document.location.href = document.getElementById('node-select').value;" />
-                        </td>
-                    </tr>
+                    {% if group.nodes %}
+                        <tr>
+                            <td>Nodes</td>
+                            <td>
+                                <select class="form-control" id="node-select">
+                                    {% for node in group.nodes %}
+                                        <option value="{{ node.id | reverse_node }}">{{ node.title }} ({{ node.permission }})</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="submit" class="pull-right btn btn-default" value="Go to" onclick="document.location.href = document.getElementById('node-select').value;" />
+                            </td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
