@@ -382,6 +382,10 @@ class UserSettingsSerializer(JSONAPISerializer):
     subscribe_osf_help_email = ser.SerializerMethodField()
     secret = ser.SerializerMethodField(read_only=True)
 
+    def to_representation(self, instance):
+        self.context['twofactor_addon'] = instance.get_addon('twofactor')
+        return super(UserSettingsSerializer, self).to_representation(instance)
+
     def get_two_factor_enabled(self, obj):
         try:
             two_factor = TwoFactorUserSettings.objects.get(owner_id=obj.id)
@@ -390,13 +394,13 @@ class UserSettingsSerializer(JSONAPISerializer):
             return False
 
     def get_two_factor_confirmed(self, obj):
-        two_factor_addon = obj.get_addon('twofactor')
+        two_factor_addon = self.context['twofactor_addon']
         if two_factor_addon and two_factor_addon.is_confirmed:
             return True
         return False
 
     def get_secret(self, obj):
-        two_factor_addon = obj.get_addon('twofactor')
+        two_factor_addon = self.context['twofactor_addon']
         if two_factor_addon and not two_factor_addon.is_confirmed:
             return two_factor_addon.totp_secret_b32
 
