@@ -359,6 +359,37 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             RegistrationSchema.objects.filter(active=True).count()
         )
 
+    def test_validate_embargo_end_date_too_soon(self):
+        registration = RegistrationFactory(project=self.node)
+        today = dt.datetime.today().replace(tzinfo=pytz.utc)
+        too_soon = today + dt.timedelta(days=5)
+        try:
+            draft_views.validate_embargo_end_date(too_soon.isoformat(), registration)
+        except HTTPError as e:
+            assert_equal(e.code, http.BAD_REQUEST)
+        else:
+            self.fail()
+
+    def test_validate_embargo_end_date_too_late(self):
+        registration = RegistrationFactory(project=self.node)
+        today = dt.datetime.today().replace(tzinfo=pytz.utc)
+        too_late = today + dt.timedelta(days=(4 * 365) + 1)
+        try:
+            draft_views.validate_embargo_end_date(too_late.isoformat(), registration)
+        except HTTPError as e:
+            assert_equal(e.code, http.BAD_REQUEST)
+        else:
+            self.fail()
+
+    def test_validate_embargo_end_date_ok(self):
+        registration = RegistrationFactory(project=self.node)
+        today = dt.datetime.today().replace(tzinfo=pytz.utc)
+        too_late = today + dt.timedelta(days=12)
+        try:
+            draft_views.validate_embargo_end_date(too_late.isoformat(), registration)
+        except Exception:
+            self.fail()
+
     def test_check_draft_state_registered(self):
         reg = RegistrationFactory()
         self.draft.registered_node = reg
