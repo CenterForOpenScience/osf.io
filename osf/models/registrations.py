@@ -9,7 +9,7 @@ from django.utils import timezone
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED

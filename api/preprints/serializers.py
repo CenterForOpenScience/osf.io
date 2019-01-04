@@ -26,8 +26,8 @@ from api.nodes.serializers import (
 from api.base.metrics import MetricsSerializerMixin
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
-from website.exceptions import NodeStateError
 from website.project import signals as project_signals
+from osf.exceptions import NodeStateError
 from osf.models import BaseFileNode, Preprint, PreprintProvider, Node, NodeLicense
 from osf.utils import permissions as osf_permissions
 
@@ -237,7 +237,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         old_tags = set(preprint.tags.values_list('name', flat=True))
-        if validated_data.get('tags'):
+        if 'tags' in validated_data:
             current_tags = set(validated_data.pop('tags', []))
         elif self.partial:
             current_tags = set(old_tags)

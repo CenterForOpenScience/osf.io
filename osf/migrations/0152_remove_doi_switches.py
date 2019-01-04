@@ -3,15 +3,15 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
-from osf.utils.migrations import AddWaffleSwitches
+from osf.utils.migrations import DeleteWaffleSwitches
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0148_merge_20181213_2253'),
+        ('osf', '0151_auto_20181215_1911'),
     ]
 
     operations = [
-        AddWaffleSwitches(['disable_datacite_dois'], active=False),
+        DeleteWaffleSwitches(['disable_datacite_dois', 'ezid_switch']),
     ]
