@@ -350,7 +350,8 @@ class TestUserEmailsList:
         assert new_token in returned_ids
         assert old_token not in returned_ids
 
-    def test_filter_by_attributes(self, app, url, user_one):
+    @mock.patch('api.base.throttling.BaseThrottle.allow_request')
+    def test_filter_by_attributes(self, mock_throttle, app, url, user_one):
         confirmed_not_verified = 'notyet@unconfirmed.test'
         token = user_one.add_unconfirmed_email(confirmed_not_verified)
         user_one.email_verifications[token]['confirmed'] = True
