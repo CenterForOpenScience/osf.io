@@ -253,22 +253,22 @@ def resolve_guid(guid, suffix=None):
         if suffix and suffix.rstrip('/').lower() == 'download':
             file_referent = None
             if isinstance(referent, Preprint) and referent.primary_file:
-                if not referent.is_published:
+                file_referent = referent.primary_file
+            elif isinstance(referent, BaseFileNode) and referent.is_file:
+                file_referent = referent
+
+            if file_referent:
+                if isinstance(file_referent.target, Preprint) and not file_referent.target.is_published:
                     # TODO: Ideally, permissions wouldn't be checked here.
                     # This is necessary to prevent a logical inconsistency with
                     # the routing scheme - if a preprint is not published, only
                     # admins and moderators should be able to know it exists.
                     auth = Auth.from_kwargs(request.args.to_dict(), {})
                     # Check if user isn't a nonetype or that the user has admin/moderator/superuser permissions
-                    if auth.user is None or not (auth.user.has_perm('view_submissions', referent.provider) or
-                            referent.has_permission(auth.user, permissions.ADMIN)):
+                    if auth.user is None or not (auth.user.has_perm('view_submissions', file_referent.target.provider) or
+                            file_referent.target.has_permission(auth.user, permissions.ADMIN)):
                         raise HTTPError(http.NOT_FOUND)
 
-                file_referent = referent.primary_file
-            elif isinstance(referent, BaseFileNode) and referent.is_file:
-                file_referent = referent
-
-            if file_referent:
                 # Extend `request.args` adding `action=download`.
                 request.args = request.args.copy()
                 request.args.update({'action': 'download'})

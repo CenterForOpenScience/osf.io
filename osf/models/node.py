@@ -29,7 +29,10 @@ from framework.auth import oauth_scopes
 from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
+from osf.exceptions import (InvalidTagError, NodeStateError,
+                            TagNotFoundError, UserNotAffiliatedError)
 from osf.models.contributor import (Contributor, get_contributor_permissions)
+
 from osf.models.collection import CollectionSubmission
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
@@ -49,8 +52,6 @@ from osf.utils.requests import DummyRequest, get_request_and_user_id
 from osf.utils import sanitize
 from website import language, settings
 from website.citations.utils import datetime_to_csl
-from website.exceptions import (InvalidTagError, NodeStateError,
-                                TagNotFoundError, UserNotAffiliatedError)
 from website.project.licenses import set_license
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks

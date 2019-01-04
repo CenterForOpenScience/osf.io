@@ -145,26 +145,6 @@ class TestMove():
         assert res.status_code == 400
         assert 'Cannot move file as it is checked out.' in res.json['errors'][0]['detail']
 
-    def test_move_preprint_file_out_of_node(self, app, user, move_url, root_node, node, node_two, node_two_root_node, folder):
-        file = folder.append_file('No I don\'t wanna go')
-        node.preprint_file = file
-        node.save()
-
-        folder_two = node_two_root_node.append_folder('To There')
-        signed_payload = sign_payload({
-            'source': folder._id,
-            'node': root_node._id,
-            'user': user._id,
-            'destination': {
-                'parent': folder_two._id,
-                'target': folder_two.target._id,
-                'name': folder_two.name,
-            }
-        })
-        res = app.post_json(move_url, signed_payload, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Cannot move file as it is the primary file of preprint.'
-
     def test_move_file_out_of_node(self, app, user, move_url, root_node, node, node_two, node_two_root_node, folder):
         # project having a preprint should not block other moves
         node.preprint_file = root_node.append_file('far')
@@ -824,6 +804,8 @@ class TestCopy():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestCopyPreprint():
     @pytest.fixture()
     def preprint(self, user):

@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
 from osf.models import AbstractNode
-from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
+from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
 )
