@@ -9,14 +9,14 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0142_remove_forks_flag'),
+        ('osf', '0153_merge_20181221_1842'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='pagecounter',
             name='action',
-            field=models.CharField(default=b'download', max_length=128, db_index=True),
+            field=models.CharField(default=b'download', max_length=128),
         ),
         migrations.AddField(
             model_name='pagecounter',
@@ -31,6 +31,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='pagecounter',
             name='version',
-            field=models.IntegerField(blank=True, null=True, db_index=True),
+            field=models.IntegerField(blank=True, null=True),
         ),
     ]

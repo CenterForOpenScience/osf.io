@@ -66,10 +66,10 @@ class PageCounter(BaseModel):
     total = models.PositiveIntegerField(default=0)
     unique = models.PositiveIntegerField(default=0)
 
-    action = models.CharField(max_length=128, null=False, blank=False, default='download', db_index=True)
-    guid = models.ForeignKey(Guid, related_name='pagecounters', null=True, blank=True, db_index=True)
-    file = models.ForeignKey('osf.BaseFileNode', null=True, blank=True, related_name='pagecounters', db_index=True)
-    version = models.IntegerField(null=True, blank=True, db_index=True)
+    action = models.CharField(max_length=128, null=False, blank=False, default='download')
+    guid = models.ForeignKey(Guid, related_name='pagecounters', null=True, blank=True)
+    file = models.ForeignKey('osf.BaseFileNode', null=True, blank=True, related_name='pagecounters')
+    version = models.IntegerField(null=True, blank=True)
 
     DOWNLOAD_ALL_VERSIONS_ID_PATTERN = r'^download:[^:]*:{1}[^:]*$'
 
@@ -102,7 +102,7 @@ class PageCounter(BaseModel):
     @staticmethod
     def deconstruct_id(page):
         """
-        Temporary method before Part II of PLAT-1771 is merged
+        Temporary method before Part II of PLAT-1171 is merged
         """
         split = page.split(':')
         action = split[0]
