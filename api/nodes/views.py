@@ -74,6 +74,7 @@ from api.nodes.permissions import (
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
     IsContributor,
+    NodeDeletePermissions,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
@@ -101,7 +102,7 @@ from api.nodes.serializers import (
 )
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
-from api.registrations.serializers import RegistrationSerializer
+from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
@@ -119,8 +120,8 @@ from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.models.node import remove_addons
 from osf.utils.permissions import ADMIN, PERMISSIONS
+from osf.exceptions import NodeStateError
 from website import mails
-from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 
 # This is used to rethrow v1 exceptions as v2
@@ -335,6 +336,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        NodeDeletePermissions,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
@@ -396,6 +398,9 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     view_name = 'node-contributors'
     ordering = ('_order',)  # default ordering
 
+    def get_resource(self):
+        return self.get_node()
+
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
         if field_name == 'bibliographic':
@@ -442,7 +447,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = self.get_node()
+        node = self.get_resource()
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError('Must have at least one visible contributor')
         if not node.contributor_set.filter(user=instance).exists():
@@ -470,6 +475,12 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
         return resource_object_list
 
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'default'
+        return context
+
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_contributors_read).
@@ -488,15 +499,24 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     view_category = 'nodes'
     view_name = 'node-contributor-detail'
 
+    def get_resource(self):
+        return self.get_node()
+
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        node = self.get_node()
+        node = self.get_resource()
         auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError('Must have at least one registered admin contributor')
+
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'default'
+        return context
 
 
 class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
@@ -603,6 +623,11 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_name = 'node-registrations'
 
     ordering = ('-modified',)
+
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'POST'):
+            return RegistrationCreateSerializer
+        return RegistrationSerializer
 
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default

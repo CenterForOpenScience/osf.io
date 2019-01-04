@@ -72,7 +72,7 @@ from api_tests.utils import create_test_file
 
 pytestmark = pytest.mark.django_db
 
-from osf.models import NodeRelation, QuickFilesNode
+from osf.models import NodeRelation, QuickFilesNode, BlacklistedEmailDomain
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -931,7 +931,7 @@ class TestProjectViews(OsfTestCase):
         assert_in(registration.title, res.body)
         assert_equal(res.status_code, 200)
 
-        for route in ['files', 'wiki/home', 'analytics', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
+        for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
             res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
             assert_equal(res.status_code, 302, route)
             res = res.follow()
@@ -2062,7 +2062,9 @@ class TestAddingContributorViews(OsfTestCase):
             branded_service=None,
             can_change_preferences=False,
             logo=settings.OSF_LOGO,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            published_preprints=[]
+
         )
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
@@ -3245,7 +3247,27 @@ class TestAuthViews(OsfTestCase):
         users = OSFUser.objects.filter(username=email)
         assert_equal(users.count(), 0)
 
+    def test_register_email_already_registered(self):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake_email(), fake.password()
+        existing_user = UserFactory(
+            username=email,
+        )
+        res = self.app.post_json(
+            url, {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password
+            },
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.CONFLICT)
+        users = OSFUser.objects.filter(username=email)
+        assert_equal(users.count(), 1)
+
     def test_register_blacklisted_email_domain(self):
+        BlacklistedEmailDomain.objects.get_or_create(domain='mailinator.com')
         url = api_url_for('register_user')
         name, email, password = fake.name(), 'bad@mailinator.com', 'agreatpasswordobviously'
         res = self.app.post_json(
