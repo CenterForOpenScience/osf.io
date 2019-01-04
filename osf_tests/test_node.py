@@ -119,6 +119,17 @@ class TestParentNode:
     def template(self, project, auth):
         return project.use_as_template(auth=auth)
 
+    @pytest.fixture()
+    def project_with_affiliations(self, user):
+        institution = InstitutionFactory()
+        another_institution = InstitutionFactory()
+        user.affiliated_institutions.add(institution)
+        user.save()
+        original = ProjectFactory(creator=user)
+        original.affiliated_institutions.add(*[institution, another_institution])
+        original.save()
+        return original
+
     def test_top_level_node_has_parent_node_none(self):
         project = ProjectFactory()
         assert project.parent_node is None
@@ -355,6 +366,11 @@ class TestParentNode:
         fork = project.fork_node(auth=auth)
         assert fork.parent_node is None
 
+    def test_fork_has_correct_affiliations(self, user, auth, project_with_affiliations):
+        fork = project_with_affiliations.fork_node(auth=auth)
+        assert project_with_affiliations.affiliated_institutions.count() == 2
+        assert fork.affiliated_institutions.count() == 1
+
     def test_fork_child_has_parent(self, project, auth):
         fork = project.fork_node(auth=auth)
         fork_child = NodeFactory(parent=fork)
@@ -380,6 +396,11 @@ class TestParentNode:
 
     def test_template_has_no_parent(self, template):
         assert template.parent_node is None
+
+    def test_template_has_correct_affiliations(self, user, auth, project_with_affiliations):
+        template = project_with_affiliations.use_as_template(auth=auth)
+        assert project_with_affiliations.affiliated_institutions.count() == 2
+        assert template.affiliated_institutions.count() == 1
 
     def test_teplate_project_child_has_correct_parent(self, template):
         template_child = NodeFactory(parent=template)
