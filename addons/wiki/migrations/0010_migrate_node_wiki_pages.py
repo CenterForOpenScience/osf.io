@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 import time
 import logging
-import progressbar
+import tqdm
 from django.db import connection, migrations
 from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
@@ -26,7 +26,7 @@ def reverse_func(state, schema):
     nwp_content_type_id = ContentType.objects.get_for_model(NodeWikiPage).id
 
     nodes = AbstractNode.objects.exclude(wiki_pages_versions={})
-    progress_bar = progressbar.ProgressBar(maxval=nodes.count() or 100).start()
+    progress_bar = tqdm(total=nodes.count() or 100)
     for i, node in enumerate(nodes, 1):
         progress_bar.update(i)
         for wiki_key, version_list in node.wiki_pages_versions.items():
@@ -41,7 +41,7 @@ def reverse_func(state, schema):
                 # Moved only for last item in wiki_pages_versions array for every page_name, NWP->WP is a many-to-one mapping. NWP->WV is a one-to-one mapping.
                 move_comment_target(Guid.load(wp._id), nwp)
                 update_comments_viewed_timestamp(node, wp._id, nwp)
-    progress_bar.finish()
+    progress_bar.close()
     WikiVersion.objects.all().delete()
     WikiPage.objects.all().delete()
     logger.info('NodeWikiPages restored and WikiVersions and WikiPages removed.')
@@ -186,13 +186,13 @@ def create_wiki_pages_sql(state, schema):
 def create_guids(state, schema):
     then = time.time()
     content_type = ContentType.objects.get_for_model(WikiPage)
-    progress_bar = progressbar.ProgressBar(maxval=WikiPage.objects.count() or 100).start()
+    progress_bar = tqdm(total=WikiPage.objects.count() or 100)
     logger.info('Creating new guids for all WikiPages:')
     for i, wiki_page_id in enumerate(WikiPage.objects.values_list('id', flat=True), 1):
         # looping instead of bulk_create, so _id's are not the same
         progress_bar.update(i)
         Guid.objects.create(object_id=wiki_page_id, content_type_id=content_type.id)
-    progress_bar.finish()
+    progress_bar.close()
     now = time.time()
     logger.info('WikiPage guids created: {:.5} seconds'.format(now - then))
     return

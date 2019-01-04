@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 import logging
-import progressbar
+import tqdm
 
 from django.db import migrations, connection
 
@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
         users_with_social = OSFUser.objects.filter(social__has_any_keys=FIELDS_TO_MIGRATE)
         users_to_update = users_with_social.count()
         logger.info('Updating social fields for {} users'.format(users_to_update))
-        progress_bar = progressbar.ProgressBar(maxval=users_to_update or 100).start()
+        progress_bar = tqdm(total=users_to_update or 100)
 
         users_updated = 0
         for user in users_with_social:
@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
             users_updated += 1
             progress_bar.update(users_updated)
 
-        progress_bar.finish()
+        progress_bar.close()
         logger.info('Updated social field for {} users'.format(users_updated))
 
     dependencies = [
