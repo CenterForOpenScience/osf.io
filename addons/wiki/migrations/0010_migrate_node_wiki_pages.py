@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 import time
 import logging
-import tqdm
+from tqdm import tqdm
 from django.db import connection, migrations
 from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType

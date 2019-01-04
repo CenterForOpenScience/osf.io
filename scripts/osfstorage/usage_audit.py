@@ -15,7 +15,7 @@ import functools
 from collections import defaultdict
 from django.contrib.contenttypes.models import ContentType
 
-import tqdm
+from tqdm import tqdm
 
 
 from framework.celery_tasks import app as celery_app

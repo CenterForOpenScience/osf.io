@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from bulk_update.helper import bulk_update
 from django.contrib.contenttypes.models import ContentType
 from django.db import migrations
-import tqdm
+from tqdm import tqdm
 
 
 def noop(*args, **kwargs):

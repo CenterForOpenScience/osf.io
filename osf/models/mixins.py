@@ -17,7 +17,7 @@ from framework import status
 from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
-from osf.exceptions import InvalidTriggerError, ValidationValueError, UserStateError
+from osf.exceptions import InvalidTriggerError, ValidationValueError, UserStateError, NodeStateError
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
@@ -29,7 +29,6 @@ from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintReque
 from osf.utils.permissions import ADMIN, READ, WRITE, reduce_permissions, expand_permissions, REVIEW_GROUPS
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils.requests import get_request_and_user_id
-from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from website import settings, mails, language
 

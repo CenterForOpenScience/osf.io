@@ -7,7 +7,7 @@ from framework.exceptions import HTTPError
 
 from website import settings
 from website.tokens import handlers
-from website.tokens.exceptions import TokenHandlerNotFound
+from osf.exceptions import TokenHandlerNotFound
 
 class TokenHandler(object):
 

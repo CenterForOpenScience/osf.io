@@ -2,7 +2,7 @@ from django.apps import apps
 from django.core.exceptions import ValidationError
 
 from framework import exceptions as framework_exceptions
-from website import exceptions as web_exceptions
+from osf import exceptions as osf_exceptions
 from osf.utils import permissions
 
 
@@ -36,7 +36,7 @@ def set_license(node, license_detail, auth, node_type='node'):
     try:
         node_license = NodeLicense.objects.get(license_id=license_id)
     except NodeLicense.DoesNotExist:
-        raise web_exceptions.NodeStateError('Trying to update a {} with an invalid license'.format(node_type))
+        raise osf_exceptions.NodeStateError('Trying to update a {} with an invalid license'.format(node_type))
 
     if node_type == 'preprint':
         if node.provider.licenses_acceptable.exists() and not node.provider.licenses_acceptable.filter(id=node_license.id):

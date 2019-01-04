@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 import logging
-import tqdm
+from tqdm import tqdm
 
 from django.db import migrations, connection
 
