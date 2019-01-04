@@ -162,7 +162,7 @@ def get_options_jsonschema(options, required):
             options[item] = option.get('text')
     value = {'enum': options}
 
-    if not required:  # Non-required fields need to accept empty strings as a value.
+    if not required and '' not in value['enum']:  # Non-required fields need to accept empty strings as a value.
         value['enum'].append('')
 
     return value
