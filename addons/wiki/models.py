@@ -23,12 +23,12 @@ from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.models.spam import SpamStatus
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
+from osf.exceptions import NodeStateError
 from addons.wiki import utils as wiki_utils
 from addons.wiki.exceptions import (
     PageCannotRenameError,
     PageConflictError,
 )
-from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.files.exceptions import VersionNotFoundError
 from website import settings

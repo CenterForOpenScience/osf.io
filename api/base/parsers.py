@@ -286,6 +286,14 @@ class SearchParser(JSONAPIParser):
             },
         }
 
+        sort = parser_context['request'].query_params.get('sort')
+        if sort:
+            res['sort'] = [{
+                sort.lstrip('-'): {
+                    'order': 'desc' if sort.startswith('-') else 'asc',
+                },
+            }]
+
         try:
             q = data.pop('q')
         except KeyError:

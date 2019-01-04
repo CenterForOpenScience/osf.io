@@ -282,7 +282,7 @@ class CollectionFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        collected_types = kwargs.pop('collected_types', ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'basefilenode', 'collection', 'preprintservice']))
+        collected_types = kwargs.pop('collected_types', ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'basefilenode', 'collection', 'preprint']))
         obj = cls._build(*args, **kwargs)
         obj.save()
         # M2M, requires initial save
@@ -612,7 +612,12 @@ def sync_set_identifiers(preprint):
 
 class PreprintFactory(DjangoModelFactory):
     class Meta:
-        model = models.PreprintService
+        model = models.Preprint
+
+    title = factory.Faker('catch_phrase')
+    description = factory.Faker('sentence')
+    created = factory.LazyFunction(timezone.now)
+    creator = factory.SubFactory(AuthUserFactory)
 
     doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
     provider = factory.SubFactory(PreprintProviderFactory)
@@ -620,10 +625,12 @@ class PreprintFactory(DjangoModelFactory):
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
         creator = kwargs.pop('creator', None) or UserFactory()
-        project = kwargs.pop('project', None) or ProjectFactory(creator=creator)
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
-        instance = target_class(node=project, provider=provider)
-
+        project = kwargs.pop('project', None) or None
+        title = kwargs.pop('title', None) or 'Untitled'
+        description = kwargs.pop('description', None) or 'None'
+        is_public = kwargs.pop('is_public', True)
+        instance = target_class(provider=provider, title=title, description=description, creator=creator, node=project, is_public=is_public)
         return instance
 
     @classmethod
@@ -640,26 +647,20 @@ class PreprintFactory(DjangoModelFactory):
         license_details = kwargs.pop('license_details', None)
         filename = kwargs.pop('filename', None) or 'preprint_file.txt'
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
-        instance.node.preprint_article_doi = doi
+        instance.article_doi = doi
 
         instance.machine_state = kwargs.pop('machine_state', 'initial')
-
-        user = kwargs.pop('creator', None) or instance.node.creator
-        if not instance.node.is_contributor(user):
-            instance.node.add_contributor(
-                contributor=user,
-                permissions=permissions.CREATOR_PERMISSIONS,
-                log=False,
-                save=True
-            )
+        user = kwargs.pop('creator', None) or instance.creator
+        instance.save()
 
         preprint_file = OsfStorageFile.create(
-            target=instance.node,
+            target_object_id=instance.id,
+            target_content_type=ContentType.objects.get_for_model(instance),
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))
-        preprint_file.save()
 
+        preprint_file.save()
         from addons.osfstorage import settings as osfstorage_settings
 
         preprint_file.create_version(user, {
@@ -671,7 +672,6 @@ class PreprintFactory(DjangoModelFactory):
             'contentType': 'img/png'
         }).save()
         update_task_patcher.stop()
-
         if finish:
             auth = Auth(user)
 
@@ -679,19 +679,13 @@ class PreprintFactory(DjangoModelFactory):
             instance.set_subjects(subjects, auth=auth)
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
-
+            instance.set_published(is_published, auth=auth)
             create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
             mock_create_identifier = create_task_patcher.start()
             if is_published and set_doi:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)
-
-            instance.set_published(is_published, auth=auth)
             create_task_patcher.stop()
 
-        if not instance.is_published:
-            instance.node._has_abandoned_preprint = True
-
-        instance.node.save()
         instance.save()
         return instance
 

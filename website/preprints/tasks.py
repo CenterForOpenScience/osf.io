@@ -8,6 +8,7 @@ import requests
 from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
+
 from framework import sentry
 
 from website import settings, mails
@@ -15,26 +16,30 @@ from website.util.share import GraphNode, format_contributor, format_subject
 
 logger = logging.getLogger(__name__)
 
-
 @celery_app.task(ignore_results=True, max_retries=5, default_retry_delay=60)
 def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None, saved_fields=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
-    from osf.models import PreprintService
-    preprint = PreprintService.load(preprint_id)
+    from osf.models import Preprint
+    preprint = Preprint.load(preprint_id)
     if old_subjects is None:
         old_subjects = []
+    need_update = bool(preprint.SEARCH_UPDATE_FIELDS.intersection(saved_fields or {}))
+
+    if need_update:
+        preprint.update_search()
+
     if should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
         update_or_create_preprint_identifiers(preprint)
+
     if update_share:
         update_preprint_share(preprint, old_subjects, share_type)
 
 def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
     # Only update identifier metadata iff...
     return (
-        # the preprint is valid (has a node)
-        preprint.node and
         # DOI didn't just get created
+        preprint and preprint.date_published and
         not (saved_fields and 'preprint_doi_created' in saved_fields) and
         # subjects aren't being set
         not old_subjects and
@@ -43,7 +48,7 @@ def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
     )
 
 def update_or_create_preprint_identifiers(preprint):
-    status = 'public' if preprint.verified_publishable else 'unavailable'
+    status = 'public' if preprint.verified_publishable and not preprint.is_retracted else 'unavailable'
     try:
         preprint.request_identifier_update(category='doi', status=status)
     except HTTPError as err:
@@ -58,13 +63,10 @@ def update_or_enqueue_on_preprint_updated(preprint_id, update_share=True, share_
     if task:
         old_subjects = old_subjects or []
         task_subjects = task.kwargs['old_subjects'] or []
-        saved_fields = saved_fields or {}
-        task_saved_fields = task.kwargs['saved_fields'] or {}
-        task_saved_fields.update(saved_fields)
         task.kwargs['update_share'] = update_share or task.kwargs['update_share']
         task.kwargs['share_type'] = share_type or task.kwargs['share_type']
         task.kwargs['old_subjects'] = old_subjects + task_subjects
-        task.kwargs['saved_fields'] = task_saved_fields or task.kwargs['saved_fields']
+        task.kwargs['saved_fields'] = list(set(task.kwargs['saved_fields']).union(saved_fields))
     else:
         enqueue_postcommit_task(
             on_preprint_updated,
@@ -96,8 +98,8 @@ def _update_preprint_share(preprint, old_subjects, share_type):
 def _async_update_preprint_share(self, preprint_id, old_subjects, share_type):
     # Any modifications to this function may need to change _update_preprint_share
     # Takes preprint_id to ensure async retries push fresh data
-    PreprintService = apps.get_model('osf.PreprintService')
-    preprint = PreprintService.load(preprint_id)
+    Preprint = apps.get_model('osf.Preprint')
+    preprint = Preprint.load(preprint_id)
 
     data = serialize_share_preprint_data(preprint, share_type, old_subjects)
     resp = send_share_preprint_data(preprint, data)
@@ -137,22 +139,15 @@ def format_preprint(preprint, share_type, old_subjects=None):
     from osf.models import Subject
     old_subjects = [Subject.objects.get(id=s) for s in old_subjects]
     preprint_graph = GraphNode(share_type, **{
-        'title': preprint.node.title,
-        'description': preprint.node.description or '',
+        'title': preprint.title,
+        'description': preprint.description or '',
         'is_deleted': (
-            not preprint.verified_publishable or
-            preprint.node.tags.filter(name='qatest').exists()
+            (not preprint.verified_publishable and not preprint.is_retracted) or
+            preprint.tags.filter(name='qatest').exists()
         ),
-        # Note: Changing any preprint attribute that is pulled from the node, like title, will NOT bump
-        # the preprint's date modified but will bump the node's date_modified.
-        # We have to send the latest date to SHARE to actually get the result to be updated.
-        # If we send a date_updated that is <= the one we previously sent, SHARE will ignore any changes
-        # because it looks like a race condition that arose from preprints being resent to SHARE on
-        # every step of preprint creation.
-        'date_updated': max(preprint.modified, preprint.node.modified).isoformat(),
+        'date_updated': preprint.modified.isoformat(),
         'date_published': preprint.date_published.isoformat() if preprint.date_published else None
     })
-
     to_visit = [
         preprint_graph,
         GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint._id + '/'))
@@ -172,7 +167,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
 
     preprint_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))
-        for tag in preprint.node.tags.values_list('name', flat=True) if tag
+        for tag in preprint.tags.values_list('name', flat=True) if tag
     ]
 
     current_subjects = [
@@ -185,9 +180,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
     ]
     preprint_graph.attrs['subjects'] = current_subjects + deleted_subjects
 
-    to_visit.extend(format_contributor(preprint_graph, user, preprint.node.get_visible(user), i) for i, user in enumerate(preprint.node.contributors))
-    to_visit.extend(GraphNode('AgentWorkRelation', creative_work=preprint_graph, agent=GraphNode('institution', name=institution))
-                    for institution in preprint.node.affiliated_institutions.values_list('name', flat=True))
+    to_visit.extend(format_contributor(preprint_graph, user, preprint.get_visible(user), i) for i, user in enumerate(preprint.contributors))
 
     visited = set()
     to_visit.extend(preprint_graph.get_related())
