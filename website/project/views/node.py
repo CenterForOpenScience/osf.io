@@ -24,9 +24,9 @@ from osf import features
 from website import language
 
 from website.util import rubeus
-from website.exceptions import NodeStateError
-from website.project import new_node, new_private_link
 from website.ember_osf_web.views import use_ember_app
+from osf.exceptions import NodeStateError
+from website.project import new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
     must_be_contributor_or_public,
@@ -40,7 +40,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation
+from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation, Preprint
 from addons.wiki.models import WikiPage
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
@@ -514,18 +514,13 @@ def project_reorder_components(node, **kwargs):
     logger.error('Got invalid node list in reorder components')
     raise HTTPError(http.BAD_REQUEST)
 
-
-##############################################################################
-
-
 @must_be_valid_project
 @must_be_contributor_or_public
 @must_not_be_retracted_registration
-@ember_flag_is_active(features.EMBER_PROJECT_ANALYTICS)
 def project_statistics(auth, node, **kwargs):
-    ret = _view_project(node, auth, primary=True)
-    ret['node']['keenio_read_key'] = node.keenio_read_key
-    return ret
+    if request.path.startswith('/project/'):
+        return redirect('/' + node._id + '/analytics/')
+    return use_ember_app()
 
 
 ###############################################################################
@@ -696,7 +691,6 @@ def _view_project(node, auth, primary=False,
     addons = list(node.get_addons())
     widgets, configs, js, css = _render_addons(addons)
     redirect_url = node.url + '?view_only=None'
-    node_linked_preprint = node.linked_preprint
 
     disapproval_link = ''
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
@@ -738,6 +732,7 @@ def _view_project(node, auth, primary=False,
             'tags': list(node.tags.filter(system=False).values_list('name', flat=True)),
             'children': node.nodes_active.exists(),
             'child_exists': Node.objects.get_children(node, active=True).exists(),
+            'is_supplemental_project': node.has_linked_published_preprints,
             'is_registration': is_registration,
             'is_pending_registration': node.is_pending_registration if is_registration else False,
             'is_retracted': node.is_retracted if is_registration else False,
@@ -774,20 +769,9 @@ def _view_project(node, auth, primary=False,
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
+            'visible_preprints': serialize_preprints(node, user),
             'institutions': get_affiliated_institutions(node) if node else [],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'is_preprint': node.is_preprint,
-            'has_moderated_preprint': node_linked_preprint.provider.reviews_workflow if node_linked_preprint else '',
-            'preprint_state': node_linked_preprint.machine_state if node_linked_preprint else '',
-            'preprint_word': node_linked_preprint.provider.preprint_word if node_linked_preprint else '',
-            'preprint_provider': {
-                'name': node_linked_preprint.provider.name,
-                'workflow': node_linked_preprint.provider.reviews_workflow
-            } if node_linked_preprint else {},
-            'is_preprint_orphan': node.is_preprint_orphan,
-            'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
-            'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
-            'preprint_url': node.preprint_url,
             'access_requests_enabled': node.access_requests_enabled,
             'storage_location': node.osfstorage_region.name,
             'waterbutler_url': node.osfstorage_region.waterbutler_url,
@@ -890,6 +874,21 @@ def serialize_collections(cgms, auth):
         'logo': cgm.collection.provider.get_asset_url('favicon')
     } for cgm in cgms if cgm.collection.provider and (cgm.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', cgm.collection)))]
+
+def serialize_preprints(node, user):
+    return [
+        {
+            'title': preprint.title,
+            'is_moderated': preprint.provider.reviews_workflow,
+            'is_withdrawn': preprint.date_withdrawn is not None,
+            'state': preprint.machine_state,
+            'word': preprint.provider.preprint_word,
+            'provider': {'name': 'OSF Preprints' if preprint.provider.name == 'Open Science Framework' else preprint.provider.name, 'workflow': preprint.provider.reviews_workflow},
+            'url': preprint.url,
+            'absolute_url': preprint.absolute_url
+        } for preprint in Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)
+    ]
+
 
 def serialize_children(child_list, nested, indent=0):
     """
@@ -1011,7 +1010,7 @@ def serialize_child_tree(child_list, user, nested):
                     'is_public': child.is_public,
                     'contributors': contributors,
                     'is_admin': child.has_admin_perm,
-                    'is_preprint': child.is_preprint,
+                    'is_supplemental_project': child.has_linked_published_preprints,
                 },
                 'user_id': user._id,
                 'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
@@ -1068,7 +1067,9 @@ def node_child_tree(user, node):
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
                 'contributors': contributors,
-                'is_admin': is_admin
+                'is_admin': is_admin,
+                'is_supplemental_project': node.has_linked_published_preprints,
+
             },
             'user_id': user._id,
             'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],

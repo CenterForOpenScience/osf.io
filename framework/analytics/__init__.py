@@ -7,14 +7,6 @@ from framework.postcommit_tasks.handlers import run_postcommit
 
 logger = logging.getLogger(__name__)
 
-# TODO Find out why this is here and fix it.
-collection = None
-# if database._get_current_object() is not None:
-#     collection = database['pagecounters']
-# elif database._get_current_object() is None and settings.DEBUG_MODE:
-#     logger.warn('Cannot connect to database. Analytics will be unavailable')
-# else:
-#     raise RuntimeError('Cannot connect to database')
 
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)

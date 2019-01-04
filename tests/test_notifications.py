@@ -1931,7 +1931,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_reviews_submit_notification(self, mock_store):
         time_now = timezone.now()
-        self.context_info_submission['message'] = u'submitted {}.'.format(self.context_info_submission['reviewable'].node.title)
+        self.context_info_submission['message'] = u'submitted {}.'.format(self.context_info_submission['reviewable'].title)
         self.context_info_submission['profile_image_url'] = get_profile_image_url(self.context_info_submission['referrer'])
         self.context_info_submission['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
                                                                                          self.context_info_submission[
@@ -1946,7 +1946,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
                                       'email_digest',
                                       'new_pending_submissions',
                                       self.context_info_submission['referrer'],
-                                      self.context_info_submission['reviewable'].node,
+                                      self.context_info_submission['reviewable'],
                                       time_now,
                                       abstract_provider=self.context_info_submission['reviewable'].provider,
                                       **self.context_info_submission)
@@ -1955,7 +1955,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
                                    'email_transactional',
                                    'new_pending_submissions',
                                    self.context_info_submission['referrer'],
-                                   self.context_info_submission['reviewable'].node,
+                                   self.context_info_submission['reviewable'],
                                    time_now,
                                    abstract_provider=self.context_info_request['reviewable'].provider,
                                    **self.context_info_submission)
@@ -1964,7 +1964,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
     def test_reviews_request_notification(self, mock_store):
         time_now = timezone.now()
         self.context_info_request['message'] = u'has requested withdrawal of {} "{}".'.format(self.context_info_request['reviewable'].provider.preprint_word,
-                                                                                                 self.context_info_request['reviewable'].node.title)
+                                                                                                 self.context_info_request['reviewable'].title)
         self.context_info_request['profile_image_url'] = get_profile_image_url(self.context_info_request['requester'])
         self.context_info_request['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
                                                                                          self.context_info_request[
@@ -1979,7 +1979,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
                                       'email_digest',
                                       'new_pending_submissions',
                                       self.context_info_request['requester'],
-                                      self.context_info_request['reviewable'].node,
+                                      self.context_info_request['reviewable'],
                                       time_now,
                                       abstract_provider=self.context_info_request['reviewable'].provider,
                                       **self.context_info_request)
@@ -1988,7 +1988,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
                                    'email_transactional',
                                    'new_pending_submissions',
                                    self.context_info_request['requester'],
-                                   self.context_info_request['reviewable'].node,
+                                   self.context_info_request['reviewable'],
                                    time_now,
                                    abstract_provider=self.context_info_request['reviewable'].provider,
                                    **self.context_info_request)
