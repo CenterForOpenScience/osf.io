@@ -13,17 +13,17 @@ def reverse_func(state, schema):
     pagecounters = PageCounter.objects.all()
     batch = []
     for pc in pagecounters:
-        pc.guid_id = None
+        pc.resource_id = None
         pc.file_id = None
         pc.version = None
         batch.append(pc)
 
-    bulk_update(batch, update_fields=['guid_id', 'file_id', 'version'], batch_size=10000)
+    bulk_update(batch, update_fields=['resource_id', 'file_id', 'version'], batch_size=10000)
 
 
 def separate_pagecounter_id(state, schema):
     """
-    Splits the data in pagecounter _id field of form action:guid_id:file_id:version into
+    Splits the data in pagecounter _id field of form action:resource_id:file_id:version into
     four new columns: action(char), resource(fk), file(fk), version(int)
     """
     Guid = state.get_model('osf', 'Guid')
@@ -38,12 +38,12 @@ def separate_pagecounter_id(state, schema):
         id_array = pc._id.split(':')
 
         pc.action = id_array[0]
-        pc.guid_id = Guid.objects.get(_id=id_array[1]).id
+        pc.resource_id = Guid.objects.get(_id=id_array[1]).id
         pc.file_id = BaseFileNode.objects.get(_id=id_array[2]).id
         pc.version = id_array[3] if len(id_array) == 4 else None
         batch.append(pc)
         progress_bar.update(i)
-    bulk_update(batch, update_fields=['action', 'guid_id', 'file_id', 'version'], batch_size=10000)
+    bulk_update(batch, update_fields=['action', 'resource_id', 'file_id', 'version'], batch_size=10000)
     progress_bar.finish()
 
 
