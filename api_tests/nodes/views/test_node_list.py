@@ -3529,7 +3529,7 @@ class TestNodeBulkDelete:
             private_payload, url,
             user_one_private_project_url):
         user_one_private_project.add_contributor(
-            user_two, permissions=[permissions.READ, permissions.WRITE], save=True)
+            user_two, permissions=permissions.WRITE, save=True)
         res = app.delete_json_api(
             url, private_payload,
             auth=user_two.auth,

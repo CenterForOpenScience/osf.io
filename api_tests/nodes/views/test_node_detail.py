@@ -1437,7 +1437,7 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_deletes_private_node_logged_in_write_contributor(
             self, app, user_two, project_private, url_private):
         project_private.add_contributor(
-            user_two, permissions=[permissions.WRITE, permissions.READ])
+            user_two, permissions=permissions.WRITE)
         project_private.save()
         res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
         project_private.reload()
@@ -1497,17 +1497,6 @@ class TestNodeDelete(NodeCRUDTestCase):
         with assert_latest_log(NodeLog.PROJECT_DELETED, project_public):
             res = app.delete_json_api(
                 url_public, auth=user.auth, expect_errors=True)
-            project_public.reload()
-            assert res.status_code == 204
-            assert project_public.is_deleted is True
-
-    def test_deletes_public_node_succeeds_with_osf_group_write_perms(
-            self, app, user_two, project_public, url_public):
-        with assert_latest_log(NodeLog.PROJECT_DELETED, project_public):
-            group = OSFGroupFactory(creator=user_two)
-            project_public.add_osf_group(group, 'write')
-            res = app.delete_json_api(
-                url_public, auth=user_two.auth, expect_errors=True)
             project_public.reload()
             assert res.status_code == 204
             assert project_public.is_deleted is True
