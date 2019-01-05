@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='pagecounter',
-            name='guid',
+            name='resource',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='pagecounters', to='osf.Guid'),
         ),
         migrations.AddField(

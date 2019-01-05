@@ -67,7 +67,7 @@ class PageCounter(BaseModel):
     unique = models.PositiveIntegerField(default=0)
 
     action = models.CharField(max_length=128, null=False, blank=False, default='download')
-    guid = models.ForeignKey(Guid, related_name='pagecounters', null=True, blank=True)
+    resource = models.ForeignKey(Guid, related_name='pagecounters', null=True, blank=True)
     file = models.ForeignKey('osf.BaseFileNode', null=True, blank=True, related_name='pagecounters')
     version = models.IntegerField(null=True, blank=True)
 
@@ -106,13 +106,13 @@ class PageCounter(BaseModel):
         """
         split = page.split(':')
         action = split[0]
-        guid = Guid.load(split[1])
+        resource = Guid.load(split[1])
         file = BaseFileNode.load(split[2])
         if len(split) == 3:
             version = None
         else:
             version = split[3]
-        return guid, file, action, version
+        return resource, file, action, version
 
     @classmethod
     def update_counter(cls, page, node_info):
@@ -121,12 +121,12 @@ class PageCounter(BaseModel):
         date_string = date.strftime('%Y/%m/%d')
         visited_by_date = session.data.get('visited_by_date', {'date': date_string, 'pages': []})
         with transaction.atomic():
-            # Temporary backwards compat - when creating new PageCounters, temporarily write to _id, guid, file, action, and version fields
+            # Temporary backwards compat - when creating new PageCounters, temporarily write to _id, resource, file, action, and version fields
             try:
                 model_instance = cls.objects.get(_id=cleaned_page)
             except cls.DoesNotExist:
-                guid, file, action, version = cls.deconstruct_id(cleaned_page)
-                model_instance = cls.objects.create(_id=cleaned_page, guid=guid, file=file, action=action, version=version)
+                resource, file, action, version = cls.deconstruct_id(cleaned_page)
+                model_instance = cls.objects.create(_id=cleaned_page, resource=resource, file=file, action=action, version=version)
 
             # if they visited something today
             if date_string == visited_by_date['date']:

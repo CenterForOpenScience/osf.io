@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL([
-            'CREATE INDEX CONCURRENTLY page_counter_idx ON osf_pagecounter (action, guid_id, file_id, version);',
+            'CREATE INDEX CONCURRENTLY page_counter_idx ON osf_pagecounter (action, resource_id, file_id, version);',
         ], [
             'DROP INDEX IF EXISTS page_counter_idx, RESTRICT;'
         ])
