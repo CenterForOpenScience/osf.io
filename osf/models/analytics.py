@@ -64,8 +64,8 @@ class PageCounter(BaseModel, ObjectIDMixin):
     unique = models.PositiveIntegerField(default=0)
 
     action = models.CharField(max_length=128, null=False, blank=False, default='download')
-    resource = models.ForeignKey(Guid, related_name='pagecounters', null=True, blank=True)
-    file = models.ForeignKey('osf.BaseFileNode', null=True, blank=True, related_name='pagecounters')
+    resource = models.ForeignKey(Guid, related_name='pagecounters', null=False, blank=False)
+    file = models.ForeignKey('osf.BaseFileNode', null=False, blank=False, related_name='pagecounters')
     version = models.IntegerField(null=True, blank=True)
 
     @classmethod
@@ -94,18 +94,18 @@ class PageCounter(BaseModel, ObjectIDMixin):
         )
 
     @classmethod
-    def update_counter(cls, guid, file, version, action, node_info):
+    def update_counter(cls, resource, file, version, action, node_info):
         if version:
-            page = '{0}:{1}:{2}:{3}'.format(action, guid._id, file._id, version)
+            page = '{0}:{1}:{2}:{3}'.format(action, resource._id, file._id, version)
         else:
-            page = '{0}:{1}:{2}'.format(action, guid._id, file._id)
+            page = '{0}:{1}:{2}'.format(action, resource._id, file._id)
 
         cleaned_page = cls.clean_page(page)
         date = timezone.now()
         date_string = date.strftime('%Y/%m/%d')
         visited_by_date = session.data.get('visited_by_date', {'date': date_string, 'pages': []})
         with transaction.atomic():
-            model_instance, created = cls.objects.select_for_update().get_or_create(guid=guid, file=file, version=version, action=action)
+            model_instance, created = cls.objects.select_for_update().get_or_create(resource=resource, file=file, version=version, action=action)
 
             # if they visited something today
             if date_string == visited_by_date['date']:
@@ -162,9 +162,9 @@ class PageCounter(BaseModel, ObjectIDMixin):
             model_instance.save()
 
     @classmethod
-    def get_basic_counters(cls, guid, file, version, action):
+    def get_basic_counters(cls, resource, file, version, action):
         try:
-            counter = cls.objects.get(guid=guid, file=file, version=version, action=action)
+            counter = cls.objects.get(resource=resource, file=file, version=version, action=action)
             return (counter.unique, counter.total)
         except cls.DoesNotExist:
             return (None, None)

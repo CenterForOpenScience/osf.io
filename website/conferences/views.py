@@ -157,9 +157,7 @@ def conference_data(meeting):
 def conference_submissions_sql(conf):
     """
     Serializes all meeting submissions to a conference (returns array of dictionaries)
-
     :param obj conf: Conference object.
-
     """
     submission1_name = conf.field_names['submission1']
     submission2_name = conf.field_names['submission2']
@@ -226,10 +224,9 @@ def conference_submissions_sql(conf):
               LEFT JOIN LATERAL (
                 SELECT P.total AS DOWNLOAD_COUNT
                 FROM osf_pagecounter AS P
-                WHERE P.guid_id = GUID.id
+                WHERE P.action = 'download'
+                AND P.resource_id = GUID.id
                 AND P.file_id = FILE.id
-                AND P.action = 'download'
-                AND P.version ISNULL
                 LIMIT 1
               ) DOWNLOAD_COUNT ON TRUE
             -- Get all the nodes for a specific meeting
@@ -243,7 +240,6 @@ def conference_submissions_sql(conf):
                    AND osf_abstractnode.is_public = TRUE
                    AND AUTHOR_GUID IS NOT NULL)
             ORDER BY osf_abstractnode.created DESC;
-
             """, [
                 submission1_name,
                 submission1_name,
@@ -285,7 +281,6 @@ def serialize_conference(conf):
 @ember_flag_is_active(features.EMBER_MEETING_DETAIL)
 def conference_results(meeting):
     """Return the data for the grid view for a conference.
-
     :param str meeting: Endpoint name for a conference.
     """
     try:
@@ -305,7 +300,6 @@ def conference_results(meeting):
 
 def conference_submissions(**kwargs):
     """Return data for all OSF4M submissions.
-
     The total number of submissions for each meeting is calculated and cached
     in the Conference.num_submissions field.
     """

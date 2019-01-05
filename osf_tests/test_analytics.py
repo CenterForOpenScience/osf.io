@@ -69,20 +69,20 @@ def file_node3(project):
 
 @pytest.fixture()
 def page_counter(project, file_node):
-    guid = project.guids.first()
-    page_counter, created = PageCounter.objects.get_or_create(guid=guid, file=file_node, version=None, action='download', date={u'2018/02/04': {u'total': 41, u'unique': 33}})
+    resource = project.guids.first()
+    page_counter, created = PageCounter.objects.get_or_create(resource=resource, file=file_node, version=None, action='download', date={u'2018/02/04': {u'total': 41, u'unique': 33}})
     return page_counter
 
 @pytest.fixture()
 def page_counter2(project, file_node2):
-    guid = project.guids.first()
-    page_counter, created = PageCounter.objects.get_or_create(guid=guid, file=file_node2, version=None, action='download', date={u'2018/02/04': {u'total': 4, u'unique': 26}})
+    resource = project.guids.first()
+    page_counter, created = PageCounter.objects.get_or_create(resource=resource, file=file_node2, version=None, action='download', date={u'2018/02/04': {u'total': 4, u'unique': 26}})
     return page_counter
 
 @pytest.fixture()
 def page_counter_for_individual_version(project, file_node3):
-    guid = project.guids.first()
-    page_counter, created = PageCounter.objects.get_or_create(guid=guid, file=file_node3, version=0, action='download', date={u'2018/02/04': {u'total': 1, u'unique': 1}})
+    resource = project.guids.first()
+    page_counter, created = PageCounter.objects.get_or_create(resource=resource, file=file_node3, version=0, action='download', date={u'2018/02/04': {u'total': 1, u'unique': 1}})
     return page_counter
 
 
@@ -92,14 +92,14 @@ class TestPageCounter:
     @mock.patch('osf.models.analytics.session')
     def test_download_update_counter(self, mock_session, project, file_node):
         mock_session.data = {}
-        guid = project.guids.first()
-        PageCounter.update_counter(guid, file_node, version=None, action='download', node_info={})
+        resource = project.guids.first()
+        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={})
 
-        page_counter = PageCounter.objects.get(guid=guid, file=file_node, version=None, action='download')
+        page_counter = PageCounter.objects.get(resource=resource, file=file_node, version=None, action='download')
         assert page_counter.total == 1
         assert page_counter.unique == 1
 
-        PageCounter.update_counter(guid, file_node, version=None, action='download', node_info={})
+        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={})
 
         page_counter.refresh_from_db()
         assert page_counter.total == 2
@@ -108,15 +108,15 @@ class TestPageCounter:
     @mock.patch('osf.models.analytics.session')
     def test_download_update_counter_contributor(self, mock_session, user, project, file_node):
         mock_session.data = {'auth_user_id': user._id}
-        guid = project.guids.first()
+        resource = project.guids.first()
 
-        PageCounter.update_counter(guid, file_node, version=None, action='download', node_info={'contributors': project.contributors})
+        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={'contributors': project.contributors})
 
-        page_counter = PageCounter.objects.get(guid=guid, file=file_node, version=None, action='download')
+        page_counter = PageCounter.objects.get(resource=resource, file=file_node, version=None, action='download')
         assert page_counter.total == 0
         assert page_counter.unique == 0
 
-        PageCounter.update_counter(guid, file_node, version=None, action='download', node_info={'contributors': project.contributors})
+        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={'contributors': project.contributors})
 
         page_counter.refresh_from_db()
         assert page_counter.total == 0

@@ -31,10 +31,10 @@ def update_analytics(node, file, version_idx, action='download'):
     node_info = {
         'contributors': contributors
     }
-    guid = node.guids.first()
+    resource = node.guids.first()
 
-    update_counter(guid, file, version=None, action=action, node_info=node_info)
-    update_counter(guid, file, version_idx, action, node_info=node_info)
+    update_counter(resource, file, version=None, action=action, node_info=node_info)
+    update_counter(resource, file, version_idx, action, node_info=node_info)
 
 
 def serialize_revision(node, record, version, index, anon=False):
