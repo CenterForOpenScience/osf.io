@@ -585,12 +585,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   OR (SELECT EXISTS(
                       SELECT P.codename
                       FROM auth_permission AS P
-                      INNER JOIN django_content_type AS CT ON (P.content_type_id = CT.id)
                       INNER JOIN osf_nodegroupobjectpermission AS G ON (P.id = G.permission_id)
                       INNER JOIN osf_osfuser_groups AS UG ON (G.group_id = UG.group_id)
-                      WHERE (P.content_type_id = CT.id
-                             AND P.codename = 'read_node'
-                             AND G.permission_id = P.id
+                      WHERE (P.codename = 'read_node'
                              AND G.content_object_id = osf_abstractnode.id
                              AND UG.osfuser_id = %s)
                       )
@@ -599,12 +596,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   OR (SELECT EXISTS(
                       SELECT P.codename
                       FROM auth_permission AS P
-                      INNER JOIN django_content_type AS CT ON (P.content_type_id = CT.id)
                       INNER JOIN osf_nodegroupobjectpermission AS G ON (P.id = G.permission_id)
                       INNER JOIN osf_osfuser_groups AS UG ON (G.group_id = UG.group_id)
-                      WHERE (P.content_type_id = CT.id
-                             AND P.codename = 'admin_node'
-                             AND G.permission_id = P.id
+                      WHERE (P.codename = 'admin_node'
                              AND G.content_object_id = parent_id
                              AND UG.osfuser_id = %s)
                       )

@@ -53,7 +53,7 @@ class IsPublic(permissions.BasePermission):
 
 class IsAdminContributor(permissions.BasePermission):
     """
-    Use on API views where the logged-in user needs to be an
+    Use on API views where the requesting user needs to be an
     admin contributor to make changes.  Admin group membership
     is not sufficient.
     """
