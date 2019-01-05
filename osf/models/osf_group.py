@@ -13,7 +13,7 @@ from framework.auth.core import get_user, Auth
 from framework.sentry import log_exception
 from osf.models import base
 from osf.models.mixins import GuardianMixin, Loggable
-from osf.models import AbstractNode, OSFUser, NodeLog
+from osf.models import Node, OSFUser, NodeLog
 from osf.models.osf_grouplog import OSFGroupLog
 from osf.utils.permissions import ADMIN, MANAGER, MEMBER, MANAGE, reduce_permissions
 from osf.utils import sanitize
@@ -95,7 +95,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         """
         Returns nodes that the OSF group has permission to
         """
-        return get_objects_for_group(self.member_group, 'read_node', AbstractNode)
+        return get_objects_for_group(self.member_group, 'read_node', Node)
 
     @property
     def absolute_api_v2_url(self):
@@ -317,7 +317,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
     def add_group_to_node(self, node, permission='write', auth=None):
         """Gives the OSF Group permissions to the node.  Called from node model.
 
-        :param obj AbstractNode
+        :param obj Node
         :param str Highest permission to grant, 'read', 'write', or 'admin'
         :param auth: Auth object
         """
@@ -354,7 +354,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
     def update_group_permissions_to_node(self, node, permission='write', auth=None):
         """Updates the OSF Group permissions to the node.  Called from node model.
 
-        :param obj AbstractNode
+        :param obj Node
         :param str Highest permission to grant, 'read', 'write', or 'admin'
         :param auth: Auth object
         """
@@ -382,7 +382,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
     def remove_group_from_node(self, node, auth):
         """Removes the OSFGroup from the node. Called from node model.
 
-        :param obj AbstractNode
+        :param obj Node
         """
         if not self.get_permission_to_node(node):
             return False
