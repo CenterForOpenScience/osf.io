@@ -83,10 +83,13 @@ class UserNodesFilterMixin(NodesFilterMixin):
             if operation['value'] not in API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
             perm = operation['value']
+            # Filtering UserNodes on the requesting user's permissions to those nodes.
             user = self.request.user
 
             if user.is_anonymous:
-                query = Q() if StrictVersion(self.request.version) < StrictVersion('2.11') else Q(id__in=[])
+                # Anonymous users have no perms to the current node in current versions, and in
+                # older versions, will have read if node is public
+                query = Q() if StrictVersion(self.request.version) < StrictVersion('2.11') and perm == READ else Q(id__in=[])
             elif perm == READ:
                 query = Q(id__in=self.build_node_list(user, 'read_node'))
             elif perm == WRITE:
