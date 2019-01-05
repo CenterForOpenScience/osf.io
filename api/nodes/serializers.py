@@ -1768,8 +1768,8 @@ class NodeGroupsSerializer(JSONAPISerializer):
 
 class NodeGroupsCreateSerializer(NodeGroupsSerializer):
     """
-    Overrides NodeGroupSerializer so osf_groups relationship is properly parsed
-    (JSONAPIParser will flatten osf_groups relationship into {'_id': 'group_id'},
+    Overrides NodeGroupSerializer so groups relationship is properly parsed
+    (JSONAPIParser will flatten groups relationship into {'_id': 'group_id'},
     so _id field needs to be writeable so it's not dropped from validated_data)
 
     """
