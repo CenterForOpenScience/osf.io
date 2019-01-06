@@ -79,12 +79,12 @@ class RecentlyAddedContributor(models.Model):
 
 def get_contributor_permission(contributor, object_id, model_type):
     """
-    Returns a contributor's permissions - perms through contributorship only. No group membership.
-    Checking group membership so you will get the intended permission of an unregistered contrib
+    Returns a contributor's permissions - perms through contributorship only. No permissions through osf group membership.
     """
     read = '{}_{}_read'.format(model_type, object_id)
     write = '{}_{}_write'.format(model_type, object_id)
     admin = '{}_{}_admin'.format(model_type, object_id)
+    # Checking for django group membership allows you to also get the intended permissions of unregistered contributors
     user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
     if admin in user_groups:
         return 'admin'

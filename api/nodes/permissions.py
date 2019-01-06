@@ -53,7 +53,7 @@ class IsPublic(permissions.BasePermission):
 
 class IsAdminContributor(permissions.BasePermission):
     """
-    Use on API views where the logged-in user needs to be an
+    Use on API views where the requesting user needs to be an
     admin contributor to make changes.  Admin group membership
     is not sufficient.
     """
@@ -78,6 +78,20 @@ class IsAdmin(permissions.BasePermission):
             obj = view.get_node()
         auth = get_user_auth(request)
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
+
+
+class NodeDeletePermissions(permissions.BasePermission):
+    acceptable_models = (AbstractNode,)
+
+    def has_object_permission(self, request, view, obj):
+        """
+        Admin perms are required to delete a node
+        """
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method == 'DELETE':
+            return obj.has_permission(auth.user, osf_permissions.ADMIN)
+        return True
 
 
 class IsContributorOrGroupMember(permissions.BasePermission):

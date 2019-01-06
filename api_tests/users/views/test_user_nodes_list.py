@@ -400,3 +400,11 @@ class TestNodeListPermissionFiltering:
         res = app.get('{}read&version=2.2'.format(url))
         assert len(res.json['data']) == 1
         assert set([read_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter nonauthenticated_user v2.2
+        res = app.get('{}write&version=2.2'.format(url))
+        assert len(res.json['data']) == 0
+
+        # test filter nonauthenticated_user v2.2
+        res = app.get('{}admin&version=2.2'.format(url))
+        assert len(res.json['data']) == 0

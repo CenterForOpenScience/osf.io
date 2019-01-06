@@ -9,9 +9,7 @@ from admin.osf_groups.serializers import serialize_group
 
 
 class OSFGroupsView(PermissionRequiredMixin, GuidView):
-    """ Allow authorized admin user to view a osf group
-
-    View of OSF database. No admin models.
+    """ Allow authorized admin user to view an osf group
     """
     template_name = 'osf_groups/osf_groups.html'
     context_object_name = 'group'
@@ -54,8 +52,6 @@ class OSFGroupsFormView(PermissionRequiredMixin, FormView):
 
 class OSFGroupsListView(PermissionRequiredMixin, ListView):
     """ Allow authorized admin user to view list of osf groups
-
-    View of OSF database. No admin models.
     """
     template_name = 'osf_groups/osf_groups_list.html'
     paginate_by = 10
