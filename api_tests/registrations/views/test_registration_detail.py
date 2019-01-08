@@ -472,6 +472,8 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert res.status_code == 401
 
         # test withdrawal from a read write contrib
+        public_registration.add_contributor(read_write_contributor, permissions=[permissions.WRITE])
+        public_registration.save()
         res = app.put_json_api(public_url, public_payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -494,6 +496,11 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         )
         url = '/{}registrations/{}/'.format(API_BASE, registration_comp._id)
         res = app.put_json_api(url, payload_component, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # setting withdraw to false fails
+        public_payload['data']['attributes'] = {'withdrawn': False}
+        res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
         # test withdrawal with just withdrawal_justification key
