@@ -108,7 +108,7 @@
                 </div>
 
 		<!----------------------------------------------------------->
-		<div style="visibility:hidden">
+		<div style="visibility:hidden; display:none;">
                 <div id="externalIdentity" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Connected Identities</h3></div>
                     <div class="panel-body">
@@ -144,8 +144,9 @@
                         % endfor
                         </tbody>
                     </div>
+                </div>
                 </div>  <!-- hidden -->
-		<div style="visibility:hidden">
+		<div style="visibility:hidden; display:none;">
                 <div id="changePassword" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Change Password</h3></div>
                     <div class="panel-body">
@@ -235,7 +236,7 @@
                   </div>
                 </div>
                 </div>  <!-- hidden -->
-		<div style="visibility:hidden">
+		<div style="visibility:hidden; display:none;">
                 <div id="exportAccount" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Export Account Data</h3></div>
                     <div class="panel-body">
@@ -244,7 +245,7 @@
                     </div>
                 </div>
                 </div>  <!-- hidden -->
-		<div style="visibility:hidden">
+		<div style="visibility:hidden; display:none;">
                 <div id="deactivateAccount" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Deactivate Account</h3></div>
                     <div class="panel-body">

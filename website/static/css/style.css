@@ -36,6 +36,12 @@ body {
     flex: 3 0 auto;
 }
 
+@media (max-width: 767px) {
+    .watermarked .container {
+        width: 100%;
+    }
+}
+
 a {
     cursor: pointer;
 }
