@@ -343,24 +343,26 @@ class RegistrationSerializer(NodeSerializer):
                     raise exceptions.PermissionDenied()
             else:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
-        if not user_is_admin and (validated_data.get('retraction') or validated_data.get('is_retracted')):
-            raise exceptions.PermissionDenied()
-        if validated_data.get('retraction') and not validated_data.get('is_retracted'):
-            raise exceptions.ValidationError(
-                'You cannot provide a withdrawal_justification without a concurrent withdrawal request.',
-            )
-        is_retracted = validated_data.get('is_retracted', None)
-        if is_truthy(is_retracted):
-            if registration.is_pending_retraction:
-                raise exceptions.ValidationError('This registration is already pending withdrawal')
-            withdrawal_justification = validated_data['retraction']['justification'] if validated_data.get('retraction') else None
-            try:
-                retraction = registration.retract_registration(user, withdrawal_justification, save=True)
-            except NodeStateError as err:
-                raise exceptions.ValidationError(str(err))
-            retraction.ask(registration.get_active_contributors_recursive(unique_users=True))
-        elif is_retracted is not None:
-            raise exceptions.ValidationError('You cannot set withdrawn to False.')
+        if 'retraction' in validated_data or 'is_retracted' in validated_data:
+            if user_is_admin:
+                is_retracted = validated_data.get('is_retracted', None)
+                if validated_data.get('retraction') and not is_retracted:
+                    raise exceptions.ValidationError(
+                        'You cannot provide a withdrawal_justification without a concurrent withdrawal request.',
+                    )
+                if is_truthy(is_retracted):
+                    if registration.is_pending_retraction:
+                        raise exceptions.ValidationError('This registration is already pending withdrawal')
+                    withdrawal_justification = validated_data['retraction']['justification'] if validated_data.get('retraction') else None
+                    try:
+                        retraction = registration.retract_registration(user, withdrawal_justification, save=True)
+                    except NodeStateError as err:
+                        raise exceptions.ValidationError(str(err))
+                    retraction.ask(registration.get_active_contributors_recursive(unique_users=True))
+                elif is_retracted is not None:
+                    raise exceptions.ValidationError('You cannot set withdrawn to False.')
+            else:
+                raise exceptions.PermissionDenied()
         return registration
 
     class Meta:
