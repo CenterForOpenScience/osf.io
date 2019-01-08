@@ -1,4 +1,5 @@
 from django.db import connection
+from distutils.version import StrictVersion
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -30,19 +31,29 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.osfstorage.models import Region
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, Institution,
     RegistrationSchema, AbstractNode, PrivateLink,
+    RegistrationProvider,
 )
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
-from osf.models.preprint_service import PreprintService
+from osf.models.preprint import Preprint
 from website.project import new_private_link
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+
+
+class RegistrationProviderRelationshipField(RelationshipField):
+    def get_object(self, _id):
+        return RegistrationProvider.load(_id)
+
+    def to_internal_value(self, data):
+        provider = self.get_object(data)
+        return {'provider': provider}
 
 
 def get_or_add_license_to_serializer_context(serializer, node):
@@ -187,7 +198,7 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
         type_ = 'styled-citations'
 
 def get_license_details(node, validated_data):
-    license = node.license if isinstance(node, PreprintService) else node.node_license
+    license = node.license if isinstance(node, Preprint) else node.node_license
 
     license_id = license.node_license.license_id if license else None
     license_year = license.year if license else None
@@ -262,7 +273,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
-    preprint = ser.BooleanField(read_only=True, source='is_preprint')
+    preprint = ser.SerializerMethodField()
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = ser.ListField(source='tag_names', child=ser.CharField(), required=False)
@@ -281,8 +292,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
-        'for the current user on this node.',
+        'for the current user on this node. As of version 2.11, this field will only return the permissions '
+        'explicitly assigned to the current user, and will not automatically return read for all public nodes',
     )
+    current_user_is_contributor = ser.SerializerMethodField(
+        help_text='Whether the current user is a contributor on this node.',
+    )
+    wiki_enabled = ser.SerializerMethodField(help_text='Whether the wiki addon is enabled')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(
@@ -464,20 +480,24 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     def get_current_user_permissions(self, obj):
+        request_version = self.context['request'].version
+        default_perm = ['read'] if StrictVersion(request_version) < StrictVersion('2.11') else []
         if hasattr(obj, 'contrib_admin'):
             if obj.contrib_admin:
                 return ['admin', 'write', 'read']
             elif obj.contrib_write:
                 return ['write', 'read']
-            else:
+            elif obj.contrib_read:
                 return ['read']
+            else:
+                return default_perm
         else:
             user = self.context['request'].user
             if user.is_anonymous:
-                return ['read']
-            permissions = obj.get_permissions(user=user)
-            if not permissions:
-                permissions = ['read']
+                return default_perm
+            permissions = obj.get_permissions(user=user) or default_perm
+            if not permissions and user in obj.parent_admin_contributors:
+                permissions += ['read']
             return permissions
 
     def get_current_user_can_comment(self, obj):
@@ -493,6 +513,20 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             return obj.contrib_read or False
         else:
             return obj.can_comment(auth)
+
+    def get_preprint(self, obj):
+        # Whether the node has supplemental material for a preprint the user can view
+        user = self.context['request'].user if not self.context['request'].user.is_anonymous else None
+        return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
+
+    def get_current_user_is_contributor(self, obj):
+        if hasattr(obj, 'user_is_contrib'):
+            return obj.user_is_contrib
+
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return obj.is_contributor(user)
 
     class Meta:
         type_ = 'nodes'
@@ -558,20 +592,14 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return obj.linked_nodes.count()
 
     def get_node_links_count(self, obj):
-        count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').exclude(type='osf.registration'):
-            if pointer.can_view(auth):
-                count += 1
-        return count
+        linked_nodes = obj.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').exclude(type='osf.registration')
+        return linked_nodes.can_view(auth.user, auth.private_link).count()
 
     def get_registration_links_count(self, obj):
-        count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.registration').exclude(type='osf.collection'):
-            if pointer.can_view(auth):
-                count += 1
-        return count
+        linked_registrations = obj.linked_nodes.filter(is_deleted=False, type='osf.registration').exclude(type='osf.collection')
+        return linked_registrations.can_view(auth.user, auth.private_link).count()
 
     def get_linked_by_nodes_count(self, obj):
         return obj._parents.filter(is_node_link=True, parent__is_deleted=False, parent__type='osf.node').count()
@@ -599,6 +627,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             # i.e. after creating a node
             region_id = obj.osfstorage_region._id
         return region_id
+
+    def get_wiki_enabled(self, obj):
+        return obj.has_wiki_addon if hasattr(obj, 'has_wiki_addon') else obj.has_addon('wiki')
 
     def create(self, validated_data):
         request = self.context['request']
@@ -699,11 +730,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 try:
                     node.set_subjects(subjects, auth)
                 except PermissionsError as e:
-                    raise exceptions.PermissionDenied(detail=e.message)
+                    raise exceptions.PermissionDenied(detail=str(e))
                 except ValueError as e:
-                    raise exceptions.ValidationError(detail=e.message)
+                    raise exceptions.ValidationError(detail=str(e))
                 except NodeStateError as e:
-                    raise exceptions.ValidationError(detail=e.message)
+                    raise exceptions.ValidationError(detail=str(e))
 
             try:
                 node.update(validated_data, auth=auth)
@@ -714,7 +745,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             except NodeUpdateError as e:
                 raise exceptions.ValidationError(detail=e.reason)
             except NodeStateError as e:
-                raise InvalidModelValueError(detail=e.message)
+                raise InvalidModelValueError(detail=str(e))
 
         return node
 
@@ -915,12 +946,6 @@ class NodeDetailSerializer(NodeSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
-    current_user_is_contributor = ser.SerializerMethodField(help_text='Whether the current user is a contributor on this node.')
-
-    def get_current_user_is_contributor(self, obj):
-        user = self.context['request'].user
-        user = None if user.is_anonymous else user
-        return obj.is_contributor(user)
 
 
 class NodeForksSerializer(NodeSerializer):
@@ -1025,7 +1050,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def get_unregistered_contributor(self, obj):
-        unclaimed_records = obj.user.unclaimed_records.get(obj.node._id, None)
+        # SerializerMethodField works for both Node and Preprint contributors
+        if hasattr(obj, 'preprint'):
+            unclaimed_records = obj.user.unclaimed_records.get(obj.preprint._id, None)
+        else:
+            unclaimed_records = obj.user.unclaimed_records.get(obj.node._id, None)
         if unclaimed_records:
             return unclaimed_records.get('name', None)
 
@@ -1047,13 +1076,16 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         required=False,
     )
 
-    email_preferences = ['default', 'preprint', 'false']
+    email_preferences = ['default', 'false']
+
+    def get_proposed_permissions(self, validated_data):
+        return osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
-        if user_id and (full_name or email):
-            raise Conflict(detail='Full name and/or email should not be included with a user ID.')
         if not user_id and not full_name:
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+        if user_id and email:
+            raise exceptions.ValidationError(detail='Do not provide an email when providing this user_id.')
         if index > len(node.contributors):
             raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
 
@@ -1063,12 +1095,12 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         index = None
         if '_order' in validated_data:
             index = validated_data.pop('_order')
-        node = self.context['view'].get_node()
+        node = self.context['resource']
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
         bibliographic = validated_data.get('bibliographic')
-        send_email = self.context['request'].GET.get('send_email') or 'default'
-        permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        send_email = self.context['request'].GET.get('send_email') or self.context['default_email']
+        permissions = self.get_proposed_permissions(validated_data)
 
         self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index)
 
@@ -1076,10 +1108,13 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail='{} is not a valid email preference.'.format(send_email))
 
         try:
-            contributor_obj = node.add_contributor_registered_or_not(
-                auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
-                permissions=permissions, bibliographic=bibliographic, index=index, save=True,
-            )
+            contributor_dict = {
+                'auth': auth, 'user_id': id, 'email': email, 'full_name': full_name, 'send_email': send_email,
+                'bibliographic': bibliographic, 'index': index, 'save': True,
+            }
+
+            contributor_dict['permissions'] = permissions
+            contributor_obj = node.add_contributor_registered_or_not(**contributor_dict)
         except ValidationError as e:
             raise exceptions.ValidationError(detail=e.messages[0])
         except ValueError as e:
@@ -1100,7 +1135,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             index = validated_data.pop('_order')
 
         auth = Auth(self.context['request'].user)
-        node = self.context['view'].get_node()
+        node = self.context['resource']
 
         if 'bibliographic' in validated_data:
             bibliographic = validated_data.get('bibliographic')
@@ -1111,10 +1146,10 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             if index is not None:
                 node.move_contributor(instance.user, auth, index, save=True)
             node.update_contributor(instance.user, permission, bibliographic, auth, save=True)
-        except NodeStateError as e:
-            raise exceptions.ValidationError(detail=e.message)
+        except node.state_error as e:
+            raise exceptions.ValidationError(detail=str(e))
         except ValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
+            raise exceptions.ValidationError(detail=str(e))
         instance.refresh_from_db()
         return instance
 
@@ -1230,6 +1265,7 @@ class InstitutionRelated(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'institutions'
 
+
 class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=InstitutionRelated())
     links = LinksField({
@@ -1304,6 +1340,13 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         read_only=False,
     )
 
+    provider = RegistrationProviderRelationshipField(
+        related_view='providers:registration-providers:registration-provider-detail',
+        related_view_kwargs={'provider_id': '<provider._id>'},
+        read_only=False,
+        required=False,
+    )
+
     links = LinksField({
         'html': 'get_absolute_url',
     })
@@ -1317,7 +1360,12 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
         schema = validated_data.pop('registration_schema')
 
-        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
+        provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
+        # TODO: this
+        # if not provider.schemas_acceptable.filter(id=schema.id).exists():
+        #     raise exceptions.ValidationError('Invalid schema for provider.')
+
+        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
         reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
 
         if metadata:
@@ -1347,6 +1395,12 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
         related_view_kwargs={'schema_id': '<registration_schema._id>'},
+    )
+
+    provider = RegistrationProviderRelationshipField(
+        related_view='providers:registration-providers:registration-provider-detail',
+        related_view_kwargs={'provider_id': '<provider._id>'},
+        read_only=True,
     )
 
     def update(self, draft, validated_data):

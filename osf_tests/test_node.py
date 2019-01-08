@@ -11,7 +11,7 @@ from framework.exceptions import PermissionsError
 from framework.sessions import set_session
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from osf.utils import permissions
 from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
@@ -42,6 +42,7 @@ from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
+from osf.utils.workflows import DefaultStates
 from framework.auth.core import Auth
 
 from osf_tests.factories import (
@@ -52,9 +53,9 @@ from osf_tests.factories import (
     NodeLogFactory,
     UserFactory,
     UnregUserFactory,
+    PreprintFactory,
     RegistrationFactory,
     DraftRegistrationFactory,
-    PreprintFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     NodeRelationFactory,
@@ -90,6 +91,10 @@ def auth(user):
 @pytest.fixture()
 def subject():
     return SubjectFactory()
+
+@pytest.fixture()
+def preprint(user):
+    return PreprintFactory(creator=user)
 
 
 class TestParentNode:
@@ -550,11 +555,11 @@ class TestNodeMODMCompat:
             node.save()
         assert excinfo.value.message_dict == {'title': ['This field cannot be blank.']}
 
-        too_long = 'a' * 201
+        too_long = 'a' * 513
         node = NodeFactory.build(title=too_long)
         with pytest.raises(ValidationError) as excinfo:
             node.save()
-        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
+        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 512 characters.']}
 
     def test_querying_on_guid_id(self):
         node = NodeFactory()
@@ -1761,7 +1766,7 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=1)
+        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
         data = {'some': 'data'}
         reg = root.register_node(
@@ -1999,7 +2004,7 @@ class TestNodeSpam:
                 project.set_privacy('private')
                 assert project.check_spam(user, None, None) is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail, project, user):
@@ -2027,7 +2032,7 @@ class TestNodeSpam:
                 project3.reload()
                 assert project3.is_public is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail, project, user):
@@ -3063,24 +3068,6 @@ def test_querying_on_contributors(node, user, auth):
     assert deleted not in result2
 
 
-@pytest.mark.enable_implicit_clean
-class TestDOIValidation:
-
-    def test_validate_bad_doi(self):
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='nope').save()
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='https://doi.org/10.123.456').save()  # should save the bare DOI, not a URL
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
-
-    def test_validate_good_doi(self, node):
-        doi = '10.11038/nwooo1170'
-        node.preprint_article_doi = doi
-        node.save()
-        assert node.preprint_article_doi == doi
-
-
 class TestLogMethods:
 
     @pytest.fixture()
@@ -3330,7 +3317,7 @@ class TestNodeUpdate:
 
     def test_set_title_fails_if_too_long(self, user, auth):
         proj = ProjectFactory(title='That Was Then', creator=user)
-        long_title = ''.join('a' for _ in range(201))
+        long_title = ''.join('a' for _ in range(513))
         with pytest.raises(ValidationValueError):
             proj.set_title(long_title, auth=auth)
 
@@ -3476,8 +3463,7 @@ class TestOnNodeUpdate:
         assert task.kwargs['first_save'] is False
         assert 'title' in task.kwargs['saved_fields']
 
-    @mock.patch('osf.models.identifiers.IdentifierMixin.request_identifier_update')
-    def test_queueing_on_node_updated(self, mock_request_update, node, user):
+    def test_queueing_on_node_updated(self, node, user):
         node.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id))
         node.title = 'Something New'
         node.save()
@@ -3505,7 +3491,6 @@ class TestOnNodeUpdate:
         task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
         assert 'contributors' in task.kwargs['saved_fields']
         assert 'node_license' in task.kwargs['saved_fields']
-        mock_request_update.assert_called_once()
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
@@ -3578,7 +3563,7 @@ class TestOnNodeUpdate:
             assert registration.is_registration
             kwargs = requests.post.call_args[1]
             graph = kwargs['json']['data']['attributes']['data']['@graph']
-            payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+            payload = next((item for item in graph if 'is_deleted' in item.keys()))
             assert payload['is_deleted'] == case['is_deleted']
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3604,14 +3589,14 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         node.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3623,14 +3608,14 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3642,7 +3627,7 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         node.title = 'Not a qa title'
@@ -3651,7 +3636,7 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3664,7 +3649,7 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         registration.title = 'Not a qa title'
@@ -3673,7 +3658,7 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', None)
@@ -3756,6 +3741,16 @@ class TestRemoveNode:
 
         # target node shouldn't be deleted
         assert target.is_deleted is False
+
+    def test_remove_supplemental_project_for_preprints(self, auth, user, project, preprint):
+        preprint.node = project
+        preprint.save()
+
+        project.remove_node(auth=auth)
+        preprint.reload()
+
+        assert project.is_deleted
+        assert preprint.node is None
 
 
 class TestTemplateNode:
@@ -3967,10 +3962,7 @@ class TestTemplateNode:
         admin.save()
 
         # filter down self.nodes to only include projects the user can see
-        visible_nodes = filter(
-            lambda x: x.can_view(other_user_auth),
-            project.nodes
-        )
+        visible_nodes = [x for x in project.nodes if x.can_view(other_user_auth)]
 
         # create templated node
         new = project.use_as_template(auth=other_user_auth)
@@ -4154,7 +4146,7 @@ class TestAddonCallbacks:
         # Mock addon callbacks
         for addon in node.addons:
             mock_settings = mock.create_autospec(addon.__class__)
-            for callback, return_value in self.callbacks.iteritems():
+            for callback, return_value in self.callbacks.items():
                 mock_callback = getattr(mock_settings, callback)
                 mock_callback.return_value = return_value
                 patch = mock.patch.object(
@@ -4298,13 +4290,27 @@ class TestAdminImplicitRead(object):
         assert project not in qs
 
 
-class TestPreprintProperties:
+class TestNodeProperties:
+    def test_has_linked_published_preprints(self, project, preprint, user):
+        # If no preprints, is False
+        assert project.has_linked_published_preprints is False
 
-    def test_preprint_url_does_not_return_unpublished_preprint_url(self):
-        node = ProjectFactory(is_public=True)
-        published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
-        PreprintFactory(project=node, is_published=False, filename='file2.txt')
-        assert node.preprint_url == published.url
+        # A published preprint attached to a project is True
+        preprint.node = project
+        preprint.save()
+        assert project.has_linked_published_preprints is True
+
+        # Abandoned preprint is False
+        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.save()
+        assert project.has_linked_published_preprints is False
+
+        # Unpublished preprint is False
+        preprint.machine_state = DefaultStates.ACCEPTED.value
+        preprint.is_published = False
+        preprint.save()
+        assert project.has_linked_published_preprints is False
+
 
 @pytest.mark.enable_bookmark_creation
 class TestCollectionProperties:
@@ -4335,7 +4341,8 @@ class TestCollectionProperties:
 
     @pytest.fixture()
     def collection_public(self, provider, collector):
-        return CollectionFactory(creator=collector, provider=provider, is_public=True)
+        return CollectionFactory(creator=collector, provider=provider, is_public=True,
+                                 status_choices=['', 'Complete'], collected_type_choices=['', 'Dataset'])
 
     @pytest.fixture()
     def public_non_provided_collection(self, collector):
@@ -4351,7 +4358,7 @@ class TestCollectionProperties:
 
     @pytest.fixture()
     def subjects(self):
-        return [[SubjectFactory()._id] for i in xrange(0, 5)]
+        return [[SubjectFactory()._id] for i in range(0, 5)]
 
     def _collection_url(self, collection):
         try:

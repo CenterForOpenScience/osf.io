@@ -40,3 +40,7 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'test-anon': '1/hour',
     'send-email': '2/minute',
 }
+
+# Prereg challenge data is uploaded to this project TODO: Delete when Prereg challenge ends
+PREREG_DATA_STORE_TOKEN = None
+PREREG_DATA_STORE_GUID = None

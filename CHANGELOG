@@ -2,6 +2,68 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+18.9.0 (2018-12-19)
+===================
+
+- Disable Prereg Challenge UI when osf_preregistration flag is active.
+
+18.8.0 (2018-12-13)
+===================
+
+- Remove the dependency of Preprints on Nodes, a.k.a. "The Node Preprint Divorce". Preprints no longer store metadata on nodes.
+  Nodes optionally provide supplemental materials for preprints, but other than that are independent of preprints.
+
+18.7.0 (2018-12-05)
+===================
+
+- Add "OSF Preregistration" registration schema. It will automatically become active on Jan 1, 2019.
+- Add ENABLE_INACTIVE_SCHEMAS waffle switch. When active, APIv2 will return both active and inactive schemas.
+- Remove invalid registration schemas.
+
+18.6.0 (2018-11-15)
+===================
+
+- Support for partial registrations.
+- APIv2: Fix error when adding an email on a blacklisted domain.
+- APIv2: Optimizations for collections endpoints.
+- Upgrade djangorestframework to 3.9.0.
+- Update subject lines in emails with "OSF" instead of "Open Science Framework."
+- Remove legacy forks and analytics pages.
+
+18.5.0 (2018-10-31)
+===================
+
+- APIv2: Return explicitly assigned node permissions for current user
+- APIv2: Add wiki_enabled attribute to nodes
+- Remove forked dependencies
+- Clean up unused settings
+- Fix Prereg weekly digest
+
+18.4.0 (2018-10-23)
+===================
+
+- Store preprint views and downloads in Elasticsearch using django-elasticsearch-metrics.
+  This feature is behind the elasticsearch_metrics waffle switch.
+- Add link on OSF Search to institutions landing page.
+- Fix for editing tags on registrations.
+- Remove unnecessary is_claimed field on OSFUser.
+- Add celerybeatjob to clear out stale Session records.
+- Fix syncing registration tags with SHARE.
+
+18.3.0 (2018-10-10)
+===================
+
+- Migrate registrations into OSFRegistries
+- Update registries API and models
+- Update elastic mapping for collection submissions
+- Add additional CollectionProvider fields
+
+18.2.0 (2018-10-02)
+===================
+
+- APIv2: Add email account management.
+- APIv2: Add password reset functionality.
+
 18.1.0 (2018-09-25)
 ===================
 

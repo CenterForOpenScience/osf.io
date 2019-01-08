@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^(?P<user_id>\w+)/addons/(?P<provider>\w+)/accounts/$', views.UserAddonAccountList.as_view(), name=views.UserAddonAccountList.view_name),
     url(r'^(?P<user_id>\w+)/addons/(?P<provider>\w+)/accounts/(?P<account_id>\w+)/$', views.UserAddonAccountDetail.as_view(), name=views.UserAddonAccountDetail.view_name),
     url(r'^(?P<user_id>\w+)/claim/$', views.ClaimUser.as_view(), name=views.ClaimUser.view_name),
+    url(r'^(?P<user_id>\w+)/draft_registrations/$', views.UserDraftRegistrations.as_view(), name=views.UserDraftRegistrations.view_name),
     url(r'^(?P<user_id>\w+)/institutions/$', views.UserInstitutions.as_view(), name=views.UserInstitutions.view_name),
     url(r'^(?P<user_id>\w+)/nodes/$', views.UserNodes.as_view(), name=views.UserNodes.view_name),
     url(r'^(?P<user_id>\w+)/preprints/$', views.UserPreprints.as_view(), name=views.UserPreprints.view_name),
@@ -24,4 +25,5 @@ urlpatterns = [
     url(r'^(?P<user_id>\w+)/settings/identities/(?P<identity_id>\w+)/$', views.UserIdentitiesDetail.as_view(), name=views.UserIdentitiesDetail.view_name),
     url(r'^(?P<user_id>\w+)/settings/export/$', views.UserAccountExport.as_view(), name=views.UserAccountExport.view_name),
     url(r'^(?P<user_id>\w+)/settings/deactivate/$', views.UserAccountDeactivate.as_view(), name=views.UserAccountDeactivate.view_name),
+    url(r'^(?P<user_id>\w+)/settings/password/$', views.UserChangePassword.as_view(), name=views.UserChangePassword.view_name),
 ]

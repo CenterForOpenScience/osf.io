@@ -89,21 +89,15 @@ class TestAuthUtils(OsfTestCase):
         assert_in('login?service=', res.location)
 
         user.reload()
-        mock_mail.assert_called()
-        assert_equal(len(mock_mail.call_args_list), 1)
-        empty, kwargs = mock_mail.call_args
-        kwargs['user'].reload()
 
-        assert_equal(empty, ())
-        assert_equal(kwargs, {
-            'user': user,
-            'mimetype': 'html',
-            'mail': mails.WELCOME,
-            'domain': settings.DOMAIN,
-            'to_addr': user.username,
-            'osf_support_email': settings.OSF_SUPPORT_EMAIL,
-            'storage_flag_is_active': storage_i18n_flag_active(),
-        })
+        mock_mail.assert_called_with(osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                                     mimetype='html',
+                                     storage_flag_is_active=False,
+                                     to_addr=user.username,
+                                     domain=settings.DOMAIN,
+                                     user=user,
+                                     mail=mails.WELCOME)
+
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie())
         res = self.app.get('/confirm/{}/{}'.format(user._id, token))

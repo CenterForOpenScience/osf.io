@@ -12,14 +12,16 @@ import tempfile
 
 from django.core import serializers
 from django.core.management.base import BaseCommand
+from django.contrib.contenttypes.models import ContentType
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFile
 from addons.wiki.models import WikiPage
 from framework.auth.core import Auth
 from osf.models import (
+    AbstractNode,
     FileVersion,
     OSFUser,
-    PreprintService,
+    Preprint,
     Registration,
 )
 from scripts.utils import Progress
@@ -64,7 +66,7 @@ def export_metadata(node, current_dir):
     export_fields = NODE_EXPORT_FIELDS
     if isinstance(node, Registration):
         export_fields = REGISTRATION_EXPORT_FIELDS
-    elif isinstance(node, PreprintService):
+    elif isinstance(node, Preprint):
         export_fields = PREPRINT_EXPORT_FIELDS
     with open(os.path.join(current_dir, 'metadata.json'), 'w') as f:
         # only write the fields dict, throw away pk and model_name
@@ -125,7 +127,8 @@ def export_node(node, user, current_dir):
     export_metadata(node, current_dir)
     if WikiPage.objects.get_wiki_pages_latest(node):
         export_wikis(node, current_dir)
-    if OsfStorageFileNode.objects.filter(node=node):
+    ctype = ContentType.objects.get_for_model(node.__class__)
+    if OsfStorageFileNode.objects.filter(target_object_id=node.id, target_content_type=ctype):
         export_files(node, user, current_dir)
 
     descendants = list(node.find_readable_descendants(Auth(user)))
@@ -167,8 +170,9 @@ def export_nodes(nodes_to_export, user, dir, nodes_type):
         progress.stop()
 
 def get_usage(user):
-    nodes = user.nodes.filter(is_deleted=False).exclude(type='osf.collection').values_list('guids___id', flat=True)
-    files = OsfStorageFile.objects.filter(node__guids___id__in=nodes).values_list('id', flat=True)
+    nodes = user.nodes.filter(is_deleted=False).exclude(type='osf.collection').values_list('id', flat=True)
+    node_ctype = ContentType.objects.get_for_model(AbstractNode)
+    files = OsfStorageFile.objects.filter(target_object_id__in=nodes, target_content_type=node_ctype).values_list('id', flat=True)
     versions = FileVersion.objects.filter(basefilenode__in=files)
     return sum([v.size or 0 for v in versions]) / GBs
 
@@ -227,7 +231,7 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
     os.mkdir(projects_dir)
     os.mkdir(registrations_dir)
 
-    preprints_to_export = (PreprintService.objects
+    preprints_to_export = (Preprint.objects
         .filter(node___contributors__guids___id=user_id, guids___id__isnull=False)
         .select_related('node')
     )

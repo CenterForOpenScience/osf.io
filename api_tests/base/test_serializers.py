@@ -8,7 +8,7 @@ from pytz import utc
 from datetime import datetime
 import urllib
 
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import re
 
 from tests.base import ApiTestCase, DbTestCase
@@ -36,7 +36,7 @@ for loader, name, _ in pkgutil.iter_modules(['api']):
 
 SER_CLASSES = []
 for mod in SER_MODULES:
-    for name, val in mod.__dict__.iteritems():
+    for name, val in mod.__dict__.items():
         try:
             if issubclass(val, BaseAPISerializer):
                 if 'JSONAPI' in name or 'BaseAPI' in name:
@@ -132,9 +132,10 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'current_user_can_comment',
             'current_user_is_contributor',
             'preprint',
-            'subjects']
+            'subjects',
+            'wiki_enabled']
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings']
+        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'children']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)
@@ -232,7 +233,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': True})
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -294,7 +295,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': 'children'})
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -324,7 +325,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'children,contributors'}
         )
         relationships = res.json['data']['relationships']
-        for key, relation in relationships.iteritems():
+        for key, relation in relationships.items():
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
@@ -567,7 +568,7 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(
-            datetime.strftime(self.old_date,self.old_format),
+            datetime.strftime(self.old_date, self.old_format),
             data['attributes']['date_modified']
         )
 
@@ -588,7 +589,7 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(
-            datetime.strftime(self.old_date,self.new_format),
+            datetime.strftime(self.old_date, self.new_format),
             data['attributes']['date_modified']
         )
 

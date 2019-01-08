@@ -14,6 +14,7 @@ from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
 
+from osf.models.base import Guid
 from osf.models.user import OSFUser
 from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
@@ -186,7 +187,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'users': map(serialize_user, query_set),
+            'users': list(map(serialize_user, query_set)),
             'page': page,
         }
 
@@ -514,15 +515,15 @@ class GetUserClaimLinks(GetUserLink):
     def get_claim_links(self, user):
         links = []
 
-        for guid, value in user.unclaimed_records.iteritems():
-            node = Node.load(guid)
+        for guid, value in user.unclaimed_records.items():
+            obj = Guid.load(guid)
             url = '{base_url}user/{uid}/{project_id}/claim/?token={token}'.format(
                 base_url=DOMAIN,
                 uid=user._id,
                 project_id=guid,
                 token=value['token']
             )
-            links.append('Claim URL for node {}: {}'.format(node._id, url))
+            links.append('Claim URL for {} {}: {}'.format(obj.content_type.model, obj._id, url))
 
         return links or ['User currently has no active unclaimed records for any nodes.']
 
@@ -608,7 +609,7 @@ class UserReindexElastic(UserDeleteView):
 
     def delete(self, request, *args, **kwargs):
         user = self.get_object()
-        search.search.update_user(user, async=False)
+        search.search.update_user(user, async_update=False)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=user._id,

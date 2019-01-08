@@ -8,7 +8,7 @@ import requests
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from addons.wiki.models import NodeSettings as WikiNodeSettings
-from osf.models import AbstractNode, Guid, NodeRelation, Contributor
+from osf.models import AbstractNode, Preprint, Guid, NodeRelation, Contributor
 
 from api.base.exceptions import ServiceUnavailableError
 from api.base.utils import get_object_or_error, waterbutler_api_url_for, get_user_auth, has_admin_scope
@@ -21,6 +21,8 @@ def get_file_object(target, path, provider, request):
         if path == '/':
             if isinstance(target, AbstractNode):
                 obj = target.get_addon('osfstorage').get_root()
+            elif isinstance(target, Preprint):
+                obj = target.root_folder
             else:
                 obj = target
         else:
@@ -78,6 +80,7 @@ class NodeOptimizationMixin(object):
         wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
         contribs = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
         return queryset.prefetch_related('root').prefetch_related('subjects').annotate(
+            user_is_contrib=Exists(contribs),
             contrib_read=Subquery(contribs.values('read')[:1]),
             contrib_write=Subquery(contribs.values('write')[:1]),
             contrib_admin=Subquery(contribs.values('admin')[:1]),

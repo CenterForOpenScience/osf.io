@@ -1,6 +1,6 @@
 """Tests related to project decorators"""
 
-from nose.tools import *  # noqa
+from nose.tools import *  # noqa: F403
 
 from website.project.decorators import must_be_valid_project
 

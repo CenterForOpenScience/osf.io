@@ -303,7 +303,7 @@ class TestWebsiteUtils(unittest.TestCase):
         rapply(outputs, r_assert)
 
     def test_rapply_on_list(self):
-        inputs = range(5)
+        inputs = list(range(5))
         add_one = lambda n: n + 1
         outputs = rapply(inputs, add_one)
         for i in inputs:
@@ -338,7 +338,7 @@ class TestWebsiteUtils(unittest.TestCase):
             if check and checkFn(item):
                 return item
             return 0
-        inputs = range(5)
+        inputs = list(range(5))
         outputs = rapply(inputs, zero_if_not_check, True, checkFn=lambda n: n % 2)
         assert_equal(outputs, [0, 1, 0, 3, 0])
         outputs = rapply(inputs, zero_if_not_check, False, checkFn=lambda n: n % 2)

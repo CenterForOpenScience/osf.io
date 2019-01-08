@@ -10,7 +10,7 @@ class TestScopeDetail:
     def test_scope_detail(self, app):
         count = 0
         expected_count = len(public_scopes)
-        for key, value in public_scopes.iteritems():
+        for key, value in public_scopes.items():
             id = key
             description = value.description
             is_public = value.is_public

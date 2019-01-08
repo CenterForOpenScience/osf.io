@@ -108,13 +108,13 @@ class PreprintRequestTestMixin(object):
         )
         pre.ever_public = True
         pre.save()
-        pre.node.add_contributor(
+        pre.add_contributor(
             contributor=write_contrib,
-            permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            permissions='write',
             save=True
         )
-        pre.node.is_public = True
-        pre.node.save()
+        pre.is_public = True
+        pre.save()
         return pre
 
     @pytest.fixture()
@@ -126,9 +126,9 @@ class PreprintRequestTestMixin(object):
             machine_state='pending'
         )
         pre.save()
-        pre.node.add_contributor(
+        pre.add_contributor(
             contributor=write_contrib,
-            permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            permissions='write',
             save=True
         )
         return pre
@@ -140,9 +140,9 @@ class PreprintRequestTestMixin(object):
             provider=post_mod_provider,
         )
         post.save()
-        post.node.add_contributor(
+        post.add_contributor(
             contributor=write_contrib,
-            permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            permissions='write',
             save=True
         )
         return post
@@ -154,9 +154,9 @@ class PreprintRequestTestMixin(object):
             provider=none_mod_provider,
         )
         preprint.save()
-        preprint.node.add_contributor(
+        preprint.add_contributor(
             contributor=write_contrib,
-            permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            permissions='write',
             save=True
         )
         return preprint

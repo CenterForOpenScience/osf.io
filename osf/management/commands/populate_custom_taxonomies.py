@@ -4,7 +4,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from osf.models import AbstractProvider, PreprintProvider, PreprintService, Subject
+from osf.models import AbstractProvider, PreprintProvider, Preprint, Subject
 from osf.models.provider import rules_to_subjects
 from scripts import utils as script_utils
 from osf.models.validators import validate_subject_hierarchy
@@ -48,7 +48,7 @@ def validate_input(custom_provider, data, provider_type='osf.preprintprovider', 
         included_subjects = included_subjects.exclude(text__in=excludes)
         logger.info('Successfully validated `exclude`')
 
-    for cust_name, map_dict in customs.iteritems():
+    for cust_name, map_dict in customs.items():
         assert not included_subjects.filter(text=cust_name).exists(), 'Custom text {} already exists in mapped set'.format(cust_name)
         assert Subject.objects.filter(provider=BEPRESS_PROVIDER, text=map_dict.get('bepress')).exists(), 'Unable to find specified BePress subject with text {}'.format(map_dict.get('bepress'))
         if map_dict.get('parent'):  # Null parent possible
@@ -58,11 +58,11 @@ def validate_input(custom_provider, data, provider_type='osf.preprintprovider', 
     logger.info('Successfully validated `custom`')
     included_subjects = included_subjects | Subject.objects.filter(text__in=[map_dict['bepress'] for map_dict in customs.values()])
 
-    for merged_from, merged_into in merges.iteritems():
+    for merged_from, merged_into in merges.items():
         assert not included_subjects.filter(text=merged_from).exists(), 'Cannot merge subject "{}" that will be included'.format(merged_from)
         assert merged_into in set(included_subjects.values_list('text', flat=True)) | set(customs.keys()), 'Unable to determine merge target for "{}"'.format(merged_into)
     included_subjects = included_subjects | Subject.objects.filter(text__in=merges.keys())
-    missing_subjects = Subject.objects.filter(id__in=set([hier[-1].id for ps in PreprintService.objects.filter(provider=custom_provider) for hier in ps.subject_hierarchy])).exclude(id__in=included_subjects.values_list('id', flat=True))
+    missing_subjects = Subject.objects.filter(id__in=set([hier[-1].id for ps in Preprint.objects.filter(provider=custom_provider) for hier in ps.subject_hierarchy])).exclude(id__in=included_subjects.values_list('id', flat=True))
 
     if not add_missing:
         assert not missing_subjects.exists(), 'Incomplete mapping -- following subjects in use but not included:\n{}'.format(list(missing_subjects.values_list('text', flat=True)))
@@ -147,7 +147,7 @@ def do_custom_mapping(custom_provider, customs):
         if tries == 10:
             raise RuntimeError('Unable to map custom subjects with 10 iterations -- invalid input')
         successes = []
-        for cust_name, map_dict in unmapped_customs.iteritems():
+        for cust_name, map_dict in unmapped_customs.items():
             if map_custom_subject(custom_provider, cust_name, map_dict.get('parent'), map_dict.get('bepress')):
                 successes.append(cust_name)
             else:
@@ -158,7 +158,7 @@ def do_custom_mapping(custom_provider, customs):
             raise RuntimeError('Unable to map any custom subjects on iteration -- invalid input')
 
 def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False):
-    for preprint in PreprintService.objects.filter(provider=custom_provider):
+    for preprint in Preprint.objects.filter(provider=custom_provider):
         logger.info('Preparing to migrate preprint {}'.format(preprint.id))
         old_hier = preprint.subject_hierarchy
         subjects_to_map = [hier[-1] for hier in old_hier]
@@ -254,7 +254,7 @@ class Command(BaseCommand):
             action='store',
             type=str,
             dest='provider_type',
-            help='Specifies provider type [`osf.preprintprovider`, `osf.registrationprovider`]'
+            help='Specifies provider type [`osf.preprintprovider`, `osf.registrationprovider`, `osf.collectionprovider`]'
         )
 
     def handle(self, *args, **options):

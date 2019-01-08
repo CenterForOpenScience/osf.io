@@ -23,7 +23,7 @@ def _get_client():
 
 def _validate_reports(value, *args, **kwargs):
     from osf.models import OSFUser
-    for key, val in value.iteritems():
+    for key, val in value.items():
         if not OSFUser.load(key):
             raise ValidationValueError('Keys must be user IDs')
         if not isinstance(val, dict):

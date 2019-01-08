@@ -1,5 +1,7 @@
+import pytz
+
 from django.apps import apps
-from django.db.models import F
+from django.db.models import Exists, F, OuterRef, Q
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -20,11 +22,12 @@ from api.base.utils import (
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle
 from api.institutions.serializers import InstitutionSerializer
-from api.nodes.filters import NodesFilterMixin
-from api.nodes.serializers import NodeSerializer
+from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
+from api.nodes.serializers import DraftRegistrationSerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
+
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
     ReadOnlyOrCurrentUserRelationship,
@@ -38,30 +41,37 @@ from api.users.serializers import (
     UserSerializer,
     UserEmail,
     UserEmailsSerializer,
+    UserNodeSerializer,
     UserSettingsSerializer,
     UserSettingsUpdateSerializer,
     UserQuickFilesSerializer,
     UserAccountExportSerializer,
     UserAccountDeactivateSerializer,
     ReadEmailUserDetailSerializer,
+    UserChangePasswordSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
+from django.http import JsonResponse
 from django.utils import timezone
 from framework.auth.core import get_user
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
-from framework.exceptions import PermissionsError
+from framework.auth.exceptions import ChangePasswordError
+from framework.utils import throttle_period_expired
+from framework.sessions.utils import remove_sessions_for_user
+from framework.exceptions import PermissionsError, HTTPError
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError
+from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled
 from osf.models import (
     Contributor,
+    DraftRegistration,
     ExternalAccount,
     Guid,
     QuickFilesNode,
     AbstractNode,
-    PreprintService,
+    Preprint,
     Node,
     Registration,
     OSFUser,
@@ -280,7 +290,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin, NodeOptimizationMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilterMixin, NodeOptimizationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_nodes_list).
     """
     permission_classes = (
@@ -293,7 +303,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
 
-    serializer_class = NodeSerializer
+    serializer_class = UserNodeSerializer
     view_category = 'users'
     view_name = 'user-nodes'
 
@@ -374,7 +384,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         target_user = self.get_user(check_permissions=False)
 
         # Permissions on the list objects are handled by the query
-        default_qs = PreprintService.objects.filter(node___contributors__guids___id=target_user._id)
+        default_qs = Preprint.objects.filter(_contributors__guids___id=target_user._id).exclude(machine_state='initial')
         return self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
 
     def get_queryset(self):
@@ -435,6 +445,33 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10)
+
+class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
+
+    serializer_class = DraftRegistrationSerializer
+    view_category = 'users'
+    view_name = 'user-draft-registrations'
+
+    ordering = ('-modified',)
+
+    def get_queryset(self):
+        user = self.get_user()
+        contrib_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, admin=True)
+        node_qs = Node.objects.annotate(admin=Exists(contrib_qs)).filter(admin=True).exclude(is_deleted=True)
+        return DraftRegistration.objects.filter(
+            Q(registered_node__isnull=True) |
+            Q(registered_node__is_deleted=True),
+            branched_from__in=list(node_qs),
+            deleted__isnull=True,
+        )
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
@@ -500,8 +537,8 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     def get_queryset(self):
         user = self.get_user()
         identities = []
-        for key, value in user.external_identity.iteritems():
-            identities.append({'_id': key, 'external_id': value.keys()[0], 'status': value.values()[0]})
+        for key, value in user.external_identity.items():
+            identities.append({'_id': key, 'external_id': list(value.keys())[0], 'status': list(value.values())[0]})
 
         return identities
 
@@ -608,6 +645,58 @@ class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    view_category = 'users'
+    view_name = 'user_password'
+
+    serializer_class = UserChangePasswordSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.get_user()
+        existing_password = request.data['existing_password']
+        new_password = request.data['new_password']
+
+        # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
+        if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
+            user.reset_old_password_invalid_attempts()
+
+        # There have been more than 3 failed attempts and throttle hasn't expired.
+        if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(
+            user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE,
+        ):
+            time_since_throttle = (timezone.now() - user.change_password_last_attempt.replace(tzinfo=pytz.utc)).total_seconds()
+            wait_time = settings.CHANGE_PASSWORD_THROTTLE - time_since_throttle
+            raise Throttled(wait=wait_time)
+
+        try:
+            # double new password for confirmation because validation is done on the front-end.
+            user.change_password(existing_password, new_password, new_password)
+        except ChangePasswordError as error:
+            # A response object must be returned instead of raising an exception to avoid rolling back the transaction
+            # and losing the incrementation of failed password attempts
+            user.save()
+            return JsonResponse(
+                {'errors': [{'detail': message} for message in error.messages]},
+                status=400,
+                content_type='application/vnd.api+json; application/json',
+            )
+
+        user.save()
+        remove_sessions_for_user(user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -652,8 +741,8 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         rely upon a flask context and placed in utils (or elsewhere).
 
         :param bool registered: Indicates which sender to call (passed in as keyword)
-        :param \*args: Positional arguments passed to senders
-        :param \*\*kwargs: Keyword arguments passed to senders
+        :param *args: Positional arguments passed to senders
+        :param **kwargs: Keyword arguments passed to senders
         :return: None
         """
         from website.app import app
@@ -688,7 +777,7 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         try:
             unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
         except KeyError:
-            if isinstance(record_referent, PreprintService) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
+            if isinstance(record_referent, Preprint) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
                 record_referent = record_referent.node
                 unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
             else:
@@ -696,17 +785,23 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
 
         if claimer.is_anonymous and email:
             claimer = get_user(email=email)
-            if claimer and claimer.is_registered:
-                self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
-            else:
-                self._send_claim_email(email, claimed_user, record_referent, notify=True, registered=False)
+            try:
+                if claimer and claimer.is_registered:
+                    self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+                else:
+                    self._send_claim_email(email, claimed_user, record_referent, notify=True, registered=False)
+            except HTTPError as e:
+                raise ValidationError(e.data['message_long'])
         elif isinstance(claimer, OSFUser):
             if unclaimed_record.get('referrer_id', '') == claimer._id:
                 raise ValidationError('Referrer cannot claim user.')
-            self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+            try:
+                self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+            except HTTPError as e:
+                raise ValidationError(e.data['message_long'])
+
         else:
             raise ValidationError('Must either be logged in or specify claim email.')
-
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -719,6 +814,8 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
 
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+
+    throttle_classes = (SendEmailThrottle, )
 
     view_category = 'users'
     view_name = 'user-emails'

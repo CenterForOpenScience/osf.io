@@ -876,7 +876,7 @@ class TestUserUpdate:
             }
         }, auth=user_one.auth)
         user_one.reload()
-        for key, value in res.json['data']['attributes']['social'].iteritems():
+        for key, value in res.json['data']['attributes']['social'].items():
             assert user_one.social[key] == value == social_payload[key]
 
     def test_partial_patch_user_logged_in_no_social_fields(

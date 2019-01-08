@@ -324,7 +324,7 @@ class TestNodeDetailViewOnlyLinks:
             {'view_only': private_node_one_private_link.key})
         assert res.status_code == 200
         res_relationships = res.json['data']['relationships']
-        for key, value in res_relationships.iteritems():
+        for key, value in res_relationships.items():
             if isinstance(value, list):
                 for relationship in value:
                     links = relationship.get('links', {})

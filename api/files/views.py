@@ -3,7 +3,7 @@ from django.core.files.base import ContentFile
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -48,6 +48,9 @@ class FileMixin(object):
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
 
+        if getattr(obj.target, 'deleted', None):
+            raise Gone(detail='The requested file is no longer available')
+
         if getattr(obj.target, 'is_quickfiles', False) and getattr(obj.target, 'creator'):
             if obj.target.creator.is_disabled:
                 raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
@@ -81,7 +84,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     def get_serializer_class(self):
         try:
             target = self.get_target()
-        except (NotFound, Gone):
+        except (NotFound, Gone, PermissionDenied):
             return FileDetailSerializer
         else:
             if isinstance(target, QuickFilesNode):

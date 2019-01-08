@@ -134,8 +134,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools',
         'social',
     }
-    TRACK_FIELDS = SEARCH_UPDATE_FIELDS.copy()
-    TRACK_FIELDS.update({'password', 'last_login'})
+
+    # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
+    FIELDS_TO_CHECK = SEARCH_UPDATE_FIELDS.copy()
+    FIELDS_TO_CHECK.update({'password', 'last_login', 'merged_by_id'})
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -172,12 +174,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # user has taken action to register the account
     is_registered = models.BooleanField(db_index=True, default=False)
-
-    # user has claimed the account
-    # TODO: This should be retired - it always reflects is_registered.
-    #   While a few entries exist where this is not the case, they appear to be
-    #   the result of a bug, as they were all created over a small time span.
-    is_claimed = models.BooleanField(default=False, db_index=True)
 
     # for internal use
     tags = models.ManyToManyField('Tag', blank=True)
@@ -607,7 +603,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for system_tag in user.system_tags.all():
             self.add_system_tag(system_tag)
 
-        self.is_claimed = self.is_claimed or user.is_claimed
+        self.is_registered = self.is_registered or user.is_registered
         self.is_invited = self.is_invited or user.is_invited
         self.is_superuser = self.is_superuser or user.is_superuser
         self.is_staff = self.is_staff or user.is_staff
@@ -636,7 +632,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
         if not website_settings.RUNNING_MIGRATION:
-            for key, value in user.mailchimp_mailing_lists.iteritems():
+            for key, value in user.mailchimp_mailing_lists.items():
                 # subscribe to each list if either user was subscribed
                 subscription = value or self.mailchimp_mailing_lists.get(key)
                 signals.user_merged.send(self, list_name=key, subscription=subscription)
@@ -644,7 +640,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 # clear subscriptions for merged user
                 signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
 
-        for target_id, timestamp in user.comments_viewed_timestamp.iteritems():
+        for target_id, timestamp in user.comments_viewed_timestamp.items():
             if not self.comments_viewed_timestamp.get(target_id):
                 self.comments_viewed_timestamp[target_id] = timestamp
             elif timestamp > self.comments_viewed_timestamp[target_id]:
@@ -653,7 +649,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Give old user's emails to self
         user.emails.update(user=self)
 
-        for k, v in user.email_verifications.iteritems():
+        for k, v in user.email_verifications.items():
             email_to_confirm = v['email']
             if k not in self.email_verifications and email_to_confirm != user.username:
                 self.email_verifications[k] = v
@@ -662,7 +658,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.affiliated_institutions.add(*user.affiliated_institutions.values_list('pk', flat=True))
 
         for service in user.external_identity:
-            for service_id in user.external_identity[service].iterkeys():
+            for service_id in user.external_identity[service].keys():
                 if not (
                     service_id in self.external_identity.get(service, '') and
                     self.external_identity[service][service_id] == 'VERIFIED'
@@ -742,7 +738,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 split_filename = splitext(merging_user_file.name)
                 name_without_extension = split_filename[0]
                 extension = split_filename[1]
-                found_digit_in_parens = re.findall('(?<=\()(\d)(?=\))', name_without_extension)
+                found_digit_in_parens = re.findall(r'(?<=\()(\d)(?=\))', name_without_extension)
                 if found_digit_in_parens:
                     found_digit = int(found_digit_in_parens[0])
                     digit = found_digit + 1
@@ -914,7 +910,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def create_confirmed(cls, username, password, fullname):
         user = cls.create(username, password, fullname)
         user.is_registered = True
-        user.is_claimed = True
         user.save()  # Must save before using auto_now_add field
         user.date_confirmed = user.date_registered
         user.emails.create(address=username.lower().strip())
@@ -945,7 +940,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         unconfirmed_emails = []
         if self.email_verifications:
-            for token, value in self.email_verifications.iteritems():
+            for token, value in self.email_verifications.items():
                 if not value.get('external_identity'):
                     unconfirmed_emails.append(value.get('email'))
         return unconfirmed_emails
@@ -1079,7 +1074,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
-        for token, value in self.email_verifications.iteritems():
+        for token, value in self.email_verifications.items():
             if value.get('email') == email:
                 del self.email_verifications[token]
                 return True
@@ -1158,7 +1153,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if not self.emails.filter(address=username):
             self.emails.create(address=username)
         self.is_registered = True
-        self.is_claimed = True
         self.date_confirmed = timezone.now()
         if accepted_terms_of_service:
             self.accepted_terms_of_service = timezone.now()
@@ -1253,7 +1247,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             'user_fullname': self.fullname,
             'user_profile_url': self.profile_url,
             'user_display_name': name_formatters[formatter](self),
-            'user_is_claimed': self.is_claimed
+            'user_is_registered': self.is_registered
         }
 
     def check_password(self, raw_password):
@@ -1382,7 +1376,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
 
-        :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider`
+        :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider` or `Preprint`
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
@@ -1390,10 +1384,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
 
         from osf.models.provider import AbstractProvider
+        from osf.models import Preprint
         if isinstance(claim_origin, AbstractProvider):
             if not bool(get_perms(referrer, claim_origin)):
                 raise PermissionsError(
                     'Referrer does not have permission to add a moderator to provider {0}'.format(claim_origin._id)
+                )
+
+        elif isinstance(claim_origin, Preprint):
+            if not claim_origin.has_permission(referrer, 'admin'):
+                raise PermissionsError(
+                    'Referrer does not have permission to add a contributor to preprint {0}'.format(claim_origin._id)
                 )
         else:
             if not claim_origin.can_edit(user=referrer):
@@ -1543,14 +1544,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         https://openscience.atlassian.net/wiki/spaces/PRODUC/pages/482803755/GDPR-Related+protocols
 
         """
-        from osf.models import PreprintService, AbstractNode
+        from osf.models import Preprint, AbstractNode
 
         user_nodes = self.nodes.exclude(is_deleted=True)
         #  Validates the user isn't trying to delete things they deliberately made public.
         if user_nodes.filter(type='osf.registration').exists():
             raise UserStateError('You cannot delete this user because they have one or more registrations.')
 
-        if PreprintService.objects.filter(node___contributors=self, ever_public=True, node__is_deleted=False).exists():
+        if Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists():
             raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
         # Validates that the user isn't trying to delete things nodes they are the only admin on.

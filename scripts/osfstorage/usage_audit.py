@@ -67,7 +67,7 @@ def get_usage(node):
     usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=vids)])
     trashed_usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=t_vids)])
 
-    return map(sum, zip(*([(usage, trashed_usage)] + [get_usage(child) for child in node.nodes_primary])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
+    return list(map(sum, zip(*([(usage, trashed_usage)] + [get_usage(child) for child in node.nodes_primary]))))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
 
 def limit_filter(limit, (item, usage)):

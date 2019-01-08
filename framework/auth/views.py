@@ -28,11 +28,12 @@ from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
-from website.ember_osf_web.decorators import storage_i18n_flag_active
+from website.ember_osf_web.decorators import storage_i18n_flag_active, ember_flag_is_active
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlacklistedEmailError
 from osf.models.provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
+from osf import features
 
 @block_bing_preview
 @collect_auth
@@ -262,6 +263,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             )
     # login or register with next parameter
     elif next_url:
+        # TODO - logout is no longer used by claim_user_registered, see [#PLAT-1151]
         if logout:
             # handle `claim_user_registered`
             data['next_url'] = next_url
@@ -320,6 +322,7 @@ def auth_login(auth):
 
 
 @collect_auth
+@ember_flag_is_active(features.EMBER_AUTH_REGISTER)
 def auth_register(auth):
     """
     View for OSF register. Land on the register page, redirect or go to `auth_logout`
@@ -344,7 +347,7 @@ def auth_register(auth):
     campaign = request.args.get('campaign')
     # the service url for CAS login or redirect url for OSF
     next_url = request.args.get('next')
-    # used only for `claim_user_registered`
+    # TODO: no longer used for `claim_user_registered`, see [#PLAT-1151]
     logout = request.args.get('logout')
 
     # logout must have next_url
@@ -549,6 +552,7 @@ def external_login_confirm_email_get(auth, uid, token):
             mail=mails.WELCOME,
             mimetype='html',
             user=user,
+            domain=settings.DOMAIN,
             osf_support_email=settings.OSF_SUPPORT_EMAIL,
             storage_flag_is_active=storage_i18n_flag_active(),
         )
@@ -829,7 +833,7 @@ def register_user(**kwargs):
         framework_auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(
-            http.BAD_REQUEST,
+            http.CONFLICT,
             data=dict(
                 message_long=language.ALREADY_REGISTERED.format(
                     email=markupsafe.escape(request.json['email1'])

@@ -74,6 +74,7 @@ from api.nodes.permissions import (
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
     IsContributor,
+    NodeDeletePermissions,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
@@ -101,7 +102,7 @@ from api.nodes.serializers import (
 )
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
-from api.registrations.serializers import RegistrationSerializer
+from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
@@ -119,8 +120,8 @@ from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.models.node import remove_addons
 from osf.utils.permissions import ADMIN, PERMISSIONS
+from osf.exceptions import NodeStateError
 from website import mails
-from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 
 # This is used to rethrow v1 exceptions as v2
@@ -325,7 +326,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         try:
             instance.remove_node(auth=auth)
         except NodeStateError as err:
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
         instance.save()
 
 
@@ -335,6 +336,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        NodeDeletePermissions,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
@@ -360,7 +362,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         try:
             node.remove_node(auth=auth)
         except NodeStateError as err:
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
         node.save()
 
     def get_renderer_context(self):
@@ -395,6 +397,9 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     view_category = 'nodes'
     view_name = 'node-contributors'
     ordering = ('_order',)  # default ordering
+
+    def get_resource(self):
+        return self.get_node()
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
@@ -442,7 +447,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = self.get_node()
+        node = self.get_resource()
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError('Must have at least one visible contributor')
         if not node.contributor_set.filter(user=instance).exists():
@@ -470,6 +475,12 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
         return resource_object_list
 
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'default'
+        return context
+
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_contributors_read).
@@ -488,15 +499,24 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     view_category = 'nodes'
     view_name = 'node-contributor-detail'
 
+    def get_resource(self):
+        return self.get_node()
+
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        node = self.get_node()
+        node = self.get_resource()
         auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError('Must have at least one registered admin contributor')
+
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'default'
+        return context
 
 
 class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
@@ -543,6 +563,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
     serializer_class = DraftRegistrationSerializer
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON, )
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
@@ -602,6 +623,11 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_name = 'node-registrations'
 
     ordering = ('-modified',)
+
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'POST'):
+            return RegistrationCreateSerializer
+        return RegistrationSerializer
 
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
@@ -720,7 +746,7 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
         try:
             citation = render_citation(node=node, style=style)
         except ValueError as err:  # style requested could not be found
-            csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
+            csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
             raise NotFound('{} is not a known style.'.format(csl_name))
 
         return {'citation': citation, 'id': style}
@@ -817,7 +843,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         try:
             node.rm_pointer(instance, auth=auth)
         except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
         node.save()
 
     # overrides ListCreateAPIView
@@ -904,7 +930,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         try:
             node.rm_pointer(pointer, auth=auth)
         except ValueError as err:  # pointer doesn't belong to node
-            raise NotFound(err.message)
+            raise NotFound(str(err))
         node.save()
 
 
@@ -1794,12 +1820,7 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
     view_name = 'linked-registrations'
 
     def get_queryset(self):
-        ret = [
-            node for node in
-            super(NodeLinkedRegistrationsList, self).get_queryset()
-            if node.is_registration
-        ]
-        return ret
+        return super(NodeLinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):

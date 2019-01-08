@@ -28,7 +28,7 @@ def read_capabilities(filename):
 
     ret = {}
 
-    for addon_name, info in addons.iteritems():
+    for addon_name, info in addons.items():
         infos = []
         for cap in CAPABILITY_SET:
             status = info[cap].get('status') or ''

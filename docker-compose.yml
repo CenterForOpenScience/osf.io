@@ -9,6 +9,8 @@ volumes:
     external: false
   elasticsearch_data_vol:
     external: false
+  elasticsearch6_data_vol:
+    external: false
   rabbitmq_vol:
     external: false
   ember_osf_web_dist_vol:
@@ -54,6 +56,15 @@ services:
       - 9200:9200
     volumes:
       - elasticsearch_data_vol:/usr/share/elasticsearch/data
+    stdin_open: true
+
+  # Temporary: Remove when we've upgraded to ES6
+  elasticsearch6:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
+    ports:
+      - 9201:9200
+    volumes:
+      - elasticsearch6_data_vol:/usr/share/elasticsearch/data
     stdin_open: true
 
   postgres:

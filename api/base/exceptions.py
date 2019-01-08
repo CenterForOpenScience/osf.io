@@ -32,7 +32,7 @@ def dict_error_formatting(errors, context, index=None):
     else:
         index = str(index) + '/'
 
-    for error_key, error_description in errors.iteritems():
+    for error_key, error_description in errors.items():
         if isinstance(error_description, basestring):
             error_description = [error_description]
 

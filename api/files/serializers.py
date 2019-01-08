@@ -7,7 +7,7 @@ import pytz
 import jsonschema
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, OSFUser, Comment, PreprintService, AbstractNode
+from osf.models import BaseFileNode, OSFUser, Comment, Preprint, AbstractNode
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from website import settings
@@ -27,6 +27,7 @@ from api.base.serializers import (
     WaterbutlerLink,
     VersionedDateTimeField,
     TargetField,
+    HideIfPreprint,
     ShowIfVersion,
 )
 from api.base.exceptions import Conflict, InvalidModelValueError
@@ -191,12 +192,12 @@ class BaseFileSerializer(JSONAPISerializer):
         related_view_kwargs={'file_id': '<_id>'},
         kind='file',
     )
-    comments = FileCommentRelationshipField(
+    comments = HideIfPreprint(FileCommentRelationshipField(
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<target._id>'},
         related_meta={'unread': 'get_unread_comments_count'},
         filter={'target': 'get_file_guid'},
-    )
+    ))
     metadata_records = RelationshipField(
         related_view='files:metadata-records',
         related_view_kwargs={'file_id': '<_id>'},
@@ -273,7 +274,9 @@ class BaseFileSerializer(JSONAPISerializer):
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
-        return obj.target.can_comment(auth)
+        if isinstance(obj.target, AbstractNode):
+            return obj.target.can_comment(auth)
+        return False
 
     def get_unread_comments_count(self, obj):
         user = self.context['request'].user
@@ -340,7 +343,7 @@ class FileSerializer(BaseFileSerializer):
 
     def get_target_type(self, obj):
         target_type = 'node'
-        if isinstance(obj, PreprintService):
+        if isinstance(obj, Preprint):
             target_type = 'preprint'
         return target_type
 

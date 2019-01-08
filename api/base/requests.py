@@ -17,8 +17,10 @@ class EmbeddedRequest(Request):
     ):
         self.original_user = request.user
         self.parents = parents or {Node: {}, OSFUser: {}}
+        self.version = request.version
+
         super(EmbeddedRequest, self).__init__(
-            request, parsers, authenticators,
+            request._request, parsers, authenticators,
             negotiator, parser_context,
         )
 
@@ -35,3 +37,10 @@ class EmbeddedRequest(Request):
         Returns the user from the original request
         """
         return self.original_user
+
+    @property
+    def auth(self):
+        """
+        Returns the user from the original request
+        """
+        return self._request.auth

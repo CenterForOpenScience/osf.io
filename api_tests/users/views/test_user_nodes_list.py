@@ -10,8 +10,10 @@ from osf_tests.factories import (
     PreprintFactory,
     ProjectFactory,
     RegistrationFactory,
+    UserFactory,
 )
 from website.views import find_bookmark_collection
+from osf.utils.workflows import DefaultStates
 
 
 @pytest.mark.django_db
@@ -201,15 +203,16 @@ class TestUserNodesPreprintsFiltering:
 
     @pytest.fixture()
     def abandoned_preprint(self, abandoned_preprint_node):
-        return PreprintFactory(
-            project=abandoned_preprint_node,
+        preprint = PreprintFactory(project=abandoned_preprint_node,
             is_published=False)
+        preprint.machine_state = DefaultStates.INITIAL.value
+        return preprint
 
     @pytest.fixture()
     def orphaned_preprint(self, orphaned_preprint_node):
         orphaned_preprint = PreprintFactory(project=orphaned_preprint_node)
-        orphaned_preprint.node.preprint_file = None
-        orphaned_preprint.node.save()
+        orphaned_preprint.primary_file = None
+        orphaned_preprint.save()
         return orphaned_preprint
 
     @pytest.fixture()
@@ -217,7 +220,7 @@ class TestUserNodesPreprintsFiltering:
         return '/{}users/me/nodes/?filter[preprint]='.format(API_BASE)
 
     def test_filter_false(
-            self, app, user, abandoned_preprint_node,
+            self, app, user, abandoned_preprint_node, abandoned_preprint, orphaned_preprint, valid_preprint, valid_preprint_node,
             no_preprints_node, orphaned_preprint_node, url_base):
         expected_ids = [
             abandoned_preprint_node._id,
@@ -229,7 +232,7 @@ class TestUserNodesPreprintsFiltering:
         assert set(expected_ids) == set(actual_ids)
 
     def test_filter_true(
-            self, app, user, valid_preprint_node,
+            self, app, user, valid_preprint_node, orphaned_preprint_node, orphaned_preprint, abandoned_preprint_node, abandoned_preprint,
             valid_preprint, url_base):
         expected_ids = [valid_preprint_node._id]
         res = app.get('{}true'.format(url_base), auth=user.auth)
@@ -245,10 +248,66 @@ class TestNodeListFiltering(NodesListFilteringMixin):
     def url(self):
         return '/{}users/me/nodes/?'.format(API_BASE)
 
-
 @pytest.mark.django_db
 class TestNodeListDateFiltering(NodesListDateFilteringMixin):
 
     @pytest.fixture()
     def url(self):
         return '/{}users/me/nodes/?'.format(API_BASE)
+
+@pytest.mark.django_db
+class TestNodeListPermissionFiltering:
+
+    @pytest.fixture()
+    def creator(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def no_perm_node(self, creator):
+        return ProjectFactory(creator=creator)
+
+    @pytest.fixture()
+    def read_node(self, creator, contrib):
+        node = ProjectFactory(creator=creator)
+        node.add_contributor(contrib, permissions=['read'], save=True)
+        return node
+
+    @pytest.fixture()
+    def write_node(self, creator, contrib):
+        node = ProjectFactory(creator=creator)
+        node.add_contributor(contrib, permissions=['read', 'write'], save=True)
+        return node
+
+    @pytest.fixture()
+    def admin_node(self, creator, contrib):
+        node = ProjectFactory(creator=creator)
+        node.add_contributor(contrib, permissions=['read', 'write', 'admin'], save=True)
+        return node
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}users/me/nodes/?filter[current_user_permissions]='.format(API_BASE)
+
+    def test_current_user_permissions_filter(self, app, url, contrib, no_perm_node, read_node, write_node, admin_node):
+        # test filter read
+        res = app.get('{}read'.format(url), auth=contrib.auth)
+        assert len(res.json['data']) == 3
+        assert set([read_node._id, write_node._id, admin_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter write
+        res = app.get('{}write'.format(url), auth=contrib.auth)
+        assert len(res.json['data']) == 2
+        assert set([admin_node._id, write_node._id]) == set([node['id'] for node in res.json['data']])
+
+        # test filter admin
+        res = app.get('{}admin'.format(url), auth=contrib.auth)
+        assert len(res.json['data']) == 1
+        assert [admin_node._id] == [node['id'] for node in res.json['data']]
+
+        # test filter null
+        res = app.get('{}null'.format(url), auth=contrib.auth, expect_errors=True)
+        assert res.status_code == 400
