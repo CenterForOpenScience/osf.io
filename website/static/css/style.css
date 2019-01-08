@@ -1,6 +1,7 @@
 /* Global Styles are in base.css */
 
 html, body {
+    height: 100%;
 }
 
 body {
@@ -8,6 +9,31 @@ body {
     position: relative; /* for bootstrap affix */
     -webkit-font-smoothing: antialiased;
     font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    height: auto !important;
+    min-height: 100%;
+}
+
+.watermarked {
+    height: 100%;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-flex: 3 0 auto;
+    -webkit-flex: 3 0 auto;
+    -ms-flex: 3 0 auto;
+    flex: 3 0 auto;
 }
 
 a {
