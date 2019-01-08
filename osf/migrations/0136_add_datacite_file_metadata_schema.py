@@ -35,7 +35,7 @@ def remove_datacite_schema(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0124_add_file_metadata_models'),
+        ('osf', '0135_add_file_metadata_models'),
     ]
 
     operations = [
