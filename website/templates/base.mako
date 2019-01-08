@@ -141,7 +141,7 @@
 
 <div id="IEDepreciationBanner"  class="alert warningBanner">
     <div class="warningBannerText">
-        The OSF no longer supports Internet Explore please switch to another browser or continue at your own risk.
+        The OSF no longer supports Internet Explorer please switch to another browser or continue at your own risk.
     </div>
     <div class="warningBannerAcceptBtn">
         <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
