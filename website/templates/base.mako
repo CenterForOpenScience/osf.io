@@ -139,14 +139,23 @@
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
+<div id="IEDepreciationBanner"  class="alert warningBanner">
+    <div class="warningBannerText">
+        The OSF no longer supports Internet Explore please switch to another browser or continue at your own risk.
+    </div>
+    <div class="warningBannerAcceptBtn">
+        <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
+    </div>
+</div>
+
 % if not user_id:
-<div id="cookieBanner" class="alert">
-    <div id="cookieText">
+<div id="cookieBanner" class="alert warningBanner">
+    <div id="cookieText" class="warningBannerText">
         This website relies on cookies to help provide a better user experience. By clicking Accept or continuing to use the site, you agree. For more information,
         see our <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md'>Privacy Policy</a>
         and information on <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md#7-types-of-information-we-collect'>cookie use</a>.
     </div>
-    <div id="cookieAccept">
+    <div class="warningBannerAcceptBtn">
         <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
     </div>
 </div>

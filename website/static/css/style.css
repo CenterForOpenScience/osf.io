@@ -59,8 +59,8 @@ a {
     list-style-type: none;
 }
 
-/* Cookie Banner */
-#cookieBanner {
+/* Warning Banner for cookies and browser depreciation goes on bottom of page */
+.warningBanner {
     position:fixed;
     width: 100%;
     z-index: 10;
@@ -75,25 +75,25 @@ a {
     align-items: center;
 }
 
-#cookieText {
+.warningBannerText {
     margin-left: 10%;
     margin-right: 75px;
 }
 
-#cookieAccept {
+.warningBannerAcceptBtn {
    margin-right: 10%
 }
 
-#cookieBanner a {
+.warningBanner a {
     color: white;
     text-decoration: underline;
 }
 
-#cookieBanner a:hover {
+.warningBanner a:hover {
     color: #ADCCE6;
 }
 
-#cookieBanner a:visited {
+.warningBanner a:visited {
     color: #ADCCE6;
 }
 
