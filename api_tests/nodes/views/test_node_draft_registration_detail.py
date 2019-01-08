@@ -300,7 +300,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration the \'Has data collection begun for this project?\'' \
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
                                    ' field is invalid, your response must be one of the provided options.'
 
     def test_registration_metadata_question_keys_must_be_value(
@@ -314,7 +314,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration the \'Has data collection begun for this project?\'' \
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
                                    ' field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_metadata_must_be_in_schema(
@@ -343,7 +343,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'For your registration the \'Has data collection begun for this project?\' field' \
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' field' \
                                    ' is invalid, your response must be one of the provided options.'
 
     def test_cannot_update_registration_schema(
@@ -458,7 +458,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'For your registration the \'Authors\' field is invalid.'
+            'detail'] == 'For your registration your response to the \'Authors\' field is invalid.'
 
     def test_reviewer_can_update_nested_comment_fields_draft_registration(
             self, app, project_public, draft_registration_prereg, administer_permission):
@@ -526,7 +526,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'For your registration the \'Data collection procedures\' field is invalid.'
+            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
 
 @pytest.mark.django_db
@@ -794,7 +794,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'For your registration the \'Title\' field is invalid.'
+            'detail'] == 'For your registration your response to the \'Title\' field is invalid.'
 
     def test_first_level_open_ended_answer_must_be_of_correct_type(
             self, app, user, payload, url_draft_registrations):
@@ -806,7 +806,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration the \'Title\' field is invalid.'
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Title\' field is invalid.'
 
     def test_first_level_open_ended_answer_not_expecting_more_nested_data(
             self, app, user, payload, url_draft_registrations):
@@ -822,7 +822,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration the \'Title\' field is invalid.'
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Title\' field is invalid.'
 
     def test_second_level_answers(
             self, app, user, payload, url_draft_registrations):
@@ -854,7 +854,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'For your registration the \'Data collection procedures\' field is invalid.'
+            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
     def test_third_level_open_ended_answer_must_have_correct_key(
             self, app, user, payload, url_draft_registrations):
@@ -871,7 +871,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == \
-               'For your registration the \'Data collection procedures\' field is invalid.'
+               'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
     def test_second_level_open_ended_answer_must_have_correct_type(
             self, app, user, payload, url_draft_registrations):
@@ -885,7 +885,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration the \'Data collection procedures\'' \
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Data collection procedures\'' \
                                                   ' field is invalid.'
 
     def test_third_level_open_ended_answer_must_have_correct_type(
@@ -902,7 +902,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration the \'Data collection procedures\'' \
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Data collection procedures\'' \
                                                   ' field is invalid.'
 
     def test_uploader_metadata(
@@ -957,7 +957,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'For your registration the \'Data collection procedures\' field is invalid.'
+            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
     def test_multiple_choice_questions_incorrect_choice(
             self, app, user, payload, url_draft_registrations):
@@ -969,7 +969,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration the \'Blinding\' field is invalid, your ' \
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Blinding\' field is invalid, your ' \
                                                   'response must be one of the provided options.'
 
     def test_multiple_choice_questions(

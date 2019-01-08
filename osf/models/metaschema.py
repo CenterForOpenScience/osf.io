@@ -88,12 +88,12 @@ class RegistrationSchema(AbstractSchema):
                     elif e.relative_path[0] == question['qid']:
                         if 'options' in question:
                             raise ValidationError(
-                                'For your registration the \'{}\' field is invalid, your response must be one of the provided options.'.format(
+                                'For your registration your response to the \'{}\' field is invalid, your response must be one of the provided options.'.format(
                                     question['title'],
                                 ),
                             )
                         raise ValidationError(
-                            'For your registration the \'{}\' field is invalid.'.format(question['title']),
+                            'For your registration your response to the \'{}\' field is invalid.'.format(question['title']),
                         )
             raise ValidationError(e.message)
         except jsonschema.SchemaError as e:

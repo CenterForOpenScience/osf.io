@@ -812,7 +812,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration the \'Manipulated variables\' field is invalid.'
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Manipulated variables\' field is invalid.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_third_level_questions_must_be_answered_on_draft(
@@ -849,7 +849,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration the \'Manipulated variables\' field is invalid.'
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Manipulated variables\' field is invalid.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_multiple_choice_in_registration_schema_must_match_one_of_choices(
@@ -871,7 +871,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert (
-            res.json['errors'][0]['detail'] == 'For your registration the \'I judge the replication to be a(n)\''
+            res.json['errors'][0]['detail'] == 'For your registration your response to the \'I judge the replication to be a(n)\''
                                                ' field is invalid, your response must be one of the provided options.')
 
     def test_invalid_registration_choice(
@@ -1081,7 +1081,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'All files attached to this form must be registered to complete the' \
                                                   ' process. The following file(s) are attached, but are not part of' \
-                                                  ' a component being registered: <b>file 1</b>'
+                                                  ' a component being registered: file 1'
 
 
 @pytest.mark.django_db
