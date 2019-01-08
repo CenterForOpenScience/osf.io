@@ -179,7 +179,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        return OSFUser.objects.filter(spam_status=self.SPAM_STATUS)
+        return OSFUser.objects.filter(spam_status=self.SPAM_STATUS).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
