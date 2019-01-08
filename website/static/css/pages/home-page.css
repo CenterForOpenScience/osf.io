@@ -1,10 +1,29 @@
 h3, h4 {
     font-weight: 400;
 }
+#osfHome {
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-flex: 1000 0 auto;
+    -webkit-flex: 1000 0 auto;
+    -ms-flex: 1000 0 auto;
+    flex: 1000 0 auto;
+}
 .quickSearch {
     min-height: 700px;
     background: #C5D6E6 url('/static/img/bg6.jpg') top center repeat-y;
     background-size: cover;
+    -webkit-box-flex: 1 0 auto;
+    -webkit-flex: 1 0 auto;
+    -ms-flex: 1 0 auto;
+    flex: 1 0 auto;
 }
 
 .newAndNoteworthy {

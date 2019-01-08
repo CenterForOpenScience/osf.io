@@ -1,6 +1,6 @@
 <% from datetime import datetime %>
 
-<div class="container copyright" style="text-size: 16px">
+<div class="container copyright" style="text-size: 16px; width: 100%;">
     <div class="row">
         <div class="col-md-12">
             <!--

@@ -36,7 +36,7 @@
           <div class="circle" id="circle-8"><span></span></div>
         </div>
 
-        <div id="hero-signup" class="container" style="visibility: hidden">
+        <div id="hero-signup" class="container" style="visibility: hidden; display: none;">
           <div class="row">
             <div class="col-sm-6 hidden-xs">
               <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw" aria-label="OSF YouTube Video"><i class="icon icon-play"></i></a>

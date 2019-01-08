@@ -77,6 +77,12 @@ h6 {
     color: #fff;
     padding-top: 100px;
     position: relative;
+    -webkit-box-flex: 1 0 auto;
+    -webkit-flex: 1 0 auto;
+    -ms-flex: 1 0 auto;
+    flex: 1 0 auto;
+    z-index: -1;
+    overflow: hidden;
 }
 #home-hero h1 {
     font-size: 3.5em;
@@ -496,7 +502,6 @@ footer {
         left: 250px;
     }
     .copyright {
-        padding-top: 14px;
     }
 }
 @media (min-width: 768px) and (max-width: 1199px) {
