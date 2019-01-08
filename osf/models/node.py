@@ -42,7 +42,6 @@ from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.sanctions import RegistrationApproval
 from osf.models.private_link import PrivateLink
-from osf.models.spam import SpamStatus
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_title
@@ -51,7 +50,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from osf.utils import sanitize
-from website import language, settings, mails
+from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.project.licenses import set_license
 from website.project import signals as project_signals
@@ -1875,105 +1874,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.
             super(AbstractNode, self).save()
-
-    def _get_spam_content(self, saved_fields):
-        spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
-            saved_fields)
-        content = []
-        for field in spam_fields:
-            content.append((getattr(self, field, None) or '').encode('utf-8'))
-        if not content:
-            return None
-        return ' '.join(content)
-
-    def check_spam(self, user, saved_fields, request_headers):
-        if not settings.SPAM_CHECK_ENABLED:
-            return False
-        if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
-            return False
-        if user.spam_status == SpamStatus.HAM:
-            return False
-
-        content = self._get_spam_content(saved_fields)
-        if not content:
-            return
-        is_spam = self.do_check_spam(
-            user.fullname,
-            user.username,
-            content,
-            request_headers
-        )
-        logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
-            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
-        ))
-        if is_spam:
-            self._check_spam_user(user)
-            for preprint in self.preprints.get_queryset():
-                preprint.flag_spam()
-                preprint.save()
-
-        return is_spam
-
-    def _check_spam_user(self, user):
-        if (
-            settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
-            and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
-        ):
-            self.set_privacy('private', log=False, save=False)
-
-            # Suspend the flagged user for spam.
-            user.flag_spam()
-            if not user.is_disabled:
-                user.disable_account()
-                user.is_registered = False
-                mails.send_mail(
-                    to_addr=user.username,
-                    mail=mails.SPAM_USER_BANNED,
-                    user=user,
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
-                    can_change_preferences=False,
-                )
-            user.save()
-
-            # Make public nodes private from this contributor
-            for node in user.contributed:
-                if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
-                    node.set_privacy('private', log=False, save=True)
-
-    def flag_spam(self):
-        """ Overrides SpamMixin#flag_spam.
-        """
-        super(AbstractNode, self).flag_spam()
-        if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
-            self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
-            log = self.add_log(
-                action=NodeLog.MADE_PRIVATE,
-                params={
-                    'project': self.parent_id,
-                    'node': self._primary_key,
-                },
-                auth=None,
-                save=False
-            )
-            log.should_hide = True
-            log.save()
-
-    def confirm_spam(self, save=False):
-        super(AbstractNode, self).confirm_spam(save=False)
-        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False)
-        log = self.add_log(
-            action=NodeLog.MADE_PRIVATE,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-            },
-            auth=None,
-            save=False
-        )
-        log.should_hide = True
-        log.save()
-        if save:
-            self.save()
 
     def resolve(self):
         """For compat with v1 Pointers."""
