@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 
 
-<%def name="title()">OSF Prereg Challenge</%def>
+<%def name="title()">GakuNin RDM Prereg Challenge</%def>
 
 <%def name="stylesheets()">
     ${ parent.stylesheets() }
@@ -69,7 +69,7 @@
       %endif
       %if has_projects:
       <div class="row">
-        <div class="reg-landing-page-button-xs reg-landing-page-button reg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProjectXS">Preregister a project you already have on the OSF
+        <div class="reg-landing-page-button-xs reg-landing-page-button reg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProjectXS">Preregister a project you already have on the GakuNin RDM
         </div>
         <div class="reg-button-content-xs">
           ${existingProject('XS')}
@@ -111,7 +111,7 @@
             %endif
             %if has_projects:
             <td class="col-sm-${ num_cols } reg-landing-page-button-col">
-              <div class="reg-landing-page-button reg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Preregister a project you already have on the OSF</div>
+              <div class="reg-landing-page-button reg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Preregister a project you already have on the GakuNin RDM</div>
             </td>
             %endif
           </tr>

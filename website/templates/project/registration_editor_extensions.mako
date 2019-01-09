@@ -1,4 +1,4 @@
-<!-- OSF Upload -->
+<!-- GakuNin RDM Upload -->
 <script type="text/html" id="osf-upload">
   <span data-bind="template: {data: $data, name: format}"></span>
 </script>

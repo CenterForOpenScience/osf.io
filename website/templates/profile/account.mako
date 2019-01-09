@@ -117,11 +117,11 @@
                 <div id="externalIdentity" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Connected Identities</h3></div>
                     <div class="panel-body">
-                        <p> Connected identities allow you to log in to the OSF via a third-party service. <br/>
+                        <p> Connected identities allow you to log in to the GakuNin RDM via a third-party service. <br/>
                         You can revoke these authorizations here.</p>
                         <hr />
                         % if not external_identity:
-                        <p >You have not authorized any external services to log in to the OSF.</p>
+                        <p >You have not authorized any external services to log in to the GakuNin RDM.</p>
                         % endif
                         <tbody>
                         % for identity in external_identity:
@@ -251,7 +251,7 @@
                     <div class="panel-heading clearfix"><h3 class="panel-title">Deactivate Account</h3></div>
                     <div class="panel-body">
                         <p class="alert alert-warning"><strong>Warning:</strong> Once your deactivation has been approved the effects are irreversible.</p>
-                        <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with OSF projects, and your work on the OSF will be inaccessible.</p>
+                        <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with GakuNin RDM projects, and your work on the GakuNin RDM will be inaccessible.</p>
                         <p data-bind="click: cancel, visible: requestPending()"><b>Your account is currently pending deactivation.</b></p>
                         <a class="btn btn-danger" data-bind="click: submit, visible: !requestPending()">Request deactivation</a>
                         <a class="btn btn-success" data-bind="click: cancel, visible: requestPending()">Cancel deactivation request</a>

@@ -33,7 +33,7 @@
             <p>There have been no completed registrations of this project.
             Only project administrators can initiate registrations.</p>
           % endif
-          <p>For a list of the most viewed and most recent public registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.</p>
+          <p>For a list of the most viewed and most recent public registrations on the GakuNin RDM, click <a href="/explore/activity/#newPublicRegistrations">here</a>.</p>
         % endif
         %if parent_node['exists'] and user['is_admin_parent']:
         <br />

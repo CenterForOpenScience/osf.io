@@ -29,16 +29,16 @@
         <p>
             For more information about ${reviewable.provider.name}, visit
             <a href="${provider_url}">${provider_url}</a> to learn more. To learn about the
-            Open Science Framework, visit <a href="https://osf.io/">https://osf.io/</a>.
+            GakuNin RDM, visit <a href="https://rdm.nii.ac.jp/">https://rdm.nii.ac.jp/</a>.
         </p>
         <p>For questions regarding submission criteria, please email ${provider_contact_email}</p>
         <br>
         Sincerely,<br>
-        Your ${reviewable.provider.name} and OSF teams
+        Your ${reviewable.provider.name} and GakuNin RDM teams
         <p>
-            Center for Open Science<br>
+            National Institute of Informatics<br>
             210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903
         </p>
-        <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
+        <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>
 </div>
 

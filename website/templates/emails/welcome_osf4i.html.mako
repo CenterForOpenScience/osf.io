@@ -3,7 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <h3 class="text-center" style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;text-align: center;">Welcome to the OSF!</h3>
+    <h3 class="text-center" style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;text-align: center;">Welcome to the GakuNin RDM!</h3>
   </td>
 </tr>
 <tr>
@@ -11,7 +11,7 @@
 
 Hello ${user.fullname},<br>
 <br>
-Thank you for verifying your account on OSF, a free, open source service maintained by the Center for Open Science. Here are a few things you can do with OSF:
+Thank you for verifying your account on GakuNin RDM, a free, open source service maintained by the National Institute of Informatics. Here are a few things you can do with GakuNin RDM:
 <br>
 
 % if storage_flag_is_active:
@@ -37,7 +37,7 @@ Create a permanent, time-stamped version of your projects and files.  Do this to
 <br>
 
 <h4>Make your work citable</h4>
-Every project and file on the OSF has a permanent unique identifier, and every registration can be assigned a DOI.  Citations for public projects are generated automatically so that visitors can give you credit for your research. <a href="http://help.osf.io/m/sharing/l/524208-create-dois/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Learn more.</a><br>
+Every project and file on the GakuNin RDM has a permanent unique identifier, and every registration can be assigned a DOI.  Citations for public projects are generated automatically so that visitors can give you credit for your research. <a href="http://help.osf.io/m/sharing/l/524208-create-dois/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Learn more.</a><br>
 <br>
 
 <h4>Measure your impact</h4>
@@ -45,18 +45,18 @@ You can monitor traffic to your public projects and downloads of your public fil
 <br>
 
 <h4>Connect services that you use</h4>
-OSF integrates with GitHub, Dropbox, Google Drive, Box, Dataverse, figshare, Amazon S3, ownCloud, Bitbucket, GitLab, OneDrive, Mendeley, and Zotero. Link the services that you use to your OSF projects so that all parts of your research are in one place <a href="http://help.osf.io/m/addons/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Learn about add-ons.</a><br>
+GakuNin RDM integrates with GitHub, Dropbox, Google Drive, Box, Dataverse, figshare, Amazon S3, ownCloud, Bitbucket, GitLab, OneDrive, Mendeley, and Zotero. Link the services that you use to your GakuNin RDM projects so that all parts of your research are in one place <a href="http://help.osf.io/m/addons/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Learn about add-ons.</a><br>
 <br>
 
 <h4>Collaborate</h4>
 Add your collaborators to have a shared environment for maintaining your research materials and data and never lose files again. <a href="http://help.osf.io/m/collaborating/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Start collaborating.</a><br>
 <br>
 
-Learn more about OSF by reading the <a href="http://help.osf.io/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Guides</a>, or email <a href="mailto:${osf_support_email}">${osf_support_email}</a> for support.<br>
+Learn more about GakuNin RDM by reading the <a href="http://help.osf.io/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Guides</a>, or email <a href="mailto:${osf_support_email}">${osf_support_email}</a> for support.<br>
 <br>
 Sincerely,<br>
 <br>
-The OSF Team<br>
+The National Institute of Informatics Team<br>
 
   </td>
 </tr>

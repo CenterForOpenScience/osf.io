@@ -196,7 +196,7 @@
                                     </div>
                                 </div>
                                 <div data-bind="if: emailSearch">
-                                    <p>It looks like you are trying to search by email address. Please try your search again using your collaborator's name. You will be able to add users without OSF accounts as unregistered contributors.</p>
+                                    <p>It looks like you are trying to search by email address. Please try your search again using your collaborator's name. You will be able to add users without GakuNin RDM accounts as unregistered contributors.</p>
                                 </div>
                             </div>
                         </div><!-- ./col-md -->

@@ -16,10 +16,10 @@
   </h4>
 
   <div id="TfaVerify" data-bind="visible: !isConfirmed()">
-    <p>By using two-factor authentication, you'll protect your OSF account with both your password and your mobile phone.</p>
+    <p>By using two-factor authentication, you'll protect your GakuNin RDM account with both your password and your mobile phone.</p>
     <div data-bind="visible: isEnabled">
       <div class="alert alert-danger">
-        <p><strong>Important: </strong> If you lose access to your mobile device, you will not be able to log in to your OSF account.</p>
+        <p><strong>Important: </strong> If you lose access to your mobile device, you will not be able to log in to your GakuNin RDM account.</p>
       </div>
       <p>To use, you must install an appropriate application on your mobile device. Google Authenticator is a popular choice and is available for both
         <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a> and <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>.</p>

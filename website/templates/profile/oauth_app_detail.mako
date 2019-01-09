@@ -29,7 +29,7 @@
 
                 <p><strong class="m-b-sm">Client secret</strong>
                     <i class="fa fa-info-circle text-muted"
-                       data-bind="tooltip: {title:'The client secret is known only to you and the OSF. Do not display or expose this information.',
+                       data-bind="tooltip: {title:'The client secret is known only to you and the GakuNin RDM. Do not display or expose this information.',
                                             placement: 'bottom'}"></i>
                 </p>
                 <p>

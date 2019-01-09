@@ -8,7 +8,7 @@
                         Copyright &copy; 2011-${datetime.utcnow().year}
                     </span>
                     <a href="${footer_links['cos']}">
-                        Center for Open Science
+                        National Institute of Informatics
                     </a>
                     <span>
                         |

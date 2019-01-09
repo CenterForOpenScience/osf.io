@@ -7,28 +7,28 @@
     %if campaign == "prereg":
         <div class="text-center m-t-lg">
             <h3>Preregistration Challenge</h3><hr>
-            <p>Please login to the Open Science Framework or create a free account to continue.</p>
+            <p>Please login to the GakuNin RDM or create a free account to continue.</p>
         </div>
     %endif
 
     %if campaign == "erpc":
         <div class="text-center m-t-lg">
             <h3>Election Research Preacceptance Competition</h3><hr>
-            <p>Please login to the Open Science Framework or create a free account to continue.</p>
+            <p>Please login to the GakuNin RDM or create a free account to continue.</p>
         </div>
     %endif
 
     %if campaign == "osf-registries":
         <div class="text-center m-t-lg">
-            <h3>OSF Registries</h3><hr>
-            <p>Please login to the Open Science Framework or create a free account to continue.</p>
+            <h3>GakuNin RDM Registries</h3><hr>
+            <p>Please login to the GakuNin RDM or create a free account to continue.</p>
         </div>
     %endif
 
     %if campaign == "osf-preprints":
         <div class="text-center m-t-lg">
-            <h3>OSF Preprints</h3><hr>
-            <p>Please login to the Open Science Framework or create a free account to contribute to OSF Preprints.</p>
+            <h3>GakuNin RDM Preprints</h3><hr>
+            <p>Please login to the GakuNin RDM or create a free account to contribute to GakuNin RDM Preprints.</p>
         </div>
     %endif
 
@@ -49,14 +49,14 @@
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/registries/osf-prereg-black.png" style="width: 200px; margin-top: 15px" /></td>
-                            <td><h3>Create a free OSF account</h3></td>
+                            <td><h3>Create a free GakuNin RDM account</h3></td>
                         </tr>
                     </table>
                 %elif campaign == "osf-registries":
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/registries/osf-registries-black.png" style="width: 200px; margin-top: 15px" /></td>
-                            <td><h3>Create a free OSF account</h3></td>
+                            <td><h3>Create a free GakuNin RDM account</h3></td>
                         </tr>
                     </table>
                 %elif campaign == "osf-registered-reports":
@@ -66,11 +66,11 @@
                             <td><h3>Create a free OSF account</h3></td>
                         </tr>
                     </table>
-                %elif campaign == "osf-preprints":
+                %elif campaign == "GakuNin RDM-preprints":
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/preprint_providers/osf-preprints-login.png" style="width: 200px; margin-top: 15px" /></td>
-                            <td><h3>Create a free OSF account</h3></td>
+                            <td><h3>Create a free GakuNin RDM account</h3></td>
                         </tr>
                     </table>
                 %elif campaign not in preprint_campaigns.keys():
@@ -81,7 +81,7 @@
                             <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                                 <tr>
                                     <td><img src="${preprint_campaigns[provider]['logo_path']}" style="width: 100px; height: 100px" /></td>
-                                    <td><h3>Create a free OSF account to contribute to ${preprint_campaigns[provider]['name'] | n}</h3></td>
+                                    <td><h3>Create a free GakuNin RDM account to contribute to ${preprint_campaigns[provider]['name'] | n}</h3></td>
                                 </tr>
                             </table>
                         %endif

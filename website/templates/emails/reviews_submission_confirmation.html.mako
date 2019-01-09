@@ -3,9 +3,9 @@
 <%def name="content()">
     <% from website import settings %>
     <%
-        isOsfSubmission = reviewable.provider.name == 'Open Science Framework'
+        isOsfSubmission = reviewable.provider.name == 'GakuNin RDM'
         if isOsfSubmission:
-            reviewable.provider.name = 'OSF Preprints'
+            reviewable.provider.name = 'GakuNin RDM Preprints'
     %>
     <tr>
         <td>
@@ -22,7 +22,7 @@
                         ${referrer.fullname} has added you as a contributor to the
                         ${reviewable.provider.preprint_word}
                         <a href="${reviewable.absolute_url}">${reviewable.node.title}</a>
-                        on ${reviewable.provider.name}, which is hosted on the OSF.
+                        on ${reviewable.provider.name}, which is hosted on the GakuNin RDM.
                     </p>
                 % endif
                       <p>
@@ -38,9 +38,9 @@
                             <tbody>
                                 <tr>
                                     <td>
-                                    Now that you've shared your ${reviewable.provider.preprint_word}, take advantage of more OSF features:
+                                    Now that you've shared your ${reviewable.provider.preprint_word}, take advantage of more GakuNin RDM features:
                                         <ul>
-                                            <li>Upload supplemental, materials, data, and code to the OSF project associated with your ${reviewable.provider.preprint_word}.
+                                            <li>Upload supplemental, materials, data, and code to the GakuNin RDM project associated with your ${reviewable.provider.preprint_word}.
                                                 <a href="http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint" target="_blank">Learn how</a></li>
                                             <li>Preregister your next study. <a href="http://help.osf.io/m/registrations/l/524205-register-your-project">Read more</a></li>
                                             <li>Or share on social media: Tell your friends through:
@@ -82,11 +82,11 @@
                     "Contributors" page and remove yourself as a contributor.
                 </p>
                 % endif
-                <p>Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://osf.io/">OSF</a>.</p>
+                <p>Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://rdm.nii.ac.jp/">GakuNin RDM</a>.</p>
                 <br>
                 <p>
                     Sincerely,<br>
-                    ${'Your OSF team' if isOsfSubmission else 'Your {provider} and OSF teams'.format(provider=reviewable.provider.name)}
+                    ${'Your GakuNin RDM team' if isOsfSubmission else 'Your {provider} and GakuNin RDM teams'.format(provider=reviewable.provider.name)}
                 </p>
             </div>
         </td>
