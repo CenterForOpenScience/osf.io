@@ -81,7 +81,6 @@ h6 {
     -webkit-flex: 1 0 auto;
     -ms-flex: 1 0 auto;
     flex: 1 0 auto;
-    z-index: -1;
     overflow: hidden;
 }
 #home-hero h1 {
