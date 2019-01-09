@@ -6,12 +6,12 @@ import json
 import logging
 
 from django.db import migrations
-from osf.models import FileMetadataSchema
 
 logger = logging.getLogger(__file__)
 
 
-def add_datacite_schema(*args):
+def add_datacite_schema(state, schema):
+    FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
     with open('osf/metadata/schemas/datacite.json') as f:
         jsonschema = json.load(f)
     _, created = FileMetadataSchema.objects.get_or_create(
@@ -27,7 +27,8 @@ def add_datacite_schema(*args):
         logger.info('Added datacite schema to the database')
 
 
-def remove_datacite_schema(*args):
+def remove_datacite_schema(state, schema):
+    FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
     FileMetadataSchema.objects.get(_id='datacite').delete()
     logger.info('Removed datacite schema from the database')
 

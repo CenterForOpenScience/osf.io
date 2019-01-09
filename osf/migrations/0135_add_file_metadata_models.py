@@ -27,6 +27,7 @@ class Migration(migrations.Migration):
                 ('category', models.CharField(blank=True, max_length=255, null=True)),
                 ('active', models.BooleanField(default=True)),
                 ('schema_version', models.IntegerField()),
+                ('visible', models.BooleanField(default=True)),
             ],
             options={
                 'abstract': False,
