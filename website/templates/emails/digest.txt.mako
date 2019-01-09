@@ -18,7 +18,7 @@ Recent Activity:
 
 ${build_message(message)}
 
-From the Open Science Framework
+From the GakuNin RDM
 
 <%def name="build_message(d, indent=0)">
 %for key in d['children']:

@@ -1,6 +1,6 @@
 Hello ${fullname},
 
-We received your request to claim an OSF account and become a contributor for "${node.title}". 
+We received your request to claim an GakuNin RDM account and become a contributor for "${node.title}". 
 
 To confirm your identity, ${referrer.fullname} has been sent an email to forward to you with your confirmation link.
 
@@ -10,14 +10,14 @@ Thank you for your patience.
 
 Sincerely,
 
-The OSF Team
+The GakuNin RDM Team
 
-Center for Open Science
+National Institute of Informatics
 
-210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN
 
-Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
+Privacy Policy: https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422
 
-More information? Visit https://osf.io/ and https://cos.io/ for information about the Open Science Framework and its supporting organization, the Center for Open Science.
+More information? Visit https://rdm.nii.ac.jp/ and https://nii.ac.jp/ for information about the GakuNin RDM and its supporting organization, the National Institute of Informatics.
 
 Questions? Email contact@osf.io

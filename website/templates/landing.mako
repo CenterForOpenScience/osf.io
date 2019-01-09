@@ -39,8 +39,8 @@
         <div id="hero-signup" class="container" style="visibility: hidden; display: none;">
           <div class="row">
             <div class="col-sm-6 hidden-xs">
-              <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw" aria-label="OSF YouTube Video"><i class="icon icon-play"></i></a>
-              <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
+              <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw" aria-label="GakuNin RDM YouTube Video"><i class="icon icon-play"></i></a>
+              <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of GakuNin RDM" />
             </div>
             <div class="col-sm-6 sign-up-div" style="visibility: hidden">
               <h2>Free and open source. Start now.</h2>
@@ -154,7 +154,7 @@
             </div>
             <div class="col-xs-9 col-xs-offset-1">
               <h3>Respect for your workflow</h3>
-              <p><strong>Connect your favorite third party services</strong> directly to the Open Science Framework.  <span class="label label-primary">3rd Party Integrations</span></p>
+              <p><strong>Connect your favorite third party services</strong> directly to the GakuNin RDM.  <span class="label label-primary">3rd Party Integrations</span></p>
             </div>
           </div>
         </div>
@@ -162,7 +162,7 @@
           <div class="student-wrap">
             <div class="student-image">
               <div class="quote">
-                <span class="main">“The OSF is a great way to collaborate and stay organized while still using your favorite external services."</span>
+                <span class="main">“The GakuNin RDM is a great way to collaborate and stay organized while still using your favorite external services."</span>
                 <span class="attrib"><strong>Kara Woo</strong> - Information Manager, Aquatic Ecology, Washington State</span>
               </div>
             </div>
@@ -176,7 +176,7 @@
       <div class="feature-2 space-top space-bottom">
         <div class="row">
           <div class="col-xs-12 text-center headline">
-            <h2>OSF integrations make your <strong>workflow more efficient</strong></h2>
+            <h2>GakuNin RDM integrations make your <strong>workflow more efficient</strong></h2>
           </div>
         </div>
         <div class="row integrations">
@@ -237,13 +237,13 @@
 
           <div class="col-sm-6 text-left">
             <h3>Archive your data</h3>
-            <p>Computer or collaborator explode? With the OSF <strong>you will never lose your project data.</strong></p>
+            <p>Computer or collaborator explode? With the GakuNin RDM <strong>you will never lose your project data.</strong></p>
 
             <h3>Control access and collaboration</h3>
             <p> Add others to your projects to collaborate, or provide private access to view.</p>
 
             <h3>Supercharge your workflow</h3>
-            <p>The OSF helps individuals, teams and labs make their <strong>research processes more efficient.</strong></p>
+            <p>The GakuNin RDM helps individuals, teams and labs make their <strong>research processes more efficient.</strong></p>
 
             <h3>Registration</h3>
             <p><strong>Preserve the state of a project at important parts of its lifecycle</strong> such as the onset of data collection.</p>
@@ -258,12 +258,12 @@
             <div class="col-md-4 col-md-offset-1">
               <i class="icon icon-earth"></i>
               <h2><strong>Contribute</strong> to global scientific efforts</h2>
-              <p>Labs and teams across the globe use the Open Science Framework to open their projects up to the scientific community. You can browse the newest and most popular public projects <a href="/explore/activity/">right here</a>. <span class="label label-warning">Get involved</span></p>
+              <p>Labs and teams across the globe use the GakuNin RDM to open their projects up to the scientific community. You can browse the newest and most popular public projects <a href="/explore/activity/">right here</a>. <span class="label label-warning">Get involved</span></p>
             </div>
             <div class="col-md-4 col-md-offset-1">
               <i class="icon icon-nonprofit"></i>
               <h2>We are a <strong>mission-driven non-profit</strong></h2>
-              <p>The OSF is a free, open source service of the <a href="https://cos.io/">Center for Open Science</a>. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
+              <p>The GakuNin RDM is a free, open source service of the <a href="https://nii.ac.jp/">National Institute of Informatics</a>. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
             </div>
           </div>
         </div>
@@ -275,7 +275,7 @@
 
         <div class="row">
           <div class="col-md-12 text-center">
-            <h2><strong>Teachers, researchers, and global teams rely</strong> on the Open Science Framework</h2>
+            <h2><strong>Teachers, researchers, and global teams rely</strong> on the GakuNin RDM</h2>
           </div>
         </div>
 
@@ -285,14 +285,14 @@
           </div>
           <div class="col-xs-8">
             <h3>Making research reproducible &amp; verifiable</h3>
-            <p>The OSF helps our students understand and apply sound data management principles to their work. And since we have easy access to all of the files the students are working with, it greatly enhances our ability to offer them constructive guidance.<br/><small><em>Richard Ball, Professor of Economics, Haverford College</em></small></p>
+            <p>The GakuNin RDM helps our students understand and apply sound data management principles to their work. And since we have easy access to all of the files the students are working with, it greatly enhances our ability to offer them constructive guidance.<br/><small><em>Richard Ball, Professor of Economics, Haverford College</em></small></p>
           </div>
         </div>
 
         <div class="row hidden-xs hidden-sm">
           <div class="col-md-7 col-md-offset-2">
             <h3>Version control makes life easier</h3>
-            <p>The OSF makes version control effortless. My PI, my lab mates, and I have access to previous versions of a file at any time&#151;and the most current version is always readily available.<br/><small><em>Erica Baranski, PhD Student, Social and Personality Psychology Funder Lab, UC Riverside</em></small></p>
+            <p>The GakuNin RDM makes version control effortless. My PI, my lab mates, and I have access to previous versions of a file at any time&#151;and the most current version is always readily available.<br/><small><em>Erica Baranski, PhD Student, Social and Personality Psychology Funder Lab, UC Riverside</em></small></p>
           </div>
           <div class="col-md-3">
             <img src="/static/img/front-page/user3.jpg" class="img-circle img-responsive" alt="Erica Baranski" />
@@ -305,7 +305,7 @@
           </div>
           <div class="col-md-7">
             <h3>A centralized hub of information</h3>
-            <p>The OSF creates a centralized hub of information where I can oversee a diversity of research projects across multiple classes. The centralization, organization and anywhere-access save me the time and energy necessary for managing these projects.<br/><small><em>Anne Allison, Associate Professor of Biology at Piedmont Virginia Community College</em></small></p>
+            <p>The GakuNin RDM creates a centralized hub of information where I can oversee a diversity of research projects across multiple classes. The centralization, organization and anywhere-access save me the time and energy necessary for managing these projects.<br/><small><em>Anne Allison, Associate Professor of Biology at Piedmont Virginia Community College</em></small></p>
           </div>
         </div>
 
@@ -317,7 +317,7 @@
         <div class="row">
           <div class="col-md-8">
             <h2><strong>Free and open source.</strong></h2>
-            <h4>The OSF is a public good built to support your research.</h4>
+            <h4>The GakuNin RDM is a public good built to support your research.</h4>
             <a href="#" class="btn btn-info btn-lg">Get started</a>
           </div>
           <div class="col-md-4 hidden-xs hidden-sm">

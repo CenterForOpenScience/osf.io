@@ -43,7 +43,7 @@
         <meta name="dc.identifier" content="${self.identifier_meta()['doi']}" />
         <meta name="dc.identifier" content="${self.identifier_meta()['ark']}" />
     %endif
-    <meta name="citation_publisher" content="Open Science Framework" />
+    <meta name="citation_publisher" content="GakuNin RDM" />
     %for institution in self.institutions_meta()[:10]:
         <meta name="citation_author_institution" content="${institution}" />
     %endfor
@@ -56,7 +56,7 @@
     <meta name="dc.license" content="${self.license_meta()}" />
     <meta name="dc.datemodified" content="${self.datemodified_meta()}" />
     <meta name="dc.datesubmitted" content="${self.datecreated_meta()}" />
-    <meta name="dc.publisher" content="Open Science Framework" />
+    <meta name="dc.publisher" content="GakuNin RDM" />
     <meta name="dc.language" content="en" />
     <meta name="dc.identifier" content="${self.url_meta()}" />
     <meta name="citation_description" content="${self.description_meta()}" />
@@ -65,7 +65,7 @@
 
     <!-- Facebook display -->
     <meta property="og:ttl" content="3" />
-    <meta property="og:site_name" content="Open Science Framework" />
+    <meta property="og:site_name" content="GakuNin RDM" />
     <meta property="og:url" content="${self.url_meta()}" />
     <meta property="og:title" content="${self.title_meta()}" />
     <meta property="og:description" content="${self.description_meta()}" />
@@ -73,7 +73,7 @@
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Open Science Framework" />
+    <meta property="og:image:alt" content="GakuNin RDM" />
 
     %for author in self.authors_meta()[:10]:
         <meta name="dc.creator" content="${author}" />
@@ -149,12 +149,12 @@
             </div>
             <div class='col-sm-10 col-xs-12'>
                 <a data-bind="click: dismiss" class="close" href="#">&times;</a>
-                <h1>Start managing your projects on the OSF today.</h1>
-                <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
+                <h1>Start managing your projects on the GakuNin RDM today.</h1>
+                <p>Free and easy to use, the GakuNin RDM supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
                 <div>
                     <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
 
-                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="http://help.osf.io" target="_blank" rel="noreferrer">Learn More</a>
+                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="https://meatwiki.nii.ac.jp/confluence/display/gakuninrdmusers" target="_blank" rel="noreferrer">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
@@ -276,7 +276,7 @@
 
 <!-- Metadata tags-->
 <%def name="description_meta()">
-    Hosted on the Open Science Framework
+    Hosted on the GakuNin RDM
 </%def>
 
 <%def name="title_meta()">

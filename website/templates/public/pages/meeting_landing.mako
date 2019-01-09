@@ -27,7 +27,7 @@
         <div class="osf-meeting-header">
             <div class="container ">
             <div class="text-center m-b-lg">
-                <h1><img src="/static/img/meeting-page/osf_meetings_white.png" alt="Logo for OSF meeting" style="width: 80%"></h1>
+                <h1><img src="/static/img/meeting-page/osf_meetings_white.png" alt="Logo for GakuNin RDM meeting" style="width: 80%"></h1>
                 <h3>A <strong>free poster and presentation sharing service</strong> for academic meetings and conferences</h3>
             </div>
                 <div class="network-img"> </div>
@@ -45,7 +45,7 @@
                     </div>
                     <div class="collapse" id="osf-meeting-register">
                         <div class="m-lg osf-box-lt p-md text-left">
-                            <p>OSF for Meetings is a product that we offer to academic conferences at no cost. To request poster and talk hosting for a conference:</p>
+                            <p>GakuNin RDM for Meetings is a product that we offer to academic conferences at no cost. To request poster and talk hosting for a conference:</p>
                                 <p class="text-center"><strong> Email us at <a href="mailto:contact@cos.io">contact@cos.io</a> </strong></p>
                              <p>We'll review and add your conference within one business day.</p>
                         </div>
@@ -63,15 +63,15 @@
                     </div>
                     <div class="collapse" id="osf-meeting-upload">
                         <div class="m-lg osf-box-lt p-md text-left">
-                            <p>The OSF can host posters and talks for scholarly meetings.
+                            <p>The GakuNin RDM can host posters and talks for scholarly meetings.
                                 Submitting a presentation is easy:</p>
 
                             <ul>
                                 <li>Find the email address for your conference by clicking on its name in the list below</li>
-                                <li>Send your materials to the OSF for Meetings email address for your conference</li>
+                                <li>Send your materials to the GakuNin RDM for Meetings email address for your conference</li>
                             </ul>
 
-                            <p> We’ll create an OSF project for you. You'll get a permanent link to your presentation, plus analytics about who has viewed and downloaded your work.</p>
+                            <p> We’ll create an GakuNin RDM project for you. You'll get a permanent link to your presentation, plus analytics about who has viewed and downloaded your work.</p>
                         </div>
 
                     </div>
@@ -147,7 +147,7 @@
         </div>
 
         <div class="row text-center m-b-md">
-            <h2> Who uses OSF for Meetings?</h2>
+            <h2> Who uses GakuNin RDM for Meetings?</h2>
         </div>
         <div class="row org-logo m-b-lg">
             <div class="col-sm-3 col-xs-6  text-center">

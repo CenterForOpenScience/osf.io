@@ -1,6 +1,6 @@
 Hello ${merge_target.fullname},
 
-This email is to notify you that ${user.username} has an initiated an account merge with your account on the Open Science Framework (OSF). This merge will move all of the projects and components associated with ${email} and with ${user.username} into one account. All projects and components will be displayed under ${user.username}.
+This email is to notify you that ${user.username} has an initiated an account merge with your account on the GakuNin RDM (GRDM). This merge will move all of the projects and components associated with ${email} and with ${user.username} into one account. All projects and components will be displayed under ${user.username}.
 
 Both ${user.username} and ${email} can be used to log into the account. However, ${email} will no longer show up in user search.
 

@@ -4,11 +4,11 @@
 
 Hello ${user.fullname},
 
-Congratulations on sharing your preprint "${node.title}" on OSF Preprints: ${preprint.absolute_url}
+Congratulations on sharing your preprint "${node.title}" on GRDM Preprints: ${preprint.absolute_url}
 
-Now that you've shared your preprint, take advantage of more OSF features:
+Now that you've shared your preprint, take advantage of more GakuNin RDM features:
 
-*Upload supplemental, materials, data, and code to the OSF project associated with your preprint: ${node.absolute_url} Learn how: http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint
+*Upload supplemental, materials, data, and code to the GakuNin RDM project associated with your preprint: ${node.absolute_url} Learn how: http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint
 
 *Preregister your next study and become eligible for a $1000 prize: osf.io/prereg
 
@@ -20,16 +20,16 @@ You will ${'not receive ' if all_global_subscriptions_none else 'be automaticall
 
 Sincerely,
 
-Your OSF Team
+Your GakuNin RDM Team
 
-Want more information? Visit https://osf.io/ to learn about the Open Science Framework or https://cos.io/ for information about its supporting organization, the Center for Open Science.
+Want more information? Visit https://rdm.nii.ac.jp/ to learn about the GakuNin RDM or https://nii.ac.jp/ for information about its supporting organization, the National Institute of Informatics.
 
 Questions? Email contact@osf.io
 
 
 
-Center for Open Science
+National Institute of Informatics
 
-210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN
 
-Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
+Privacy Policy: https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422

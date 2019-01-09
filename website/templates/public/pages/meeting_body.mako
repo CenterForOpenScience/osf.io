@@ -33,7 +33,7 @@
         <h3>${('Add your ' + meeting['field_names']['add_submission']) if meeting['poster'] and meeting['talk'] else ('Add your ' + meeting['field_names']['submission1_plural']) if meeting['poster'] else ('Add your ' + meeting['field_names']['submission2_plural'])}</h3>
         <p>
             Send an email to the following address(es) from the email
-            account you would like used on the OSF:
+            account you would like used on the GakuNin RDM:
         </p>
         <ul>
             % if meeting['poster']:
@@ -58,7 +58,7 @@
             Once sent, we will follow-up by sending you the permanent identifier
             that others can use to cite your work; you can also login and make changes,
             such as uploading additional files, to your project at that URL. If you
-            didn't have an OSF account, one will be created automatically and a link
+            didn't have an GakuNin RDM account, one will be created automatically and a link
             to set your password will be emailed to you; if you do, we will simply create
             a new project in your account. By creating an account you agree to our
             <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a>

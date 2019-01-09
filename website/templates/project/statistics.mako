@@ -49,7 +49,7 @@
           <ul>
             <li>are discoverable</li>
             <li>are citable</li>
-            <li>can be affiliated with OSF for Institutions partners</li>
+            <li>can be affiliated with GakuNin RDM for Institutions partners</li>
             <li>promote open practices among peers</li>
           </ul>
 

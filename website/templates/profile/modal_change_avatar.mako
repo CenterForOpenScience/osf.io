@@ -6,14 +6,14 @@
                 <h3 class="modal-title">Change Avatar</h3>
             </div>
             <div class="modal-body">
-                <p>Avatars on the OSF use
+                <p>Avatars on the GakuNin RDM use
                     <a href="http://gravatar.org/">gravatar.org</a>, a free
                     service that allows users to easily control their identity
                     and profile on multiple service across the Internet.
                 </p>
                 <p>To change your avatar image, please login or register at
                    <a href="http://gravatar.org/">gravatar.org</a>, and add the
-                   email address you use on the OSF to your Gravatar account.
+                   email address you use on the GakuNin RDM to your Gravatar account.
                 </p>
             </div>
             <div class="modal-footer">

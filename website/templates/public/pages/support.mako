@@ -25,8 +25,8 @@
                         <h4 class="f-w-lg"><a href="/faq"> Frequently Asked Questions</a></h4>
                     </div>
                     <div class="support-col-body clearfix">
-                        <p> How can it be free? How will the OSF be useful to my research? What is a registration?
-                        Get your questions about the Open Science Framework answered on our <a href="http://help.osf.io/m/faqs/l/726460-faqs"> FAQ page. </a></p>
+                        <p> How can it be free? How will the GakuNin RDM be useful to my research? What is a registration?
+                        Get your questions about the GakuNin RDM answered on our <a href="http://help.osf.io/m/faqs/l/726460-faqs"> FAQ page. </a></p>
                         <a href="http://help.osf.io/m/faqs/l/726460-faqs" class="btn btn-info m-t-lg pull-right" > Visit FAQ <i class="fa fa-angle-right"></i></a>
                     </div>
 
@@ -35,10 +35,10 @@
             <div class="col-sm-4">
                 <div class="support-col">
                     <div class="support-col-header bg-color-select">
-                        <h4 class="f-w-lg"><a href="http://help.osf.io" target="_blank" rel="noreferrer">OSF Guides</a></h4>
+                        <h4 class="f-w-lg"><a href="http://help.osf.io" target="_blank" rel="noreferrer">GakuNin RDM Guides</a></h4>
                     </div>
                     <div class="support-col-body clearfix">
-                        <p> Learn how to use the OSF for improving your research workflow. Read our <a href="http://help.osf.io" target="_blank" rel="noreferrer">
+                        <p> Learn how to use the GakuNin RDM for improving your research workflow. Read our <a href="http://help.osf.io" target="_blank" rel="noreferrer">
                             Guides </a> for step-by-step screenshots that show you the basics
                             of project structures, version control, privacy, files, add-on support, and more! </p>
                             <a href="http://help.osf.io" class="btn btn-info m-t-lg pull-right" target="_blank" rel="noreferrer"> Visit Guides <i class="fa fa-angle-right"></i> </a>
@@ -73,7 +73,7 @@
             </div>
             <div class="col-sm-4">
                 <h5 class="m-t-md f-w-xl"> Are you looking for statistics consultations?</h5>
-                <p>COS provides statistics consulation for free. To learn more about this service visit the <a href="https://cos.io/stats_consulting/"> COS statistics consulting page</a>.</p>
+                <p>NII provides statistics consulation for free. To learn more about this service visit the <a href="https://cos.io/stats_consulting/"> NII statistics consulting page</a>.</p>
             </div>
 
         </div>
@@ -84,7 +84,7 @@
                 <a href="https://twitter.com/OSFSupport" class="btn btn-link"><i class="fa fa-twitter"></i> Ask us a question on twitter </a>
                 <a href="https://groups.google.com/forum/#!forum/openscienceframework" class="btn btn-link"><i class="fa fa-users"></i> Join our mailing list </a>
                 <a href="https://www.facebook.com/CenterForOpenScience/" class="btn btn-link"><i class="fa fa-facebook"></i> Follow us on Facebook </a>
-                <a href="https://github.com/centerforopenscience" class="btn btn-link"><i class="fa fa-github"></i> Connect with COS on GitHub</a>
+                <a href="https://github.com/centerforopenscience" class="btn btn-link"><i class="fa fa-github"></i> Connect with NII on GitHub</a>
             </div>
         </div>
 

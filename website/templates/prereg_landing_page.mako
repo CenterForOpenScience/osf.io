@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 
 
-<%def name="title()">OSF Prereg Challenge</%def>
+<%def name="title()">GakuNin RDM Prereg Challenge</%def>
 
 <%def name="stylesheets()">
     ${ parent.stylesheets() }
@@ -71,7 +71,7 @@
       %endif
       %if has_projects:
       <div class="row">
-        <div class="prereg-button-xs prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProjectXS">Preregister a project you already have on the OSF
+        <div class="prereg-button-xs prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProjectXS">Preregister a project you already have on the GakuNin RDM
         </div>
         <div class="prereg-button-content-xs">
           ${existingProject('XS')}
@@ -113,7 +113,7 @@
             %endif
             %if has_projects:
             <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Preregister a project you already have on the OSF</div>
+              <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Preregister a project you already have on the GakuNin RDM</div>
             </td>
             %endif
           </tr>
