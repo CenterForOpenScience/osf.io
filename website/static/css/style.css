@@ -61,18 +61,22 @@ a {
 
 /* Warning Banner for cookies and browser depreciation goes on bottom of page */
 .warningBanner {
+    margin-bottom: 0px;
+    background-color: #263947;
+    color:white;
+    text-align: left;
+    border-width: 1px;
+    border-color: white;
+    display: none;
+    align-items: center;
+}
+
+footBanners {
     position:fixed;
     width: 100%;
     z-index: 10;
     bottom:0;
-    margin-bottom: 0px;
     left:0;
-    background-color: #263947;
-    color:white;
-    text-align: left;
-    border: 0px;
-    display: none;
-    align-items: center;
 }
 
 .warningBannerText {
