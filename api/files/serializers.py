@@ -448,6 +448,7 @@ class FileMetadataRecordSerializer(JSONAPISerializer):
 
     links = LinksField({
         'download': 'get_download_link',
+        'self': 'get_absolute_url',
     })
 
     def validate_metadata(self, value):
