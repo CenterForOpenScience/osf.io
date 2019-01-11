@@ -20,6 +20,7 @@ from osf_tests.factories import (
     OSFGroupFactory,
     PrivateLinkFactory
 )
+from osf.utils.permissions import READ
 
 
 def prepare_mock_wb_response(
@@ -219,7 +220,7 @@ class TestNodeFilesList(ApiTestCase):
     def test_returns_private_files_logged_in_osf_group_member(self):
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        self.project.add_osf_group(group, 'read')
+        self.project.add_osf_group(group, READ)
         res = self.app.get(
             self.private_url,
             auth=group_mem.auth,

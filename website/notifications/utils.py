@@ -4,6 +4,7 @@ from django.apps import apps
 from django.db.models import Q
 
 from framework.postcommit_tasks.handlers import run_postcommit
+from osf.utils.permissions import READ
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.project import signals
@@ -126,7 +127,7 @@ def separate_users(node, user_ids):
             user = OSFUser.load(user_id)
         except TypeError:
             user = user_id
-        if node.has_permission(user, 'read'):
+        if node.has_permission(user, READ):
             subbed.append(user_id)
         else:
             removed.append(user_id)
@@ -266,15 +267,15 @@ def format_data(user, nodes):
     for node in nodes:
         assert node, '{} is not a valid Node.'.format(node._id)
 
-        can_read = node.has_permission(user, 'read')
-        can_read_children = node.has_permission_on_children(user, 'read')
+        can_read = node.has_permission(user, READ)
+        can_read_children = node.has_permission_on_children(user, READ)
 
         if not can_read and not can_read_children:
             continue
 
         children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
         children_tree = []
-        # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
+        # List project/node if user has at least READ permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
 
         if can_read:
@@ -298,7 +299,7 @@ def format_data(user, nodes):
                 'title': node.title if can_read else 'Private Project',
             },
             'children': children_tree,
-            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
+            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, READ) else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
             'permissions': {
@@ -390,7 +391,7 @@ def get_parent_notification_type(node, event, user):
     AbstractNode = apps.get_model('osf.AbstractNode')
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
 
-    if node and isinstance(node, AbstractNode) and node.parent_node and node.parent_node.has_permission(user, 'read'):
+    if node and isinstance(node, AbstractNode) and node.parent_node and node.parent_node.has_permission(user, READ):
         parent = node.parent_node
         key = to_subscription_key(parent._id, event)
         try:

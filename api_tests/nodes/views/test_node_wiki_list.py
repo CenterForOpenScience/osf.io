@@ -14,6 +14,7 @@ from osf_tests.factories import (
     OSFGroupFactory,
     RegistrationFactory,
 )
+from osf.utils.permissions import WRITE, READ
 from tests.base import fake
 
 
@@ -126,7 +127,7 @@ class TestNodeWikiList:
     #   test_return_private_node_wikis_logged_in_osf_group_member
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, 'read')
+        private_project.add_osf_group(group, READ)
         res = app.get(private_url, auth=group_mem.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
@@ -349,7 +350,7 @@ class TestNodeWikiCreate(WikiCRUDTestCase):
         # test_osf_group_member_write
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, 'write')
+        project_public.add_osf_group(group, WRITE)
         res = app.post_json_api(url_node_public, create_wiki_payload(fake.word()), auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 201
 
@@ -386,7 +387,7 @@ class TestNodeWikiCreate(WikiCRUDTestCase):
         # test_do_not_create_public_wiki_page_as_read_osf_group_member
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, 'read')
+        project_public.add_osf_group(group, READ)
         res = app.post_json_api(url_node_public, create_wiki_payload(fake.word()), auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
 

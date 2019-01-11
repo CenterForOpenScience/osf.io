@@ -3,6 +3,7 @@ from guardian.shortcuts import get_perms
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
+from osf.utils import permissions
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -38,15 +39,15 @@ def osf_group(member, manager):
 @pytest.fixture()
 def private_project(write_contrib, read_contrib):
     project = ProjectFactory(is_public=False)
-    project.add_contributor(read_contrib, permissions='read')
-    project.add_contributor(write_contrib, permissions='write', save=True)
+    project.add_contributor(read_contrib, permissions=permissions.READ)
+    project.add_contributor(write_contrib, permissions=permissions.WRITE, save=True)
     return project
 
 @pytest.fixture()
 def public_project(write_contrib, read_contrib):
     project = ProjectFactory(is_public=True)
-    project.add_contributor(read_contrib, permissions='read')
-    project.add_contributor(write_contrib, permissions='write', save=True)
+    project.add_contributor(read_contrib, permissions=permissions.READ)
+    project.add_contributor(write_contrib, permissions=permissions.WRITE, save=True)
     return project
 
 @pytest.fixture()
@@ -87,22 +88,22 @@ class TestNodeGroupsList:
         return contrib_id
 
     def test_return(self, app, non_contrib, osf_group, member, manager, public_project, private_project, public_url, private_url, make_group_id):
-        public_project.add_osf_group(osf_group, 'write')
+        public_project.add_osf_group(osf_group, permissions.WRITE)
 
         # public url logged out
         res = app.get(public_url)
         resp_json = res.json['data']
         ids = [each['id'] for each in resp_json]
         assert make_group_id(public_project, osf_group) in ids
-        assert resp_json[0]['attributes']['permission'] == 'write'
+        assert resp_json[0]['attributes']['permission'] == permissions.WRITE
 
         # private project logged in
-        private_project.add_osf_group(osf_group, 'read')
+        private_project.add_osf_group(osf_group, permissions.READ)
         res = app.get(private_url, auth=private_project.creator.auth)
         resp_json = res.json['data']
         ids = [each['id'] for each in resp_json]
         assert make_group_id(private_project, osf_group) in ids
-        assert resp_json[0]['attributes']['permission'] == 'read'
+        assert resp_json[0]['attributes']['permission'] == permissions.READ
 
         # private project logged out
         res = app.get(private_url, expect_errors=True)
@@ -123,9 +124,9 @@ class TestNodeGroupsList:
     def test_filter_groups(self, app, osf_group, private_project, manager, private_url, make_group_id):
         read_group = OSFGroupFactory(creator=manager, name='house')
         write_group = OSFGroupFactory(creator=manager, name='doghouse')
-        private_project.add_osf_group(read_group, 'read')
-        private_project.add_osf_group(write_group, 'write')
-        private_project.add_osf_group(osf_group, 'admin')
+        private_project.add_osf_group(read_group, permissions.READ)
+        private_project.add_osf_group(write_group, permissions.WRITE)
+        private_project.add_osf_group(osf_group, permissions.ADMIN)
 
         # test filter on permission
         url = private_url + '?filter[permission]=admin'
@@ -180,7 +181,7 @@ class TestNodeGroupCreate:
 
     def test_create_node_groups(self, app, osf_group, public_url, non_contrib, member, manager,
                                 public_project, write_contrib, make_node_group_payload):
-        attributes = {'permission': 'write'}
+        attributes = {'permission': permissions.WRITE}
         relationships = {
             'groups': {
                 'data': {
@@ -204,13 +205,13 @@ class TestNodeGroupCreate:
         assert res.status_code == 403
 
         # create group with admin permissions on node and manager permissions in group
-        public_project.add_contributor(manager, permissions='admin', auth=Auth(public_project.creator), save=True)
+        public_project.add_contributor(manager, permissions=permissions.ADMIN, auth=Auth(public_project.creator), save=True)
 
         # test_perm_not_specified - given write by default
         relationship_only = make_node_group_payload(attributes={}, relationships=relationships)
         res = app.post_json_api(public_url, relationship_only, auth=manager.auth)
         assert res.status_code == 201
-        assert res.json['data']['attributes']['permission'] == 'write'
+        assert res.json['data']['attributes']['permission'] == permissions.WRITE
         assert osf_group._id in res.json['data']['relationships']['groups']['links']['related']['href']
 
         public_project.remove_osf_group(osf_group)
@@ -238,8 +239,8 @@ class TestNodeGroupCreate:
         # test_admin_perms
         res = app.post_json_api(public_url, payload, auth=manager.auth)
         assert public_project in osf_group.nodes
-        assert public_project.has_permission(member, 'write')
-        assert res.json['data']['attributes']['permission'] == 'write'
+        assert public_project.has_permission(member, permissions.WRITE)
+        assert res.json['data']['attributes']['permission'] == permissions.WRITE
         assert osf_group._id in res.json['data']['relationships']['groups']['links']['related']['href']
 
         # test creating group a second time fails
@@ -277,7 +278,7 @@ class TestNodeGroupDetail:
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'Group {} does not have permissions to node {}.'.format(osf_group._id, public_project._id)
 
-        public_project.add_osf_group(osf_group, 'write')
+        public_project.add_osf_group(osf_group, permissions.WRITE)
 
         # test attributes
         res = app.get(public_detail_url)
@@ -285,7 +286,7 @@ class TestNodeGroupDetail:
         assert attributes['date_created'] == osf_group.created.replace(tzinfo=None).isoformat()
         assert attributes['date_modified'] == osf_group.modified.replace(tzinfo=None).isoformat()
         assert attributes['name'] == osf_group.name
-        assert attributes['permission'] == 'write'
+        assert attributes['permission'] == permissions.WRITE
 
         # test relationships
         relationships = res.json['data']['relationships']
@@ -297,8 +298,8 @@ class TestNodeGroupDetail:
         assert res.status_code == 404
 
     def test_node_group_detail_perms(self, app, non_contrib, osf_group, member, public_project, private_project, public_detail_url, private_url):
-        public_project.add_osf_group(osf_group, 'read')
-        private_project.add_osf_group(osf_group, 'write')
+        public_project.add_osf_group(osf_group, permissions.READ)
+        private_project.add_osf_group(osf_group, permissions.WRITE)
         private_detail_url = private_url + osf_group._id + '/'
 
         # nonauth
@@ -328,14 +329,14 @@ class TestNodeGroupUpdate:
 
     def test_update_permission(self, app, public_detail_url, osf_group, write_contrib, non_contrib,
                                 public_project, make_node_group_payload):
-        attributes = {'permission': 'write'}
+        attributes = {'permission': permissions.WRITE}
         payload = make_node_group_payload(attributes=attributes)
 
         # group has not been added to the node
         res = app.patch_json_api(public_detail_url, payload, auth=public_project.creator.auth, expect_errors=True)
         assert res.status_code == 404
 
-        public_project.add_osf_group(osf_group, 'read')
+        public_project.add_osf_group(osf_group, permissions.READ)
 
         # test id not present in request
         res = app.patch_json_api(public_detail_url, payload, auth=public_project.creator.auth, expect_errors=True)
@@ -365,7 +366,7 @@ class TestNodeGroupUpdate:
         res_json = res.json['data']
         assert res.status_code == 200
         assert not osf_group.is_member(public_project.creator.auth)
-        assert res_json['attributes']['permission'] == 'write'
+        assert res_json['attributes']['permission'] == permissions.WRITE
         assert 'write_node' in get_perms(osf_group.member_group, public_project)
 
         # test update invalid perm
@@ -378,14 +379,14 @@ class TestNodeGroupUpdate:
         payload['data']['attributes'] = {}
         res = app.patch_json_api(public_detail_url, payload, auth=public_project.creator.auth, expect_errors=True)
         assert res.status_code == 200
-        assert res_json['attributes']['permission'] == 'write'
+        assert res_json['attributes']['permission'] == permissions.WRITE
 
 
 @pytest.mark.django_db
 class TestNodeGroupDelete:
 
     def test_delete_group(self, app, public_detail_url, public_project, osf_group, member, manager, non_contrib, write_contrib):
-        public_project.add_contributor(manager, permissions='admin')
+        public_project.add_contributor(manager, permissions=permissions.ADMIN)
         payload = {
             'data': [
                 {'type': 'node_groups', 'id': '{}-{}'.format(public_project._id, osf_group._id)}
@@ -395,7 +396,7 @@ class TestNodeGroupDelete:
         res = app.delete_json_api(public_detail_url, payload, auth=public_project.creator.auth, expect_errors=True)
         assert res.status_code == 404
 
-        public_project.add_osf_group(osf_group, 'write')
+        public_project.add_osf_group(osf_group, permissions.WRITE)
 
         # test member with write permission cannot remove group
         res = app.delete_json_api(public_detail_url, payload, auth=member.auth, expect_errors=True)
@@ -419,14 +420,14 @@ class TestNodeGroupDelete:
         assert osf_group not in public_project.osf_groups
 
         # test member with admin permissions can remove group
-        public_project.add_osf_group(osf_group, 'admin')
+        public_project.add_osf_group(osf_group, permissions.ADMIN)
         res = app.delete_json_api(public_detail_url, payload, auth=member.auth)
         assert res.status_code == 204
         assert osf_group not in public_project.osf_groups
 
         second_group = OSFGroupFactory(creator=non_contrib)
         second_group.make_member(member)
-        public_project.add_osf_group(second_group, 'write')
+        public_project.add_osf_group(second_group, permissions.WRITE)
 
         # test member with write cannot remove group
         second_payload = {

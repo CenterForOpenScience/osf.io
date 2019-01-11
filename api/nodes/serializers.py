@@ -105,7 +105,7 @@ def update_institutions(node, new_institutions, user, post=False):
 
     if not post:
         for inst in remove:
-            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, 'admin'):
+            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied(
                     detail='User needs to be affiliated with {}'.format(inst.name),
                 )
@@ -495,24 +495,24 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         """
         user = self.context['request'].user
         request_version = self.context['request'].version
-        default_perm = ['read'] if StrictVersion(request_version) < StrictVersion('2.11') else []
+        default_perm = [osf_permissions.READ] if StrictVersion(request_version) < StrictVersion('2.11') else []
         if user.is_anonymous:
             return default_perm
 
         if hasattr(obj, 'has_admin'):
             user_perms = []
             if obj.has_admin:
-                user_perms = ['admin', 'write', 'read']
+                user_perms = [osf_permissions.ADMIN, osf_permissions.WRITE, osf_permissions.READ]
             elif obj.has_write:
-                user_perms = ['write', 'read']
+                user_perms = [osf_permissions.WRITE, osf_permissions.READ]
             elif obj.has_read:
-                user_perms = ['read']
+                user_perms = [osf_permissions.READ]
         else:
             user_perms = obj.get_permissions(user)[::-1]
 
         user_perms = user_perms or default_perm
         if not user_perms and user in obj.parent_admin_users:
-            user_perms = ['read']
+            user_perms = [osf_permissions.READ]
         return user_perms
 
     def get_current_user_can_comment(self, obj):
@@ -686,7 +686,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             template_node = Node.load(template_from)
             if template_node is None:
                 raise exceptions.NotFound
-            if not template_node.has_permission(user, 'read', check_parent=False):
+            if not template_node.has_permission(user, osf_permissions.READ, check_parent=False):
                 raise exceptions.PermissionDenied
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
@@ -704,7 +704,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if len(tag_instances):
             for tag in tag_instances:
                 node.tags.add(tag)
-        if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
+        if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, osf_permissions.WRITE):
             auth = get_user_auth(request)
             parent = validated_data['parent']
             contributors = []
@@ -723,7 +723,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             for group in parent.osf_groups:
                 if group.is_manager(user):
                     node.add_osf_group(group, group.get_permission_to_node(parent), auth=auth)
-        if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, 'write'):
+        if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, osf_permissions.WRITE):
             parent = validated_data['parent']
             node.subjects.add(parent.subjects.all())
             node.save()
@@ -1631,7 +1631,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
             'wiki_enabled',
         ]
 
-        if set(validated_data.keys()).intersection(set(admin_only_field_names)) and not obj.has_permission(user, 'admin'):
+        if set(validated_data.keys()).intersection(set(admin_only_field_names)) and not obj.has_permission(user, osf_permissions.ADMIN):
             raise exceptions.PermissionDenied
 
         self.update_node_fields(obj, validated_data, auth)

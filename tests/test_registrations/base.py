@@ -28,7 +28,7 @@ class RegistrationsTestBase(OsfTestCase):
         self.non_contrib = AuthUserFactory()
         self.group_mem = AuthUserFactory()
         self.group = OSFGroupFactory(creator=self.group_mem)
-        self.node.add_osf_group(self.group, 'admin')
+        self.node.add_osf_group(self.group, permissions.ADMIN)
 
         self.meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 

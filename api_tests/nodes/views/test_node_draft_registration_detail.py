@@ -12,6 +12,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     RegistrationFactory,
 )
+from osf.utils.permissions import WRITE, READ
 from rest_framework import exceptions
 from test_node_draft_registration_list import DraftRegistrationTestCase
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
@@ -89,7 +90,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     #   test_group_mem_read_cannot_view
         project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, 'read')
+        project_public.add_osf_group(group, READ)
         res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -284,7 +285,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     #   test_osf_group_member_write_cannot_update_draft
         project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, 'write')
+        project_public.add_osf_group(group, WRITE)
         res = app.put_json_api(
             url_draft_registrations,
             payload, expect_errors=True,
@@ -741,7 +742,7 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
     #   test_group_member_write_cannot_delete_draft
         project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, 'write')
+        project_public.add_osf_group(group, WRITE)
         res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
         assert res.status_code == 403
 

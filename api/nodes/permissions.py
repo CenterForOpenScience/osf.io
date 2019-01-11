@@ -101,7 +101,7 @@ class IsContributorOrGroupMember(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return obj.is_contributor_or_group_member(auth.user)
         else:
-            return obj.has_permission(auth.user, 'write')
+            return obj.has_permission(auth.user, osf_permissions.WRITE)
 
 
 class IsAdminContributorOrReviewer(IsAdminContributor):

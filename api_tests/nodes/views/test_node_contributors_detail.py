@@ -162,20 +162,20 @@ class TestContributorDetail:
     def test_node_contributor_detail_serializes_contributor_perms(self, app, user):
         project = ProjectFactory(creator=user, is_public=True)
         user_two = AuthUserFactory()
-        project.add_contributor(user_two, 'write')
+        project.add_contributor(user_two, permissions.WRITE)
         project.save()
 
         osf_group = OSFGroupFactory(creator=user)
         osf_group.make_member(user_two)
-        project.add_osf_group(osf_group, 'admin')
+        project.add_osf_group(osf_group, permissions.ADMIN)
 
         url = '/{}nodes/{}/contributors/{}/'.format(
             API_BASE, project._id, user_two._id)
         res = app.get(url, auth=user.auth)
         # Even though user_two has admin perms through group membership,
         # contributor endpoints return contributor permissions
-        assert res.json['data']['attributes']['permission'] == 'write'
-        assert project.has_permission(user_two, 'admin') is True
+        assert res.json['data']['attributes']['permission'] == permissions.WRITE
+        assert project.has_permission(user_two, permissions.ADMIN) is True
 
     def test_detail_includes_index(
             self,
@@ -652,7 +652,7 @@ class TestNodeContributorUpdate:
     #   test_change_contributor_non_admin_osf_group_member_auth
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        project.add_osf_group(group, 'write')
+        project.add_osf_group(group, permissions.WRITE)
         data = {
             'data': {
                 'id': contrib._id,
@@ -737,7 +737,7 @@ class TestNodeContributorUpdate:
             self, app, user, contrib, project, url_contrib):
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        project.add_osf_group(group, 'admin')
+        project.add_osf_group(group, permissions.ADMIN)
         contrib_id = '{}-{}'.format(project._id, contrib._id)
         data = {
             'data': {
@@ -1176,7 +1176,7 @@ class TestNodeContributorDelete:
             # osf-models
             group_mem = AuthUserFactory()
             group = OSFGroupFactory(creator=group_mem)
-            project.add_osf_group(group, 'admin')
+            project.add_osf_group(group, permissions.ADMIN)
             with disconnected_from_listeners(contributor_removed):
                 res = app.delete(url_user_write_contrib, auth=group_mem.auth)
             assert res.status_code == 204

@@ -55,7 +55,7 @@ class DraftRegistrationTestCase:
             user_read_contrib,
             permissions=permissions.READ)
         project_public.save()
-        project_public.add_osf_group(group, 'admin')
+        project_public.add_osf_group(group, permissions.ADMIN)
         return project_public
 
     @pytest.fixture()
@@ -118,7 +118,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     #   test_osf_group_with_admin_permissions
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, 'admin')
+        project_public.add_osf_group(group, permissions.ADMIN)
         res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 200
         data = res.json['data']
@@ -157,7 +157,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     #   test_osf_group_with_read_permissions
         project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, 'read')
+        project_public.add_osf_group(group, permissions.READ)
         res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -325,7 +325,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     #   test_group_write_contrib_cannot_create_draft
         project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, 'write')
+        project_public.add_osf_group(group, permissions.WRITE)
         res = app.post_json_api(
             url_draft_registrations,
             payload,

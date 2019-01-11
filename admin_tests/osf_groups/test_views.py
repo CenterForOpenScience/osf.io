@@ -9,7 +9,7 @@ from django.test import RequestFactory
 
 from tests.base import AdminTestCase
 from osf_tests.factories import UserFactory, ProjectFactory, OSFGroupFactory
-
+from osf.utils.permissions import WRITE
 from admin.osf_groups.serializers import serialize_node_for_groups
 
 class TestOSFGroupsView(AdminTestCase):
@@ -41,7 +41,7 @@ class TestOSFGroupsView(AdminTestCase):
         nt.assert_equal(group['managers'][0]['id'], self.user._id)
         nt.assert_equal([serialize_node_for_groups(self.project, self.group)], group['nodes'])
         nt.assert_equal(group['nodes'][0]['title'], self.project.title)
-        nt.assert_equal(group['nodes'][0]['permission'], 'write')
+        nt.assert_equal(group['nodes'][0]['permission'], WRITE)
 
 
 class TestOSFGroupsListView(AdminTestCase):

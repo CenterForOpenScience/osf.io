@@ -8,6 +8,7 @@ from osf_tests.factories import (
     OSFGroupFactory,
     RegistrationFactory,
 )
+from osf.utils.permissions import READ
 from rest_framework import exceptions
 
 
@@ -51,7 +52,7 @@ class LinkedRegistrationsTestCase:
             auth=Auth(user_admin_contrib))
         node_private.add_contributor(
             user_read_contrib,
-            permissions='read',
+            permissions=READ,
             auth=Auth(user_admin_contrib))
         node_private.add_pointer(registration, auth=Auth(user_admin_contrib))
         return node_private
@@ -117,7 +118,7 @@ class TestNodeLinkedRegistrationsList(LinkedRegistrationsTestCase):
     #   test_osf_group_member_read_can_view_linked_reg
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        node_private.add_osf_group(group, 'read')
+        node_private.add_osf_group(group, READ)
         res = make_request(
             node_id=node_private._id,
             auth=group_mem.auth,
@@ -186,7 +187,7 @@ class TestNodeLinkedRegistrationsRelationshipRetrieve(
     #   test_osf_group_member_can_view_linked_registration_relationship
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        node_private.add_osf_group(group, 'read')
+        node_private.add_osf_group(group, READ)
         res = make_request(
             node_id=node_private._id,
             auth=group_mem.auth,
@@ -277,7 +278,7 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
     #   test_read_osf_group_mem_cannot_create_linked_registrations_relationship
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        node_private.add_osf_group(group, 'read')
+        node_private.add_osf_group(group, READ)
         registration = RegistrationFactory(is_public=True)
         res = make_request(
             node_id=node_private._id,
@@ -361,7 +362,7 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         registration.add_contributor(
             user_admin_contrib,
             auth=Auth(registration.creator),
-            permissions='read')
+            permissions=READ)
         registration.save()
         res = make_request(
             node_id=node_private._id,

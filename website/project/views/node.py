@@ -666,7 +666,7 @@ def _should_show_wiki_widget(node, user):
     has_wiki = bool(node.get_addon('wiki'))
     wiki_page = WikiVersion.objects.get_for_node(node, 'home')
 
-    if node.has_permission(user, 'write') and not node.is_registration:
+    if node.has_permission(user, WRITE) and not node.is_registration:
         return has_wiki
     else:
         return has_wiki and wiki_page and wiki_page.html(node)
@@ -981,7 +981,7 @@ def _get_readable_descendants(auth, node, permission=None):
             descendants.append(child)
         # Child is a node link and user has write permission
         elif node.linked_nodes.filter(id=child.id).exists():
-            if node.has_permission(auth.user, 'write'):
+            if node.has_permission(auth.user, WRITE):
                 descendants.append(child)
             else:
                 all_readable = False
@@ -1017,7 +1017,7 @@ def serialize_child_tree(child_list, user, nested):
                     'title': child.title,
                     'is_public': child.is_public,
                     'contributors': contributors,
-                    'is_admin': child.has_permission(user, 'admin'),
+                    'is_admin': child.has_permission(user, ADMIN),
                     'is_supplemental_project': child.has_linked_published_preprints,
                 },
                 'user_id': user._id,
@@ -1026,7 +1026,7 @@ def serialize_child_tree(child_list, user, nested):
                 'category': child.category,
                 'permissions': {
                     'view': True,
-                    'is_admin': child.has_permission(user, 'admin')
+                    'is_admin': child.has_permission(user, ADMIN)
                 }
             })
 
@@ -1077,7 +1077,7 @@ def node_child_tree(user, node):
             },
             'user_id': user._id,
             'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],
-            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
+            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, READ) else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
             'permissions': {

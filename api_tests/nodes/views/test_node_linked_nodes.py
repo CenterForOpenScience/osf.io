@@ -7,6 +7,7 @@ from osf_tests.factories import (
     OSFGroupFactory,
     AuthUserFactory,
 )
+from osf.utils.permissions import WRITE, READ
 from website.project.signals import contributor_removed
 from api_tests.utils import disconnected_from_listeners
 
@@ -113,7 +114,7 @@ class TestNodeRelationshipNodeLinks:
     #   test_get_private_relationship_linked_nodes_read_group_mem
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        node_linking_private.add_osf_group(group, 'read')
+        node_linking_private.add_osf_group(group, READ)
         res = app.get(url_private, auth=group_mem.auth)
         assert res.status_code == 200
 
@@ -167,7 +168,7 @@ class TestNodeRelationshipNodeLinks:
     #   test_group_member_can_post_with_write
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        node_linking_private.add_osf_group(group, 'read')
+        node_linking_private.add_osf_group(group, READ)
         res = app.post_json_api(
             url_private,
             make_payload([node_other._id]),
@@ -175,8 +176,8 @@ class TestNodeRelationshipNodeLinks:
         )
         assert res.status_code == 403
 
-        node_linking_private.update_osf_group(group, 'write')
-        node_other.add_osf_group(group, 'write')
+        node_linking_private.update_osf_group(group, WRITE)
+        node_other.add_osf_group(group, WRITE)
         res = app.post_json_api(
             url_private,
             make_payload([node_other._id]),

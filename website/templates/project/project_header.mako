@@ -68,11 +68,11 @@
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
 
-                        % if 'write' in user['permissions'] and not node['is_registration']:
+                        % if permissions.WRITE in user['permissions'] and not node['is_registration']:
                             <li><a href="${node['url']}addons/">Add-ons</a></li>
                         % endif
 
-                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'write' in user['permissions']):
+                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and permissions.WRITE in user['permissions']):
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     % endif
@@ -124,7 +124,7 @@
                 <div class="alert alert-info">
                     <div>This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
 
-                    % if 'admin' in user['permissions']:
+                    % if 'permissions.ADMIN' in user['permissions']:
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
@@ -156,7 +156,7 @@
         % if node['is_pending_embargo']:
             <div
                 class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.
-                % if 'admin' in user['permissions']:
+                % if permissions.ADMIN in user['permissions']:
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">

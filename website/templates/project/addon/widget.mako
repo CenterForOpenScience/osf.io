@@ -1,4 +1,4 @@
-% if complete or 'write' in user['permissions']:
+% if complete or permissions.WRITE in user['permissions']:
     <div class="panel panel-default" name="${short_name}">
         <div class="panel-heading clearfix">
             <h3 class="panel-title">${full_name}</h3>

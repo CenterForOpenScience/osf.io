@@ -9,6 +9,7 @@ from osf_tests.factories import (
     OSFGroupFactory,
     AuthUserFactory
 )
+from osf.utils.permissions import WRITE, READ
 from rest_framework import exceptions
 from tests.utils import assert_latest_log
 
@@ -105,7 +106,7 @@ class TestNodeLinksList:
     #   test_osf_group_member_read_can_view
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, 'read')
+        private_project.add_osf_group(group, READ)
         res = app.get(
             private_url,
             auth=group_mem.auth,
@@ -397,7 +398,7 @@ class TestNodeLinkCreate:
 
             group_mem = AuthUserFactory()
             group = OSFGroupFactory(creator=group_mem)
-            public_project.add_osf_group(group, 'read')
+            public_project.add_osf_group(group, READ)
             res = app.post_json_api(
                 public_url, public_payload,
                 auth=group_mem.auth, expect_errors=True)
@@ -423,7 +424,7 @@ class TestNodeLinkCreate:
             self, app, private_project, private_pointer_project, private_url, make_payload):
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, 'write')
+        private_project.add_osf_group(group, WRITE)
         private_payload = make_payload(id=private_pointer_project._id)
         res = app.post_json_api(
             private_url, private_payload, auth=group_mem.auth)

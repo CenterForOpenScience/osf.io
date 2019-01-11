@@ -108,7 +108,7 @@ class TestNodeList:
     #   test_returns_nodes_through_which_you_have_perms_through_osf_groups
         group = OSFGroupFactory(creator=user)
         another_project = ProjectFactory()
-        another_project.add_osf_group(group, 'read')
+        another_project.add_osf_group(group, permissions.READ)
         res = app.get(url, auth=user.auth)
         ids = [each['id'] for each in res.json['data']]
         assert another_project._id in ids
@@ -167,7 +167,7 @@ class TestNodeList:
         assert default_node_permission_queryset(user_2, Node).count() == 0
 
         # Node write contributor
-        private_project.add_contributor(user_2, 'read')
+        private_project.add_contributor(user_2, permissions.READ)
         private_project.save()
         assert default_node_permission_queryset(user_2, Node).count() == 1
 
@@ -179,7 +179,7 @@ class TestNodeList:
         project_3 = ProjectFactory(is_public=False)
         assert default_node_permission_queryset(user_2, Node).count() == 2
         group = OSFGroupFactory(creator=user_2)
-        project_3.add_osf_group(group, 'read')
+        project_3.add_osf_group(group, permissions.READ)
         assert default_node_permission_queryset(user_2, Node).count() == 3
 
     def test_current_user_permissions(self, app, user, url, public_project, non_contrib):
@@ -237,7 +237,7 @@ class TestNodeList:
         # Read group member has "read" permissions
         group_member = AuthUserFactory()
         osf_group = OSFGroupFactory(creator=group_member)
-        public_project.add_osf_group(osf_group, 'read')
+        public_project.add_osf_group(osf_group, permissions.READ)
         res = app.get(url_public, auth=group_member.auth)
         assert public_project.has_permission(group_member, permissions.READ)
         assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
@@ -246,7 +246,7 @@ class TestNodeList:
         # Write group member has "read" and "write" permissions
         group_member = AuthUserFactory()
         osf_group = OSFGroupFactory(creator=group_member)
-        public_project.add_osf_group(osf_group, 'write')
+        public_project.add_osf_group(osf_group, permissions.WRITE)
         res = app.get(url_public, auth=group_member.auth)
         assert res.json['data'][0]['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]
         assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
@@ -255,7 +255,7 @@ class TestNodeList:
         # Admin group member has "read" and "write" and "admin" permissions
         group_member = AuthUserFactory()
         osf_group = OSFGroupFactory(creator=group_member)
-        public_project.add_osf_group(osf_group, 'admin')
+        public_project.add_osf_group(osf_group, permissions.ADMIN)
         res = app.get(url_public, auth=group_member.auth)
         assert res.json['data'][0]['attributes']['current_user_permissions'] == [permissions.ADMIN, permissions.WRITE, permissions.READ]
         assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
@@ -951,7 +951,7 @@ class TestNodeFiltering:
         assert unpublished.node._id not in [each['id'] for each in res.json['data']]
 
         # write contrib
-        unpublished.add_contributor(user_two, 'write', save=True)
+        unpublished.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert unpublished.node._id in [each['id'] for each in res.json['data']]
@@ -983,7 +983,7 @@ class TestNodeFiltering:
         assert unpublished.node._id in [each['id'] for each in res.json['data']]
 
         # write contrib (preprint)
-        unpublished.add_contributor(user_two, 'write', save=True)
+        unpublished.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert unpublished.node._id not in [each['id'] for each in res.json['data']]
@@ -1015,7 +1015,7 @@ class TestNodeFiltering:
         assert private.node._id not in [each['id'] for each in res.json['data']]
 
         # write contrib (preprint)
-        private.add_contributor(user_two, 'write', save=True)
+        private.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert private.node._id in [each['id'] for each in res.json['data']]
@@ -1047,7 +1047,7 @@ class TestNodeFiltering:
         assert private.node._id in [each['id'] for each in res.json['data']]
 
         # write contrib (preprint)
-        private.add_contributor(user_two, 'write', save=True)
+        private.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert private.node._id not in [each['id'] for each in res.json['data']]
@@ -1079,7 +1079,7 @@ class TestNodeFiltering:
         assert orphan.node._id not in [each['id'] for each in res.json['data']]
 
         # write contrib (preprint)
-        orphan.add_contributor(user_two, 'write', save=True)
+        orphan.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert orphan.node._id in [each['id'] for each in res.json['data']]
@@ -1111,7 +1111,7 @@ class TestNodeFiltering:
         assert orphan.node._id in [each['id'] for each in res.json['data']]
 
         # write contrib (preprint)
-        orphan.add_contributor(user_two, 'write', save=True)
+        orphan.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert orphan.node._id not in [each['id'] for each in res.json['data']]
@@ -1143,7 +1143,7 @@ class TestNodeFiltering:
         assert abandoned.node._id not in [each['id'] for each in res.json['data']]
 
         # write contrib (preprint)
-        abandoned.add_contributor(user_two, 'write', save=True)
+        abandoned.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert abandoned.node._id not in [each['id'] for each in res.json['data']]
@@ -1175,7 +1175,7 @@ class TestNodeFiltering:
         assert abandoned.node._id in [each['id'] for each in res.json['data']]
 
         # write contrib (preprint)
-        abandoned.add_contributor(user_two, 'write', save=True)
+        abandoned.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert abandoned.node._id in [each['id'] for each in res.json['data']]
@@ -1207,7 +1207,7 @@ class TestNodeFiltering:
         assert deleted.node._id not in [each['id'] for each in res.json['data']]
 
         # write contrib (preprint)
-        deleted.add_contributor(user_two, 'write', save=True)
+        deleted.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert deleted.node._id not in [each['id'] for each in res.json['data']]
@@ -1239,7 +1239,7 @@ class TestNodeFiltering:
         assert deleted.node._id in [each['id'] for each in res.json['data']]
 
         # write contrib (preprint)
-        deleted.add_contributor(user_two, 'write', save=True)
+        deleted.add_contributor(user_two, permissions.WRITE, save=True)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
         assert deleted.node._id in [each['id'] for each in res.json['data']]
@@ -1270,7 +1270,7 @@ class TestNodeFiltering:
             self, app, user_one, user_two):
         project_one = ProjectFactory(creator=user_one, is_public=True)
         preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
-        project_one.add_contributor(user_two, 'write', save=True)
+        project_one.add_contributor(user_two, permissions.WRITE, save=True)
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True
         preprint_one.is_published = True
@@ -1282,7 +1282,7 @@ class TestNodeFiltering:
         preprint_one.save()
 
         project_two = ProjectFactory(creator=user_one, is_public=True)
-        project_two.add_contributor(user_two, 'write', save=True)
+        project_two.add_contributor(user_two, permissions.WRITE, save=True)
         preprint_two = PreprintFactory(creator=user_one, project=project_two)
         preprint_two.date_withdrawn = timezone.now()
         preprint_two.ever_public = True
@@ -1304,8 +1304,8 @@ class TestNodeFiltering:
 
         # Read contribs can only see withdrawn preprints that have been public
         user2 = AuthUserFactory()
-        preprint_one.add_contributor(user2, 'read')
-        preprint_two.add_contributor(user2, 'read')
+        preprint_one.add_contributor(user2, permissions.READ)
+        preprint_two.add_contributor(user2, permissions.READ)
         expected = [project_two._id]
         res = app.get(url, auth=user2.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
@@ -1321,7 +1321,7 @@ class TestNodeFiltering:
             self, app, user_one, user_two):
         project_one = ProjectFactory(creator=user_one, is_public=True)
         preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
-        project_one.add_contributor(user_two, 'write', save=True)
+        project_one.add_contributor(user_two, permissions.WRITE, save=True)
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True
         preprint_one.is_published = True
@@ -1333,7 +1333,7 @@ class TestNodeFiltering:
         preprint_one.save()
 
         project_two = ProjectFactory(creator=user_one, is_public=True)
-        project_two.add_contributor(user_two, 'write', save=True)
+        project_two.add_contributor(user_two, permissions.WRITE, save=True)
         preprint_two = PreprintFactory(creator=user_one, project=project_two)
         preprint_two.date_withdrawn = timezone.now()
         preprint_two.ever_public = True
@@ -1355,8 +1355,8 @@ class TestNodeFiltering:
 
         # Read contribs can only see withdrawn preprints that have been public
         user2 = AuthUserFactory()
-        preprint_one.add_contributor(user2, 'read')
-        preprint_two.add_contributor(user2, 'read')
+        preprint_one.add_contributor(user2, permissions.READ)
+        preprint_two.add_contributor(user2, permissions.READ)
         expected = [project_one._id]
         res = app.get(url, auth=user2.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
@@ -1645,8 +1645,8 @@ class TestNodeCreate:
         second_group = OSFGroupFactory()
         third_group = OSFGroupFactory(creator=user_two)
         third_group.make_member(user_one)
-        parent_project.add_osf_group(group, 'write')
-        parent_project.add_osf_group(second_group, 'write')
+        parent_project.add_osf_group(group, permissions.WRITE)
+        parent_project.add_osf_group(second_group, permissions.WRITE)
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(
             API_BASE, parent_project._id)
         component_data = {
@@ -1702,7 +1702,7 @@ class TestNodeCreate:
         osf_group = OSFGroupFactory(creator=user_one)
         osf_group.add_unregistered_member(fullname='far', email='foo@bar.baz', auth=Auth(user_one))
         osf_group.save()
-        parent_project.add_osf_group(osf_group, 'admin')
+        parent_project.add_osf_group(osf_group, permissions.ADMIN)
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(
             API_BASE, parent_project._id)
         component_data = {
@@ -1724,7 +1724,7 @@ class TestNodeCreate:
         assert len(
             new_component.contributors
         ) == len(parent_project.contributors)
-        expected_perms = set(['read', 'admin'])
+        expected_perms = set([permissions.READ, permissions.ADMIN])
         actual_perms = set([contributor.permission for contributor in new_component.contributor_set.all()])
         assert actual_perms == expected_perms
 
@@ -3792,9 +3792,9 @@ class TestNodeBulkDeleteSkipUneditable:
             self, app, public_project_one, public_project_three, url):
         group_member = AuthUserFactory()
         group = OSFGroupFactory(creator=group_member)
-        public_project_one.add_osf_group(group, 'admin')
+        public_project_one.add_osf_group(group, permissions.ADMIN)
         public_project_one.save()
-        public_project_three.add_osf_group(group, 'write')
+        public_project_three.add_osf_group(group, permissions.WRITE)
         public_project_three.save()
         payload = {
             'data': [

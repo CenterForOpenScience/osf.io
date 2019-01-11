@@ -13,6 +13,7 @@ from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
 from osf.models import AbstractNode, Guid, Preprint, OSFGroup
+from osf.utils.permissions import WRITE
 from website import settings, language
 from website.util import web_url_for
 
@@ -432,7 +433,7 @@ def must_have_write_permission_or_public_wiki(func):
         if wiki and wiki.is_publicly_editable:
             return func(*args, **kwargs)
         else:
-            return must_have_permission('write')(func)(*args, **kwargs)
+            return must_have_permission(WRITE)(func)(*args, **kwargs)
 
     # Return decorated function
     return wrapped

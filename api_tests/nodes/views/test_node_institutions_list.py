@@ -1,6 +1,7 @@
 import pytest
 
 from osf_tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory, OSFGroupFactory
+from osf.utils.permissions import READ
 from api.base.settings.defaults import API_BASE
 
 
@@ -51,7 +52,7 @@ class TestNodeInstitutionDetail:
     #   test_osf_group_member_can_view_node_institutions
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        node_one.add_osf_group(group, 'read')
+        node_one.add_osf_group(group, READ)
         url = '/{0}nodes/{1}/institutions/'.format(API_BASE, node_one._id)
         res = app.get(url)
         assert res.status_code == 200

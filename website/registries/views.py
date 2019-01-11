@@ -2,6 +2,7 @@
 from flask import request
 from framework.auth import Auth, decorators
 from framework.utils import iso8601format
+from osf.utils.permissions import ADMIN
 from website.registries import utils
 
 
@@ -15,7 +16,7 @@ def _view_registries_landing_page(campaign=None, **kwargs):
         registerable_nodes = [
             node for node
             in auth.user.contributor_to
-            if node.has_permission(user=auth.user, permission='admin')
+            if node.has_permission(user=auth.user, permission=ADMIN)
         ]
         has_projects = bool(registerable_nodes)
     else:

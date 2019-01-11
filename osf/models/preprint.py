@@ -30,6 +30,7 @@ from osf.models.validators import validate_subject_hierarchy, validate_title, va
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
+from osf.utils.permissions import ADMIN, WRITE
 from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
@@ -347,7 +348,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         # Overrides ContributorMixin
         # Preprints don't have parents or group members at the moment, so we override here.
         # Called when removing project subscriptions
-        return self.get_group('admin').user_set.filter(is_active=True).values_list('guids___id', flat=True)
+        return self.get_group(ADMIN).user_set.filter(is_active=True).values_list('guids___id', flat=True)
 
     @property
     def csl(self):  # formats node information into CSL format for citation parsing
@@ -435,7 +436,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return ret
 
     def set_subjects(self, preprint_subjects, auth, log=True):
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
@@ -467,7 +468,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if not self.root_folder:
             raise PreprintStateError('Preprint needs a root folder.')
 
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to change a preprint\'s primary file.')
 
         if preprint_file.target != self or preprint_file.provider != 'osfstorage':
@@ -496,7 +497,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['primary_file'])
 
     def set_published(self, published, auth, save=False):
-        if not self.has_permission(auth.user, 'admin'):
+        if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can publish a preprint.')
 
         if self.is_published and not published:
@@ -610,7 +611,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         self.save()
 
     def _add_creator_as_contributor(self):
-        self.add_contributor(self.creator, permissions='admin', visible=True, log=False, save=True)
+        self.add_contributor(self.creator, permissions=ADMIN, visible=True, log=False, save=True)
 
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
@@ -700,10 +701,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return True
 
     def set_supplemental_node(self, node, auth, save=False):
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('You must have write permissions to set a supplemental node.')
 
-        if not node.has_permission(auth.user, 'write'):
+        if not node.has_permission(auth.user, WRITE):
             raise PermissionsError('You must have write permissions on the supplemental node to attach.')
 
         if node.is_deleted:
@@ -725,7 +726,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.save()
 
     def unset_supplemental_node(self, auth, save=False):
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('You must have write permissions to set a supplemental node.')
 
         current_node_id = self.node._id if self.node else None
@@ -750,7 +751,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
 
         # Called so validation does not have to wait until save.
@@ -783,7 +784,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         :param auth: All the auth informtion including user, API key.
         :param bool save: Save self after updating.
         """
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
 
         original = self.description
@@ -827,7 +828,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         :param bool meeting_creation: Whether this was created due to a meetings email.
         :param bool check_addons: Check and collect messages for addons?
         """
-        if auth and not self.has_permission(auth.user, 'write'):
+        if auth and not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to change privacy settings.')
         if permissions == 'public' and not self.is_public:
             if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
@@ -859,7 +860,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         return (self.verified_publishable or
             (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
-            self.has_permission(auth.user, 'admin') or
+            self.has_permission(auth.user, ADMIN) or
             (self.is_contributor(auth.user) and self.has_submitted_preprint)
         )
 
@@ -878,7 +879,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         user = user or auth.user
 
         return (
-            user and ((self.has_permission(user, 'write') and self.has_submitted_preprint) or self.has_permission(user, 'admin'))
+            user and ((self.has_permission(user, WRITE) and self.has_submitted_preprint) or self.has_permission(user, ADMIN))
         )
 
     def get_contributor_order(self):

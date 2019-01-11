@@ -15,7 +15,7 @@ from osf.models import base
 from osf.models.mixins import GuardianMixin, Loggable
 from osf.models import Node, OSFUser, NodeLog
 from osf.models.osf_grouplog import OSFGroupLog
-from osf.utils.permissions import ADMIN, MANAGER, MEMBER, MANAGE, reduce_permissions
+from osf.utils.permissions import ADMIN, WRITE, MANAGER, MEMBER, MANAGE, reduce_permissions
 from osf.utils import sanitize
 from website.project import signals as project_signals
 from website.osf_groups import signals as group_signals
@@ -314,7 +314,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         for node in self.nodes:
             node.update_search()
 
-    def add_group_to_node(self, node, permission='write', auth=None):
+    def add_group_to_node(self, node, permission=WRITE, auth=None):
         """Gives the OSF Group permissions to the node.  Called from node model.
 
         :param obj Node
@@ -351,7 +351,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         for user in self.members:
             group_signals.group_added_to_node.send(self, node=node, user=user, permission=permission, auth=auth)
 
-    def update_group_permissions_to_node(self, node, permission='write', auth=None):
+    def update_group_permissions_to_node(self, node, permission=WRITE, auth=None):
         """Updates the OSF Group permissions to the node.  Called from node model.
 
         :param obj Node

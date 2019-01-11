@@ -9,6 +9,7 @@ from osf_tests.factories import (
     NodeFactory,
     RegistrationFactory,
 )
+from osf.utils.permissions import READ
 from tests.base import ApiTestCase, get_default_metaschema
 
 
@@ -37,7 +38,7 @@ class LinkedRegistrationsTestCase(ApiTestCase):
             self.rw_contributor, auth=Auth(self.admin_contributor))
         public_node.add_contributor(
             self.read_contributor,
-            permissions='read',
+            permissions=READ,
             auth=Auth(self.admin_contributor))
         public_node.add_pointer(
             self.public_linked_registration,
@@ -57,7 +58,7 @@ class LinkedRegistrationsTestCase(ApiTestCase):
             auth=Auth(self.admin_contributor))
         private_node.add_contributor(
             self.read_contributor,
-            permissions='read',
+            permissions=READ,
             auth=Auth(self.admin_contributor))
         private_node.add_pointer(
             self.public_linked_registration,

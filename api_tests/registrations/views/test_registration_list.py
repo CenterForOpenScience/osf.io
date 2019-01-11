@@ -677,7 +677,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         # admin via a group cannot create registration
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, 'admin')
+        project_public.add_osf_group(group, permissions.ADMIN)
         res = app.post_json_api(url_registrations, payload, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
 

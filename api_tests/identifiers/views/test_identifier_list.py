@@ -12,6 +12,7 @@ from osf_tests.factories import (
     NodeFactory,
     PreprintFactory,
 )
+from osf.utils.permissions import READ
 from osf.utils.workflows import DefaultStates
 from tests.utils import assert_items_equal
 
@@ -315,7 +316,7 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -345,7 +346,7 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -375,7 +376,7 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -399,7 +400,7 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -423,7 +424,7 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 403
 

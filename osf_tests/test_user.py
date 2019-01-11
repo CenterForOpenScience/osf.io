@@ -32,6 +32,7 @@ from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
+from osf.utils import permissions
 from osf.exceptions import ValidationError, BlacklistedEmailError, UserStateError
 
 from .utils import capture_signals
@@ -208,8 +209,8 @@ class TestOSFUser:
         # Both the master and dupe are contributors
         project.add_contributor(user2, log=False)
         project.add_contributor(user, log=False)
-        project.set_permissions(user=user, permissions='read')
-        project.set_permissions(user=user2, permissions='admin')
+        project.set_permissions(user=user, permissions=permissions.READ)
+        project.set_permissions(user=user2, permissions=permissions.ADMIN)
         project.set_visible(user=user, visible=False)
         project.set_visible(user=user2, visible=True)
         project.save()
@@ -217,7 +218,7 @@ class TestOSFUser:
         user.save()
         project.reload()
 
-        assert project.has_permission(user, 'admin') is True
+        assert project.has_permission(user, permissions.ADMIN) is True
         assert project.get_visible(user) is True
         assert project.is_contributor(user2) is False
 
@@ -227,19 +228,19 @@ class TestOSFUser:
         group = OSFGroupFactory(creator=user2)
 
         project = ProjectFactory(is_public=True)
-        project.add_osf_group(group, 'admin')
-        assert project.has_permission(user2, 'admin')
+        project.add_osf_group(group, permissions.ADMIN)
+        assert project.has_permission(user2, permissions.ADMIN)
         # Both the master and dupe are contributors
         project.add_contributor(user2, log=False)
         project.add_contributor(user, log=False)
-        project.set_permissions(user=user, permissions='read')
-        project.set_permissions(user=user2, permissions='write')
+        project.set_permissions(user=user, permissions=permissions.READ)
+        project.set_permissions(user=user2, permissions=permissions.WRITE)
         project.save()
         user.merge_user(user2)
         user.save()
         project.reload()
 
-        assert project.has_permission(user, 'admin') is True
+        assert project.has_permission(user, permissions.ADMIN) is True
         assert project.is_admin_contributor(user) is False
         assert project.is_contributor(user2) is False
         assert group.is_member(user) is True
@@ -1339,24 +1340,24 @@ class TestMergingUsers:
     def test_merge_user_with_higher_permissions_on_project(self, master, dupe, merge_dupe):
         # Both master and dupe are contributors on the same project
         project = ProjectFactory()
-        project.add_contributor(contributor=master, permissions='write')
-        project.add_contributor(contributor=dupe, permissions='admin')
+        project.add_contributor(contributor=master, permissions=permissions.WRITE)
+        project.add_contributor(contributor=dupe, permissions=permissions.ADMIN)
 
         project.save()
         merge_dupe()  # perform the merge
 
-        assert project.get_permissions(master) == ['read', 'write', 'admin']
+        assert project.get_permissions(master) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
 
     def test_merge_user_with_lower_permissions_on_project(self, master, dupe, merge_dupe):
         # Both master and dupe are contributors on the same project
         project = ProjectFactory()
-        project.add_contributor(contributor=master, permissions='admin')
-        project.add_contributor(contributor=dupe, permissions='write')
+        project.add_contributor(contributor=master, permissions=permissions.ADMIN)
+        project.add_contributor(contributor=dupe, permissions=permissions.WRITE)
 
         project.save()
         merge_dupe()  # perform the merge
 
-        assert project.get_permissions(master) == ['read', 'write', 'admin']
+        assert project.get_permissions(master) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
 
     def test_merge_user_into_self_fails(self, master):
         with pytest.raises(ValueError):
@@ -1538,7 +1539,7 @@ class TestUser(OsfTestCase):
         project_to_be_invisible_on.save()
         group = OSFGroupFactory(creator=self.user, name='Platform')
         group_project = ProjectFactory()
-        group_project.add_osf_group(group, 'read')
+        group_project.add_osf_group(group, permissions.READ)
 
         contributor_to_nodes = [node._id for node in self.user.contributor_to]
 
@@ -1563,7 +1564,7 @@ class TestUser(OsfTestCase):
         project_to_be_invisible_on.save()
         group = OSFGroupFactory(creator=self.user, name='Platform')
         group_project = ProjectFactory()
-        group_project.add_osf_group(group, 'read')
+        group_project.add_osf_group(group, permissions.READ)
 
         contributor_to_or_group_member_nodes = [node._id for node in self.user.contributor_or_group_member_to]
 
@@ -2086,7 +2087,7 @@ class TestUserGdprDelete:
         second_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(second_admin_contrib)
-        project.set_permissions(user=second_admin_contrib, permissions='admin')
+        project.set_permissions(user=second_admin_contrib, permissions=permissions.ADMIN)
         project.save()
         return project
 
@@ -2095,7 +2096,7 @@ class TestUserGdprDelete:
         second_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(second_admin_contrib)
-        project.set_permissions(user=second_admin_contrib, permissions='admin')
+        project.set_permissions(user=second_admin_contrib, permissions=permissions.ADMIN)
         user = project.creator
 
         node_settings = project.add_addon('github', auth=None)
@@ -2132,7 +2133,7 @@ class TestUserGdprDelete:
         non_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(non_admin_contrib)
-        project.add_unregistered_contributor('lisa', 'lisafrank@cos.io', permissions='admin', auth=Auth(user))
+        project.add_unregistered_contributor('lisa', 'lisafrank@cos.io', permissions=permissions.ADMIN, auth=Auth(user))
         project.save()
         return project
 

@@ -9,6 +9,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
 )
+from osf.utils.permissions import WRITE, READ
 from rest_framework import exceptions
 from tests.utils import assert_latest_log
 
@@ -111,7 +112,7 @@ class TestNodeLinkDetail:
     #   test_returns_private_node_pointer_detail_logged_in_group_mem
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, 'read')
+        private_project.add_osf_group(group, READ)
         res = app.get(private_url, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -301,10 +302,10 @@ class TestDeleteNodeLink:
             self, app, user_two, private_url, private_project):
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, 'read')
+        private_project.add_osf_group(group, READ)
         res = app.delete(private_url, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
-        private_project.update_osf_group(group, 'write')
+        private_project.update_osf_group(group, WRITE)
         res = app.delete(private_url, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 204
 

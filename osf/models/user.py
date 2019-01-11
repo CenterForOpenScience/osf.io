@@ -49,7 +49,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
-from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -809,7 +809,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # transfer group membership
         for group in user.osf_groups:
             if not group.is_manager(self):
-                if group.has_permission(user, 'manage'):
+                if group.has_permission(user, MANAGE):
                     group.make_manager(self)
                 else:
                     group.make_member(self)
@@ -1449,12 +1449,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 )
 
         elif isinstance(claim_origin, OSFGroup):
-            if not claim_origin.has_permission(referrer, 'manage'):
+            if not claim_origin.has_permission(referrer, MANAGE):
                 raise PermissionsError(
                     'Referrer does not have permission to add a member to {0}'.format(claim_origin._id)
                 )
         else:
-            if not claim_origin.has_permission(referrer, 'admin'):
+            if not claim_origin.has_permission(referrer, ADMIN):
                 raise PermissionsError(
                     'Referrer does not have permission to add a contributor to {0}'.format(claim_origin._id)
                 )
@@ -1621,7 +1621,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
         for node in shared_nodes.exclude(type='osf.quickfilesnode'):
-            alternate_admins = OSFUser.objects.filter(groups__name=node.format_group('admin')).filter(is_active=True).exclude(id=self.id)
+            alternate_admins = OSFUser.objects.filter(groups__name=node.format_group(ADMIN)).filter(is_active=True).exclude(id=self.id)
             if not alternate_admins:
                 raise UserStateError(
                     'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(

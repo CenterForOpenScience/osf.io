@@ -105,7 +105,7 @@ class ReviewsMachine(BaseMachine):
         # Returns True if the submitter of the request is a moderator or admin for the provider.
         provider = self.machineable.provider
         return provider.get_group('moderator').user_set.filter(id=submitter.id).exists() or \
-               provider.get_group('admin').user_set.filter(id=submitter.id).exists()
+               provider.get_group(permissions.ADMIN).user_set.filter(id=submitter.id).exists()
 
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
@@ -215,7 +215,7 @@ class NodeRequestMachine(BaseMachine):
         context['contributors_url'] = '{}contributors/'.format(self.machineable.target.absolute_url)
         context['project_settings_url'] = '{}settings/'.format(self.machineable.target.absolute_url)
 
-        for admin in self.machineable.target.get_users_with_perm('admin'):
+        for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
             mails.send_mail(
                 admin.username,
                 mails.ACCESS_REQUEST_SUBMITTED,

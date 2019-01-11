@@ -166,8 +166,8 @@ class TestNodeForksList:
         assert forked_from['id'] == private_project._id
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, 'read')
-        private_fork.add_osf_group(group, 'read')
+        private_project.add_osf_group(group, permissions.READ)
+        private_fork.add_osf_group(group, permissions.READ)
         res = app.get(
             private_project_url,
             auth=group_mem.auth)
@@ -350,7 +350,7 @@ class TestNodeForkCreate:
     #   test_group_member_read_can_create_fork_of_private_node
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, 'read')
+        private_project.add_osf_group(group, permissions.READ)
         res = app.post_json_api(
             private_project_url,
             fork_data, auth=user.auth)

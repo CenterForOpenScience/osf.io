@@ -33,6 +33,7 @@ from framework.auth.core import _get_current_user
 from osf import features
 from osf.models import Institution
 from osf.utils import sanitize
+from osf.utils import permissions
 from website import util
 from website import prereg
 from website import settings
@@ -160,6 +161,7 @@ def get_globals():
         'features': features,
         'waffle': waffle,
         'csrf_cookie_name': api_settings.CSRF_COOKIE_NAME,
+        'permissions': permissions
     }
 
 
