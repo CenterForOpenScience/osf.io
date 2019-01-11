@@ -201,7 +201,7 @@
                                 %if node['is_public']:
                                     <p class="text">Control who can edit the wiki of <b>${node['title']}</b></p>
                                 %else:
-                                    <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
+                                    <p class="text">Control who can edit your wiki. To allow all GakuNin RDM users to edit the wiki, <b>${node['title']}</b> must be public.</p>
                                 %endif
                             </div>
 
@@ -245,7 +245,7 @@
                             <div class="radio">
                                 <label>
                                     <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                                    When the ${node['node_type']} is public, any OSF user can post comments
+                                    When the ${node['node_type']} is public, any GakuNin RDM user can post comments
                                 </label>
                             </div>
 
@@ -327,7 +327,7 @@
                                             id="forwardUrl"
                                             class="form-control"
                                             data-bind="value: url"
-                                            placeholder="Send people who visit your OSF project page to this link instead"
+                                            placeholder="Send people who visit your GakuNin RDM project page to this link instead"
                                         />
                                     </div>
 
@@ -389,7 +389,7 @@
                             % else:
 
                                 <div class="help-block">
-                                    Withdrawing a registration will remove its content from the OSF, but leave basic metadata
+                                    Withdrawing a registration will remove its content from the GakuNin RDM, but leave basic metadata
                                     behind. The title of a withdrawn registration and its contributor list will remain, as will
                                     justification or explanation of the withdrawal, should you wish to provide it. Withdrawn
                                     registrations will be marked with a <strong>withdrawn</strong> tag.
@@ -424,12 +424,12 @@
                              <p class="text-muted">Contributors with read-only permissions to this project cannot add or remove institutional affiliations.</p>
                          % endif:
                          <!-- ko if: affiliatedInstitutions().length == 0 -->
-                         Projects can be affiliated with institutions that have created OSF for Institutions accounts.
+                         Projects can be affiliated with institutions that have created GakuNin RDM for Institutions accounts.
                          This allows:
                          <ul>
                             <li>institutional logos to be displayed on public projects</li>
                             <li>public projects to be discoverable on specific institutional landing pages</li>
-                            <li>single sign-on to the OSF with institutional credentials</li>
+                            <li>single sign-on to the GakuNin RDM with institutional credentials</li>
                             <li><a href="http://help.osf.io/m/os4i">FAQ</a></li>
                          </ul>
                          <!-- /ko -->

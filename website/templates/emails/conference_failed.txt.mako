@@ -1,13 +1,13 @@
 Hello ${fullname},
 
-You recently tried to create a project on the Open Science Framework via email, but your message did not contain any file attachments. Please try again, making sure to attach the files you'd like to upload to your message.
+You recently tried to create a project on the GakuNin RDM via email, but your message did not contain any file attachments. Please try again, making sure to attach the files you'd like to upload to your message.
 
 Sincerely yours,
 
-The OSF Robot
+The GakuNin RDM Robot
 
-Center for Open Science
+National Institute of Informatics
 
-210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN
 
-Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
+Privacy Policy: https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422

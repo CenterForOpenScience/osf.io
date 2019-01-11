@@ -6,7 +6,7 @@
     <div id="registrationRetraction" class="col-md-6 col-md-offset-3">
         <div class="panel panel-default">
             <div class="panel-body">
-                Withdrawing a registration will remove its content from the OSF, but leave basic metadata behind.
+                Withdrawing a registration will remove its content from the GakuNin RDM, but leave basic metadata behind.
                 The title of a withdrawn registration and its contributor list will remain, as will justification or
                 explanation of the withdrawal, should you wish to provide it. Withdrawn registrations will be marked
                 with a "withdrawn" tag. <strong>This action is irreversible.</strong>

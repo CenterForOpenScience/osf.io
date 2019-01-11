@@ -21,7 +21,7 @@
 
                 <p> Personal access tokens function like ordinary OAuth access tokens. They can be used to authenticate to the API.</p>
 
-                <p data-bind="visible: (tokenData().length == 0)">You have not created any access tokens that can connect to the OSF.</p>
+                <p data-bind="visible: (tokenData().length == 0)">You have not created any access tokens that can connect to the GakuNin RDM.</p>
                 <div id="if-tokens" data-bind="visible: (tokenData().length > 0)">
                     <p>You have generated the following personal access tokens:</p>
 

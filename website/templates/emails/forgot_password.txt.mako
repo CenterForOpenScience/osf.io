@@ -3,8 +3,8 @@ Follow this link to reset your password
 ${reset_link}
 
 
-Center for Open Science
+National Institute of Informatics
 
-210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN
 
-Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
+Privacy Policy: https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422

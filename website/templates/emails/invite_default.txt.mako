@@ -4,7 +4,7 @@
 
 Hello ${fullname},
 
-You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the Open Science Framework. To set a password for your account, visit:
+You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the GakuNin RDM. To set a password for your account, visit:
 
 ${claim_url}
 
@@ -19,16 +19,16 @@ If you are not ${fullname} or you are erroneously being associated with "${node.
 
 Sincerely,
 
-Open Science Framework Robot
+GakuNin RDM Robot
 
 
-Center for Open Science
+National Institute of Informatics
 
-210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN
 
-Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
+Privacy Policy: https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422
 
 
-Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.
+Want more information? Visit https://rdm.nii.ac.jp/ to learn about the GakuNin RDM, or https://nii.ac.jp/ for information about its supporting organization, the National Institute of Informatics.
 
 Questions? Email contact@osf.io

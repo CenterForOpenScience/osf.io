@@ -35,7 +35,7 @@
         You have no public ${pluralized_node_type}.
             <p>
                 Find out how to make your ${pluralized_node_type}
-                <a href="https://osf.io/getting-started/#privacy" target="_blank">public</a>.
+                <a href="https://rdm.nii.ac.jp/getting-started/#privacy" target="_blank">public</a>.
             </p>
         </div>
     % elif profile is not UNDEFINED:  ## On profile page and user has no public projects/components

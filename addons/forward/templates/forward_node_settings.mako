@@ -11,7 +11,7 @@
                         id="forwardUrl"
                         class="form-control"
                         data-bind="value: url"
-                        placeholder="Send people who visit your OSF project page to this link instead"
+                        placeholder="Send people who visit your GakuNin RDM project page to this link instead"
                         />
             </div>
 

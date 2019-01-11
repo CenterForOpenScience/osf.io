@@ -1,19 +1,19 @@
 Hello ${user.fullname},
 
-The password for your OSF account has successfully changed. 
+The password for your GakuNin RDM account has successfully changed. 
 
 If you did not request this action or you believe an unauthorized person has accessed your account, reset your password immediately by visiting:
 
-https://osf.io/settings/account/
+https://rdm.nii.ac.jp/settings/account/
 
 If you need additional help or have questions, let us know at contact@cos.io.
 
 Sincerely yours,
 
-The OSF Robot
+The GakuNin RDM Robot
 
-Center for Open Science
+National Institute of Informatics
 
-210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN
 
-Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
+Privacy Policy: https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422

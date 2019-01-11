@@ -1,6 +1,6 @@
 <%inherit file="base.mako"/>
 
-<%def name="title()">OSF Reviews</%def>
+<%def name="title()">GakuNin RDM Reviews</%def>
 
 <%def name="content()">
 <h2>Reviews service is not activated.</h2>

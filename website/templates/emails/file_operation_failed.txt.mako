@@ -1,11 +1,11 @@
 Hello,
 
-An error has occurred, and the ${'folder' if source_path.endswith('/') else 'file'} from ${source_node.title} on The Open Science Framework was not successfully ${'moved' if action == 'move' else 'copied'}. Please log in and try this action again. If the problem persists, please email ${osf_support_email}.
+An error has occurred, and the ${'folder' if source_path.endswith('/') else 'file'} from ${source_node.title} on the GakuNin RDM was not successfully ${'moved' if action == 'move' else 'copied'}. Please log in and try this action again. If the problem persists, please email ${osf_support_email}.
 
-The Open Science Framework Robot
+the GakuNin RDM Robot
 
-Center for Open Science
+National Institute of Informatics
 
-210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN
 
-Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
+Privacy Policy: https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422

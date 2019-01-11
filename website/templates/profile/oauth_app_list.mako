@@ -19,11 +19,11 @@
             </div>
             <div class="panel-body">
 
-                <p>The OSF allows third-party web applications to connect to the OSF on behalf of other users via the OAuth 2.0 web application flow.</p>
+                <p>The GakuNin RDM allows third-party web applications to connect to the GakuNin RDM on behalf of other users via the OAuth 2.0 web application flow.</p>
 
-                <p data-bind="visible: (appData().length == 0)">You have not registered any applications that can connect to the OSF on behalf of other users.</p>
+                <p data-bind="visible: (appData().length == 0)">You have not registered any applications that can connect to the GakuNin RDM on behalf of other users.</p>
                 <div id="if-apps" data-bind="visible: (appData().length > 0)">
-                    <p>You have registered the following applications that can connect to the OSF on behalf of other users:</p>
+                    <p>You have registered the following applications that can connect to the GakuNin RDM on behalf of other users:</p>
 
                     <table class="table table-condensed">
                         <thead>
