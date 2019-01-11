@@ -7,13 +7,13 @@ from osf.utils import permissions
 
 
 def test_reduce_permissions():
-    result = permissions.reduce_permissions(['read_node', 'write_node', 'admin_node'])
+    result = permissions.reduce_permissions([permissions.READ_NODE, permissions.WRITE_NODE, permissions.ADMIN_NODE])
     assert_equal(result, permissions.ADMIN)
 
-    result2 = permissions.reduce_permissions(['read_node', 'write_node'])
+    result2 = permissions.reduce_permissions([permissions.READ_NODE, permissions.WRITE_NODE])
     assert_equal(result2, permissions.WRITE)
 
-    result3 = permissions.reduce_permissions(['read_node'])
+    result3 = permissions.reduce_permissions([permissions.READ_NODE])
     assert_equal(result3, permissions.READ)
 
     result = permissions.reduce_permissions([permissions.READ, permissions.WRITE, permissions.ADMIN])

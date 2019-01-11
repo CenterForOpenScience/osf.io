@@ -12,6 +12,7 @@ from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from addons.wiki.models import NodeSettings as WikiNodeSettings
 from osf.models import AbstractNode, Preprint, Guid, NodeRelation, Contributor
 from osf.models.node import NodeGroupObjectPermission
+from osf.utils import permissions
 
 from api.base.exceptions import ServiceUnavailableError
 from api.base.utils import get_object_or_error, waterbutler_api_url_for, get_user_auth, has_admin_scope
@@ -84,9 +85,9 @@ class NodeOptimizationMixin(object):
         parent = NodeRelation.objects.annotate(parent__id=Subquery(guid.values('_id')[:1])).filter(child=OuterRef('pk'), is_node_link=False)
         wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
 
-        admin_permission = Permission.objects.get(codename='admin_node')
-        write_permission = Permission.objects.get(codename='write_node')
-        read_permission = Permission.objects.get(codename='read_node')
+        admin_permission = Permission.objects.get(codename=permissions.ADMIN_NODE)
+        write_permission = Permission.objects.get(codename=permissions.WRITE_NODE)
+        read_permission = Permission.objects.get(codename=permissions.READ_NODE)
         contrib = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
         user_group = OSFUserGroup.objects.filter(osfuser_id=auth.user.id if auth.user else None, group_id=OuterRef('group_id'))
         node_group = NodeGroupObjectPermission.objects.annotate(user_group=Subquery(user_group.values_list('group_id')[:1])).filter(user_group__isnull=False, content_object_id=OuterRef('pk'))

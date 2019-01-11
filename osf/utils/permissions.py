@@ -5,8 +5,11 @@ READ = 'read'
 WRITE = 'write'
 ADMIN = 'admin'
 # NOTE: Ordered from most-restrictive to most permissive
-PERMISSIONS = ['read_node', 'write_node', 'admin_node']
-CONTRIB_PERMISSIONS = {'admin_node': 'admin', 'write_node': 'write', 'read_node': 'read'}
+READ_NODE = 'read_node'
+WRITE_NODE = 'write_node'
+ADMIN_NODE = 'admin_node'
+PERMISSIONS = [READ_NODE, WRITE_NODE, ADMIN_NODE]
+CONTRIB_PERMISSIONS = {ADMIN_NODE: ADMIN, WRITE_NODE: WRITE, READ_NODE: READ}
 API_CONTRIBUTOR_PERMISSIONS = [READ, WRITE, ADMIN]
 CREATOR_PERMISSIONS = ADMIN
 DEFAULT_CONTRIBUTOR_PERMISSIONS = WRITE

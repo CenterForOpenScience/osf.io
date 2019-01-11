@@ -23,7 +23,7 @@ from osf.exceptions import (
     NodeStateError,
 )
 from osf.models import Contributor, Retraction
-from osf.utils.permissions import ADMIN
+from osf.utils import permissions
 
 
 @pytest.mark.enable_bookmark_creation

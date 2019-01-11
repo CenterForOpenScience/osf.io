@@ -3,7 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import AbstractNode, NodeLog
-from osf.utils.permisisons import ADMIN, WRITE, READ
+from osf.utils import permissions
 from osf.utils.sanitize import strip_html
 from osf_tests.factories import (
     NodeFactory,
@@ -13,7 +13,6 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from tests.base import fake
-from osf.utils import permissions
 
 
 @pytest.fixture()
@@ -104,7 +103,7 @@ class TestNodeChildrenList:
     #   test_return_private_node_children_osf_group_member_admin
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, ADMIN)
+        private_project.add_osf_group(group, permissions.ADMIN)
         res = app.get(private_project_url, auth=group_mem.auth)
         assert res.status_code == 200
         # Can view node children that you have implict admin permissions
@@ -246,14 +245,14 @@ class TestNodeChildCreate:
     #   test_creates_child_group_member_read
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        project.add_osf_group(group, READ)
+        project.add_osf_group(group, permissions.READ)
         res = app.post_json_api(
             url, child, auth=group_mem.auth,
             expect_errors=True
         )
         assert res.status_code == 403
 
-        project.update_osf_group(group, WRITE)
+        project.update_osf_group(group, permissions.WRITE)
         res = app.post_json_api(
             url, child, auth=group_mem.auth,
             expect_errors=True

@@ -45,7 +45,7 @@ from addons.wiki.models import WikiPage
 from osf.models import AbstractNode, Collection, Contributor, Guid, PrivateLink, Node, NodeRelation, Preprint
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
-from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
+from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS, ADMIN_NODE
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary, get_storage_region_list
@@ -927,7 +927,7 @@ def _get_children(node, auth):
     children = (Node.objects.get_children(node)
                 .filter(is_deleted=False)
                 .annotate(parentnode_id=Subquery(parent_node_sqs[:1])))
-    admin_children = get_objects_for_user(auth.user, 'admin_node', children, with_superuser=False)
+    admin_children = get_objects_for_user(auth.user, ADMIN_NODE, children, with_superuser=False)
 
     nested = defaultdict(list)
     for child in admin_children:

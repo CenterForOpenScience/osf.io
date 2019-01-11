@@ -23,7 +23,7 @@ from api.base.utils import get_user_auth, is_deprecated, assert_resource_type
 
 class ContributorOrPublic(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, NodeRelation, Preprint)
+    acceptable_models = (AbstractNode, NodeRelation, Preprint,)
 
     def has_object_permission(self, request, view, obj):
         from api.nodes.views import NodeStorageProvider
@@ -57,7 +57,7 @@ class IsAdminContributor(permissions.BasePermission):
     admin contributor to make changes.  Admin group membership
     is not sufficient.
     """
-    acceptable_models = (AbstractNode, DraftRegistration)
+    acceptable_models = (AbstractNode, DraftRegistration,)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
@@ -70,7 +70,7 @@ class IsAdminContributor(permissions.BasePermission):
             return obj.is_admin_contributor(auth.user)
 
 class IsAdmin(permissions.BasePermission):
-    acceptable_models = (AbstractNode, PrivateLink)
+    acceptable_models = (AbstractNode, PrivateLink,)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
@@ -131,7 +131,7 @@ class AdminOrPublic(permissions.BasePermission):
 
 class AdminContributorOrPublic(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, DraftRegistration)
+    acceptable_models = (AbstractNode, DraftRegistration,)
 
     def has_object_permission(self, request, view, obj):
         """
@@ -161,7 +161,7 @@ class ExcludeWithdrawals(permissions.BasePermission):
 class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
 
-    acceptable_models = (AbstractNode, OSFUser, Contributor)
+    acceptable_models = (AbstractNode, OSFUser, Contributor,)
 
     def load_resource(self, context, view):
         return AbstractNode.load(context[view.node_lookup_url_kwarg])
@@ -205,7 +205,7 @@ class NodeGroupDetailPermissions(permissions.BasePermission):
 
 class ContributorOrPublicForPointers(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, NodeRelation)
+    acceptable_models = (AbstractNode, NodeRelation,)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)

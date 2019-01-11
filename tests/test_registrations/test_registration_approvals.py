@@ -47,8 +47,8 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
     def test__initiate_approval_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
         Contributor.objects.create(node=self.registration, user=unconfirmed_user)
-        self.registration.add_permission(unconfirmed_user, permissions.ADMIN, save=True)
-        assert_equal(Contributor.objects.get(node=self.registration, user=unconfirmed_user).permission, permissions.ADMIN)
+        self.registration.add_permission(unconfirmed_user, ADMIN, save=True)
+        assert_equal(Contributor.objects.get(node=self.registration, user=unconfirmed_user).permission, ADMIN)
 
         approval = self.registration._initiate_approval(
             self.user
@@ -82,7 +82,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         assert_not_in(child_non_admin._id, approval.approval_state)
 
     def test_require_approval_from_non_admin_raises_PermissionsError(self):
-        self.registration.remove_permission(self.user, permissions.ADMIN)
+        self.registration.remove_permission(self.user, ADMIN)
         self.registration.save()
         self.registration.reload()
         with assert_raises(PermissionsError):
@@ -128,7 +128,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
     def test_one_approval_with_two_admins_stays_pending(self):
         admin2 = UserFactory()
         Contributor.objects.create(node=self.registration, user=admin2)
-        self.registration.add_permission(admin2, permissions.ADMIN, save=True)
+        self.registration.add_permission(admin2, ADMIN, save=True)
         self.registration.require_approval(
             self.user
         )
