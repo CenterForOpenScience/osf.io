@@ -14,6 +14,7 @@ from osf_tests.factories import (
     UserFactory,
 )
 from website.views import find_bookmark_collection
+from osf.utils import permissions
 from osf.utils.workflows import DefaultStates
 
 
@@ -181,7 +182,7 @@ class TestUserNodes:
         assert len(res.json['data']) == 0
 
         group = OSFGroupFactory(creator=group_mem)
-        private_project_user_one.add_osf_group(group, 'read')
+        private_project_user_one.add_osf_group(group, permissions.READ)
         res = app.get(url, auth=group_mem.auth)
         assert len(res.json['data']) == 1
 
@@ -292,19 +293,19 @@ class TestNodeListPermissionFiltering:
     @pytest.fixture()
     def read_node(self, creator, contrib):
         node = ProjectFactory(creator=creator)
-        node.add_contributor(contrib, permissions='read', save=True)
+        node.add_contributor(contrib, permissions=permissions.READ, save=True)
         return node
 
     @pytest.fixture()
     def write_node(self, creator, contrib):
         node = ProjectFactory(creator=creator)
-        node.add_contributor(contrib, permissions='write', save=True)
+        node.add_contributor(contrib, permissions=permissions.WRITE, save=True)
         return node
 
     @pytest.fixture()
     def admin_node(self, creator, contrib):
         node = ProjectFactory(creator=creator)
-        node.add_contributor(contrib, permissions='admin', save=True)
+        node.add_contributor(contrib, permissions=permissions.ADMIN, save=True)
         return node
 
     @pytest.fixture()
@@ -333,9 +334,9 @@ class TestNodeListPermissionFiltering:
 
         user2 = AuthUserFactory()
         osf_group = OSFGroupFactory(creator=user2)
-        read_node.add_osf_group(osf_group, 'read')
-        write_node.add_osf_group(osf_group, 'write')
-        admin_node.add_osf_group(osf_group, 'admin')
+        read_node.add_osf_group(osf_group, permissions.READ)
+        write_node.add_osf_group(osf_group, permissions.WRITE)
+        admin_node.add_osf_group(osf_group, permissions.ADMIN)
 
         # test filter group member read
         res = app.get('{}read'.format(url), auth=user2.auth)
@@ -361,7 +362,7 @@ class TestNodeListPermissionFiltering:
         res = app.get('{}read'.format(url), auth=me.auth)
         assert len(res.json['data']) == 0
 
-        read_node.add_contributor(me, 'read')
+        read_node.add_contributor(me, permissions.READ)
         read_node.save()
         res = app.get('{}read'.format(url), auth=me.auth)
         assert len(res.json['data']) == 1
@@ -370,7 +371,7 @@ class TestNodeListPermissionFiltering:
         # test filter write
         res = app.get('{}write'.format(url), auth=me.auth)
         assert len(res.json['data']) == 0
-        write_node.add_contributor(me, 'write')
+        write_node.add_contributor(me, permissions.WRITE)
         write_node.save()
         res = app.get('{}write'.format(url), auth=me.auth)
         assert len(res.json['data']) == 1
@@ -381,7 +382,7 @@ class TestNodeListPermissionFiltering:
         assert len(res.json['data']) == 0
 
         res = app.get('{}admin'.format(url), auth=me.auth)
-        admin_node.add_contributor(me, 'admin')
+        admin_node.add_contributor(me, permissions.ADMIN)
         admin_node.save()
         res = app.get('{}admin'.format(url), auth=me.auth)
         assert len(res.json['data']) == 1

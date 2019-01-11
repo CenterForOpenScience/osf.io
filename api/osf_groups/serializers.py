@@ -165,7 +165,6 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
                 else:
                     user = group.add_unregistered_member(full_name, email, auth, role)
         except ValueError as e:
-            # Making someone a member has the potential to violate the one-manager rule
             raise exceptions.ValidationError(detail=str(e.message))
 
         return user

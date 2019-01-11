@@ -1161,7 +1161,15 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         return fobj
 
 
-class NodeGroupsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListFilterMixin, OSFGroupMixin):
+class NodeGroupsBase(JSONAPIBaseView, NodeMixin, OSFGroupMixin):
+    model_class = OSFGroup
+
+    required_read_scopes = [CoreScopes.NODE_OSF_GROUPS_READ]
+    required_write_scopes = [CoreScopes.NODE_OSF_GROUPS_WRITE]
+    view_category = 'nodes'
+
+
+class NodeGroupsList(NodeGroupsBase, generics.ListCreateAPIView, ListFilterMixin):
     """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_groups_list)
 
     """
@@ -1170,13 +1178,8 @@ class NodeGroupsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Lis
         AdminOrPublic,
         base_permissions.TokenHasScope,
     )
-    model_class = OSFGroup
 
     serializer_class = NodeGroupsSerializer
-
-    required_read_scopes = [CoreScopes.NODE_OSF_GROUPS_READ]
-    required_write_scopes = [CoreScopes.NODE_OSF_GROUPS_WRITE]
-    view_category = 'nodes'
     view_name = 'node-groups'
 
     def get_default_queryset(self):
@@ -1214,7 +1217,7 @@ class NodeGroupsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Lis
         return context
 
 
-class NodeGroupsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, OSFGroupMixin):
+class NodeGroupsDetail(NodeGroupsBase, generics.RetrieveUpdateDestroyAPIView):
     """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_groups_read)
 
     """
@@ -1226,9 +1229,6 @@ class NodeGroupsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, N
 
     serializer_class = NodeGroupsDetailSerializer
 
-    required_read_scopes = [CoreScopes.NODE_OSF_GROUPS_READ]
-    required_write_scopes = [CoreScopes.NODE_OSF_GROUPS_WRITE]
-    view_category = 'nodes'
     view_name = 'node-group-detail'
 
     # Overrides RetrieveUpdateDestroyAPIView
@@ -1651,7 +1651,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
 
         for val in data:
             if val['id'] in current_insts:
-                if not user.is_affiliated_with_institution(current_insts[val['id']]) and not node.has_permission(user, 'admin'):
+                if not user.is_affiliated_with_institution(current_insts[val['id']]) and not node.has_permission(user, ADMIN):
                     raise PermissionDenied
                 node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
         node.save()

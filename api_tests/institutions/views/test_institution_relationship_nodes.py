@@ -318,7 +318,7 @@ class TestInstitutionRelationshipNodes:
             self, node_private, user,
             app, url_institution_nodes,
             institution):
-        node_private.add_contributor(user, permissions='read')
+        node_private.add_contributor(user, permissions=permissions.READ)
         node_private.save()
 
         res = app.delete_json_api(

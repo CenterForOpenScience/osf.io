@@ -3,6 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from osf.utils.permissions import WRITE, READ
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -49,15 +50,15 @@ def private_project(
     private_project = ProjectFactory(creator=admin_contributor)
     private_project.add_contributor(
         write_contrib,
-        permissions='write',
+        permissions=WRITE,
         auth=Auth(admin_contributor))
     private_project.add_contributor(
         read_contrib,
-        permissions='read',
+        permissions=READ,
         auth=Auth(admin_contributor))
     private_project.add_contributor(
         disabled_contrib,
-        permissions='read',
+        permissions=READ,
         auth=Auth(admin_contributor))
     private_project.custom_citation = 'Test Citation Text'
     private_project.save()
@@ -121,7 +122,7 @@ class NodeCitationsMixin:
     #   test_read_group_mem_can_view_private_project_citations
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, 'read')
+        private_project.add_osf_group(group, READ)
         res = app.get(private_url, auth=group_mem.auth)
         assert res.status_code == 200
 

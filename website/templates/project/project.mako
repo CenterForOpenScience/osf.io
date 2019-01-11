@@ -38,7 +38,7 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>
-                        % if 'admin' in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
+                        % if permissions.ADMIN in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
                         <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">
                           Make Public
                           <!-- ko if: nodeIsPendingEmbargoTermination -->
@@ -47,7 +47,7 @@
                         </a>
                         % endif
                     % else:
-                        % if 'admin' in user['permissions'] and not node['is_registration']:
+                        % if permissions.ADMIN in user['permissions'] and not node['is_registration']:
                             <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
@@ -111,7 +111,7 @@
                                         Remove from bookmarks
                                     </a>
                                 </li>
-                                % if 'admin' in user['permissions'] and not node['is_registration']:  ## Create view-only link
+                                % if permissions.ADMIN in user['permissions'] and not node['is_registration']:  ## Create view-only link
                                     <li>
                                         <a href="${node['url']}settings/#createVolsAnchor">
                                             Create view-only link
@@ -175,7 +175,7 @@
                     </div>
                 % endif
                 % if enable_institutions and not node['anonymous']:
-                    % if ('admin' in user['permissions'] and not node['is_registration']) and (len(node['institutions']) != 0 or len(user['institutions']) != 0):
+                    % if (permissions.ADMIN in user['permissions'] and not node['is_registration']) and (len(node['institutions']) != 0 or len(user['institutions']) != 0):
                         <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institutions:</a>
                         % if node['institutions'] != []:
                             % for inst in node['institutions']:
@@ -189,7 +189,7 @@
                             <span> None </span>
                         % endif
                     % endif
-                    % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institutions'] != []:
+                    % if not (permissions.ADMIN in user['permissions'] and not node['is_registration']) and node['institutions'] != []:
                         Affiliated institutions:
                         % for inst in node['institutions']:
                             % if inst != node['institutions'][-1]:
@@ -246,7 +246,7 @@
                     <span id="nodeCategoryEditable">${node['category']}</span>
                 </p>
 
-                % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
+                % if (node['description']) or (not node['description'] and permissions.WRITE in user['permissions'] and not node['is_registration']):
                     <p>
                     <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">
                         ${node['description']}</span>
@@ -258,7 +258,7 @@
                     % else:
                         <div class="col-xs-6">
                     % endif
-                            % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
+                            % if (permissions.ADMIN in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
                                 <p>
                                   <license-picker params="saveUrl: '${node['update_url']}',
                                                           saveMethod: 'PUT',
@@ -315,7 +315,7 @@
             <div style="margin-top: 5px;">
                 Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
                 <img style="margin: 0px 0px 2px 5px;" height="16", width="16" src="${collection['logo']}">
-                % if 'admin' in user['permissions']:
+                % if permissions.ADMIN in user['permissions']:
                   <a href="${collection['url']}${node['id']}/edit"><i class="fa fa-edit" aria-label="Edit in Collection"></i></a>
                 % endif
             &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
@@ -429,7 +429,7 @@
                    <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
-            % if not node['is_registration'] and not node['anonymous'] and 'write' in user['permissions']:
+            % if not node['is_registration'] and not node['anonymous'] and permissions.WRITE in user['permissions']:
                 <div class="row">
                     <div class="col-sm-12 m-t-sm m-l-md">
                         <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
@@ -491,7 +491,7 @@
                         </div>
                      </div>
                      <div data-bind="visible: page() == 'standard'" style="display: none;">
-                         % if not node['anonymous'] and 'admin' in user['permissions']:
+                         % if not node['anonymous'] and permissions.ADMIN in user['permissions']:
                              <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Customize</a>
                          % endif
                          <div class="m-b-md">
@@ -511,7 +511,7 @@
                          <pre id="citationText" class="formatted-citation"></pre>
                      </div>
                      <div data-bind="visible: page() == 'custom'" style="display: none;">
-                         % if not node['anonymous'] and 'admin' in user['permissions']:
+                         % if not node['anonymous'] and permissions.ADMIN in user['permissions']:
                             <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Edit</a>
                          % endif
 
@@ -557,7 +557,7 @@
         % endif
 
 
-        %if node['tags'] or 'write' in user['permissions']:
+        %if node['tags'] or permissions.WRITE in user['permissions']:
          <div class="tags panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Tags </h3>
@@ -593,12 +593,12 @@
 </div>
 
 <%def name="children()">
-% if ('write' in user['permissions'] and not node['is_registration']) or node['children']:
+% if (permissions.WRITE in user['permissions'] and not node['is_registration']) or node['children']:
     <div class="components panel panel-default">
         <div class="panel-heading clearfix">
             <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Components </h3>
             <div class="pull-right">
-                % if 'write' in user['permissions'] and not node['is_registration']:
+                % if permissions.WRITE in user['permissions'] and not node['is_registration']:
                     <span id="newComponent">
                         <button class="btn btn-sm btn-default" disabled="true">Add Component</button>
                     </span>

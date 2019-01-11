@@ -179,7 +179,7 @@ class TestNodeDetailViewOnlyLinks:
             {'view_only': private_node_one_private_link.key})
         assert res_linked.status_code == 200
         assert res_linked.json['data']['attributes']['current_user_permissions'] == [
-            'read']
+            permissions.READ]
 
         # Remove any keys that will be different for view-only responses
         res_normal_json = res_normal.json

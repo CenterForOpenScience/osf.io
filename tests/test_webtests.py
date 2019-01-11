@@ -32,6 +32,7 @@ from osf_tests.factories import (
     UnconfirmedUserFactory,
     UnregUserFactory,
 )
+from osf.utils import permissions
 from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from website import settings, language
@@ -130,7 +131,7 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory(creator=self.user)
         project.add_contributor(
             self.user,
-            permissions='admin',
+            permissions=permissions.ADMIN,
             save=True)
         res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
@@ -146,7 +147,7 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory()
         project.add_contributor(
             self.user,
-            permissions='admin',
+            permissions=permissions.ADMIN,
             save=True)
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
@@ -157,7 +158,7 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory()
         project.add_contributor(
             self.user,
-            permissions='write',
+            permissions=permissions.WRITE,
             save=True)
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
@@ -168,7 +169,7 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory(is_public=True)
         project.add_contributor(
             self.user,
-            permissions='admin',
+            permissions=permissions.ADMIN,
             save=True)
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
@@ -179,7 +180,7 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory(is_public=True)
         project.add_contributor(
             self.user,
-            permissions='write',
+            permissions=permissions.WRITE,
             save=True)
         # User goes to the project page
         res = self.app.get(project.url, auth=self.auth).maybe_follow()
@@ -300,7 +301,7 @@ class TestComponents(OsfTestCase):
         non_admin = AuthUserFactory()
         self.component.add_contributor(
             non_admin,
-            permissions='write',
+            permissions=permissions.WRITE,
             auth=self.consolidate_auth,
             save=True,
         )
@@ -324,7 +325,7 @@ class TestComponents(OsfTestCase):
         non_admin = AuthUserFactory()
         self.component.add_contributor(
             non_admin,
-            permissions='write',
+            permissions=permissions.WRITE,
             auth=self.consolidate_auth,
             save=True,
         )
@@ -366,7 +367,7 @@ class TestPrivateLinkView(OsfTestCase):
         link2.save()
         self.project.add_contributor(
             self.user,
-            permissions='read',
+            permissions=permissions.READ,
             save=True,
         )
         res = self.app.get(self.project_url, {'view_only': link2.key},
@@ -381,7 +382,7 @@ class TestPrivateLinkView(OsfTestCase):
     def test_no_warning_for_read_only_user_with_invalid_link(self):
         self.project.add_contributor(
             self.user,
-            permissions='read',
+            permissions=permissions.READ,
             save=True,
         )
         res = self.app.get(self.project_url, {'view_only': 'not_valid'},
@@ -1019,13 +1020,13 @@ class TestPreprintBannerView(OsfTestCase):
         self.non_contrib = AuthUserFactory()
         self.provider_one = PreprintProviderFactory()
         self.project_one = ProjectFactory(creator=self.admin, is_public=True)
-        self.project_one.add_contributor(self.write_contrib, 'write')
-        self.project_one.add_contributor(self.read_contrib, 'read')
+        self.project_one.add_contributor(self.write_contrib, permissions.WRITE)
+        self.project_one.add_contributor(self.read_contrib, permissions.READ)
 
         self.subject_one = SubjectFactory()
         self.preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=self.project_one, is_published=True)
-        self.preprint.add_contributor(self.write_contrib, 'write')
-        self.preprint.add_contributor(self.read_contrib, 'read')
+        self.preprint.add_contributor(self.write_contrib, permissions.WRITE)
+        self.preprint.add_contributor(self.read_contrib, permissions.READ)
 
     def test_public_project_published_preprint(self):
         url = self.project_one.web_url_for('view_project')
@@ -1221,7 +1222,7 @@ class TestPreprintBannerView(OsfTestCase):
     def test_implicit_admins_can_see_project_status(self):
         project = ProjectFactory(creator=self.admin)
         component = NodeFactory(creator=self.admin, parent=project)
-        project.add_contributor(self.write_contrib, 'admin')
+        project.add_contributor(self.write_contrib, permissions.ADMIN)
         project.save()
 
         preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=component, is_published=True)

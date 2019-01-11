@@ -5,7 +5,7 @@ from website import settings
 from osf.models import Contributor
 from addons.osfstorage.models import Region
 from website.filters import profile_image_url
-
+from osf.utils.permissions import READ
 from osf.utils import workflows
 from website.ember_osf_web.decorators import storage_i18n_flag_active
 
@@ -41,7 +41,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         if admin:
             flags = {
                 'visible': False,
-                'permission': 'read',
+                'permission': READ,
             }
         else:
             if not contrib:

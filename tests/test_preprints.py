@@ -182,7 +182,7 @@ class TestPreprintSubjects:
     @pytest.fixture()
     def write_contrib(self, preprint):
         write_contrib = AuthUserFactory()
-        preprint.add_contributor(write_contrib, auth=Auth(preprint.creator), permissions='write')
+        preprint.add_contributor(write_contrib, auth=Auth(preprint.creator), permissions=WRITE)
         preprint.save()
         return write_contrib
 
@@ -366,8 +366,8 @@ class TestContributorMethods:
         assert preprint.is_contributor(user2)
         assert user1._id in preprint.visible_contributor_ids
         assert user2._id not in preprint.visible_contributor_ids
-        assert preprint.get_permissions(user1) == ['read', 'write', 'admin']
-        assert preprint.get_permissions(user2) == ['read', 'write']
+        assert preprint.get_permissions(user1) == [READ, WRITE, ADMIN]
+        assert preprint.get_permissions(user2) == [READ, WRITE]
         last_log = preprint.logs.all().order_by('-created')[0]
         assert (
             last_log.params['contributors'] ==
@@ -536,7 +536,7 @@ class TestContributorMethods:
         new_contrib = AuthUserFactory()
         preprint.add_contributor(new_contrib, permissions=WRITE, auth=auth)
 
-        assert preprint.get_permissions(new_contrib) == ['read', 'write']
+        assert preprint.get_permissions(new_contrib) == [READ, WRITE]
         assert preprint.get_visible(new_contrib) is True
 
         preprint.update_contributor(
@@ -545,7 +545,7 @@ class TestContributorMethods:
             False,
             auth=auth
         )
-        assert preprint.get_permissions(new_contrib) == ['read']
+        assert preprint.get_permissions(new_contrib) == [READ]
         assert preprint.get_visible(new_contrib) is False
 
     def test_update_contributor_non_admin_raises_error(self, preprint, auth):
@@ -701,10 +701,10 @@ class TestPermissionMethods:
             preprint=preprint, user=user,
         )
         preprint.add_permission(user, READ)
-        assert preprint.get_permissions(user) == ['read']
+        assert preprint.get_permissions(user) == [READ]
 
         preprint.add_permission(user, WRITE)
-        assert preprint.get_permissions(user) == ['read', 'write']
+        assert preprint.get_permissions(user) == [READ, WRITE]
         assert contributor.user in preprint.contributors
 
     def test_add_permission(self, preprint):
@@ -819,7 +819,7 @@ class TestPermissionMethods:
         creator = UserFactory()
         preprint = PreprintFactory(creator=creator)
         contrib = UserFactory()
-        preprint.add_contributor(contrib, permissions='admin', auth=Auth(user=creator))
+        preprint.add_contributor(contrib, permissions=ADMIN, auth=Auth(user=creator))
         preprint.save()
         assert creator in preprint.contributors.all()
         # Creator is removed from project
@@ -1181,8 +1181,8 @@ class TestManageContributors:
             save=True
         )
         users = [
-            {'id': preprint.creator._id, 'permissions': 'read', 'visible': True},
-            {'id': user._id, 'permissions': 'read', 'visible': True},
+            {'id': preprint.creator._id, 'permissions': READ, 'visible': True},
+            {'id': user._id, 'permissions': READ, 'visible': True},
         ]
         with pytest.raises(PreprintStateError):
             preprint.manage_contributors(
@@ -1195,7 +1195,7 @@ class TestManageContributors:
             unregistered.fullname,
             unregistered.email,
             auth=Auth(preprint.creator),
-            permissions='admin',
+            permissions=ADMIN,
             existing_user=unregistered
         )
         users = [
@@ -1680,12 +1680,12 @@ class TestPreprintPermissions(OsfTestCase):
         self.preprint.save()
 
         project = ProjectFactory(creator=self.preprint.creator)
-        project.add_contributor(self.read_contrib, 'read', save=True)
-        project.add_contributor(self.write_contrib, 'write', save=True)
+        project.add_contributor(self.read_contrib, READ, save=True)
+        project.add_contributor(self.write_contrib, WRITE, save=True)
 
-        self.preprint.add_contributor(self.read_contrib, 'admin', save=True)
-        self.preprint.add_contributor(self.write_contrib, 'admin', save=True)
-        self.preprint.add_contributor(self.noncontrib, 'admin', save=True)
+        self.preprint.add_contributor(self.read_contrib, ADMIN, save=True)
+        self.preprint.add_contributor(self.write_contrib, ADMIN, save=True)
+        self.preprint.add_contributor(self.noncontrib, ADMIN, save=True)
 
         # noncontrib
         with assert_raises(PermissionsError):
@@ -1713,9 +1713,9 @@ class TestPreprintPermissions(OsfTestCase):
         self.preprint.save()
 
         project = ProjectFactory(creator=self.preprint.creator)
-        project.add_contributor(self.read_contrib, 'admin', save=True)
-        project.add_contributor(self.write_contrib, 'admin', save=True)
-        project.add_contributor(self.noncontrib, 'admin', save=True)
+        project.add_contributor(self.read_contrib, ADMIN, save=True)
+        project.add_contributor(self.write_contrib, ADMIN, save=True)
+        project.add_contributor(self.noncontrib, ADMIN, save=True)
 
         # noncontrib
         with assert_raises(PermissionsError):
@@ -2234,13 +2234,13 @@ class TestPreprintSaveShareHook(OsfTestCase):
         preprint.move_contributor(contributor=user, index=0, auth=self.auth, save=True)
         assert mock_on_preprint_updated.call_count == 7
 
-        data = [{'id': self.admin._id, 'permissions': 'admin', 'visible': True},
-                {'id': user._id, 'permissions': 'write', 'visible': False}]
+        data = [{'id': self.admin._id, 'permissions': ADMIN, 'visible': True},
+                {'id': user._id, 'permissions': WRITE, 'visible': False}]
 
         preprint.manage_contributors(data, auth=self.auth, save=True)
         assert mock_on_preprint_updated.call_count == 9
 
-        preprint.update_contributor(user, 'read', True, auth=self.auth, save=True)
+        preprint.update_contributor(user, READ, True, auth=self.auth, save=True)
         assert mock_on_preprint_updated.call_count == 11
 
         preprint.remove_contributor(contributor=user, auth=self.auth)
@@ -2399,7 +2399,7 @@ class TestCheckPreprintAuth(OsfTestCase):
         assert_equal(exc_info.exception.code, 403)
 
         # Read contributor
-        self.preprint.add_contributor(user2, 'read', save=True)
+        self.preprint.add_contributor(user2, READ, save=True)
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(user2), 'download', None)
         assert_equal(exc_info.exception.code, 403)

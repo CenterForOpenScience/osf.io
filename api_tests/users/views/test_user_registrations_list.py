@@ -12,6 +12,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     OSFGroupFactory
 )
+from osf.utils import permissions
 from tests.base import ApiTestCase
 from website.views import find_bookmark_collection
 
@@ -73,7 +74,7 @@ class TestUserRegistrations:
             is_public=False,
             creator=user_one
         )
-        project.add_osf_group(osf_group, 'admin')
+        project.add_osf_group(osf_group, permissions.ADMIN)
         return project
 
     @pytest.fixture()

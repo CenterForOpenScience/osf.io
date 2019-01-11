@@ -33,6 +33,7 @@ from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import Session, RegistrationSchema, QuickFilesNode
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
+from osf.utils.permissions import WRITE, READ
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.project.views.node import serialize_addons, collect_node_config_js
@@ -425,7 +426,7 @@ class TestCheckAuth(OsfTestCase):
 
         component_registration = registration._nodes.first()
 
-        assert_false(component_registration.has_permission(self.user, 'write'))
+        assert_false(component_registration.has_permission(self.user, WRITE))
         res = views.check_access(component_registration, Auth(user=self.user), 'upload', None)
         assert_true(res)
 
@@ -435,7 +436,7 @@ class TestCheckAuth(OsfTestCase):
 
         component_registration = RegistrationFactory(project=component, creator=component_admin)
 
-        assert_false(component_registration.has_permission(self.user, 'read'))
+        assert_false(component_registration.has_permission(self.user, READ))
         res = views.check_access(component_registration, Auth(user=self.user), 'metadata', None)
         assert_true(res)
 
@@ -443,7 +444,7 @@ class TestCheckAuth(OsfTestCase):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, parent=self.node)
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError):
             views.check_access(component, Auth(user=self.user), 'upload', None)
 
@@ -451,7 +452,7 @@ class TestCheckAuth(OsfTestCase):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'copyfrom', None)
         assert_true(res)
 
@@ -507,7 +508,7 @@ class TestCheckPreregAuth(OsfTestCase):
     def test_has_permission_write_prereg_challenge_admin(self):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.draft_registration.branched_from,
-                Auth(user=self.prereg_challenge_admin_user), 'write', None)
+                Auth(user=self.prereg_challenge_admin_user), WRITE, None)
             assert_equal(exc_info.exception.code, http.FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
@@ -522,7 +523,7 @@ class TestCheckOAuth(OsfTestCase):
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
         cas_resp = cas.CasResponse(authenticated=False)
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_equal(exc_info.exception.code, 403)
@@ -533,7 +534,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_equal(exc_info.exception.code, 403)
@@ -544,7 +545,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.users.all_read'}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_true(res)
 
@@ -554,7 +555,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.users.all_read'}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_equal(exc_info.exception.code, 403)
@@ -568,7 +569,7 @@ class TestCheckOAuth(OsfTestCase):
                                        'osf.nodes.data_read',
                                    }})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_true(res)
 
@@ -578,7 +579,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.nodes.data_write'}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_true(res)
 
@@ -587,7 +588,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.nodes.data_read'}})
 
-        assert_true(component.has_permission(self.user, 'write'))
+        assert_true(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'upload', cas_resp)
         assert_equal(exc_info.exception.code, 403)

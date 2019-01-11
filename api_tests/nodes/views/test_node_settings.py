@@ -9,6 +9,7 @@ from osf_tests.factories import (
     OSFGroupFactory,
 )
 from osf.models import NodeLog
+from osf.utils import permissions
 
 @pytest.fixture()
 def admin_contrib():
@@ -33,8 +34,8 @@ def osf_group(group_member):
 @pytest.fixture()
 def project(admin_contrib, write_contrib, read_contrib):
     project = ProjectFactory(creator=admin_contrib)
-    project.add_contributor(write_contrib, 'write')
-    project.add_contributor(read_contrib, 'read')
+    project.add_contributor(write_contrib, permissions.WRITE)
+    project.add_contributor(read_contrib, permissions.READ)
     project.save()
     return project
 
@@ -69,7 +70,7 @@ class TestNodeSettingsGet:
         assert res.status_code == 200
 
         # group member can access node settings
-        project.add_osf_group(osf_group, 'read')
+        project.add_osf_group(osf_group, permissions.READ)
         res = app.get(url, auth=group_member.auth)
         assert res.status_code == 200
 
@@ -163,7 +164,7 @@ class TestNodeSettingsPUT:
         assert res.status_code == 403
 
         # group member read
-        project.add_osf_group(osf_group, 'read')
+        project.add_osf_group(osf_group, permissions.READ)
         project.save()
         res = app.put_json_api(url, payload, auth=group_member.auth, expect_errors=True)
         assert res.status_code == 403
@@ -173,7 +174,7 @@ class TestNodeSettingsPUT:
         assert res.status_code == 403
 
         # group member write
-        project.update_osf_group(osf_group, 'write')
+        project.update_osf_group(osf_group, permissions.WRITE)
         project.save()
         res = app.put_json_api(url, payload, auth=group_member.auth, expect_errors=True)
         assert res.status_code == 403
@@ -183,7 +184,7 @@ class TestNodeSettingsPUT:
         assert res.status_code == 200
 
         # group member admin
-        project.update_osf_group(osf_group, 'admin')
+        project.update_osf_group(osf_group, permissions.ADMIN)
         project.save()
         res = app.put_json_api(url, payload, auth=group_member.auth, expect_errors=True)
         assert res.status_code == 200
@@ -228,17 +229,17 @@ class TestNodeSettingsUpdate:
         assert res.status_code == 200
 
         # Logged in read group mem
-        project.add_osf_group(osf_group, 'read')
+        project.add_osf_group(osf_group, permissions.READ)
         res = app.patch_json_api(url, payload, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
         # Logged in write group mem (Write group mems can only change some node settings)
-        project.add_osf_group(osf_group, 'write')
+        project.add_osf_group(osf_group, permissions.WRITE)
         res = app.patch_json_api(url, payload, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 200
 
         # Logged in admin group mem
-        project.add_osf_group(osf_group, 'admin')
+        project.add_osf_group(osf_group, permissions.ADMIN)
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth)
         assert res.status_code == 200
 

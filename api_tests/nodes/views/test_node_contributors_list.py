@@ -130,9 +130,9 @@ class TestNodeContributorList(NodeCRUDTestCase):
     def test_permissions_work_with_many_users(
             self, app, user, project_private, url_private):
         users = {
-            'admin': [user._id],
-            'write': [],
-            'read': []
+            permissions.ADMIN: [user._id],
+            permissions.WRITE: [],
+            permissions.READ: []
         }
         for i in range(0, 25):
             perm = random.choice(users.keys())
@@ -174,7 +174,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
     #   test_return_private_contributor_list_logged_in_osf_group_member
         res = app.get(url_private, auth=user_two.auth, expect_errors=True)
         osf_group = OSFGroupFactory(creator=user_two)
-        project_private.add_osf_group(osf_group, 'read')
+        project_private.add_osf_group(osf_group, permissions.READ)
         res = app.get(url_private, auth=user_two.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
@@ -688,7 +688,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             self, app, user, user_two, user_three,
             project_public, data_user_three, url_public):
         group = OSFGroupFactory(creator=user_two)
-        project_public.add_osf_group(group, 'write')
+        project_public.add_osf_group(group, permissions.WRITE)
         res = app.post_json_api(url_public, data_user_three,
                                 auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
@@ -724,7 +724,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             self, app, user, user_two, user_three, project_private,
             data_user_two, url_private):
         osf_group = OSFGroupFactory(creator=user_three)
-        project_private.add_osf_group(osf_group, 'admin')
+        project_private.add_osf_group(osf_group, permissions.ADMIN)
         with assert_latest_log(NodeLog.CONTRIB_ADDED, project_private):
             res = app.post_json_api(url_private, data_user_two, auth=user_three.auth)
             assert res.status_code == 201
@@ -788,7 +788,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_private.reload()
             assert user_two in project_private.contributors
             assert project_private.get_permissions(user_two) == [
-                'read', 'write', 'admin']
+                permissions.READ, permissions.WRITE, permissions.ADMIN]
 
     def test_adds_write_contributor_private_project_admin(
             self, app, user, user_two, project_private, url_private):
@@ -818,7 +818,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_private.reload()
             assert user_two in project_private.contributors
             assert project_private.get_permissions(
-                user_two) == ['read', 'write']
+                user_two) == [permissions.READ, permissions.WRITE]
 
     def test_adds_read_contributor_private_project_admin(
             self, app, user, user_two, project_private, url_private):
@@ -848,7 +848,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             project_private.reload()
             assert user_two in project_private.contributors
             assert project_private.get_permissions(user_two) == [
-                'read']
+                permissions.READ]
 
     def test_adds_invalid_permission_contributor_private_project_admin(
             self, app, user, user_two, project_private, url_private):
@@ -902,7 +902,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
             project_private.reload()
             assert user_two in project_private.contributors
-            assert project_private.has_permission(user_two, 'write')
+            assert project_private.has_permission(user_two, permissions.WRITE)
 
     def test_adds_already_existing_contributor_private_project_admin(
             self, app, user, user_two, project_private, data_user_two, url_private):
@@ -1559,7 +1559,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': True,
-                'permission': 'admin'
+                'permission': permissions.ADMIN
             },
             'relationships': {
                 'users': {
@@ -1577,7 +1577,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': False,
-                'permission': 'read'
+                'permission': permissions.READ
             },
             'relationships': {
                 'users': {
@@ -1668,7 +1668,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         assert_items_equal([res.json['data'][0]['attributes']['bibliographic'],
                             res.json['data'][1]['attributes']['bibliographic']], [True, False])
         assert_items_equal([res.json['data'][0]['attributes']['permission'],
-                            res.json['data'][1]['attributes']['permission']], ['admin', 'read'])
+                            res.json['data'][1]['attributes']['permission']], [permissions.ADMIN, permissions.READ])
         assert res.content_type == 'application/vnd.api+json'
 
         res = app.get(url_public, auth=user.auth)
@@ -1683,7 +1683,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         assert_items_equal([res.json['data'][0]['attributes']['bibliographic'],
                             res.json['data'][1]['attributes']['bibliographic']], [True, False])
         assert_items_equal([res.json['data'][0]['attributes']['permission'],
-                            res.json['data'][1]['attributes']['permission']], ['admin', 'read'])
+                            res.json['data'][1]['attributes']['permission']], [permissions.ADMIN, permissions.READ])
         assert res.content_type == 'application/vnd.api+json'
 
         res = app.get(url_private, auth=user.auth)
@@ -1827,7 +1827,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': True,
-                'permission': 'admin'
+                'permission': permissions.ADMIN
             }
         }
 
@@ -1838,7 +1838,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': True,
-                'permission': 'admin'
+                'permission': permissions.ADMIN
             }
         }
 
@@ -1849,7 +1849,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': False,
-                'permission': 'write'
+                'permission': permissions.WRITE
             }
         }
 
@@ -1861,7 +1861,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': False,
-                'permission': 'write'
+                'permission': permissions.WRITE
             }
         }
 
@@ -1904,7 +1904,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_update_contributors_public_projects_logged_out
@@ -1923,7 +1923,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_update_contributors_private_projects_logged_out
@@ -1942,7 +1942,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_private_projects_logged_in_non_contrib
         res = app.put_json_api(
@@ -1961,7 +1961,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_private_projects_logged_in_read_only_contrib
         res = app.put_json_api(
@@ -1980,7 +1980,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_update_contributors_projects_send_dictionary_not_list
@@ -2089,7 +2089,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_update_contributors_invalid_bibliographic
@@ -2119,7 +2119,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_update_contributors_must_have_at_least_one_bibliographic_contributor
@@ -2133,7 +2133,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
                         ),
                         'type': 'contributors',
                         'attributes': {
-                            'permission': 'admin',
+                            'permission': permissions.ADMIN,
                             'bibliographic': False
                         }
                     }, {
@@ -2163,7 +2163,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
                     ),
                     'type': 'contributors',
                     'attributes': {
-                            'permission': 'read'
+                            'permission': permissions.READ
                     }
                 }
             ]},
@@ -2185,7 +2185,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         assert_items_equal(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
-            ['admin', 'write']
+            [permissions.ADMIN, permissions.WRITE]
         )
 
     def test_bulk_update_contributors_private_projects_logged_in_contrib(
@@ -2200,7 +2200,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         assert_items_equal(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
-            ['admin', 'write']
+            [permissions.ADMIN, permissions.WRITE]
         )
 
 
@@ -2275,7 +2275,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': True,
-                'permission': 'admin'
+                'permission': permissions.ADMIN
             }
         }
 
@@ -2286,7 +2286,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': False,
-                'permission': 'write'
+                'permission': permissions.WRITE
             }
         }
 
@@ -2297,7 +2297,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': True,
-                'permission': 'admin'
+                'permission': permissions.ADMIN
             }
         }
 
@@ -2309,7 +2309,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {
                 'bibliographic': False,
-                'permission': 'write'
+                'permission': permissions.WRITE
             }
         }
 
@@ -2346,7 +2346,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_partial_update_contributors_public_projects_logged_out
@@ -2362,7 +2362,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_partial_update_contributors_private_projects_logged_out
@@ -2379,7 +2379,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_contributors_private_projects_logged_in_non_contrib
         res = app.patch_json_api(
@@ -2396,7 +2396,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read']
+            [permissions.ADMIN, permissions.READ, permissions.READ]
         )
 
     #   test_bulk_partial_update_contributors_private_projects_logged_in_read_only_contrib
@@ -2414,7 +2414,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_contributors_projects_send_dictionary_not_list
         res = app.patch_json_api(
@@ -2511,7 +2511,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_invalid_bibliographic
         res = app.patch_json_api(
@@ -2537,7 +2537,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin', 'read', 'read'])
+            [permissions.ADMIN, permissions.READ, permissions.READ])
 
     def test_bulk_partial_update_contributors_public_projects_logged_in(
             self, app, user, payload_public_one, payload_public_two, url_public):
@@ -2550,7 +2550,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_items_equal(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
-            ['admin', 'write'])
+            [permissions.ADMIN, permissions.WRITE])
 
     def test_bulk_partial_update_contributors_private_projects_logged_in_contrib(
             self, app, user, payload_private_one, payload_private_two, url_private):
@@ -2563,7 +2563,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_items_equal(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
-            ['admin', 'write'])
+            [permissions.ADMIN, permissions.WRITE])
 
 
 class TestNodeContributorBulkDelete(NodeCRUDTestCase):
@@ -2922,7 +2922,7 @@ class TestNodeContributorFiltering:
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes'].get('permission') == 'admin'
+        assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
 
     #   test_filtering_node_with_only_bibliographic_contributors
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
@@ -2954,13 +2954,13 @@ class TestNodeContributorFiltering:
 
     #   test_filtering_write_contributors
         user_two = AuthUserFactory()
-        project.add_contributor(user_two, 'write')
+        project.add_contributor(user_two, permissions.WRITE)
         url = '/{}nodes/{}/contributors/?filter[permission]=write'.format(
             API_BASE, project._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes'].get('permission') == 'write'
+        assert res.json['data'][0]['attributes'].get('permission') == permissions.WRITE
 
     def test_filtering_node_with_non_bibliographic_contributor(
             self, app, user, project):

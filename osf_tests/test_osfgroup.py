@@ -781,7 +781,7 @@ class TestNodeGroups:
         project.add_osf_group(osf_group, ADMIN)
         # Manager has explict admin to child, member has implicit admin.
         # Manager should be in admin_users, member should be in parent_admin_users
-        admin_users = child.get_users_with_perm('admin')
+        admin_users = child.get_users_with_perm(ADMIN)
         assert manager in admin_users
         assert member not in admin_users
 

@@ -331,7 +331,7 @@ def project_remove_contributor(auth, **kwargs):
         node = AbstractNode.load(node_id)
 
         # Forbidden unless user is removing herself
-        if not node.has_permission(auth.user, 'admin'):
+        if not node.has_permission(auth.user, ADMIN):
             if auth.user != contributor:
                 raise HTTPError(http.FORBIDDEN)
 

@@ -126,21 +126,21 @@ class TestNodeSerializers(OsfTestCase):
         user = UserFactory()
         admin_project = ProjectFactory()
         admin_project.add_contributor(user, auth=Auth(admin_project.creator),
-                                      permissions='admin')
+                                      permissions=permissions.ADMIN)
         admin_project.save()
 
         admin_component = NodeFactory(parent=admin_project)
         admin_component.add_contributor(user, auth=Auth(admin_component.creator),
-                                        permissions='admin')
+                                        permissions=permissions.ADMIN)
         admin_component.save()
 
         read_and_write = NodeFactory(parent=admin_project)
         read_and_write.add_contributor(user, auth=Auth(read_and_write.creator),
-                                       permissions='write')
+                                       permissions=permissions.WRITE)
         read_and_write.save()
         read_only = NodeFactory(parent=admin_project)
         read_only.add_contributor(user, auth=Auth(read_only.creator),
-                                  permissions='read')
+                                  permissions=permissions.READ)
         read_only.save()
 
         non_contributor = NodeFactory(parent=admin_project)
@@ -196,7 +196,7 @@ class TestNodeSerializers(OsfTestCase):
         project = ProjectFactory()
         user = UserFactory()
         group = OSFGroupFactory(creator=user)
-        project.add_osf_group(group, 'write')
+        project.add_osf_group(group, permissions.WRITE)
 
         res = _view_project(
             project, auth=Auth(user),
@@ -206,7 +206,7 @@ class TestNodeSerializers(OsfTestCase):
         assert_false(res['user']['is_admin'])
         assert_true(res['user']['can_edit'])
         assert_true(res['user']['has_read_permissions'])
-        assert_equal(set(res['user']['permissions']), set(['read', 'write']))
+        assert_equal(set(res['user']['permissions']), set([permissions.READ, permissions.WRITE]))
         assert_true(res['user']['can_comment'])
 
     def test_serialize_node_search_returns_only_visible_contributors(self):
@@ -356,34 +356,34 @@ class TestGetReadableDescendants(OsfTestCase):
         userB = UserFactory(fullname='User B')
 
         project1 = ProjectFactory(creator=self.user, title='One')
-        project1.add_contributor(userA, auth=Auth(self.user), permissions='read')
-        project1.add_contributor(userB, auth=Auth(self.user), permissions='read')
+        project1.add_contributor(userA, auth=Auth(self.user), permissions=permissions.READ)
+        project1.add_contributor(userB, auth=Auth(self.user), permissions=permissions.READ)
 
         component2 = ProjectFactory(creator=self.user, title='Two')
-        component2.add_contributor(userA, auth=Auth(self.user), permissions='read')
+        component2.add_contributor(userA, auth=Auth(self.user), permissions=permissions.READ)
 
         component3 = ProjectFactory(creator=self.user, title='Three')
-        component3.add_contributor(userA, auth=Auth(self.user), permissions='read')
-        component3.add_contributor(userB, auth=Auth(self.user), permissions='read')
+        component3.add_contributor(userA, auth=Auth(self.user), permissions=permissions.READ)
+        component3.add_contributor(userB, auth=Auth(self.user), permissions=permissions.READ)
 
         component4 = ProjectFactory(creator=self.user, title='Four')
-        component4.add_contributor(userB, auth=Auth(self.user), permissions='read')
+        component4.add_contributor(userB, auth=Auth(self.user), permissions=permissions.READ)
 
         component5 = ProjectFactory(creator=self.user, title='Five')
-        component5.add_contributor(userB, auth=Auth(self.user), permissions='read')
+        component5.add_contributor(userB, auth=Auth(self.user), permissions=permissions.READ)
 
         component6 = ProjectFactory(creator=self.user, title='Six')
-        component6.add_contributor(userA, auth=Auth(self.user), permissions='read')
+        component6.add_contributor(userA, auth=Auth(self.user), permissions=permissions.READ)
 
         component7 = ProjectFactory(creator=self.user, title='Seven')
-        component7.add_contributor(userA, auth=Auth(self.user), permissions='read')
+        component7.add_contributor(userA, auth=Auth(self.user), permissions=permissions.READ)
 
         component8 = ProjectFactory(creator=self.user, title='Eight')
-        component8.add_contributor(userA, auth=Auth(self.user), permissions='read')
-        component8.add_contributor(userB, auth=Auth(self.user), permissions='read')
+        component8.add_contributor(userA, auth=Auth(self.user), permissions=permissions.READ)
+        component8.add_contributor(userB, auth=Auth(self.user), permissions=permissions.READ)
 
         component9 = ProjectFactory(creator=self.user, title='Nine')
-        component9.add_contributor(userB, auth=Auth(self.user), permissions='read')
+        component9.add_contributor(userB, auth=Auth(self.user), permissions=permissions.READ)
 
         project1.add_pointer(component2, Auth(self.user))
         NodeRelation.objects.create(parent=project1, child=component4)

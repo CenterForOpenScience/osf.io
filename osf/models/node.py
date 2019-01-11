@@ -64,7 +64,7 @@ from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
 from osf.utils.requests import get_headers_from_request
-from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, CONTRIB_PERMISSIONS, PERMISSIONS
+from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, CONTRIB_PERMISSIONS, PERMISSIONS, WRITE, READ
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 
@@ -765,7 +765,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return False
 
         return (self.is_public or
-                (auth.user and self.has_permission(auth.user, 'read')) or
+                (auth.user and self.has_permission(auth.user, READ)) or
                 auth.private_key in self.private_link_keys_active or
                 self.is_admin_parent(auth.user))
 
@@ -787,15 +787,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             is_api_node = False
         return (
-            (user and self.has_permission(user, 'write')) or is_api_node
+            (user and self.has_permission(user, WRITE)) or is_api_node
         )
 
-    def add_osf_group(self, group, permission='write', auth=None):
+    def add_osf_group(self, group, permission=WRITE, auth=None):
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to add an OSF Group.')
         group.add_group_to_node(self, permission, auth)
 
-    def update_osf_group(self, group, permission='write', auth=None):
+    def update_osf_group(self, group, permission=WRITE, auth=None):
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to add an OSF Group.')
         group.update_group_permissions_to_node(self, permission, auth)
@@ -875,7 +875,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     Useful for checking parent permissions for non-group actions like registrations.
         :return: bool Does the user have admin permissions on this object or its parents?
         """
-        if self.has_permission(user, 'admin', check_parent=False):
+        if self.has_permission(user, ADMIN, check_parent=False):
             ret = True
             if not include_group_admin and not self.is_contributor(user):
                 ret = False
@@ -929,7 +929,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def _get_admin_contributor_ids(self, include_self=False):
         def get_admin_contributor_ids(node):
-            return node.get_group('admin').user_set.filter(is_active=True).values_list('guids___id', flat=True)
+            return node.get_group(ADMIN).user_set.filter(is_active=True).values_list('guids___id', flat=True)
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
         admin_ids = set(get_admin_contributor_ids(self)) if include_self else set()
         for parent in self.parents:
@@ -953,9 +953,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def _get_admin_user_ids(self, include_self=False):
         def get_admin_user_ids(node):
-            return node.get_users_with_perm('admin').values_list('guids___id', flat=True)
+            return node.get_users_with_perm(ADMIN).values_list('guids___id', flat=True)
 
-        contributor_ids = set(self.get_users_with_perm('read').values_list('guids___id', flat=True))
+        contributor_ids = set(self.get_users_with_perm(READ).values_list('guids___id', flat=True))
         admin_ids = set(get_admin_user_ids(self)) if include_self else set()
         for parent in self.parents:
             admins = get_admin_user_ids(parent)
@@ -1198,7 +1198,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.comment_level == 'public':
             return auth.logged_in and (
                 self.is_public or
-                (auth.user and self.has_permission(auth.user, 'read'))
+                (auth.user and self.has_permission(auth.user, READ))
             )
         return self.is_contributor_or_group_member(auth.user)
 
@@ -1296,7 +1296,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 'operator': 'eq',
                 'property_value': str(self._id)
             }],
-            'allowed_operations': ['read']
+            'allowed_operations': [READ]
         })
 
     @property
@@ -1590,7 +1590,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         user = auth.user
 
         # Non-contributors can't fork private nodes
-        if not (self.is_public or self.has_permission(user, 'read')):
+        if not (self.is_public or self.has_permission(user, READ)):
             raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
         when = timezone.now()
@@ -1742,7 +1742,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise NodeStateError('Cannot use deleted node as template.')
 
         # Non-contributors can't template private nodes
-        if not (self.is_public or self.has_permission(auth.user, 'read')):
+        if not (self.is_public or self.has_permission(auth.user, READ)):
             raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
 
         new = self.clone()
@@ -1944,7 +1944,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     node=self,
                     visible=True,
                 )
-                self.add_permission(self.creator, 'admin')
+                self.add_permission(self.creator, ADMIN)
         return ret
 
     def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):

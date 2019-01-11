@@ -9,7 +9,7 @@ from api.base.filters import ListFilterMixin
 from api.base import utils
 
 from osf.models import AbstractNode, NodeRelation, Node, Preprint
-from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
+from osf.utils import permissions
 
 
 class NodesFilterMixin(ListFilterMixin):
@@ -80,7 +80,7 @@ class NodesFilterMixin(ListFilterMixin):
 class UserNodesFilterMixin(NodesFilterMixin):
     def build_query_from_field(self, field_name, operation):
         if field_name == 'current_user_permissions':
-            if operation['value'] not in API_CONTRIBUTOR_PERMISSIONS:
+            if operation['value'] not in permissions.API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
             perm = operation['value']
             # Filtering UserNodes on the requesting user's permissions to those nodes.
@@ -89,15 +89,14 @@ class UserNodesFilterMixin(NodesFilterMixin):
             if user.is_anonymous:
                 # Anonymous users have no perms to the current node in current versions, and in
                 # older versions, will have read if node is public
-                query = Q() if StrictVersion(self.request.version) < StrictVersion('2.11') and perm == READ else Q(id__in=[])
-            elif perm == READ:
-                query = Q(id__in=self.build_node_list(user, 'read_node'))
-            elif perm == WRITE:
-                query = Q(id__in=self.build_node_list(user, 'write_node'))
-            elif perm == ADMIN:
-                query = Q(id__in=self.build_node_list(user, 'admin_node'))
-            return query
+                return Q() if StrictVersion(self.request.version) < StrictVersion('2.11') and perm == permissions.READ else Q(id__in=[])
+            elif perm == permissions.READ:
+                return Q(id__in=self.build_node_list(user, permissions.READ_NODE))
+            elif perm == permissions.WRITE:
+                return Q(id__in=self.build_node_list(user, permissions.WRITE_NODE))
+            elif perm == permissions.ADMIN:
+                return Q(id__in=self.build_node_list(user, permissions.ADMIN_NODE))
         return super(UserNodesFilterMixin, self).build_query_from_field(field_name, operation)
 
-    def build_node_list(self, user, perm):
-        return get_objects_for_user(user, perm, Node, with_superuser=False).values_list('id', flat=True)
+    def build_node_list(self, user, perm, with_superuser=False):
+        return get_objects_for_user(user, perm, Node, with_superuser=with_superuser).values_list('id', flat=True)

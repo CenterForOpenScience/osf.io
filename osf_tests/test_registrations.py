@@ -553,9 +553,9 @@ class TestDraftRegistrations:
         member = factories.AuthUserFactory()
         osf_group = factories.OSFGroupFactory(creator=user)
         osf_group.make_member(member, auth=auth)
-        project.add_osf_group(osf_group, 'admin')
+        project.add_osf_group(osf_group, ADMIN)
         draft_2 = factories.DraftRegistrationFactory(branched_from=project)
-        assert project.has_permission(member, 'admin')
+        assert project.has_permission(member, ADMIN)
         with pytest.raises(PermissionsError):
             draft_2.register(Auth(member))
         assert not draft_2.registered_node

@@ -11,6 +11,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     EmbargoFactory,
 )
+from osf.utils.permissions import READ
 from tests.base import assert_datetime_equal
 from api_tests.utils import disconnected_from_listeners
 from website.project.signals import contributor_removed
@@ -79,7 +80,7 @@ class TestNodeLogList:
     def test_can_view_osf_group_log(self, app, private_project, private_url):
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, 'read')
+        private_project.add_osf_group(group, READ)
         res = app.get(private_url, auth=group_mem.auth)
         assert res.status_code == 200
 

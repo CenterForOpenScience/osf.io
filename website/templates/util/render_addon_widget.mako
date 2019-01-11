@@ -1,6 +1,6 @@
 <%def name="render_addon_widget(addon_name, addon_data)">
 
-    % if addon_data['complete'] or 'write' in user['permissions']:
+    % if addon_data['complete'] or permissions.WRITE in user['permissions']:
         <div class="panel panel-default" name="${addon_data['short_name']}">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">${addon_data['full_name']}</h3>

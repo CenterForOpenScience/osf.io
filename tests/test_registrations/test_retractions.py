@@ -23,6 +23,7 @@ from osf.exceptions import (
     NodeStateError,
 )
 from osf.models import Contributor, Retraction
+from osf.utils import permissions
 
 
 @pytest.mark.enable_bookmark_creation
@@ -51,8 +52,8 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
     def test__initiate_retraction_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
         Contributor.objects.create(node=self.registration, user=unconfirmed_user)
-        self.registration.add_permission(unconfirmed_user, 'admin', save=True)
-        assert_equal(Contributor.objects.get(node=self.registration, user=unconfirmed_user).permission, 'admin')
+        self.registration.add_permission(unconfirmed_user, permissions.ADMIN, save=True)
+        assert_equal(Contributor.objects.get(node=self.registration, user=unconfirmed_user).permission, permissions.ADMIN)
 
         retraction = self.registration._initiate_retraction(self.user)
         assert_true(self.user._id in retraction.approval_state)
@@ -200,7 +201,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         # group admin on node cannot retract registration
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        self.registration.registered_from.add_osf_group(group, 'admin')
+        self.registration.registered_from.add_osf_group(group, permissions.ADMIN)
         with assert_raises(PermissionsError):
             self.registration.retraction.approve_retraction(group_mem, approval_token)
         assert_true(self.registration.is_pending_retraction)
@@ -297,7 +298,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
     def test_two_approvals_with_two_admins_retracts(self):
         self.admin2 = UserFactory()
         Contributor.objects.create(node=self.registration, user=self.admin2)
-        self.registration.add_permission(self.admin2, 'admin', save=True)
+        self.registration.add_permission(self.admin2, permissions.ADMIN, save=True)
         self.registration.retract_registration(self.user)
         self.registration.save()
         self.registration.reload()
@@ -319,7 +320,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
     def test_one_approval_with_two_admins_stays_pending(self):
         self.admin2 = UserFactory()
         Contributor.objects.create(node=self.registration, user=self.admin2)
-        self.registration.add_permission(self.admin2, 'admin', save=True)
+        self.registration.add_permission(self.admin2, permissions.ADMIN, save=True)
 
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -788,7 +789,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
         self.group_mem = AuthUserFactory()
         self.group = OSFGroupFactory(creator=self.group_mem)
-        self.registration.registered_from.add_osf_group(self.group, 'admin')
+        self.registration.registered_from.add_osf_group(self.group, permissions.ADMIN)
 
     def test_GET_retraction_page_when_pending_retraction_returns_HTTPError_BAD_REQUEST(self):
         self.registration.retract_registration(self.user)
@@ -822,7 +823,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             unreg.fullname,
             unreg.email,
             auth=Auth(self.user),
-            permissions='admin',
+            permissions=permissions.ADMIN,
             existing_user=unreg
         )
         self.registration.save()

@@ -7,6 +7,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory
 )
+from osf.utils.permissions import READ
 
 
 @pytest.fixture()
@@ -63,7 +64,7 @@ class TestNodeImplicitContributors:
     def test_osf_group_members_can_view_implicit_contributors(self, app, component, admin_contributor, implicit_contributor):
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        component.add_osf_group(group, 'read')
+        component.add_osf_group(group, READ)
 
         url = '/{}nodes/{}/implicit_contributors/'.format(API_BASE, component._id)
         res = app.get(url, auth=group_mem.auth)

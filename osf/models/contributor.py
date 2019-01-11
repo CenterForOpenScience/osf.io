@@ -2,6 +2,7 @@ from django.db import models
 from include import IncludeManager
 
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils import permissions
 
 
 class AbstractBaseContributor(models.Model):
@@ -87,10 +88,10 @@ def get_contributor_permission(contributor, object_id, model_type):
     # Checking for django group membership allows you to also get the intended permissions of unregistered contributors
     user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
     if admin in user_groups:
-        return 'admin'
+        return permissions.ADMIN
     elif write in user_groups:
-        return 'write'
+        return permissions.WRITE
     elif read in user_groups:
-        return 'read'
+        return permissions.READ
     else:
         return None

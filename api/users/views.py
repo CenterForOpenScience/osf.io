@@ -79,6 +79,7 @@ from osf.models import (
     OSFUser,
     Email,
 )
+from osf.utils import permissions
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 
@@ -316,7 +317,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
     def get_default_queryset(self):
         user = self.get_user()
         # Nodes the requested user has read_permissions on
-        default_queryset = user.contributor_or_group_member_to.filter(type__in=['osf.node'])
+        default_queryset = user.contributor_or_group_member_to.filter(type='osf.node')
         if user != self.request.user:
             if self.request.user.is_anonymous:
                 # Further restrict UserNodes to public nodes
@@ -502,7 +503,7 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
     def get_queryset(self):
         user = self.get_user()
-        node_qs = get_objects_for_user(user, 'admin_node', Node, with_superuser=False).exclude(is_deleted=True)
+        node_qs = get_objects_for_user(user, permissions.ADMIN_NODE, Node, with_superuser=False).exclude(is_deleted=True)
         return DraftRegistration.objects.filter(
             Q(registered_node__isnull=True) |
             Q(registered_node__is_deleted=True),

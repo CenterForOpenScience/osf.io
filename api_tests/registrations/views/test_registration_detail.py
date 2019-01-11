@@ -308,7 +308,7 @@ class TestRegistrationUpdate:
     #   test_osf_group_member_write_cannot_update_registration
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
-        public_project.add_osf_group(group, 'write')
+        public_project.add_osf_group(group, permissions.WRITE)
         res = app.put_json_api(
             public_url,
             public_to_private_payload,
@@ -318,7 +318,7 @@ class TestRegistrationUpdate:
 
     #   test_osf_group_member_admin_cannot_update_registration
         public_project.remove_osf_group(group)
-        public_project.add_osf_group(group, 'admin')
+        public_project.add_osf_group(group, permissions.ADMIN)
         res = app.put_json_api(
             public_url,
             public_to_private_payload,

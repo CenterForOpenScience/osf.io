@@ -16,6 +16,7 @@ from osf_tests.factories import (
 )
 from osf.models import Collection
 from osf.utils.sanitize import strip_html
+from osf.utils.permissions import ADMIN
 from tests.utils import assert_items_equal
 from website.project.signals import contributor_removed
 from api_tests.utils import disconnected_from_listeners
@@ -4351,7 +4352,7 @@ class TestCollectedMetaDetail:
         )
         assert res.status_code == 403
 
-        project_one.add_contributor(user_two, permissions='admin', save=True)  # has referent admin perms
+        project_one.add_contributor(user_two, permissions=ADMIN, save=True)  # has referent admin perms
         res = app.delete_json_api(
             url,
             auth=user_two.auth,

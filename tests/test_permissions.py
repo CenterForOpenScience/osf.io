@@ -7,23 +7,23 @@ from osf.utils import permissions
 
 
 def test_reduce_permissions():
-    result = permissions.reduce_permissions(['read_node', 'write_node', 'admin_node'])
-    assert_equal(result, 'admin')
+    result = permissions.reduce_permissions([permissions.READ_NODE, permissions.WRITE_NODE, permissions.ADMIN_NODE])
+    assert_equal(result, permissions.ADMIN)
 
-    result2 = permissions.reduce_permissions(['read_node', 'write_node'])
-    assert_equal(result2, 'write')
+    result2 = permissions.reduce_permissions([permissions.READ_NODE, permissions.WRITE_NODE])
+    assert_equal(result2, permissions.WRITE)
 
-    result3 = permissions.reduce_permissions(['read_node'])
-    assert_equal(result3, 'read')
+    result3 = permissions.reduce_permissions([permissions.READ_NODE])
+    assert_equal(result3, permissions.READ)
 
-    result = permissions.reduce_permissions(['read', 'write', 'admin'])
-    assert_equal(result, 'admin')
+    result = permissions.reduce_permissions([permissions.READ, permissions.WRITE, permissions.ADMIN])
+    assert_equal(result, permissions.ADMIN)
 
-    result2 = permissions.reduce_permissions(['read', 'write'])
-    assert_equal(result2, 'write')
+    result2 = permissions.reduce_permissions([permissions.READ, permissions.WRITE])
+    assert_equal(result2, permissions.WRITE)
 
-    result3 = permissions.reduce_permissions(['read'])
-    assert_equal(result3, 'read')
+    result3 = permissions.reduce_permissions([permissions.READ])
+    assert_equal(result3, permissions.READ)
 
 
 def test_reduce_permissions_with_empty_list_raises_error():
@@ -38,7 +38,7 @@ def test_reduce_permissions_with_unknown_permission_raises_error():
 
 def test_default_contributor_permissions():
     assert_equal(permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-        'write')
+        permissions.WRITE)
 
 
 if __name__ == '__main__':

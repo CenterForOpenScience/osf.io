@@ -44,17 +44,21 @@ class OSFGroupMixin(object):
         return group
 
 
-class GroupList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, OSFGroupMixin):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
+class GroupBaseView(JSONAPIBaseView, OSFGroupMixin):
     required_read_scopes = [CoreScopes.OSF_GROUPS_READ]
     required_write_scopes = [CoreScopes.OSF_GROUPS_WRITE]
     model_class = apps.get_model('osf.OSFGroup')
 
-    serializer_class = GroupSerializer
     view_category = 'groups'
+
+
+class GroupList(GroupBaseView, generics.ListCreateAPIView, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = GroupSerializer
     view_name = 'group-list'
     ordering = ('-modified', )
 
@@ -79,20 +83,15 @@ class GroupList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, OS
         serializer.save(creator=user)
 
 
-class GroupDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, OSFGroupMixin):
+class GroupDetail(GroupBaseView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         IsGroupManager,
     )
-    required_read_scopes = [CoreScopes.OSF_GROUPS_READ]
-    required_write_scopes = [CoreScopes.OSF_GROUPS_WRITE]
-    model_class = apps.get_model('osf.OSFGroup')
 
     serializer_class = GroupDetailSerializer
-    view_category = 'groups'
     view_name = 'group-detail'
-    ordering = ('-modified', )
 
     # Overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -129,7 +128,7 @@ class OSFGroupMemberBaseView(JSONAPIBaseView, OSFGroupMixin):
             raise NotFound('{} cannot be found in this OSFGroup'.format(user._id))
 
     def get_serializer_class(self):
-        if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
+        if self.request.method in ('PUT', 'PATCH', 'DELETE'):
             return GroupMemberDetailSerializer
         elif self.request.method == 'POST':
             return GroupMemberCreateSerializer
@@ -199,14 +198,14 @@ class GroupMembersList(OSFGroupMemberBaseView, bulk_views.BulkUpdateJSONAPIView,
     # Overrides ListFilterMixin
     def build_query_from_field(self, field_name, operation):
         if field_name == 'role':
-            group = self.get_osf_group(check_object_permissions=False)
             if operation['op'] != 'eq':
                 raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
             # operation['value'] should be 'member' or 'manager'
-            query_val = operation['value'].lower().strip()
-            if query_val not in GROUP_ROLES:
+            role = operation['value'].lower().strip()
+            if role not in GROUP_ROLES:
                 raise InvalidFilterValue(value=operation['value'])
-            return Q(id__in=group.managers if query_val == MANAGER else group.members_only)
+            group = self.get_osf_group(check_object_permissions=False)
+            return Q(id__in=group.managers if role == MANAGER else group.members_only)
         return super(GroupMembersList, self).build_query_from_field(field_name, operation)
 
 
