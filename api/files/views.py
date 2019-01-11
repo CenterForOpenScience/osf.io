@@ -247,7 +247,7 @@ class FileMetadataRecordDownload(JSONAPIBaseView, generics.RetrieveAPIView, File
             response = FileResponse(ContentFile(record.serialize(format=file_type)))
         except ValueError as e:
             raise InvalidFilterValue(detail=str(e))
-        file_name = 'file_metadata_{}.{}'.format(record.schema._id, file_type)
+        file_name = 'file_metadata_{}_{}.{}'.format(record.schema._id, record.file.name, file_type)
         response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
         response['Content-Type'] = 'application/{}'.format(file_type)
         return response
