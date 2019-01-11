@@ -3358,6 +3358,23 @@ class TestNodeBulkDelete:
         res = app.get(user_one_private_project_url, auth=user_one.auth)
         assert res.status_code == 200
 
+    def test_bulk_delete_private_projects_logged_in_write_contributor(
+            self, app, user_one, user_two,
+            user_one_private_project,
+            private_payload, url,
+            user_one_private_project_url):
+        user_one_private_project.add_contributor(
+            user_two, permissions=[permissions.READ, permissions.WRITE], save=True)
+        res = app.delete_json_api(
+            url, private_payload,
+            auth=user_two.auth,
+            expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+        res = app.get(user_one_private_project_url, auth=user_one.auth)
+        assert res.status_code == 200
+
     def test_bulk_delete_all_or_nothing(
             self, app, user_one, user_two,
             user_one_private_project,
