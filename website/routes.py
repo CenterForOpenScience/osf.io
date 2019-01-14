@@ -406,13 +406,6 @@ def make_url_map(app):
         Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
         Rule(
-            '/explore/',
-            'get',
-            discovery_views.redirect_explore_to_activity,
-            notemplate
-        ),
-
-        Rule(
             [
                 '/messages/',
             ],
@@ -634,19 +627,11 @@ def make_url_map(app):
     ### Discovery ###
 
     process_rules(app, [
-
         Rule(
-            '/explore/activity/',
+            ['/activity/', '/explore/activity/', '/explore/'],
             'get',
-            discovery_views.redirect_explore_activity_to_activity,
+            discovery_views.redirect_activity_to_search,
             notemplate
-        ),
-
-        Rule(
-            '/activity/',
-            'get',
-            discovery_views.activity,
-            OsfWebRenderer('public/pages/active_nodes.mako', trust=False)
         ),
     ])
 

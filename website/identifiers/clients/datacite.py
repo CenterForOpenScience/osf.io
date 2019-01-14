@@ -4,9 +4,7 @@ import logging
 
 import re
 import datetime
-import waffle
 
-from osf import features
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 from datacite import DataCiteMDSClient, schema40
@@ -76,9 +74,6 @@ class DataCiteClient(AbstractIdentifierClient):
         self._client.doi_get(identifier)
 
     def create_identifier(self, node, category):
-        if waffle.switch_is_active(features.DISABLE_DATACITE_DOIS):
-            logger.info('Datacite updates are disabled. Doing nothing...')
-            return None
         if category == 'doi':
             metadata = self.build_metadata(node)
             resp = self._client.metadata_post(metadata)
@@ -91,9 +86,6 @@ class DataCiteClient(AbstractIdentifierClient):
             raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
 
     def update_identifier(self, node, category, status=None):
-        if waffle.switch_is_active(features.DISABLE_DATACITE_DOIS):
-            logger.info('Datacite updates are disabled. Doing nothing...')
-            return None
         if not node.is_public or node.is_deleted:
             if category == 'doi':
                 doi = self.build_doi(node)

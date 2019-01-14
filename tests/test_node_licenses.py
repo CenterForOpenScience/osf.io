@@ -18,7 +18,7 @@ from tests.utils import assert_logs, assert_not_logs
 from website import settings
 from osf.models.licenses import NodeLicense, serialize_node_license_record, serialize_node_license
 from osf.models import NodeLog
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 
 
 
