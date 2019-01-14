@@ -17,7 +17,7 @@ from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer, RegistrationProviderRelationshipField
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
-    FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
+    FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
@@ -460,7 +460,7 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
         kind='folder',
     )
 
-    comments = FileCommentRelationshipField(
+    comments = FileRelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<target._id>'},
         related_meta={'unread': 'get_unread_comments_count'},
