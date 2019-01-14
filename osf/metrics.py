@@ -31,7 +31,14 @@ class MetricMixin(object):
             bucket('by_id', 'terms', field=metric_field, size=size, order={'sum_count': 'desc'}).\
             metric('sum_count', 'sum', field=count_field)
         # Optimization: set size to 0 so that hits aren't returned (we only care about the aggregation)
-        response = search.extra(size=0).execute()
+        search = search.extra(size=0)
+        try:
+            response = search.execute()
+        except NotFoundError:
+            # _get_relevant_indices returned 1 or more indices
+            # that doesn't exist. Fall back to unoptimized query
+            search = search.index().index(cls._default_index())
+            response = search.execute()
         # No indexed data
         if not hasattr(response.aggregations, 'by_id'):
             return None
