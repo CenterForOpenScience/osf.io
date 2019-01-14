@@ -4260,6 +4260,12 @@ class TestCollectedMetaDetail:
         return cgm
 
     @pytest.fixture()
+    def second_collection(self, user_one, project_one):
+        c = CollectionFactory(creator=user_one)
+        c.collect_object(project_one, user_one)
+        return c
+
+    @pytest.fixture()
     def url(self, collection, cgm):
         return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm.guid._id)
 
@@ -4357,6 +4363,19 @@ class TestCollectedMetaDetail:
             auth=user_two.auth,
         )
         assert res.status_code == 204
+
+    def test_get_collection_metadata_project_belongs_to_multiple_collections(self, app, collection, second_collection, project_one, user_one, url):
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        invalid_collection_url = '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, 'abcde', project_one._id)
+        invalid_project_url = '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, 'abcde')
+
+        res = app.get(invalid_collection_url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        res = app.get(invalid_project_url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
 
     def test_with_permissions(self, app, collection, cgm, user_one, user_two, url, payload):
         res = app.get(url, auth=user_one.auth, expect_errors=True)
