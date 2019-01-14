@@ -99,33 +99,27 @@ class Registration(AbstractNode):
     @property
     def sanction(self):
         sanction = (
-            self.embargo_termination_approval or
-            self.retraction or
-            self.embargo or
-            self.registration_approval
+            self.root.embargo_termination_approval or
+            self.root.retraction or
+            self.root.embargo or
+            self.root.registration_approval
         )
         if sanction:
             return sanction
-        elif self.parent_node:
-            return self.parent_node.sanction
         else:
             return None
 
     @property
     def is_registration_approved(self):
-        if self.registration_approval is None:
-            if self.parent_node:
-                return self.parent_node.is_registration_approved
+        if self.root.registration_approval is None:
             return False
-        return self.registration_approval.is_approved
+        return self.root.registration_approval.is_approved
 
     @property
     def is_pending_embargo(self):
-        if self.embargo is None:
-            if self.parent_node:
-                return self.parent_node.is_pending_embargo
+        if self.root.embargo is None:
             return False
-        return self.embargo.is_pending_approval
+        return self.root.embargo.is_pending_approval
 
     @property
     def is_pending_embargo_for_existing_registration(self):
@@ -134,41 +128,33 @@ class Registration(AbstractNode):
         registrations pre-dating the Embargo feature do not get deleted if
         their respective Embargo request is rejected.
         """
-        if self.embargo is None:
-            if self.parent_node:
-                return self.parent_node.is_pending_embargo_for_existing_registration
+        if self.root.embargo is None:
             return False
-        return self.embargo.pending_registration
+        return self.root.embargo.pending_registration
 
     @property
     def is_retracted(self):
-        if self.retraction is None:
-            if self.parent_node:
-                return self.parent_node.is_retracted
+        if self.root.retraction is None:
             return False
-        return self.retraction.is_approved
+        return self.root.retraction.is_approved
 
     @property
     def is_pending_registration(self):
-        if self.registration_approval is None:
-            if self.parent_node:
-                return self.parent_node.is_pending_registration
+        if self.root.registration_approval is None:
             return False
-        return self.registration_approval.is_pending_approval
+        return self.root.registration_approval.is_pending_approval
 
     @property
     def is_pending_retraction(self):
-        if self.retraction is None:
-            if self.parent_node:
-                return self.parent_node.is_pending_retraction
+        if self.root.retraction is None:
             return False
-        return self.retraction.is_pending_approval
+        return self.root.retraction.is_pending_approval
 
     @property
     def is_pending_embargo_termination(self):
-        return (self.is_embargoed and
-                bool(self.embargo_termination_approval) and
-                self.embargo_termination_approval.is_pending_approval)
+        if self.root.embargo_termination_approval is None:
+            return False
+        return self.root.embargo_termination_approval.is_pending_approval
 
     @property
     def is_embargoed(self):
@@ -177,18 +163,15 @@ class Registration(AbstractNode):
         - that record has been approved
         - the node is not public (embargo not yet lifted)
         """
-        if self.embargo is None:
-            if self.parent_node:
-                return self.parent_node.is_embargoed
-        return self.embargo and self.embargo.is_approved and not self.is_public
+        if self.is_public or self.root.embargo is None:
+            return False
+        return self.root.embargo.is_approved
 
     @property
     def embargo_end_date(self):
-        if self.embargo is None:
-            if self.parent_node:
-                return self.parent_node.embargo_end_date
+        if self.root.embargo is None:
             return False
-        return self.embargo.embargo_end_date
+        return self.root.embargo.embargo_end_date
 
     @property
     def archiving(self):
