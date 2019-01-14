@@ -1362,8 +1362,8 @@ class TestRegistrationBulkUpdate:
     def test_bulk_update_embargo_logged_in_contrib(
             self, app, user, registration_one, registration_two,
             public_payload, url):
-        assert registration_one.embargo_termination_approval is None
-        assert registration_two.embargo_termination_approval is None
+        assert registration_one.is_pending_embargo_termination is False
+        assert registration_two.is_pending_embargo_termination is False
 
         res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
         assert res.status_code == 200
@@ -1373,13 +1373,15 @@ class TestRegistrationBulkUpdate:
         # Needs confirmation before it will become public
         assert res.json['data'][0]['attributes']['public'] is False
         assert res.json['data'][1]['attributes']['public'] is False
+        assert res.json['data'][0]['attributes']['pending_embargo_termination_approval'] is True
+        assert res.json['data'][1]['attributes']['pending_embargo_termination_approval'] is True
 
         registration_one.refresh_from_db()
         registration_two.refresh_from_db()
 
         # registrations should have pending terminations
-        assert registration_one.embargo_termination_approval and registration_one.embargo_termination_approval.is_pending_approval
-        assert registration_two.embargo_termination_approval and registration_two.embargo_termination_approval.is_pending_approval
+        assert registration_one.is_pending_embargo_termination is True
+        assert registration_two.is_pending_embargo_termination is True
 
 
 class TestRegistrationListFiltering(
