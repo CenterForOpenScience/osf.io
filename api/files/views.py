@@ -24,6 +24,7 @@ from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
+from api.files.permissions import FileMetadataRecordPermission
 from api.files.serializers import FileSerializer
 from api.files.serializers import FileDetailSerializer, QuickFilesDetailSerializer
 from api.files.serializers import FileVersionSerializer
@@ -198,8 +199,8 @@ class FileMetadataRecordDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PermissionWithGetter(ContributorOrPublic, 'target'),
-        PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
+        FileMetadataRecordPermission(ContributorOrPublic),
+        FileMetadataRecordPermission(ReadOnlyIfRegistration),
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
