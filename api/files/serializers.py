@@ -456,7 +456,11 @@ class FileMetadataRecordSerializer(JSONAPISerializer):
         try:
             jsonschema.validate(value, schema)
         except jsonschema.ValidationError as e:
-            raise InvalidModelValueError(e)
+            human_error_message = 'Your response of {} for the field {} was invalid.'.format(
+                e.instance,
+                e.absolute_path[0],
+            )
+            raise InvalidModelValueError(human_error_message)
         return value
 
     def update(self, record, validated_data):

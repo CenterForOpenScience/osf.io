@@ -152,7 +152,7 @@ class TestFileMetadataRecordUpdate:
         res = app.patch_json_api(self.get_url(public_record), payload, auth=user.auth, expect_errors=True)
         public_record.reload()
         assert res.status_code == 400
-        assert "'dinosaur' does not match" in res.json['errors'][0]['detail']
+        assert res.json['errors'][0]['detail'] == 'Your response of dinosaur for the field related_publication_doi was invalid.'
         assert public_record.metadata == {}
 
     def test_cannot_update_registration_metadata_record(self, app, user, registration_record, make_payload):
