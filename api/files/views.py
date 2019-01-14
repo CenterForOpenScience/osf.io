@@ -3,7 +3,7 @@ from django.core.files.base import ContentFile
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -14,7 +14,7 @@ from osf.models import (
     QuickFilesNode,
 )
 
-from api.base.exceptions import Gone, InvalidFilterValue
+from api.base.exceptions import Gone
 from api.base.permissions import PermissionWithGetter
 from api.base.throttling import CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle
 from api.base import utils
@@ -247,7 +247,8 @@ class FileMetadataRecordDownload(JSONAPIBaseView, generics.RetrieveAPIView, File
         try:
             response = FileResponse(ContentFile(record.serialize(format=file_type)))
         except ValueError as e:
-            raise InvalidFilterValue(detail=str(e))
+            detail = str(e).replace('.', '')
+            raise ValidationError(detail='{} for metadata file export.'.format(detail))
         file_name = 'file_metadata_{}_{}.{}'.format(record.schema._id, record.file.name, file_type)
         response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
         response['Content-Type'] = 'application/{}'.format(file_type)
