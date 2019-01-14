@@ -9,7 +9,7 @@ from osf.features import EMBER_PROJECT_REGISTRATIONS
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0146_update_registration_schemas'),
+        ('osf', '0151_auto_20181215_1911'),
     ]
 
     operations = [
