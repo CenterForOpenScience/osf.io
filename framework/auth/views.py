@@ -2,6 +2,7 @@
 import furl
 import httplib as http
 import urllib
+import pytz
 
 import markupsafe
 from django.core.exceptions import ValidationError
@@ -34,6 +35,21 @@ from osf.exceptions import ValidationValueError, BlacklistedEmailError
 from osf.models.provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
 from osf import features
+
+
+def throttle_password_reset(user):
+    if not throttle_period_expired(user.submit_reset_token_last_attempt, settings.TIME_RESET_SUBMIT_PASSWORD_TOKEN):
+        last_attempt = user.submit_reset_token_last_attempt.replace(tzinfo=pytz.utc)
+        time_since_throttle = (timezone.now() - last_attempt).total_seconds()
+        wait_time = int(settings.TIME_RESET_SUBMIT_PASSWORD_TOKEN - time_since_throttle)
+        error_data = {
+            'message_short': 'Too Many Requests.',
+            'message_long': 'The you have entered an incorrect token, please wait {} seconds to retry.'.format(wait_time)
+        }
+        raise HTTPError(429, data=error_data)
+    else:
+        user.submit_reset_token_last_attempt = timezone.now()
+        user.save()
 
 @block_bing_preview
 @collect_auth
@@ -87,6 +103,8 @@ def reset_password_post(uid=None, token=None):
 
     # Check if request bears a valid pair of `uid` and `token`
     user_obj = OSFUser.load(uid)
+    throttle_password_reset(user_obj)
+
     if not (user_obj and user_obj.verify_password_token(token=token)):
         error_data = {
             'message_short': 'Invalid Request.',

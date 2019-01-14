@@ -4843,6 +4843,22 @@ class TestResetPassword(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.verification_key, None)
 
+    # throttle posting password reset endpoint so it can't be brute forced
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_throttle_reset_password_post(self, mock_service_validate):
+
+        # throttle reset_password_post
+        get_url = web_url_for(
+            'reset_password_post',
+            uid=self.user._id,
+            token='bruteforceguess'
+        )
+        res = self.app.post(get_url, expect_errors=True)
+        assert res.status_code == 400
+        res = self.app.post(get_url, expect_errors=True)
+        assert res.status_code == 429
+
+
     #  log users out before they land on reset password page
     def test_reset_password_logs_out_user(self):
         # visit reset password link while another user is logged in

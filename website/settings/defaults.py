@@ -58,6 +58,9 @@ DATE_LAST_LOGIN_THROTTLE = 60
 # Seconds that must elapse before change password attempts are reset(currently 1 hour)
 TIME_RESET_CHANGE_PASSWORD_ATTEMPTS = 3600
 
+# Seconds that must elapse before you can submit another password reset token (currently 10 seconds)
+TIME_RESET_SUBMIT_PASSWORD_TOKEN = 10
+
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)

@@ -234,6 +234,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # old password was invalid
     old_password_invalid_attempts = models.PositiveIntegerField(default=0)
 
+    # Logs the the last time a user submitted a password reset token
+    submit_reset_token_last_attempt = NonNaiveDateTimeField(null=True, blank=True)
+
     # email verification tokens
     #   see also ``unconfirmed_emails``
     email_verifications = DateTimeAwareJSONField(default=dict, blank=True)
