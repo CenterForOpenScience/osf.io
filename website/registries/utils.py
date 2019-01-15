@@ -1,5 +1,6 @@
 REG_CAMPAIGNS = {
-    'prereg': 'Prereg Challenge',
+    'prereg_challenge': 'Prereg Challenge',
+    'prereg': 'OSF Preregistration',
     'registered_report': 'Registered Report Protocol Preregistration',
 }
 

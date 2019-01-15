@@ -26,7 +26,7 @@ class ChronosSubmission(BaseModel):
     publication_id = models.TextField(null=False, blank=False, unique=True)
 
     journal = models.ForeignKey(ChronosJournal, null=False, blank=False)
-    preprint = models.ForeignKey('osf.PreprintService', null=False, blank=False)
+    preprint = models.ForeignKey('osf.Preprint', null=False, blank=False)
 
     submitter = models.ForeignKey('osf.OSFUser', null=False, blank=False)
 

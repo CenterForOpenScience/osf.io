@@ -2,10 +2,9 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.response import Response
 
-from osf.models import AbstractNode
+from osf.models import Guid
 from rest_framework.views import APIView
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
-from api.base.utils import get_object_or_error
 from api.base.parsers import HMACSignedParser
 from api.wb.serializers import (
     WaterbutlerMetadataSerializer,
@@ -24,12 +23,10 @@ class FileMetadataView(APIView):
         return self.get_target(self.kwargs[self.target_lookup_url_kwarg])
 
     def get_target(self, target_id):
-        target = get_object_or_error(
-            AbstractNode,
-            target_id,
-            self.request,
-            display_name='target',
-        )
+        guid = Guid.load(target_id)
+        if not guid:
+            raise NotFound
+        target = guid.referent
         if getattr(target, 'is_registration', False) and not getattr(target, 'archiving', False):
             raise ValidationError('Registrations cannot be changed.')
         return target
