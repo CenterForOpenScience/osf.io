@@ -5,7 +5,7 @@ from osf.models import Node, Registration
 from osf.utils import permissions as osf_permissions
 
 from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, JSONAPIRelationshipSerializer, \
-    BaseAPISerializer
+    BaseAPISerializer, ShowIfVersion
 from api.base.exceptions import RelationshipPostMakesNoChanges
 
 
@@ -19,7 +19,6 @@ class InstitutionSerializer(JSONAPISerializer):
 
     name = ser.CharField(read_only=True)
     id = ser.CharField(read_only=True, source='_id')
-    logo_path = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     auth_url = ser.CharField(read_only=True)
     assets = ser.SerializerMethodField(read_only=True)
@@ -58,6 +57,11 @@ class InstitutionSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'institutions'
 
+    # Deprecated fields
+    logo_path = ShowIfVersion(
+        ser.CharField(read_only=True, default=''),
+        min_version='2.0', max_version='2.11',
+    )
 
 class NodeRelated(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
