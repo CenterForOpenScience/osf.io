@@ -832,10 +832,9 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
             hashed_id = hashids.encode(email.id)
             serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, verified=True, primary=primary)
             serialized_emails.append(serialized_email)
-        email_verifications = user.email_verifications or []
-        for token in email_verifications:
-            is_merge = Email.objects.filter(address=email.address).exists()
-            detail = user.email_verifications[token]
+        email_verifications = user.email_verifications or {}
+        for token, detail in email_verifications.iteritems():
+            is_merge = Email.objects.filter(address=detail['email']).exists()
             serialized_unconfirmed_email = UserEmail(
                 email_id=token,
                 address=detail['email'],
