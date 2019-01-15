@@ -102,7 +102,7 @@
             <button class="btn btn-primary" data-bind="click:embargoPage, disable:invalidSelection">Continue</button>
         </span>
         <span data-bind="if: page() == EMBARGO">
-            <a href="#" class="btn btn-default" data-bind="click: confirmPage, visible: !noComponents()" data-dismiss="modal">Back</a>
+            <a href="#" class="btn btn-default" data-bind="click: confirmPage, visible: !requiresApproval && !noComponents()" data-dismiss="modal">Back</a>
             <button class="btn btn-success" data-bind="click: register, enable: canRegister">Register</button>
         </span>
 

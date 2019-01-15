@@ -1,16 +1,25 @@
 from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
+from rest_framework.fields import empty
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
     JSONAPISerializer, IDField, TypeField, HideIfNotWithdrawal, NoneIfWithdrawal,
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField,
+    NodeFileHyperLinkField, WaterbutlerLink, HideIfPreprint,
+    LinkedNodesRelationshipSerializer,
 )
 from api.base.utils import absolute_reverse, get_user_auth
+from api.base.parsers import NO_DATA_ERROR
 from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeLicenseSerializer,
+    NodeContributorsSerializer,
+    NodeStorageProviderSerializer,
+    NodeContributorsCreateSerializer,
+    NodeContributorDetailSerializer,
     get_license_details,
     NodeTagField,
 )
@@ -19,8 +28,8 @@ from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
-from osf.utils import permissions
+from osf.models import BaseFileNode, Preprint, PreprintProvider, Node, NodeLicense
+from osf.utils import permissions as osf_permissions
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -33,7 +42,10 @@ class PrimaryFileRelationshipField(RelationshipField):
 
 class NodeRelationshipField(RelationshipField):
     def get_object(self, node_id):
-        return Node.load(node_id)
+        try:
+            return Node.load(node_id)
+        except AttributeError:
+            raise exceptions.ValidationError(detail='Node not correctly specified.')
 
     def to_internal_value(self, data):
         node = self.get_object(data)
@@ -80,22 +92,26 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_created = VersionedDateTimeField(source='created', read_only=True)
     date_modified = VersionedDateTimeField(source='modified', read_only=True)
     date_published = VersionedDateTimeField(read_only=True)
-    original_publication_date = VersionedDateTimeField(required=False)
+    original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
-    title = ser.CharField(source='node.title', required=False)
-    description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='node.description')
-    date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
-    withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
+    title = ser.CharField(required=True, max_length=512)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     is_published = NoneIfWithdrawal(ser.BooleanField(required=False))
     is_preprint_orphan = NoneIfWithdrawal(ser.BooleanField(read_only=True))
     license_record = NodeLicenseSerializer(required=False, source='license')
-    tags = JSONAPIListField(child=NodeTagField(), required=False, source='node.tags')
-    node_is_public = NoneIfWithdrawal(ser.BooleanField(read_only=True, source='node__is_public'))
+    tags = JSONAPIListField(child=NodeTagField(), required=False)
+    node_is_public = ser.BooleanField(read_only=True, source='node__is_public', help_text='Is supplementary project public?')
     preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
-
+    date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
+    withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
+    current_user_permissions = ser.SerializerMethodField(
+        help_text='List of strings representing the permissions '
+        'for the current user on this preprint.',
+    )
+    public = ser.BooleanField(source='is_public', required=False, read_only=True)
     contributors = RelationshipField(
-        related_view='nodes:node-contributors',
-        related_view_kwargs={'node_id': '<node._id>'},
+        related_view='preprints:preprint-contributors',
+        related_view_kwargs={'preprint_id': '<_id>'},
     )
     reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
@@ -114,6 +130,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
         read_only=False,
+        many=False,
+        self_view='preprints:preprint-node-relationship',
+        self_view_kwargs={'preprint_id': '<_id>'},
     ))
 
     license = PreprintLicenseRelationshipField(
@@ -129,8 +148,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     )
 
     files = NoneIfWithdrawal(RelationshipField(
-        related_view='nodes:node-storage-providers',
-        related_view_kwargs={'node_id': '<_id>'},
+        related_view='preprints:preprint-storage-providers',
+        related_view_kwargs={'preprint_id': '<_id>'},
     ))
 
     primary_file = NoneIfWithdrawal(PrimaryFileRelationshipField(
@@ -170,6 +189,15 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     def get_article_doi_url(self, obj):
         return 'https://doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
+    def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
+        all_perms = ['read', 'write', 'admin']
+        user_perms = []
+        for p in all_perms:
+            if obj.has_permission(user, p):
+                user_perms.append(p)
+        return user_perms
+
     def get_preprint_doi_url(self, obj):
         doi = None
         doi_identifier = obj.get_identifier('doi')
@@ -182,12 +210,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         return 'https://doi.org/{}'.format(doi) if doi else None
 
     def update(self, preprint, validated_data):
-        assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
-        assert isinstance(preprint.node, Node), 'You must specify a preprint with a valid node to be updated.'
+        assert isinstance(preprint, Preprint), 'You must specify a valid preprint to be updated'
 
         auth = get_user_auth(self.context['request'])
-        if not preprint.node.has_permission(auth.user, 'admin'):
-            raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
+        if not preprint.has_permission(auth.user, osf_permissions.WRITE):
+            raise exceptions.PermissionDenied(detail='User must have admin or write permissions to update a preprint.')
 
         published = validated_data.pop('is_published', None)
         if published and preprint.provider.is_reviewed:
@@ -201,39 +228,50 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 ),
             ))
 
-        save_node = False
         save_preprint = False
         recently_published = False
+
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
-            save_node = True
+            save_preprint = True
 
-        old_tags = set(preprint.node.tags.values_list('name', flat=True))
-        if validated_data.get('node') and 'tags' in validated_data['node']:
-            current_tags = set(validated_data['node'].pop('tags', []))
+        old_tags = set(preprint.tags.values_list('name', flat=True))
+        if 'tags' in validated_data:
+            current_tags = set(validated_data.pop('tags', []))
         elif self.partial:
             current_tags = set(old_tags)
         else:
             current_tags = set()
 
         for new_tag in (current_tags - old_tags):
-            preprint.node.add_tag(new_tag, auth=auth)
+            preprint.add_tag(new_tag, auth=auth)
         for deleted_tag in (old_tags - current_tags):
-            preprint.node.remove_tag(deleted_tag, auth=auth)
+            preprint.remove_tag(deleted_tag, auth=auth)
 
         if 'node' in validated_data:
-            preprint.node.update(fields=validated_data.pop('node'))
-            save_node = True
+            node = validated_data.pop('node', None)
+            self.set_field(preprint.set_supplemental_node, node, auth)
+            save_preprint = True
 
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
             self.set_field(preprint.set_subjects, subjects, auth)
             save_preprint = True
 
+        if 'title' in validated_data:
+            title = validated_data['title']
+            self.set_field(preprint.set_title, title, auth)
+            save_preprint = True
+
+        if 'description' in validated_data:
+            description = validated_data['description']
+            self.set_field(preprint.set_description, description, auth)
+            save_preprint = True
+
         if 'article_doi' in validated_data:
-            preprint.node.preprint_article_doi = validated_data['article_doi']
-            save_node = True
+            preprint.article_doi = validated_data['article_doi']
+            save_preprint = True
 
         if 'license_type' in validated_data or 'license' in validated_data:
             license_details = get_license_details(preprint, validated_data)
@@ -241,7 +279,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         if 'original_publication_date' in validated_data:
-            preprint.original_publication_date = validated_data['original_publication_date']
+            preprint.original_publication_date = validated_data['original_publication_date'] or None
             save_preprint = True
 
         if published is not None:
@@ -250,26 +288,15 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             self.set_field(preprint.set_published, published, auth)
             save_preprint = True
             recently_published = published
-            preprint.node.set_privacy('public')
-            save_node = True
-
-        if save_node:
-            try:
-                preprint.node.save()
-            except ValidationError as e:
-                # Raised from invalid DOI
-                raise exceptions.ValidationError(detail=e.messages[0])
+            preprint.set_privacy('public', log=False, save=True)
 
         if save_preprint:
             preprint.save()
 
-        # Send preprint confirmation email signal to new authors on preprint! -- only when published
-        # TODO: Some more thought might be required on this; preprints made from existing
-        # nodes will send emails making it seem like a new node.
         if recently_published:
-            for author in preprint.node.contributors:
+            for author in preprint.contributors:
                 if author != auth.user:
-                    project_signals.contributor_added.send(preprint.node, contributor=author, auth=auth, email_template='preprint')
+                    project_signals.contributor_added.send(preprint, contributor=author, auth=auth, email_template='preprint')
 
         return preprint
 
@@ -287,29 +314,15 @@ class PreprintCreateSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
-        node = validated_data.pop('node', {})
-        if isinstance(node, dict):
-            node = Node.objects.create(creator=self.context['request'].user, **node)
-
-        if node.is_deleted:
-            raise exceptions.ValidationError('Cannot create a preprint from a deleted node.')
-
-        auth = get_user_auth(self.context['request'])
-        if not node.has_permission(auth.user, permissions.ADMIN):
-            raise exceptions.PermissionDenied
-
+        creator = self.context['request'].user
         provider = validated_data.pop('provider', None)
         if not provider:
             raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
 
-        node_preprints = node.preprints.filter(provider=provider)
-        if node_preprints.exists():
-            raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': node_preprints.first()._id})
-
-        preprint = PreprintService(node=node, provider=provider)
+        title = validated_data.pop('title')
+        description = validated_data.pop('description', '')
+        preprint = Preprint(provider=provider, title=title, creator=creator, description=description)
         preprint.save()
-        preprint.node._has_abandoned_preprint = True
-        preprint.node.save()
 
         return self.update(preprint, validated_data)
 
@@ -318,3 +331,107 @@ class PreprintCitationSerializer(NodeCitationSerializer):
 
     class Meta:
         type_ = 'preprint-citation'
+
+
+class PreprintContributorsSerializer(NodeContributorsSerializer):
+    """ Separate from UserSerializer due to necessity to override almost every field as read only
+    """
+    preprint = RelationshipField(
+        related_view='preprints:preprint-detail',
+        related_view_kwargs={'preprint_id': '<preprint._id>'},
+    )
+
+    node = HideIfPreprint(RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<node._id>'},
+    ))
+
+    class Meta:
+        type_ = 'contributors'
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'preprints:preprint-contributor-detail',
+            kwargs={
+                'user_id': obj.user._id,
+                'preprint_id': self.context['request'].parser_context['kwargs']['preprint_id'],
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+
+class PreprintContributorsCreateSerializer(NodeContributorsCreateSerializer, PreprintContributorsSerializer):
+    """
+    Overrides PreprintContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
+
+    id and index redefined because of the two serializers we've inherited
+    """
+    id = IDField(source='_id', required=False, allow_null=True)
+    index = ser.IntegerField(required=False, source='_order')
+
+    email_preferences = ['preprint', 'false']
+
+    def get_proposed_permissions(self, validated_data):
+        return validated_data.get('permission') or osf_permissions.WRITE
+
+
+class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, PreprintContributorsSerializer):
+    """
+    Overrides NodeContributorDetailSerializer to set the preprint instead of the node
+
+    id and index redefined because of the two serializers we've inherited
+    """
+    id = IDField(required=True, source='_id')
+    index = ser.IntegerField(required=False, read_only=False, source='_order')
+
+
+class PreprintStorageProviderSerializer(NodeStorageProviderSerializer):
+    node = HideIfPreprint(ser.CharField(source='node_id', read_only=True))
+    preprint = ser.CharField(source='node_id', read_only=True)
+
+    files = NodeFileHyperLinkField(
+        related_view='preprints:preprint-files',
+        related_view_kwargs={'preprint_id': '<node._id>'},
+        kind='folder',
+        never_embed=True,
+    )
+
+    links = LinksField({
+        'upload': WaterbutlerLink(),
+    })
+
+
+class PreprintNodeRelationshipSerializer(LinkedNodesRelationshipSerializer):
+    data = ser.DictField()
+
+    def run_validation(self, data=empty):
+        """
+        Overwrites run_validation.
+        JSONAPIOnetoOneRelationshipParser parses data into {id: None, type: None} if data is null,
+        which is what this endpoint expects.
+        """
+
+        if data == {}:
+            raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
+
+        if data.get('type', None) is not None and data.get('id', None) is not None:
+            raise DRFValidationError({'data': 'Data must be null. This endpoint can only be used to unset the supplemental project.'}, 400)
+        return data
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {
+            'data': None,
+            'self': obj,
+        }
+
+    def update(self, instance, validated_data):
+        auth = get_user_auth(self.context['request'])
+        preprint = instance['self']
+        preprint.unset_supplemental_node(auth=auth)
+        preprint.save()
+        return self.make_instance_obj(preprint)
+
+    links = LinksField({
+        'self': 'get_self_url',
+    })

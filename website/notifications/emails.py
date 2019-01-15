@@ -129,7 +129,7 @@ def compile_subscriptions(node, event_type, event=None, level=0):
     if event:
         subscriptions = check_node(node, event)  # Gets particular event subscriptions
         parent_subscriptions = compile_subscriptions(node, event_type, level=level + 1)  # get node and parent subs
-    elif node.parent_id:
+    elif getattr(node, 'parent_id', False):
         parent_subscriptions = \
             compile_subscriptions(AbstractNode.load(node.parent_id), event_type, level=level + 1)
     else:
@@ -174,7 +174,10 @@ def get_node_lineage(node):
     """ Get a list of node ids in order from the node to top most project
         e.g. [parent._id, node._id]
     """
+    from osf.models import Preprint
     lineage = [node._id]
+    if isinstance(node, Preprint):
+        return lineage
 
     while node.parent_id:
         node = node.parent_node

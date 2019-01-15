@@ -84,10 +84,12 @@ if (!window.Set) {
 }
 
 
-function NodeFetcher(type, link, handleOrphans, regType, regLink) {
+function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, preprintLink) {
     this.type = type || 'nodes';
     this.regType = regType || null;
     this.regLink = regLink || null;
+    this.preprintType = preprintType || null;
+    this.preprintLink = preprintLink || null;
     this.loaded = 0;
     this._failed = 0;
     this.total = 0;
@@ -119,7 +121,7 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink) {
 
     // TODO Use sparse fields on preprints, users/contributors already added
     if (this.type === 'preprints') {
-        link = link ? link : $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
+        link = link ? link : $osf.apiV2Url('users/me/preprints/', { query : { 'embed' : ['contributors'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
     }
 
     this.nextLink = link ?
@@ -257,6 +259,12 @@ NodeFetcher.prototype = {
         this.nextLink = this.regLink;
         this.type = this.regType;
         this.regLink = null;
+    }
+
+    if(!this.nextLink && this.preprintLink) {
+        this.nextLink = this.preprintLink;
+        this.type = this.preprintType;
+        this.preprintLink = null;
     }
 
     this._callbacks.page.forEach((function(cb) {
@@ -503,6 +511,10 @@ var MyProjects = {
             if(self.selected().length === 1 && !self.logRequestPending){
                 var item = self.selected()[0];
                 var id = item.data.id;
+                // Hiding preprint logs for now
+                if (item.data.type === 'preprints') {
+                    return [];
+                }
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     // TODO assess sparse field usage (some already implemented)
@@ -623,14 +635,18 @@ var MyProjects = {
             var collectionNode = currentCollection.data.node; // If it's not a system collection like projects or registrations this will have a node
 
             var link_types = {'linked_nodes': {'data': []},
-                              'linked_registrations': {'data': []}};
+                              'linked_registrations': {'data': []},
+                              'linked_preprints': {'data': []}};
             self.selected().map(function(item){
                 if(item.data.type === 'nodes') {
                     link_types.linked_nodes.data.push({id: item.data.id,
                                                        type: 'linked_nodes'});
-                } else {
+                } else if (item.data.type === 'registrations') {
                     link_types.linked_registrations.data.push({id: item.data.id,
                                                  type: 'linked_registrations'});
+                } else {
+                    link_types.linked_preprints.data.push({id: item.data.id,
+                                                 type: 'linked_preprints'});
                 }
             });
 
@@ -768,7 +784,7 @@ var MyProjects = {
                     } else {
                         var helpText = 'This collection is empty.';
                         if (!self.viewOnly) {
-                            helpText +=' You can add projects or registrations by dragging them into the collection.';
+                            helpText +=' You can add projects, registrations, or preprints by dragging them into the collection.';
                         }
                         template = m('.db-non-load-template.m-md.p-md.osf-box', helpText);
                     }
@@ -937,12 +953,13 @@ var MyProjects = {
             var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function(result){
                 result.data.forEach(function(node){
-                    var count = node.relationships.linked_registrations.links.related.meta.count + node.relationships.linked_nodes.links.related.meta.count;
+                    var count = node.relationships.linked_registrations.links.related.meta.count + node.relationships.linked_nodes.links.related.meta.count + node.relationships.linked_preprints.links.related.meta.count;
                     self.collections().push(new LinkObject('collection', {nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, $osf.decodeText(node.attributes.title)));
                     // TODO assess whether more sparse fields can be used
+                    var preprintLink = $osf.apiV2Url('collections/' + node.id + '/linked_preprints/', { query : {'embed' : 'contributors', 'version': '2.2'}});
                     var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2', 'fields[registrations]' : sparseRegistrationFields}});
                     var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'fields[nodes]' : sparseNodeFields }});
-                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false, 'registrations', regLink);
+                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false, 'registrations', regLink, 'preprints', preprintLink);
                     self.fetchers[self.collections()[self.collections().length-1].id].on(['page'], self.onPageLoad);
                 });
                 if(result.links.next){
@@ -1027,7 +1044,7 @@ var MyProjects = {
             });
             if (!self.viewOnly){
                 // TODO use sparse fields
-                var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_registrations,linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'linked_nodes'}});
+                var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_registrations,linked_nodes,linked_preprints', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'linked_nodes'}});
                 self.loadCollections(collectionsUrl);
             }
             // Add linkObject to the currentView
@@ -1947,9 +1964,14 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
+            var resourceType = item.type;
             var permission = item.attributes.current_user_permissions.slice(-1)[0];
             showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
-            category = item.attributes.category === '' ? 'Uncategorized' : item.attributes.category;
+            if (resourceType === 'preprints') {
+                category = 'Preprint';
+            } else {
+                category = item.attributes.category === '' ? 'Uncategorized' : item.attributes.category;
+            }
             template = m('.p-sm', [
                 showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', { onclick : function() {
                     args.removeProjectFromCollections();
@@ -1963,7 +1985,7 @@ var Information = {
                         m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', {onclick: function(){
                             $osf.trackClick('myProjects', 'information-panel', 'open-information-tab');
                         }}, 'Information')),
-                        m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', {onclick : function() {
+                        resourceType === 'preprints' ? '' : m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', {onclick : function() {
                             args.getCurrentLogs();
                             $osf.trackClick('myProjects', 'information-panel', 'open-activity-tab');
                         }}, 'Activity'))
@@ -1971,9 +1993,9 @@ var Information = {
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
-                                item.embeds.preprints ? m('.fangorn-preprint.p-xs.m-b-xs', 'This project is a Preprint') : '',  // TODO: update once preprint node divorce is finished
-                                item.embeds.preprints && item.embeds.preprints.data[0].attributes.reviews_state && item.embeds.preprints.data[0].attributes.reviews_state !== 'initial' ? m('.text-capitalize', 'Status: ' + item.embeds.preprints.data[0].attributes.reviews_state) : '',  // is a preprint, has a state, provider uses moderation
-                                m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
+                                resourceType === 'preprints' && item.attributes.reviews_state !== 'initial' && item.attributes.reviews_state !== null ? m('.text-capitalize', 'Status: ' + item.attributes.reviews_state) : resourceType === 'preprints' && item.attributes.date_withdrawn !== null ? 'Status: Withdrawn' : '',  // is a preprint, has a state, provider uses moderation
+                                resourceType === 'preprints' && item.attributes.is_published === true ? m('.text-capitalize', 'Published: ' + item.attributes.is_published) : '',
+                                m('', 'Visibility: ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('', [
                                   m('span', 'Category: '),
                                   m('span', { className : mHelpers.getIcon(category) }),
@@ -1996,7 +2018,7 @@ var Information = {
                             ]) : ''
                         ]),
                         m('[role="tabpanel"].tab-pane#tab-activity',[
-                            m.component(ActivityLogs, args)
+                            item.type !== 'preprints' ? m.component(ActivityLogs, args) : ''
                         ])
                     ])
                 ])
@@ -2010,13 +2032,18 @@ var Information = {
                     $osf.trackClick('myProjects', 'information-panel', 'remove-multiple-projects-from-collections');
                 } }, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
-                    category = item.data.attributes.category === '' ? 'uncategorized' : item.data.attributes.category;
+                    var resourceType = item.data.type;
+                    if (resourceType === 'preprints') {
+                        category = 'Preprint';
+                    } else {
+                        category = item.data.attributes.category === '' ? 'Uncategorized' : item.data.attributes.category;
+                    }
                     return m('.db-info-multi', [
                         m('h4', m('a', { href : item.data.links.html, onclick: function(){
                             $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project-multiple-selected');
                         }}, $osf.decodeText(item.data.attributes.title))),
                         m('p.db-info-meta.text-muted', [
-                            m('span', (item.data.attributes.public ? 'Public' : 'Private') + ' ' + category),
+                            resourceType === 'preprints'? m('span', (item.data.attributes.is_published ? 'Published' : 'Unpublished') + ' ' + category) : m('span', (item.data.attributes.public ? 'Public' : 'Private') + ' ' + category),
                             m('span', ', Last Modified on ' + item.data.date.local)
                         ])
                     ]);

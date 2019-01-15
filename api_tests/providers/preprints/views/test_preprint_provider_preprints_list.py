@@ -1,6 +1,6 @@
 import mock
 import pytest
-
+from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
@@ -94,21 +94,35 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
         actual = res.json['meta']['reviews_state_counts']
         assert expected == actual
 
-        # exclude private preprints
-        preprint_one.node.is_public = False
-        preprint_one.node.save()
+        # exclude private preprints (expect this to be rare - legacy preprints)
+        preprint_one.is_public = False
+        preprint_one.save()
         expected['pending'] -= 1
         res = app.get(url, auth=user.auth)
         actual = res.json['meta']['reviews_state_counts']
         assert expected == actual
 
         # exclude deleted preprints
-        preprint_two.node.is_deleted = True
-        preprint_two.node.save()
+        preprint_two.deleted = timezone.now()
+        preprint_two.save()
         expected['pending'] -= 1
         res = app.get(url, auth=user.auth)
         actual = res.json['meta']['reviews_state_counts']
         assert expected == actual
+
+    def test_node_is_public_deprecated_filter(
+            self, app, user, preprint_one, preprint_two,
+            preprint_three, url):
+
+        preprint_one.node.is_public = False
+        preprint_one.node.save()
+        preprint_two.node.is_public = True
+        preprint_two.node.save()
+        preprint_three.node.is_public = True
+        preprint_three.node.save()
+
+        res = app.get(url + '&filter[node_is_public]=True', auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
 
 
 class TestPreprintProviderPreprintListFilteringByReviewableFields(
@@ -194,6 +208,7 @@ class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin):
             provider=provider_one,
             subjects=[[subject._id]],
             project=project_public,
+            machine_state='pending',
             is_published=False)
 
     def test_unpublished_visible_to_admins(

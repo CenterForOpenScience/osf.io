@@ -20,7 +20,7 @@ from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
-from osf.models import AbstractNode, MaintenanceState
+from osf.models import AbstractNode, MaintenanceState, Preprint
 from website import settings
 from website.project.model import has_anonymous_link
 
@@ -118,7 +118,7 @@ class ShowIfVersion(ConditionalField):
     or not before the feature's latest supported version.
     """
 
-    def __init__(self, field, min_version, max_version, **kwargs):
+    def __init__(self, field, min_version=None, max_version=None, **kwargs):
         super(ShowIfVersion, self).__init__(field, **kwargs)
         self.min_version = min_version
         self.max_version = max_version
@@ -169,6 +169,24 @@ class HideIfDisabled(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class HideIfPreprint(ConditionalField):
+    """
+    If object is a preprint or related to a preprint, hide the field.
+    """
+
+    def should_hide(self, instance):
+        if getattr(instance, 'node', False) and isinstance(getattr(instance, 'node', False), Preprint):
+            # Sometimes a "node" might be a preprint object where node/preprint code is shared
+            return True
+
+        return isinstance(instance, Preprint) \
+            or isinstance(getattr(instance, 'target', None), Preprint) \
+            or isinstance(getattr(instance, 'preprint', False), Preprint)
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
+
+
 class NoneIfWithdrawal(ConditionalField):
     """
     If preprint is withdrawn, this field (attribute or relationship) should return None instead of hidden.
@@ -192,10 +210,12 @@ class HideIfWithdrawal(ConditionalField):
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
 
+
 class HideIfNotWithdrawal(ConditionalField):
 
     def should_hide(self, instance):
         return not instance.is_retracted
+
 
 class HideIfWikiDisabled(ConditionalField):
     """
@@ -813,7 +833,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 return {'data': None}
 
         related_url = url['related']
-        related_path = urlparse(related_url).path
+        related_path = urlparse(related_url).path if related_url else None
         related_meta = self.get_meta_information(self.related_meta, value)
         self_url = url['self']
         self_meta = self.get_meta_information(self.self_meta, value)
@@ -1561,6 +1581,11 @@ class LinkedRegistration(JSONAPIRelationshipSerializer):
         type_ = 'linked_registrations'
 
 
+class LinkedPreprint(LinkedNode):
+    class Meta:
+        type_ = 'linked_preprints'
+
+
 class LinkedNodesRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=LinkedNode())
     links = LinksField({
@@ -1585,7 +1610,7 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
 
         nodes_to_add = []
         for node_id in diff['add']:
-            node = AbstractNode.load(node_id)
+            node = AbstractNode.load(node_id) or Preprint.load(node_id)
             if not node:
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
             nodes_to_add.append(node)
@@ -1697,6 +1722,28 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
             collection.add_pointer(node, auth)
 
         return self.make_instance_obj(collection)
+
+
+class LinkedPreprintsRelationshipSerializer(LinkedNodesRelationshipSerializer):
+    data = ser.ListField(child=LinkedPreprint())
+
+    def get_self_url(self, obj):
+        return obj['self'].linked_preprints_self_url
+
+    def get_related_url(self, obj):
+        return obj['self'].linked_preprints_related_url
+
+    class Meta:
+        type_ = 'linked_preprints'
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {
+            'data': [
+                pointer for pointer in
+                obj.linked_nodes.filter(deleted__isnull=True, type='osf.preprint')
+            ], 'self': obj,
+        }
 
 
 class MaintenanceStateSerializer(ser.ModelSerializer):

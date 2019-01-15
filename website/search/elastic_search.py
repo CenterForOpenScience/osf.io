@@ -26,6 +26,8 @@ from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
+from osf.models import Preprint
+from osf.models import SpamStatus
 from addons.wiki.models import WikiPage
 from osf.models import CollectionSubmission
 from osf.utils.sanitize import unescape_entities
@@ -58,7 +60,7 @@ DOC_TYPE_TO_MODEL = {
     'user': OSFUser,
     'file': BaseFileNode,
     'institution': Institution,
-    'preprint': AbstractNode,
+    'preprint': Preprint,
     'collectionSubmission': CollectionSubmission,
 }
 
@@ -248,8 +250,10 @@ def format_results(results):
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
-        elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
+        elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
+        elif result.get('category') in {'preprint'}:
+            result = format_preprint_result(result)
         elif result.get('category') == 'collectionSubmission':
             continue
         elif not result.get('category'):
@@ -283,7 +287,34 @@ def format_result(result, parent_id=None):
         'n_wikis': len(result['wikis'] or []),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
-        'preprint_url': result.get('preprint_url'),
+    }
+
+    return formatted_result
+
+
+def format_preprint_result(result):
+    parent_info = None
+    formatted_result = {
+        'contributors': result['contributors'],
+        # TODO: Remove unescape_entities when mako html safe comes in
+        'title': unescape_entities(result['title']),
+        'url': result['url'],
+        'is_component': False,
+        'parent_title': None,
+        'parent_url': parent_info.get('url') if parent_info is not None else None,
+        'tags': result['tags'],
+        'is_registration': False,
+        'is_retracted': result['is_retracted'],
+        'is_pending_retraction': False,
+        'embargo_end_date': None,
+        'is_pending_embargo': False,
+        'description': unescape_entities(result['description']),
+        'category': result.get('category'),
+        'date_created': result.get('created'),
+        'date_registered': None,
+        'n_wikis': 0,
+        'license': result.get('license'),
+        'affiliated_institutions': None,
     }
 
     return formatted_result
@@ -305,10 +336,10 @@ COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 
 
 def get_doctype_from_node(node):
+    if isinstance(node, Preprint):
+        return 'preprint'
     if node.is_registration:
         return 'registration'
-    elif node.is_preprint:
-        return 'preprint'
     elif node.parent_node is None:
         # ElasticSearch categorizes top-level projects differently than children
         return 'project'
@@ -323,6 +354,15 @@ def update_node_async(self, node_id, index=None, bulk=False):
     node = AbstractNode.load(node_id)
     try:
         update_node(node=node, index=index, bulk=bulk, async_update=True)
+    except Exception as exc:
+        self.retry(exc=exc)
+
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_preprint_async(self, preprint_id, index=None, bulk=False):
+    Preprint = apps.get_model('osf.Preprint')
+    preprint = Preprint.load(preprint_id)
+    try:
+        update_preprint(preprint=preprint, index=index, bulk=bulk, async_update=True)
     except Exception as exc:
         self.retry(exc=exc)
 
@@ -375,12 +415,46 @@ def serialize_node(node, category):
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         'extra_search_terms': clean_splitters(node.title),
-        'preprint_url': node.preprint_url,
     }
     if not node.is_retracted:
         for wiki in WikiPage.objects.get_wiki_pages_latest(node):
             # '.' is not allowed in field names in ES2
             elastic_document['wikis'][wiki.wiki_page.page_name.replace('.', ' ')] = wiki.raw_text(node)
+
+    return elastic_document
+
+def serialize_preprint(preprint, category):
+    elastic_document = {}
+
+    try:
+        normalized_title = six.u(preprint.title)
+    except TypeError:
+        normalized_title = preprint.title
+    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+    elastic_document = {
+        'id': preprint._id,
+        'contributors': [
+            {
+                'fullname': x['fullname'],
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+            }
+            for x in preprint._contributors.filter(preprintcontributor__visible=True).order_by('preprintcontributor___order')
+            .values('fullname', 'guids___id', 'is_active')
+        ],
+        'title': preprint.title,
+        'normalized_title': normalized_title,
+        'category': category,
+        'public': preprint.is_public,
+        'published': preprint.verified_publishable,
+        'is_retracted': preprint.is_retracted,
+        'tags': list(preprint.tags.filter(system=False).values_list('name', flat=True)),
+        'description': preprint.description,
+        'url': preprint.url,
+        'date_created': preprint.created,
+        'license': serialize_node_license_record(preprint.license),
+        'boost': 2,  # More relevant than a registration
+        'extra_search_terms': clean_splitters(preprint.title),
+    }
 
     return elastic_document
 
@@ -392,7 +466,7 @@ def update_node(node, index=None, bulk=False, async_update=False):
         update_file(file_, index=index)
 
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
+    if node.is_deleted or not node.is_public or node.archiving or node.is_spam or (node.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -402,7 +476,25 @@ def update_node(node, index=None, bulk=False, async_update=False):
         else:
             client().index(index=index, doc_type=category, id=node._id, body=elastic_document, refresh=True)
 
-def bulk_update_nodes(serialize, nodes, index=None):
+@requires_search
+def update_preprint(preprint, index=None, bulk=False, async_update=False):
+    from addons.osfstorage.models import OsfStorageFile
+    index = index or INDEX
+    for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(preprint)), target_object_id=preprint.id)):
+        update_file(file_, index=index)
+
+    is_qa_preprint = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(preprint.tags.all().values_list('name', flat=True))) or any(substring in preprint.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if not preprint.verified_publishable or preprint.is_spam or (preprint.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or is_qa_preprint:
+        delete_doc(preprint._id, preprint, category='preprint', index=index)
+    else:
+        category = 'preprint'
+        elastic_document = serialize_preprint(preprint, category)
+        if bulk:
+            return elastic_document
+        else:
+            client().index(index=index, doc_type=category, id=preprint._id, body=elastic_document, refresh=True)
+
+def bulk_update_nodes(serialize, nodes, index=None, category=None):
     """Updates the list of input projects
 
     :param function Node-> dict serialize:
@@ -419,7 +511,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
                 '_op_type': 'update',
                 '_index': index,
                 '_id': node._id,
-                '_type': get_doctype_from_node(node),
+                '_type': category or get_doctype_from_node(node),
                 'doc': serialized,
                 'doc_as_upsert': True,
             })
@@ -565,7 +657,8 @@ def update_file(file_, index=None, delete=False):
     ) or bool(
         set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True))
     ) or any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not target.is_public or delete or target.is_deleted or target.archiving or file_node_is_qa:
+    if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or (
+            target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
         client().delete(
             index=index,
             doc_type='file',
@@ -575,6 +668,18 @@ def update_file(file_, index=None, delete=False):
         )
         return
 
+    if isinstance(target, Preprint):
+        if not getattr(target, 'verified_publishable', False) or target.primary_file != file_ or target.is_spam or (
+                target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
+            client().delete(
+                index=index,
+                doc_type='file',
+                id=file_._id,
+                refresh=True,
+                ignore=[404]
+            )
+            return
+
     # We build URLs manually here so that this function can be
     # run outside of a Flask request context (e.g. in a celery task)
     file_deep_url = '/{target_id}/files/{provider}{path}/'.format(
@@ -582,7 +687,7 @@ def update_file(file_, index=None, delete=False):
         provider=file_.provider,
         path=file_.path,
     )
-    if target.is_quickfiles:
+    if getattr(target, 'is_quickfiles', None):
         node_url = '/{user_id}/quickfiles/'.format(user_id=target.creator._id)
     else:
         node_url = '/{target_id}/'.format(target_id=target._id)
@@ -591,10 +696,12 @@ def update_file(file_, index=None, delete=False):
     file_guid = file_.get_guid(create=False)
     if file_guid:
         guid_url = '/{file_guid}/'.format(file_guid=file_guid._id)
+    # File URL's not provided for preprint files, because the File Detail Page will
+    # just reroute to preprints detail
     file_doc = {
         'id': file_._id,
-        'deep_url': file_deep_url,
-        'guid_url': guid_url,
+        'deep_url': None if isinstance(target, Preprint) else file_deep_url,
+        'guid_url': None if isinstance(target, Preprint) else guid_url,
         'tags': list(file_.tags.filter(system=False).values_list('name', flat=True)),
         'name': file_.name,
         'category': 'file',
@@ -756,10 +863,10 @@ def create_index(index=None):
 def delete_doc(elastic_document_id, node, index=None, category=None):
     index = index or INDEX
     if not category:
-        if node.is_registration:
-            category = 'registration'
-        elif node.is_preprint:
+        if isinstance(node, Preprint):
             category = 'preprint'
+        elif node.is_registration:
+            category = 'registration'
         else:
             category = node.project_or_component
     client().delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])

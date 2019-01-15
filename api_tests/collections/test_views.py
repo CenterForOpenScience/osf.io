@@ -9,6 +9,7 @@ from osf_tests.factories import (
     CollectionFactory,
     NodeFactory,
     RegistrationFactory,
+    PreprintFactory,
     ProjectFactory,
     AuthUserFactory,
     SubjectFactory,
@@ -224,7 +225,7 @@ class TestCollectionCreate:
             'data': {
                 'type': 'collections',
                 'attributes': {
-                    'title': 'A' * 201,
+                    'title': 'A' * 513,
                 }
             }
         }
@@ -233,7 +234,7 @@ class TestCollectionCreate:
             auth=user_one.auth, expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
     def test_create_bookmark_collection(
             self, app, bookmark_user_one,
@@ -780,7 +781,7 @@ class TestCollectionUpdate(CollectionCRUDTestCase):
                 'type': 'collections',
                 'id': collection._id,
                 'attributes': {
-                    'title': 'A' * 201,
+                    'title': 'A' * 513,
                     'category': 'project',
                 }
             }
@@ -790,7 +791,7 @@ class TestCollectionUpdate(CollectionCRUDTestCase):
             auth=user_one.auth, expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
 
 @pytest.mark.django_db
@@ -3345,6 +3346,514 @@ class TestCollectionRelationshipNodeLinks:
             auth=user_one.auth, expect_errors=True
         )
         assert res.status_code == 404
+
+
+@pytest.mark.django_db
+class TestCollectionRelationshipPreprintLinks:
+
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def auth_user_one(self, user_one):
+        return Auth(user_one)
+
+    @pytest.fixture()
+    def preprint_admin(self, user_one):
+        return PreprintFactory(creator=user_one)
+
+    @pytest.fixture()
+    def preprint_contributor(self, user_one, user_two):
+        preprint_contributor = PreprintFactory(creator=user_two)
+        preprint_contributor.add_contributor(user_one, auth=Auth(user_two))
+        preprint_contributor.save()
+        return preprint_contributor
+
+    @pytest.fixture()
+    def preprint(self):
+        preprint = PreprintFactory()
+        preprint.is_public = False
+        preprint.save()
+        return preprint
+
+    @pytest.fixture()
+    def preprint_private(self, user_one):
+        preprint = PreprintFactory(creator=user_one)
+        preprint.is_public = False
+        preprint.save()
+        return preprint
+
+    @pytest.fixture()
+    def preprint_public(self):
+        return PreprintFactory(is_public=True)
+
+    @pytest.fixture()
+    def collection_private(
+            self, user_one, preprint_private, auth_user_one
+    ):
+        collection_private = CollectionFactory(creator=user_one)
+        collection_private.collect_object(preprint_private, user_one)
+        return collection_private
+
+    @pytest.fixture()
+    def collection_public(
+            self, preprint_private,
+            user_two, preprint_public):
+
+        collection_public = CollectionFactory(is_public=True, creator=user_two)
+        collection_public.collect_object(preprint_private, user_two)
+        collection_public.collect_object(preprint_public, user_two)
+        return collection_public
+
+    @pytest.fixture()
+    def url_private_linked_preprints(self, collection_private):
+        return '/{}collections/{}/relationships/linked_preprints/'.format(
+            API_BASE, collection_private._id)
+
+    @pytest.fixture()
+    def url_public_linked_preprints(self, collection_public):
+        return '/{}collections/{}/relationships/linked_preprints/'.format(
+            API_BASE, collection_public._id)
+
+    @pytest.fixture()
+    def make_payload(self, preprint_admin):
+        def payload(preprint_ids=None):
+            preprint_ids = preprint_ids or [preprint_admin._id]
+            env_linked_preprints = [{'type': 'linked_preprints',
+                                 'id': preprint_id} for preprint_id in preprint_ids]
+            return {'data': env_linked_preprints}
+        return payload
+
+    def test_get_relationship_linked_preprints(
+            self, app, url_private_linked_preprints,
+            user_one, collection_private, preprint_private
+    ):
+        res = app.get(url_private_linked_preprints, auth=user_one.auth)
+        assert res.status_code == 200
+        assert collection_private.linked_preprints_self_url in res.json['links']['self']
+        assert res.json['data'][0]['id'] == preprint_private._id
+
+    def test_get_public_relationship_linked_preprints_logged_out(
+            self, app, url_public_linked_preprints, preprint_public):
+        res = app.get(url_public_linked_preprints)
+
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == preprint_public._id
+
+    def test_get_public_relationship_linked_preprints_logged_in(
+            self, app, url_public_linked_preprints, user_one):
+        res = app.get(url_public_linked_preprints, auth=user_one.auth)
+
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+
+    def test_post_contributing_preprint(
+            self, app, url_private_linked_preprints,
+            make_payload, user_one, preprint_contributor,
+            preprint_private
+    ):
+        res = app.post_json_api(
+            url_private_linked_preprints, make_payload([preprint_contributor._id]),
+            auth=user_one.auth
+        )
+
+        assert res.status_code == 201
+
+        ids = [data['id'] for data in res.json['data']]
+        assert preprint_contributor._id in ids
+        assert preprint_private._id in ids
+
+    def test_post_public_preprint(
+            self, app, url_private_linked_preprints,
+            preprint_public, make_payload, preprint_private,
+            user_one
+    ):
+        res = app.post_json_api(
+            url_private_linked_preprints, make_payload([preprint_public._id]),
+            auth=user_one.auth
+        )
+
+        assert res.status_code == 201
+
+        ids = [data['id'] for data in res.json['data']]
+        assert preprint_public._id in ids
+        assert preprint_private._id in ids
+
+    def test_post_preprint_already_linked(
+            self, app, user_one,
+            url_private_linked_preprints,
+            make_payload, preprint_private
+    ):
+        res = app.post_json_api(
+            url_private_linked_preprints, make_payload([preprint_private._id]),
+            auth=user_one.auth
+        )
+
+        assert res.status_code == 204
+
+    def test_put_contributing_preprint(
+            self, app, url_private_linked_preprints,
+            make_payload, preprint_contributor,
+            user_one, preprint_private
+    ):
+        res = app.put_json_api(
+            url_private_linked_preprints, make_payload([preprint_contributor._id]),
+            auth=user_one.auth
+        )
+
+        assert res.status_code == 200
+
+        ids = [data['id'] for data in res.json['data']]
+        assert preprint_contributor._id in ids
+        assert preprint_private._id not in ids
+
+    def test_delete_with_put_empty_array(
+            self, app, user_one, url_private_linked_preprints, make_payload,
+            collection_private, preprint_admin, auth_user_one):
+
+        collection_private.collect_object(preprint_admin, user_one)
+        payload = make_payload()
+        payload['data'].pop()
+        res = app.put_json_api(
+            url_private_linked_preprints, payload,
+            auth=user_one.auth
+        )
+        assert res.status_code == 200
+        assert res.json['data'] == payload['data']
+
+    def test_delete_one(
+            self, app, make_payload, url_private_linked_preprints, preprint_admin,
+            preprint_private, user_one, auth_user_one, collection_private):
+
+        collection_private.collect_object(preprint_admin, user_one)
+        res = app.delete_json_api(
+            url_private_linked_preprints, make_payload([preprint_private._id]),
+            auth=user_one.auth,
+        )
+        assert res.status_code == 204
+
+        res = app.get(url_private_linked_preprints, auth=user_one.auth)
+
+        ids = [data['id'] for data in res.json['data']]
+        assert preprint_admin._id in ids
+        assert preprint_private._id not in ids
+
+    def test_delete_multiple(
+            self, app, url_private_linked_preprints, user_one, collection_private,
+            preprint_private, make_payload, preprint_admin, auth_user_one):
+
+        collection_private.collect_object(preprint_admin, user_one)
+        res = app.delete_json_api(url_private_linked_preprints, make_payload(
+            [preprint_private._id, preprint_admin._id]), auth=user_one.auth, )
+        assert res.status_code == 204
+
+        res = app.get(url_private_linked_preprints, auth=user_one.auth)
+        assert res.json['data'] == []
+
+    def test_delete_not_present(
+            self, app, make_payload,
+            url_private_linked_preprints,
+            collection_private, preprint, user_one
+    ):
+
+        number_of_links = collection_private.guid_links.count()
+        res = app.delete_json_api(
+            url_private_linked_preprints, make_payload([preprint._id]), auth=user_one.auth)
+        assert res.status_code == 204
+
+        res = app.get(url_private_linked_preprints, auth=user_one.auth)
+        assert len(res.json['data']) == number_of_links
+
+    def test_non_mutational_collection_relationship_nodeLinks_tests(
+            self, app, user_one, user_two,
+            url_private_linked_preprints, preprint,
+            preprint_private, make_payload,
+            preprint_contributor,
+            url_public_linked_preprints,
+            preprint_public
+    ):
+
+        # test_get_private_relationship_linked_preprints_logged_out
+        res = app.get(url_private_linked_preprints, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_post_private_preprint
+        res = app.post_json_api(
+            url_private_linked_preprints, make_payload([preprint._id]),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.get(url_private_linked_preprints, auth=user_one.auth)
+
+        ids = [data['id'] for data in res.json['data']]
+        assert preprint._id not in ids
+        assert preprint_private._id in ids
+
+        # test_post_mixed_preprints
+        res = app.post_json_api(
+            url_private_linked_preprints, make_payload([preprint._id, preprint_contributor._id]),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.get(url_private_linked_preprints, auth=user_one.auth)
+        ids = [data['id'] for data in res.json['data']]
+        assert preprint._id not in ids
+        assert preprint_contributor._id not in ids
+        assert preprint_private._id in ids
+
+        # test_put_private_preprint
+        res = app.put_json_api(
+            url_private_linked_preprints, make_payload([preprint._id]),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.get(url_private_linked_preprints, auth=user_one.auth)
+        ids = [data['id'] for data in res.json['data']]
+        assert preprint._id not in ids
+        assert preprint_private._id in ids
+
+        # test_put_mixed_preprints
+        res = app.put_json_api(
+            url_private_linked_preprints, make_payload([preprint._id, preprint_contributor._id]),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.get(url_private_linked_preprints, auth=user_one.auth)
+        ids = [data['id'] for data in res.json['data']]
+        assert preprint._id not in ids
+        assert preprint_contributor._id not in ids
+        assert preprint_private._id in ids
+
+        # test_access_other_collection
+        collection = CollectionFactory(creator=user_two)
+        url = '/{}collections/{}/relationships/linked_preprints/'.format(
+            API_BASE, collection._id)
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_preprint_doesnt_exist
+        res = app.post_json_api(
+            url_private_linked_preprints, make_payload(['aquarela']),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 404
+
+        # test_type_mistyped
+        res = app.post_json_api(
+            url_private_linked_preprints,
+            {'data': [{
+                'type': 'not_linked_preprints',
+                'id': preprint_contributor._id}
+            ]},
+            auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
+
+        # test_creates_public_linked_preprint_relationship_logged_out
+        res = app.post_json_api(url_public_linked_preprints, make_payload(
+            [preprint_public._id]), expect_errors=True)
+        assert res.status_code == 401
+
+        # test_creates_public_linked_preprint_relationship_logged_in
+        res = app.post_json_api(
+            url_public_linked_preprints,
+            make_payload([preprint_public._id]),
+            auth=user_one.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        # test_creates_private_linked_preprint_relationship_logged_out
+        res = app.post_json_api(
+            url_private_linked_preprints,
+            make_payload([preprint._id]),
+            expect_errors=True
+        )
+        assert res.status_code == 401
+
+        # test_put_public_preprints_relationships_logged_out
+        res = app.put_json_api(
+            url_public_linked_preprints,
+            make_payload([preprint_public._id]),
+            expect_errors=True
+        )
+        assert res.status_code == 401
+
+        # test_put_public_preprints_relationships_logged_in
+        res = app.put_json_api(
+            url_public_linked_preprints,
+            make_payload([preprint_private._id]),
+            auth=user_one.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        # test_delete_public_preprints_relationships_logged_out
+        res = app.delete_json_api(
+            url_public_linked_preprints,
+            make_payload([preprint_public._id]),
+            expect_errors=True
+        )
+        assert res.status_code == 401
+
+        # test_delete_public_preprints_relationships_logged_in
+        res = app.delete_json_api(
+            url_public_linked_preprints,
+            make_payload([preprint_private._id]),
+            auth=user_one.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        # test_attempt_to_add_collection_to_collection
+        collection = CollectionFactory(creator=user_one)
+        res = app.post_json_api(
+            url_private_linked_preprints,
+            make_payload([collection._id]),
+            auth=user_one.auth, expect_errors=True
+        )
+        assert res.status_code == 404
+
+
+@pytest.mark.django_db
+class TestCollectionLinkedPreprints:
+
+    @pytest.fixture()
+    def auth_user(self, user_one):
+        return Auth(user_one)
+
+    @pytest.fixture()
+    def linked_preprint_one(self, user_one):
+        preprint = PreprintFactory(creator=user_one)
+        preprint.is_public = False
+        preprint.save()
+        return preprint
+
+    @pytest.fixture()
+    def linked_preprint_two(self, user_one):
+        preprint = PreprintFactory(creator=user_one)
+        preprint.is_public = False
+        preprint.save()
+        return preprint
+
+    @pytest.fixture()
+    def preprint_public(self, user_one):
+        return PreprintFactory(creator=user_one, is_public=True)
+
+    @pytest.fixture()
+    def collection(
+            self, user_one, linked_preprint_one,
+            linked_preprint_two, preprint_public,
+            auth_user
+    ):
+        collection = CollectionFactory(creator=user_one)
+        collection.collect_object(linked_preprint_one, user_one)
+        collection.collect_object(linked_preprint_two, user_one)
+        collection.collect_object(preprint_public, user_one)
+        collection.save()
+        return collection
+
+    @pytest.fixture()
+    def url_collection_linked_preprints(self, collection):
+        return '/{}collections/{}/linked_preprints/'.format(
+            API_BASE, collection._id)
+
+    @pytest.fixture()
+    def id_linked_preprints(self, collection):
+        return list(
+            collection.guid_links.values_list(
+                '_id', flat=True)
+        )
+
+    def test_linked_preprints_returns_everything(
+            self, app, url_collection_linked_preprints,
+            user_one, id_linked_preprints):
+
+        res = app.get(url_collection_linked_preprints, auth=user_one.auth)
+
+        assert res.status_code == 200
+        preprints_returned = [linked_preprint['id']
+                          for linked_preprint in res.json['data']]
+        assert len(preprints_returned) == len(id_linked_preprints)
+
+        for preprint_returned in preprints_returned:
+            assert preprint_returned in id_linked_preprints
+
+    def test_linked_preprints_only_return_viewable_preprints(
+            self, app, linked_preprint_one,
+            linked_preprint_two, preprint_public,
+            id_linked_preprints, auth_user
+    ):
+
+        user = AuthUserFactory()
+        collection = CollectionFactory(creator=user)
+        linked_preprint_one.add_contributor(user, auth=auth_user, save=True)
+        linked_preprint_two.add_contributor(user, auth=auth_user, save=True)
+        preprint_public.add_contributor(user, auth=auth_user, save=True)
+        collection.collect_object(linked_preprint_one, user)
+        collection.collect_object(linked_preprint_two, user)
+        collection.collect_object(preprint_public, user)
+        collection.save()
+
+        res = app.get('/{}collections/{}/linked_preprints/'.format(API_BASE,
+                                                               collection._id), auth=user.auth)
+
+        assert res.status_code == 200
+        preprints_returned = [linked_preprint['id']
+                          for linked_preprint in res.json['data']]
+        assert len(preprints_returned) == len(id_linked_preprints)
+
+        for preprint_returned in preprints_returned:
+            assert preprint_returned in id_linked_preprints
+
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            linked_preprint_two.remove_contributor(user, auth=auth_user)
+            preprint_public.remove_contributor(user, auth=auth_user)
+
+        res = app.get(
+            '/{}collections/{}/linked_preprints/'.format(
+                API_BASE, collection._id
+            ), auth=user.auth
+        )
+        preprints_returned = [linked_preprint['id']
+                          for linked_preprint in res.json['data']]
+        assert len(preprints_returned) == 2
+        assert linked_preprint_one._id in preprints_returned
+        assert preprint_public._id in preprints_returned
+        assert linked_preprint_two._id not in preprints_returned
+
+    def test_linked_preprints_doesnt_return_deleted_preprints(
+            self, app, linked_preprint_one, linked_preprint_two,
+            preprint_public, id_linked_preprints,
+            url_collection_linked_preprints, user_one,
+    ):
+
+        linked_preprint_one.deleted = now()
+        linked_preprint_one.save()
+        res = app.get(url_collection_linked_preprints, auth=user_one.auth)
+
+        assert res.status_code == 200
+        preprints_returned = [
+            linked_preprint['id'] for linked_preprint in res.json['data']
+        ]
+        assert len(preprints_returned) == 2
+
+        assert linked_preprint_one._id not in preprints_returned
+        assert linked_preprint_two._id in preprints_returned
+        assert preprint_public._id in preprints_returned
+
+    def test_attempt_to_return_linked_preprints_logged_out(
+            self, app, url_collection_linked_preprints):
+
+        res = app.get(
+            url_collection_linked_preprints,
+            auth=None, expect_errors=True
+        )
+        assert res.status_code == 401
 
 
 @pytest.mark.django_db
