@@ -16,6 +16,7 @@ from website import settings
 from website.util import paths
 from website.settings import DISK_SAVING_MODE
 from osf.utils import sanitize
+from osf.utils.permissions import WRITE_NODE
 
 
 logger = logging.getLogger(__name__)
@@ -180,7 +181,7 @@ class NodeFileCollector(object):
 
         linked_node_sqs = node.node_relations.filter(is_node_link=True, child=OuterRef('pk'))
         if self.auth and self.auth.user:
-            can_write = get_objects_for_user(self.auth.user, 'write_node', node._nodes.all(), with_superuser=False)
+            can_write = get_objects_for_user(self.auth.user, WRITE_NODE, node._nodes.all(), with_superuser=False)
         else:
             can_write = node._nodes.none()
         descendants_qs = (

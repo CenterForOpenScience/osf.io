@@ -367,7 +367,7 @@ class TestNodeGroupUpdate:
         assert res.status_code == 200
         assert not osf_group.is_member(public_project.creator.auth)
         assert res_json['attributes']['permission'] == permissions.WRITE
-        assert 'write_node' in get_perms(osf_group.member_group, public_project)
+        assert permissions.WRITE_NODE in get_perms(osf_group.member_group, public_project)
 
         # test update invalid perm
         payload['data']['attributes']['permission'] = 'bad_perm'

@@ -107,7 +107,7 @@ from api.nodes.serializers import (
     NodeGroupsCreateSerializer,
     NodeGroupsDetailSerializer,
 )
-from api.nodes.utils import NodeOptimizationMixin
+from api.nodes.utils import NodeOptimizationMixin, enforce_no_children
 from api.osf_groups.views import OSFGroupMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
@@ -127,11 +127,8 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
-from osf.models.node import remove_addons
-from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
-from osf.exceptions import NodeStateError
+from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS, WRITE_NODE
 from website import mails
-from website.project import signals as project_signals
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
@@ -140,6 +137,7 @@ HTTP_CODE_MAP = {
     403: PermissionDenied('This add-on\'s credentials could not be validated.'),
     404: NotFound('This add-on\'s resources could not be found.'),
 }
+
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -235,7 +233,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                return get_objects_for_user(auth.user, 'write_node', nodes, with_superuser=False)
+                return get_objects_for_user(auth.user, WRITE_NODE, nodes, with_superuser=False)
 
             for node in nodes:
                 if not node.can_edit(auth):
@@ -305,37 +303,23 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # Overrides BulkDestroyModelMixin
     def perform_bulk_destroy(self, resource_object_list):
-
-        auth = get_user_auth(self.request)
-        date = timezone.now()
-        id_list = [x.id for x in resource_object_list]
-
-        if NodeRelation.objects.filter(
-            parent__in=resource_object_list,
-            child__is_deleted=False,
-        ).exclude(Q(child__in=resource_object_list) | Q(is_node_link=True)).exists():
-            raise ValidationError('Any child components must be deleted prior to deleting this project.')
-
-        remove_addons(auth, resource_object_list)
+        if enforce_no_children(self.request):
+            if NodeRelation.objects.filter(
+                parent__in=resource_object_list,
+                child__is_deleted=False,
+            ).exclude(Q(child__in=resource_object_list) | Q(is_node_link=True)).exists():
+                raise ValidationError('Any child components must be deleted prior to deleting this project.')
 
         for node in resource_object_list:
-            node.add_remove_node_log(auth=auth, date=date)
+            self.perform_destroy(node)
 
-        nodes = AbstractNode.objects.filter(id__in=id_list)
-        nodes.update(is_deleted=True, deleted_date=date)
-        if nodes.filter(is_public=True).exists():
-            AbstractNode.bulk_update_search(resource_object_list)
-        for node in nodes:
-            project_signals.node_deleted.send(node)
-
-    # Overrides BulkDestroyJSONAPIView
+    # Overrides BulkDestroyModelMixin
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
         try:
             instance.remove_node(auth=auth)
-        except NodeStateError as err:
-            raise ValidationError(str(err))
-        instance.save()
+        except PermissionsError as err:
+            raise PermissionDenied(str(err))
 
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
@@ -367,11 +351,14 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
         node = self.get_object()
+
+        if enforce_no_children(self.request) and Node.objects.get_children(node, active=True).exists():
+            raise ValidationError('Any child components must be deleted prior to deleting this project.')
+
         try:
             node.remove_node(auth=auth)
-        except NodeStateError as err:
-            raise ValidationError(str(err))
-        node.save()
+        except PermissionsError as err:
+            raise PermissionDenied(str(err))
 
     def get_renderer_context(self):
         context = super(NodeDetail, self).get_renderer_context()

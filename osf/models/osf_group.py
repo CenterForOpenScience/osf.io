@@ -15,7 +15,7 @@ from osf.models import base
 from osf.models.mixins import GuardianMixin, Loggable
 from osf.models import Node, OSFUser, NodeLog
 from osf.models.osf_grouplog import OSFGroupLog
-from osf.utils.permissions import ADMIN, WRITE, MANAGER, MEMBER, MANAGE, reduce_permissions
+from osf.utils.permissions import ADMIN, READ_NODE, WRITE, MANAGER, MEMBER, MANAGE, reduce_permissions
 from osf.utils import sanitize
 from website.project import signals as project_signals
 from website.osf_groups import signals as group_signals
@@ -95,7 +95,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         """
         Returns nodes that the OSF group has permission to
         """
-        return get_objects_for_group(self.member_group, 'read_node', Node)
+        return get_objects_for_group(self.member_group, READ_NODE, Node)
 
     @property
     def absolute_api_v2_url(self):
