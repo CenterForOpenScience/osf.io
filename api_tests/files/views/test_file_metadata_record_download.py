@@ -65,4 +65,4 @@ class TestFileMetadataRecordDownload:
         url = self.get_url(public_record) + '?export=dinosaur'
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Format "dinosaur" is not supported.'
+        assert res.json['errors'][0]['detail'] == 'Format "dinosaur" is not supported for metadata file export.'
