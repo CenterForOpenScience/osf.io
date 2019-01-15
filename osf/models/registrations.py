@@ -98,11 +98,12 @@ class Registration(AbstractNode):
 
     @property
     def sanction(self):
+        root = self._dirty_root
         sanction = (
-            self.root.embargo_termination_approval or
-            self.root.retraction or
-            self.root.embargo or
-            self.root.registration_approval
+            root.embargo_termination_approval or
+            root.retraction or
+            root.embargo or
+            root.registration_approval
         )
         if sanction:
             return sanction
@@ -111,15 +112,17 @@ class Registration(AbstractNode):
 
     @property
     def is_registration_approved(self):
-        if self.root.registration_approval is None:
+        root = self._dirty_root
+        if root.registration_approval is None:
             return False
-        return self.root.registration_approval.is_approved
+        return root.registration_approval.is_approved
 
     @property
     def is_pending_embargo(self):
-        if self.root.embargo is None:
+        root = self._dirty_root
+        if root.embargo is None:
             return False
-        return self.root.embargo.is_pending_approval
+        return root.embargo.is_pending_approval
 
     @property
     def is_pending_embargo_for_existing_registration(self):
@@ -128,33 +131,38 @@ class Registration(AbstractNode):
         registrations pre-dating the Embargo feature do not get deleted if
         their respective Embargo request is rejected.
         """
-        if self.root.embargo is None:
+        root = self._dirty_root
+        if root.embargo is None:
             return False
-        return self.root.embargo.pending_registration
+        return root.embargo.pending_registration
 
     @property
     def is_retracted(self):
-        if self.root.retraction is None:
+        root = self._dirty_root
+        if root.retraction is None:
             return False
-        return self.root.retraction.is_approved
+        return root.retraction.is_approved
 
     @property
     def is_pending_registration(self):
-        if self.root.registration_approval is None:
+        root = self._dirty_root
+        if root.registration_approval is None:
             return False
-        return self.root.registration_approval.is_pending_approval
+        return root.registration_approval.is_pending_approval
 
     @property
     def is_pending_retraction(self):
-        if self.root.retraction is None:
+        root = self._dirty_root
+        if root.retraction is None:
             return False
-        return self.root.retraction.is_pending_approval
+        return root.retraction.is_pending_approval
 
     @property
     def is_pending_embargo_termination(self):
-        if self.root.embargo_termination_approval is None:
+        root = self._dirty_root
+        if root.embargo_termination_approval is None:
             return False
-        return self.root.embargo_termination_approval.is_pending_approval
+        return root.embargo_termination_approval.is_pending_approval
 
     @property
     def is_embargoed(self):
@@ -163,20 +171,32 @@ class Registration(AbstractNode):
         - that record has been approved
         - the node is not public (embargo not yet lifted)
         """
-        if self.is_public or self.root.embargo is None:
+        root = self._dirty_root
+        if root.is_public or root.embargo is None:
             return False
-        return self.root.embargo.is_approved
+        return root.embargo.is_approved
 
     @property
     def embargo_end_date(self):
-        if self.root.embargo is None:
+        root = self._dirty_root
+        if root.embargo is None:
             return False
-        return self.root.embargo.embargo_end_date
+        return root.embargo.embargo_end_date
 
     @property
     def archiving(self):
         job = self.archive_job
         return job and not job.done and not job.archive_tree_finished()
+
+    @property
+    def _dirty_root(self):
+        """Equivalent to `self.root`, but don't let Django fetch a clean copy
+        when `self == self.root`. Use when it's important to reflect unsaved
+        state rather than database state.
+        """
+        if self.id == self.root_id:
+            return self
+        return self.root
 
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):
