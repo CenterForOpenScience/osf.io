@@ -1,4 +1,4 @@
-from website.exceptions import OSFError
+from osf.exceptions import OSFError
 
 class InvalidSubscriptionError(OSFError):
     """Raised if an invalid subscription is attempted. e.g. attempt to

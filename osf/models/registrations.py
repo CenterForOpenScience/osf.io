@@ -9,7 +9,7 @@ from django.utils import timezone
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
@@ -197,6 +197,13 @@ class Registration(AbstractNode):
         if self.id == self.root_id:
             return self
         return self.root
+
+    def date_withdrawn(self):
+        return getattr(self.root.retraction, 'date_retracted', None)
+
+    @property
+    def withdrawal_justification(self):
+        return getattr(self.root.retraction, 'justification', None)
 
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):

@@ -5,7 +5,7 @@ from django.apps import apps
 from django.core.exceptions import ValidationError
 
 from framework.auth.core import Auth
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from osf.utils.sanitize import strip_html
 
 # TODO: This should be a class method of Node
