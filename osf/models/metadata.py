@@ -54,9 +54,7 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
             target.add_log(
                 action=NodeLog.FILE_METADATA_UPDATED,
                 params={
-                    'project': target.parent_id,
-                    'node': target._id,
-                    'file': self.file._id
+                    'path': self.file.materialized_path,
                 },
                 auth=auth,
             )
