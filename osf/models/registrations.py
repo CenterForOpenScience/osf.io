@@ -189,6 +189,14 @@ class Registration(AbstractNode):
         job = self.archive_job
         return job and not job.done and not job.archive_tree_finished()
 
+    @property
+    def date_withdrawn(self):
+        return getattr(self.root.retraction, 'date_retracted', None)
+
+    @property
+    def withdrawal_justification(self):
+        return getattr(self.root.retraction, 'justification', None)
+
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):
         """Initiates the retraction process for a registration
