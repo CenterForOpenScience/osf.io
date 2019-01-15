@@ -431,7 +431,7 @@ class FileVersionSerializer(JSONAPISerializer):
 
 class FileMetadataRecordSerializer(JSONAPISerializer):
 
-    id = IDField(read_only=True, source='_id', required=True)
+    id = IDField(source='_id', required=True)
     type = TypeField()
 
     metadata = ser.DictField()
