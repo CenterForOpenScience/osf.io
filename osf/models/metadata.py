@@ -6,7 +6,6 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from addons.osfstorage.models import OsfStorageFile
 from api.base.schemas.utils import from_json
-from osf.models import NodeLog
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import FileMetadataSchema
 from osf.utils import permissions as osf_permissions
@@ -52,7 +51,7 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
 
             target = self.file.target
             target.add_log(
-                action=NodeLog.FILE_METADATA_UPDATED,
+                action=target.log_class.FILE_METADATA_UPDATED,
                 params={
                     'path': self.file.materialized_path,
                 },
