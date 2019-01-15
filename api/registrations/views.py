@@ -4,6 +4,7 @@ from guardian.shortcuts import get_objects_for_user
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Registration, OSFUser
+from osf.utils.permissions import WRITE_NODE
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
 from api.base.filters import ListFilterMixin
@@ -131,7 +132,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                return get_objects_for_user(auth.user, 'write_node', registrations, with_superuser=False)
+                return get_objects_for_user(auth.user, WRITE_NODE, registrations, with_superuser=False)
 
             for registration in registrations:
                 if not registration.can_edit(auth):

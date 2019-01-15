@@ -13,13 +13,14 @@ def get_campaign_schema(campaign):
     return RegistrationSchema.objects.get(name=schema_name, schema_version=2)
 
 def drafts_for_user(user, campaign=None):
-    from osf.models import DraftRegistration, Node
     from guardian.shortcuts import get_objects_for_user
+    from osf.models import DraftRegistration, Node
+    from osf.utils.permissions import ADMIN_NODE
 
     if not user or user.is_anonymous:
         return None
 
-    node_qs = get_objects_for_user(user, 'admin_node', Node, with_superuser=False).exclude(is_deleted=True).values_list('id', flat=True)
+    node_qs = get_objects_for_user(user, ADMIN_NODE, Node, with_superuser=False).exclude(is_deleted=True).values_list('id', flat=True)
 
     drafts = DraftRegistration.objects.filter(
         approval=None,

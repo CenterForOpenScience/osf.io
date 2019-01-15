@@ -49,7 +49,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
-from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, READ_NODE, ADMIN
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -550,7 +550,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         from osf.models import AbstractNode
 
-        return get_objects_for_user(self, 'read_node', AbstractNode, with_superuser=False)
+        return get_objects_for_user(self, READ_NODE, AbstractNode, with_superuser=False)
 
     @property
     def contributor_or_group_member_to(self):
@@ -1416,7 +1416,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Returns projects that both self and other_user have in common; both are either contributors or group members
         """
-        return get_objects_for_user(other_user, 'read_node', self.contributor_or_group_member_to.filter(type__in=['osf.node'], is_deleted=False), with_superuser=False)
+        return get_objects_for_user(other_user, READ_NODE, self.contributor_or_group_member_to.filter(type='osf.node', is_deleted=False), with_superuser=False)
 
     def get_projects_in_common(self, other_user):
         """Returns either a collection of "shared projects" (projects that both users are contributors or group members for)
