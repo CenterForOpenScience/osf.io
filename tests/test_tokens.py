@@ -14,7 +14,7 @@ from framework.exceptions import HTTPError
 from website import settings
 from osf.models import AbstractNode, Embargo, RegistrationApproval, Retraction, Sanction
 from website.tokens import decode, encode, TokenHandler
-from website.tokens.exceptions import TokenHandlerNotFound
+from osf.exceptions import TokenHandlerNotFound
 
 NO_SANCTION_MSG = 'There is no {0} associated with this token.'
 APPROVED_MSG = 'This registration is not pending {0}.'

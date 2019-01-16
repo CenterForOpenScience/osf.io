@@ -265,3 +265,30 @@ class AddWaffleSwitches(Operation):
 
     def describe(self):
         return 'Adds waffle switches: {}'.format(', '.join(self.switch_names))
+
+
+class DeleteWaffleSwitches(Operation):
+    """Custom migration operation to delete waffle switches
+
+    Params:
+    - switch_names: iterable of strings, switch names to delete
+    """
+    reversible = True
+
+    def __init__(self, switch_names):
+        self.switch_names = switch_names
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        Switch = to_state.apps.get_model('waffle', 'switch')
+        Switch.objects.filter(name__in=self.switch_names).delete()
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        Switch = to_state.apps.get_model('waffle', 'switch')
+        for switch in self.switch_names:
+            Switch.objects.get_or_create(name=switch)
+
+    def describe(self):
+        return 'Removes waffle switches: {}'.format(', '.join(self.switch_names))
