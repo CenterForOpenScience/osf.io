@@ -13,6 +13,7 @@ from website import settings
 from website.util import api_v2_url
 
 from addons.base.utils import get_mfr_url
+
 from api.base.serializers import (
     FileCommentRelationshipField,
     format_relationship_links,
@@ -214,18 +215,8 @@ class BaseFileSerializer(JSONAPISerializer):
     def get_render_link(self, obj):
         if obj.is_file:
             mfr_url = get_mfr_url(obj.target, obj.provider)
-            render_url = furl.furl(mfr_url).set(
-                path=['render'],
-                args={
-                    'url': furl.furl(self.get_download_link(obj)).set(
-                        args={
-                            'direct': None,
-                            'mode': 'render',
-                        },
-                    ),
-                },
-            )
-            return render_url.url
+            download_url = self.get_download_link(obj)
+            return get_file_render_link(mfr_url, download_url)
 
     class Meta:
         type_ = 'files'
@@ -444,18 +435,9 @@ class FileVersionSerializer(JSONAPISerializer):
     def get_render_link(self, obj):
         file = self.context['file']
         mfr_url = get_mfr_url(file.target, file.provider)
-        render_url = furl.furl(mfr_url).set(
-            path=['render'],
-            args={
-                'url': furl.furl(self.get_download_link(obj)).set(
-                    args={
-                        'direct': None,
-                        'mode': 'render',
-                    },
-                ),
-            },
-        )
-        return render_url.url
+        download_url = self.get_download_link(obj)
+
+        return get_file_render_link(mfr_url, download_url, version=obj.identifier)
 
 
 def get_file_download_link(obj, version=None, view_only=None):
@@ -472,3 +454,22 @@ def get_file_download_link(obj, version=None, view_only=None):
     if view_only:
         url.args['view_only'] = view_only
     return url.url
+
+
+def get_file_render_link(mfr_url, download_url, version=None):
+    download_url_args = {
+        'direct': None,
+        'mode': 'render',
+    }
+    if version:
+        download_url_args['revision'] = version
+
+    render_url = furl.furl(mfr_url).set(
+        path=['render'],
+        args={
+            'url': furl.furl(download_url).set(
+                args=download_url_args,
+            ),
+        },
+    )
+    return render_url.url
