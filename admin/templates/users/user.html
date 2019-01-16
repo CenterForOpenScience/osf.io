@@ -39,6 +39,9 @@
     <div class="row">
         <div class="col-md-12">
             <div class="btn-group padded" role="group">
+                {% if not user.deleted %}
+                    <a href="{% url 'users:GDPR_delete' user.id %}" data-toggle="modal" data-target="#deleteModal" class="btn btn-danger">GDPR Delete Account</a>
+                {% endif %}
                 {% if not user.disabled %}
                     {% if user.requested_deactivation %}
                         <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger">Requested account deactivation</a>
@@ -107,6 +110,11 @@
                 </div>
             </div>
             <div class="modal" id="disableModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+            <div class="modal" id="deleteModal">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>
