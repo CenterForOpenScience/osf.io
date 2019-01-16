@@ -12,6 +12,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
+from django.contrib.messages.storage.fallback import FallbackStorage
 
 from tests.base import AdminTestCase
 from website import settings
@@ -132,6 +133,31 @@ class TestResetPasswordView(AdminTestCase):
 
         response = views.ResetPasswordView.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 200)
+
+
+class TestDeleteUser(AdminTestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.request = RequestFactory().post('/fake_path')
+        self.view = views.UserGDPRDeleteView
+        self.view = setup_log_view(self.view, self.request, guid=self.user._id)
+
+    def test_get_object(self):
+        obj = self.view().get_object()
+        nt.assert_is_instance(obj, OSFUser)
+
+    def test_gdpr_delete_user(self):
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+
+        count = AdminLogEntry.objects.count()
+        self.view().delete(self.request)
+        self.user.reload()
+        nt.assert_true(self.user.deleted)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
 
 class TestDisableUser(AdminTestCase):
