@@ -186,19 +186,14 @@ class UserSerializer(JSONAPISerializer):
 
     def get_preprint_count(self, obj):
         auth_user = get_user_auth(self.context['request']).user
-        query = Q(is_published=True, node__is_public=True)
+        query = Q(is_published=True, is_public=True)
         if auth_user:
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            reviews_user_query = Q(
-                node__is_public=True,
-                provider__in=get_objects_for_user(
-                    auth_user, 'view_submissions',
-                    PreprintProvider,
-                ),
-            )
+            admin_user_query = Q(_contributor__user_id=auth_user.id, _contributor__admin=True)
+            allowed_providers = get_objects_for_user(auth_user, 'view_submissions', PreprintProvider)
+            reviews_user_query = Q(is_public=True, provider__in=allowed_providers)
             query = query | admin_user_query | reviews_user_query
 
-        return Preprint.objects.filter(node___contributors__guids__id=obj.id, node__is_deleted=False).filter(query).count()
+        return Preprint.objects.filter(_contributors__id=obj.id, deleted__isnull=True).filter(query).count()
 
     def get_institutions_count(self, obj):
         return obj.affiliated_institutions.all().count()
