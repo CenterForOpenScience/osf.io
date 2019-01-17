@@ -44,7 +44,7 @@ def throttle_password_reset(user):
         wait_time = int(settings.TIME_RESET_SUBMIT_PASSWORD_TOKEN - time_since_throttle)
         error_data = {
             'message_short': 'Too Many Requests.',
-            'message_long': 'The you have entered an incorrect token, please wait {} seconds to retry.'.format(wait_time)
+            'message_long': 'You have entered an incorrect token, please wait {} seconds to retry.'.format(wait_time)
         }
         raise HTTPError(429, data=error_data)
     else:
