@@ -287,10 +287,7 @@ var ViewModel = function(params) {
             win.opener = null;
             win.focus();
         } else if (alias.name === 'preprint') {
-            win = window.open(
-                window.location.origin + '/preprints/discover?' + $.param(
-                    {q: self.query(), provider: 'OSF'}
-                ), '_blank');
+            win = window.open(window.location.origin + '/preprints/discover?' + $.param({q: self.query()}), '_blank');
             win.opener = null;
             win.focus();
         } else if (alias.name === 'institution') {
