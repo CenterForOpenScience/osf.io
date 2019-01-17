@@ -159,6 +159,34 @@ class TestDeleteUser(AdminTestCase):
         nt.assert_true(self.user.deleted)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
+    def test_no_user(self):
+        view = setup_view(views.UserGDPRDeleteView(), self.request, guid='meh')
+        with nt.assert_raises(Http404):
+            view.delete(self.request)
+
+    def test_no_user_permissions_raises_error(self):
+        user = UserFactory()
+        guid = user._id
+        request = RequestFactory().get(reverse('users:GDPR_delete', kwargs={'guid': guid}))
+        request.user = user
+
+        with self.assertRaises(PermissionDenied):
+            self.view.as_view()(request, guid=guid)
+
+    def test_correct_view_permissions(self):
+        user = UserFactory()
+        guid = user._id
+
+        change_permission = Permission.objects.get(codename='change_osfuser')
+        user.user_permissions.add(change_permission)
+        user.save()
+
+        request = RequestFactory().get(reverse('users:GDPR_delete', kwargs={'guid': guid}))
+        request.user = user
+
+        response = self.view.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 200)
+
 
 class TestDisableUser(AdminTestCase):
     def setUp(self):
