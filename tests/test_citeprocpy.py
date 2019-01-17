@@ -9,7 +9,7 @@ from osf.models import OSFUser
 
 class Node:
     _id = '2nthu'
-    csl = {'publisher': 'Open Science Framework', 'author': [{'given': u'Henrique', 'family': u'Harman'}],
+    csl = {'publisher': 'GakuNin RDM', 'author': [{'given': u'Henrique', 'family': u'Harman'}],
            'URL': 'localhost:5000/2nthu', 'issued': {'date-parts': [[2016, 12, 6]]},
            'title': u'The study of chocolate in its many forms', 'type': 'webpage', 'id': u'2nthu'}
     visible_contributors = ''

@@ -56,7 +56,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         name           type               description
         =========================================================================
         name           string             title of the institution
-        id             string             unique identifier in the OSF
+        id             string             unique identifier in the GakuNin RDM
         logo_path      string             a path to the institution's static logo
 
     #This Request/Response
@@ -96,7 +96,7 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
         name           type               description
         =========================================================================
         name           string             title of the institution
-        id             string             unique identifier in the OSF
+        id             string             unique identifier in the GakuNin RDM
         logo_path      string             a path to the institution's static logo
 
     ##Relationships
@@ -110,7 +110,7 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
     ##Links
 
         self:  the canonical api endpoint of this institution
-        html:  this institution's page on the OSF website
+        html:  this institution's page on the GakuNin RDM website
 
     #This Request/Response
 

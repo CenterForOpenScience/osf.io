@@ -271,7 +271,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
         # complete the OAuth flow using the logged-in user but their own account
         # on the external service.
         #
-        # If the OSF were to allow login via OAuth with the provider in question,
+        # If the GakuNin RDM were to allow login via OAuth with the provider in question,
         # this would allow attackers to hijack OSF accounts with a simple script
         # injection.
 
@@ -466,7 +466,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         #
         # Having only one ExternalAccount instance per account on the external
         # service means that connecting subsequent OSF users to the same external
-        # account will not invalidate the credentials used by the OSF for users
+        # account will not invalidate the credentials used by the GakuNin RDM for users
         # already associated.
         user_a = UserFactory()
         external_account = ExternalAccountFactory(

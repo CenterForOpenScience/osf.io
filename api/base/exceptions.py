@@ -52,7 +52,7 @@ def json_api_exception_handler(exc, context):
     # but if our frontend changes we may lose that protection.
     # TODO: write tests to ensure our html frontend strips html
 
-    # Import inside method to avoid errors when the OSF is loaded without Django
+    # Import inside method to avoid errors when the GakuNin RDM is loaded without Django
     from rest_framework.views import exception_handler
 
     response = exception_handler(exc, context)

@@ -86,7 +86,7 @@ class UserMixin(object):
 
 
 class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """List of users registered on the OSF.
+    """List of users registered on the GakuNin RDM.
 
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
     user, meaning additional requests to an individual user's detail view are not necessary.
@@ -193,7 +193,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     ##Links
 
         self:               the canonical api endpoint of this user
-        html:               this user's page on the OSF website
+        html:               this user's page on the GakuNin RDM website
         profile_image_url:  a url to the user's profile image
 
     ##Actions
@@ -377,7 +377,7 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
     ## ExternalAccount Attributes
 
     OSF ExternalAccount entities have the "external_accounts" `type`, with `id` indicating the
-    `external_account_id` according to the OSF
+    `external_account_id` according to the GakuNin RDM
 
         name            type        description
         =====================================================================================================
@@ -421,7 +421,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
     ## ExternalAccount Attributes
 
     OSF ExternalAccount entities have the "external_accounts" `type`, with `id` indicating the
-    `external_account_id` according to the OSF
+    `external_account_id` according to the GakuNin RDM
 
         name            type        description
         =====================================================================================================

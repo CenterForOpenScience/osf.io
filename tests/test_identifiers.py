@@ -61,7 +61,7 @@ class TestMetadataGeneration(OsfTestCase):
         assert_equal(len(creators.getchildren()), len(self.node.visible_contributors))
 
         publisher = root.find('{%s}publisher' % metadata.NAMESPACE)
-        assert_equal(publisher.text, 'Open Science Framework')
+        assert_equal(publisher.text, 'GakuNin RDM')
 
         pub_year = root.find('{%s}publicationYear' % metadata.NAMESPACE)
         assert_equal(pub_year.text, str(self.node.registered_date.year))

@@ -231,7 +231,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
             var ret = $.Deferred();
             bootbox.dialog({
                 title: 'Your Own License',
-                message: 'You have opted to use your own license. Please upload a license file named "license.txt" into the OSF Storage of this project.',
+                message: 'You have opted to use your own license. Please upload a license file named "license.txt" into the GakuNin RDM Storage of this project.',
                 buttons: {
                     cancel: {
                         label: 'Cancel',

@@ -109,7 +109,7 @@ var FolderPickerViewModel = oop.defclass({
                 return 'Successfully connected a ' + addonSafeName + ' account';
             }),
             connectAccountDenied: ko.pureComputed(function() {
-                return 'Error while authorizing addon. Please log in to your ' + addonSafeName + ' account and grant access to the OSF to enable this addon.';
+                return 'Error while authorizing addon. Please log in to your ' + addonSafeName + ' account and grant access to the GakuNin RDM to enable this addon.';
             }),
             submitSettingsSuccess: ko.pureComputed(function() {
                 throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +

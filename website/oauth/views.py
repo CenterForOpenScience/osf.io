@@ -61,7 +61,7 @@ def osf_oauth_callback(service_name, auth):
 def oauth_callback(service_name):
     # OSFAdmin
     osfadmin_callback_url = osfadmin_oauth_callback(service_name)
-    # if OAuth autherization failed on the OSFAdmin side,
+    # if OAuth autherization failed on the GakuNin RDM Admin side,
     # consider it that the request was for OSF.
     if osfadmin_callback_url:
         try:

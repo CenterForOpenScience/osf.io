@@ -153,7 +153,7 @@ def forgot_password_post():
     else:
         email = form.email.data
         status_message = ('If there is an OSF account associated with {0}, an email with instructions on how to '
-                          'reset the OSF password has been sent to {0}. If you do not receive an email and believe '
+                          'reset the GakuNin RDM password has been sent to {0}. If you do not receive an email and believe '
                           'you should have, please contact OSF Support. ').format(email)
         kind = 'success'
         # check if the user exists

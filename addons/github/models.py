@@ -77,7 +77,7 @@ class UserSettings(BaseOAuthUserSettings):
     def revoke_remote_oauth_access(self, external_account):
         """Overrides default behavior during external_account deactivation.
 
-        Tells GitHub to remove the grant for the OSF associated with this account.
+        Tells GitHub to remove the grant for the GakuNin RDM associated with this account.
         """
         connection = GitHubClient(external_account=external_account)
         try:

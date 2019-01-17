@@ -73,7 +73,7 @@ def export_metadata(node, current_dir):
 def export_files(node, user, current_dir):
     """
     Creates a "files" directory within the current directory.
-    Exports all of the OSFStorage files for a given node.
+    Exports all of the GakuNin RDM Storage files for a given node.
     Uses WB's download zip functionality to download osfstorage-archive.zip in a single request.
 
     """

@@ -32,7 +32,7 @@ class LogMixin(object):
 class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     """Details about a given Node Log. *Read-only*.
 
-     On the front end, logs show record and show actions done on the OSF. The complete list of loggable actions (in the format {identifier}: {description}) is as follows:
+     On the front end, logs show record and show actions done on the GakuNin RDM. The complete list of loggable actions (in the format {identifier}: {description}) is as follows:
 
     * 'project_created': A Node is created
     * 'project_registered': A Node is registered

@@ -11,7 +11,7 @@ The code for [https://rcos.nii.ac.jp](https://rcos.nii.ac.jp).
 
 ## More Resources
 
-## Running the OSF For Development
+## Running the GakuNin RDM For Development
 
 ---
 # OSF
@@ -20,9 +20,9 @@ The code for [https://osf.io](https://osf.io).
 
 - COS Development Docs: http://cosdev.readthedocs.org/
 
-## Running the OSF For Development
+## Running the GakuNin RDM For Development
 
-To run the OSF for local development, see [README-docker-compose.md](https://github.com/CenterForOpenScience/osf.io/blob/develop/README-docker-compose.md).
+To run the GakuNin RDM for local development, see [README-docker-compose.md](https://github.com/CenterForOpenScience/osf.io/blob/develop/README-docker-compose.md).
 
 ## More Resources
 

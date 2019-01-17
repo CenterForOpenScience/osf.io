@@ -704,9 +704,9 @@ var MyProjects = {
                         if (self.institutionId) {
                             template = m('.db-non-load-template.m-md.p-md.osf-box',
                                 'There have been no completed registrations for this institution, but you can view the ',
-                                m('a', {href: 'https://osf.io/explore/activity/#newPublicRegistrations'}, 'newest public registrations'),
+                                m('a', {href: 'https://rdm.nii.ac.jp/explore/activity/#newPublicRegistrations'}, 'newest public registrations'),
                                 ' or ',
-                                m('a', {href: 'https://osf.io/explore/activity/#popularPublicRegistrations'}, 'popular public registrations.'));
+                                m('a', {href: 'https://rdm.nii.ac.jp/explore/activity/#popularPublicRegistrations'}, 'popular public registrations.'));
                         } else {
                             template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not made any registrations yet. Go to ',

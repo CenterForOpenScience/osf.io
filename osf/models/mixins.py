@@ -502,7 +502,7 @@ class CommentableMixin(object):
 
     @property
     def target_type(self):
-        """ The object "type" used in the OSF v2 API. E.g. Comment objects have the type 'comments'."""
+        """ The object "type" used in the GakuNin RDM v2 API. E.g. Comment objects have the type 'comments'."""
         raise NotImplementedError
 
     @property

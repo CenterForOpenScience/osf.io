@@ -36,9 +36,9 @@ class ConferenceManager(models.Manager):
 
 
 class Conference(ObjectIDMixin, BaseModel):
-    #: Determines the email address for submission and the OSF url
+    #: Determines the email address for submission and the GakuNin RDM url
     # Example: If endpoint is spsp2014, then submission email will be
-    # spsp2014-talk@osf.io or spsp2014-poster@osf.io and the OSF url will
+    # spsp2014-talk@osf.io or spsp2014-poster@osf.io and the GakuNin RDM url will
     # be osf.io/view/spsp2014
     endpoint = models.CharField(max_length=255, unique=True, db_index=True)
     #: Full name, e.g. "SPSP 2014"
@@ -74,7 +74,7 @@ class Conference(ObjectIDMixin, BaseModel):
         return cls.objects.get_by_endpoint(endpoint, active)
 
     class Meta:
-        # custom permissions for use in the OSF Admin App
+        # custom permissions for use in the GakuNin RDM Admin App
         permissions = (
             ('view_conference', 'Can view conference details in the admin app.'),
         )

@@ -48,7 +48,7 @@ commit()
 1. Download ngrok (partially free, but TLS requires [subscription](https://ngrok.com/product#pricing))
 2. Run with `ngrok tls -subdomain=openscience 5000`
   * `-subdomain` can be something other than `openscience`
-  * this assumes you have the OSF running with https enabled
+  * this assumes you have the GakuNin RDM running with https enabled
 3. Copy addons/figshare/settings/defaults.py to addons/figshare/settings/local.py
 4. Go to [figshare](http://figshare.com), create an account, and login
 5. Click the dropdown with your name and select **Applications** and click **Create application**

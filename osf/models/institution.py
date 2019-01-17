@@ -54,7 +54,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     is_deleted = models.BooleanField(default=False, db_index=True)
 
     class Meta:
-        # custom permissions for use in the OSF Admin App
+        # custom permissions for use in the GakuNin RDM Admin App
         permissions = (
             ('view_institution', 'Can view institution details'),
         )

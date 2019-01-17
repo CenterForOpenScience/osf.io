@@ -159,10 +159,10 @@ SENDGRID_EMAIL_WHITELIST = []
 MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
 ENABLE_EMAIL_SUBSCRIPTIONS = True
-MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
+MAILCHIMP_GENERAL_LIST = 'GakuNin RDM General'
 
 #Triggered emails
-OSF_HELP_LIST = 'Open Science Framework Help'
+OSF_HELP_LIST = 'GakuNin RDM Help'
 PREREG_AGE_LIMIT = timedelta(weeks=12)
 PREREG_WAIT_TIME = timedelta(weeks=2)
 WAIT_BETWEEN_MAILS = timedelta(days=7)
