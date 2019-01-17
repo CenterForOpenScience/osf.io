@@ -222,7 +222,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
     ##Links
 
         self:  the canonical api endpoint of this node
-        html:  this node's page on the OSF website
+        html:  this node's page on the GakuNin RDM website
 
     ##Actions
 

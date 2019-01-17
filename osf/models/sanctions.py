@@ -370,7 +370,7 @@ class PreregCallbackMixin(object):
         if registration.registered_schema.filter(pk=prereg_schema.pk).exists():
             return {
                 'custom_message':
-                    ' as part of the Preregistration Challenge (https://cos.io/prereg)'
+                    ' as part of the Preregistration Challenge (https://nii.ac.jp/prereg)'
             }
         else:
             return {}

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Views tests for the OSF."""
+"""Views tests for the GakuNin RDM."""
 
 from __future__ import absolute_import
 
@@ -4163,8 +4163,8 @@ class TestConfigureMailingListViews(OsfTestCase):
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_mailchimp_webhook_subscribe_action_does_not_change_user(self, mock_get_mailchimp_api):
-        """ Test that 'subscribe' actions sent to the OSF via mailchimp
-            webhooks update the OSF database.
+        """ Test that 'subscribe' actions sent to the GakuNin RDM via mailchimp
+            webhooks update the GakuNin RDM database.
         """
         list_id = '12345'
         list_name = 'OSF General'
@@ -4189,13 +4189,13 @@ class TestConfigureMailingListViews(OsfTestCase):
                             content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
-        # user field is updated on the OSF
+        # user field is updated on the GakuNin RDM
         user.reload()
         assert_true(user.mailchimp_mailing_lists[list_name])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_mailchimp_webhook_profile_action_does_not_change_user(self, mock_get_mailchimp_api):
-        """ Test that 'profile' actions sent to the OSF via mailchimp
+        """ Test that 'profile' actions sent to the GakuNin RDM via mailchimp
             webhooks do not cause any database changes.
         """
         list_id = '12345'
@@ -4251,7 +4251,7 @@ class TestConfigureMailingListViews(OsfTestCase):
                             content_type='application/x-www-form-urlencoded',
                             auth=user.auth)
 
-        # user field is updated on the OSF
+        # user field is updated on the GakuNin RDM
         user.reload()
         assert_false(user.mailchimp_mailing_lists[list_name])
 
@@ -4868,7 +4868,7 @@ class TestResolveGuid(OsfTestCase):
 
 
     def test_preprint_provider_with_osf_domain(self):
-        provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
+        provider = PreprintProviderFactory(_id='osf', domain='https://rdm.nii.ac.jp/')
         preprint = PreprintFactory(provider=provider)
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)

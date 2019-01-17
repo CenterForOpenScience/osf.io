@@ -370,7 +370,7 @@ def resolve_guid(guid, suffix=None):
 
 # redirect osf.io/about/ to OSF wiki page osf.io/4znzp/wiki/home/
 def redirect_about(**kwargs):
-    return redirect('https://osf.io/4znzp/wiki/home/')
+    return redirect('https://rdm.nii.ac.jp/4znzp/wiki/home/')
 
 def redirect_help(**kwargs):
     return redirect('/faq/')
@@ -395,7 +395,7 @@ def redirect_to_home():
 
 def redirect_to_cos_news(**kwargs):
     # Redirect to COS News page
-    return redirect('https://cos.io/news/')
+    return redirect('https://nii.ac.jp/news/')
 
 
 # Return error for legacy SHARE v1 search route

@@ -92,7 +92,7 @@ def get_dataset(dataverse, doi):
         if dataset and dataset.get_state() == 'DEACCESSIONED':
             raise HTTPError(http.GONE, data=dict(
                 message_short='Dataset deaccessioned',
-                message_long='This dataset has been deaccessioned and can no longer be linked to the OSF.'
+                message_long='This dataset has been deaccessioned and can no longer be linked to the GakuNin RDM.'
             ))
         return dataset
     except UnicodeDecodeError:

@@ -124,7 +124,7 @@ NO_ADDON = {
 
 NO_LOGIN = {
     'template': 'no_login',
-    'subject': 'What you\'re missing on the OSF',
+    'subject': 'What you\'re missing on the GakuNin RDM',
     'presend': presends.no_login,
     'categories': ['engagement', 'engagement-no-login'],
     'engagement': True
@@ -140,7 +140,7 @@ NEW_PUBLIC_PROJECT = {
 
 PREREG_REMINDER = {
     'template': 'prereg_reminder',
-    'subject': 'Reminder: Your draft preregistration on the OSF is not yet finished',
+    'subject': 'Reminder: Your draft preregistration on the GakuNin RDM is not yet finished',
     'presend': presends.prereg_reminder,
     'categories': ['engagement', 'engagement-prereg-challenge']
 }

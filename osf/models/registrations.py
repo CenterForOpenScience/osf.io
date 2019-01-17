@@ -385,7 +385,7 @@ class Registration(AbstractNode):
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
 
     class Meta:
-        # custom permissions for use in the OSF Admin App
+        # custom permissions for use in the GakuNin RDM Admin App
         permissions = (
             ('view_registration', 'Can view registration details'),
         )

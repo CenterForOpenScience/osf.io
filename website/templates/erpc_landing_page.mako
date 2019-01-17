@@ -19,10 +19,10 @@
         Please note that many studies created as part of this competition will remain private for up to four years from the date of creation.
     </p>
     <br>
-    <p>A blank version of the Election Research Preacceptance Competition form is available <a href="https://osf.io/pu4xc/">here</a>. </p>
+    <p>A blank version of the Election Research Preacceptance Competition form is available <a href="https://rdm.nii.ac.jp/pu4xc/">here</a>. </p>
     <br>
     <p>If you'd like to preregister another study, please see the Preregistration Challenge
-        <a href="https://cos.io/prereg/">information page</a> or get started on your next preregistration
+        <a href="https://nii.ac.jp/prereg/">information page</a> or get started on your next preregistration
         <a href="https://rdm.nii.ac.jp/prereg/">now</a>.
     </p>
 

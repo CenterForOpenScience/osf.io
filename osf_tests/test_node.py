@@ -3209,7 +3209,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'OSF',
+                'publisher': 'GakuNin RDM',
                 'author': [{
                     'given': node.creator.given_name,
                     'family': node.creator.family_name,
@@ -3231,7 +3231,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'OSF',
+                'publisher': 'GakuNin RDM',
                 'author': [
                     {
                         'given': node.creator.given_name,

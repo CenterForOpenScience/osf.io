@@ -412,7 +412,7 @@ def root(request, format=None, **kwargs):
     kwargs = request.parser_context['kwargs']
     return_val = {
         'meta': {
-            'message': 'Welcome to the OSF API.',
+            'message': 'Welcome to the GakuNin RDM API.',
             'version': request.version,
             'current_user': current_user,
             'active_flags': flags,

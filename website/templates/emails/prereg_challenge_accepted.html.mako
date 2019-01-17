@@ -15,10 +15,10 @@ What happens now?
 <strong>Publish your study:</strong> The published study must appear online by December 31, 2018.
 <br />
 <br />
-<strong>Reminders:</strong> Any deviations from your preregistration (e.g. sample size, timing, analysis) must be documented and appear in the final publication. Any additional analyses must be noted separately from the registered, confirmatory, hypothesis testing analyses. Such new analyses must be described as hypothesis generating or exploratory tests. You must also refer to your preregistration in the publication by using its URL: <a href="${registration_url}">${registration_url}</a>. Publication must occur in an <a href="https://cos.io/preregjournals">eligible journal</a>.
+<strong>Reminders:</strong> Any deviations from your preregistration (e.g. sample size, timing, analysis) must be documented and appear in the final publication. Any additional analyses must be noted separately from the registered, confirmatory, hypothesis testing analyses. Such new analyses must be described as hypothesis generating or exploratory tests. You must also refer to your preregistration in the publication by using its URL: <a href="${registration_url}">${registration_url}</a>. Publication must occur in an <a href="https://nii.ac.jp/preregjournals">eligible journal</a>.
 <br />
 <br />
-<strong>Submit your article for review:</strong> We will review your final, published article once you submit it on the GakuNin RDM. We will verify that your study and its analyses were conducted as specified in your preregistration. In order to avoid any unintended oversights, please reach out to us (<a href="mailto:prereg@cos.io">prereg@cos.io</a>) and refer to our guidelines and FAQ on our <a href="https://cos.io/prereg">website</a> when writing up your results.
+<strong>Submit your article for review:</strong> We will review your final, published article once you submit it on the GakuNin RDM. We will verify that your study and its analyses were conducted as specified in your preregistration. In order to avoid any unintended oversights, please reach out to us (<a href="mailto:prereg@cos.io">prereg@cos.io</a>) and refer to our guidelines and FAQ on our <a href="https://nii.ac.jp/prereg">website</a> when writing up your results.
 <br />
 <br />
 <strong>Receive the prize!</strong> $1,000 rewards will be distributed to eligible entrants according to the schedule on our website.

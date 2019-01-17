@@ -82,7 +82,7 @@ def setup_django():
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
              attach_request_handlers=True):
-    """Initializes the OSF. A sort of pseudo-app factory that allows you to
+    """Initializes the GakuNin RDM. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
 

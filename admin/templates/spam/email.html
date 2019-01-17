@@ -4,7 +4,7 @@
 </div>
 <div class="modal-body">
     <p>Dear {{ spam.author.fullname }},</p>
-    <p>A comment you made on an Open Science Framework (OSF) project
+    <p>A comment you made on an GakuNin RDM (GRDM) project
         [<a href="{{ spam.node.absolute_url }}">{{ spam.node.absolute_url }}</a>]
         has been reported as
         {% if spam.category == 'hate' %}
@@ -15,7 +15,7 @@
             spam
         {% endif %}
         Our team reviewed your comment and found it to be in violation
-        of the OSF Terms of Service:
+        of the GakuNin RDM Terms of Service:
         <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">
             https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md
         </a>.

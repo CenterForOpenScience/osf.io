@@ -97,7 +97,7 @@ hmmmmmmo+++++++.                .++++++++dmmmmmd`
                     /mmmmmmmmh`
                     `+shhyo:
     """
-    greeting = 'Welcome to the OSF Shell. Happy hacking!'
+    greeting = 'Welcome to the GakuNin RDM Shell. Happy hacking!'
     imported_objects = format_imported_objects(**kwargs)
     transaction_warning = """
 *** TRANSACTION AUTOMATICALLY STARTED ***

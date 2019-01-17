@@ -3,23 +3,23 @@
         "GitHub": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making a GitHub repo public or private. The OSF does not alter the permissions of linked GitHub repos."
+                "text": "Making an GakuNin RDM project public or private is independent of making a GitHub repo public or private. The GakuNin RDM does not alter the permissions of linked GitHub repos."
             },
             "View / download file versions": {
                 "status": "full",
-                "text": "GitHub files and their versions can be viewed/downloaded via OSF."
+                "text": "GitHub files and their versions can be viewed/downloaded via GakuNin RDM."
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in GitHub."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in GitHub."
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in GitHub."
+                "text": "Files deleted via GakuNin RDM will be deleted in GitHub."
             },
             "Logs": {
                 "status": "full",
-                "text": "GitHub dynamically updates OSF logs when files are modified outside the OSF. Changes to GitHub repos made before the repo is linked to the OSF will not be reflected in OSF logs."
+                "text": "GitHub dynamically updates GakuNin RDM logs when files are modified outside the GakuNin RDM. Changes to GitHub repos made before the repo is linked to the GakuNin RDM will not be reflected in GakuNin RDM logs."
             },
             "Forking": {
                 "status": "partial",
@@ -33,23 +33,23 @@
         "GitLab": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making a GitLab repo public or private. The OSF does not alter the permissions of linked GitLab repos."
+                "text": "Making an GakuNin RDM project public or private is independent of making a GitLab repo public or private. The GakuNin RDM does not alter the permissions of linked GitLab repos."
             },
             "View / download file versions": {
                 "status": "full",
-                "text": "GitLab files and their versions can be viewed/downloaded via OSF."
+                "text": "GitLab files and their versions can be viewed/downloaded via GakuNin RDM."
             },
             "Add / update files": {
                 "status": "none",
-                "text": "Adding/updating files in the project via OSF is not implemented yet."
+                "text": "Adding/updating files in the project via GakuNin RDM is not implemented yet."
             },
             "Delete files": {
                 "status": "none",
-                "text": "Deleting files via OSF is not implemented yet."
+                "text": "Deleting files via GakuNin RDM is not implemented yet."
             },
             "Logs": {
                 "status": "none",
-                "text": "OSF does not keep track of changes made using Gitlab directly."
+                "text": "GakuNin RDM does not keep track of changes made using Gitlab directly."
             },
             "Forking": {
                 "status": "partial",
@@ -63,7 +63,7 @@
         "Amazon S3": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making an S3 bucket public or private. The OSF does not alter the permissions of linked S3 buckets."
+                "text": "Making an GakuNin RDM project public or private is independent of making an S3 bucket public or private. The GakuNin RDM does not alter the permissions of linked S3 buckets."
             },
             "View / download file versions": {
                 "status": "partial",
@@ -71,15 +71,15 @@
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in Amazon S3."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Amazon S3."
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in Amazon S3."
+                "text": "Files deleted via GakuNin RDM will be deleted in Amazon S3."
             },
             "Logs": {
                 "status": "partial",
-                "text": "The OSF keeps track of changes you make to your S3 buckets through the OSF, but not for changes made using S3 directly."
+                "text": "The GakuNin RDM keeps track of changes you make to your S3 buckets through the GakuNin RDM, but not for changes made using S3 directly."
             },
             "Forking": {
                 "status": "partial",
@@ -93,11 +93,11 @@
         "figshare": {
             "Permissions": {
                 "status": "partial",
-                "text": " Making an OSF project public or private is independent of making figshare content public or private. The OSF does not alter the permissions of linked figshare content."
+                "text": " Making an GakuNin RDM project public or private is independent of making figshare content public or private. The GakuNin RDM does not alter the permissions of linked figshare content."
             },
             "View / download file versions": {
                 "status": "partial",
-                "text": "figshare files can be viewed/downloaded via OSF, but version history is not supported."
+                "text": "figshare files can be viewed/downloaded via GakuNin RDM, but version history is not supported."
             },
             "Add / update files": {
                 "status": "partial",
@@ -105,11 +105,11 @@
             },
             "Delete files": {
                 "status": "partial",
-                "text": "Private files and filesets can be deleted via OSF."
+                "text": "Private files and filesets can be deleted via GakuNin RDM."
             },
             "Logs": {
                 "status": "partial",
-                "text": "OSF keeps track of changes you make to your figshare content through OSF, but not for changes made using figshare directly."
+                "text": "GakuNin RDM keeps track of changes you make to your figshare content through GakuNin RDM, but not for changes made using figshare directly."
             },
             "Forking": {
                 "status": "partial",
@@ -123,23 +123,23 @@
         "Dropbox": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of Dropbox privacy. The OSF does not alter the permissions of linked Dropbox folders."
+                "text": "Making an GakuNin RDM project public or private is independent of Dropbox privacy. The GakuNin RDM does not alter the permissions of linked Dropbox folders."
             },
             "View / download file versions": {
                 "status": "full",
-                "text": "Dropbox files and their versions can be viewed/downloaded via OSF."
+                "text": "Dropbox files and their versions can be viewed/downloaded via GakuNin RDM."
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in Dropbox."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Dropbox."
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in Dropbox."
+                "text": "Files deleted via GakuNin RDM will be deleted in Dropbox."
             },
             "Logs": {
                 "status": "partial",
-                "text": "OSF keeps track of changes you make to your Dropbox content through OSF, but not for changes made using Dropbox directly."
+                "text": "GakuNin RDM keeps track of changes you make to your Dropbox content through GakuNin RDM, but not for changes made using Dropbox directly."
             },
             "Forking": {
                 "status": "partial",
@@ -153,11 +153,11 @@
         "OneDrive": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of OneDrive privacy. The OSF does not alter the permissions of linked OneDrive folders."
+                "text": "Making an GakuNin RDM project public or private is independent of OneDrive privacy. The GakuNin RDM does not alter the permissions of linked OneDrive folders."
             },
             "View / download file versions": {
                 "status": "full",
-                "text": "OneDrive files and their versions can be viewed/downloaded via OSF.  OneNote files are unexportable and cannot be downloaded or viewed."
+                "text": "OneDrive files and their versions can be viewed/downloaded via GakuNin RDM.  OneNote files are unexportable and cannot be downloaded or viewed."
             },
             "Add / update files": {
                 "status": "none",
@@ -169,7 +169,7 @@
             },
             "Logs": {
                 "status": "partial",
-                "text": "OSF keeps track of changes you make to your OneDrive add-on configuration.  It does not track changes to OneDrive content."
+                "text": "GakuNin RDM keeps track of changes you make to your OneDrive add-on configuration.  It does not track changes to OneDrive content."
             },
             "Forking": {
                 "status": "partial",
@@ -183,23 +183,23 @@
         "Dataverse": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making a Dataverse study public or private. The OSF allows you to release the latest draft version of a Dataverse dataset."
+                "text": "Making an GakuNin RDM project public or private is independent of making a Dataverse study public or private. The GakuNin RDM allows you to release the latest draft version of a Dataverse dataset."
             },
             "View / download file versions": {
                 "status": "partial",
-                "text": "Files from the latest release of the selected Dataverse study can be viewed/downloaded. OSF users with write permissions can view/download draft files as well."
+                "text": "Files from the latest release of the selected Dataverse study can be viewed/downloaded. GakuNin RDM users with write permissions can view/download draft files as well."
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in Dataverse."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Dataverse."
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in Dataverse."
+                "text": "Files deleted via GakuNin RDM will be deleted in Dataverse."
             },
             "Logs": {
                 "status": "partial",
-                "text": "The OSF keeps track of changes you make to your Dataverse studies through the OSF, but not for changes made using Dataverse directly."
+                "text": "The GakuNin RDM keeps track of changes you make to your Dataverse studies through the GakuNin RDM, but not for changes made using Dataverse directly."
             },
             "Forking": {
                 "status": "partial",
@@ -213,23 +213,23 @@
         "Google Drive": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of Google Drive privacy. The OSF does not alter the permissions of linked Google Drive folders."
+                "text": "Making an GakuNin RDM project public or private is independent of Google Drive privacy. The GakuNin RDM does not alter the permissions of linked Google Drive folders."
             },
             "View / download file versions": {
                 "status": "full",
-                "text": "Google Drive files and their versions can be viewed/downloaded via OSF."
+                "text": "Google Drive files and their versions can be viewed/downloaded via GakuNin RDM."
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in Google Drive."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Google Drive."
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in Google Drive."
+                "text": "Files deleted via GakuNin RDM will be deleted in Google Drive."
             },
             "Logs": {
                 "status": "partial",
-                "text": "The OSF keeps track of changes you make to your Google Drive content through the OSF, but not for changes made using Google Drive directly."
+                "text": "The GakuNin RDM keeps track of changes you make to your Google Drive content through the GakuNin RDM, but not for changes made using Google Drive directly."
             },
             "Forking": {
                 "status": "partial",
@@ -243,23 +243,23 @@
         "Box": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of Box privacy. The OSF does not alter the permissions of linked Box folders."
+                "text": "Making an GakuNin RDM project public or private is independent of Box privacy. The GakuNin RDM does not alter the permissions of linked Box folders."
             },
             "View / download file versions": {
                 "status": "full",
-                "text": "Box files and their versions can be viewed/downloaded via OSF."
+                "text": "Box files and their versions can be viewed/downloaded via GakuNin RDM."
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in Box."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Box."
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in Box."
+                "text": "Files deleted via GakuNin RDM will be deleted in Box."
             },
             "Logs": {
                 "status": "partial",
-                "text": "The OSF keeps track of changes you make to your Box content through the OSF, but not for changes made using Box directly."
+                "text": "The GakuNin RDM keeps track of changes you make to your Box content through the GakuNin RDM, but not for changes made using Box directly."
             },
             "Forking": {
                 "status": "partial",
@@ -273,7 +273,7 @@
         "Mendeley": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making a Mendeley folder public or private. The OSF does not alter the permissions of a linked Mendeley folder."
+                "text": "Making an GakuNin RDM project public or private is independent of making a Mendeley folder public or private. The GakuNin RDM does not alter the permissions of a linked Mendeley folder."
             },
             "View / download file versions": {
                 "status": "NA"
@@ -299,23 +299,23 @@
         "ownCloud": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of ownCloud privacy. The OSF does not alter the permissions of linked ownCloud folders."
+                "text": "Making an GakuNin RDM project public or private is independent of ownCloud privacy. The GakuNin RDM does not alter the permissions of linked ownCloud folders."
             },
             "View / download file versions": {
                 "status": "partial",
-                "text": "ownCloud files can be viewed/downloaded via OSF, but version history is not supported by the ownCloud WebDAV API."
+                "text": "ownCloud files can be viewed/downloaded via GakuNin RDM, but version history is not supported by the ownCloud WebDAV API."
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in ownCloud."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in ownCloud."
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in ownCloud."
+                "text": "Files deleted via GakuNin RDM will be deleted in ownCloud."
             },
             "Logs": {
                 "status": "partial",
-                "text": "OSF keeps track of changes you make to your ownCloud content through OSF, but not for changes made using ownCloud directly."
+                "text": "GakuNin RDM keeps track of changes you make to your ownCloud content through GakuNin RDM, but not for changes made using ownCloud directly."
             },
             "Forking": {
                 "status": "partial",
@@ -329,7 +329,7 @@
         "Zotero": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making a Zotero folder public or private. The OSF does not alter the permissions of a linked Zotero folder."
+                "text": "Making an GakuNin RDM project public or private is independent of making a Zotero folder public or private. The GakuNin RDM does not alter the permissions of a linked Zotero folder."
             },
             "View / download file versions": {
                 "status": "NA"
@@ -355,11 +355,11 @@
         "Bitbucket": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making a Bitbucket repo public or private. The OSF does not alter the permissions of linked Bitbucket repos."
+                "text": "Making an GakuNin RDM project public or private is independent of making a Bitbucket repo public or private. The GakuNin RDM does not alter the permissions of linked Bitbucket repos."
             },
             "View / download file versions": {
                 "status": "full",
-                "text": "Bitbucket files and their versions can be viewed/downloaded via OSF."
+                "text": "Bitbucket files and their versions can be viewed/downloaded via GakuNin RDM."
             },
             "Add / update files": {
                 "status": "none",
@@ -371,7 +371,7 @@
             },
             "Logs": {
                 "status": "full",
-                "text": "OSF keeps track of changes you make to your Bitbucket content through OSF, but not for changes made using Bitbucket directly."
+                "text": "GakuNin RDM keeps track of changes you make to your Bitbucket content through GakuNin RDM, but not for changes made using Bitbucket directly."
             },
             "Forking": {
                 "status": "partial",
@@ -385,7 +385,7 @@
         "OpenStack Swift": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making an Swift container public or private."
+                "text": "Making an GakuNin RDM project public or private is independent of making an Swift container public or private."
             },
             "View / download file versions": {
                 "status": "partial",
@@ -393,15 +393,15 @@
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in Swift."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Swift."
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in Swift."
+                "text": "Files deleted via GakuNin RDM will be deleted in Swift."
             },
             "Logs": {
                 "status": "partial",
-                "text": "The OSF keeps track of changes you make to your Swift containers through the OSF, but not for changes made using Swift directly."
+                "text": "The GakuNin RDM keeps track of changes you make to your Swift containers through the GakuNin RDM, but not for changes made using Swift directly."
             },
             "Forking": {
                 "status": "partial",
@@ -415,7 +415,7 @@
         "Azure Blob Storage": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making an Azure Blob Storage container public or private."
+                "text": "Making an GakuNin RDM project public or private is independent of making an Azure Blob Storage container public or private."
             },
             "View / download file versions": {
                 "status": "partial",
@@ -423,15 +423,15 @@
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in Azure Blob Storage."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Azure Blob Storage."
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in Azure Blob Storage."
+                "text": "Files deleted via GakuNin RDM will be deleted in Azure Blob Storage."
             },
             "Logs": {
                 "status": "partial",
-                "text": "The OSF keeps track of changes you make to your Azure Blob Storage containers through the OSF, but not for changes made using Azure Blob Storage directly."
+                "text": "The GakuNin RDM keeps track of changes you make to your Azure Blob Storage containers through the GakuNin RDM, but not for changes made using Azure Blob Storage directly."
             },
             "Forking": {
                 "status": "partial",
@@ -451,15 +451,15 @@
             },
             "Add / update files": {
                 "status": "partial",
-                "text": "Adding/updating indices/items in the project via OSF will be reflected in WEKO."
+                "text": "Adding/updating indices/items in the project via GakuNin RDM will be reflected in WEKO."
             },
             "Delete files": {
                 "status": "partial",
-                "text": "Items deleted via OSF will be deleted in WEKO."
+                "text": "Items deleted via GakuNin RDM will be deleted in WEKO."
             },
             "Logs": {
                 "status": "partial",
-                "text": "The OSF keeps track of changes you make to your WEKO index through the OSF, but not for changes made using WEKO directly."
+                "text": "The GakuNin RDM keeps track of changes you make to your WEKO index through the GakuNin RDM, but not for changes made using WEKO directly."
             },
             "Forking": {
                 "status": "partial",
@@ -477,7 +477,7 @@
             },
             "Logs": {
                 "status": "partial",
-                "text": "The OSF keeps track of changes you make to your S3 Compatible Storage buckets through the OSF, but not for changes made using S3 Compatible Storage directly."
+                "text": "The GakuNin RDM keeps track of changes you make to your S3 Compatible Storage buckets through the GakuNin RDM, but not for changes made using S3 Compatible Storage directly."
             },
             "Registering": {
                 "status": "partial",
@@ -485,7 +485,7 @@
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in S3 Compatible Storage."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in S3 Compatible Storage."
             },
             "View / download file versions": {
                 "status": "partial",
@@ -493,17 +493,17 @@
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in S3 Compatible Storage."
+                "text": "Files deleted via GakuNin RDM will be deleted in S3 Compatible Storage."
             },
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making an S3 Compatible Storage bucket public or private. The OSF does not alter the permissions of linked S3 Compatible Storage buckets."
+                "text": "Making an GakuNin RDM project public or private is independent of making an S3 Compatible Storage bucket public or private. The GakuNin RDM does not alter the permissions of linked S3 Compatible Storage buckets."
             }
         },
         "JupyterHub": {
             "Permissions": {
                 "status": "none",
-                "text": "The OSF does not affect the permissions of JupyterHub."
+                "text": "The GakuNin RDM does not affect the permissions of JupyterHub."
             },
             "View / download file versions": {
                 "status": "none",
@@ -523,7 +523,7 @@
             },
             "Forking": {
                 "status": "partial",
-                "text": "Forking a project or component copies information about linked JupyterHub but the OSF does not affect authentication of JupyterHub."
+                "text": "Forking a project or component copies information about linked JupyterHub but the GakuNin RDM does not affect authentication of JupyterHub."
             },
             "Registering": {
                 "status": "none",
@@ -537,7 +537,7 @@
             },
             "Logs": {
                 "status": "partial",
-                "text": "OSF keeps track of changes you make to your Nextcloud content through OSF, but not for changes made using Nextcloud directly."
+                "text": "GakuNin RDM keeps track of changes you make to your Nextcloud content through GakuNin RDM, but not for changes made using Nextcloud directly."
             },
             "Registering": {
                 "status": "partial",
@@ -545,24 +545,24 @@
             },
             "Add / update files": {
                 "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in Nextcloud."
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Nextcloud."
             },
             "View / download file versions": {
                 "status": "partial",
-                "text": "Nextcloud files can be viewed/downloaded via OSF, but version history is not supported by the Nextcloud WebDAV API."
+                "text": "Nextcloud files can be viewed/downloaded via GakuNin RDM, but version history is not supported by the Nextcloud WebDAV API."
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via OSF will be deleted in Nextcloud."
+                "text": "Files deleted via GakuNin RDM will be deleted in Nextcloud."
             },
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of Nextcloud privacy. The OSF does not alter the permissions of linked Nextcloud folders."
+                "text": "Making an GakuNin RDM project public or private is independent of Nextcloud privacy. The GakuNin RDM does not alter the permissions of linked Nextcloud folders."
             }
         }
     },
     "disclaimers": [
-        "This add-on connects your OSF project to an external service. Use of this service is bound by its terms and conditions. The OSF is not responsible for the service or for your use thereof.",
-        "This add-on allows you to store files using an external service. Files added to this add-on are not stored within the OSF."
+        "This add-on connects your GakuNin RDM project to an external service. Use of this service is bound by its terms and conditions. The GakuNin RDM is not responsible for the service or for your use thereof.",
+        "This add-on allows you to store files using an external service. Files added to this add-on are not stored within the GakuNin RDM."
     ]
 }

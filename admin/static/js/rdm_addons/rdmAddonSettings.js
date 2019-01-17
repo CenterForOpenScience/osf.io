@@ -94,14 +94,14 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             self.updateAccounts().done( function() {
                 if (self.accounts().length > 0 && self.accounts().length >= accountCount) {  // If there's more than 1 and the count stays the same, probably reauthorizing
                     if (self.name === 'dropbox') {
-                        self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of dropbox.com before attempting to connect to a second Dropbox account on the OSF. This will clear the credentials stored in your browser.', 'text-success');
+                        self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of dropbox.com before attempting to connect to a second Dropbox account on the GakuNin RDM. This will clear the credentials stored in your browser.', 'text-success');
                     } else if (self.name === 'bitbucket') {
-                        self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of bitbucket.org before attempting to connect to a second Bitbucket account on the OSF. This will clear the credentials stored in your browser.', 'text-success');
+                        self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of bitbucket.org before attempting to connect to a second Bitbucket account on the GakuNin RDM. This will clear the credentials stored in your browser.', 'text-success');
                     } else {
                         self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', 'text-success');
                     }
                 } else {
-                    self.setMessage('Error while authorizing add-on. Please log in to your ' + self.properName + ' account and grant access to the OSF to enable this add-on.', 'text-danger');
+                    self.setMessage('Error while authorizing add-on. Please log in to your ' + self.properName + ' account and grant access to the GakuNin RDM to enable this add-on.', 'text-danger');
                 }
             });
         };

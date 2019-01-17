@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 # OSF preprint provider used for initial subject creation
 OSF_PROVIDER_DATA = {
     '_id': 'osf',
-    'name': 'Open Science Framework',
+    'name': 'GakuNin RDM',
     'domain': settings.DOMAIN,
     'domain_redirect_enabled': False,
     'default_license': 'CC0 1.0 Universal',

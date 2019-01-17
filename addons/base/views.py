@@ -57,7 +57,7 @@ ERROR_MESSAGES = {'FILE_GONE': u"""
 </style>
 <div class="alert alert-info" role="alert">
 <p>
-The file "{file_name}" stored on {provider} was deleted via the OSF.
+The file "{file_name}" stored on {provider} was deleted via the GakuNin RDM.
 </p>
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
@@ -68,7 +68,7 @@ It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
 </style>
 <div class="alert alert-info" role="alert">
 <p>
-The file "{file_name}" stored on {provider} was deleted via the OSF.
+The file "{file_name}" stored on {provider} was deleted via the GakuNin RDM.
 </p>
 <p>
 It was deleted on {deleted_on}.

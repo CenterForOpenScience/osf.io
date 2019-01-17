@@ -1,5 +1,5 @@
 /**
- * JS module included on every page of the OSF. Site-wide initialization
+ * JS module included on every page of the GakuNin RDM. Site-wide initialization
  * code goes here.
  */
 'use strict';

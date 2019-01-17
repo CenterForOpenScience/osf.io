@@ -107,7 +107,7 @@ function ViewModel(url) {
         }),
         datasetDeaccessioned: ko.pureComputed(function() {
             return 'This dataset has already been deaccessioned on Dataverse ' +
-                'and cannot be connected to the OSF.';
+                'and cannot be connected to the GakuNin RDM.';
         }),
         forbiddenCharacters: ko.pureComputed(function() {
             return 'This dataset cannot be connected due to forbidden characters ' +

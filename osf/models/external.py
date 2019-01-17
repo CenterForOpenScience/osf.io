@@ -216,7 +216,7 @@ class ExternalProvider(object):
         """Exchange temporary credentials for permanent credentials
 
         This is called in the view that handles the user once they are returned
-        to the OSF after authenticating on the external service.
+        to the GakuNin RDM after authenticating on the external service.
         """
 
         if 'error' in request.args:

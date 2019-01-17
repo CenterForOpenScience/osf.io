@@ -512,7 +512,7 @@ def user_choose_mailing_lists(auth, **kwargs):
 
         Example input:
         {
-            "Open Science Framework General": true,
+            "GakuNin RDM General": true,
             ...
         }
 
@@ -560,7 +560,7 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
 
 
 def mailchimp_get_endpoint(**kwargs):
-    """Endpoint that the mailchimp webhook hits to check that the OSF is responding"""
+    """Endpoint that the mailchimp webhook hits to check that the GakuNin RDM is responding"""
     return {}, http.OK
 
 
@@ -592,7 +592,7 @@ def sync_data_from_mailchimp(**kwargs):
     else:
         # TODO: get tests to pass with sentry logging
         # sentry.log_exception()
-        # sentry.log_message("Unauthorized request to the OSF.")
+        # sentry.log_message("Unauthorized request to the GakuNin RDM.")
         raise HTTPError(http.UNAUTHORIZED)
 
 

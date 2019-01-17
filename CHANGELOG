@@ -395,7 +395,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Clear Deactivate Flag on User Accounts
 - Add new logo / branding to OSF Meetings
 - Add user's registrations and preprints relationships to user serializer
-- There should not be a link to Box.com in the Welcome to the OSF email
+- There should not be a link to Box.com in the Welcome to the GakuNin RDM email
 - Users Should be Alerted of Maintenance on All Pages
 - Add Embargo Date Management to Admin App
 - Cancel changes button on admin preprint config
@@ -416,7 +416,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Trigger for wiki widget "Read More" does not match display field length
 - Improve node category visual recognition
 - Allow tags to be added after a registration is created
-- Remove WBv0-using code from the OSF
+- Remove WBv0-using code from the GakuNin RDM
 - Show preprint provider logos in Admin
 - Add metatags to projects and components for better Zotero export
 - Add ability to rename a file on the file detail page
@@ -527,7 +527,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Modify Prereg Challenge Landing page
 - Test Optimization: Api tokens, addons, taxonomies, test
 - Add tests for sitemap generation
-- Remove mod-meta usage on the OSF
+- Remove mod-meta usage on the GakuNin RDM
 - Pytest Conversion api_tests/users
 - Don't render all contributors for contributor-related logs
 - API: Add title and contributor fields to preprints
@@ -584,7 +584,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Allow users to autopopulate tags in new component creation
 - Arbitrarily Reindex OSF things in SHARE and OSF Search via admin
 - Make 'GUID has no deep URL' sentry error less annoying
-- Linking to the eligible journal list in the OSF preregistration challenge workflow
+- Linking to the eligible journal list in the GakuNin RDM preregistration challenge workflow
 - Preprint providers should not have subjects_acceptable in API response
 - Surface Unregistered Contributor Emails in Admin
 - Allow "highlighted" taxonomy per provider
@@ -912,7 +912,7 @@ Migrations
 - Surface analytics initialization script
 - Add error messaging on project page, files page, and prereg form "cannot upload folders"
 - Change preprint logs to say 'made' instead of 'initiated'
-- Fix raven-js calls on the OSF
+- Fix raven-js calls on the GakuNin RDM
 - Capitalize wiki's Home page on many of the logs
 - Remove legacy SHARE code
 
@@ -1754,7 +1754,7 @@ elasticsearch.py.
 ===================
 
 - Add API for subscribing/unsubscribing users to Mailchimp mailing lists. Add
-sync_email.py script to add all registered, confirmed users to the OSF General
+sync_email.py script to add all registered, confirmed users to the GakuNin RDM General
 Mailing list.
 - Add "Add to Dashboard" button in project header to add a project to the
 dashboard organizer.
@@ -1769,7 +1769,7 @@ dashboard organizer.
 
 Hotfix release
 
-- Add an endpoint for receiving the webhook payload from the OSF upload
+- Add an endpoint for receiving the webhook payload from the GakuNin RDM upload
 service when files are backed up to a Amazon Glacier archive.
 - Fix a bug in accessing nested files in S3 addon.
 

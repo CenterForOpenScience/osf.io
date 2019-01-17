@@ -655,7 +655,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # For Comment API compatibility
     @property
     def target_type(self):
-        """The object "type" used in the OSF v2 API."""
+        """The object "type" used in the GakuNin RDM v2 API."""
         return 'nodes'
 
     @property
@@ -737,7 +737,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 contributor.csl_name(self._id)  # method in auth/model.py which parses the names of authors
                 for contributor in self.visible_contributors
             ],
-            'publisher': 'OSF',
+            'publisher': 'GakuNin RDM',
             'type': 'webpage',
             'URL': self.display_absolute_url,
         }
@@ -2952,7 +2952,7 @@ class Node(AbstractNode):
         return False
 
     class Meta:
-        # custom permissions for use in the OSF Admin App
+        # custom permissions for use in the GakuNin RDM Admin App
         permissions = (
             ('view_node', 'Can view node details'),
         )

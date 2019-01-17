@@ -168,7 +168,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # For Comment API compatibility
     @property
     def target_type(self):
-        """The object "type" used in the OSF v2 API."""
+        """The object "type" used in the GakuNin RDM v2 API."""
         return 'files'
 
     @property

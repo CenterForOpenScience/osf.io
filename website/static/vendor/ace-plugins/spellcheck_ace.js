@@ -5,12 +5,12 @@ var editor = 'editor'; // This should be the id of your editor element.
 var lang = 'en_US';
 var affData, dicData;
 
-// ard-coded in the static libraries for the OSF language dictionaries
+// ard-coded in the static libraries for the GakuNin RDM language dictionaries
 var dicPath =  '/static/dictionaries/en_US/en_US.dic';
 var affPath =  '/static/dictionaries/en_US/en_US.aff';
 
 // Make dotted red underline for gutter and words.
-// Edited to conform to the OSF Style Guide
+// Edited to conform to the GakuNin RDM Style Guide
 $('<style id="ace_editor_body" type="text/css">.ace_marker-layer .misspelled { position: absolute; z-index: -2; border-bottom: 1px dotted red; margin-bottom: -1px; }</style>').appendTo('head');
 $('<style id="ace_editor_line_numbers" type="text/css">.misspelled { border-bottom: 1px dotted red; margin-bottom: -1px; }</style>').appendTo('head');
 

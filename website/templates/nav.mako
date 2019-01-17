@@ -56,7 +56,7 @@
             <li class="dropdown">
             <a id="navbar-support" data-bind="click: trackClick.bind($data, '${service_name} Support')" href="${service_support_url}">Support</a>
             </li>
-            <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://cos.io/donate">Donate</a></li>
+            <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://nii.ac.jp/donate">Donate</a></li>
             % endif:
             % if user_name and display_name:
             <li class="dropdown secondary-nav-dropdown">
