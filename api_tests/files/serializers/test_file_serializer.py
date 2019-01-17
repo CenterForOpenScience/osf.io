@@ -4,7 +4,7 @@ import pytest
 from pytz import utc
 
 from addons.base.utils import get_mfr_url
-from api.files.serializers import FileSerializer
+from api.files.serializers import FileSerializer, get_file_download_link, get_file_render_link
 from api_tests import utils
 from osf_tests.factories import (
     UserFactory,
@@ -12,6 +12,7 @@ from osf_tests.factories import (
     NodeFactory,
 )
 from tests.utils import make_drf_request_with_version
+from website import settings
 
 @pytest.fixture()
 def user():
@@ -107,6 +108,32 @@ class TestFileSerializer:
         download_link = data['links']['download']
         render_link = data['links']['render']
         assert render_link == mfr_url + '/render?url=' + download_link + '?direct%26mode=render'
+
+    def test_get_file_download_and_render_links(self, file_one, node):
+        # file links with path
+        download_link = get_file_download_link(file_one)
+        mfr_link = get_mfr_url(file_one.target, 'osfstorage')
+        assert download_link == settings.DOMAIN + 'download/' + file_one._id + '/'
+        assert get_file_render_link(mfr_link, download_link) == mfr_link + '/render?url=' + download_link + '?direct%26mode=render'
+
+        # file versions link with path
+        download_link = get_file_download_link(file_one, version=2)
+        mfr_link = get_mfr_url(file_one.target, 'osfstorage')
+        assert download_link == settings.DOMAIN + 'download/' + file_one._id + '/?revision=2'
+        assert get_file_render_link(mfr_link, download_link, version=2) == mfr_link + '/render?url=' + download_link + '%26direct%26mode=render'
+
+        # file links with guid
+        file_one.get_guid(create=True)
+        download_link = get_file_download_link(file_one)
+        mfr_link = get_mfr_url(file_one.target, 'osfstorage')
+        assert download_link == settings.DOMAIN + 'download/' + file_one.get_guid()._id + '/'
+        assert get_file_render_link(mfr_link, download_link) == mfr_link + '/render?url=' + download_link + '?direct%26mode=render'
+
+        # file version links with guid
+        download_link = get_file_download_link(file_one, version=2)
+        mfr_link = get_mfr_url(file_one.target, 'osfstorage')
+        assert download_link == settings.DOMAIN + 'download/' + file_one.get_guid()._id + '/?revision=2'
+        assert get_file_render_link(mfr_link, download_link, version=2) == mfr_link + '/render?url=' + download_link + '%26direct%26mode=render'
 
     def test_no_node_relationship_after_version_2_7(self, file_one):
         req_2_7 = make_drf_request_with_version(version='2.7')
