@@ -2,7 +2,7 @@ import hmac
 import uuid
 import urllib
 import hashlib
-import httplib as http
+import http.client as http
 
 from framework.exceptions import HTTPError
 from addons.base.exceptions import HookError

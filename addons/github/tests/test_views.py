@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+import http.client as http
 import unittest
 
 from django.utils import timezone

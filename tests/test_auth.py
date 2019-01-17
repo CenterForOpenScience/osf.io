@@ -6,7 +6,7 @@ from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `Test
 import mock
 import urllib
 import urlparse
-import httplib as http
+import http.client as http
 
 from flask import Flask
 from werkzeug.wrappers import BaseResponse

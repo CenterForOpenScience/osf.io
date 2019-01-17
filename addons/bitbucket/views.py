@@ -1,6 +1,6 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import httplib as http
+import http.client as http
 import logging
 
 from flask import request, make_response

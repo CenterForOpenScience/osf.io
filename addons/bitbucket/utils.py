@@ -1,5 +1,5 @@
 import urllib
-import httplib as http
+import http.client as http
 
 from framework.exceptions import HTTPError
 

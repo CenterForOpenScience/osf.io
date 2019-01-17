@@ -5,7 +5,7 @@
 from __future__ import absolute_import
 
 import datetime as dt
-import httplib as http
+import http.client as http
 import json
 import time
 import unittest

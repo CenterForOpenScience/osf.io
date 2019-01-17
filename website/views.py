@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import itertools
-import httplib as http
+import http.client as http
 import logging
 import math
 import os
