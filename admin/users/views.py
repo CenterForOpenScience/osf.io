@@ -142,7 +142,15 @@ class UserGDPRDeleteView(PermissionRequiredMixin, DeleteView):
         return super(UserGDPRDeleteView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return OSFUser.load(self.kwargs.get('guid'))
+        user = OSFUser.load(self.kwargs.get('guid'))
+        if user:
+            return user
+        else:
+            raise Http404(
+                '{} with id "{}" not found.'.format(
+                    self.context_object_name.title(),
+                    self.kwargs.get('guid')
+                ))
 
 
 class SpamUserDeleteView(UserDeleteView):
