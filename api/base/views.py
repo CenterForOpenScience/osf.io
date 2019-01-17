@@ -393,7 +393,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 def root(request, format=None, **kwargs):
     """Welcome to the V2 GakuNin RDM API. With this API you can access users, projects, components, logs, and files
     from the [GakuNin RDM](https://rdm.nii.ac.jp/). The GakuNin RDM (GRDM) is a free, open-source service
-    maintained by the [Center for Open Science](http://cos.io/).
+    maintained by the [National Institute of Informatics](http://nii.ac.jp/).
 
     The OSF serves as a repository and archive for study designs, materials, data, manuscripts, or anything else
     associated with your research during the research process. Every project and file on the GakuNin RDM has a permanent unique

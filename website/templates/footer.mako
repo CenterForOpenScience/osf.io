@@ -17,7 +17,7 @@
                     <li><a href="http://cos.io">Home</a></li>
                     <li><a href="${domain}ezcuj/wiki/home/">Reproducibility Project: Psychology</a></li>
                     <li><a href="${domain}e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
-                    <li><a href="http://cos.io/top/">TOP Guidelines</a></li>
+                    <li><a href="http://nii.ac.jp/top/">TOP Guidelines</a></li>
                      <li><a href="https://www.crowdrise.com/donate/charity/centerforopenscience">Donate</a></li>
                </ul>
             </div>
