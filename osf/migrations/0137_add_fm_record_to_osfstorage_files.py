@@ -6,15 +6,15 @@ from django.db import migrations, connection
 
 
 def remove_records_from_files(state, schema):
-    FileMetadatRecord = state.get_model('osf', 'filemetadatarecord')
-    FileMetadatRecord.objects.all().delete()
+    FileMetadataRecord = state.get_model('osf', 'filemetadatarecord')
+    FileMetadataRecord.objects.all().delete()
 
 def add_records_to_files_sql(state, schema):
     FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
     datacite_schema_id = FileMetadataSchema.objects.filter(_id='datacite').values_list('id', flat=True)[0]
     sql = """
-    INSERT INTO osf_filemetadatarecord (created, modified, _id, metadata, id, file_id, schema_id)
-    SELECT  NOW(), NOW(), generate_object_id(), '{}', nextval('osf_filemetadatarecord_id_seq'), OSF_FILE.id, %d
+    INSERT INTO osf_filemetadatarecord (created, modified, _id, metadata, file_id, schema_id)
+    SELECT  NOW(), NOW(), generate_object_id(), '{}', OSF_FILE.id, %d
         FROM osf_basefilenode OSF_FILE
             LEFT OUTER JOIN osf_filemetadatarecord ON
                 (OSF_FILE.id = osf_filemetadatarecord.file_id)
