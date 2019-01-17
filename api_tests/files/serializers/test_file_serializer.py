@@ -38,7 +38,7 @@ class TestFileSerializer:
     def primary_file(self, preprint):
         return preprint.primary_file
 
-    def test_file_serializer(self, file_one):
+    def test_file_serializer(self, file_one, node):
         created = file_one.versions.last().created
         modified = file_one.versions.first().created
         created_tz_aware = created.replace(tzinfo=utc)
@@ -89,6 +89,14 @@ class TestFileSerializer:
         # check render file link with guid
         assert download_base.format(guid) in data['links']['render']
         assert mfr_url in data['links']['render']
+
+        # check download/render link for folder
+        folder = node.get_addon('osfstorage').get_root().append_folder('Test_folder')
+        folder.save()
+        req = make_drf_request_with_version(version='2.2')
+        data = FileSerializer(folder, context={'request': req}).data['data']
+        assert 'render' not in data['links']
+        assert 'download' not in data['links']
 
     def test_serialize_preprint_file(self, preprint, primary_file):
         req = make_drf_request_with_version(version='2.2')
