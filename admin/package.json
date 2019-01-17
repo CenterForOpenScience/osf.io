@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
-  "author": "Center for Open Science",
+  "author": "National Institute of Informatics",
   "dependencies": {
     "babel-loader": "^4.1.0",
     "bootstrap-colorpicker": "^2.5.2",
