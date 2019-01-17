@@ -184,6 +184,7 @@ class TestFileMetadataRecordUpdate:
         public_record.reload()
         assert res.status_code == 400
         assert 'Additional properties are not allowed' in res.json['errors'][0]['detail']
+        assert res.json['errors'][0]['meta'].get('metadata_schema', None)
         assert public_record.metadata == {}
 
     def test_update_fails_with_invalid_json(self, app, user, public_record, make_payload):
