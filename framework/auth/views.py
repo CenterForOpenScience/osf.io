@@ -69,8 +69,8 @@ def reset_password_get(auth, uid=None, token=None):
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
 
-    # Check if request bears a valid pair of `uid` and `token`
     user_obj = OSFUser.load(uid)
+    # Check if request bears a valid pair of `uid` and `token`
     if not (user_obj and user_obj.verify_password_token(token=token)):
         error_data = {
             'message_short': 'Invalid Request.',
@@ -101,10 +101,10 @@ def reset_password_post(uid=None, token=None):
 
     form = ResetPasswordForm(request.form)
 
-    # Check if request bears a valid pair of `uid` and `token`
     user_obj = OSFUser.load(uid)
     throttle_password_reset(user_obj)
 
+    # Check if request bears a valid pair of `uid` and `token`
     if not (user_obj and user_obj.verify_password_token(token=token)):
         error_data = {
             'message_short': 'Invalid Request.',
