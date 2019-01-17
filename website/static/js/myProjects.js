@@ -420,9 +420,7 @@ var MyProjects = {
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
-            new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations'),
-            new LinkObject('collection', { nodeType : 'preprints'}, 'All my preprints')
+            new LinkObject('collection', { nodeType : 'projects'}, 'All my projects')
         ];
 
         self.fetchers = {};
