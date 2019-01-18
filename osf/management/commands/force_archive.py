@@ -19,7 +19,7 @@ Usage:
 from __future__ import unicode_literals
 
 from copy import deepcopy
-import http.client as http
+import httplib as http
 import json
 import logging
 import requests

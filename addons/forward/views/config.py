@@ -1,6 +1,6 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import http.client as http
+import httplib as http
 
 from flask import request
 from osf.exceptions import ValidationValueError

@@ -1,4 +1,4 @@
-import http.client as http
+import httplib as http
 import logging
 import os
 

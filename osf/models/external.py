@@ -1,7 +1,7 @@
 import abc
 import datetime as dt
 import functools
-import http.client as http
+import httplib as http
 import logging
 
 from django.contrib.postgres.fields import ArrayField

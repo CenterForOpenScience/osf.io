@@ -1,5 +1,5 @@
 from datetime import datetime
-import http.client as http
+import httplib as http
 import logging
 import json
 import time

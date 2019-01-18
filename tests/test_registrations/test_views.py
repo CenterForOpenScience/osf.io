@@ -4,7 +4,7 @@
 from __future__ import absolute_import
 import datetime as dt
 import mock
-import http.client as http
+import httplib as http
 import pytz
 from django.utils import timezone
 
