@@ -14,6 +14,11 @@
   dependencies:
     np "^3.0.4"
 
+"@centerforopenscience/markdown-it-imsize@2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-imsize/-/markdown-it-imsize-2.0.1.tgz#bdfc7602bfffe9faeed9ee0278185535d8b001ae"
+  integrity sha512-PV6UGXJobGfJjt+H/A4wIOyrobjflVIrTYvE1RAQU/TTmCEVvnT5Os4TfziEWhKNfaB/IGRTphjQI8jDokPdjw==
+
 "@centerforopenscience/markdown-it-toc@~1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-toc/-/markdown-it-toc-1.1.1.tgz#633c6367cf783a51a080e75a9cd62fd62037e140"
@@ -3966,10 +3971,6 @@ map-obj@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/map-obj/-/map-obj-2.0.0.tgz#a65cd29087a92598b8791257a523e021222ac1f9"
   integrity sha1-plzSkIepJZi4eRJXpSPgISIqwfk=
-
-"markdown-it-imsize@git://github.com/cos-forks/markdown-it-imsize.git#v2.0.1.cos1":
-  version "2.0.1"
-  resolved "git://github.com/cos-forks/markdown-it-imsize.git#fc313a03b00cb7379eab4785f880d072847ac0a0"
 
 markdown-it-ins-del@^0.1.1:
   version "0.1.1"
