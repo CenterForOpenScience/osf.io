@@ -733,7 +733,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -751,7 +751,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -772,7 +772,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }

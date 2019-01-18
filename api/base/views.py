@@ -196,7 +196,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -214,7 +214,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -235,7 +235,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
