@@ -1595,7 +1595,11 @@ class LinkedRegistration(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
-        type_ = 'linked_registrations'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_registrations'
+            return 'registrations'
 
 
 class LinkedPreprint(LinkedNode):
@@ -1690,7 +1694,11 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
         return obj['self'].linked_registrations_related_url
 
     class Meta:
-        type_ = 'linked_registrations'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_registrations'
+            return 'registrations'
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(

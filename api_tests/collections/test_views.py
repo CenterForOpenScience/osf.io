@@ -3024,6 +3024,19 @@ class TestCollectionRelationshipNodeLinks:
         assert collection_private.linked_registrations_self_url in res.json['links']['self']
         assert collection_private.linked_registrations_related_url in res.json['links']['html']
         assert res.json['data'][0]['id'] == registration_private._id
+        assert res.json['data'][0]['type'] == 'linked_registrations'
+
+    def test_get_relationship_linked_registrations_2_13(
+            self, app, registration_private,
+            url_private_linked_regs, user_one,
+            collection_private
+    ):
+        res = app.get('{}?version=2.13'.format(url_private_linked_regs), auth=user_one.auth)
+        assert res.status_code == 200
+        assert collection_private.linked_registrations_self_url in res.json['links']['self']
+        assert collection_private.linked_registrations_related_url in res.json['links']['html']
+        assert res.json['data'][0]['id'] == registration_private._id
+        assert res.json['data'][0]['type'] == 'registrations'
 
     def test_get_public_relationship_linked_nodes_logged_out(
             self, app, url_public_linked_nodes, node_public):

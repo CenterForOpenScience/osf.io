@@ -857,7 +857,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -875,7 +875,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_regisrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -896,7 +896,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
