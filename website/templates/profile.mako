@@ -67,7 +67,7 @@
         </table>
         <h2>
            ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
-           ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}, ${profile["number_public_projects"]} public
+           ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}<!-- , ${profile["number_public_projects"]} public -->
         </h2>
     </div>
 
@@ -100,7 +100,7 @@
 
 </div>
 <hr />
-<div class="row">
+<div class="row" style="display: none;">
     <div class="col-sm-6">
         % if user['has_quickfiles']:
         <div class="row">
