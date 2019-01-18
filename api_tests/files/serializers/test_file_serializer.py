@@ -99,13 +99,14 @@ class TestFileSerializer:
         # check html link in file serializer
         assert data['links']['html'] == '{}{}/files/osfstorage/{}'.format(settings.DOMAIN, node._id, file_one._id)
 
-        # check download/render link for folder
+        # check download/render/html link for folder
         folder = node.get_addon('osfstorage').get_root().append_folder('Test_folder')
         folder.save()
         req = make_drf_request_with_version(version='2.2')
         data = FileSerializer(folder, context={'request': req}).data['data']
         assert 'render' not in data['links']
         assert 'download' not in data['links']
+        assert 'html' not in data['links']
 
     def test_serialize_preprint_file(self, preprint, primary_file):
         req = make_drf_request_with_version(version='2.2')
