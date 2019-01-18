@@ -330,7 +330,7 @@ var renderNodeLogsForOneUserChart = function(user_id) {
 
 // Common Queries
 
-// Active user count! - Total Confirmed Users of the OSF
+// Active user count! - Total Confirmed Users of the GakuNin RDM
 var activeUsersQuery = new keenAnalysis.Query("sum", {
     event_collection: "user_summary",
     target_property: "status.active",

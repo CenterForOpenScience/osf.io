@@ -17,7 +17,7 @@
             <li>You have one place to reference when looking for your research materials</li>
             <li>You can monitor interest in your data and materials by tracking downloads, just like you can for your ${conference} presentation.</li>
         </ul>
-        To learn more about how the GakuNin RDM can help you manage your research, read our <a href="http://help.osf.io">Guides</a>. Or, read about how others use the GakuNin RDM from a <a href="https://osf.io/svje2/">case study</a>.
+        To learn more about how the GakuNin RDM can help you manage your research, read our <a href="http://help.osf.io">Guides</a>. Or, read about how others use the GakuNin RDM from a <a href="https://rdm.nii.ac.jp/svje2/">case study</a>.
         The best part? It’s all free! GakuNin RDM is supported by the non-profit technology company, the <a href="https://nii.ac.jp/">National Institute of Informatics</a>.
         <br><br>
         Best wishes,

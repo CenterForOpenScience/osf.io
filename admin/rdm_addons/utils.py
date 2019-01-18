@@ -64,7 +64,7 @@ def get_rdm_addon_option(institution_id, addon_name):
     return rdm_addon_option
 
 def update_with_rdm_addon_settings(addon_setting, user):
-    """add configuration information specific to RDM to the OSF Addon settings"""
+    """add configuration information specific to RDM to the GakuNin RDM Addon settings"""
     institutoin_id = get_institution_id(user)
     for addon in addon_setting:
         addon_name = addon['addon_short_name']

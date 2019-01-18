@@ -1593,7 +1593,7 @@ class TestUserMerging(OsfTestCase):
                 'shared_lt': True,
             },
             'osf_mailing_lists': {
-                'Open Science Framework Help': True
+                'GakuNin RDM Help': True
             },
             'security_messages': {
                 'user': today,
@@ -1766,9 +1766,9 @@ class TestUserValidation(OsfTestCase):
             raise
 
     def test_validate_multiple_profile_websites_valid(self):
-        self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
+        self.user.social = {'profileWebsites': ['http://nii.ac.jp/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
         self.user.save()
-        assert self.user.social['profileWebsites'] == ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']
+        assert self.user.social['profileWebsites'] == ['http://nii.ac.jp/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']
 
     def test_validate_social_profile_websites_invalid(self):
         self.user.social = {'profileWebsites': ['help computer']}
@@ -1776,7 +1776,7 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_multiple_profile_social_profile_websites_invalid(self):
-        self.user.social = {'profileWebsites': ['http://cos.io/', 'help computer', 'http://dinosaurs.com']}
+        self.user.social = {'profileWebsites': ['http://nii.ac.jp/', 'help computer', 'http://dinosaurs.com']}
         with pytest.raises(ValidationError):
             self.user.save()
 
@@ -1785,33 +1785,33 @@ class TestUserValidation(OsfTestCase):
         assert len(self.user.social_links) == 0
 
     def test_profile_website_unchanged(self):
-        self.user.social = {'profileWebsites': ['http://cos.io/']}
+        self.user.social = {'profileWebsites': ['http://nii.ac.jp/']}
         self.user.save()
-        assert self.user.social_links['profileWebsites'] == ['http://cos.io/']
+        assert self.user.social_links['profileWebsites'] == ['http://nii.ac.jp/']
         assert len(self.user.social_links) == 1
 
     def test_various_social_handles(self):
         self.user.social = {
-            'profileWebsites': ['http://cos.io/'],
+            'profileWebsites': ['http://nii.ac.jp/'],
             'twitter': 'OSFramework',
             'github': 'CenterForOpenScience'
         }
         self.user.save()
         assert self.user.social_links == {
-            'profileWebsites': ['http://cos.io/'],
+            'profileWebsites': ['http://nii.ac.jp/'],
             'twitter': 'http://twitter.com/OSFramework',
             'github': 'http://github.com/CenterForOpenScience'
         }
 
     def test_multiple_profile_websites(self):
         self.user.social = {
-            'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
+            'profileWebsites': ['http://nii.ac.jp/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
             'twitter': 'OSFramework',
             'github': 'CenterForOpenScience'
         }
         self.user.save()
         assert self.user.social_links == {
-            'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
+            'profileWebsites': ['http://nii.ac.jp/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
             'twitter': 'http://twitter.com/OSFramework',
             'github': 'http://github.com/CenterForOpenScience'
         }

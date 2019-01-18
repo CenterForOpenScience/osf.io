@@ -242,7 +242,7 @@ def goodbye():
 
 
 def make_url_map(app):
-    """Set up all the routes for the OSF app.
+    """Set up all the routes for the GakuNin RDM app.
 
     :param app: A Flask/Werkzeug app to bind the rules to.
     """

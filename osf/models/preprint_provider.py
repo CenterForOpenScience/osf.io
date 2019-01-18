@@ -65,7 +65,7 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, Bas
 
     class Meta:
         permissions = tuple(PERMISSIONS.items()) + (
-            # custom permissions for use in the OSF Admin App
+            # custom permissions for use in the GakuNin RDM Admin App
             ('view_preprintprovider', 'Can view preprint provider details'),
         )
 

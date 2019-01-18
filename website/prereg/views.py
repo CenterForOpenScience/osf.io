@@ -1,7 +1,7 @@
 """Back-end code to support the Prereg Challenge initiative
 
 Keeping the code together in this file should make it easier to remove the
-features added to the OSF specifically to support this initiative in the future.
+features added to the GakuNin RDM specifically to support this initiative in the future.
 
 Other resources that are a part of the Prereg Challenge:
 

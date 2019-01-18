@@ -12,8 +12,8 @@ from website import settings
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
 WELCOME_MESSAGE = '''
-<h1>Welcome to the OSF!</h1>
-<p>Visit our <a href="http://help.osf.io/" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
+<h1>Welcome to the GakuNin RDM!</h1>
+<p>Visit our <a href="http://help.osf.io/" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://rdm.nii.ac.jp/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
 '''
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
@@ -59,7 +59,7 @@ EMAIL_NOT_FOUND = u'''
 
 # Shown after an unregistered user claims an account and is redirected to the
 # settings page
-CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display name below and then check your '
+CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the GakuNin RDM!</strong> Edit your display name below and then check your '
                        '<a href="/dashboard/">dashboard</a> to see projects to which you have been added as a '
                        'contributor by someone else.')
 

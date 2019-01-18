@@ -160,7 +160,7 @@ class SearchComponents(BaseSearchView):
 
     ###Node Links
 
-    List of links (pointers) to other nodes on the OSF.  Node links can be added through this endpoint.
+    List of links (pointers) to other nodes on the GakuNin RDM.  Node links can be added through this endpoint.
 
     ###Parent
 
@@ -179,7 +179,7 @@ class SearchComponents(BaseSearchView):
     ##Links
 
         self:  the canonical api endpoint of this node
-        html:  this node's page on the OSF website
+        html:  this node's page on the GakuNin RDM website
 
         See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
@@ -224,7 +224,7 @@ class SearchFiles(BaseSearchView):
         modified      timestamp         last modified timestamp - format depends on provider
         contentType   string            MIME-type when available
         provider      string            id of provider e.g. "osfstorage", "s3", "googledrive".
-                                        equivalent to addon_short_name on the OSF
+                                        equivalent to addon_short_name on the GakuNin RDM
         size          integer           size of file in bytes
         tags          array of strings  list of tags that describes the file (osfstorage only)
         extra         object            may contain additional data beyond what's described here,
@@ -388,7 +388,7 @@ class SearchProjects(BaseSearchView):
 
     ###Node Links
 
-    List of links (pointers) to other nodes on the OSF.  Node links can be added through this endpoint.
+    List of links (pointers) to other nodes on the GakuNin RDM.  Node links can be added through this endpoint.
 
     ###Parent
 
@@ -407,7 +407,7 @@ class SearchProjects(BaseSearchView):
     ##Links
 
         self:  the canonical api endpoint of this node
-        html:  this node's page on the OSF website
+        html:  this node's page on the GakuNin RDM website
 
         See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
@@ -561,7 +561,7 @@ class SearchUsers(BaseSearchView):
     ##Links
 
         self:               the canonical api endpoint of this user
-        html:               this user's page on the OSF website
+        html:               this user's page on the GakuNin RDM website
         profile_image_url:  a url to the user's profile image
 
     ## Query Params
@@ -598,7 +598,7 @@ class SearchInstitutions(BaseSearchView):
         name           type               description
         =========================================================================
         name           string             title of the institution
-        id             string             unique identifier in the OSF
+        id             string             unique identifier in the GakuNin RDM
         logo_path      string             a path to the institution's static logo
 
     ##Relationships
@@ -612,7 +612,7 @@ class SearchInstitutions(BaseSearchView):
     ##Links
 
         self:  the canonical api endpoint of this institution
-        html:  this institution's page on the OSF website
+        html:  this institution's page on the GakuNin RDM website
 
     # This Request/Response
 

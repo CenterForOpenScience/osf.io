@@ -57,7 +57,7 @@ var _figshareItemButtons = {
                 );
             }
 
-            // All files are viewable on the OSF.
+            // All files are viewable on the GakuNin RDM.
             if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {

@@ -60,7 +60,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     @property
     def target_type(self):
-        """The object "type" used in the OSF v2 API."""
+        """The object "type" used in the GakuNin RDM v2 API."""
         return 'comments'
 
     @property

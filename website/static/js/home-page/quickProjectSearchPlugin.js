@@ -518,7 +518,7 @@ var QuickSearchProject = {
                     m('p.text-center.f-w-lg', [ 'Go to ', m('a', {href:'/myprojects/', onclick: function(){
                         $osf.trackClick('quickSearch', 'navigate', 'navigate-to-my-projects');
                     }}, 'My Projects'),  ' to organize your work or ',
-                        m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
+                        m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the GakuNin RDM' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
                             m('.col-sm-3.col-md-6', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),

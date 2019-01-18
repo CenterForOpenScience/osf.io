@@ -72,7 +72,7 @@ function ViewModel(configUrl, accountsUrl) {
                 if (self.accounts().length > accountCount) {
                     self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable WEKO, and choose content to connect.', 'text-success');
                 } else {
-                    self.setMessage('Error while authorizing add-on. Please log in to your WEKO account and grant access to the OSF to enable this add-on.', 'text-danger');
+                    self.setMessage('Error while authorizing add-on. Please log in to your WEKO account and grant access to the GakuNin RDM to enable this add-on.', 'text-danger');
                 }
             });
         };

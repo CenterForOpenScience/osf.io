@@ -203,7 +203,7 @@ class MockRequestTestCase(unittest.TestCase):
 
 
 class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
-    """Base `TestCase` for tests that require both scratch databases and the OSF
+    """Base `TestCase` for tests that require both scratch databases and the GakuNin RDM
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
@@ -211,7 +211,7 @@ class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
 
 
 class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase, MockRequestTestCase):
-    """Base `TestCase` for tests that require both scratch databases and the OSF
+    """Base `TestCase` for tests that require both scratch databases and the GakuNin RDM
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """

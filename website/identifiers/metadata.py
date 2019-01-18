@@ -64,7 +64,7 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
         doi=doi,
         title=node.title,
         creators=creators,
-        publisher='Open Science Framework',
+        publisher='GakuNin RDM',
         publication_year=getattr(node.registered_date or node.created, 'year'),
         pretty_print=pretty_print
     )

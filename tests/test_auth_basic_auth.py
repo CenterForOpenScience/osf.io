@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Basic Authorization tests for the OSF.'''
+'''Basic Authorization tests for the GakuNin RDM.'''
 
 from __future__ import absolute_import
 

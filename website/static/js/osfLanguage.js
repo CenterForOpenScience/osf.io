@@ -29,7 +29,7 @@ module.exports = {
                 'projects you have authorized.',
             confirmNodeDeauth: 'Are you sure you want to unlink this Dataverse Account? This will ' +
                 'revoke the ability to view, download, modify, and upload files ' +
-                'to studies on the Dataverse from the OSF. This will not remove your ' +
+                'to studies on the Dataverse from the GakuNin RDM. This will not remove your ' +
                 'Dataverse authorization from your <a href="/settings/addons/">user settings</a> ' +
                 'page.',
             deauthError: 'Could not disconnect the Dataverse Account at this time.',
@@ -40,7 +40,7 @@ module.exports = {
             authInvalid: 'Your Dataverse API token is invalid.',
             authSuccess: 'Your Dataverse account was linked.',
             datasetDeaccessioned: 'This dataset has already been deaccessioned on the Dataverse ' +
-                'and cannot be connected to the OSF.',
+                'and cannot be connected to the GakuNin RDM.',
             forbiddenCharacters: 'This dataset cannot be connected due to forbidden characters ' +
                 'in one or more of the dataset\'s file names. This issue has been forwarded to our ' +
                 'development team.',

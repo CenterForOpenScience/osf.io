@@ -156,7 +156,7 @@ class BaseFileSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     materialized_path = ser.CharField(
         read_only=True, help_text='The Unix-style path of this object relative to the provider root')
-    last_touched = VersionedDateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
+    last_touched = VersionedDateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the GakuNin RDM')
     date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
@@ -266,7 +266,7 @@ class BaseFileSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         assert isinstance(instance, BaseFileNode), 'Instance must be a BaseFileNode'
         if instance.provider != 'osfstorage' and 'tags' in validated_data:
-            raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
+            raise Conflict('File service provider {} does not support tags on the GakuNin RDM.'.format(instance.provider))
         auth = get_user_auth(self.context['request'])
         old_tags = set(instance.tags.values_list('name', flat=True))
         if 'tags' in validated_data:

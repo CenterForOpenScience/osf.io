@@ -231,7 +231,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
 
     ##Links
     - `self` -- Preprint detail page for the current preprint
-    - `html` -- Project on the OSF corresponding to the current preprint
+    - `html` -- Project on the GakuNin RDM corresponding to the current preprint
     - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).

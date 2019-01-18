@@ -88,12 +88,12 @@ def main(env):
     PREPRINT_PROVIDERS = {
         'osf': {
             '_id': 'osf',
-            'name': 'Open Science Framework',
+            'name': 'GakuNin RDM',
             'share_publish_type': 'Preprint',
             'description': 'A scholarly commons to connect the entire research cycle',
             'domain': DOMAIN,
             'domain_redirect_enabled': False,  # Never change this
-            'external_url': 'https://osf.io/preprints/',
+            'external_url': 'https://rdm.nii.ac.jp/preprints/',
             'example': 'khbvy',
             'advisory_board': '',
             'email_contact': '',

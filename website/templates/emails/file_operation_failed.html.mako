@@ -19,7 +19,7 @@
                             <table id="header-logo" border="0" style="margin: 0 auto;padding: 0px;">
                                 <tr>
                                     <td style="border-collapse: collapse;">
-                                        <img src="https://osf.io/static/img/cos-white2.png" alt="NII logo" width="36" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
+                                        <img src="https://rdm.nii.ac.jp/static/img/cos-white2.png" alt="NII logo" width="36" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                     </td>
                                     <td style="border-collapse: collapse;">
                                         <h2 style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;font-size: 20px;text-align: left; color:white;">GakuNin RDM</h2>

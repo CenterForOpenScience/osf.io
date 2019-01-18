@@ -13,7 +13,7 @@ from website.conferences import signals as conference_signals
 @auth_signals.unconfirmed_user_created.connect
 def queue_no_addon_email(user):
     """Queue an email for user who has not connected an addon after
-    `settings.NO_ADDON_WAIT_TIME` months of signing up for the OSF.
+    `settings.NO_ADDON_WAIT_TIME` months of signing up for the GakuNin RDM.
     """
     from osf.models.queued_mail import queue_mail, NO_ADDON
     queue_mail(

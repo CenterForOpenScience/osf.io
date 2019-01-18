@@ -10,7 +10,7 @@ from addons.base.exceptions import HookError
 
 from addons.github.api import GitHubClient
 
-MESSAGE_BASE = 'via the Open Science Framework'
+MESSAGE_BASE = 'via the GakuNin RDM'
 MESSAGES = {
     'add': 'Added {0}'.format(MESSAGE_BASE),
     'move': 'Moved {0}'.format(MESSAGE_BASE),

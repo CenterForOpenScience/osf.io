@@ -18,7 +18,7 @@ var Preprints = {
                         [
                             m('div.conference-centering',  m('h3', 'Browse the latest research')),
                             m('div.conference-centering.m-t-lg',
-                                m('p.text-bigger', 'Check out the latest Preprints hosted on the OSF covering a variety of research areas.')
+                                m('p.text-bigger', 'Check out the latest Preprints hosted on the GakuNin RDM covering a variety of research areas.')
                             )
                         ]
                     ),

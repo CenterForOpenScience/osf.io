@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 
 def get_default_mailing_lists():
-    return {'Open Science Framework Help': True}
+    return {'GakuNin RDM Help': True}
 
 
 name_formatters = {
@@ -1520,7 +1520,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
     class Meta:
-        # custom permissions for use in the OSF Admin App
+        # custom permissions for use in the GakuNin RDM Admin App
         permissions = (
             ('view_osfuser', 'Can view user details'),
         )

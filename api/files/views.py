@@ -55,7 +55,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     Welcome to the Files API.  Brace yourself, things are about to get *weird*.
 
-    The Files API is the one place in the OSF API where we break hard from the JSON-API spec.  This is because most of
+    The Files API is the one place in the GakuNin RDM API where we break hard from the JSON-API spec.  This is because most of
     the behind-the-scenes moving, uploading, deleting, etc. of files and folders is actually handled for us by a
     nifty piece of software called [WaterButler](https://github.com/CenterForOpenScience/waterbutler).  WaterButler lets
     us interact with files stored on different cloud storage platforms through a consistent API.  However, it uses
@@ -64,7 +64,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     Only files and folders which have previously been retrieved through the Node Files List endpoint (accessible through
     the `files` relationship of their parent nodes) can be accessed through this endpoint.  Viewing a folder through the
-    Node Files List vivifies their children's metadata in the OSF and allows the children to be assigned ids.  This
+    Node Files List vivifies their children's metadata in the GakuNin RDM and allows the children to be assigned ids.  This
     metadata is cached and can be refreshed by GETting the file via the Node Files List endpoint.
 
     Both files and folders are available through the Files API and are distinguished by the `kind` attribute ("file" for
@@ -91,7 +91,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         modified        timestamp         last modified timestamp - format depends on provider
         contentType     string            MIME-type when available
         provider        string            id of provider e.g. "osfstorage", "s3", "googledrive".
-                                          equivalent to addon_short_name on the OSF
+                                          equivalent to addon_short_name on the GakuNin RDM
         size            integer           size of file in bytes
         current_version integer           current file version
         tags            array of strings  list of tags that describes the file (osfstorage only)
@@ -273,7 +273,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         Success:       200 OK or 201 Created + new entity representation
 
     Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for
-    the `action` body parameters.  The `path` parameter is also required and should be the OSF `path` attribute of the
+    the `action` body parameters.  The `path` parameter is also required and should be the GakuNin RDM `path` attribute of the
     folder being written to.  The `rename` and `conflict` parameters are optional.  If you wish to change the name of
     the file or folder at its destination, set the `rename` parameter to the new name.  The `conflict` param governs how
     name clashes are resolved.  Possible values are `replace` and `keep`.  `replace` is the default and will overwrite
@@ -360,7 +360,7 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     A specific version of an uploaded file.  Note that the version is tied to the id/path, so two versions of the same
     file could have completely different contents and formats.  That's on you, though.  Don't do that.
 
-    Unlike the OSF File entity which can represent files and folders, FileVersions only ever represent files. When a
+    Unlike the GakuNin RDM File entity which can represent files and folders, FileVersions only ever represent files. When a
     file is first uploaded to the "osfstorage" provider through the API it is assigned version 1.  Each time it is
     updated through the API, the version number is incremented.  Files stored on other providers will follow that
     provider's versioning semantics.
@@ -425,7 +425,7 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     A specific version of an uploaded file.  Note that the version is tied to the id/path, so two versions of the same
     file could have completely different contents and formats.  That's on you, though.  Don't do that.
 
-    Unlike the OSF File entity which can represent files and folders, FileVersions only ever represent files. When a
+    Unlike the GakuNin RDM File entity which can represent files and folders, FileVersions only ever represent files. When a
     file is first uploaded through the API it is assigned version 1.  Each time it is updated through the API, the
     version number is incremented.
 
@@ -446,7 +446,7 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     ##Links
 
         self:  the canonical api endpoint for this version of the file
-        html:  the OSF webpage for this file version
+        html:  the GakuNin RDM webpage for this file version
 
     ##Actions
 

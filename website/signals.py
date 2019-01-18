@@ -1,4 +1,4 @@
-"""Consolidates all signals used by the OSF."""
+"""Consolidates all signals used by the GakuNin RDM."""
 
 from framework.auth import signals as auth
 from website.project import signals as project

@@ -294,7 +294,7 @@ def format_data(user, nodes):
 
 
 def format_user_subscriptions(user):
-    """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
+    """ Format user-level subscriptions (e.g. comment replies across the GakuNin RDM) for user settings page"""
     user_subs_available = list(constants.USER_SUBSCRIPTIONS_AVAILABLE.keys())
     subscriptions = [
         serialize_event(

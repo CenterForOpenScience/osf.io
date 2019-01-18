@@ -41,7 +41,7 @@ class FigshareFile(FigshareFileNode, File):
             </style>
             <div class="alert alert-info" role="alert">
             The file "{name}" is still a draft on figshare. <br>
-            To view it  on the OSF
+            To view it  on the GakuNin RDM
             <a href="https://support.figshare.com/support/solutions">publish</a>
             it on figshare.
             </div>

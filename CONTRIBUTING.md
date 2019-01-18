@@ -20,7 +20,7 @@ First, please make sure that the issue has not already been reported by searchin
 
 When submitting an issue, be as descriptive as possible: 
 * What you did (step by step)
-    * Where does this happen on the OSF?
+    * Where does this happen on the GakuNin RDM?
 * What you expected
 * What actually happened 
     * Check the JavaScript console in the browser (e.g. In Chrome go to View → Developer → JavaScript console) and report errors 

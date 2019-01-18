@@ -8,7 +8,7 @@
     "pages": [{
         "id": "page1-essential",
         "title": "A. Hypotheses - Essential elements",
-        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://rdm.nii.ac.jp/56g8e/ for additional information.",
         "questions": [{
             "qid": "description-hypothesis",
             "title": "Description of essential elements",
@@ -36,7 +36,7 @@
     }, {
         "id": "page1-recommended",
         "title": "Recommended elements",
-        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://rdm.nii.ac.jp/56g8e/ for additional information.",
         "questions": [{
             "qid": "recommended-hypothesis",
             "title": "Recommended elements",
@@ -61,7 +61,7 @@
     }, {
         "id": "page2-essential",
         "title": "B. Methods - Essential elements",
-        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://rdm.nii.ac.jp/56g8e/ for additional information.",
         "questions": [{
             "qid": "description-methods",
             "type": "object",
@@ -150,7 +150,7 @@
     }, {
         "id": "page2-recommended",
         "title": "Recommended elements",
-        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://rdm.nii.ac.jp/56g8e/ for additional information.",
         "questions": [{
             "qid": "recommended-methods",
             "type": "object",
@@ -175,7 +175,7 @@
     }, {
         "id": "page3-essential",
         "title": "C. Analysis plan - Essential elements",
-        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://rdm.nii.ac.jp/56g8e/ for additional information.",
         "questions": [{
             "qid": "confirmatory-analyses-first",
             "type": "object",
@@ -360,7 +360,7 @@
     }, {
         "id": "page3-recommended",
         "title": "Recommended elements",
-        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://rdm.nii.ac.jp/56g8e/ for additional information.",
         "questions": [{
             "qid": "recommended-analysis",
             "type": "object",
@@ -407,7 +407,7 @@
     }, {
         "id": "page4",
         "title": "Final questions",
-        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://osf.io/56g8e/ for additional information.",
+        "description": "For any required question that does not apply to your study put 'N/A' in the space for the relevant field. See van 't Veer & Giner-Sorolla (2016) or https://rdm.nii.ac.jp/56g8e/ for additional information.",
         "questions": [{
             "qid": "datacompletion",
             "title": "Has data collection begun for this project?",

@@ -65,7 +65,7 @@
         <div class="row m-b-lg">
             <div class="col-sm-4">
                 <h5 class="m-t-md f-w-xl"> Do you have Prereg Challenge related questions? </h5>
-                <p>Check out our <a href="https://cos.io/prereg/">Prereg section</a> on the cos.io website. </p>
+                <p>Check out our <a href="https://nii.ac.jp/prereg/">Prereg section</a> on the cos.io website. </p>
             </div>
             <div class="col-sm-4">
                 <h5 class="m-t-md f-w-xl"> Are you experiencing downtime with our services? </h5>
@@ -73,7 +73,7 @@
             </div>
             <div class="col-sm-4">
                 <h5 class="m-t-md f-w-xl"> Are you looking for statistics consultations?</h5>
-                <p>NII provides statistics consulation for free. To learn more about this service visit the <a href="https://cos.io/stats_consulting/"> NII statistics consulting page</a>.</p>
+                <p>NII provides statistics consulation for free. To learn more about this service visit the <a href="https://nii.ac.jp/stats_consulting/"> NII statistics consulting page</a>.</p>
             </div>
 
         </div>

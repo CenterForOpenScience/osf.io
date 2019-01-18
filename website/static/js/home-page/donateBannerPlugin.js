@@ -13,7 +13,7 @@ var bannerOptions = [
         endDate: new Date(2017, 11, 6),
         imageLg: {
             src:'/static/img/front-page/week03_dec2017.svg',
-            alt:'The Center for Open Science created the OSF and a suite of free products to advance the work of the ' +
+            alt:'The National Institute of Informatics created the GakuNin RDM and a suite of free products to advance the work of the ' +
             'research community. If you value these tools, please make a gift to support COS’s efforts to improve and ' +
             'scale these services. DONATE NOW! Image © Nestlé'
         },
@@ -27,13 +27,13 @@ var bannerOptions = [
         endDate: new Date(2017, 11, 13),
         imageLg: {
             src:'/static/img/front-page/week04_dec2017.svg',
-            alt:'Thousands of researchers use the OSF and its related services daily. If you value the OSF, make a ' +
-            'donation to support the Center for Open Science and its ongoing efforts to improve and advance these ' +
+            alt:'Thousands of researchers use the GakuNin RDM and its related services daily. If you value the GakuNin RDM, make a ' +
+            'donation to support the National Institute of Informatics and its ongoing efforts to improve and advance these ' +
             'public goods. Image © Pressmaster/Shutterstock'
         },
         imageSm: {
             src:'/static/img/front-page/week04_dec2017_mobile.svg',
-            alt:'Thousands of researchers use the OSF and its related services. Make a donation to support these ' +
+            alt:'Thousands of researchers use the GakuNin RDM and its related services. Make a donation to support these ' +
             'ongoing efforts. Image © Pressmaster/Shutterstock'
         },
     }, {
@@ -41,7 +41,7 @@ var bannerOptions = [
         endDate: new Date(2017, 11, 20),
         imageLg: {
             src:'/static/img/front-page/week05_dec2017.svg',
-            alt:'The Center for Open Science created the OSF and its related services as public goods. While these ' +
+            alt:'The National Institute of Informatics created the GakuNin RDM and its related services as public goods. While these ' +
             'services will always be free to use, they are not free to build, maintain, and improve. Please support the' +
             ' OSF and COS with a donation today. Image © joker1991/Shutterstock'
         },
@@ -55,7 +55,7 @@ var bannerOptions = [
         endDate: new Date(2017, 11, 27),
         imageLg: {
             src:'/static/img/front-page/week06_dec2017.svg',
-            alt: 'The Center for Open Science launched the OSF with the goal of creating a service to support the ' +
+            alt: 'The National Institute of Informatics launched the GakuNin RDM with the goal of creating a service to support the ' +
             'entire research cycle and remove barriers to accessing data. Support COS’s efforts to advance the work of' +
             ' researchers with a gift today! Image © angellodeco/Shutterstock'
         },
@@ -69,7 +69,7 @@ var bannerOptions = [
         endDate: new Date(2018, 0, 4),
         imageLg: {
             src: '/static/img/front-page/week07_dec2017.svg',
-            alt: 'At the Center for Open Science, we envision a future in which ideas, processes, and outcomes of ' +
+            alt: 'At the National Institute of Informatics, we envision a future in which ideas, processes, and outcomes of ' +
             'research are free and open. COS relies on contributions to build the free products you use and love. Help' +
             ' make our vision a reality with a gift today. Image © Smithsonian Institution Archives'
         },

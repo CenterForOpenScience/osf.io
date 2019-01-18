@@ -18,7 +18,7 @@ var addonsPath = function(dir) {
 };
 
 /**
- * Each JS module for a page on the OSF is webpack entry point. These are built
+ * Each JS module for a page on the GakuNin RDM is webpack entry point. These are built
  * to website/static/public/
  */
 var entry = {

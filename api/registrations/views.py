@@ -285,7 +285,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
     ##Links
 
         self:  the canonical api endpoint of this registration
-        html:  this registration's page on the OSF website
+        html:  this registration's page on the GakuNin RDM website
 
     #This Request/Response
 
@@ -446,7 +446,7 @@ class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, Us
     ##Links
 
         self:           the canonical api endpoint of this contributor
-        html:           the contributing user's page on the OSF website
+        html:           the contributing user's page on the GakuNin RDM website
         profile_image:  a url to the contributing user's profile image
 
     ##Query Params
@@ -558,7 +558,7 @@ class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
         id                       string               unique ID for the citation
         title                    string               title of project or component
         author                   list                 list of authors for the work
-        publisher                string               publisher - most always 'Open Science Framework'
+        publisher                string               publisher - most always 'GakuNin RDM'
         type                     string               type of citation - web
         doi                      string               doi of the resource
 

@@ -405,7 +405,7 @@ ADMIN_TESTS = [
 
 @task
 def test_osf(ctx, numprocesses=None):
-    """Run the OSF test suite."""
+    """Run the GakuNin RDM test suite."""
     print('Testing modules "{}"'.format(OSF_TESTS))
     test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
 

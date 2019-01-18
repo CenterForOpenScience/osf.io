@@ -74,7 +74,7 @@ class NodeRemoveContributorView(PermissionRequiredMixin, DeleteView):
                     ),
                     action_flag=CONTRIBUTOR_REMOVED
                 )
-                # Log invisibly on the OSF.
+                # Log invisibly on the GakuNin RDM.
                 osf_log = NodeLog(
                     action=NodeLog.CONTRIB_REMOVED,
                     user=None,
@@ -163,7 +163,7 @@ class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
                     action_flag=flag
                 )
             if osf_flag is not None:
-                # Log invisibly on the OSF.
+                # Log invisibly on the GakuNin RDM.
                 osf_log = NodeLog(
                     action=osf_flag,
                     user=None,

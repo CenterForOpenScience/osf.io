@@ -391,15 +391,15 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 @api_view(('GET',))
 @throttle_classes([RootAnonThrottle, UserRateThrottle])
 def root(request, format=None, **kwargs):
-    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
-    from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
-    maintained by the [Center for Open Science](http://cos.io/).
+    """Welcome to the V2 GakuNin RDM API. With this API you can access users, projects, components, logs, and files
+    from the [GakuNin RDM](https://rdm.nii.ac.jp/). The GakuNin RDM (GRDM) is a free, open-source service
+    maintained by the [National Institute of Informatics](http://nii.ac.jp/).
 
     The OSF serves as a repository and archive for study designs, materials, data, manuscripts, or anything else
-    associated with your research during the research process. Every project and file on the OSF has a permanent unique
+    associated with your research during the research process. Every project and file on the GakuNin RDM has a permanent unique
     identifier, and every registration (a permanent, time-stamped version of your projects and files) can be assigned a
-    DOI/ARK. You can use the OSF to measure your impact by monitoring the traffic to projects and files you make
-    public. With the OSF you have full control of what parts of your research are public and what remains private.
+    DOI/ARK. You can use the GakuNin RDM to measure your impact by monitoring the traffic to projects and files you make
+    public. With the GakuNin RDM you have full control of what parts of your research are public and what remains private.
 
     Beta notice: This API is currently a beta service.  You are encouraged to use the API and will receive support
     when doing so, however, while the API remains in beta status, it may change without notice as a result of
@@ -428,7 +428,7 @@ def root(request, format=None, **kwargs):
 
     ###Common Actions
 
-    Every endpoint in the OSF API responds to `GET`, `HEAD`, and `OPTION` requests.  You must have adequate permissions
+    Every endpoint in the GakuNin RDM API responds to `GET`, `HEAD`, and `OPTION` requests.  You must have adequate permissions
     to interact with the endpoint.  Unauthorized use will result in 401 Unauthorized or 403 Forbidden responses.  Use
     `HEAD` to probe an endpoint and make sure your headers are well-formed.  `GET` will return a representation of the
     entity or entity collection referenced by the endpoint.  An `OPTIONS` request will return a JSON object that describes the
@@ -668,7 +668,7 @@ def root(request, format=None, **kwargs):
 
     ###Errors
 
-    When a request fails for whatever reason, the OSF API will return an appropriate HTTP error code and include a
+    When a request fails for whatever reason, the GakuNin RDM API will return an appropriate HTTP error code and include a
     descriptive error in the body of the response.  The response body will be an object with a key, `errors`, pointing
     to an array of error objects.  Generally, these error objects will consist of a `detail` key with a detailed error
     message and a `source` object that may contain a field `pointer` that is a [JSON
@@ -702,7 +702,7 @@ def root(request, format=None, **kwargs):
 
     ##OSF Enum Fields
 
-    Some entities in the OSF API have fields that only take a restricted set of values.  Those fields are listed here
+    Some entities in the GakuNin RDM API have fields that only take a restricted set of values.  Those fields are listed here
     for reference.  Fuller descriptions are available on the relevant entity pages.
 
     ###OSF Node Categories
@@ -754,7 +754,7 @@ def root(request, format=None, **kwargs):
     kwargs = request.parser_context['kwargs']
     return_val = {
         'meta': {
-            'message': 'Welcome to the OSF API.',
+            'message': 'Welcome to the GakuNin RDM API.',
             'version': request.version,
             'current_user': current_user,
         },

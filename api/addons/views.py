@@ -59,7 +59,7 @@ class AddonSettingsMixin(object):
         return addon_settings
 
 class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """List of addons configurable with the OSF *Read-only*.
+    """List of addons configurable with the GakuNin RDM *Read-only*.
 
     Paginated list of addons associated with third-party services
 
