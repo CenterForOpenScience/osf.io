@@ -113,9 +113,9 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
         if funders:
             doc['fundingReferences'] = []
             for funder in funders:
-                funder_info = {
-                    'funderName': funder['funding_agency'],
-                }
+                funder_info = {}
+                if funder.get('funding_agency'):
+                    funder_info['funderName'] = funder['funding_agency']
                 if funder.get('grant_number'):
                     funder_info['awardNumber'] = {'awardNumber': funder['grant_number']}
 

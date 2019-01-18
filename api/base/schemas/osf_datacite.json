@@ -48,7 +48,9 @@
                         "description": "The code assigned by the funder to a sponsored award (grant).",
                         "type": "string"
                     }
-                }
+                },
+                "required": ["funding_agency"],
+                "additionalProperties": false
             }
         }
     },

@@ -198,6 +198,24 @@ class TestFileMetadataRecord:
         with pytest.raises(jsonschema.ValidationError):
             record.update(wrong_resource_type, user=node.creator)
 
+        # funders but no funding agency
+        no_funding_agency_metadata = {
+            'funders': [
+                {'grant_number': 'Woooo'}
+            ]
+        }
+        with pytest.raises(jsonschema.ValidationError):
+            record.update(no_funding_agency_metadata, user=node.creator)
+
+        # additional properties for funders fails
+        more_funders_metadata = {
+            'funders': [
+                {'funding_agency': 'Woop', 'there_it': 'is'}
+            ]
+        }
+        with pytest.raises(jsonschema.ValidationError):
+            record.update(more_funders_metadata, user=node.creator)
+
     def test_update_permissions(self, node, record, initial_metadata):
         # Can't update with non-contributor auth
         rando = AuthUserFactory()
