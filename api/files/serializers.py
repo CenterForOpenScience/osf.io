@@ -205,8 +205,14 @@ class BaseFileSerializer(JSONAPISerializer):
         'delete': WaterbutlerLink(),
         'download': 'get_download_link',
         'render': 'get_render_link',
+        'html': 'absolute_url',
         'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder'),
     })
+
+    def absolute_url(self, obj):
+        return furl.furl(settings.DOMAIN).set(
+            path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
+        ).url
 
     def get_download_link(self, obj):
         if obj.is_file:
