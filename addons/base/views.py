@@ -397,11 +397,7 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            # Don't log download actions, but do update analytics
             if payload['action'] in DOWNLOAD_ACTIONS:
-                guid = Guid.load(payload['metadata'].get('nid'))
-                if guid:
-                    node = guid.referent
                 return {'status': 'success'}
 
             user = OSFUser.load(auth['id'])
