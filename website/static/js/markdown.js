@@ -53,7 +53,7 @@ var markdown = new MarkdownIt('commonmark', {
                  '<script>$(document).ready(function () {new mfr.Render("' + id + '", "' + getMfrUrl(assetID) + '");    }); </script>';
         }
     })
-    .use(require('markdown-it-video'))
+    .use(require('@centerforopenscience/markdown-it-video'))
     .use(require('@centerforopenscience/markdown-it-toc'))
     .use(require('markdown-it-sanitizer'))
     .use(require('@centerforopenscience/markdown-it-imsize'))
