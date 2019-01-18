@@ -25,6 +25,19 @@ from website import settings
 from website.project.model import has_anonymous_link
 
 
+def get_meta_type(serializer_class, request):
+    meta = getattr(serializer_class, 'Meta', None)
+    if meta is None:
+        return None
+    resource_type = getattr(meta, 'type_', None)
+    if resource_type is not None:
+        return resource_type
+    try:
+        return meta.get_type(request)
+    except AttributeError:
+        return None
+
+
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
     """
     Properly handles formatting of self and related links according to JSON API.
@@ -385,10 +398,11 @@ class TypeField(ser.CharField):
 
     # Overrides CharField
     def to_internal_value(self, data):
+        request = self.context.get('request', None)
         if isinstance(self.root, JSONAPIListSerializer):
-            type_ = self.root.child.Meta.type_
+            type_ = get_meta_type(self.root.child, request)
         else:
-            type_ = self.root.Meta.type_
+            type_ = get_meta_type(self.root, request)
 
         if type_ != data:
             raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
@@ -866,11 +880,11 @@ class TypedRelationshipField(RelationshipField):
         if len(view_name.split(':')) == 2:
             untyped_view = view_name
             view_parts = view_name.split(':')
-            try:
-                view_parts.insert(1, self.root.Meta.type_.replace('_', '-'))
-            except AttributeError:
-                # List Serializer, use the child's type
-                view_parts.insert(1, self.root.child.Meta.type_.replace('_', '-'))
+            request = self.context.get('request', None)
+            if isinstance(self.root, JSONAPIListSerializer):
+                view_parts.insert(1, get_meta_type(self.root.child, request).replace('_', '-'))
+            else:
+                view_parts.insert(1, get_meta_type(self.root, request).replace('_', '-'))
             self.view_name = view_name = ':'.join(view_parts)
             for k, v in self.views.items():
                 if v == untyped_view:
@@ -1229,7 +1243,7 @@ class SparseFieldsetMixin(object):
     def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
         request = kwargs.get('context', {}).get('request', None)
         if request and (allow_unsafe or request.method in permissions.SAFE_METHODS):
-            sparse_fieldset_query_param = 'fields[{}]'.format(self.Meta.type_)
+            sparse_fieldset_query_param = 'fields[{}]'.format(get_meta_type(self, request))
             if sparse_fieldset_query_param in request.query_params:
                 fieldset = request.query_params[sparse_fieldset_query_param].split(',')
                 for field_name in self.fields.fields.copy().keys():
@@ -1310,9 +1324,9 @@ class JSONAPISerializer(BaseAPISerializer):
         :param envelope: Key for resource object.
         """
         ret = {}
-        meta = getattr(self, 'Meta', None)
-        type_ = getattr(meta, 'type_', None)
-        assert type_ is not None, 'Must define Meta.type_'
+        request = self.context.get('request')
+        type_ = get_meta_type(self, request)
+        assert type_ is not None, 'Must define Meta.type_ or Meta.get_type()'
         self.parse_sparse_fields(allow_unsafe=True, context=self.context)
 
         data = {
@@ -1486,9 +1500,9 @@ class JSONAPIRelationshipSerializer(BaseAPISerializer):
     type = TypeField(required=False, allow_null=True)
 
     def to_representation(self, obj):
-        meta = getattr(self, 'Meta', None)
-        type_ = getattr(meta, 'type_', None)
-        assert type_ is not None, 'Must define Meta.type_'
+        request = self.context.get('request')
+        type_ = get_meta_type(self, request)
+        assert type_ is not None, 'Must define Meta.type_ or Meta.get_type()'
         relation_id_field = self.fields['id']
         attribute = relation_id_field.get_attribute(obj)
         relationship = relation_id_field.to_representation(attribute)
