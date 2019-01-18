@@ -24,6 +24,11 @@
   resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-toc/-/markdown-it-toc-1.1.1.tgz#633c6367cf783a51a080e75a9cd62fd62037e140"
   integrity sha512-xzfwi99vziqpE8cEmcAWiSNGA2pCg/F5XO/GsWo89J1qzFt4udlOiqzW8+yjtfEPQhDY3KLB62QVN4yudeBUYA==
 
+"@centerforopenscience/markdown-it-video@1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-video/-/markdown-it-video-1.0.0.tgz#4c1ab932ccb25c17a8992daa12168d0aea622664"
+  integrity sha512-6TOHqcRy7eg09aCcXLYCvLk87eMuFB8P1rBonpjJPcz++FQdEL5834c1Vq8vCePabKY2Scg3DNagRIblagXjXg==
+
 "@centerforopenscience/osf-style@1.8.0":
   version "1.8.0"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/osf-style/-/osf-style-1.8.0.tgz#adde9771ec09d930b408a39a121ff10b925f2fd5"
@@ -3981,11 +3986,6 @@ markdown-it-sanitizer@~0.3.0:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/markdown-it-sanitizer/-/markdown-it-sanitizer-0.3.2.tgz#052cb45504d39737829c83e84e2f18cc1905d9dc"
   integrity sha1-BSy0VQTTlzeCnIPoTi8YzBkF2dw=
-
-markdown-it-video@~0.6.3:
-  version "0.6.3"
-  resolved "https://registry.yarnpkg.com/markdown-it-video/-/markdown-it-video-0.6.3.tgz#ee96a8fce4a262872f8aaf9706c31540d40104c2"
-  integrity sha512-T4th1kwy0OcvyWSN4u3rqPGxvbDclpucnVSSaH3ZacbGsAts964dxokx9s/I3GYsrDCJs4ogtEeEeVP18DQj0Q==
 
 markdown-it@~4.1.0:
   version "4.1.2"
