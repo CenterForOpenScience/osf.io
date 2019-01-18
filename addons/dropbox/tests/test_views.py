@@ -1,5 +1,5 @@
 """Views tests for the Dropbox addon."""
-import http.client as http
+import httplib as http
 import unittest
 
 from dropbox.exceptions import ApiError

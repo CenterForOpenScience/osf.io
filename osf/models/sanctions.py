@@ -1,6 +1,6 @@
 import pytz
 import functools
-import http.client as http
+import httplib as http
 
 from dateutil.parser import parse as parse_date
 from django.apps import apps

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-import http.client as http
+import httplib as http
 
 from furl import furl
 from flask import request

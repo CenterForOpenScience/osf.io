@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Functional tests using WebTest."""
 import datetime as dt
-import http.client as http
+import httplib as http
 import logging
 import unittest
 

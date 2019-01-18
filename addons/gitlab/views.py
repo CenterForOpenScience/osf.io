@@ -1,7 +1,7 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
 from dateutil.parser import parse as dateparse
-import http.client as http
+import httplib as http
 import logging
 import gitlab
 

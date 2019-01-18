@@ -4,7 +4,7 @@ import mock
 import pytest
 import unittest
 
-import http.client as http
+import httplib as http
 
 
 from addons.base.tests.views import OAuthAddonConfigViewsTestCaseMixin

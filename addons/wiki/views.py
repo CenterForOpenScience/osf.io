@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import http.client as http
+import httplib as http
 import logging
 
 from flask import request

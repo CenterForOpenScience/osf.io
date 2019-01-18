@@ -1,5 +1,5 @@
 from datetime import timedelta
-import http.client as http
+import httplib as http
 
 from django.utils import timezone
 from nose.tools import *  # noqa (PEP8 asserts)

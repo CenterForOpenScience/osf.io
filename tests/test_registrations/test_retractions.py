@@ -1,7 +1,7 @@
 """Tests related to retraction of public registrations"""
 
 import datetime
-import http.client as http
+import httplib as http
 
 import mock
 import pytest

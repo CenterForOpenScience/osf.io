@@ -1,4 +1,4 @@
-import http.client as http
+import httplib as http
 
 from framework.exceptions import HTTPError
 

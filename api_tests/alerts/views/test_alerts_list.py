@@ -1,5 +1,5 @@
 import pytest
-import http.client as http
+import httplib as http
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (

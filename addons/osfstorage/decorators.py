@@ -1,4 +1,4 @@
-import http.client as http
+import httplib
 import functools
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -21,11 +21,11 @@ def handle_django_errors(func):
         try:
             return func(*args, **kwargs)
         except ObjectDoesNotExist:
-            raise HTTPError(http.NOT_FOUND)
+            raise HTTPError(httplib.NOT_FOUND)
         except IntegrityError:
-            raise HTTPError(http.CONFLICT)
+            raise HTTPError(httplib.CONFLICT)
         except exceptions.VersionNotFoundError:
-            raise HTTPError(http.NOT_FOUND)
+            raise HTTPError(httplib.NOT_FOUND)
     return wrapped
 
 
@@ -37,7 +37,7 @@ def load_guid_as_target(func):
         target = getattr(Guid.load(guid), 'referent', None)
         if not target:
             raise HTTPError(
-                http.NOT_FOUND,
+                httplib.NOT_FOUND,
                 data={
                     'message_short': 'Guid not resolved',
                     'message_long': 'No object with that guid could be found',
@@ -63,7 +63,7 @@ def autoload_filenode(must_be=None, default_root=False):
             else:
                 file_node = OsfStorageFileNode.get(kwargs.get('fid'), kwargs['target'])
             if must_be and file_node.kind != must_be:
-                raise HTTPError(http.BAD_REQUEST, data={
+                raise HTTPError(httplib.BAD_REQUEST, data={
                     'message_short': 'incorrect type',
                     'message_long': 'FileNode must be of type {} not {}'.format(must_be, file_node.kind)
                 })
@@ -99,7 +99,7 @@ def waterbutler_opt_hook(func):
                 'name': payload['destination']['name'],
             })
         except KeyError:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(httplib.BAD_REQUEST)
 
         return func(*args, **kwargs)
     return wrapped

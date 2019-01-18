@@ -1,6 +1,6 @@
 import os
 import re
-import http.client as http
+import httplib as http
 
 from citeproc import CitationStylesStyle, CitationStylesBibliography
 from citeproc import Citation, CitationItem

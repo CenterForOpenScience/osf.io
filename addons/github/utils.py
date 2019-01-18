@@ -2,7 +2,7 @@ import hmac
 import uuid
 import urllib
 import hashlib
-import http.client as http
+import httplib as http
 from github3.repos.branch import Branch
 
 from framework.exceptions import HTTPError

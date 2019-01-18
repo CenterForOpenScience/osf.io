@@ -3,7 +3,7 @@
 
 # PEP8 asserts
 from copy import deepcopy
-import http.client as http
+import httplib as http
 import time
 import mock
 import pytest

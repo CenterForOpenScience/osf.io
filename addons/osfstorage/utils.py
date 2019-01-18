@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 import os
-import http.client as http
+import httplib
 import logging
 import functools
 
@@ -64,7 +64,7 @@ def serialize_revision(node, record, version, index, anon=False):
 
 
 SIGNED_REQUEST_ERROR = HTTPError(
-    http.SERVICE_UNAVAILABLE,
+    httplib.SERVICE_UNAVAILABLE,
     data={
         'message_short': 'Upload service unavailable',
         'message_long': (

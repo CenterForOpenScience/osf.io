@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import http.client as http
+import httplib as http
 
 from framework.exceptions import HTTPError
 from osf.models import NodeLog

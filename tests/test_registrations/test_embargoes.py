@@ -1,6 +1,6 @@
 """Tests related to embargoes of registrations"""
 import datetime
-import http.client as http
+import httplib as http
 import json
 
 import pytz
