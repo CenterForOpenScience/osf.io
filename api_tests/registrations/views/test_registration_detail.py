@@ -176,12 +176,12 @@ class TestRegistrationDetail:
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
-        assert res.json['data']['relationships']['comments']['links']['related']['meta']['total']['node'] == 1
+        assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 2
         assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
-        registration_comment.is_deleted = True
-        registration_comment.save()
+        registration_comment_reply.is_deleted = True
+        registration_comment_reply.save()
         res = app.get(url, auth=user.auth)
-        assert res.json['data']['relationships']['comments']['links']['related']['meta']['total']['node'] == 0
+        assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 1
 
     #   test_registration_shows_specific_related_counts
         url = '/{}registrations/{}/?related_counts=children,wikis'.format(
