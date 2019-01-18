@@ -27,6 +27,7 @@ from osf_tests.factories import (
 
 from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
 from tests.utils import assert_latest_log
+from api_tests.utils import create_test_file
 
 
 @pytest.fixture()
@@ -46,7 +47,10 @@ class TestRegistrationDetail:
 
     @pytest.fixture()
     def private_project(self, user):
-        return ProjectFactory(title='Private Project', creator=user)
+        private_project = ProjectFactory(title='Private Project', creator=user)
+        create_test_file(private_project, user, filename='sake recipe')
+        create_test_file(private_project, user, filename='sake rice wine recipe')
+        return private_project
 
     @pytest.fixture()
     def public_registration(self, user, public_project):
@@ -65,7 +69,11 @@ class TestRegistrationDetail:
 
     @pytest.fixture()
     def private_registration(self, user, private_project, private_wiki):
-        return RegistrationFactory(project=private_project, creator=user)
+        private_registration = RegistrationFactory(project=private_project, creator=user)
+        # Registration seem to lose all files on the node (registered_from).
+        private_registration.files_count = private_project.files.count()
+        private_registration.save()
+        return private_registration
 
     @pytest.fixture()
     def registration_comment(self, private_registration, user):
@@ -187,8 +195,10 @@ class TestRegistrationDetail:
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
         assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 2
         assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
-        registration_comment_reply.is_deleted = True
-        registration_comment_reply.save()
+        assert res.json['data']['relationships']['files']['links']['related']['meta']['count'] == 2
+
+        registration_comment.is_deleted = True
+        registration_comment.save()
         res = app.get(url, auth=user.auth)
         assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 1
 

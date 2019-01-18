@@ -7,6 +7,7 @@ from celery.utils.log import get_task_logger
 
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.utils import logged
+from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import HTTPError
 
 from api.base.utils import waterbutler_api_url_for
@@ -24,7 +25,10 @@ from website.archiver import (
 from website.archiver import utils
 from website.archiver import signals as archiver_signals
 
-from website.project import signals as project_signals
+from website.project import (
+    signals as project_signals,
+    tasks as project_tasks,
+)
 from website import settings
 from website.app import init_addons
 from osf.models import (
@@ -299,6 +303,10 @@ def archive_success(dst_pk, job_pk):
     """
     create_app_context()
     dst = AbstractNode.load(dst_pk)
+    # Launch task to set registration files count
+    logger.info('Enqueued task to update registration {} files count'.format(dst))
+    enqueue_task(project_tasks.update_files_count.s(dst._id))
+
     # The filePicker extension addded with the Prereg Challenge registration schema
     # allows users to select files in OSFStorage as their response to some schema
     # questions. These files are references to files on the unregistered Node, and
