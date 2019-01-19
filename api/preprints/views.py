@@ -1,4 +1,5 @@
 import re
+from distutils.version import StrictVersion
 
 from rest_framework import generics
 from django.db.models import Q
@@ -218,8 +219,9 @@ class PreprintNodeRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, 
     def get_object(self):
         preprint = self.get_preprint()
         auth = get_user_auth(self.request)
+        type_ = 'linked_preprint_nodes' if StrictVersion(self.request.version) < StrictVersion('2.13') else 'nodes'
         obj = {
-            'data': {'id': preprint.node._id, 'type': 'linked_preprint_nodes'} if preprint.node and preprint.node.can_view(auth) else None,
+            'data': {'id': preprint.node._id, 'type': type_} if preprint.node and preprint.node.can_view(auth) else None,
             'self': preprint,
         }
         return obj
