@@ -336,10 +336,17 @@
 
             <div class="modal-footer">
 
+                <span data-bind="if: page() == 'invite'">
+                  <button class="btn btn-link" data-bind="click:selectWhom">Back</button>
+                </span>
+
+                <span data-bind="if: page() == 'which'">
+                  <a class="btn btn-link" data-bind="click:selectWhom">Back</a>
+                </span>
+
                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
 
                 <span data-bind="if: page() === 'invite'">
-                    <button class="btn btn-primary" data-bind='click:selectWhom'>Back</button>
                     <button class='btn btn-success'
                          data-bind='click: postInvite, enable:canSubmit'
                                     type="submit">Add</button>
@@ -351,7 +358,6 @@
                 </span>
 
                 <span data-bind="if: page() == 'which'">
-                    <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
                     <a class="btn btn-success" data-bind="click:submit">Add</a>
                 </span>
 

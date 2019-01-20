@@ -75,9 +75,9 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.page = ko.observable('whom');
         self.pageTitle = ko.computed(function () {
             return {
-                whom: 'Add Contributors',
-                which: 'Select Components',
-                invite: 'Add Unregistered Contributor'
+                whom: 'Add contributors',
+                which: 'Select components',
+                invite: 'Add unregistered contributor'
             }[self.page()];
         });
         self.query = ko.observable();
