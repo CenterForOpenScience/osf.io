@@ -12,6 +12,8 @@ import pytest
 import pytz
 import itsdangerous
 
+from waffle.testutils import override_switch
+
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
@@ -34,6 +36,7 @@ from framework.exceptions import PermissionsError, HTTPError
 from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
+from osf import features
 from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, Subject, Session
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError, PreprintProviderError
 
@@ -2308,6 +2311,12 @@ class TestPreprintOsfStorage(OsfTestCase):
         self.preprint = PreprintFactory(creator=self.user)
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
+    # enable the ELASTICSEARCH_METRICS switch for all tests
+    @pytest.fixture(autouse=True)
+    def enable_elasticsearch_metrics(self):
+        with override_switch(features.ELASTICSEARCH_METRICS, active=True):
+            yield
+
     def test_create_log(self):
         action = 'file_added'
         path = 'pizza.nii'
@@ -2330,9 +2339,15 @@ class TestPreprintOsfStorage(OsfTestCase):
 
     def build_url(self, **kwargs):
         options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
-            action='download',
+            action=kwargs.get('action', 'download'),
             nid=self.preprint._id,
-            provider='osf_storage'), **kwargs),
+            provider='osf_storage',
+            path='/test',
+            origin='Foles',
+            refer='Ertz',
+            user_agent='Agholor',
+            url='Sproles'
+        ), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=500),
         }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
         return self.preprint.api_url_for('get_auth', **options)
@@ -2347,6 +2362,44 @@ class TestPreprintOsfStorage(OsfTestCase):
         observed_url = furl.furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)
+
+    @mock.patch('addons.base.views.PreprintDownload.record_for_preprint')
+    def test_metrics_download(self, mock_metrics):
+        user = UserFactory()
+        session = Session(data={'auth_user_id': user._id})
+        session.save()
+        cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id)
+
+        url = self.build_url(cookie=cookie)
+        res = self.app.get(url, auth=Auth(user=user))
+        assert res.status_code == 200
+        mock_metrics.assert_called_once_with(origin='Foles',
+                                             path='/test',
+                                             preprint=self.preprint,
+                                             refer='Ertz',
+                                             url='Sproles',
+                                             user=user,
+                                             user_agent='Agholor',
+                                             version=None)
+
+    @mock.patch('addons.base.views.PreprintView.record_for_preprint')
+    def test_metrics_view(self, mock_metrics):
+        user = UserFactory()
+        session = Session(data={'auth_user_id': user._id})
+        session.save()
+        cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id)
+
+        url = self.build_url(cookie=cookie, action='render')
+        res = self.app.get(url, auth=Auth(user=user))
+        assert res.status_code == 200
+        mock_metrics.assert_called_once_with(origin='Foles',
+                                             path='/test',
+                                             preprint=self.preprint,
+                                             refer='Ertz',
+                                             url='Sproles',
+                                             user=user,
+                                             user_agent='Agholor',
+                                             version=None)
 
 
 class TestCheckPreprintAuth(OsfTestCase):

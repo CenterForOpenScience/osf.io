@@ -339,7 +339,11 @@ def get_auth(auth, **kwargs):
                         preprint=node,
                         user=user,
                         version=fileversion.identifier if fileversion else None,
-                        path=path
+                        path=path,
+                        refer=data.get('refer'),
+                        user_agent=data.get('user_agent'),
+                        origin=data.get('origin'),
+                        url=data.get('url')
                     )
                 except es_exceptions.ConnectionError:
                     log_exception()
