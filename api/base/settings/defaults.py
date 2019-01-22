@@ -163,6 +163,7 @@ REST_FRAMEWORK = {
         '2.10',
         '2.11',
         '2.12',
+        '2.13',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
