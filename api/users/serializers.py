@@ -1,10 +1,8 @@
 import jsonschema
 from django.utils import timezone
-from django.db.models import Q
 
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from guardian.shortcuts import get_objects_for_user
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 from api.base.exceptions import InvalidModelValueError, Conflict
@@ -14,13 +12,13 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
-from api.base.utils import default_node_list_queryset
+from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
 from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
 from osf.models import Email
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
-from osf.models import OSFUser, QuickFilesNode, PreprintProvider, Preprint
+from osf.models import OSFUser, QuickFilesNode, Preprint
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
@@ -173,8 +171,10 @@ class UserSerializer(JSONAPISerializer):
 
     def get_node_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        user_nodes = default_node_list_queryset(model_cls=Node).filter(contributor__user__id=obj.id)
-        return user_nodes.can_view(user=auth.user, private_link=auth.private_link).count()
+        if obj != auth.user:
+            return default_node_list_permission_queryset(user=auth.user, model_cls=Node).filter(contributor__user__id=obj.id).count()
+
+        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=obj.id).count()
 
     def get_quickfiles_count(self, obj):
         return QuickFilesNode.objects.get(contributor__user__id=obj.id).files.filter(type='osf.osfstoragefile').count()
@@ -186,14 +186,8 @@ class UserSerializer(JSONAPISerializer):
 
     def get_preprint_count(self, obj):
         auth_user = get_user_auth(self.context['request']).user
-        query = Q(is_published=True, is_public=True)
-        if auth_user:
-            admin_user_query = Q(_contributor__user_id=auth_user.id, _contributor__admin=True)
-            allowed_providers = get_objects_for_user(auth_user, 'view_submissions', PreprintProvider)
-            reviews_user_query = Q(is_public=True, provider__in=allowed_providers)
-            query = query | admin_user_query | reviews_user_query
-
-        return Preprint.objects.filter(_contributors__id=obj.id, deleted__isnull=True).filter(query).count()
+        user_preprints_query = Preprint.objects.filter(_contributors__guids___id=obj._id).exclude(machine_state='initial')
+        return Preprint.objects.can_view(user_preprints_query, auth_user, allow_contribs=False).count()
 
     def get_institutions_count(self, obj):
         return obj.affiliated_institutions.count()
