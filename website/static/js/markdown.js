@@ -53,10 +53,10 @@ var markdown = new MarkdownIt('commonmark', {
                  '<script>$(document).ready(function () {new mfr.Render("' + id + '", "' + getMfrUrl(assetID) + '");    }); </script>';
         }
     })
-    .use(require('markdown-it-video'))
+    .use(require('@centerforopenscience/markdown-it-video'))
     .use(require('@centerforopenscience/markdown-it-toc'))
     .use(require('markdown-it-sanitizer'))
-    .use(require('markdown-it-imsize'))
+    .use(require('@centerforopenscience/markdown-it-imsize'))
     .use(insDel)
     .enable('table')
     .enable('linkify')
@@ -67,7 +67,7 @@ var markdown = new MarkdownIt('commonmark', {
 // Fast markdown renderer for active editing to prevent slow loading/rendering tasks
 var markdownQuick = new MarkdownIt('commonmark', { linkify: true })
     .use(require('markdown-it-sanitizer'))
-    .use(require('markdown-it-imsize'))
+    .use(require('@centerforopenscience/markdown-it-imsize'))
     .disable('link')
     .disable('image')
     .use(insDel)
@@ -79,7 +79,7 @@ var markdownQuick = new MarkdownIt('commonmark', { linkify: true })
 // Markdown renderer for older wikis rendered before switch date
 var markdownOld = new MarkdownIt('commonmark', { linkify: true})
     .use(require('markdown-it-sanitizer'))
-    .use(require('markdown-it-imsize'))
+    .use(require('@centerforopenscience/markdown-it-imsize'))
     .use(insDel)
     .enable('table')
     .enable('linkify')
