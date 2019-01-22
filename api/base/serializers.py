@@ -1604,7 +1604,11 @@ class LinkedRegistration(JSONAPIRelationshipSerializer):
 
 class LinkedPreprint(LinkedNode):
     class Meta:
-        type_ = 'linked_preprints'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_preprints'
+            return 'preprints'
 
 
 class LinkedNodesRelationshipSerializer(BaseAPISerializer):
@@ -1763,7 +1767,11 @@ class LinkedPreprintsRelationshipSerializer(LinkedNodesRelationshipSerializer):
         return obj['self'].linked_preprints_related_url
 
     class Meta:
-        type_ = 'linked_preprints'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_preprints'
+            return 'preprints'
 
     def make_instance_obj(self, obj):
         # Convenience method to format instance based on view's get_object

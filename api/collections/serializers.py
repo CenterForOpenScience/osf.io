@@ -364,6 +364,3 @@ class CollectedPreprintsRelationshipSerializer(CollectedAbstractNodeRelationship
                 list(self.context['view'].collection_preprints(obj, user=get_user_auth(self.context['request']).user)),
             'self': obj,
         }
-
-    class Meta:
-        type_ = 'linked_preprints'
