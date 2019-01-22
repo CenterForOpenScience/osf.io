@@ -196,7 +196,7 @@ class UserSerializer(JSONAPISerializer):
         return Preprint.objects.filter(_contributors__id=obj.id, deleted__isnull=True).filter(query).count()
 
     def get_institutions_count(self, obj):
-        return obj.affiliated_institutions.all().count()
+        return obj.affiliated_institutions.count()
 
     def get_can_view_reviews(self, obj):
         group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
