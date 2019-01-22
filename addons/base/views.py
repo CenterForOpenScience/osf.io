@@ -340,7 +340,7 @@ def get_auth(auth, **kwargs):
                         user=user,
                         version=fileversion.identifier if fileversion else None,
                         path=path,
-                        refer=data.get('refer'),
+                        referer=data.get('referer'),
                         user_agent=data.get('user_agent'),
                         origin=data.get('origin'),
                         url=data.get('url')
