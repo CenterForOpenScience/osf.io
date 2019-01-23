@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 
 def get_default_mailing_lists():
-    return {'GakuNin RDM Help': True}
+    return {'Open Science Framework Help': True}
 
 
 name_formatters = {
