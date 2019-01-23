@@ -456,9 +456,9 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
             raise exceptions.PermissionDenied(detail='The two-factor verification code you provided is invalid.')
         two_factor_addon.save()
 
-    def request_deactivation(self, instance, value):
-        if instance.requested_deactivation != value:
-            if value:
+    def request_deactivation(self, instance, requested_deactivation):
+        if instance.requested_deactivation != requested_deactivation:
+            if requested_deactivation:
                 mails.send_mail(
                     to_addr=OSF_SUPPORT_EMAIL,
                     mail=mails.REQUEST_DEACTIVATION,

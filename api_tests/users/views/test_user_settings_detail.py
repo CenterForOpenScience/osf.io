@@ -228,7 +228,7 @@ class TestUpdateRequestedDeactivation:
         res = app.patch_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
 
-        # Logged in, requesting export for another user
+        # Logged in, requesting deactivation for another user
         res = app.patch_json_api(url, payload, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
