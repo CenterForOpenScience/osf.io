@@ -459,9 +459,7 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
                     can_change_preferences=False,
                 )
                 instance.email_last_sent = timezone.now()
-                instance.requested_deactivation = True
-            else:
-                instance.requested_deactivation = False
+            instance.requested_deactivation = requested_deactivation
             instance.save()
         return
 
