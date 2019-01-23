@@ -418,6 +418,7 @@ AddContributorViewModel = oop.extend(Paginator, {
     },
     submit: function () {
         var self = this;
+        self.canSubmit(false);
         $osf.block();
         var url = self.nodeApiUrl + 'contributors/';
         return $osf.postJSON(
@@ -437,6 +438,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                 }));
                 self.hide();
                 $osf.unblock();
+                self.canSubmit(true);
                 if (self.callback) {
                     self.callback(response);
                 }
@@ -446,6 +448,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         }).fail(function (xhr, status, error) {
             self.hide();
             $osf.unblock();
+            self.canSubmit(true);
             var errorMessage = lodashGet(xhr, 'responseJSON.message') || ('There was a problem trying to add contributors.' + osfLanguage.REFRESH_OR_SUPPORT);
             $osf.growl('Could not add contributors', errorMessage);
             Raven.captureMessage('Error adding contributors', {
