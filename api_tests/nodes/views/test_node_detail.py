@@ -310,6 +310,31 @@ class TestNodeDetail:
         res = app.get(url, auth=user.auth)
         assert 'wikis' in res.json['data']['relationships']
 
+    def test_preprint_field(self, app, user, user_two, project_public, url_public):
+        # Returns true if project holds supplemental material for a preprint a user can view
+        # Published preprint, admin_contrib
+        preprint = PreprintFactory(project=project_public, creator=user)
+        res = app.get(url_public, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['preprint'] is True
+
+        # Published preprint, non_contrib
+        res = app.get(url_public, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['preprint'] is True
+
+        # Unpublished preprint, admin contrib
+        preprint.is_published = False
+        preprint.save()
+        res = app.get(url_public, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['preprint'] is True
+
+        # Unpublished preprint, non_contrib
+        res = app.get(url_public, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['preprint'] is False
+
     def test_shows_access_requests_enabled_field_based_on_version(self, app, user, project_public, url_public):
         url = url_public + '?version=latest'
         res = app.get(url, auth=user.auth)
@@ -736,7 +761,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'type': 'nodes',
                 'id': project_public._id,
                 'attributes': {
-                    'title': 'A' * 201,
+                    'title': 'A' * 513,
                     'category': 'project',
                 }
             }
@@ -745,7 +770,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             url_public, project,
             auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
 
     #   test_update_public_project_logged_in_but_unauthorized
         res = app.put_json_api(url_public, {
@@ -1144,7 +1169,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_doi_metadata.assert_called_with(target_object._id)
+        # Turning supplemental_project private no longer turns preprint private
+        assert target_object.is_public
+        assert not mock_update_doi_metadata.called
 
     def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
         # test_write_contrib_cannot_set_subjects
@@ -1236,7 +1263,18 @@ class TestNodeDelete(NodeCRUDTestCase):
         assert project_private.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
-    def test_delete_project_with_component_returns_error(self, app, user):
+    def test_deletes_private_node_logged_in_write_contributor(
+            self, app, user_two, project_private, url_private):
+        project_private.add_contributor(
+            user_two, permissions=[permissions.WRITE, permissions.READ])
+        project_private.save()
+        res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
+        project_private.reload()
+        assert res.status_code == 403
+        assert project_private.is_deleted is False
+        assert 'detail' in res.json['errors'][0]
+
+    def test_delete_project_with_component_returns_errors_pre_2_12(self, app, user):
         project = ProjectFactory(creator=user)
         NodeFactory(parent=project, creator=user)
         # Return a 400 because component must be deleted before deleting the
@@ -1252,6 +1290,41 @@ class TestNodeDelete(NodeCRUDTestCase):
         assert (
             errors[0]['detail'] ==
             'Any child components must be deleted prior to deleting this project.')
+
+    def test_delete_project_with_component_allowed_with_2_12(self, app, user):
+        project = ProjectFactory(creator=user)
+        child = NodeFactory(parent=project, creator=user)
+        grandchild = NodeFactory(parent=child, creator=user)
+        # Versions 2.12 and greater delete all the nodes in the hierarchy
+        res = app.delete_json_api(
+            '/{}nodes/{}/?version=2.12'.format(API_BASE, project._id),
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 204
+        project.reload()
+        child.reload()
+        grandchild.reload()
+        assert project.is_deleted is True
+        assert child.is_deleted is True
+        assert grandchild.is_deleted is True
+
+    def test_delete_project_with_private_component_2_12(self, app, user):
+        user_two = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        child = NodeFactory(parent=project, creator=user_two)
+        # Versions 2.12 and greater delete all the nodes in the hierarchy
+        res = app.delete_json_api(
+            '/{}nodes/{}/?version=2.12'.format(API_BASE, project._id),
+            auth=user.auth,
+            expect_errors=True
+        )
+
+        assert res.status_code == 403
+        project.reload()
+        child.reload()
+        assert project.is_deleted is False
+        assert child.is_deleted is False
 
     def test_delete_bookmark_collection_returns_error(self, app, user):
         bookmark_collection = find_bookmark_collection(user)
@@ -1271,7 +1344,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
         project_public.reload()
 
-        assert mock_update_doi_metadata_on_change.called
+        assert not mock_update_doi_metadata_on_change.called
 
     @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
     def test_delete_node_with_identifier_calls_preprint_update_status(

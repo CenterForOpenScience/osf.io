@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
-import pytest
+from nose.tools import *  # noqa:
 
 from osf.models import Node
 from framework.auth.core import Auth

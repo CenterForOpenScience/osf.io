@@ -10,9 +10,9 @@
     <br>
     ${referrer_name + ' has added you' if referrer_name else 'You have been added'} as a contributor to the ${branded_service.preprint_word} "${node.title}" on ${branded_service.name}, which is hosted on the Open Science Framework: ${node.absolute_url}<br>
     <br>
-    You will ${'not receive ' if all_global_subscriptions_none else 'be automatically subscribed to '}notification emails for this ${branded_service.preprint_word}. Each ${branded_service.preprint_word} is associated with a project on the Open Science Framework for managing the ${branded_service.preprint_word}. To change your email notification preferences, visit your project user settings: ${settings.DOMAIN + "settings/notifications/"}<br>
+    You will ${'not receive ' if all_global_subscriptions_none else 'be automatically subscribed to '}notification emails for this ${branded_service.preprint_word}.  To change your email notification preferences, visit your user settings: ${settings.DOMAIN + "settings/notifications/"}<br>
     <br>
-    If you have been erroneously associated with "${node.title}", then you may visit the project's "Contributors" page and remove yourself as a contributor.<br>
+    If you have been erroneously associated with "${node.title}", then you may visit the ${branded_service.preprint_word} and remove yourself as a contributor.<br>
     <br>
     Sincerely,<br>
     <br>

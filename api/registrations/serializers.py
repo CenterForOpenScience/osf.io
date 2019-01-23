@@ -1,6 +1,7 @@
 import pytz
 import json
 
+
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -8,7 +9,6 @@ from api.base.exceptions import Conflict
 
 from api.base.utils import absolute_reverse, get_user_auth
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
@@ -21,11 +21,13 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, NodeStateError
+from osf.models import Node
 from osf.utils import permissions
 
+from framework.sentry import log_exception
 
-class BaseRegistrationSerializer(NodeSerializer):
+class RegistrationSerializer(NodeSerializer):
 
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
@@ -71,11 +73,11 @@ class BaseRegistrationSerializer(NodeSerializer):
     )
 
     date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    date_withdrawn = VersionedDateTimeField(source='retraction.date_retracted', read_only=True, help_text='Date time of when this registration was retracted.')
+    date_withdrawn = VersionedDateTimeField(read_only=True, help_text='Date time of when this registration was retracted.')
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
     custom_citation = HideIfWithdrawal(ser.CharField(allow_blank=True, required=False))
 
-    withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
+    withdrawal_justification = ser.CharField(read_only=True)
     template_from = HideIfWithdrawal(ser.CharField(
         read_only=True, allow_blank=False, allow_null=False,
         help_text='Specify a node id for a node you would like to use as a template for the '
@@ -280,37 +282,6 @@ class BaseRegistrationSerializer(NodeSerializer):
     def get_absolute_url(self, obj):
         return self.get_registration_url(obj)
 
-    def create(self, validated_data):
-        auth = get_user_auth(self.context['request'])
-        draft = validated_data.pop('draft')
-        registration_choice = validated_data.pop('registration_choice', 'immediate')
-        embargo_lifted = validated_data.pop('lift_embargo', None)
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
-
-        try:
-            draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
-        except ValidationValueError as e:
-            raise exceptions.ValidationError(e.message)
-
-        registration = draft.register(auth, save=True)
-
-        if registration_choice == 'embargo':
-            if not embargo_lifted:
-                raise exceptions.ValidationError('lift_embargo must be specified.')
-            embargo_end_date = embargo_lifted.replace(tzinfo=pytz.utc)
-            try:
-                registration.embargo_registration(auth.user, embargo_end_date)
-            except ValidationError as err:
-                raise exceptions.ValidationError(err.message)
-        else:
-            try:
-                registration.require_approval(auth.user)
-            except NodeStateError as err:
-                raise exceptions.ValidationError(err)
-
-        registration.save()
-        return registration
-
     def get_registered_meta(self, obj):
         if obj.registered_meta:
             meta_values = obj.registered_meta.values()[0]
@@ -378,18 +349,80 @@ class BaseRegistrationSerializer(NodeSerializer):
         type_ = 'registrations'
 
 
-class RegistrationSerializer(BaseRegistrationSerializer):
+class RegistrationCreateSerializer(RegistrationSerializer):
     """
-    Overrides BaseRegistrationSerializer to add draft_registration, registration_choice, and lift_embargo fields
+    Overrides RegistrationSerializer to add draft_registration, registration_choice, and lift_embargo fields
     """
     draft_registration = ser.CharField(write_only=True)
     registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
+    children = ser.ListField(write_only=True, required=False)
+
+    def create(self, validated_data):
+        auth = get_user_auth(self.context['request'])
+        draft = validated_data.pop('draft')
+        registration_choice = validated_data.pop('registration_choice', 'immediate')
+        embargo_lifted = validated_data.pop('lift_embargo', None)
+        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+        children = validated_data.pop('children', [])
+        if children:
+            # First check that all children are valid
+            child_nodes = Node.objects.filter(guids___id__in=children)
+            if child_nodes.count() != len(children):
+                raise exceptions.ValidationError('Some child nodes could not be found.')
+
+        # Second check that metadata doesn't have files that are not in the child nodes being registered.
+        registering = children + [draft.branched_from._id]
+        orphan_files = self._find_orphan_files(registering, draft)
+        if orphan_files:
+            orphan_files_names = [file_data['selectedFileName'] for file_data in orphan_files]
+            raise exceptions.ValidationError('All files attached to this form must be registered to complete the process. '
+                                             'The following file(s) are attached, but are not part of a component being'
+                                             ' registered: {}'.format(','.join(orphan_files_names)))
+
+        try:
+            draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
+        except ValidationValueError:
+            log_exception()  # Probably indicates a bug on our end, so log to sentry
+            # TODO: Raise an error once our JSON schemas are updated
+
+        try:
+            registration = draft.register(auth, save=True, child_ids=children)
+        except NodeStateError as err:
+            raise exceptions.ValidationError(err)
+
+        if registration_choice == 'embargo':
+            if not embargo_lifted:
+                raise exceptions.ValidationError('lift_embargo must be specified.')
+            embargo_end_date = embargo_lifted.replace(tzinfo=pytz.utc)
+            try:
+                registration.embargo_registration(auth.user, embargo_end_date)
+            except ValidationError as err:
+                raise exceptions.ValidationError(err.message)
+        else:
+            try:
+                registration.require_approval(auth.user)
+            except NodeStateError as err:
+                raise exceptions.ValidationError(err)
+
+        registration.save()
+        return registration
+
+    def _find_orphan_files(self, registering, draft):
+        from website.archiver.utils import find_selected_files
+        files = find_selected_files(draft.registration_schema, draft.registration_metadata)
+        orphan_files = []
+        for _, value in files.items():
+            if 'extra' in value:
+                for file_metadata in value['extra']:
+                    if file_metadata['nodeId'] not in registering:
+                        orphan_files.append(file_metadata)
+        return orphan_files
 
 
-class RegistrationDetailSerializer(BaseRegistrationSerializer):
+class RegistrationDetailSerializer(RegistrationSerializer):
     """
-    Overrides BaseRegistrationSerializer to make id required.
+    Overrides RegistrationSerializer to make id required.
     """
 
     id = IDField(source='_id', required=True)

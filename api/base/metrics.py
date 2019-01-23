@@ -27,7 +27,7 @@ class MetricsViewMixin(object):
     TIMEDELTA_MAP = {
         'daily': timedelta(hours=24),
         'weekly': timedelta(days=7),
-        'monthly': timedelta(days=7),
+        'monthly': timedelta(days=30),
         'yearly': timedelta(days=365),
     }
     VALID_METRIC_PERIODS = {

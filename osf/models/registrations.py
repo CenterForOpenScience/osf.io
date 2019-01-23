@@ -9,7 +9,7 @@ from django.utils import timezone
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
@@ -188,6 +188,14 @@ class Registration(AbstractNode):
     def archiving(self):
         job = self.archive_job
         return job and not job.done and not job.archive_tree_finished()
+
+    @property
+    def date_withdrawn(self):
+        return getattr(self.root.retraction, 'date_retracted', None)
+
+    @property
+    def withdrawal_justification(self):
+        return getattr(self.root.retraction, 'justification', None)
 
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):
@@ -590,7 +598,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         if save:
             self.save()
 
-    def register(self, auth, save=False):
+    def register(self, auth, save=False, child_ids=None):
         node = self.branched_from
 
         # Create the registration
@@ -598,7 +606,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
             schema=self.registration_schema,
             auth=auth,
             data=self.registration_metadata,
-            provider=self.provider,
+            child_ids=child_ids,
+            provider=self.provider
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)

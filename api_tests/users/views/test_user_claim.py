@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
+from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from api.users.views import ClaimUser
@@ -209,6 +210,19 @@ class TestClaimUser:
             expect_errors=True
         )
         assert res.status_code == 403
+
+    def test_claim_auth_throttle_error(self, app, url, claimer, unreg_user, project, mock_mail):
+        unreg_user.unclaimed_records[project._id]['last_sent'] = timezone.now()
+        unreg_user.save()
+        res = app.post_json_api(
+            url.format(unreg_user._id),
+            self.payload(id=project._id),
+            auth=claimer.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'User account can only be claimed with an existing user once every 24 hours'
+        assert mock_mail.call_count == 0
 
     def test_claim_auth_success(self, app, url, claimer, unreg_user, project, mock_mail):
         res = app.post_json_api(

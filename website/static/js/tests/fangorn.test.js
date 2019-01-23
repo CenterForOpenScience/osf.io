@@ -397,57 +397,6 @@ describe('fangorn', () => {
             });
         });
 
-        describe('folderContainsPreprint', () => {
-            it('does not contain a preprint if no children', () => {
-                folder = getItem('folder', 2);
-                assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), false);
-            });
-
-            it('does not contain a preprint if child is not a preprint', () => {
-                folder = getItem('folder', 2);
-                item = getItem('file', 3);
-                item.data.path = 'gfedcba';
-                folder.children = [item];
-                assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), false);
-            });
-
-            it('does contain a preprint if child is a preprint', () => {
-                folder = getItem('folder', 2);
-                item = getItem('file', 3);
-                item.data.path = 'abcdefg';
-                folder.children = [item];
-                assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), true);
-            });
-
-            it('does contain a preprint if nested child is a preprint', () => {
-                folder = getItem('folder', 2);
-                var folder2 = getItem('folder', 3);
-                item = getItem('file', 4);
-                item.data.path = 'abcdefg';
-                folder2.children = [item];
-                folder.children = [folder2];
-                assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), true);
-            });
-        });
-
-        describe('multiselectContainsPreprint', () => {
-            it('does contain a preprint if one item is a preprint', () => {
-                folder = getItem('folder', 2);
-                folder.data.path = 'aaaaaaa';
-                item = getItem('file', 3);
-                item.data.path = 'abcdefg';
-                assert.equal(Fangorn.multiselectContainsPreprint([folder, item], 'abcdefg'), true);
-            });
-
-            it('does not contain a preprint if no items are preprints', () => {
-                folder = getItem('folder', 2);
-                folder.data.path = 'aaaaaaa';
-                item = getItem('file', 3);
-                item.data.path = 'bbbbbbb';
-                assert.equal(Fangorn.multiselectContainsPreprint([folder, item], 'abcdefg'), false);
-            });
-        });
-
         describe('showDeleteMultiple', () => {
             it('does not show multi delete if no edit permissions', () => {
                 folder = getItem('folder', 2);
