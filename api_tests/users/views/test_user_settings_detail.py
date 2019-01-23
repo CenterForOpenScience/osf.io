@@ -205,3 +205,78 @@ class TestUserSettingsUpdateMailingList:
         res = app.patch_json_api(url, payload, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.content_type == 'application/vnd.api+json'
+
+
+@pytest.mark.django_db
+class TestUpdateRequestedDeactivation:
+
+    @pytest.fixture()
+    def payload(self, user_one):
+        return {
+            'data': {
+                'id': user_one._id,
+                'type': 'user_settings',
+                'attributes': {
+                    'deactivation_requested': True
+                }
+            }
+        }
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_patch_requested_deactivation(self, mock_mail, app, user_one, user_two, url, payload):
+        # Logged out
+        res = app.patch_json_api(url, payload, expect_errors=True)
+        assert res.status_code == 401
+
+        # Logged in, requesting export for another user
+        res = app.patch_json_api(url, payload, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # Logged in, request to deactivate
+        assert user_one.email_last_sent is None
+        assert user_one.requested_deactivation is False
+        res = app.patch_json_api(url, payload, auth=user_one.auth)
+        assert res.status_code == 200
+        user_one.reload()
+        assert user_one.email_last_sent is not None
+        assert user_one.requested_deactivation is True
+        assert mock_mail.call_count == 1
+
+        # Logged in, deactivation already requested
+        res = app.patch_json_api(url, payload, auth=user_one.auth)
+        assert res.status_code == 200
+        user_one.reload()
+        assert user_one.email_last_sent is not None
+        assert user_one.requested_deactivation is True
+        assert mock_mail.call_count == 1
+
+        # Logged in, request to cancel deactivate request
+        payload['data']['attributes']['deactivation_requested'] = False
+        res = app.patch_json_api(url, payload, auth=user_one.auth)
+        assert res.status_code == 200
+        user_one.reload()
+        assert user_one.email_last_sent is not None
+        assert user_one.requested_deactivation is False
+        assert mock_mail.call_count == 1
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_patch_invalid_type(self, mock_mail, app, user_one, url, payload):
+        assert user_one.email_last_sent is None
+        payload['data']['type'] = 'Invalid Type'
+        res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
+        user_one.reload()
+        assert user_one.email_last_sent is None
+        assert mock_mail.call_count == 0
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_exceed_throttle(self, mock_mail, app, user_one, url, payload):
+        assert user_one.email_last_sent is None
+        res = app.patch_json_api(url, payload, auth=user_one.auth)
+        assert res.status_code == 200
+
+        res = app.patch_json_api(url, payload, auth=user_one.auth)
+        assert res.status_code == 200
+
+        res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 429
