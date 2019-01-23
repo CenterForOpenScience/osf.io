@@ -14,7 +14,7 @@ from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
 from addons.base.views import DOWNLOAD_ACTIONS
 from website import settings
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission,

@@ -2,6 +2,19 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.0.0 (2019-01-23)
+===================
+- APIv2: Allow doubly confirming new emails and account merges
+- APIv2: Deleting nodes deletes entire hierarchy
+- APIv2: Initiate resending confirmation emails for unconfirmed emails
+- Learn more license link opens in new tab
+- APIv2 - withdrawal date/justification included on children
+- Limit file size uploads
+- Impact: request relevant indices
+- Fix institution settings FAQ link
+- Remove legacy registrations
+- Don't add provider=osf query param when clicking on preprint in search
+
 18.9.0 (2018-12-19)
 ===================
 

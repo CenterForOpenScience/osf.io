@@ -25,7 +25,7 @@ from website import language
 
 from website.util import rubeus
 from website.ember_osf_web.views import use_ember_app
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.project import new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
@@ -251,9 +251,10 @@ def project_before_template(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 @must_not_be_registration
-@ember_flag_is_active(features.EMBER_PROJECT_REGISTRATIONS)
 def node_registrations(auth, node, **kwargs):
-    return _view_project(node, auth, primary=True, embed_registrations=True)
+    if request.path.startswith('/project/'):
+        return redirect('/{}/registrations/'.format(node._id))
+    return use_ember_app()
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
@@ -589,7 +590,6 @@ def component_remove(auth, node, **kwargs):
                 'message_long': 'Could not delete component: ' + str(e)
             },
         )
-    node.save()
 
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
@@ -737,8 +737,8 @@ def _view_project(node, auth, primary=False,
             'is_pending_registration': node.is_pending_registration if is_registration else False,
             'is_retracted': node.is_retracted if is_registration else False,
             'is_pending_retraction': node.is_pending_retraction if is_registration else False,
-            'retracted_justification': getattr(node.retraction, 'justification', None) if is_registration else None,
-            'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)) if is_registration else '',
+            'retracted_justification': getattr(node.root.retraction, 'justification', None) if is_registration else None,
+            'date_retracted': iso8601format(getattr(node.root.retraction, 'date_retracted', None)) if is_registration else '',
             'embargo_end_date': node.embargo_end_date.strftime('%A, %b %d, %Y') if is_registration and node.embargo_end_date else '',
             'is_pending_embargo': node.is_pending_embargo if is_registration else False,
             'is_embargoed': node.is_embargoed if is_registration else False,

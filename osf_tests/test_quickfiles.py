@@ -4,13 +4,12 @@ import pytest
 from framework.auth.core import Auth
 from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
-from osf.exceptions import MaxRetriesError
+from osf.exceptions import MaxRetriesError, NodeStateError
 from api_tests.utils import create_test_file
 from tests.utils import assert_items_equal
 from tests.base import get_default_metaschema
 
 from . import factories
-from website.exceptions import NodeStateError
 
 pytestmark = pytest.mark.django_db
 
