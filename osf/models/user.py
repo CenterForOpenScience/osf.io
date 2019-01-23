@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 
 def get_default_mailing_lists():
-    return {'Open Science Framework Help': True}
+    return {website_settings.OSF_HELP_LIST: website_settings.ENABLE_OSF_HELP}
 
 
 name_formatters = {

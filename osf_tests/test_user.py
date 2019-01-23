@@ -1685,7 +1685,7 @@ class TestUserMerging(OsfTestCase):
                 'shared_lt': True,
             },
             'osf_mailing_lists': {
-                'Open Science Framework Help': True
+                settings.OSF_HELP_LIST: True
             },
             'security_messages': {
                 'user': today,
