@@ -340,10 +340,10 @@ def get_auth(auth, **kwargs):
                         user=user,
                         version=fileversion.identifier if fileversion else None,
                         path=path,
-                        referer=data.get('referer'),
+                        referrer=data.get('referrer'),
                         user_agent=data.get('user_agent'),
                         origin=data.get('origin'),
-                        url=data.get('url')
+                        uri=data.get('uri')
                     )
                 except es_exceptions.ConnectionError:
                     log_exception()
