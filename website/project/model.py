@@ -2,7 +2,6 @@
 import logging
 import re
 
-from django.apps import apps
 from django.core.exceptions import ValidationError
 
 from osf.utils import sanitize
@@ -22,15 +21,6 @@ def has_anonymous_link(node, auth):
     return False
 
 
-def validate_contributor(guid, contributors):
-    OSFUser = apps.get_model('osf.OSFUser')
-    user = OSFUser.load(guid)
-    if not user or not user.is_registered:
-        raise ValidationError('User does not exist or is not active.')
-    elif user not in contributors:
-        raise ValidationError('Mentioned user is not a contributor.')
-    return True
-
 def get_valid_mentioned_users_guids(comment, contributors):
     """ Get a list of valid users that are mentioned in the comment content.
 
@@ -38,13 +28,15 @@ def get_valid_mentioned_users_guids(comment, contributors):
     :param list contributors: List of contributors on the node
     :return list new_mentions: List of valid users mentioned in the comment content
     """
-    new_mentions = set(re.findall(r'\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5})\/\)', comment.content))
-    new_mentions = [
-        m for m in new_mentions if
-        m not in comment.ever_mentioned.values_list('guids___id', flat=True) and
-        validate_contributor(m, contributors)
-    ]
-    return new_mentions
+    mentions = set(re.findall(r'\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5})\/\)', comment.content))
+    old_mentioned_guids = comment.ever_mentioned.values_list('guids___id', flat=True)
+    return list(contributors.filter(
+        is_registered=True, guids___id__in=mentions
+    ).exclude(
+        guids___id__in=old_mentioned_guids
+    ).values_list(
+        'guids___id', flat=True
+    ))
 
 
 def get_pointer_parent(pointer):
