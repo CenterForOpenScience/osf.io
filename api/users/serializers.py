@@ -352,13 +352,6 @@ class UserAccountExportSerializer(BaseAPISerializer):
         type_ = 'user-account-export-form'
 
 
-class UserAccountDeactivateSerializer(BaseAPISerializer):
-    type = TypeField()
-
-    class Meta:
-        type_ = 'user-account-deactivate-form'
-
-
 class UserChangePasswordSerializer(BaseAPISerializer):
     type = TypeField()
     existing_password = ser.CharField(write_only=True, required=True)
