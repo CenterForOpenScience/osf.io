@@ -11,6 +11,7 @@
     </div>
 
     <div class="col-sm-9 col-md-7">
+        <div style="display: none;">
         <div class="panel panel-default scripted" id="selectLists">
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Email Preferences</h3></div>
             <div class="panel-body">
@@ -46,6 +47,7 @@
                     <!-- Flashed Messages -->
                     <div data-bind="html: message, attr: {class: messageClass}"></div>
             </div><!--view model scope ends -->
+        </div>
         </div>
         <div class="panel panel-default">
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
