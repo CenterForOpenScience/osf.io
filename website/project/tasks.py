@@ -46,12 +46,17 @@ def update_files_count(node_id):
     if node is None:
         return
 
+    field = AbstractNode._meta.get_field('modified')
+    # Do not update modified upon save()
+    field.auto_now = False
+
     if node.is_registration:
         node.files_count = node.files.count()
     # else:
         # TODO: Do node specific files_count update
 
     node.save()
+    field.auto_now = True
 
 def update_collecting_metadata(node, saved_fields):
     from website.search.search import update_collected_metadata

@@ -153,7 +153,7 @@ class RegistrationSerializer(NodeSerializer):
     files = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-storage-providers',
         related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_files_count'}
+        related_meta={'count': 'get_files_count'},
     ))
 
     wikis = HideIfWithdrawal(RelationshipField(

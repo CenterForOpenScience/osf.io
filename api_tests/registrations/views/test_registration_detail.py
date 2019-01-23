@@ -70,7 +70,7 @@ class TestRegistrationDetail:
     @pytest.fixture()
     def private_registration(self, user, private_project, private_wiki):
         private_registration = RegistrationFactory(project=private_project, creator=user)
-        # Registration seem to lose all files on the node (registered_from).
+        # Registration seems to lose all files on the node (registered_from).
         private_registration.files_count = private_project.files.count()
         private_registration.save()
         return private_registration
@@ -197,8 +197,8 @@ class TestRegistrationDetail:
         assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
         assert res.json['data']['relationships']['files']['links']['related']['meta']['count'] == 2
 
-        registration_comment.is_deleted = True
-        registration_comment.save()
+        registration_comment_reply.is_deleted = True
+        registration_comment_reply.save()
         res = app.get(url, auth=user.auth)
         assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 1
 
