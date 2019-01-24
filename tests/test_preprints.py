@@ -2344,9 +2344,9 @@ class TestPreprintOsfStorage(OsfTestCase):
             provider='osf_storage',
             path='/test',
             origin='Foles',
-            referer='Ertz',
+            referrer='Ertz',
             user_agent='Agholor',
-            url='Sproles'
+            uri='Sproles'
         ), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=500),
         }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
@@ -2376,8 +2376,8 @@ class TestPreprintOsfStorage(OsfTestCase):
         mock_metrics.assert_called_once_with(origin='Foles',
                                              path='/test',
                                              preprint=self.preprint,
-                                             referer='Ertz',
-                                             url='Sproles',
+                                             referrer='Ertz',
+                                             uri='Sproles',
                                              user=user,
                                              user_agent='Agholor',
                                              version=None)
@@ -2395,8 +2395,8 @@ class TestPreprintOsfStorage(OsfTestCase):
         mock_metrics.assert_called_once_with(origin='Foles',
                                              path='/test',
                                              preprint=self.preprint,
-                                             referer='Ertz',
-                                             url='Sproles',
+                                             referrer='Ertz',
+                                             uri='Sproles',
                                              user=user,
                                              user_agent='Agholor',
                                              version=None)
