@@ -40,9 +40,7 @@ def get_valid_mentioned_users_guids(comment, contributors):
     elif contributors.filter(guids___id__in=new_mentions).count() != len(new_mentions):
         raise ValidationError('Mentioned user is not a contributor.')
 
-    valid_new_mentions = contributors.exclude(guids___id__in=old_mentioned_guids)
-
-    return list(valid_new_mentions.values_list('guids___id', flat=True))
+    return list(new_mentions)
 
 
 def get_pointer_parent(pointer):
