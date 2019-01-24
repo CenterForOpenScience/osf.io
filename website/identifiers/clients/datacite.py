@@ -85,7 +85,7 @@ class DataCiteClient(AbstractIdentifierClient):
         else:
             raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
 
-    def update_identifier(self, node, category, status=None):
+    def update_identifier(self, node, category):
         if not node.is_public or node.is_deleted:
             if category == 'doi':
                 doi = self.build_doi(node)
