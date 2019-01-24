@@ -10,6 +10,7 @@ from flask import request
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db.models import Q, OuterRef, Exists, Subquery
+import waffle
 
 from framework import status
 from framework.utils import iso8601format
@@ -270,7 +271,9 @@ def node_forks(auth, node, **kwargs):
 @must_have_permission(READ)
 @ember_flag_is_active(features.EMBER_PROJECT_SETTINGS)
 def node_setting(auth, node, **kwargs):
-
+    if node.is_registration and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+        # Registration settings page obviated during redesign
+        return redirect(node.url)
     auth.user.update_affiliated_institutions_by_email_domain()
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
@@ -742,10 +745,7 @@ def _view_project(node, auth, primary=False,
             'embargo_end_date': node.embargo_end_date.strftime('%A, %b %d, %Y') if is_registration and node.embargo_end_date else '',
             'is_pending_embargo': node.is_pending_embargo if is_registration else False,
             'is_embargoed': node.is_embargoed if is_registration else False,
-            'is_pending_embargo_termination': is_registration and node.is_embargoed and (
-                node.embargo_termination_approval and
-                node.embargo_termination_approval.is_pending_approval
-            ),
+            'is_pending_embargo_termination': is_registration and node.is_pending_embargo_termination,
             'registered_from_url': node.registered_from.url if is_registration else '',
             'registered_date': iso8601format(node.registered_date) if is_registration else '',
             'root_id': node.root._id if node.root else None,
