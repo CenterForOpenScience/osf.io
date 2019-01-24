@@ -531,8 +531,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_preprint(self, obj):
         # Whether the node has supplemental material for a preprint the user can view
-        user = self.context['request'].user if not self.context['request'].user.is_anonymous else None
-        return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
+        if hasattr(obj, 'has_viewable_preprints'):
+            # if queryset has been annotated with "has_viewable_preprints", use this value
+            return obj.has_viewable_preprints
+        else:
+            user = self.context['request'].user
+            return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
 
     def get_current_user_is_contributor(self, obj):
         # Returns whether user is a contributor (does not include group members)

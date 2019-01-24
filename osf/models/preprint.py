@@ -68,7 +68,7 @@ class PreprintManager(IncludeManager):
         & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
 
     def preprint_permissions_query(self, user=None, allow_contribs=True, public_only=False):
-        include_non_public = user and not public_only
+        include_non_public = user and not user.is_anonymous and not public_only
         if include_non_public:
             moderator_for = get_objects_for_user(user, 'view_submissions', PreprintProvider, with_superuser=False)
             admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))

@@ -131,6 +131,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert res.json['data']['attributes']['current_user_permissions'] == [permissions.ADMIN, permissions.WRITE, permissions.READ]
+        assert res.json['data']['relationships']['region']['data']['id'] == project_private.osfstorage_region._id
 
     #   test_return_private_project_details_logged_out
         res = app.get(url_private, expect_errors=True)

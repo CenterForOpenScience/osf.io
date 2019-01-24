@@ -56,6 +56,13 @@ class TestNodeList:
     def url(self, user):
         return '/{}nodes/'.format(API_BASE)
 
+    @pytest.fixture()
+    def preprint(self, public_project, user):
+        preprint = PreprintFactory(creator=user, finish=True)
+        preprint.node = public_project
+        preprint.save()
+        return preprint
+
     def test_return(
             self, app, user, non_contrib, deleted_project,
             private_project, public_project, url):
@@ -157,6 +164,28 @@ class TestNodeList:
         res = app.get('{}?embed=region'.format(url))
         assert res.status_code == 200
         assert res.json['data'][0]['embeds']['region']['data']['id'] == DEFAULT_REGION_ID
+
+    def test_node_list_region_relationship(self, app, url, public_project):
+        # For asserting region properly returned when queryset is annotated with region property
+        res = app.get(url)
+        assert res.status_code == 200
+        assert res.json['data'][0]['relationships']['region']['data']['id'] == public_project.osfstorage_region._id
+
+    def test_preprint_attribute(self, app, url, public_project, preprint, user):
+        # For asserting region properly returned when queryset is annotated with has_viewable_preprints property
+        res = app.get(url)
+        # Node is supplemental project for a published preprint
+        assert res.json['data'][0]['attributes']['preprint'] is True
+
+        preprint.is_public = False
+        preprint.save()
+        res = app.get(url)
+        # Node is supplemental project for the preprint, but it's private, so its presence is not surfaced
+        assert res.json['data'][0]['attributes']['preprint'] is False
+
+        res = app.get(url, auth=user.auth)
+        # Preprint author can see that the node is a supplemental node for a private preprint
+        assert res.json['data'][0]['attributes']['preprint'] is True
 
     def test_default_node_permission_queryset(self, app, url, private_project, user):
         # Node admin contributor
