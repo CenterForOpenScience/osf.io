@@ -8,7 +8,7 @@ import requests
 from django.db.models import QuerySet
 
 from framework.auth.utils import impute_names
-from website.identifiers.metadata import remove_control_characters
+from website.identifiers.utils import remove_control_characters
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 
