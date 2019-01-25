@@ -187,7 +187,7 @@ class UserSerializer(JSONAPISerializer):
     def get_preprint_count(self, obj):
         auth_user = get_user_auth(self.context['request']).user
         user_preprints_query = Preprint.objects.filter(_contributors__guids___id=obj._id).exclude(machine_state='initial')
-        return Preprint.objects.can_view(user_preprints_query, auth_user).count()
+        return Preprint.objects.can_view(user_preprints_query, auth_user, allow_contribs=False).count()
 
     def get_institutions_count(self, obj):
         return obj.affiliated_institutions.count()

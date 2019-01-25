@@ -1,20 +1,30 @@
 import pytest
 
 from api.users.serializers import UserSerializer
+from api_tests.utils import create_test_file
+
 from osf_tests.factories import (
     UserFactory,
     RegistrationFactory,
     WithdrawnRegistrationFactory,
     PreprintFactory,
     ProjectFactory,
+    InstitutionFactory
 )
 from tests.utils import make_drf_request_with_version
 from django.utils import timezone
+from django.urls import resolve, reverse
 
+from osf.models import QuickFilesNode
 
 @pytest.fixture()
 def user():
-    return UserFactory()
+    user = UserFactory()
+    quickfiles_node = QuickFilesNode.objects.get_for_user(user)
+    create_test_file(quickfiles_node, user)
+    inst = InstitutionFactory()
+    user.affiliated_institutions.add(inst)
+    return user
 
 
 @pytest.fixture()
@@ -86,17 +96,82 @@ def deleted_project(user):
     return ProjectFactory(creator=user, is_deleted=True)
 
 
+def pytest_generate_tests(metafunc):
+    # called once per each test function
+    funcarglist = metafunc.cls.params.get(metafunc.function.__name__)
+    if not funcarglist:
+        return
+    argnames = sorted(funcarglist[0])
+    metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
+            for funcargs in funcarglist])
+
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
 class TestUserSerializer:
 
-    def get_data(self, user, with_auth=None):
+    params = {
+        'test_related_counts_equal_related_views': [{
+            'field_name': 'nodes',
+            'expected_count': {
+                'user': 4,  # this counts the private nodes created by RegistrationFactory
+                'other_user': 1,
+                'no_auth': 1
+            },
+        }, {
+            'field_name': 'preprints',  # "unpublished" preprints don't appear in api at all
+            'expected_count': {
+                'user': 2,
+                'other_user': 1,
+                'no_auth': 1
+            },
+        }, {
+            'field_name': 'registrations',
+            'expected_count': {
+                'user': 2,
+                'other_user': 1,
+                'no_auth': 1
+            },
+        }, {
+            'field_name': 'institutions',
+            'expected_count': {
+                'user': 1,
+                'other_user': 1,
+                'no_auth': 1
+            },
+        }, {
+            'field_name': 'quickfiles',
+            'expected_count': {
+                'user': 1,
+                'other_user': 1,
+                'no_auth': 1
+            },
+        }]
+    }
+
+    def get_data(self, user):
         req = make_drf_request_with_version(version='2.0')
         req.query_params['related_counts'] = True
-        if with_auth:
-            req.user = with_auth
+        req.user = user
         result = UserSerializer(user, context={'request': req}).data
         return result['data']
+
+    def get_related_count(self, user, related_field, auth):
+        req = make_drf_request_with_version(version='2.0')
+        req.query_params['related_counts'] = True
+        if auth:
+            req.user = auth
+        result = UserSerializer(user, context={'request': req}).data
+        return result['data']['relationships'][related_field]['links']['related']['meta']['count']
+
+    def get_view_count(self, user, related_field, auth):
+        req = make_drf_request_with_version(version='2.0')
+        if auth:
+            req.user = auth
+        view_name = UserSerializer().fields[related_field].field.view_name
+        resolve_match = resolve(reverse(view_name, kwargs={'version': 'v2', 'user_id': user._id}))
+        view = resolve_match.func.view_class(request=req, kwargs={'version': 'v2', 'user_id': user._id})
+
+        return view.get_queryset().count()
 
     def test_user_serializer(self, user):
 
@@ -120,70 +195,35 @@ class TestUserSerializer:
         assert 'preprints' in relationships
         assert 'registrations' in relationships
 
-    def test_user_serializer_with_related_counts(self, user):
-        data = self.get_data(user)
-
-        # Relationships
-        relationships = data['relationships']
-        assert relationships['quickfiles']['links']['related']['meta']['count'] == 0
-        assert relationships['nodes']['links']['related']['meta']['count'] == 0
-        assert relationships['institutions']['links']['related']['meta']['count'] == 0
-        assert relationships['preprints']['links']['related']['meta']['count'] == 0
-        assert relationships['registrations']['links']['related']['meta']['count'] == 0
-
-    def test_user_serializer_get_nodes_count(self,
-                                             user,
-                                             user_without_nodes,
-                                             project,
-                                             public_project,
-                                             deleted_project):
-
-        data = self.get_data(user, with_auth=user)
-        assert user.nodes.exclude(type='osf.quickfilesnode').count() == 3
-        assert data['relationships']['nodes']['links']['related']['meta']['count'] == 2
-
-        data = self.get_data(user, with_auth=user_without_nodes)
-        assert user_without_nodes.nodes.exclude(type='osf.quickfilesnode').count() == 0
-        assert data['relationships']['nodes']['links']['related']['meta']['count'] == 1
-
-        data = self.get_data(user, with_auth=None)
-        assert data['relationships']['nodes']['links']['related']['meta']['count'] == 1
-
-    def test_user_serializer_get_registration_count(self,
-                                                    user,
-                                                    user_without_nodes,
-                                                    registration,
-                                                    private_registration,
-                                                    withdrawn_registration):
-
-        data = self.get_data(user, with_auth=user)
-        assert user.nodes.filter(type='osf.registration').count() == 2
-        assert data['relationships']['registrations']['links']['related']['meta']['count'] == 2
-
-        data = self.get_data(user, with_auth=user_without_nodes)
-        assert user_without_nodes.nodes.filter(type='osf.registration').count() == 0
-        assert data['relationships']['registrations']['links']['related']['meta']['count'] == 1
-
-        data = self.get_data(user, with_auth=None)
-        assert data['relationships']['registrations']['links']['related']['meta']['count'] == 1
-
-    def test_user_serializer_get_preprint_count(self,
+    def test_related_counts_equal_related_views(self,
+                                                request,
+                                                field_name,
+                                                expected_count,
                                                 user,
                                                 user_without_nodes,
+                                                project,
+                                                public_project,
+                                                deleted_project,
+                                                registration,
+                                                private_registration,
+                                                withdrawn_registration,
                                                 preprint,
                                                 private_preprint,
                                                 withdrawn_preprint,
-                                                unpublished_preprint,
+                                                unpublished_preprint,  # not in the view/related counts by default
                                                 deleted_preprint):
 
-        data = self.get_data(user, with_auth=user)
-        assert user.preprints.count() == 5
-        assert data['relationships']['preprints']['links']['related']['meta']['count'] == 2
+        view_count = self.get_view_count(user, field_name, auth=user)
+        related_count = self.get_related_count(user, field_name, auth=user)
 
-        data = self.get_data(user, with_auth=user_without_nodes)
-        assert user_without_nodes.preprints.count() == 0
-        assert data['relationships']['preprints']['links']['related']['meta']['count'] == 1
+        assert related_count == view_count == expected_count['user']
 
-        data = self.get_data(user, with_auth=None)
-        assert user_without_nodes.preprints.count() == 0
-        assert data['relationships']['preprints']['links']['related']['meta']['count'] == 1
+        view_count = self.get_view_count(user, field_name, auth=user_without_nodes)
+        related_count = self.get_related_count(user, field_name, auth=user_without_nodes)
+
+        assert related_count == view_count == expected_count['other_user']
+
+        view_count = self.get_view_count(user, field_name, auth=None)
+        related_count = self.get_related_count(user, field_name, auth=None)
+
+        assert related_count == view_count == expected_count['no_auth']
