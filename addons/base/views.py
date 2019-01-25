@@ -21,6 +21,7 @@ from elasticsearch import exceptions as es_exceptions
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.utils import update_analytics
 
 from framework import sentry
 from framework.auth import Auth
@@ -28,12 +29,11 @@ from framework.auth import cas
 from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
-from framework.routing import json_renderer, proxy_url
 from framework.sentry import log_exception
+from framework.routing import json_renderer, proxy_url
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
-from addons.base import exceptions
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
@@ -289,45 +289,53 @@ def get_auth(auth, **kwargs):
         if not provider_settings:
             raise HTTPError(httplib.BAD_REQUEST)
 
-    try:
-        path = data.get('path')
-        version = data.get('version')
-        credentials = None
-        waterbutler_settings = None
-        fileversion = None
-        if provider_name == 'osfstorage':
-            if path and version:
-                # check to see if this is a file or a folder
-                filenode = OsfStorageFileNode.load(path.strip('/'))
-                if filenode and filenode.is_file:
-                    try:
-                        fileversion = FileVersion.objects.filter(
-                            basefilenode___id=path.strip('/'),
-                            identifier=version
-                        ).select_related('region').get()
-                    except FileVersion.DoesNotExist:
-                        raise HTTPError(httplib.BAD_REQUEST)
-            # path and no version, use most recent version
-            elif path:
-                filenode = OsfStorageFileNode.load(path.strip('/'))
-                if filenode and filenode.is_file:
+    path = data.get('path')
+    version = data.get('version')
+
+    credentials = None
+    waterbutler_settings = None
+    fileversion = None
+    if provider_name == 'osfstorage':
+        if path:
+            file_id = path.strip('/')
+            # check to see if this is a file or a folder
+            filenode = OsfStorageFileNode.load(path.strip('/'))
+            if filenode and filenode.is_file:
+                # default to most recent version if none is provided in the response
+                version = version or filenode.versions.count()
+                try:
                     fileversion = FileVersion.objects.filter(
-                        basefilenode=filenode
-                    ).select_related('region').order_by('-created').first()
-            if fileversion:
-                region = fileversion.region
-                credentials = region.waterbutler_credentials
-                waterbutler_settings = fileversion.serialize_waterbutler_settings(
-                    node_id=provider_settings.owner._id if provider_settings else node._id,
-                    root_id=provider_settings.root_node._id if provider_settings else node.root_folder._id,
-                )
-        # If they haven't been set by version region, use the NodeSettings region
-        if not (credentials and waterbutler_settings):
-            credentials = node.serialize_waterbutler_credentials(provider_name)
-            waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
-    except exceptions.AddonError:
-        log_exception()
-        raise HTTPError(httplib.BAD_REQUEST)
+                        basefilenode___id=file_id,
+                        identifier=version
+                    ).select_related('region').get()
+                except FileVersion.DoesNotExist:
+                    raise HTTPError(httplib.BAD_REQUEST)
+                if auth.user:
+                    # mark fileversion as seen
+                    FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
+                if not node.is_contributor(auth.user):
+                    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
+                    # version index is 0 based
+                    version_index = version - 1
+                    if action == 'render':
+                        update_analytics(node, file_id, version_index, 'view')
+                    elif action == 'download' and not download_is_from_mfr:
+                        update_analytics(node, file_id, version_index, 'download')
+        if fileversion:
+            region = fileversion.region
+            credentials = region.waterbutler_credentials
+            waterbutler_settings = fileversion.serialize_waterbutler_settings(
+                node_id=provider_settings.owner._id,
+                root_id=provider_settings.root_node._id,
+            )
+    # If they haven't been set by version region, use the NodeSettings or Preprint directly
+    if not (credentials and waterbutler_settings):
+        if provider_settings:
+            credentials = provider_settings.serialize_waterbutler_credentials()
+            waterbutler_settings = provider_settings.serialize_waterbutler_settings()
+        elif isinstance(node, Preprint):
+            credentials = node.serialize_waterbutler_credentials()
+            waterbutler_settings = node.serialize_waterbutler_settings()
 
     # TODO: Add a signal here?
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
@@ -375,22 +383,6 @@ DOWNLOAD_ACTIONS = set([
     'download_zip',
 ])
 
-
-# TODO: Use this to mark file versions as seen when
-# MFR callback endpoint is implemented
-def mark_file_version_as_seen(user, path, version):
-    """
-    Mark a file version as seen by the given user.
-    If no version is included, default to the most recent version.
-    """
-    file_to_update = OsfStorageFile.objects.get(_id=path)
-    if version:
-        file_version = file_to_update.versions.get(identifier=version)
-    else:
-        file_version = file_to_update.versions.order_by('-created').first()
-    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
-
-
 @must_be_signed
 @no_auto_transaction
 @must_be_valid_project(quickfiles_valid=True, preprints_valid=True)
@@ -398,7 +390,7 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            # Don't log download actions, but do update analytics
+            # Don't log download actions
             if payload['action'] in DOWNLOAD_ACTIONS:
                 guid = Guid.load(payload['metadata'].get('nid'))
                 if guid:

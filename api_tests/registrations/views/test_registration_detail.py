@@ -1,3 +1,4 @@
+import mock
 import pytest
 from urlparse import urlparse
 
@@ -7,6 +8,7 @@ from osf.utils import permissions
 from osf.models import Registration, NodeLog
 from framework.auth import Auth
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
@@ -14,6 +16,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     WithdrawnRegistrationFactory,
     OSFGroupFactory,
+    CommentFactory,
 )
 from tests.utils import assert_latest_log
 
@@ -42,11 +45,45 @@ class TestRegistrationDetail:
         return RegistrationFactory(
             project=public_project,
             creator=user,
-            is_public=True)
+            is_public=True,
+            comment_level='private')
 
     @pytest.fixture()
-    def private_registration(self, user, private_project):
+    def private_wiki(self, user, private_project):
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            wiki_page = WikiFactory(node=private_project, user=user)
+            WikiVersionFactory(wiki_page=wiki_page)
+        return wiki_page
+
+    @pytest.fixture()
+    def private_registration(self, user, private_project, private_wiki):
         return RegistrationFactory(project=private_project, creator=user)
+
+    @pytest.fixture()
+    def registration_comment(self, private_registration, user):
+        return CommentFactory(
+            node=private_registration,
+            user=user,
+            page='node',
+        )
+
+    @pytest.fixture()
+    def registration_comment_reply(self, user, private_registration, registration_comment):
+        return CommentFactory(
+            node=private_registration,
+            target=registration_comment.guids.first(),
+            user=user,
+            page='node',
+        )
+
+    @pytest.fixture()
+    def registration_wiki_comment(self, user, private_registration):
+        return CommentFactory(
+            node=private_registration,
+            target=private_registration.wikis.first().guids.first(),
+            user=user,
+            page='wiki',
+        )
 
     @pytest.fixture()
     def public_url(self, public_registration):
@@ -59,8 +96,9 @@ class TestRegistrationDetail:
 
     def test_registration_detail(
             self, app, user, public_project, private_project,
-            public_registration, private_registration,
-            public_url, private_url):
+            public_registration, private_registration, private_wiki,
+            public_url, private_url, registration_comment, registration_comment_reply,
+            registration_wiki_comment):
 
         non_contributor = AuthUserFactory()
 
@@ -139,14 +177,21 @@ class TestRegistrationDetail:
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 2
+        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
+        registration_comment_reply.is_deleted = True
+        registration_comment_reply.save()
+        res = app.get(url, auth=user.auth)
+        assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 1
 
     #   test_registration_shows_specific_related_counts
-        url = '/{}registrations/{}/?related_counts=children'.format(
+        url = '/{}registrations/{}/?related_counts=children,wikis'.format(
             API_BASE, private_registration._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
         assert res.json['data']['relationships']['contributors']['links']['related']['meta'] == {}
+        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
 
     #   test_hide_if_registration
         # Registrations are a HideIfRegistration field
