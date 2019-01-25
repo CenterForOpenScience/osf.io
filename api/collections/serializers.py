@@ -225,6 +225,12 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
             obj.status = validated_data.pop('status')
         if 'collected_type' in validated_data:
             obj.collected_type = validated_data.pop('collected_type')
+        if 'volume' in validated_data:
+            obj.volume = validated_data.pop('volume')
+        if 'issue' in validated_data:
+            obj.issue = validated_data.pop('issue')
+        if 'program_area' in validated_data:
+            obj.program_area = validated_data.pop('program_area')
         obj.save()
         return obj
 
