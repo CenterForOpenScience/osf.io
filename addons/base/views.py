@@ -342,16 +342,17 @@ def get_auth(auth, **kwargs):
         if isinstance(node, Preprint) and not node.is_contributor(user):
             metric_class = get_metric_class_for_action(action)
             if metric_class:
+                metrics = data.get('metrics', {})
                 try:
                     metric_class.record_for_preprint(
                         preprint=node,
                         user=user,
                         version=fileversion.identifier if fileversion else None,
                         path=path,
-                        referrer=data.get('referrer'),
-                        user_agent=data.get('user_agent'),
-                        origin=data.get('origin'),
-                        uri=data.get('uri')
+                        referrer=metrics.get('referrer'),
+                        user_agent=metrics.get('user_agent'),
+                        origin=metrics.get('origin'),
+                        uri=metrics.get('uri')
                     )
                 except es_exceptions.ConnectionError:
                     log_exception()

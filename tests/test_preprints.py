@@ -2341,12 +2341,11 @@ class TestPreprintOsfStorage(OsfTestCase):
         options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
             action=kwargs.get('action', 'download'),
             nid=self.preprint._id,
-            provider='osf_storage',
             path='/test',
-            origin='Foles',
-            referrer='Ertz',
-            user_agent='Agholor',
-            uri='Sproles',
+            metrics=dict(origin='Foles',
+                         referrer='Ertz',
+                         user_agent='Agholor',
+                         uri='Sproles'),
             provider='osfstorage'), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=500),
         }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
