@@ -2346,8 +2346,8 @@ class TestPreprintOsfStorage(OsfTestCase):
             origin='Foles',
             referrer='Ertz',
             user_agent='Agholor',
-            uri='Sproles'
-        ), **kwargs),
+            uri='Sproles',
+            provider='osfstorage'), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=500),
         }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
         return self.preprint.api_url_for('get_auth', **options)

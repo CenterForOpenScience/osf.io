@@ -359,6 +359,8 @@ services:
 
   requirements:
     image: quay.io/centerforopenscience/osf:develop
+    # Need to allocate tty to be able to call invoke for requirements task
+    tty: true
     command:
       - /bin/bash
       - -c

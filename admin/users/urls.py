@@ -13,6 +13,7 @@ urlpatterns = [
     url(r'^(?P<guid>[a-z0-9]+)/$', views.UserView.as_view(), name='user'),
     url(r'^search/(?P<name>.*)/$', views.UserSearchList.as_view(), name='search_list'),
     url(r'^(?P<guid>[a-z0-9]+)/reset-password/$', views.ResetPasswordView.as_view(), name='reset_password'),
+    url(r'^(?P<guid>[a-z0-9]+)/gdpr_delete/$', views.UserGDPRDeleteView.as_view(), name='GDPR_delete'),
     url(r'^(?P<guid>[a-z0-9]+)/disable/$', views.UserDeleteView.as_view(), name='disable'),
     url(r'^(?P<guid>[a-z0-9]+)/disable_spam/$', views.SpamUserDeleteView.as_view(), name='spam_disable'),
     url(r'^(?P<guid>[a-z0-9]+)/enable_ham/$', views.HamUserRestoreView.as_view(), name='ham_enable'),
