@@ -2985,9 +2985,9 @@ class TestCollectionRelationshipNodeLinks:
 
     @pytest.fixture()
     def make_payload(self, node_admin):
-        def payload(node_ids=None, deprecatedType=True):
+        def payload(node_ids=None, deprecated_type=True):
             node_ids = node_ids or [node_admin._id]
-            env_linked_nodes = [{'type': 'linked_nodes' if deprecatedType else 'nodes',
+            env_linked_nodes = [{'type': 'linked_nodes' if deprecated_type else 'nodes',
                                  'id': node_id} for node_id in node_ids]
             return {'data': env_linked_nodes}
         return payload
@@ -3469,9 +3469,9 @@ class TestCollectionRelationshipPreprintLinks:
 
     @pytest.fixture()
     def make_payload(self, preprint_admin):
-        def payload(preprint_ids=None, deprecatedType=True):
+        def payload(preprint_ids=None, deprecated_type=True):
             preprint_ids = preprint_ids or [preprint_admin._id]
-            env_linked_preprints = [{'type': 'linked_preprints' if deprecatedType else 'preprints',
+            env_linked_preprints = [{'type': 'linked_preprints' if deprecated_type else 'preprints',
                                  'id': preprint_id} for preprint_id in preprint_ids]
             return {'data': env_linked_preprints}
         return payload
