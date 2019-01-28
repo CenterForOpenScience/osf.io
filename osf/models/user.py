@@ -38,7 +38,7 @@ from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, UserStateError
-from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
+from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet, ObjectIDMixin
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
@@ -116,7 +116,37 @@ class Email(BaseModel):
         return self.address
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin, SpamMixin):
+class AbstractBaseProfileModel(ObjectIDMixin, BaseModel):
+    institution = models.CharField(max_length=650)
+    department = models.CharField(max_length=650, null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    ongoing = models.BooleanField(default=False)
+
+    class Meta:
+        abstract = True
+
+    def __unicode__(self):
+        return '{} for user {}'.format(self.institution, self.user._id)
+
+
+class Employment(AbstractBaseProfileModel):
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE, related_name='employment')
+    title = models.CharField(max_length=650, null=True, blank=True)
+
+    class Meta:
+        order_with_respect_to = 'user'
+
+
+class Education(AbstractBaseProfileModel):
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE, related_name='education')
+    degree = models.CharField(max_length=650, null=True, blank=True)
+
+    class Meta:
+        order_with_respect_to = 'user'
+
+
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
         'system_tags': 'tags',
