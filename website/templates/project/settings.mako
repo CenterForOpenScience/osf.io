@@ -117,7 +117,7 @@
                                 <span id="deleteNode">
                                     <button
                                     data-toggle="modal" data-target="#nodesDelete"
-                                    data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
+                                    data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_supplemental_project'] | sjson, n}, '${node['api_url']}')"
                                     class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
                                     <%include file="project/nodes_delete.mako"/>
                                 </span>
@@ -431,7 +431,7 @@
                             <li>institutional logos to be displayed on public projects</li>
                             <li>public projects to be discoverable on specific institutional landing pages</li>
                             <li>single sign-on to the OSF with institutional credentials</li>
-                            <li><a href="http://help.osf.io/m/os4i">FAQ</a></li>
+                            <li><a href="http://help.osf.io/m/institutions">FAQ</a></li>
                          </ul>
                          <!-- /ko -->
                      </div>
@@ -507,6 +507,7 @@
       window.contextVars.node = window.contextVars.node || {};
       window.contextVars.node.description = ${node['description'] | sjson, n };
       window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
+      window.contextVars.node.isSupplementalProject = ${ node['is_supplemental_project'] | sjson, n };
       window.contextVars.node.institutions = ${ node['institutions'] | sjson, n };
       window.contextVars.node.requestProjectAccessEnabled = ${node['access_requests_enabled'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };

@@ -5,9 +5,8 @@ from django.db import DataError
 
 from framework.auth import Auth
 from osf.models import Tag
-from osf.exceptions import ValidationError
+from osf.exceptions import ValidationError, TagNotFoundError
 from osf_tests.factories import ProjectFactory, UserFactory
-from website.exceptions import TagNotFoundError
 
 pytestmark = pytest.mark.django_db
 

@@ -44,6 +44,9 @@ class FileMixin(object):
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
 
+        if getattr(obj.target, 'deleted', None):
+            raise Gone(detail='The requested file is no longer available')
+
         if getattr(obj.target, 'is_quickfiles', False) and getattr(obj.target, 'creator'):
             if obj.target.creator.is_disabled:
                 raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')

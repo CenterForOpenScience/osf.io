@@ -9,7 +9,6 @@ from api.base.exceptions import Conflict
 
 from api.base.utils import absolute_reverse, get_user_auth
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
@@ -22,7 +21,7 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, NodeStateError
 from osf.models import Node
 from osf.utils import permissions
 
@@ -74,11 +73,11 @@ class RegistrationSerializer(NodeSerializer):
     )
 
     date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    date_withdrawn = VersionedDateTimeField(source='retraction.date_retracted', read_only=True, help_text='Date time of when this registration was retracted.')
+    date_withdrawn = VersionedDateTimeField(read_only=True, help_text='Date time of when this registration was retracted.')
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
     custom_citation = HideIfWithdrawal(ser.CharField(allow_blank=True, required=False))
 
-    withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
+    withdrawal_justification = ser.CharField(read_only=True)
     template_from = HideIfWithdrawal(ser.CharField(
         read_only=True, allow_blank=False, allow_null=False,
         help_text='Specify a node id for a node you would like to use as a template for the '
@@ -383,9 +382,9 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
-        except ValidationValueError as e:
+        except ValidationValueError:
             log_exception()  # Probably indicates a bug on our end, so log to sentry
-            raise exceptions.ValidationError(e.message)
+            # TODO: Raise an error once our JSON schemas are updated
 
         try:
             registration = draft.register(auth, save=True, child_ids=children)

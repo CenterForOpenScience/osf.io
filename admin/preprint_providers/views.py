@@ -253,13 +253,13 @@ class DeletePreprintProvider(PermissionRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
-        if preprint_provider.preprint_services.count() > 0:
+        if preprint_provider.preprints.count() > 0:
             return redirect('preprint_providers:cannot_delete', preprint_provider_id=preprint_provider.pk)
         return super(DeletePreprintProvider, self).delete(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
-        if preprint_provider.preprint_services.count() > 0:
+        if preprint_provider.preprints.count() > 0:
             return redirect('preprint_providers:cannot_delete', preprint_provider_id=preprint_provider.pk)
         return super(DeletePreprintProvider, self).get(request, *args, **kwargs)
 
@@ -337,11 +337,10 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
 
         resp_json = self.share_post(preprint_provider)
+        preprint_provider.share_source = resp_json['data']['attributes']['longTitle']
         for data in resp_json['included']:
             if data['type'] == 'ShareUser':
                 preprint_provider.access_token = data['attributes']['token']
-            elif data['type'] == 'SourceConfig':
-                preprint_provider.share_source = data['attributes']['label']
         preprint_provider.save()
         return redirect(reverse_lazy('preprint_providers:detail', kwargs={'preprint_provider_id': preprint_provider.id}))
 

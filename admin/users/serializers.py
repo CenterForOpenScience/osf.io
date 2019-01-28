@@ -13,6 +13,7 @@ def serialize_user(user):
         'last_login': user.date_last_login,
         'confirmed': user.date_confirmed,
         'registered': user.date_registered,
+        'deleted': user.deleted,
         'disabled': user.date_disabled if user.is_disabled else False,
         'two_factor': user.has_addon('twofactor'),
         'osf_link': user.absolute_url,

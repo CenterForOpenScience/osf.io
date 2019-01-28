@@ -62,6 +62,20 @@ class NodeRemoveContributorView(PermissionRequiredMixin, DeleteView):
     permission_required = ('osf.view_node', 'osf.change_node')
     raise_exception = True
 
+    def add_contributor_removed_log(self, node, user):
+        osf_log = NodeLog(
+            action=NodeLog.CONTRIB_REMOVED,
+            user=None,
+            params={
+                'project': node.parent_id,
+                'node': node.pk,
+                'contributors': user.pk
+            },
+            date=timezone.now(),
+            should_hide=True,
+        )
+        return osf_log.save()
+
     def delete(self, request, *args, **kwargs):
         try:
             node, user = self.get_object()
@@ -70,45 +84,37 @@ class NodeRemoveContributorView(PermissionRequiredMixin, DeleteView):
                     user_id=self.request.user.id,
                     object_id=node.pk,
                     object_repr='Contributor',
-                    message='User {} removed from node {}.'.format(
-                        user.pk, node.pk
+                    message='User {} removed from {} {}.'.format(
+                        user.pk, node.__class__.__name__.lower(), node.pk
                     ),
                     action_flag=CONTRIBUTOR_REMOVED
                 )
                 # Log invisibly on the OSF.
-                osf_log = NodeLog(
-                    action=NodeLog.CONTRIB_REMOVED,
-                    user=None,
-                    params={
-                        'project': node.parent_id,
-                        'node': node.pk,
-                        'contributors': user.pk
-                    },
-                    date=timezone.now(),
-                    should_hide=True,
-                )
-                osf_log.save()
+                self.add_contributor_removed_log(node, user)
         except AttributeError:
             return page_not_found(
                 request,
                 AttributeError(
                     '{} with id "{}" not found.'.format(
                         self.context_object_name.title(),
-                        kwargs.get('node_id')
+                        self.kwargs.get('guid')
                     )
                 )
             )
-        return redirect(reverse_node(self.kwargs.get('node_id')))
+        if isinstance(node, Node):
+            return redirect(reverse_node(self.kwargs.get('guid')))
 
     def get_context_data(self, **kwargs):
         context = {}
         node, user = kwargs.get('object')
-        context.setdefault('node_id', node._id)
+        context.setdefault('guid', node._id)
         context.setdefault('user', serialize_simple_user_and_node_permissions(node, user))
+        context['link'] = 'nodes:remove_user'
+        context['resource_type'] = 'project'
         return super(NodeRemoveContributorView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return (Node.load(self.kwargs.get('node_id')),
+        return (Node.load(self.kwargs.get('guid')),
                 OSFUser.load(self.kwargs.get('user_id')))
 
 
@@ -135,6 +141,12 @@ class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
     object = None
     permission_required = ('osf.view_node', 'osf.delete_node')
     raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        context = super(NodeDeleteView, self).get_context_data(**kwargs)
+        context['link'] = 'nodes:remove'
+        context['resource_type'] = 'node'
+        return context
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -369,6 +381,7 @@ class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
     template_name = 'nodes/confirm_spam.html'
     permission_required = 'osf.mark_spam'
     raise_exception = True
+    object_type = 'Node'
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
@@ -377,16 +390,31 @@ class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,
-            object_repr='Node',
+            object_repr=self.object_type,
             message='Confirmed SPAM: {}'.format(node._id),
             action_flag=CONFIRM_SPAM
         )
-        return redirect(reverse_node(self.kwargs.get('guid')))
+        if isinstance(node, Node):
+            return redirect(reverse_node(self.kwargs.get('guid')))
+
+    def get_context_data(self, **kwargs):
+        context = super(NodeConfirmSpamView, self).get_context_data(**kwargs)
+        context['link'] = 'nodes:confirm-spam'
+        context['resource_type'] = self.object_type.lower()
+        return context
+
 
 class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
     template_name = 'nodes/confirm_ham.html'
     permission_required = 'osf.mark_spam'
     raise_exception = True
+    object_type = 'Node'
+
+    def get_context_data(self, **kwargs):
+        context = super(NodeConfirmHamView, self).get_context_data(**kwargs)
+        context['link'] = 'nodes:confirm-ham'
+        context['resource_type'] = self.object_type.lower()
+        return context
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
@@ -395,11 +423,12 @@ class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,
-            object_repr='Node',
+            object_repr=self.object_type,
             message='Confirmed HAM: {}'.format(node._id),
             action_flag=CONFIRM_HAM
         )
-        return redirect(reverse_node(self.kwargs.get('guid')))
+        if isinstance(node, Node):
+            return redirect(reverse_node(self.kwargs.get('guid')))
 
 class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
     template_name = 'nodes/reindex_node_share.html'
@@ -419,7 +448,14 @@ class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
             message='Node Reindexed (SHARE): {}'.format(node._id),
             action_flag=REINDEX_SHARE
         )
-        return redirect(reverse_node(self.kwargs.get('guid')))
+        if isinstance(node, Node):
+            return redirect(reverse_node(self.kwargs.get('guid')))
+
+    def get_context_data(self, **kwargs):
+        context = super(NodeReindexShare, self).get_context_data(**kwargs)
+        context['link'] = 'nodes:reindex-share-node'
+        context['resource_type'] = 'node'
+        return context
 
 class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
     template_name = 'nodes/reindex_node_elastic.html'
@@ -440,6 +476,12 @@ class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
             action_flag=REINDEX_ELASTIC
         )
         return redirect(reverse_node(self.kwargs.get('guid')))
+
+    def get_context_data(self, **kwargs):
+        context = super(NodeReindexElastic, self).get_context_data(**kwargs)
+        context['link'] = 'nodes:reindex-elastic-node'
+        context['resource_type'] = 'node'
+        return context
 
 
 class StuckRegistrationsView(PermissionRequiredMixin, TemplateView):

@@ -15,7 +15,8 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
     category = models.CharField(max_length=255, null=True, blank=True)
-    active = models.BooleanField(default=True)
+    active = models.BooleanField(default=True)  # whether or not the schema accepts submissions
+    visible = models.BooleanField(default=True)  # whether or not the schema should be visible in the API and registries search
 
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = models.IntegerField()

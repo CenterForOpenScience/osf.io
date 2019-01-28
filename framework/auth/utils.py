@@ -4,6 +4,7 @@ import re
 from nameparser.parser import HumanName
 import requests
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 
 from website import settings
@@ -25,13 +26,15 @@ DOMAIN_REGEX = re.compile(
 
 
 def validate_email(email):
+    BlacklistedEmailDomain = apps.get_model('osf.BlacklistedEmailDomain')
     if len(email) > 254:
         raise ValidationError('Invalid Email')
 
     if not email or '@' not in email:
         raise ValidationError('Invalid Email')
 
-    if email.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
+    domain = email.split('@')[1].lower()
+    if BlacklistedEmailDomain.objects.filter(domain=domain).exists():
         raise ValidationError('Invalid Email')
 
     user_part, domain_part = email.rsplit('@', 1)

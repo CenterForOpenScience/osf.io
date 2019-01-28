@@ -5,13 +5,13 @@ from django.core.management.base import BaseCommand
 from django.db.models import F
 
 from scripts import utils as script_utils
-from osf.models import PreprintService
+from osf.models import Preprint
 from website.preprints.tasks import on_preprint_updated
 
 logger = logging.getLogger(__name__)
 
 def update_share_preprint_modified_dates(dry_run=False):
-    for preprint in PreprintService.objects.filter(date_modified__lt=F('node__modified')):
+    for preprint in Preprint.objects.filter(date_modified__lt=F('node__modified')):
         if dry_run:
             logger.info('Would have sent ' + preprint._id + ' data to SHARE')
         else:

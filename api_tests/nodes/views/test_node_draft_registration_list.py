@@ -349,36 +349,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
 
-    #   test_registration_supplement_must_be_most_recent_metaschema
-        schema = RegistrationSchema.objects.get(
-            name='Open-Ended Registration', schema_version=1)
-        draft_data = {
-            'data': {
-                'type': 'draft_registrations',
-                'attributes': {},
-                'relationships': {
-                    'registration_schema': {
-                        'data': {
-                            'type': 'registration_schema',
-                            'id': schema._id
-                        }
-                    },
-                    'provider': {
-                        'data': {
-                            'type': 'registration-providers',
-                            'id': provider._id,
-                        }
-                    }
-                }
-            }
-        }
-        res = app.post_json_api(
-            url_draft_registrations,
-            draft_data, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
-
     def test_cannot_create_draft_errors(
             self, app, user, project_public, payload):
 

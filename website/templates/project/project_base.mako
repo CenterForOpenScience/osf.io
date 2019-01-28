@@ -7,8 +7,6 @@
         prefix = ''
     if node.get('is_registration', False):
         return prefix + 'registrations'
-    elif node.get('is_preprint', False):
-        return prefix + 'preprints'
     else:
         return prefix + 'nodes'
     %>
@@ -92,7 +90,6 @@
         relations.extend([
             node['registered_from_url'],
             node['forked_from_display_absolute_url'],
-            node['preprint_url'] or '',
             parent_node['absolute_url'] if parent_node['exists'] else ''
         ])
         return relations
@@ -199,8 +196,7 @@
             isPublic: ${ node.get('is_public', False) | sjson, n },
             isRegistration: ${ node.get('is_registration', False) | sjson, n },
             isRetracted: ${ node.get('is_retracted', False) | sjson, n },
-            isPreprint: ${ node.get('is_preprint', False) | sjson, n },
-            preprintFileId: ${ node.get('preprint_file_id', None) | sjson, n },
+            isSupplementalProject: ${ node.get('is_supplemental_project', False) | sjson, n },
             anonymous: ${ node['anonymous'] | sjson, n },
             category: ${node['category_short'] | sjson, n },
             rootId: ${ root_id | sjson, n },

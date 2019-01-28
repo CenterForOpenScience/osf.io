@@ -116,7 +116,7 @@ class TestBaseVersioning:
         url = '/v2/?format=api'
         res = app.get(url)
         assert res.status_code == 200
-        assert '"version": "{}"'.format(
+        assert '&quot;version&quot;: &quot;{}&quot'.format(
             LATEST_VERSIONS[2]
         ) in res.body
 
@@ -124,7 +124,7 @@ class TestBaseVersioning:
         url = '/v2/?format=api&version=2.5'
         res = app.get(url)
         assert res.status_code == 200
-        assert '"version": "2.5"' in res.body
+        assert '&quot;version&quot;: &quot;2.5&quot' in res.body
 
     def test_json_defaults_to_default(self, app):
         url = '/v2/?format=json'

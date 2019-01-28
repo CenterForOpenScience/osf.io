@@ -29,8 +29,7 @@ from website.project.decorators import (
     must_not_be_retracted_registration,
 )
 
-from website.exceptions import NodeStateError
-from osf.exceptions import ValidationError
+from osf.exceptions import ValidationError, NodeStateError
 
 from .exceptions import (
     NameEmptyError,

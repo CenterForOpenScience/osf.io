@@ -20,7 +20,7 @@
                         <div>
                             Select:&nbsp;
                             <a class="text-bigger" data-bind="click:selectAll">All components</a>
-                            <span class="pull-right"><b><sup>*</sup></b><small>project or component contains a preprint</small></span>
+                            <span class="pull-right"><b><sup>*</sup></b><small>contains supplemental materials for a preprint</small></span>
                         </div>
                         <div class="tb-row-titles">
                             <div style="width: 100%" data-tb-th-col="0" class="tb-th">
