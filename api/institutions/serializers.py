@@ -60,7 +60,7 @@ class InstitutionSerializer(JSONAPISerializer):
     # Deprecated fields
     logo_path = ShowIfVersion(
         ser.CharField(read_only=True, default=''),
-        min_version='2.0', max_version='2.11',
+        min_version='2.0', max_version='2.13',
     )
 
 class NodeRelated(JSONAPIRelationshipSerializer):
