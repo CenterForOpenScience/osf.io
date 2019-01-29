@@ -28,6 +28,8 @@ from api.nodes.serializers import DraftRegistrationSerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.education.serializers import EducationSerializer
+from api.employment.serializers import EmploymentSerializer
 
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
@@ -77,6 +79,8 @@ from osf.models import (
     Registration,
     OSFUser,
     Email,
+    Education,
+    Employment,
 )
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
@@ -387,6 +391,48 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         # Permissions on the list objects are handled by the query
         default_qs = Preprint.objects.filter(_contributors__guids___id=target_user._id).exclude(machine_state='initial')
         return self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class UserEducation(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    # TODO - ordering! https://jsonapi.org/format/1.1/#crud-updating-to-many-relationships
+    ordering = ('-created')
+
+    serializer_class = EducationSerializer
+    view_category = 'users'
+    view_name = 'user-education'
+
+    def get_default_queryset(self):
+        user = self.get_user(check_permissions=True)
+        return Education.objects.filter(user=user)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class UserEmployment(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    # TODO - ordering! https://jsonapi.org/format/1.1/#crud-updating-to-many-relationships
+    ordering = ('-created')
+
+    serializer_class = EmploymentSerializer
+    view_category = 'users'
+    view_name = 'user-employment'
+
+    def get_default_queryset(self):
+        user = self.get_user(check_permissions=True)
+        return Employment.objects.filter(user=user)
 
     def get_queryset(self):
         return self.get_queryset_from_request()

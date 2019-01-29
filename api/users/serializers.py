@@ -143,6 +143,16 @@ class UserSerializer(JSONAPISerializer):
         read_only=True,
     ))
 
+    education = HideIfDisabled(RelationshipField(
+        related_view='users:user-education',
+        related_view_kwargs={'user_id': '<_id>'},
+    ))
+
+    employment = HideIfDisabled(RelationshipField(
+        related_view='users:user-employment',
+        related_view_kwargs={'user_id': '<_id>'},
+    ))
+
     class Meta:
         type_ = 'users'
 
