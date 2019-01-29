@@ -1788,3 +1788,29 @@ class MaintenanceStateSerializer(ser.ModelSerializer):
     class Meta:
         model = MaintenanceState
         fields = ('level', 'message', 'start', 'end')
+
+
+class BaseProfileSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'institution',
+    ])
+
+    user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
+    institution = ser.CharField(required=True, allow_null=False)
+    department = ser.CharField(required=False)
+    start_date = ser.DateField(required=False)
+    end_date = ser.DateField(required=False)
+    ongoing = ser.BooleanField(default=False, required=False)
+
+    id = IDField(source='_id', read_only=True)
+
+    links = LinksField({'self': 'self_url'})
+
+    def self_url(self, obj):
+        raise NotImplementedError
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    def get_id(self, obj):
+        return obj._id
