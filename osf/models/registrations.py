@@ -32,6 +32,12 @@ logger = logging.getLogger(__name__)
 
 class Registration(AbstractNode):
 
+    WRITABLE_WHITELIST = [
+        'description',
+        'is_public',
+        'node_license',
+    ]
+
     provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,

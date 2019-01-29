@@ -5,7 +5,7 @@ import json
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, InvalidModelValueError
 
 from api.base.utils import absolute_reverse, get_user_auth
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
@@ -13,8 +13,8 @@ from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer
-from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
-from api.nodes.serializers import NodeContributorsSerializer, RegistrationProviderRelationshipField
+from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer, update_institutions
+from api.nodes.serializers import NodeContributorsSerializer, NodeLicenseRelationshipField, RegistrationProviderRelationshipField, get_license_details
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
@@ -28,9 +28,16 @@ from osf.utils import permissions
 from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
-
+    admin_only_editable_fields = [
+        'affiliated_institutions',
+        'custom_citation',
+        'description',
+        'is_public',
+        'license',
+        'license_type',
+    ]
     title = ser.CharField(read_only=True)
-    description = ser.CharField(read_only=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
     category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string))
@@ -38,7 +45,7 @@ class RegistrationSerializer(NodeSerializer):
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
     access_requests_enabled = HideIfWithdrawal(ser.BooleanField(read_only=True))
-    node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
+    node_license = HideIfWithdrawal(NodeLicenseSerializer(required=False, source='license'))
     tags = HideIfWithdrawal(ValuesListField(attr_name='name', child=ser.CharField(), required=False))
     public = HideIfWithdrawal(ser.BooleanField(
         source='is_public', required=False,
@@ -155,9 +162,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<template_node._id>'},
     ))
 
-    license = HideIfWithdrawal(RelationshipField(
+    license = HideIfWithdrawal(NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
-        related_view_kwargs={'license_id': '<node_license.node_license._id>'},
+        related_view_kwargs={'license_id': '<license.node_license._id>'},
+        read_only=False,
     ))
 
     logs = HideIfWithdrawal(RelationshipField(
@@ -212,6 +220,11 @@ class RegistrationSerializer(NodeSerializer):
     affiliated_institutions = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-institutions',
         related_view_kwargs={'node_id': '<_id>'},
+        self_view='registrations:registration-relationships-institutions',
+        self_view_kwargs={'node_id': '<_id>'},
+        read_only=False,
+        many=True,
+        required=False,
     ))
 
     registration_schema = RelationshipField(
@@ -323,37 +336,58 @@ class RegistrationSerializer(NodeSerializer):
     def get_total_comments_count(self, obj):
         return obj.comment_set.filter(page='node', is_deleted=False).count()
 
+    def check_admin_perms(self, registration, user, validated_data):
+        """
+        While admin/write users can make both make modifications to registrations,
+        most fields are restricted to admin-only edits
+
+        Add fields that need admin perms to admin_only_editable_fields
+        """
+        user_is_admin = registration.has_permission(user, permissions.ADMIN)
+        for field in validated_data:
+            if field in self.admin_only_editable_fields and not user_is_admin:
+                raise exceptions.PermissionDenied()
+
+    def update_registration_tags(self, registration, validated_data, auth):
+        new_tags = validated_data.pop('tags', [])
+        try:
+            registration.update_tags(new_tags, auth=auth)
+        except NodeStateError as err:
+            raise Conflict(str(err))
+
     def update(self, registration, validated_data):
         # TODO - when withdrawal is added, make sure to restrict to admin only here
         user = self.context['request'].user
         auth = Auth(user)
-        user_is_admin = registration.has_permission(user, permissions.ADMIN)
-        # Update tags
+        self.check_admin_perms(registration, user, validated_data)
+        validated_data.pop('_id', None)
+
         if 'tags' in validated_data:
-            new_tags = validated_data.pop('tags', [])
-            try:
-                registration.update_tags(new_tags, auth=auth)
-            except NodeStateError as err:
-                raise Conflict(str(err))
+            self.update_registration_tags(registration, validated_data, auth)
         if 'custom_citation' in validated_data:
-            if user_is_admin:
-                registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
-            else:
-                raise exceptions.PermissionDenied()
-        is_public = validated_data.get('is_public', None)
-        if is_public is not None:
-            if is_public:
-                if user_is_admin:
-                    try:
-                        registration.update(validated_data, auth=auth)
-                    except NodeUpdateError as err:
-                        raise exceptions.ValidationError(err.reason)
-                    except NodeStateError as err:
-                        raise exceptions.ValidationError(str(err))
-                else:
-                    raise exceptions.PermissionDenied()
-            else:
+            registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
+        if 'license_type' in validated_data or 'license' in validated_data:
+            license_details = get_license_details(registration, validated_data)
+            validated_data['node_license'] = license_details
+            validated_data.pop('license_type', None)
+            validated_data.pop('license', None)
+        if 'affiliated_institutions' in validated_data:
+            institutions_list = validated_data.pop('affiliated_institutions')
+            new_institutions = [{'_id': institution} for institution in institutions_list]
+            update_institutions(registration, new_institutions, user)
+            registration.save()
+        if 'is_public' in validated_data:
+            if validated_data.get('is_public') is False:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+        try:
+            registration.update(validated_data, auth=auth)
+        except ValidationError as e:
+            raise InvalidModelValueError(detail=e.message)
+        except NodeUpdateError as err:
+            raise exceptions.ValidationError(err.reason)
+        except NodeStateError as err:
+            raise exceptions.ValidationError(str(err))
+
         return registration
 
     class Meta:

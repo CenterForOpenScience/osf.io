@@ -5,7 +5,7 @@ from urlparse import urlparse
 from rest_framework import exceptions
 from api.base.settings.defaults import API_BASE
 from osf.utils import permissions
-from osf.models import Registration, NodeLog
+from osf.models import Registration, NodeLog, NodeLicense
 from framework.auth import Auth
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
@@ -16,7 +16,10 @@ from osf_tests.factories import (
     AuthUserFactory,
     WithdrawnRegistrationFactory,
     CommentFactory,
+    InstitutionFactory,
 )
+
+from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
 from tests.utils import assert_latest_log
 
 
@@ -277,6 +280,10 @@ class TestRegistrationUpdate:
         return {'public': True}
 
     @pytest.fixture()
+    def institution_one(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
     def make_payload(self, private_registration, attributes):
         def payload(
                 id=private_registration._id,
@@ -291,6 +298,10 @@ class TestRegistrationUpdate:
                 }
             }
         return payload
+
+    @pytest.fixture()
+    def license_cc0(self):
+        return NodeLicense.objects.filter(name='CC0 1.0 Universal').first()
 
     def test_update_registration(
             self, app, user, read_only_contributor,
@@ -353,8 +364,8 @@ class TestRegistrationUpdate:
 
     def test_fields(
             self, app, user, public_registration,
-            private_registration, public_url,
-            private_url, make_payload):
+            private_registration, public_url, institution_one,
+            private_url, make_payload, license_cc0):
 
         #   test_public_field_has_invalid_value
         invalid_public_payload = make_payload(
@@ -369,12 +380,72 @@ class TestRegistrationUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"Dr.Strange" is not a valid boolean.'
 
-    #   test_fields_other_than_public_are_ignored
+    #   test_some_registration_fields_are_editable
+        user.affiliated_institutions.add(institution_one)
+        year = '2009'
+        copyright_holders = ['Grapes McGee']
+        description = 'New description'
+        tags = ['hello', 'hi']
+        custom_citation = 'This is my custom citation. Grapes McGee.'
+
         attribute_list = {
             'public': True,
             'category': 'instrumentation',
             'title': 'New title',
-            'description': 'New description'
+            'description': description,
+            'tags': tags,
+            'custom_citation': custom_citation,
+            'node_license': {
+                'year': year,
+                'copyright_holders': copyright_holders
+            }
+        }
+        verbose_private_payload = make_payload(attributes=attribute_list)
+        verbose_private_payload['data']['relationships'] = {
+            'license': {
+                'data': {
+                    'type': 'licenses',
+                    'id': license_cc0._id
+                }
+            },
+            'affiliated_institutions': {
+                'data': [
+                    {'type': 'institutions', 'id': institution_one._id}
+                ]
+            }
+        }
+        res = app.put_json_api(
+            private_url,
+            verbose_private_payload,
+            auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['public'] is True
+        assert res.json['data']['attributes']['category'] == 'project'
+        assert res.json['data']['attributes']['description'] == description
+        assert res.json['data']['attributes']['tags'] == tags
+        assert res.json['data']['attributes']['title'] == private_registration.title
+        assert res.json['data']['attributes']['node_license']['copyright_holders'] == copyright_holders
+        assert res.json['data']['attributes']['node_license']['year'] == year
+        assert res.json['data']['attributes']['custom_citation'] == custom_citation
+
+        institution_links = res.json['data']['relationships']['affiliated_institutions']['links']
+        assert '/{}registrations/{}/institutions/'.format(
+            API_BASE, private_registration._id) in institution_links['related']['href']
+        assert '/{}registrations/{}/relationships/institutions/'.format(
+            API_BASE, private_registration._id) in institution_links['self']['href']
+
+    #   test_can_unset_certain_registration_fields
+        attribute_list = {
+            'public': True,
+            'category': 'instrumentation',
+            'title': 'New title',
+            'description': '',
+            'tags': [],
+            'custom_citation': '',
+            'node_license': {
+                'year': '',
+                'copyright_holders': []
+            }
         }
         verbose_private_payload = make_payload(attributes=attribute_list)
 
@@ -385,8 +456,12 @@ class TestRegistrationUpdate:
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
         assert res.json['data']['attributes']['category'] == 'project'
-        assert res.json['data']['attributes']['description'] == private_registration.description
+        assert res.json['data']['attributes']['description'] == ''
+        assert res.json['data']['attributes']['tags'] == []
         assert res.json['data']['attributes']['title'] == private_registration.title
+        assert res.json['data']['attributes']['node_license']['copyright_holders'] == []
+        assert res.json['data']['attributes']['node_license']['year'] == ''
+        assert res.json['data']['attributes']['custom_citation'] == ''
 
     #   test_type_field_must_match
         node_type_payload = make_payload(type='node')
@@ -431,6 +506,10 @@ class TestRegistrationUpdate:
             'lift_embargo',
             'children',
             'tags',
+            'description',
+            'node_license',
+            'license',
+            'affiliated_institutions',
             'custom_citation']
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
@@ -446,6 +525,10 @@ class TestRegistrationUpdate:
             'lift_embargo',
             'children',
             'tags',
+            'description',
+            'node_license',
+            'license',
+            'affiliated_institutions',
             'custom_citation']
 
         for field in RegistrationDetailSerializer._declared_fields:
@@ -483,6 +566,30 @@ class TestRegistrationUpdate:
             id=private_registration._id,
             attributes={'custom_citation': 'This is a custom citation yay'}
         )
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_read_write_contributor_cannot_update_description(
+            self, app, read_write_contributor, private_registration, private_url, make_payload):
+        payload = make_payload(
+            id=private_registration._id,
+            attributes={'description': 'Updated description'}
+        )
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_read_write_contributor_cannot_update_affiliated_institution(
+            self, app, read_write_contributor, private_registration, private_url, institution_one, make_payload):
+        payload = make_payload(
+            id=private_registration._id,
+        )
+        payload['relationships'] = {
+            'affiliated_institutions': {
+                'data': [
+                    {'type': 'institutions', 'id': institution_one._id}
+                ]
+            }
+        }
         res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -756,3 +863,70 @@ class TestRegistrationTags:
             expect_errors=True)
         assert res.status_code == 409
         assert res.json['errors'][0]['detail'] == 'Cannot remove tags of withdrawn registrations.'
+
+
+class TestUpdateRegistrationLicense(TestNodeUpdateLicense):
+    @pytest.fixture()
+    def node(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        node = RegistrationFactory(creator=user_admin_contrib, is_public=False)
+        node.add_contributor(user_write_contrib, auth=Auth(user_admin_contrib))
+        node.add_contributor(
+            user_read_contrib,
+            auth=Auth(user_admin_contrib),
+            permissions=['read'])
+        node.save()
+        return node
+
+    @pytest.fixture()
+    def url_node(self, node):
+        return '/{}registrations/{}/'.format(API_BASE, node._id)
+
+    @pytest.fixture()
+    def make_payload(self):
+        def payload(
+                node_id, license_id=None, license_year=None,
+                copyright_holders=None):
+            attributes = {}
+
+            if license_year and copyright_holders:
+                attributes = {
+                    'node_license': {
+                        'year': license_year,
+                        'copyright_holders': copyright_holders
+                    }
+                }
+            elif license_year:
+                attributes = {
+                    'node_license': {
+                        'year': license_year
+                    }
+                }
+            elif copyright_holders:
+                attributes = {
+                    'node_license': {
+                        'copyright_holders': copyright_holders
+                    }
+                }
+
+            return {
+                'data': {
+                    'type': 'registrations',
+                    'id': node_id,
+                    'attributes': attributes,
+                    'relationships': {
+                        'license': {
+                            'data': {
+                                'type': 'licenses',
+                                'id': license_id
+                            }
+                        }
+                    }
+                }
+            } if license_id else {
+                'data': {
+                    'type': 'registrations',
+                    'id': node_id,
+                    'attributes': attributes
+                }
+            }
+        return payload
