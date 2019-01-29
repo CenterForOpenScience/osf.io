@@ -299,7 +299,7 @@ def get_auth(auth, **kwargs):
             filenode = OsfStorageFileNode.load(path.strip('/'))
             if filenode and filenode.is_file:
                 # default to most recent version if none is provided in the response
-                version = int(data.get('version', filenode.versions.count()))
+                version = int(data['version']) if data.get('version') else filenode.versions.count()
                 try:
                     fileversion = FileVersion.objects.filter(
                         basefilenode___id=file_id,
