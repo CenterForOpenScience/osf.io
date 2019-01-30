@@ -318,7 +318,7 @@ def get_auth(auth, **kwargs):
                         update_analytics(node, file_id, version_index, 'view')
                     elif action == 'download' and not download_is_from_mfr:
                         update_analytics(node, file_id, version_index, 'download')
-        if fileversion:
+        if fileversion and provider_settings:
             region = fileversion.region
             credentials = region.waterbutler_credentials
             waterbutler_settings = fileversion.serialize_waterbutler_settings(
@@ -327,12 +327,8 @@ def get_auth(auth, **kwargs):
             )
     # If they haven't been set by version region, use the NodeSettings or Preprint directly
     if not (credentials and waterbutler_settings):
-        if provider_settings:
-            credentials = provider_settings.serialize_waterbutler_credentials()
-            waterbutler_settings = provider_settings.serialize_waterbutler_settings()
-        elif isinstance(node, Preprint):
-            credentials = node.serialize_waterbutler_credentials()
-            waterbutler_settings = node.serialize_waterbutler_settings()
+        credentials = node.serialize_waterbutler_credentials()
+        waterbutler_settings = node.serialize_waterbutler_settings()
 
     # TODO: Add a signal here?
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
