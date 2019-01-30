@@ -57,6 +57,10 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True, source='is_pending_embargo',
         help_text='The associated Embargo is awaiting approval by project admins.',
     ))
+    pending_embargo_termination_approval = HideIfWithdrawal(ser.BooleanField(
+        read_only=True, source='is_pending_embargo_termination',
+        help_text='The associated Embargo early termination is awaiting approval by project admins',
+    ))
     embargoed = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_embargoed'))
     pending_registration_approval = HideIfWithdrawal(ser.BooleanField(
         source='is_pending_registration', read_only=True,
@@ -111,7 +115,10 @@ class RegistrationSerializer(NodeSerializer):
     comments = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
+        related_meta={
+            'unread': 'get_unread_comments_count',
+            'count': 'get_total_comments_count',
+        },
         filter={'target': '<_id>'},
     ))
 
@@ -135,6 +142,7 @@ class RegistrationSerializer(NodeSerializer):
     wikis = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-wikis',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_wiki_page_count'},
     ))
 
     forked_from = HideIfWithdrawal(RelationshipField(
@@ -311,6 +319,9 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_view_only_links_count(self, obj):
         return obj.private_links.filter(is_deleted=False).count()
+
+    def get_total_comments_count(self, obj):
+        return obj.comment_set.filter(page='node', is_deleted=False).count()
 
     def update(self, registration, validated_data):
         # TODO - when withdrawal is added, make sure to restrict to admin only here
