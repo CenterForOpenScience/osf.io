@@ -3,6 +3,7 @@ import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
+from datetime import datetime
 
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -25,7 +26,7 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf import features
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode, Education, Employment
 from osf.exceptions import BlacklistedEmailError
 from website import mails
 from website import mailchimp_utils
@@ -645,37 +646,44 @@ def serialize_social(auth, uid=None, **kwargs):
 
 
 def serialize_job(job):
+    start_date = job.start_date
+    end_date = job.end_date
     return {
-        'institution': job.get('institution'),
-        'department': job.get('department'),
-        'title': job.get('title'),
-        'startMonth': job.get('startMonth'),
-        'startYear': job.get('startYear'),
-        'endMonth': job.get('endMonth'),
-        'endYear': job.get('endYear'),
-        'ongoing': job.get('ongoing', False),
+        'institution': job.institution,
+        'department': job.department,
+        'title': job.title,
+        'startMonth': start_date.month if start_date else None,
+        'startYear': start_date.year if start_date else None,
+        'endMonth': end_date.month if end_date else None,
+        'endYear': end_date.year if end_date else None,
+        'ongoing': job.ongoing,
+        '_id': job._id,
     }
 
 
 def serialize_school(school):
+    start_date = school.start_date
+    end_date = school.end_date
     return {
-        'institution': school.get('institution'),
-        'department': school.get('department'),
-        'degree': school.get('degree'),
-        'startMonth': school.get('startMonth'),
-        'startYear': school.get('startYear'),
-        'endMonth': school.get('endMonth'),
-        'endYear': school.get('endYear'),
-        'ongoing': school.get('ongoing', False),
+        'institution': school.institution,
+        'department': school.department,
+        'degree': school.degree,
+        'startMonth': start_date.month if start_date else None,
+        'startYear': start_date.year if start_date else None,
+        'endMonth': end_date.month if end_date else None,
+        'endYear': end_date.year if end_date else None,
+        'ongoing': school.ongoing,
+        '_id': school._id,
     }
 
 
 def serialize_contents(field, func, auth, uid=None):
     target = get_target_user(auth, uid)
+    manager = getattr(target, field)
     ret = {
         'contents': [
             func(content)
-            for content in getattr(target, field)
+            for content in manager.all()
         ]
     }
     append_editable(ret, auth, uid)
@@ -684,14 +692,14 @@ def serialize_contents(field, func, auth, uid=None):
 
 @collect_auth
 def serialize_jobs(auth, uid=None, **kwargs):
-    ret = serialize_contents('jobs', serialize_job, auth, uid)
+    ret = serialize_contents('employment', serialize_job, auth, uid)
     append_editable(ret, auth, uid)
     return ret
 
 
 @collect_auth
 def serialize_schools(auth, uid=None, **kwargs):
-    ret = serialize_contents('schools', serialize_school, auth, uid)
+    ret = serialize_contents('education', serialize_school, auth, uid)
     append_editable(ret, auth, uid)
     return ret
 
@@ -734,57 +742,59 @@ def unserialize_social(auth, **kwargs):
         ))
 
 
-def unserialize_job(job):
-    return {
-        'institution': job.get('institution'),
-        'department': job.get('department'),
-        'title': job.get('title'),
-        'startMonth': job.get('startMonth'),
-        'startYear': job.get('startYear'),
-        'endMonth': job.get('endMonth'),
-        'endYear': job.get('endYear'),
-        'ongoing': job.get('ongoing'),
-    }
-
-
-def unserialize_school(school):
-    return {
-        'institution': school.get('institution'),
-        'department': school.get('department'),
-        'degree': school.get('degree'),
-        'startMonth': school.get('startMonth'),
-        'startYear': school.get('startYear'),
-        'endMonth': school.get('endMonth'),
-        'endYear': school.get('endYear'),
-        'ongoing': school.get('ongoing'),
-    }
-
-
-def unserialize_contents(field, func, auth):
+def unserialize_contents(model, auth, attribute_name):
     user = auth.user
     json_data = escape_html(request.get_json())
-    setattr(
-        user,
-        field,
-        [
-            func(content)
-            for content in json_data.get('contents', [])
-        ]
-    )
-    user.save()
+    new_order = []
+    for entry in json_data.get('contents', []):
+        institution = entry.get('institution')
+        _id = entry.get('_id')
+        if institution:
+            if _id:
+                profile_object = model.objects.get(_id=_id)
+                profile_object.institution = institution
+            else:
+                profile_object = model(institution=institution, user=user)
+
+            for key, value in entry.items():
+                if key != 'institution' and hasattr(model, key):
+                    setattr(profile_object, key, value)
+
+            start_year = entry.get('startYear', None)
+            start_month = entry['startMonth'] if start_year else None
+            if start_year and start_month:
+                profile_object.start_date = datetime.strptime('{} {}'.format(start_month, start_year), '%m %Y')
+
+            end_year = entry.get('endYear', None)
+            end_month = entry['endMonth'] if end_year else None
+            if end_year and end_month:
+                profile_object.end_date = datetime.strptime('{} {}'.format(end_month, end_year), '%m %Y')
+
+            profile_object.save()
+            new_order.append(profile_object.id)
+
+    # Remove relationships that aren't present in current payload
+    user_object_manager = getattr(user, attribute_name)
+    current_user_relationships = user_object_manager.values_list('id', flat=True)
+    removed_relationships = set(current_user_relationships) - set(new_order)
+    # TODO - is there a better way? new_order has normal ids, but the remove method on the user uses _id
+    model.objects.filter(id__in=removed_relationships).delete()
+
+    # set the order with respect to the user for the objects sent back by the frontend
+    getattr(user, 'set_{}_order'.format(attribute_name))(new_order)
 
 
 @must_be_logged_in
 def unserialize_jobs(auth, **kwargs):
     verify_user_match(auth, **kwargs)
-    unserialize_contents('jobs', unserialize_job, auth)
+    unserialize_contents(Employment, auth, 'employment')
     # TODO: Add return value
 
 
 @must_be_logged_in
 def unserialize_schools(auth, **kwargs):
     verify_user_match(auth, **kwargs)
-    unserialize_contents('schools', unserialize_school, auth)
+    unserialize_contents(Education, auth, 'education')
     # TODO: Add return value
 
 

@@ -204,6 +204,7 @@ DateMixin.prototype.unserialize = function(data) {
     var endMonth = self.intToMonth(self.endMonth());
     self.startMonth(startMonth);
     self.endMonth(endMonth);
+    self._id = data._id;
 
     return self;
 };
