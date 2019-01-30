@@ -327,8 +327,8 @@ def get_auth(auth, **kwargs):
             )
     # If they haven't been set by version region, use the NodeSettings or Preprint directly
     if not (credentials and waterbutler_settings):
-        credentials = node.serialize_waterbutler_credentials()
-        waterbutler_settings = node.serialize_waterbutler_settings()
+        credentials = node.serialize_waterbutler_credentials(provider_name)
+        waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
 
     # TODO: Add a signal here?
     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
