@@ -51,7 +51,7 @@ def update_files_count(node_id):
     field.auto_now = False
 
     if node.is_registration:
-        node.files_count = node.files.count()
+        node.files_count = node.files.filter(deleted_on__isnull=True).count()
     # else:
         # TODO: Do node specific files_count update
 

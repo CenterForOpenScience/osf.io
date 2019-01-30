@@ -50,6 +50,8 @@ class TestRegistrationDetail:
         private_project = ProjectFactory(title='Private Project', creator=user)
         create_test_file(private_project, user, filename='sake recipe')
         create_test_file(private_project, user, filename='sake rice wine recipe')
+        deleted_file = create_test_file(private_project, user, filename='No sake')
+        deleted_file.delete()
         return private_project
 
     @pytest.fixture()
@@ -69,11 +71,7 @@ class TestRegistrationDetail:
 
     @pytest.fixture()
     def private_registration(self, user, private_project, private_wiki):
-        private_registration = RegistrationFactory(project=private_project, creator=user)
-        # Registration seems to lose all files on the node (registered_from).
-        private_registration.files_count = private_project.files.count()
-        private_registration.save()
-        return private_registration
+        return RegistrationFactory(project=private_project, creator=user)
 
     @pytest.fixture()
     def registration_comment(self, private_registration, user):
