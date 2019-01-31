@@ -341,6 +341,9 @@ SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
 CAS_SERVER_URL = 'http://localhost:8080'
 MFR_SERVER_URL = 'http://localhost:7778'
+# FIXME: This is a gross hack. Don't rely on these.
+MFR_DOMAIN_PREFIX = 'localhost'
+MFR_DOMAIN_SUFFIX = ':7778'
 
 ###### ARCHIVER ###########
 ARCHIVE_PROVIDER = 'osfstorage'

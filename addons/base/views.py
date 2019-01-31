@@ -228,12 +228,29 @@ def make_auth(user):
         }
     return {}
 
-def get_metric_class_for_action(action):
+def download_is_from_mfr(req, payload):
+    metrics_data = payload.get('metrics', {})
+    referrer_netloc = furl.furl(metrics_data.get('referrer', '')).netloc
+    referrer_is_mfr = (
+        referrer_netloc.startswith(settings.MFR_DOMAIN_PREFIX) and
+        referrer_netloc.endswith(settings.MFR_DOMAIN_SUFFIX)
+    )
+    return (
+        # This header is sent for download requests that
+        # originate from MFR, e.g. for the code pygments renderer
+        req.headers.get('X-Cos-Mfr-Render-Request', None) or
+        # Need to check the netloc in order to account
+        # for renderers that send XHRs from the
+        # renderered content, e.g. PDFs
+        referrer_is_mfr
+    )
+
+
+def get_metric_class_for_action(action, from_mfr):
     metric_class = None
-    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
     if action == 'render':
         metric_class = PreprintView
-    elif action == 'download' and not download_is_from_mfr:
+    elif action == 'download' and not from_mfr:
         metric_class = PreprintDownload
     return metric_class
 
@@ -311,13 +328,26 @@ def get_auth(auth, **kwargs):
                     # mark fileversion as seen
                     FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
                 if not node.is_contributor(auth.user):
-                    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
+                    from_mfr = download_is_from_mfr(request, payload=data)
                     # version index is 0 based
                     version_index = version - 1
                     if action == 'render':
                         update_analytics(node, file_id, version_index, 'view')
-                    elif action == 'download' and not download_is_from_mfr:
+                    elif action == 'download' and not from_mfr:
                         update_analytics(node, file_id, version_index, 'download')
+                    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
+                        if isinstance(node, Preprint):
+                            metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
+                            if metric_class:
+                                try:
+                                    metric_class.record_for_preprint(
+                                        preprint=node,
+                                        user=auth.user,
+                                        version=fileversion.identifier if fileversion else None,
+                                        path=path
+                                    )
+                                except es_exceptions.ConnectionError:
+                                    log_exception()
         if fileversion and provider_settings:
             region = fileversion.region
             credentials = region.waterbutler_credentials
@@ -329,22 +359,6 @@ def get_auth(auth, **kwargs):
     if not (credentials and waterbutler_settings):
         credentials = node.serialize_waterbutler_credentials(provider_name)
         waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
-
-    # TODO: Add a signal here?
-    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-        user = auth.user
-        if isinstance(node, Preprint) and not node.is_contributor(user):
-            metric_class = get_metric_class_for_action(action)
-            if metric_class:
-                try:
-                    metric_class.record_for_preprint(
-                        preprint=node,
-                        user=user,
-                        version=fileversion.identifier if fileversion else None,
-                        path=path
-                    )
-                except es_exceptions.ConnectionError:
-                    log_exception()
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
