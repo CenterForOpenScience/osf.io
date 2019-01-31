@@ -30,6 +30,7 @@ from framework.sentry import log_exception
 class RegistrationSerializer(NodeSerializer):
     admin_only_editable_fields = [
         'affiliated_institutions',
+        'article_doi',
         'custom_citation',
         'description',
         'is_public',
@@ -47,6 +48,7 @@ class RegistrationSerializer(NodeSerializer):
     access_requests_enabled = HideIfWithdrawal(ser.BooleanField(read_only=True))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(required=False, source='license'))
     tags = HideIfWithdrawal(ValuesListField(attr_name='name', child=ser.CharField(), required=False))
+    article_doi = ser.CharField(required=False, allow_null=True)
     public = HideIfWithdrawal(ser.BooleanField(
         source='is_public', required=False,
                help_text='Nodes that are made public will give read-only access '
@@ -382,7 +384,7 @@ class RegistrationSerializer(NodeSerializer):
         try:
             registration.update(validated_data, auth=auth)
         except ValidationError as e:
-            raise InvalidModelValueError(detail=e.message)
+            raise InvalidModelValueError(detail=e.messages[0])
         except NodeUpdateError as err:
             raise exceptions.ValidationError(err.reason)
         except NodeStateError as err:

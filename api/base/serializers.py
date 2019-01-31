@@ -83,7 +83,8 @@ class ConditionalField(ser.Field):
     def __init__(self, field, **kwargs):
         super(ConditionalField, self).__init__(**kwargs)
         self.field = getattr(field, 'child_relation', field)
-        self.source = self.field.source
+        # source is intentionally field.source and not self.field.source
+        self.source = field.source
         self.required = self.field.required
         self.read_only = self.field.read_only
 

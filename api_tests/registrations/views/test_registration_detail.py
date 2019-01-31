@@ -208,6 +208,7 @@ class TestRegistrationDetail:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
 class TestRegistrationUpdate:
 
     @pytest.fixture()
@@ -387,6 +388,7 @@ class TestRegistrationUpdate:
         description = 'New description'
         tags = ['hello', 'hi']
         custom_citation = 'This is my custom citation. Grapes McGee.'
+        article_doi = '10.123/456/789'
 
         attribute_list = {
             'public': True,
@@ -398,7 +400,8 @@ class TestRegistrationUpdate:
             'node_license': {
                 'year': year,
                 'copyright_holders': copyright_holders
-            }
+            },
+            'article_doi': '10.123/456/789'
         }
         verbose_private_payload = make_payload(attributes=attribute_list)
         verbose_private_payload['data']['relationships'] = {
@@ -427,6 +430,7 @@ class TestRegistrationUpdate:
         assert res.json['data']['attributes']['node_license']['copyright_holders'] == copyright_holders
         assert res.json['data']['attributes']['node_license']['year'] == year
         assert res.json['data']['attributes']['custom_citation'] == custom_citation
+        assert res.json['data']['attributes']['article_doi'] == article_doi
 
         institution_links = res.json['data']['relationships']['affiliated_institutions']['links']
         assert '/{}registrations/{}/institutions/'.format(
@@ -483,6 +487,15 @@ class TestRegistrationUpdate:
             expect_errors=True)
         assert res.status_code == 409
 
+    #   test_invalid_doi
+        bad_doi_payload = make_payload(attributes={'article_doi': 'blah'})
+        res = app.put_json_api(
+            private_url,
+            bad_doi_payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+
     def test_turning_private_registrations_public(
             self, app, user, make_payload):
         private_project = ProjectFactory(creator=user, is_public=False)
@@ -510,6 +523,7 @@ class TestRegistrationUpdate:
             'node_license',
             'license',
             'affiliated_institutions',
+            'article_doi',
             'custom_citation']
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
@@ -529,6 +543,7 @@ class TestRegistrationUpdate:
             'node_license',
             'license',
             'affiliated_institutions',
+            'article_doi',
             'custom_citation']
 
         for field in RegistrationDetailSerializer._declared_fields:
@@ -574,6 +589,15 @@ class TestRegistrationUpdate:
         payload = make_payload(
             id=private_registration._id,
             attributes={'description': 'Updated description'}
+        )
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_read_write_contributor_cannot_update_article_doi(
+            self, app, read_write_contributor, private_registration, private_url, make_payload):
+        payload = make_payload(
+            id=private_registration._id,
+            attributes={'article_doi': '10.123/456/789'}
         )
         res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
@@ -773,7 +797,7 @@ class TestRegistrationTags:
             auth=user_non_contrib.auth)
         assert res.status_code == 403
 
-        # test_partial_update_registration_does_not_clear_tagsb
+        # test_partial_update_registration_does_not_clear_tags
         new_payload = {
             'data': {
                 'id': registration_private._id,

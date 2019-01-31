@@ -129,6 +129,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'id',
             'links',
             'registration',
+            'article_doi',
             'title',
             'type',
             'current_user_can_comment',
