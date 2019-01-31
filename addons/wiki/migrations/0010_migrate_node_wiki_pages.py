@@ -29,7 +29,7 @@ def reverse_func(state, schema):
     progress_bar = progressbar.ProgressBar(maxval=nodes.count() or 100).start()
     for i, node in enumerate(nodes, 1):
         progress_bar.update(i)
-        for wiki_key, version_list in node.wiki_pages_versions.iteritems():
+        for wiki_key, version_list in node.wiki_pages_versions.items():
             if version_list:
                 for index, version in enumerate(version_list):
                     nwp = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]

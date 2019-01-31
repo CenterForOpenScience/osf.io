@@ -68,7 +68,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         instance.deactivate(save=False)  # This will cause CAS to revoke the existing token but still allow it to be used in the future, new scopes will be updated properly at that time.
         instance.reload()
 
-        for attr, value in validated_data.iteritems():
+        for attr, value in validated_data.items():
             if attr == 'token_id':  # Do not allow user to update token_id
                 continue
             else:

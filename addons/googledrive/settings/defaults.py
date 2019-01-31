@@ -14,3 +14,6 @@ OAUTH_SCOPE = [
 ]
 OAUTH_BASE_URL = 'https://accounts.google.com/o/oauth2/'
 API_BASE_URL = 'https://www.googleapis.com/'
+
+# Max file size permitted by frontend in megabytes
+MAX_UPLOAD_SIZE = 5 * 1024  # 5 GB

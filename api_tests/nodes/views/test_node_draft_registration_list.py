@@ -7,6 +7,7 @@ from osf.models import RegistrationSchema
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
+    RegistrationProviderFactory,
     AuthUserFactory,
     CollectionFactory,
     DraftRegistrationFactory,
@@ -54,12 +55,15 @@ class DraftRegistrationTestCase:
             json_schema = create_jsonschema_from_metaschema(
                 draft.registration_schema.schema)
 
-            for key, value in json_schema['properties'].iteritems():
+            for key, value in json_schema['properties'].items():
                 response = 'Test response'
-                if value['properties']['value'].get('enum'):
-                    response = value['properties']['value']['enum'][0]
-
-                if value['properties']['value'].get('properties'):
+                items = value['properties']['value'].get('items')
+                enum = value['properties']['value'].get('enum')
+                if items:  # multiselect
+                    response = [items['enum'][0]]
+                elif enum:  # singleselect
+                    response = enum[0]
+                elif value['properties']['value'].get('properties'):
                     response = {'question': {'value': 'Test Response'}}
 
                 test_metadata[key] = {'value': response}
@@ -173,13 +177,17 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
+    def provider(self):
+        return RegistrationProviderFactory(_id='osf')
+
+    @pytest.fixture()
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
     @pytest.fixture()
-    def payload(self, metaschema_open_ended):
+    def payload(self, metaschema_open_ended, provider):
         return {
             'data': {
                 'type': 'draft_registrations',
@@ -190,7 +198,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': metaschema_open_ended._id
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
@@ -277,7 +290,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 403
 
     def test_registration_supplement_errors(
-            self, app, user, url_draft_registrations):
+            self, app, user, provider, url_draft_registrations):
 
         #   test_registration_supplement_not_found
         draft_data = {
@@ -290,7 +303,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': 'Invalid schema'
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
@@ -314,32 +332,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': schema._id
                         }
-
-                    }
-                }
-            }
-        }
-        res = app.post_json_api(
-            url_draft_registrations,
-            draft_data, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
-
-    #   test_registration_supplement_must_be_most_recent_metaschema
-        schema = RegistrationSchema.objects.get(
-            name='Open-Ended Registration', schema_version=1)
-        draft_data = {
-            'data': {
-                'type': 'draft_registrations',
-                'attributes': {},
-                'relationships': {
-                    'registration_schema': {
+                    },
+                    'provider': {
                         'data': {
-                            'type': 'registration_schema',
-                            'id': schema._id
+                            'type': 'registration-providers',
+                            'id': provider._id,
                         }
-
                     }
                 }
             }
@@ -386,7 +384,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     def test_required_metaschema_questions_not_required_on_post(
-            self, app, user, project_public, prereg_metadata):
+            self, app, user, provider, project_public, prereg_metadata):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
@@ -417,7 +415,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': prereg_schema._id
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
@@ -536,7 +539,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'Nope, data collection has not begun\' is not one of [u\'No, data collection has not begun\', u\'Yes, data collection is underway or complete\']'
+        assert errors['detail'] == 'u\'Nope, data collection has not begun\' is not one of [u\'No, data collection has not begun\', u\'Yes, data collection is underway or complete\', \'\']'
 
     def test_reviewer_cannot_create_draft_registration(
             self, app, user_read_contrib, project_public,

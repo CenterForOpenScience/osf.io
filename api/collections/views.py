@@ -1,4 +1,5 @@
 from guardian.core import ObjectPermissionChecker
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
@@ -28,9 +29,11 @@ from api.collections.serializers import (
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
     CollectedNodeRelationshipSerializer,
+    CollectedPreprintsRelationshipSerializer,
     CollectedRegistrationsRelationshipSerializer,
 )
 from api.nodes.serializers import NodeSerializer
+from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from osf.models import (
     AbstractNode,
@@ -38,6 +41,7 @@ from osf.models import (
     Collection,
     Node,
     Registration,
+    Preprint,
 )
 
 
@@ -61,8 +65,15 @@ class CollectionMixin(object):
             self.check_object_permissions(self.request, collection)
         return collection
 
+    def collection_preprints(self, collection, user):
+        return Preprint.objects.can_view(
+            Preprint.objects.filter(
+                guids__in=collection.guid_links.all(), deleted__isnull=True,
+            ), user=user,
+        )
 
-class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
+
+class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, CollectionMixin):
     """Organizer Collections organize projects and components. *Writeable*.
 
     Paginated list of Project Organizer Collections ordered by their `modified`.
@@ -413,7 +424,8 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        nodes = Node.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        node_ids = self.get_collection().guid_links.filter(content_type_id=ContentType.objects.get_for_model(Node).id).values_list('object_id', flat=True)
+        nodes = Node.objects.filter(id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
         return self.optimize_node_queryset(nodes)
 
     # overrides APIView
@@ -516,6 +528,34 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
         return res
 
 
+class LinkedPreprintsList(BaseLinkedList, CollectionMixin):
+    """List of preprints linked to this collection. *Read-only*.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CollectionWriteOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    serializer_class = PreprintSerializer
+    view_category = 'collections'
+    view_name = 'linked-preprints'
+
+    ordering = ('-modified',)
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        return self.collection_preprints(self.get_collection(), auth.user)
+
+    # overrides APIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(LinkedPreprintsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
+
 class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, CollectionMixin):
     """Node Links to other nodes. *Writeable*.
 
@@ -593,7 +633,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         try:
             collection.remove_object(instance)
         except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
@@ -674,7 +714,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         try:
             collection.remove_object(pointer.guid.referent)
         except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
         collection.save()
 
 
@@ -693,7 +733,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -711,7 +751,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -732,7 +772,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -777,6 +817,31 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
                 collection.remove_object(current_pointers[val['id']])
 
 
+class CollectionLinkedPreprintsRelationship(CollectionLinkedNodesRelationship):
+    """ Relationship Endpoint for Collection -> Linked Preprints relationships
+    """
+    permission_classes = (
+        CollectionWriteOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    serializer_class = CollectedPreprintsRelationshipSerializer
+
+    view_category = 'collections'
+    view_name = 'collection-preprint-pointer-relationship'
+
+    def get_object(self):
+        collection = self.get_collection(check_object_permissions=False)
+        auth = get_user_auth(self.request)
+        obj = {
+            'data': [
+                pointer for pointer in self.collection_preprints(collection, auth.user)
+            ], 'self': collection,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
 class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, CollectionMixin):
     """ Relationship Endpoint for Collection -> Linked Registration relationships
 
@@ -792,7 +857,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -810,7 +875,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_regisrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -831,7 +896,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }

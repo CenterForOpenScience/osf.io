@@ -552,20 +552,34 @@ class TestRemoveNodeSignal(OsfTestCase):
 
     def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
         project = factories.ProjectFactory()
+        component = factories.NodeFactory(parent=project, creator=project.creator)
 
         s = NotificationSubscription.objects.filter(email_transactional=project.creator)
         assert_equal(s.count(), 2)
 
+        s = NotificationSubscription.objects.filter(email_transactional=component.creator)
+        assert_equal(s.count(), 2)
+
         with capture_signals() as mock_signals:
             project.remove_node(auth=Auth(project.creator))
+        project.reload()
+        component.reload()
+
         assert_true(project.is_deleted)
+        assert_true(component.is_deleted)
         assert_equal(mock_signals.signals_sent(), set([node_deleted]))
 
         s = NotificationSubscription.objects.filter(email_transactional=project.creator)
         assert_equal(s.count(), 0)
 
+        s = NotificationSubscription.objects.filter(email_transactional=component.creator)
+        assert_equal(s.count(), 0)
+
         with assert_raises(NotificationSubscription.DoesNotExist):
             NotificationSubscription.objects.get(node=project)
+
+        with assert_raises(NotificationSubscription.DoesNotExist):
+            NotificationSubscription.objects.get(node=component)
 
 
 def list_or_dict(data):
@@ -587,7 +601,7 @@ def has(data, sub_data):
     # :param sub_data: subset being checked for
     # :return: True or False
     try:
-        (item for item in data if item == sub_data).next()
+        next((item for item in data if item == sub_data))
         return True
     except StopIteration:
         lists_and_dicts = list_or_dict(data)
@@ -1931,7 +1945,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_reviews_submit_notification(self, mock_store):
         time_now = timezone.now()
-        self.context_info_submission['message'] = u'submitted {}.'.format(self.context_info_submission['reviewable'].node.title)
+        self.context_info_submission['message'] = u'submitted {}.'.format(self.context_info_submission['reviewable'].title)
         self.context_info_submission['profile_image_url'] = get_profile_image_url(self.context_info_submission['referrer'])
         self.context_info_submission['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
                                                                                          self.context_info_submission[
@@ -1946,7 +1960,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
                                       'email_digest',
                                       'new_pending_submissions',
                                       self.context_info_submission['referrer'],
-                                      self.context_info_submission['reviewable'].node,
+                                      self.context_info_submission['reviewable'],
                                       time_now,
                                       abstract_provider=self.context_info_submission['reviewable'].provider,
                                       **self.context_info_submission)
@@ -1955,7 +1969,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
                                    'email_transactional',
                                    'new_pending_submissions',
                                    self.context_info_submission['referrer'],
-                                   self.context_info_submission['reviewable'].node,
+                                   self.context_info_submission['reviewable'],
                                    time_now,
                                    abstract_provider=self.context_info_request['reviewable'].provider,
                                    **self.context_info_submission)
@@ -1964,7 +1978,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
     def test_reviews_request_notification(self, mock_store):
         time_now = timezone.now()
         self.context_info_request['message'] = u'has requested withdrawal of {} "{}".'.format(self.context_info_request['reviewable'].provider.preprint_word,
-                                                                                                 self.context_info_request['reviewable'].node.title)
+                                                                                                 self.context_info_request['reviewable'].title)
         self.context_info_request['profile_image_url'] = get_profile_image_url(self.context_info_request['requester'])
         self.context_info_request['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
                                                                                          self.context_info_request[
@@ -1979,7 +1993,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
                                       'email_digest',
                                       'new_pending_submissions',
                                       self.context_info_request['requester'],
-                                      self.context_info_request['reviewable'].node,
+                                      self.context_info_request['reviewable'],
                                       time_now,
                                       abstract_provider=self.context_info_request['reviewable'].provider,
                                       **self.context_info_request)
@@ -1988,7 +2002,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
                                    'email_transactional',
                                    'new_pending_submissions',
                                    self.context_info_request['requester'],
-                                   self.context_info_request['reviewable'].node,
+                                   self.context_info_request['reviewable'],
                                    time_now,
                                    abstract_provider=self.context_info_request['reviewable'].provider,
                                    **self.context_info_request)

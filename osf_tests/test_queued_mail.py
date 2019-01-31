@@ -5,15 +5,17 @@ import datetime as dt
 import pytest
 import mock
 from django.utils import timezone
-from framework.auth.core import Auth
+from waffle.testutils import override_switch
 from website.prereg.utils import get_prereg_schema
 
 from .factories import UserFactory, NodeFactory, DraftRegistrationFactory
 
+from osf.features import DISABLE_ENGAGEMENT_EMAILS
 from osf.models.queued_mail import (
     queue_mail, WELCOME_OSF4M,
-    NO_LOGIN, NO_ADDON, NEW_PUBLIC_PROJECT, PREREG_REMINDER
+    NO_LOGIN, NO_ADDON, NEW_PUBLIC_PROJECT
 )
+from website.mails import mails
 from website.settings import DOMAIN
 
 @pytest.fixture()
@@ -159,27 +161,14 @@ class TestQueuedMail:
         )
         assert mail.send_mail() is False
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend(self, mock_mail, user, prereg):
-        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
-        assert mail.send_mail()
+    def test_disabled_queued_emails_not_sent_if_switch_active(self, user):
+        with override_switch(DISABLE_ENGAGEMENT_EMAILS, active=True):
+            assert self.queue_mail(mail=NO_ADDON, user=user) is False
+            assert self.queue_mail(mail=NO_LOGIN, user=user) is False
+            assert self.queue_mail(mail=WELCOME_OSF4M, user=user) is False
+            assert self.queue_mail(mail=NEW_PUBLIC_PROJECT, user=user) is False
 
-        # test don't send if already sent
-        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
-        assert not mail.send_mail()
-
-    @mock.patch('website.archiver.tasks.archive')
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend_submitted(self, mock_mail, mock_archive, user, prereg):
-        prereg.register(Auth(user))
-        prereg.save()
-
-        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
-        assert not mail.send_mail()
-
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend_deleted_draft(self, mock_mail, user, prereg):
-        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
-        prereg.deleted = timezone.now()
-        prereg.save()
-        assert not mail.send_mail()
+    def test_disabled_triggered_emails_not_sent_if_switch_active(self):
+        with override_switch(DISABLE_ENGAGEMENT_EMAILS, active=True):
+            assert mails.send_mail(to_addr='', mail=mails.WELCOME) is False
+            assert mails.send_mail(to_addr='', mail=mails.WELCOME_OSF4I) is False

@@ -32,17 +32,21 @@ from django.utils.termcolors import colorize
 from django.db.models import Model
 from django_extensions.management.commands import shell_plus
 from django_extensions.management.utils import signalcommand
+from elasticsearch_metrics.registry import registry as metrics_registry
 
 
 def header(text):
     return colorize(text, fg='green', opts=('bold', ))
 
-def format_imported_objects(models, osf, transaction, other, user):
+def format_imported_objects(models, metrics, osf, transaction, other, user):
     def format_dict(d):
         return ', '.join(sorted(d.keys()))
     ret = """
 {models_header}
 {models}
+
+{metrics_header}
+{metrics}
 
 {osf_header}
 {osf}
@@ -54,6 +58,8 @@ def format_imported_objects(models, osf, transaction, other, user):
 {other}""".format(
         models_header=header('Models:'),
         models=format_dict(models),
+        metrics_header=header('Metrics:'),
+        metrics=format_dict(metrics),
         osf_header=header('OSF:'),
         osf=format_dict(osf),
         transaction_header=header('Transaction:'),
@@ -153,6 +159,12 @@ class Command(shell_plus.Command):
             ret['fake'] = fake
         return ret
 
+    def get_metrics(self):
+        return {
+            each.__name__: each
+            for each in metrics_registry.get_metrics()
+        }
+
     def get_grouped_imports(self, options):
         """Return a dictionary of grouped import of the form:
         {
@@ -187,6 +199,7 @@ class Command(shell_plus.Command):
 
         groups = {
             'models': {},
+            'metrics': self.get_metrics(),
             'other': {},
             'osf': self.get_osf_imports(),
             'transaction': {

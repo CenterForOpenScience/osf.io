@@ -40,8 +40,8 @@ function _poTitleColumn(item) {
     var isMypreprintsCollection = tb.options.currentView().collection.data.nodeType === 'preprints';
     if (item.data.archiving) { // TODO check if this variable will be available
         return m('span', {'class': 'registration-archiving'}, title + ' [Archiving]');
-    } else if (node.embeds.preprints && isMypreprintsCollection){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.embeds.preprints.data[0].links.html, 'data-nodeID' : node.id, 'data-nodeTitle': title,'data-nodeType': node.type, onclick : function(event) {
+    } else if (node.type === 'preprints' && isMypreprintsCollection){
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, 'data-nodeTitle': title,'data-nodeType': node.type, onclick : function(event) {
             preventSelect.call(this, event);
             $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-preprint');
         }}, title) ];
@@ -339,8 +339,7 @@ var tbOptions = {
     },
     onmultiselect : _poMultiselect,
     resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
-        var isMypreprintsCollection = this.options.currentView().collection.data.nodeType === 'preprints';
-        var iconType = item.data.embeds.preprints && isMypreprintsCollection ? 'preprint' : item.data.attributes.category;
+        var iconType = item.data.type === 'preprints' ? 'preprint' : item.data.attributes.category;
         return m('i.' + iconmap.projectComponentIcons[iconType]);
     },
     resolveToggle : _poResolveToggle,
@@ -380,13 +379,6 @@ var tbOptions = {
     ondblclickrow : function(item, event){
         var tb = this;
         $osf.trackClick('myProjects', 'projectOrganizer', 'double-click-project');
-        var node = item.data;
-        var linkObject = new LinkObject('node', node, node.attributes.title);
-        tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?related_counts=children&embed=contributors');
-        tb.options.fetchers[linkObject.id].on(['page', 'done'], tb.options.onPageLoad);
-
-        // Get ancestors
-        linkObject.ancestors = [];
         function getAncestors (item) {
             var parent = item.parent();
             if(parent && parent.id > tb.treeData.id) {
@@ -394,8 +386,17 @@ var tbOptions = {
                 getAncestors(parent);
             }
         }
-        getAncestors(item);
-        tb.options.updateFilesData(linkObject);
+        var node = item.data;
+        var linkObject = new LinkObject('node', node, node.attributes.title);
+        if (item.data.type !== 'preprints') {
+            tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?related_counts=children&embed=contributors');
+            tb.options.fetchers[linkObject.id].on(['page', 'done'], tb.options.onPageLoad);
+
+            // Get ancestors
+            linkObject.ancestors = [];
+            getAncestors(item);
+            tb.options.updateFilesData(linkObject);
+        }
     },
     hScroll : 'auto',
     filterTemplate : function() {

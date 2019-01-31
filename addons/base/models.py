@@ -200,7 +200,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
             self.oauth_grants[node._id][external_account._id] = {}
 
         # update the metadata with the supplied values
-        for key, value in metadata.iteritems():
+        for key, value in metadata.items():
             self.oauth_grants[node._id][external_account._id][key] = value
 
         self.save()
@@ -264,7 +264,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
             return False
 
         # Verify every key/value pair is in the grants dict
-        for key, value in metadata.iteritems():
+        for key, value in metadata.items():
             if key not in grants or grants[key] != value:
                 return False
 
@@ -272,7 +272,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
     def get_nodes_with_oauth_grants(self, external_account):
         # Generator of nodes which have grants for this external account
-        for node_id, grants in self.oauth_grants.iteritems():
+        for node_id, grants in self.oauth_grants.items():
             node = AbstractNode.load(node_id)
             if external_account._id in grants.keys() and not node.is_deleted:
                 yield node
@@ -294,11 +294,11 @@ class BaseOAuthUserSettings(BaseUserSettings):
         if user_settings.__class__ is not self.__class__:
             raise TypeError('Cannot merge different addons')
 
-        for node_id, data in user_settings.oauth_grants.iteritems():
+        for node_id, data in user_settings.oauth_grants.items():
             if node_id not in self.oauth_grants:
                 self.oauth_grants[node_id] = data
             else:
-                node_grants = user_settings.oauth_grants[node_id].iteritems()
+                node_grants = user_settings.oauth_grants[node_id].items()
                 for ext_acct, meta in node_grants:
                     if ext_acct not in self.oauth_grants[node_id]:
                         self.oauth_grants[node_id][ext_acct] = meta

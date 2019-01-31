@@ -24,7 +24,7 @@ except ImportError as error:
 if not DEV_MODE and os.environ.get('DJANGO_SETTINGS_MODULE') == 'api.base.settings':
     from . import local
     from . import defaults
-    for setting in ('JWE_SECRET', 'JWT_SECRET', 'BYPASS_THROTTLE_TOKEN'):
+    for setting in ('JWE_SECRET', 'JWT_SECRET', 'BYPASS_THROTTLE_TOKEN', 'HASHIDS_SALT'):
         assert getattr(local, setting, None) and getattr(local, setting, None) != getattr(defaults, setting, None), '{} must be specified in local.py when DEV_MODE is False'.format(setting)
 
 def load_origins_whitelist():

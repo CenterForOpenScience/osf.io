@@ -79,10 +79,10 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
                 elif (
                     self._context.request.method == 'OPTIONS' and
                     'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in self._context.request.META and
-                    'authorization' in map(
+                    'authorization' in list(map(
                         lambda h: h.strip(),
                         self._context.request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(','),
-                    )
+                    ))
                 ):
                     return True
 

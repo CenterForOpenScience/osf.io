@@ -3,6 +3,7 @@ import httplib as http
 import itertools
 
 from flask import request
+import waffle
 
 from framework import status
 from framework.exceptions import HTTPError
@@ -14,13 +15,14 @@ from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
 from addons.base.views import DOWNLOAD_ACTIONS
 from website import settings
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission,
     must_not_be_registration, must_be_registration,
     must_not_be_retracted_registration
 )
+from osf import features
 from osf.models import Identifier, RegistrationSchema
 from website.project.utils import serialize_node
 from osf.utils.permissions import ADMIN
@@ -49,8 +51,10 @@ def node_register_page(auth, node, **kwargs):
     else:
         status.push_status_message(
             'You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process',
-            trust=False)
-        return redirect(node.web_url_for('node_registrations', view='draft'))
+            trust=False,
+            id='redirected_to_registrations',
+        )
+        return redirect(node.web_url_for('node_registrations', view='draft', _guid=True))
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -111,15 +115,18 @@ def node_registration_retraction_post(auth, node, **kwargs):
         node.save()
         node.retraction.ask(node.get_active_contributors_recursive(unique_users=True))
     except NodeStateError as err:
-        raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
+        raise HTTPError(http.FORBIDDEN, data=dict(message_long=str(err)))
 
     return {'redirectUrl': node.web_url_for('view_project')}
 
 @must_be_valid_project
 @must_not_be_retracted_registration
 @must_be_contributor_or_public
-@ember_flag_is_active('ember_registration_form_detail_page')
+@ember_flag_is_active(features.EMBER_REGISTRATION_FORM_DETAIL)
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
+    if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+        # Registration meta page obviated during redesign
+        return redirect(node.url)
     if node.is_registration and bool(node.registered_schema):
         try:
             meta_schema = RegistrationSchema.objects.get(_id=metaschema_id)
@@ -149,9 +156,10 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
     else:
         status.push_status_message(
             'You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process',
-            trust=False
+            trust=False,
+            id='redirected_to_registrations',
         )
-        return redirect(node.web_url_for('node_registrations', view=kwargs.get('template')))
+        return redirect(node.web_url_for('node_registrations', view=kwargs.get('template'), _guid=True))
 
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)

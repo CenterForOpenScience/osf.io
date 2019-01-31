@@ -20,10 +20,12 @@ Usage: ::
 """
 import os
 import logging
+import waffle
 
 from mako.lookup import TemplateLookup, Template
 
 from framework.email import tasks
+from osf import features
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -36,6 +38,10 @@ _tpl_lookup = TemplateLookup(
 
 HTML_EXT = '.html.mako'
 
+DISABLED_MAILS = [
+    'welcome',
+    'welcome_osf4i'
+]
 
 class Mail(object):
     """An email object.
@@ -45,12 +51,15 @@ class Mail(object):
     :param iterable categories: Categories to add to the email using SendGrid's
         SMTPAPI. Used for email analytics.
         See https://sendgrid.com/docs/User_Guide/Statistics/categories.html
+    :param: bool engagement: Whether this is an engagement email that can be disabled with
+        the disable_engagement_emails waffle flag
     """
 
-    def __init__(self, tpl_prefix, subject, categories=None):
+    def __init__(self, tpl_prefix, subject, categories=None, engagement=False):
         self.tpl_prefix = tpl_prefix
         self._subject = subject
         self.categories = categories
+        self.engagement = engagement
 
     def html(self, **context):
         """Render the HTML email message."""
@@ -87,6 +96,8 @@ def send_mail(
     .. note:
          Uses celery if available
     """
+    if waffle.switch_is_active(features.DISABLE_ENGAGEMENT_EMAILS) and mail.engagement:
+        return False
 
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
@@ -143,7 +154,7 @@ TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
 # Emails for first-time login through external identity providers.
 EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail(
     'external_confirm_create',
-    subject='Open Science Framework Account Verification'
+    subject='OSF Account Verification'
 )
 
 FORK_COMPLETED = Mail(
@@ -158,17 +169,17 @@ FORK_FAILED = Mail(
 
 EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
     'external_confirm_link',
-    subject='Open Science Framework Account Verification'
+    subject='OSF Account Verification'
 )
 EXTERNAL_LOGIN_LINK_SUCCESS = Mail(
     'external_confirm_success',
-    subject='Open Science Framework Account Verification Success'
+    subject='OSF Account Verification Success'
 )
 
 # Sign up confirmation emails for OSF, native campaigns and branded campaigns
 INITIAL_CONFIRM_EMAIL = Mail(
     'initial_confirm',
-    subject='Open Science Framework Account Verification'
+    subject='OSF Account Verification'
 )
 CONFIRM_EMAIL = Mail(
     'confirm',
@@ -176,23 +187,23 @@ CONFIRM_EMAIL = Mail(
 )
 CONFIRM_EMAIL_PREREG = Mail(
     'confirm_prereg',
-    subject='Open Science Framework Account Verification, Preregistration Challenge'
+    subject='OSF Account Verification, Preregistration Challenge'
 )
 CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
-    subject='Open Science Framework Account Verification, Election Research Preacceptance Competition'
+    subject='OSF Account Verification, Election Research Preacceptance Competition'
 )
 CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
     'confirm_preprints_{}'.format(name),
-    subject='Open Science Framework Account Verification, {}'.format(provider)
+    subject='OSF Account Verification, {}'.format(provider)
 )
 CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
     'confirm_registries_osf',
-    subject='Open Science Framework Account Verification, OSF Registries'
+    subject='OSF Account Verification, OSF Registries'
 )
 CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
     'confirm_moderation',
-    subject='Open Science Framework Account Verification, {}'.format(provider.name)
+    subject='OSF Account Verification, {}'.format(provider.name)
 )
 
 # Merge account, add or remove email confirmation emails.
@@ -244,15 +255,15 @@ SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as sp
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',
-    subject='Project created on Open Science Framework',
+    subject='Project created on OSF',
 )
 CONFERENCE_INACTIVE = Mail(
     'conference_inactive',
-    subject='Open Science Framework Error: Conference inactive',
+    subject='OSF Error: Conference inactive',
 )
 CONFERENCE_FAILED = Mail(
     'conference_failed',
-    subject='Open Science Framework Error: No files attached',
+    subject='OSF Error: No files attached',
 )
 
 DIGEST = Mail(
@@ -367,12 +378,14 @@ ARCHIVE_SUCCESS = Mail(
 
 WELCOME = Mail(
     'welcome',
-    subject='Welcome to the Open Science Framework'
+    subject='Welcome to OSF',
+    engagement=True
 )
 
 WELCOME_OSF4I = Mail(
     'welcome_osf4i',
-    subject='Welcome to the Open Science Framework'
+    subject='Welcome to OSF',
+    engagement=True
 )
 
 PREREG_CHALLENGE_REJECTED = Mail(

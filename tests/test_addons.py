@@ -28,7 +28,7 @@ from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import Session, RegistrationSchema, QuickFilesNode
 from osf.models import files as file_models
@@ -159,6 +159,71 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_action_downloads_marks_version_as_seen(self):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path)
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        # Add a new version, make sure that does not have a record
+        version = FileVersionFactory()
+        test_file.versions.add(version)
+        test_file.save()
+
+        versions = test_file.versions.order_by('created')
+        assert versions.first().seen_by.filter(guids___id=noncontrib._id).exists()
+        assert not versions.last().seen_by.filter(guids___id=noncontrib._id).exists()
+
+    def test_action_download_contrib(self):
+        test_file = create_test_file(self.node, self.user)
+        url = self.build_url(action='download', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = self.node.logs.count()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_download_count(), 0) # contribs don't count as downloads
+        assert_equal(self.node.logs.count(), nlogs) # don't log downloads
+
+    def test_action_download_non_contrib(self):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='download', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = node.logs.count()
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_download_count(), 1)
+        assert_equal(node.logs.count(), nlogs) # don't log views
+
+    def test_action_download_mfr_views_contrib(self):
+        test_file = create_test_file(self.node, self.user)
+        url = self.build_url(action='render', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = self.node.logs.count()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_view_count(), 0) # contribs don't count as views
+        assert_equal(self.node.logs.count(), nlogs) # don't log views
+
+    def test_action_download_mfr_views_non_contrib(self):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = node.logs.count()
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_view_count(), 1)
+        assert_equal(node.logs.count(), nlogs) # don't log views
+
 
 class TestAddonLogs(OsfTestCase):
 
@@ -214,7 +279,7 @@ class TestAddonLogs(OsfTestCase):
         options.update(kwargs)
         options = {
             key: value
-            for key, value in options.iteritems()
+            for key, value in options.items()
             if value is not None
         }
         message, signature = signing.default_signer.sign_payload(options)
@@ -961,6 +1026,26 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 401)
+
+    def test_resolve_folder_raise(self):
+        folder = OsfStorageFolder(
+            name='folder',
+            target=self.project,
+            path='/test/folder/',
+            materialized_path='/test/folder/',
+        )
+        folder.save()
+        resp = self.app.get(
+            self.project.web_url_for(
+                'addon_view_or_download_file',
+                path=folder._id,
+                provider='osfstorage',
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 400)
 
     def test_delete_action_creates_trashed_file_node(self):
         file_node = self.get_test_file()

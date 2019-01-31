@@ -8,7 +8,9 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
+from framework.exceptions import PermissionsError
 
+from addons.base.exceptions import InvalidAuthError
 from addons.osfstorage.models import OsfStorageFolder
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
@@ -73,6 +75,7 @@ from api.nodes.permissions import (
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
     IsContributor,
+    NodeDeletePermissions,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
@@ -98,15 +101,16 @@ from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeCitationStyleSerializer,
 )
-from api.nodes.utils import NodeOptimizationMixin
+from api.nodes.utils import NodeOptimizationMixin, enforce_no_children
 from api.preprints.serializers import PreprintSerializer
-from api.registrations.serializers import RegistrationSerializer
+from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
+from framework.exceptions import HTTPError
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
@@ -115,11 +119,16 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
-from osf.models.node import remove_addons
 from osf.utils.permissions import ADMIN, PERMISSIONS
 from website import mails
-from website.exceptions import NodeStateError
-from website.project import signals as project_signals
+
+# This is used to rethrow v1 exceptions as v2
+HTTP_CODE_MAP = {
+    400: ValidationError(detail='This add-on has made a bad request.'),
+    401: NotAuthenticated('This add-on could not be authenticated.'),
+    403: PermissionDenied('This add-on\'s credentials could not be validated.'),
+    404: NotFound('This add-on\'s resources could not be found.'),
+}
 
 
 class NodeMixin(object):
@@ -287,37 +296,23 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # Overrides BulkDestroyModelMixin
     def perform_bulk_destroy(self, resource_object_list):
-
-        auth = get_user_auth(self.request)
-        date = timezone.now()
-        id_list = [x.id for x in resource_object_list]
-
-        if NodeRelation.objects.filter(
-            parent__in=resource_object_list,
-            child__is_deleted=False,
-        ).exclude(Q(child__in=resource_object_list) | Q(is_node_link=True)).exists():
-            raise ValidationError('Any child components must be deleted prior to deleting this project.')
-
-        remove_addons(auth, resource_object_list)
+        if enforce_no_children(self.request):
+            if NodeRelation.objects.filter(
+                parent__in=resource_object_list,
+                child__is_deleted=False,
+            ).exclude(Q(child__in=resource_object_list) | Q(is_node_link=True)).exists():
+                raise ValidationError('Any child components must be deleted prior to deleting this project.')
 
         for node in resource_object_list:
-            node.add_remove_node_log(auth=auth, date=date)
+            self.perform_destroy(node)
 
-        nodes = AbstractNode.objects.filter(id__in=id_list)
-        nodes.update(is_deleted=True, deleted_date=date)
-        if nodes.filter(is_public=True).exists():
-            AbstractNode.bulk_update_search(resource_object_list)
-        for node in nodes:
-            project_signals.node_deleted.send(node)
-
-    # Overrides BulkDestroyJSONAPIView
+    # Overrides BulkDestroyModelMixin
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
         try:
             instance.remove_node(auth=auth)
-        except NodeStateError as err:
-            raise ValidationError(err.message)
-        instance.save()
+        except PermissionsError as err:
+            raise PermissionDenied(str(err))
 
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
@@ -326,6 +321,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        NodeDeletePermissions,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
@@ -348,11 +344,14 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
         node = self.get_object()
+
+        if enforce_no_children(self.request) and Node.objects.get_children(node, active=True).exists():
+            raise ValidationError('Any child components must be deleted prior to deleting this project.')
+
         try:
             node.remove_node(auth=auth)
-        except NodeStateError as err:
-            raise ValidationError(err.message)
-        node.save()
+        except PermissionsError as err:
+            raise PermissionDenied(str(err))
 
     def get_renderer_context(self):
         context = super(NodeDetail, self).get_renderer_context()
@@ -386,6 +385,9 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     view_category = 'nodes'
     view_name = 'node-contributors'
     ordering = ('_order',)  # default ordering
+
+    def get_resource(self):
+        return self.get_node()
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
@@ -433,7 +435,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = self.get_node()
+        node = self.get_resource()
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError('Must have at least one visible contributor')
         if not node.contributor_set.filter(user=instance).exists():
@@ -461,6 +463,12 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
         return resource_object_list
 
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'default'
+        return context
+
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_contributors_read).
@@ -479,15 +487,24 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     view_category = 'nodes'
     view_name = 'node-contributor-detail'
 
+    def get_resource(self):
+        return self.get_node()
+
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        node = self.get_node()
+        node = self.get_resource()
         auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError('Must have at least one registered admin contributor')
+
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'default'
+        return context
 
 
 class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
@@ -534,6 +551,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
     serializer_class = DraftRegistrationSerializer
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON, )
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
@@ -593,6 +611,11 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_name = 'node-registrations'
 
     ordering = ('-modified',)
+
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'POST'):
+            return RegistrationCreateSerializer
+        return RegistrationSerializer
 
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
@@ -673,7 +696,7 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
 
     serializer_class = NodeCitationSerializer
     view_category = 'nodes'
@@ -685,7 +708,6 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
         if not node.is_public and not node.can_view(auth):
             raise PermissionDenied if auth.user else NotAuthenticated
         return node.csl
-
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_read).
@@ -712,7 +734,7 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
         try:
             citation = render_citation(node=node, style=style)
         except ValueError as err:  # style requested could not be found
-            csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
+            csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
             raise NotFound('{} is not a known style.'.format(csl_name))
 
         return {'citation': citation, 'id': style}
@@ -809,7 +831,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         try:
             node.rm_pointer(instance, auth=auth)
         except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
         node.save()
 
     # overrides ListCreateAPIView
@@ -896,7 +918,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         try:
             node.rm_pointer(pointer, auth=auth)
         except ValueError as err:  # pointer doesn't belong to node
-            raise NotFound(err.message)
+            raise NotFound(str(err))
         node.save()
 
 
@@ -1241,7 +1263,13 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         if not hasattr(node_addon, 'get_folders'):
             raise EndpointNotImplementedError('Endpoint not yet implemented for this addon')
 
-        return node_addon.get_folders(path=path, folder_id=folder_id)
+        #  Convert v1 errors to v2 as much as possible.
+        try:
+            return node_addon.get_folders(path=path, folder_id=folder_id)
+        except InvalidAuthError:
+            raise NotAuthenticated('This add-on could not be authenticated.')
+        except HTTPError as exc:
+            raise HTTP_CODE_MAP.get(exc.code, exc)
 
 
 class NodeStorageProvider(object):
@@ -1569,7 +1597,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1587,7 +1615,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1608,7 +1636,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1658,7 +1686,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1676,7 +1704,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1697,7 +1725,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1780,12 +1808,7 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
     view_name = 'linked-registrations'
 
     def get_queryset(self):
-        ret = [
-            node for node in
-            super(NodeLinkedRegistrationsList, self).get_queryset()
-            if node.is_registration
-        ]
-        return ret
+        return super(NodeLinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):

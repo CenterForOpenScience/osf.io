@@ -30,7 +30,7 @@ def encode_uri_component(val):
 def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
     if inst:
-        for key, val in inst_data.iteritems():
+        for key, val in inst_data.items():
             setattr(inst, key, val)
         inst.save()
         print('Updated {}'.format(inst.name))
@@ -148,6 +148,18 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'cfa',
+                'name': 'Center for Astrophysics | Harvard & Smithsonian',
+                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="http://help.osf.io/">Get Help</a>',
+                'banner_name': 'cfa-banner.png',
+                'logo_name': 'cfa-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['cfa.harvard.edu'],
+                'delegation_protocol': '',
+            },
+            {
                 '_id': 'clrn',
                 'name': 'Character Lab Research Network',
                 'description': ' Projects listed below are run through the <a href="https://www.characterlab.org/research-network">Character Lab Research Network</a>, a consortium of trailblazing schools and elite scientists that develop and test activities designed to help students thrive. Character Lab Research Network is a proud supporter of the Student Privacy Pledge to safeguard student privacy. For more details on the Research Network privacy policy, you can refer to the <a href="https://www.characterlab.org/student-privacy">Research Network student privacy policy</a> and <a href="https://www.characterlab.org/student-privacy/faqs">FAQs</a>.',
@@ -182,6 +194,18 @@ def main(env):
                 'banner_name': 'colorado-banner.png',
                 'logo_name': 'colorado-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fedauth.colorado.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'cornell',
+                'name': 'Cornell University',
+                'description': 'Supported by the Cornell Research Data Management Service Group and the Cornell University Library. The OSF service may not be used to store or transfer personally identifiable, confidential/restricted, HIPPA-regulated or any other controlled unclassified information. Learn more at <a href="https://data.research.cornell.edu">https://data.research.cornell.edu</a> | <a href="mailto:rdmsg-help@cornell.edu">rdmsg-help@cornell.edu</a>.',
+                'banner_name': 'cornell-banner.png',
+                'logo_name': 'cornell-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp.cit.cornell.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
@@ -253,11 +277,11 @@ def main(env):
                 'description': 'In partnership with the <a href="https://www.ferris.edu/research/">Office of Research and Sponsored Programs</a>, the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/index.htm">Provost and Vice President for Academic Affairs</a>, and the <a href="https://www.ferris.edu/library/">FLITE Library</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), intellectual property (IP) or any other controlled unclassified information (CUI). All projects must abide by the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/Forms_Policies/Documents/Policy_Letters/AA-Intellectual-Property-Rights.pdf">FSU Intellectual Property Rights and Electronic Distance Learning Materials</a> letter of agreement.',
                 'banner_name': 'ferris-banner.png',
                 'logo_name': 'ferris-shield.png',
-                'login_url': None,
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.ferris.edu/samlsso')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
-                'delegation_protocol': '',
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'fsu',
@@ -305,6 +329,21 @@ def main(env):
                 'logout_url': None,
                 'domains': ['osf.icer-review.org'],
                 'email_domains': ['icer-review.org'],
+                'delegation_protocol': '',
+            },
+            {
+                '_id': 'igdore',
+                'name': 'Institute for Globally Distributed Open Research and Education (IGDORE)',
+                'description': 'Institute for Globally Distributed Open Research and Education '
+                               '(IGDORE) is an independent research institute dedicated to improve '
+                               'the quality of science, science education, and quality of life for '
+                               'scientists, students, and their families.',
+                'banner_name': 'igdore-banner.png',
+                'logo_name': 'igdore-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['igdore.org'],
                 'delegation_protocol': '',
             },
             {
@@ -402,6 +441,18 @@ def main(env):
                 'domains': ['research.mindandlife.org'],
                 'email_domains': ['mindandlife.org'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'mq',
+                'name': 'Macquarie University',
+                'description': 'In partnership with the Office of the Deputy Vice-Chancellor (Research) and the University Library. Learn more about <a href="https://staff.mq.edu.au/research/strategy-priorities-and-initiatives/data-science-and-eresearch">Data Science and eResearch</a> at Macquarie University.',
+                'banner_name': 'mq-banner.png',
+                'logo_name': 'mq-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exk2dzwun7KebsDIV2p7')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.mq.edu.au'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'nd',
@@ -836,6 +887,18 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'cfa',
+                'name': 'Center for Astrophysics | Harvard & Smithsonian [Test]',
+                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="http://help.osf.io/">Get Help</a>',
+                'banner_name': 'cfa-banner.png',
+                'logo_name': 'cfa-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['cfa.harvard.edu'],
+                'delegation_protocol': '',
+            },
+            {
                 '_id': 'clrn',
                 'name': 'Character Lab Research Network [Test]',
                 'description': ' Projects listed below are run through the <a href="https://www.characterlab.org/research-network">Character Lab Research Network</a>, a consortium of trailblazing schools and elite scientists that develop and test activities designed to help students thrive. Character Lab Research Network is a proud supporter of the Student Privacy Pledge to safeguard student privacy. For more details on the Research Network privacy policy, you can refer to the <a href="https://www.characterlab.org/student-privacy">Research Network student privacy policy</a> and <a href="https://www.characterlab.org/student-privacy/faqs">FAQs</a>.',
@@ -872,6 +935,18 @@ def main(env):
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fedauth.colorado.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'cornell',
+                'name': 'Cornell University [Test]',
+                'description': 'Supported by the Cornell Research Data Management Service Group and the Cornell University Library. The OSF service may not be used to store or transfer personally identifiable, confidential/restricted, HIPPA-regulated or any other controlled unclassified information. Learn more at <a href="https://data.research.cornell.edu">https://data.research.cornell.edu</a> | <a href="mailto:rdmsg-help@cornell.edu">rdmsg-help@cornell.edu</a>.',
+                'banner_name': 'cornell-banner.png',
+                'logo_name': 'cornell-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp.cit.cornell.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-cornell.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -941,11 +1016,11 @@ def main(env):
                 'description': 'In partnership with the <a href="https://www.ferris.edu/research/">Office of Research and Sponsored Programs</a>, the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/index.htm">Provost and Vice President for Academic Affairs</a>, and the <a href="https://www.ferris.edu/library/">FLITE Library</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), intellectual property (IP) or any other controlled unclassified information (CUI). All projects must abide by the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/Forms_Policies/Documents/Policy_Letters/AA-Intellectual-Property-Rights.pdf">FSU Intellectual Property Rights and Electronic Distance Learning Materials</a> letter of agreement.',
                 'banner_name': 'ferris-banner.png',
                 'logo_name': 'ferris-shield.png',
-                'login_url': None,
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('fsueeit.ferris.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
-                'delegation_protocol': '',
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'fsu',
@@ -993,6 +1068,21 @@ def main(env):
                 'logout_url': None,
                 'domains': ['test-osf-icer.cos.io'],
                 'email_domains': ['icer-review.org'],
+                'delegation_protocol': '',
+            },
+            {
+                '_id': 'igdore',
+                'name': 'Institute for Globally Distributed Open Research and Education [Test]',
+                'description': 'Institute for Globally Distributed Open Research and Education '
+                               '(IGDORE) is an independent research institute dedicated to improve '
+                               'the quality of science, science education, and quality of life for '
+                               'scientists, students, and their families.',
+                'banner_name': 'igdore-banner.png',
+                'logo_name': 'igdore-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['test-osf-icer.igdore.io'],
+                'email_domains': ['igdore.org'],
                 'delegation_protocol': '',
             },
             {
@@ -1090,6 +1180,18 @@ def main(env):
                 'domains': ['research.mindandlife.org'],
                 'email_domains': ['mindandlife.org'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'mq',
+                'name': 'Macquarie University [Test]',
+                'description': 'In partnership with the Office of the Deputy Vice-Chancellor (Research) and the University Library. Learn more about <a href="https://staff.mq.edu.au/research/strategy-priorities-and-initiatives/data-science-and-eresearch">Data Science and eResearch</a> at Macquarie University.',
+                'banner_name': 'mq-banner.png',
+                'logo_name': 'mq-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exkebok0cpJxGzMKz0h7')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-mq.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'nd',

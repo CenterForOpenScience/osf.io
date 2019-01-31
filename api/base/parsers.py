@@ -100,7 +100,7 @@ class JSONAPIParser(JSONParser):
                 relationship_values = []
                 relationship_key = None
                 for relationship in relationships:
-                    for key, value in relationship.iteritems():
+                    for key, value in relationship.items():
                         relationship_values.append(value)
                         relationship_key = key
                 relationship = {relationship_key: relationship_values}
@@ -286,6 +286,14 @@ class SearchParser(JSONAPIParser):
             },
         }
 
+        sort = parser_context['request'].query_params.get('sort')
+        if sort:
+            res['sort'] = [{
+                sort.lstrip('-'): {
+                    'order': 'desc' if sort.startswith('-') else 'asc',
+                },
+            }]
+
         try:
             q = data.pop('q')
         except KeyError:
@@ -293,7 +301,7 @@ class SearchParser(JSONAPIParser):
         else:
             res['query']['bool'].update({
                 'must': {
-                    'multi_match': {
+                    'query_string': {
                         'query': q,
                         'fields': view.search_fields,
                     },
@@ -302,7 +310,7 @@ class SearchParser(JSONAPIParser):
 
         if any(data.values()):
             res['query']['bool'].update({'filter': []})
-            for key, val in data.iteritems():
+            for key, val in data.items():
                 if val is not None:
                     if isinstance(val, list):
                         res['query']['bool']['filter'].append({'terms': {key: val}})

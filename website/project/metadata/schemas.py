@@ -13,7 +13,6 @@ def ensure_schema_structure(schema):
     schema['pages'] = schema.get('pages', [])
     schema['title'] = schema['name']
     schema['version'] = schema.get('version', 1)
-    schema['active'] = schema.get('active', True)
     return schema
 
 here = os.path.split(os.path.abspath(__file__))[0]
@@ -23,13 +22,9 @@ def from_json(fname):
         return json.load(f)
 
 OSF_META_SCHEMAS = [
-    ensure_schema_structure(from_json('osf-open-ended-1.json')),
     ensure_schema_structure(from_json('osf-open-ended-2.json')),
-    ensure_schema_structure(from_json('osf-standard-1.json')),
     ensure_schema_structure(from_json('osf-standard-2.json')),
-    ensure_schema_structure(from_json('brandt-prereg-1.json')),
     ensure_schema_structure(from_json('brandt-prereg-2.json')),
-    ensure_schema_structure(from_json('brandt-postcomp-1.json')),
     ensure_schema_structure(from_json('brandt-postcomp-2.json')),
     ensure_schema_structure(from_json('prereg-prize.json')),
     ensure_schema_structure(from_json('erpc-prize.json')),
@@ -40,12 +35,14 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('registered-report.json')),
     ensure_schema_structure(from_json('ridie-initiation.json')),
     ensure_schema_structure(from_json('ridie-complete.json')),
+    ensure_schema_structure(from_json('osf-preregistration.json'))
 ]
 
 METASCHEMA_ORDERING = (
     'Prereg Challenge',
+    'OSF Preregistration',
     'Open-Ended Registration',
-    'AsPredicted Preregistration',
+    'Preregistration Template from AsPredicted.org',
     'Registered Report Protocol Preregistration',
     'OSF-Standard Pre-Data Collection Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',

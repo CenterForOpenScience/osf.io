@@ -18,4 +18,5 @@ urlpatterns = [
     url(r'^(?P<preprint_provider_id>[a-z0-9]+)/delete/$', views.DeletePreprintProvider.as_view(), name='delete'),
     url(r'^(?P<preprint_provider_id>[a-z0-9]+)/export/$', views.ExportPreprintProvider.as_view(), name='export'),
     url(r'^(?P<preprint_provider_id>[a-z0-9]+)/share_source/$', views.ShareSourcePreprintProvider.as_view(), name='share_source'),
+    url(r'^(?P<preprint_provider_id>[a-z0-9]+)/register/$', views.PreprintProviderRegisterModeratorOrAdmin.as_view(), name='register_moderator_admin'),
 ]

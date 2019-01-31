@@ -166,7 +166,7 @@ def ref_to_params(branch=None, sha=None):
 
     params = urllib.urlencode({
         key: value
-        for key, value in {'branch': branch, 'sha': sha}.iteritems()
+        for key, value in {'branch': branch, 'sha': sha}.items()
         if value
     })
     if params:

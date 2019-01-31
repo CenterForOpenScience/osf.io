@@ -7,7 +7,7 @@ from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
 from framework import status
 
-from website.tokens.exceptions import UnsupportedSanctionHandlerKind, TokenError
+from osf.exceptions import UnsupportedSanctionHandlerKind, TokenError
 
 def registration_approval_handler(action, registration, registered_from):
     # TODO: Unnecessary and duplicated dictionary.
@@ -95,7 +95,7 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         except PermissionsError as e:
             raise HTTPError(http.UNAUTHORIZED, data={
                 'message_short': 'Unauthorized access',
-                'message_long': e.message
+                'message_long': str(e)
             })
         sanction.save()
         return {
