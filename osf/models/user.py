@@ -1509,6 +1509,24 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.affiliated_institutions.remove(inst)
             return True
 
+    def remove_education(self, education_id):
+        try:
+            education = self.education.get(_id=education_id)
+        except Education.DoesNotExist:
+            return False
+        else:
+            education.delete()
+            return True
+
+    def remove_employment(self, employment_id):
+        try:
+            employment = self.employment.get(_id=employment_id)
+        except Employment.DoesNotExist:
+            return False
+        else:
+            employment.delete()
+            return True
+
     def get_activity_points(self):
         return analytics.get_total_activity_count(self._id)
 
