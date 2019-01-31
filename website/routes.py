@@ -98,7 +98,6 @@ def get_globals():
         'embedded_ds': settings.to_bool('USE_EMBEDDED_DS', False),
         'nav_dropdown': settings.to_bool('NAV_DROPDOWN', True),
         'nav_support': settings.to_bool('NAV_SUPPORT', True),
-        'home_simple': settings.to_bool('HOME_SIMPLE', False),
         'pages_footer': settings.to_bool('PAGES_FOOTER', True),
         'project_analytics': settings.to_bool('PROJECT_ANALYTICS', True),
         'project_registrations': settings.to_bool('PROJECT_REGISTRATIONS', True),
