@@ -289,8 +289,6 @@ def get_auth(auth, **kwargs):
             raise HTTPError(httplib.BAD_REQUEST)
 
     path = data.get('path')
-    version = data.get('version')
-
     credentials = None
     waterbutler_settings = None
     fileversion = None
@@ -301,7 +299,7 @@ def get_auth(auth, **kwargs):
             filenode = OsfStorageFileNode.load(path.strip('/'))
             if filenode and filenode.is_file:
                 # default to most recent version if none is provided in the response
-                version = version or filenode.versions.count()
+                version = int(data['version']) if data.get('version') else filenode.versions.count()
                 try:
                     fileversion = FileVersion.objects.filter(
                         basefilenode___id=file_id,
