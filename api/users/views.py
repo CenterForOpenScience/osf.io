@@ -44,6 +44,8 @@ from api.users.serializers import (
     UserDetailSerializer,
     UserIdentitiesSerializer,
     UserInstitutionsRelationshipSerializer,
+    UserEducationRelationshipSerializer,
+    UserEmploymentRelationshipSerializer,
     UserSerializer,
     UserEmail,
     UserEmailsSerializer,
@@ -597,6 +599,84 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         for val in data:
             if val['id'] in current_institutions:
                 user.remove_institution(val['id'])
+        user.save()
+
+
+class UserEducationRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserRelationship,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserEducationRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'users'
+    view_name = 'user-education-relationship'
+
+    # TODO - If the front end submits a PATCH request that has a mismatch relationship that you have stored,
+    # give a 409 CONFLICT response.
+
+    def get_object(self):
+        user = self.get_user(check_permissions=False)
+        obj = {
+            'data': user.education.all(),
+            'self': user,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_education = set(user.education.values_list('_id', flat=True))
+
+        for val in data:
+            if val['id'] in current_education:
+                user.remove_education(val['id'])
+        user.save()
+
+
+class UserEmploymentRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserRelationship,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserEmploymentRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'users'
+    view_name = 'user-employment-relationship'
+
+    # TODO - If the front end submits a PATCH request that has a mismatch relationship that you have stored,
+    # give a 409 CONFLICT response.
+
+    def get_object(self):
+        user = self.get_user(check_permissions=False)
+        obj = {
+            'data': user.employment.all(),
+            'self': user,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_employment = set(user.employment.values_list('_id', flat=True))
+
+        for val in data:
+            if val['id'] in current_employment:
+                user.remove_employment(val['id'])
         user.save()
 
 
