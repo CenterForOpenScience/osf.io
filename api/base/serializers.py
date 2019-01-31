@@ -82,7 +82,7 @@ class ConditionalField(ser.Field):
 
     def __init__(self, field, **kwargs):
         super(ConditionalField, self).__init__(**kwargs)
-        self.field = field
+        self.field = getattr(field, 'child_relation', field)
         self.source = self.field.source
         self.required = self.field.required
         self.read_only = self.field.read_only
@@ -1316,6 +1316,23 @@ class JSONAPISerializer(BaseAPISerializer):
                 _validated_data[field] = self.initial_data[field]
         return _validated_data
 
+    def get_lowest_nested_field(self, field):
+        """
+        Returns lowest nested field.
+        :param field, highest field
+
+        Assumes one of the following nested structures:
+        field
+        field.field
+        field.child_relation
+        field.field.child_relation
+        """
+        nested_field = getattr(field, 'field', None)
+        if nested_field:
+            return getattr(nested_field, 'child_relation', nested_field)
+        else:
+            return getattr(field, 'child_relation', None)
+
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
         """Serialize to final representation.
@@ -1367,6 +1384,7 @@ class JSONAPISerializer(BaseAPISerializer):
             )
 
         for field in fields:
+            nested_field = self.get_lowest_nested_field(field)
             try:
                 if hasattr(field, 'child_relation'):
                     attribute = field.child_relation.get_attribute(obj)
@@ -1374,15 +1392,10 @@ class JSONAPISerializer(BaseAPISerializer):
                     attribute = field.get_attribute(obj)
             except SkipField:
                 continue
-
-            if hasattr(field, 'child_relation'):
-                nested_field = field.child_relation
-            else:
-                nested_field = getattr(field, 'field', None)
             if attribute is None:
                 # We skip `to_representation` for `None` values so that
                 # fields do not have to explicitly deal with that case.
-                if getattr(field, 'field', None) and isinstance(field.field, RelationshipField):
+                if isinstance(nested_field, RelationshipField):
                     # if this is a RelationshipField, serialize as a null relationship
                     data['relationships'][field.field_name] = {'data': None}
                 else:

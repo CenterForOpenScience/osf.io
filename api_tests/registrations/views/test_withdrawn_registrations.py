@@ -8,6 +8,7 @@ from osf_tests.factories import (
     ProjectFactory,
     CommentFactory,
     RegistrationFactory,
+    InstitutionFactory,
     WithdrawnRegistrationFactory,
 )
 
@@ -15,8 +16,14 @@ from osf_tests.factories import (
 class TestWithdrawnRegistrations(NodeCRUDTestCase):
 
     @pytest.fixture()
-    def registration(self, user, project_public):
-        return RegistrationFactory(creator=user, project=project_public)
+    def institution_one(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def registration(self, user, project_public, institution_one):
+        registration = RegistrationFactory(creator=user, project=project_public)
+        registration.affiliated_institutions.add(institution_one)
+        return registration
 
     @pytest.fixture()
     def registration_with_child(self, user, project_public):
@@ -116,6 +123,13 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
+    #   test_cannot_access_withdrawn_affiliated_institutions
+        registration.save()
+        url = '/{}registrations/{}/institutions/'.format(
+            API_BASE, registration._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+
     def test_cannot_access_withdrawn_comments(
             self, app, user, project_public, pointer_public,
             registration, withdrawn_registration):
@@ -191,6 +205,8 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert 'registered_by' not in res.json['data']['relationships']
         assert 'registered_from' not in res.json['data']['relationships']
         assert 'root' not in res.json['data']['relationships']
+        assert 'affiliated_institutions' not in res.json['data']['relationships']
+        assert 'license' not in res.json['data']['relationships']
 
     def test_field_specific_related_counts_ignored_if_hidden_field_on_withdrawn_registration(
             self, app, user, registration, withdrawn_registration):
