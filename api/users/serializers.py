@@ -11,10 +11,10 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
-from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated
+from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
-from osf.exceptions import ValidationValueError, ValidationError
-from osf.models import OSFUser, QuickFilesNode
+from osf.models import OSFUser, QuickFilesNode, Email
+from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
@@ -467,21 +467,33 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
 
 class UserEmail(object):
-    def __init__(self, email_id, address, confirmed, primary):
+    def __init__(self, email_id, address, confirmed, verified, primary, is_merge=False):
         self.id = email_id
         self.address = address
         self.confirmed = confirmed
+        self.verified = verified
         self.primary = primary
+        self.is_merge = is_merge
 
 
 class UserEmailsSerializer(JSONAPISerializer):
+
+    filterable_fields = frozenset([
+        'confirmed',
+        'verified',
+        'primary',
+    ])
+
     id = IDField(read_only=True)
     type = TypeField()
     email_address = ser.CharField(source='address')
-    confirmed = ser.BooleanField(read_only=True)
+    confirmed = ser.BooleanField(read_only=True, help_text='User has clicked the confirmation link in an email.')
+    verified = ser.BooleanField(required=False, help_text='User has verified adding the email on the OSF, i.e. via a modal.')
     primary = ser.BooleanField(required=False)
+    is_merge = ser.BooleanField(read_only=True, required=False, help_text='This unconfirmed email is already confirmed to another user.')
     links = LinksField({
         'self': 'get_absolute_url',
+        'resend_confirmation': 'get_resend_confirmation_url',
     })
 
     def get_absolute_url(self, obj):
@@ -495,12 +507,18 @@ class UserEmailsSerializer(JSONAPISerializer):
             },
         )
 
+    def get_resend_confirmation_url(self, obj):
+        if not obj.confirmed:
+            url = self.get_absolute_url(obj)
+            return '{}?resend_confirmation=true'.format(url)
+
     class Meta:
         type_ = 'user_emails'
 
     def create(self, validated_data):
         user = self.context['request'].user
         address = validated_data['address']
+        is_merge = Email.objects.filter(address=address).exists()
         if address in user.unconfirmed_emails or address in user.emails.all().values_list('address', flat=True):
             raise Conflict('This user already has registered with the email address {}'.format(address))
         try:
@@ -508,19 +526,35 @@ class UserEmailsSerializer(JSONAPISerializer):
             user.save()
             if CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=address)
+                user.email_last_sent = timezone.now()
+                user.save()
         except ValidationError as e:
             raise exceptions.ValidationError(e.args[0])
+        except BlacklistedEmailError:
+            raise exceptions.ValidationError('This email address domain is blacklisted.')
 
-        return UserEmail(email_id=token, address=address, confirmed=False, primary=False)
+        return UserEmail(email_id=token, address=address, confirmed=False, verified=False, primary=False, is_merge=is_merge)
 
     def update(self, instance, validated_data):
         user = self.context['request'].user
         primary = validated_data.get('primary', None)
+        verified = validated_data.get('verified', None)
         if primary and instance.confirmed:
             user.username = instance.address
             user.save()
         elif primary and not instance.confirmed:
             raise exceptions.ValidationError('You cannot set an unconfirmed email address as your primary email address.')
+
+        if verified and not instance.verified:
+            if not instance.confirmed:
+                raise exceptions.ValidationError('You cannot verify an email address that has not been confirmed by a user.')
+            user.confirm_email(token=instance.id, merge=instance.is_merge)
+            instance.verified = True
+            instance.is_merge = False
+            new_email = Email.objects.get(address=instance.address, user=user)
+            instance.id = hashids.encode(new_email.id)
+            user.save()
+
         return instance
 
 

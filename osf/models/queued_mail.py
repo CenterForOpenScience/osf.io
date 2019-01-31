@@ -8,7 +8,7 @@ from website.mails import Mail, send_mail
 from website.mails import presends
 from website import settings as osf_settings
 
-from osf.features import DISABLE_ENGAGEMENT_EMAILS
+from osf import features
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
@@ -91,7 +91,7 @@ def queue_mail(to_addr, mail, send_at, user, **context):
                     not parameters.
     :return: the QueuedMail object created
     """
-    if waffle.switch_is_active(DISABLE_ENGAGEMENT_EMAILS) and mail.get('engagement', False):
+    if waffle.switch_is_active(features.DISABLE_ENGAGEMENT_EMAILS) and mail.get('engagement', False):
         return False
     new_mail = QueuedMail(
         user=user,
@@ -138,12 +138,6 @@ NEW_PUBLIC_PROJECT = {
     'engagement': True
 }
 
-PREREG_REMINDER = {
-    'template': 'prereg_reminder',
-    'subject': 'Reminder: Your draft preregistration on the OSF is not yet finished',
-    'presend': presends.prereg_reminder,
-    'categories': ['engagement', 'engagement-prereg-challenge']
-}
 
 WELCOME_OSF4M = {
     'template': 'welcome_osf4m',
@@ -156,7 +150,6 @@ WELCOME_OSF4M = {
 NO_ADDON_TYPE = 'no_addon'
 NO_LOGIN_TYPE = 'no_login'
 NEW_PUBLIC_PROJECT_TYPE = 'new_public_project'
-PREREG_REMINDER_TYPE = 'prereg_reminder'
 WELCOME_OSF4M_TYPE = 'welcome_osf4m'
 
 
@@ -165,6 +158,5 @@ queue_mail_types = {
     NO_ADDON_TYPE: NO_ADDON,
     NO_LOGIN_TYPE: NO_LOGIN,
     NEW_PUBLIC_PROJECT_TYPE: NEW_PUBLIC_PROJECT,
-    PREREG_REMINDER_TYPE: PREREG_REMINDER,
     WELCOME_OSF4M_TYPE: WELCOME_OSF4M
 }

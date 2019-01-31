@@ -19,7 +19,7 @@ from osf_tests.factories import (
 )
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from addons.wiki import settings
 from addons.wiki import views
 from addons.wiki.exceptions import InvalidVersionError

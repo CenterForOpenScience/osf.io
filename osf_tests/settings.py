@@ -1,5 +1,5 @@
 # Use API settings.
-from api.base.settings import *  # noqa
+from api.base.settings import *  # noqa: F401,F403
 
 DEBUG_PROPAGATE_EXCEPTIONS = True
 #DATABASES = {

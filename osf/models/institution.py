@@ -1,4 +1,5 @@
 import logging
+import urlparse
 
 from dirtyfields import DirtyFieldsMixin
 
@@ -9,6 +10,7 @@ from django.db import models
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
 from osf.models.mixins import Loggable
+from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +73,10 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         return reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})
 
     @property
+    def absolute_url(self):
+        return urlparse.urljoin(website_settings.DOMAIN, 'institutions/{}/'.format(self._id))
+
+    @property
     def absolute_api_v2_url(self):
         from api.base.utils import absolute_reverse
         return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})
@@ -126,7 +132,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         if saved_fields and bool(self.pk):
             for node in self.nodes.filter(is_deleted=False):
                 try:
-                    update_node(node, async=False)
+                    update_node(node, async_update=False)
                 except SearchUnavailableError as e:
                     logger.exception(e)
 

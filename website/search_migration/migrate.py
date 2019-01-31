@@ -3,10 +3,11 @@
 """Migration script for Search-enabled Models."""
 from __future__ import absolute_import
 from math import ceil
-
+import functools
 import logging
 
 from django.db import connection
+from django.core.paginator import Paginator
 from elasticsearch2 import helpers
 
 import website.search.search as search
@@ -16,12 +17,13 @@ from website.search_migration import (
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
     JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
 from scripts import utils as script_utils
-from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, CollectionSubmission
+from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, CollectionSubmission
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
 from website.search.elastic_search import bulk_update_cgm
 from website.search.search import update_institution, bulk_update_collected_metadata
+
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +90,25 @@ def migrate_nodes(index, delete, increment=10000):
             es_args={'raise_on_error': False},  # ignore 404s
             spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
         logger.info('{} nodes marked deleted'.format(total_nodes))
+
+def migrate_preprints(index, delete):
+    logger.info('Migrating preprints to index: {}'.format(index))
+    preprints = Preprint.objects.all()
+    increment = 100
+    paginator = Paginator(preprints, increment)
+    for page_number in paginator.page_range:
+        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        Preprint.bulk_update_search(paginator.page(page_number).object_list, index=index)
+
+def migrate_preprint_files(index, delete):
+    logger.info('Migrating preprint files to index: {}'.format(index))
+    valid_preprints = Preprint.objects.all()
+    valid_preprint_files = BaseFileNode.objects.filter(preprint__in=valid_preprints)
+    paginator = Paginator(valid_preprint_files, 500)
+    serialize = functools.partial(search.update_file, index=index)
+    for page_number in paginator.page_range:
+        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        search.bulk_update_nodes(serialize, paginator.page(page_number).object_list, index=index, category='file')
 
 def migrate_files(index, delete, increment=10000):
     logger.info('Migrating files to index: {}'.format(index))
@@ -185,6 +206,8 @@ def migrate(delete, remove=False, index=None, app=None):
     migrate_nodes(new_index, delete=delete)
     migrate_files(new_index, delete=delete)
     migrate_users(new_index, delete=delete)
+    migrate_preprints(new_index, delete=delete)
+    migrate_preprint_files(new_index, delete=delete)
     migrate_collected_metadata(new_index, delete=delete)
 
     set_up_alias(index, new_index)

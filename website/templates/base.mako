@@ -266,7 +266,7 @@
 
 <%def name="nav()">
     <%namespace name="nav_helper" file="nav.mako" />
-    ${nav_helper.nav(service_name='HOME', service_url='/', service_support_url='/support/')}
+    ${nav_helper.nav(service_name='HOME', service_url=domain, service_support_url='/support/')}
 </%def>
 
 <%def name="title()">

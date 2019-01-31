@@ -20,9 +20,22 @@ from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
-from osf.models import AbstractNode, MaintenanceState
+from osf.models import AbstractNode, MaintenanceState, Preprint
 from website import settings
 from website.project.model import has_anonymous_link
+
+
+def get_meta_type(serializer_class, request):
+    meta = getattr(serializer_class, 'Meta', None)
+    if meta is None:
+        return None
+    resource_type = getattr(meta, 'type_', None)
+    if resource_type is not None:
+        return resource_type
+    try:
+        return meta.get_type(request)
+    except AttributeError:
+        return None
 
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
@@ -118,7 +131,7 @@ class ShowIfVersion(ConditionalField):
     or not before the feature's latest supported version.
     """
 
-    def __init__(self, field, min_version, max_version, **kwargs):
+    def __init__(self, field, min_version=None, max_version=None, **kwargs):
         super(ShowIfVersion, self).__init__(field, **kwargs)
         self.min_version = min_version
         self.max_version = max_version
@@ -169,6 +182,24 @@ class HideIfDisabled(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class HideIfPreprint(ConditionalField):
+    """
+    If object is a preprint or related to a preprint, hide the field.
+    """
+
+    def should_hide(self, instance):
+        if getattr(instance, 'node', False) and isinstance(getattr(instance, 'node', False), Preprint):
+            # Sometimes a "node" might be a preprint object where node/preprint code is shared
+            return True
+
+        return isinstance(instance, Preprint) \
+            or isinstance(getattr(instance, 'target', None), Preprint) \
+            or isinstance(getattr(instance, 'preprint', False), Preprint)
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
+
+
 class NoneIfWithdrawal(ConditionalField):
     """
     If preprint is withdrawn, this field (attribute or relationship) should return None instead of hidden.
@@ -192,10 +223,12 @@ class HideIfWithdrawal(ConditionalField):
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)
 
+
 class HideIfNotWithdrawal(ConditionalField):
 
     def should_hide(self, instance):
         return not instance.is_retracted
+
 
 class HideIfWikiDisabled(ConditionalField):
     """
@@ -365,10 +398,11 @@ class TypeField(ser.CharField):
 
     # Overrides CharField
     def to_internal_value(self, data):
+        request = self.context.get('request', None)
         if isinstance(self.root, JSONAPIListSerializer):
-            type_ = self.root.child.Meta.type_
+            type_ = get_meta_type(self.root.child, request)
         else:
-            type_ = self.root.Meta.type_
+            type_ = get_meta_type(self.root, request)
 
         if type_ != data:
             raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
@@ -433,7 +467,7 @@ class AuthorizedCharField(ser.CharField):
         return field_source_method(auth=auth)
 
 class AnonymizedRegexField(AuthorizedCharField):
-    """
+    r"""
     Performs a regex replace on the content of the authorized object's
     source field when an anonymous view is requested.
 
@@ -657,7 +691,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             # nested attributes in relationship fields.
             try:
                 return_val = get_nested_attributes(obj, source_attrs)
-            except KeyError:
+            except (KeyError, AttributeError):
                 return None
             return return_val
 
@@ -675,10 +709,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         for lookup_url_kwarg, lookup_field in kwargs_dict.items():
 
             if _tpl(lookup_field):
-                try:
-                    lookup_value = self.lookup_attribute(obj, lookup_field)
-                except AttributeError as exc:
-                    raise AssertionError(exc)
+                lookup_value = self.lookup_attribute(obj, lookup_field)
             else:
                 lookup_value = _url_val(lookup_field, obj, self.parent, self.context['request'])
 
@@ -815,7 +846,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 return {'data': None}
 
         related_url = url['related']
-        related_path = urlparse(related_url).path
+        related_path = urlparse(related_url).path if related_url else None
         related_meta = self.get_meta_information(self.related_meta, value)
         self_url = url['self']
         self_meta = self.get_meta_information(self.self_meta, value)
@@ -849,11 +880,11 @@ class TypedRelationshipField(RelationshipField):
         if len(view_name.split(':')) == 2:
             untyped_view = view_name
             view_parts = view_name.split(':')
-            try:
-                view_parts.insert(1, self.root.Meta.type_.replace('_', '-'))
-            except AttributeError:
-                # List Serializer, use the child's type
-                view_parts.insert(1, self.root.child.Meta.type_.replace('_', '-'))
+            request = self.context.get('request', None)
+            if isinstance(self.root, JSONAPIListSerializer):
+                view_parts.insert(1, get_meta_type(self.root.child, request).replace('_', '-'))
+            else:
+                view_parts.insert(1, get_meta_type(self.root, request).replace('_', '-'))
             self.view_name = view_name = ':'.join(view_parts)
             for k, v in self.views.items():
                 if v == untyped_view:
@@ -1212,7 +1243,7 @@ class SparseFieldsetMixin(object):
     def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
         request = kwargs.get('context', {}).get('request', None)
         if request and (allow_unsafe or request.method in permissions.SAFE_METHODS):
-            sparse_fieldset_query_param = 'fields[{}]'.format(self.Meta.type_)
+            sparse_fieldset_query_param = 'fields[{}]'.format(get_meta_type(self, request))
             if sparse_fieldset_query_param in request.query_params:
                 fieldset = request.query_params[sparse_fieldset_query_param].split(',')
                 for field_name in self.fields.fields.copy().keys():
@@ -1293,9 +1324,9 @@ class JSONAPISerializer(BaseAPISerializer):
         :param envelope: Key for resource object.
         """
         ret = {}
-        meta = getattr(self, 'Meta', None)
-        type_ = getattr(meta, 'type_', None)
-        assert type_ is not None, 'Must define Meta.type_'
+        request = self.context.get('request')
+        type_ = get_meta_type(self, request)
+        assert type_ is not None, 'Must define Meta.type_ or Meta.get_type()'
         self.parse_sparse_fields(allow_unsafe=True, context=self.context)
 
         data = {
@@ -1469,9 +1500,9 @@ class JSONAPIRelationshipSerializer(BaseAPISerializer):
     type = TypeField(required=False, allow_null=True)
 
     def to_representation(self, obj):
-        meta = getattr(self, 'Meta', None)
-        type_ = getattr(meta, 'type_', None)
-        assert type_ is not None, 'Must define Meta.type_'
+        request = self.context.get('request')
+        type_ = get_meta_type(self, request)
+        assert type_ is not None, 'Must define Meta.type_ or Meta.get_type()'
         relation_id_field = self.fields['id']
         attribute = relation_id_field.get_attribute(obj)
         relationship = relation_id_field.to_representation(attribute)
@@ -1553,14 +1584,31 @@ class LinkedNode(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
-        type_ = 'linked_nodes'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_nodes'
+            return 'nodes'
 
 
 class LinkedRegistration(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
-        type_ = 'linked_registrations'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_registrations'
+            return 'registrations'
+
+
+class LinkedPreprint(LinkedNode):
+    class Meta:
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_preprints'
+            return 'preprints'
 
 
 class LinkedNodesRelationshipSerializer(BaseAPISerializer):
@@ -1577,7 +1625,11 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
         return obj['self'].linked_nodes_related_url
 
     class Meta:
-        type_ = 'linked_nodes'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_nodes'
+            return 'nodes'
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
@@ -1587,7 +1639,7 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
 
         nodes_to_add = []
         for node_id in diff['add']:
-            node = AbstractNode.load(node_id)
+            node = AbstractNode.load(node_id) or Preprint.load(node_id)
             if not node:
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
             nodes_to_add.append(node)
@@ -1646,7 +1698,11 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
         return obj['self'].linked_registrations_related_url
 
     class Meta:
-        type_ = 'linked_registrations'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_registrations'
+            return 'registrations'
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
@@ -1699,6 +1755,32 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
             collection.add_pointer(node, auth)
 
         return self.make_instance_obj(collection)
+
+
+class LinkedPreprintsRelationshipSerializer(LinkedNodesRelationshipSerializer):
+    data = ser.ListField(child=LinkedPreprint())
+
+    def get_self_url(self, obj):
+        return obj['self'].linked_preprints_self_url
+
+    def get_related_url(self, obj):
+        return obj['self'].linked_preprints_related_url
+
+    class Meta:
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_preprints'
+            return 'preprints'
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {
+            'data': [
+                pointer for pointer in
+                obj.linked_nodes.filter(deleted__isnull=True, type='osf.preprint')
+            ], 'self': obj,
+        }
 
 
 class MaintenanceStateSerializer(ser.ModelSerializer):

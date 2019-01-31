@@ -18,7 +18,7 @@ schema==0.3.1
 responses==0.8.1
 
 # Syntax checking
-flake8==3.5.0
+flake8==3.6.0
 flake8-mutable==1.2.0
 pre-commit==1.10.5
 

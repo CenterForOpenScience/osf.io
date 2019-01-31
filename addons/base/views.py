@@ -21,6 +21,7 @@ from elasticsearch import exceptions as es_exceptions
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.utils import update_analytics
 
 from framework import sentry
 from framework.auth import Auth
@@ -28,17 +29,16 @@ from framework.auth import cas
 from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
-from framework.routing import json_renderer, proxy_url
 from framework.sentry import log_exception
+from framework.routing import json_renderer, proxy_url
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
-from addons.base import exceptions
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
 from osf.models import (BaseFileNode, TrashedFileNode,
-                        OSFUser, AbstractNode,
+                        OSFUser, AbstractNode, Preprint,
                         NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata, FileVersion)
 from osf.metrics import PreprintView, PreprintDownload
@@ -151,7 +151,6 @@ permission_map = {
     'movefrom': 'write',
 }
 
-
 def check_access(node, auth, action, cas_resp):
     """Verify that user can perform requested action on resource. Raise appropriate
     error code if action cannot proceed.
@@ -162,21 +161,22 @@ def check_access(node, auth, action, cas_resp):
 
     if cas_resp:
         if permission == 'read':
-            if node.is_public:
+            if node.can_view_files(auth=None):
                 return True
-            required_scope = oauth_scopes.CoreScopes.NODE_FILE_READ
+            required_scope = node.file_read_scope
         else:
-            required_scope = oauth_scopes.CoreScopes.NODE_FILE_WRITE
+            required_scope = node.file_write_scope
+
         if not cas_resp.authenticated \
            or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
             raise HTTPError(httplib.FORBIDDEN)
 
     if permission == 'read':
-        if node.can_view(auth):
+        if node.can_view_files(auth):
             return True
         # The user may have admin privileges on a parent node, in which
         # case they should have read permissions
-        if node.is_registration and node.registered_from.can_view(auth):
+        if getattr(node, 'is_registration', False) and node.registered_from.can_view(auth):
             return True
     if permission == 'write' and node.can_edit(auth):
         return True
@@ -192,32 +192,32 @@ def check_access(node, auth, action, cas_resp):
     # `node.is_registration` == True. However, we have no way of telling if
     # `copyfrom` actions are originating from a node being registered.
     # TODO This is raise UNAUTHORIZED for registrations that have not been archived yet
-    if action == 'copyfrom' or (action == 'upload' and node.is_registration):
-        parent = node.parent_node
-        while parent:
-            if parent.can_edit(auth):
-                return True
-            parent = parent.parent_node
+    if isinstance(node, AbstractNode):
+        if action == 'copyfrom' or (action == 'upload' and node.is_registration):
+            parent = node.parent_node
+            while parent:
+                if parent.can_edit(auth):
+                    return True
+                parent = parent.parent_node
 
-    # Users with the prereg admin permission should be allowed to download files
-    # from prereg challenge draft registrations.
-    try:
-        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
-        allowed_nodes = [node] + node.parents
-        prereg_draft_registration = DraftRegistration.objects.filter(
-            branched_from__in=allowed_nodes,
-            registration_schema=prereg_schema
-        )
-        if action == 'download' and \
-                    auth.user is not None and \
-                    prereg_draft_registration.count() > 0 and \
-                    auth.user.has_perm('osf.administer_prereg'):
-            return True
-    except RegistrationSchema.DoesNotExist:
-        pass
+        # Users with the prereg admin permission should be allowed to download files
+        # from prereg challenge draft registrations.
+        try:
+            prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
+            allowed_nodes = [node] + node.parents
+            prereg_draft_registration = DraftRegistration.objects.filter(
+                branched_from__in=allowed_nodes,
+                registration_schema=prereg_schema
+            )
+            if action == 'download' and \
+                        auth.user is not None and \
+                        prereg_draft_registration.count() > 0 and \
+                        auth.user.has_perm('osf.administer_prereg'):
+                return True
+        except RegistrationSchema.DoesNotExist:
+            pass
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
-
 
 def make_auth(user):
     if user is not None:
@@ -228,12 +228,26 @@ def make_auth(user):
         }
     return {}
 
-def get_metric_class_for_action(action):
+def download_is_from_mfr(req, payload):
+    metrics_data = payload['metrics']
+    uri = metrics_data['uri']
+    is_render_uri = furl.furl(uri or '').query.params.get('mode') == 'render'
+    return (
+        # This header is sent for download requests that
+        # originate from MFR, e.g. for the code pygments renderer
+        req.headers.get('X-Cos-Mfr-Render-Request', None) or
+        # Need to check the URI in order to account
+        # for renderers that send XHRs from the
+        # rendered content, e.g. PDFs
+        is_render_uri
+    )
+
+
+def get_metric_class_for_action(action, from_mfr):
     metric_class = None
-    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
     if action == 'render':
         metric_class = PreprintView
-    elif action == 'download' and not download_is_from_mfr:
+    elif action == 'download' and not from_mfr:
         metric_class = PreprintDownload
     return metric_class
 
@@ -277,72 +291,71 @@ def get_auth(auth, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    node = AbstractNode.load(node_id)
+    node = AbstractNode.load(node_id) or Preprint.load(node_id)
     if not node:
         raise HTTPError(httplib.NOT_FOUND)
 
     check_access(node, auth, action, cas_resp)
+    provider_settings = None
+    if hasattr(node, 'get_addon'):
+        provider_settings = node.get_addon(provider_name)
+        if not provider_settings:
+            raise HTTPError(httplib.BAD_REQUEST)
 
-    provider_settings = node.get_addon(provider_name)
-    if not provider_settings:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    try:
-        path = data.get('path')
-        version = data.get('version')
-        credentials = None
-        waterbutler_settings = None
-        fileversion = None
-        if provider_name == 'osfstorage':
-            if path and version:
-                # check to see if this is a file or a folder
-                filenode = OsfStorageFileNode.load(path.strip('/'))
-                if filenode and filenode.is_file:
-                    try:
-                        fileversion = FileVersion.objects.filter(
-                            basefilenode___id=path.strip('/'),
-                            identifier=version
-                        ).select_related('region').get()
-                    except FileVersion.DoesNotExist:
-                        raise HTTPError(httplib.BAD_REQUEST)
-            # path and no version, use most recent version
-            elif path:
-                filenode = OsfStorageFileNode.load(path.strip('/'))
-                if filenode and filenode.is_file:
-                    fileversion = FileVersion.objects.filter(
-                        basefilenode=filenode
-                    ).select_related('region').order_by('-created').first()
-            if fileversion:
-                region = fileversion.region
-                credentials = region.waterbutler_credentials
-                waterbutler_settings = fileversion.serialize_waterbutler_settings(
-                    node_id=provider_settings.owner._id,
-                    root_id=provider_settings.root_node._id,
-                )
-        # If they haven't been set by version region, use the NodeSettings region
-        if not (credentials and waterbutler_settings):
-            credentials = provider_settings.serialize_waterbutler_credentials()
-            waterbutler_settings = provider_settings.serialize_waterbutler_settings()
-    except exceptions.AddonError:
-        log_exception()
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    # TODO: Add a signal here?
-    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-        user = auth.user
-        linked_preprint = node.linked_preprint
-        if linked_preprint and not node.is_contributor(user):
-            metric_class = get_metric_class_for_action(action)
-            if metric_class:
+    path = data.get('path')
+    credentials = None
+    waterbutler_settings = None
+    fileversion = None
+    if provider_name == 'osfstorage':
+        if path:
+            file_id = path.strip('/')
+            # check to see if this is a file or a folder
+            filenode = OsfStorageFileNode.load(path.strip('/'))
+            if filenode and filenode.is_file:
+                # default to most recent version if none is provided in the response
+                version = int(data['version']) if data.get('version') else filenode.versions.count()
                 try:
-                    metric_class.record_for_preprint(
-                        preprint=linked_preprint,
-                        user=user,
-                        version=fileversion.identifier if fileversion else None,
-                        path=path
-                    )
-                except es_exceptions.ConnectionError:
-                    log_exception()
+                    fileversion = FileVersion.objects.filter(
+                        basefilenode___id=file_id,
+                        identifier=version
+                    ).select_related('region').get()
+                except FileVersion.DoesNotExist:
+                    raise HTTPError(httplib.BAD_REQUEST)
+                if auth.user:
+                    # mark fileversion as seen
+                    FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
+                if not node.is_contributor(auth.user):
+                    from_mfr = download_is_from_mfr(request, payload=data)
+                    # version index is 0 based
+                    version_index = version - 1
+                    if action == 'render':
+                        update_analytics(node, file_id, version_index, 'view')
+                    elif action == 'download' and not from_mfr:
+                        update_analytics(node, file_id, version_index, 'download')
+                    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
+                        if isinstance(node, Preprint):
+                            metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
+                            if metric_class:
+                                try:
+                                    metric_class.record_for_preprint(
+                                        preprint=node,
+                                        user=auth.user,
+                                        version=fileversion.identifier if fileversion else None,
+                                        path=path
+                                    )
+                                except es_exceptions.ConnectionError:
+                                    log_exception()
+        if fileversion and provider_settings:
+            region = fileversion.region
+            credentials = region.waterbutler_credentials
+            waterbutler_settings = fileversion.serialize_waterbutler_settings(
+                node_id=provider_settings.owner._id,
+                root_id=provider_settings.root_node._id,
+            )
+    # If they haven't been set by version region, use the NodeSettings or Preprint directly
+    if not (credentials and waterbutler_settings):
+        credentials = node.serialize_waterbutler_credentials(provider_name)
+        waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
@@ -351,10 +364,10 @@ def get_auth(auth, **kwargs):
             'credentials': credentials,
             'settings': waterbutler_settings,
             'callback_url': node.api_url_for(
-                ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
+                ('create_waterbutler_log' if not getattr(node, 'is_registration', False) else 'registration_callbacks'),
                 _absolute=True,
                 _internal=True
-            ),
+            )
         }
     }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
 
@@ -374,32 +387,18 @@ DOWNLOAD_ACTIONS = set([
     'download_zip',
 ])
 
-
-# TODO: Use this to mark file versions as seen when
-# MFR callback endpoint is implemented
-def mark_file_version_as_seen(user, path, version):
-    """
-    Mark a file version as seen by the given user.
-    If no version is included, default to the most recent version.
-    """
-    file_to_update = OsfStorageFile.objects.get(_id=path)
-    if version:
-        file_version = file_to_update.versions.get(identifier=version)
-    else:
-        file_version = file_to_update.versions.order_by('-created').first()
-    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
-
-
 @must_be_signed
 @no_auto_transaction
-@must_be_valid_project(quickfiles_valid=True)
+@must_be_valid_project(quickfiles_valid=True, preprints_valid=True)
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            # Don't log download actions, but do update analytics
+            # Don't log download actions
             if payload['action'] in DOWNLOAD_ACTIONS:
-                node = AbstractNode.load(payload['metadata']['nid'])
+                guid = Guid.load(payload['metadata'].get('nid'))
+                if guid:
+                    node = guid.referent
                 return {'status': 'success'}
 
             user = OSFUser.load(auth['id'])
@@ -411,7 +410,7 @@ def create_waterbutler_log(payload, **kwargs):
             raise HTTPError(httplib.BAD_REQUEST)
 
         auth = Auth(user=user)
-        node = kwargs['node'] or kwargs['project']
+        node = kwargs.get('node') or kwargs.get('project') or Preprint.load(kwargs.get('nid')) or Preprint.load(kwargs.get('pid'))
 
         if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
 
@@ -438,14 +437,19 @@ def create_waterbutler_log(payload, **kwargs):
                     action = LOG_ACTION_MAP['rename']
 
             destination_node = node  # For clarity
-            source_node = AbstractNode.load(payload['source']['nid'])
+            source_node = AbstractNode.load(src['nid']) or Preprint.load(src['nid'])
 
-            source = source_node.get_addon(payload['source']['provider'])
-            destination = node.get_addon(payload['destination']['provider'])
+            # We return provider fullname so we need to load node settings, if applicable
+            source = None
+            if hasattr(source_node, 'get_addon'):
+                source = source_node.get_addon(payload['source']['provider'])
+            destination = None
+            if hasattr(node, 'get_addon'):
+                destination = node.get_addon(payload['destination']['provider'])
 
             payload['source'].update({
                 'materialized': payload['source']['materialized'].lstrip('/'),
-                'addon': source.config.full_name,
+                'addon': source.config.full_name if source else 'osfstorage',
                 'url': source_node.web_url_for(
                     'addon_view_or_download_file',
                     path=payload['source']['path'].lstrip('/'),
@@ -460,7 +464,7 @@ def create_waterbutler_log(payload, **kwargs):
 
             payload['destination'].update({
                 'materialized': payload['destination']['materialized'].lstrip('/'),
-                'addon': destination.config.full_name,
+                'addon': destination.config.full_name if destination else 'osfstorage',
                 'url': destination_node.web_url_for(
                     'addon_view_or_download_file',
                     path=payload['destination']['path'].lstrip('/'),
@@ -471,11 +475,6 @@ def create_waterbutler_log(payload, **kwargs):
                     'url': destination_node.url,
                     'title': destination_node.title,
                 }
-            })
-
-            payload.update({
-                'node': destination_node._id,
-                'project': destination_node.parent_id,
             })
 
             if not payload.get('errors'):
@@ -505,18 +504,7 @@ def create_waterbutler_log(payload, **kwargs):
                 return {'status': 'success'}
 
         else:
-            try:
-                metadata = payload['metadata']
-                node_addon = node.get_addon(payload['provider'])
-            except KeyError:
-                raise HTTPError(httplib.BAD_REQUEST)
-
-            if node_addon is None:
-                raise HTTPError(httplib.BAD_REQUEST)
-
-            metadata['path'] = metadata['path'].lstrip('/')
-
-            node_addon.create_waterbutler_log(auth, action, metadata)
+            node.create_waterbutler_log(auth, action, payload)
 
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
@@ -671,6 +659,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
             'file_path': file_path,
             'file_name_title': file_name_title,
             'file_name_ext': file_name_ext,
+            'target_deleted': getattr(target, 'is_deleted', False),
             'version_id': None,
             'file_guid': file_guid,
             'file_id': file_node._id,
@@ -703,26 +692,28 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    node_addon = target.get_addon(provider)
+    if hasattr(target, 'get_addon'):
 
-    if not isinstance(node_addon, BaseStorageAddon):
-        object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
-        raise HTTPError(httplib.BAD_REQUEST, data={
-            'message_short': 'Bad Request',
-            'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, object_text)
-        })
+        node_addon = target.get_addon(provider)
 
-    if not node_addon.has_auth:
-        raise HTTPError(httplib.UNAUTHORIZED, data={
-            'message_short': 'Unauthorized',
-            'message_long': 'The {} add-on containing {} is no longer authorized.'.format(provider_safe, path_safe)
-        })
+        if not isinstance(node_addon, BaseStorageAddon):
+            object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
+            raise HTTPError(httplib.BAD_REQUEST, data={
+                'message_short': 'Bad Request',
+                'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, object_text)
+            })
 
-    if not node_addon.complete:
-        raise HTTPError(httplib.BAD_REQUEST, data={
-            'message_short': 'Bad Request',
-            'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe)
-        })
+        if not node_addon.has_auth:
+            raise HTTPError(httplib.UNAUTHORIZED, data={
+                'message_short': 'Unauthorized',
+                'message_long': 'The {} add-on containing {} is no longer authorized.'.format(provider_safe, path_safe)
+            })
+
+        if not node_addon.complete:
+            raise HTTPError(httplib.BAD_REQUEST, data={
+                'message_short': 'Bad Request',
+                'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe)
+            })
 
     savepoint_id = transaction.savepoint()
     file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path)
@@ -790,6 +781,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
+    if isinstance(target, Preprint):
+        # Redirecting preprint file guids to the preprint detail page
+        return redirect('/{}/'.format(target._id))
+
     return addon_view_file(auth, target, file_node, version)
 
 

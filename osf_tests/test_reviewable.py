@@ -1,7 +1,7 @@
 import mock
 import pytest
 
-from osf.models import PreprintService
+from osf.models import Preprint
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import PreprintFactory, AuthUserFactory
 
@@ -19,7 +19,7 @@ class TestReviewable:
 
         preprint.run_accept(user, 'comment')
         assert preprint.machine_state == DefaultStates.ACCEPTED.value
-        from_db = PreprintService.objects.get(id=preprint.id)
+        from_db = Preprint.objects.get(id=preprint.id)
         assert from_db.machine_state == DefaultStates.ACCEPTED.value
 
         preprint.run_reject(user, 'comment')

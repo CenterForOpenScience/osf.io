@@ -1,7 +1,7 @@
 {
     "name": "OSF-Standard Pre-Data Collection Registration",
     "version": 2,
-    "description": "You will be asked if data collection is underway and if you have looked at your data already. You will be provided an opportunity to post other comments about your project. This registration form is not a valid submission for the Pre-registration Prize.",
+    "description": "You will be asked if data collection is underway and if you have looked at your data already. You will be provided an opportunity to post other comments about your project.",
     "pages": [{
         "title": "OSF-Standard Pre-Data Collection Registration",
         "id": "page1",

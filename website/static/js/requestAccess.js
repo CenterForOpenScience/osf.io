@@ -67,7 +67,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
             );
             Raven.captureMessage('Error requesting project access', {
                 extra: {
-                    url: this.urls.update,
+                    url: self.updateUrl,
                     status: status,
                     error: error
                 }

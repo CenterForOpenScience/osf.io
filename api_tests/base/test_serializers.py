@@ -8,7 +8,7 @@ from pytz import utc
 from datetime import datetime
 import urllib
 
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import re
 
 from tests.base import ApiTestCase, DbTestCase
@@ -93,7 +93,9 @@ class TestSerializerMetaType(ApiTestCase):
             ), 'Serializer {} has no Meta'.format(ser)
             assert hasattr(
                 ser.Meta, 'type_'
-            ), 'Serializer {} has no Meta.type_'.format(ser)
+            ) or hasattr(
+                ser.Meta, 'get_type'
+            ), 'Serializer {} has no Meta.type_ or Meta.get_type()'.format(ser)
 
 
 class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
@@ -135,7 +137,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'subjects',
             'wiki_enabled']
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings']
+        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'children']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)
@@ -568,7 +570,7 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(
-            datetime.strftime(self.old_date,self.old_format),
+            datetime.strftime(self.old_date, self.old_format),
             data['attributes']['date_modified']
         )
 
@@ -589,7 +591,7 @@ class VersionedDateTimeField(DbTestCase):
         setattr(self.node, 'last_logged', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(
-            datetime.strftime(self.old_date,self.new_format),
+            datetime.strftime(self.old_date, self.new_format),
             data['attributes']['date_modified']
         )
 
