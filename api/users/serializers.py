@@ -1,5 +1,6 @@
 import jsonschema
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -13,7 +14,7 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
-from osf.models import OSFUser, QuickFilesNode, Email
+from osf.models import OSFUser, QuickFilesNode, Email, Education, Employment
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL, OSF_SUPPORT_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
@@ -146,11 +147,15 @@ class UserSerializer(JSONAPISerializer):
     education = HideIfDisabled(RelationshipField(
         related_view='users:user-education',
         related_view_kwargs={'user_id': '<_id>'},
+        self_view='users:user-education-relationship',
+        self_view_kwargs={'user_id': '<_id>'},
     ))
 
     employment = HideIfDisabled(RelationshipField(
         related_view='users:user-employment',
         related_view_kwargs={'user_id': '<_id>'},
+        self_view='users:user-employment-relationship',
+        self_view_kwargs={'user_id': '<_id>'},
     ))
 
     class Meta:
@@ -336,6 +341,110 @@ class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     class Meta:
         type_ = 'institutions'
+
+
+class RelatedEducation(JSONAPIRelationshipSerializer):
+    id = ser.CharField(required=False, allow_null=True, source='_id')
+    class Meta:
+        type_ = 'education'
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+
+class UserEducationRelationshipSerializer(BaseAPISerializer):
+    # TODO - consolodate these into a user relationship serializer?
+    # include this, UserInstitutionsRelationshipSerializer and UserEmploymentRelationshipSerializer
+    data = ser.ListField(child=RelatedEducation())
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
+
+    def update(self, obj, validated_data):
+        user = obj['self']
+        new_order = []
+        new_data = []
+        for entry in validated_data['data']:
+            education = get_object_or_404(Education, _id=entry['_id'])
+            new_order.append(education.id)
+            new_data.append(education)
+        user.set_education_order(new_order)
+        obj['data'] = new_data
+        return obj
+
+    def get_self_url(self, obj):
+        return absolute_reverse(
+            'users:user-education-relationship', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_related_url(self, obj):
+        return absolute_reverse(
+            'users:user-education', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    class Meta:
+        type_ = 'education'
+
+
+class RelatedEmployment(JSONAPIRelationshipSerializer):
+    id = ser.CharField(required=False, allow_null=True, source='_id')
+    class Meta:
+        type_ = 'employment'
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+
+class UserEmploymentRelationshipSerializer(BaseAPISerializer):
+    data = ser.ListField(child=RelatedEmployment())
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
+
+    def update(self, obj, validated_data):
+        user = obj['self']
+        new_order = []
+        new_data = []
+        for entry in validated_data['data']:
+            employment = get_object_or_404(Employment, _id=entry['_id'])
+            new_order.append(employment.id)
+            new_data.append(employment)
+        user.set_employment_order(new_order)
+        obj['data'] = new_data
+        return obj
+
+    def get_self_url(self, obj):
+        return absolute_reverse(
+            'users:user-employment-relationship', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_related_url(self, obj):
+        return absolute_reverse(
+            'users:user-employment', kwargs={
+                'user_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    class Meta:
+        type_ = 'employment'
 
 
 class UserIdentitiesSerializer(JSONAPISerializer):
