@@ -229,20 +229,17 @@ def make_auth(user):
     return {}
 
 def download_is_from_mfr(req, payload):
-    metrics_data = payload.get('metrics', {})
-    referrer_netloc = furl.furl(metrics_data.get('referrer', '')).netloc
-    referrer_is_mfr = (
-        referrer_netloc.startswith(settings.MFR_DOMAIN_PREFIX) and
-        referrer_netloc.endswith(settings.MFR_DOMAIN_SUFFIX)
-    )
+    metrics_data = payload['metrics']
+    uri = metrics_data['uri']
+    is_render_uri = furl(uri or '').query.params.get('mode') == 'render'
     return (
         # This header is sent for download requests that
         # originate from MFR, e.g. for the code pygments renderer
         req.headers.get('X-Cos-Mfr-Render-Request', None) or
-        # Need to check the netloc in order to account
+        # Need to check the URI in order to account
         # for renderers that send XHRs from the
-        # renderered content, e.g. PDFs
-        referrer_is_mfr
+        # rendered content, e.g. PDFs
+        is_render_uri
     )
 
 
