@@ -132,9 +132,11 @@ class TestNodeLinkedRegistrationsRelationshipRetrieve(
 
     @pytest.fixture()
     def make_request(self, app):
-        def request(node_id=None, auth=None, expect_errors=False):
+        def request(node_id=None, auth=None, expect_errors=False, version=None):
             url = '/{}nodes/{}/relationships/linked_registrations/'.format(
                 API_BASE, node_id)
+            if version:
+                url = '{}?version={}'.format(url, version)
             if auth:
                 return app.get(url, auth=auth, expect_errors=expect_errors)
             return app.get(url, expect_errors=expect_errors)
@@ -149,6 +151,13 @@ class TestNodeLinkedRegistrationsRelationshipRetrieve(
         res = make_request(node_id=node_public._id)
         assert res.status_code == 200
         assert res.json['data'][0]['id'] == registration._id
+        assert res.json['data'][0]['type'] == 'linked_registrations'
+
+        #   test_public_node_unauthenticated_user_can_view_linked_registrations_relationship_2_13
+        res = make_request(node_id=node_public._id, version='2.13')
+        assert res.status_code == 200
+        assert res.json['data'][0]['id'] == registration._id
+        assert res.json['data'][0]['type'] == 'registrations'
 
     #   test_private_node_admin_contributor_can_view_linked_registrations_relationship
         res = make_request(
@@ -201,10 +210,10 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
 
     @pytest.fixture()
     def make_payload(self):
-        def payload(registration_id=None):
+        def payload(registration_id=None, deprecated_type=True):
             return {
                 'data': [{
-                    'type': 'linked_registrations',
+                    'type': 'linked_registrations' if deprecated_type else 'registrations',
                     'id': registration_id
                 }]
             }
@@ -212,16 +221,19 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
 
     @pytest.fixture()
     def make_request(self, app, make_payload):
-        def request(node_id=None, auth=None, reg_id=None, expect_errors=False):
+        def request(node_id=None, auth=None, reg_id=None, expect_errors=False, version=None, deprecated_type=True):
             url = '/{}nodes/{}/relationships/linked_registrations/'.format(
                 API_BASE, node_id)
+            if version:
+                url = '{}?version={}'.format(url, version)
             if auth:
                 return app.post_json_api(
-                    url, make_payload(registration_id=reg_id),
+                    url,
+                    make_payload(registration_id=reg_id, deprecated_type=deprecated_type),
                     auth=auth, expect_errors=expect_errors)
             return app.post_json_api(
                 url,
-                make_payload(registration_id=reg_id),
+                make_payload(registration_id=reg_id, deprecated_type=deprecated_type),
                 expect_errors=expect_errors)
         return request
 
@@ -232,6 +244,20 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
             node_id=node_private._id,
             reg_id=registration._id,
             auth=user_admin_contrib.auth
+        )
+        assert res.status_code == 201
+        linked_registrations = [r['id'] for r in res.json['data']]
+        assert registration._id in linked_registrations
+
+    def test_admin_contributor_can_create_linked_registrations_relationship_2_13(
+            self, make_request, user_admin_contrib, node_private):
+        registration = RegistrationFactory(is_public=True)
+        res = make_request(
+            node_id=node_private._id,
+            reg_id=registration._id,
+            auth=user_admin_contrib.auth,
+            version='2.13',
+            deprecated_type=False,
         )
         assert res.status_code == 201
         linked_registrations = [r['id'] for r in res.json['data']]
@@ -380,10 +406,10 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
 
     @pytest.fixture()
     def make_payload(self):
-        def payload(registration_id=None):
+        def payload(registration_id=None, deprecated_type=True):
             return {
                 'data': [{
-                    'type': 'linked_registrations',
+                    'type': 'linked_registrations' if deprecated_type else 'registrations',
                     'id': registration_id
                 }]
             }
@@ -391,17 +417,19 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
 
     @pytest.fixture()
     def make_request(self, app, make_payload):
-        def request(node_id=None, auth=None, reg_id=None, expect_errors=False):
+        def request(node_id=None, auth=None, reg_id=None, expect_errors=False, version=None, deprecated_type=True):
             url = '/{}nodes/{}/relationships/linked_registrations/'.format(
                 API_BASE, node_id)
+            if version:
+                url = '{}?version={}'.format(url, version)
             if auth:
                 return app.put_json_api(
                     url,
-                    make_payload(registration_id=reg_id),
+                    make_payload(registration_id=reg_id, deprecated_type=deprecated_type),
                     auth=auth, expect_errors=expect_errors)
             return app.put_json_api(
                 url,
-                make_payload(registration_id=reg_id),
+                make_payload(registration_id=reg_id, deprecated_type=deprecated_type),
                 expect_errors=expect_errors)
         return request
 
@@ -412,6 +440,21 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
             node_id=node_private._id,
             reg_id=registration_two._id,
             auth=user_admin_contrib.auth
+        )
+        assert res.status_code == 200
+        linked_registrations = [r['id'] for r in res.json['data']]
+        assert registration._id not in linked_registrations
+        assert registration_two._id in linked_registrations
+
+    def test_admin_contributor_can_update_linked_registrations_relationship_2_13(
+            self, make_request, registration, user_admin_contrib, node_private):
+        registration_two = RegistrationFactory(is_public=True)
+        res = make_request(
+            node_id=node_private._id,
+            reg_id=registration_two._id,
+            auth=user_admin_contrib.auth,
+            version='2.13',
+            deprecated_type=False,
         )
         assert res.status_code == 200
         linked_registrations = [r['id'] for r in res.json['data']]
@@ -482,10 +525,10 @@ class TestNodeLinkedRegistrationsRelationshipDelete(
 
     @pytest.fixture()
     def make_payload(self):
-        def payload(registration_id=None):
+        def payload(registration_id=None, deprecated_type=True):
             return {
                 'data': [{
-                    'type': 'linked_registrations',
+                    'type': 'linked_registrations' if deprecated_type else 'registrations',
                     'id': registration_id
                 }]
             }
@@ -493,15 +536,19 @@ class TestNodeLinkedRegistrationsRelationshipDelete(
 
     @pytest.fixture()
     def make_request(self, app, make_payload):
-        def request(node_id=None, auth=None, reg_id=None, expect_errors=False):
+        def request(node_id=None, auth=None, reg_id=None, expect_errors=False, version=None, deprecated_type=True):
             url = '/{}nodes/{}/relationships/linked_registrations/'.format(
                 API_BASE, node_id)
+            if version:
+                url = '{}?version={}'.format(url, version)
             if auth:
                 return app.delete_json_api(
-                    url, make_payload(reg_id),
+                    url,
+                    make_payload(registration_id=reg_id, deprecated_type=deprecated_type),
                     auth=auth, expect_errors=expect_errors)
             return app.delete_json_api(
-                url, make_payload(reg_id),
+                url,
+                make_payload(registration_id=reg_id, deprecated_type=deprecated_type),
                 expect_errors=expect_errors)
         return request
 
@@ -511,6 +558,17 @@ class TestNodeLinkedRegistrationsRelationshipDelete(
             node_id=node_private._id,
             auth=user_admin_contrib.auth,
             reg_id=registration._id
+        )
+        assert res.status_code == 204
+
+    def test_admin_contributor_can_delete_linked_registrations_relationship_2_13(
+            self, make_request, registration, user_admin_contrib, node_private):
+        res = make_request(
+            node_id=node_private._id,
+            auth=user_admin_contrib.auth,
+            reg_id=registration._id,
+            version='2.13',
+            deprecated_type=False,
         )
         assert res.status_code == 204
 

@@ -12,7 +12,7 @@ from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
-from api.base.serializers import AddonAccountSerializer
+from api.base.serializers import get_meta_type, AddonAccountSerializer
 from api.base.utils import (
     default_node_list_permission_queryset,
     get_object_or_error,
@@ -547,7 +547,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         # DELETEs normally dont get type checked
         # not the best way to do it, should be enforced everywhere, maybe write a test for it
         for val in data:
-            if val['type'] != self.serializer_class.Meta.type_:
+            if val['type'] != get_meta_type(self.serializer_class, self.request):
                 raise Conflict()
         for val in data:
             if val['id'] in current_institutions:

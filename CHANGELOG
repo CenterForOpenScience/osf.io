@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+
+19.1.0 (2019-01-30)
+===================
+- Track OSFS file versions
+- Make embedded wiki images viewable with VOL
+- Fix last_logged date on existing forks
+
 19.0.0 (2019-01-23)
 ===================
 - APIv2: Allow doubly confirming new emails and account merges
