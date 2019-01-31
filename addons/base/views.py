@@ -231,7 +231,7 @@ def make_auth(user):
 def download_is_from_mfr(req, payload):
     metrics_data = payload['metrics']
     uri = metrics_data['uri']
-    is_render_uri = furl(uri or '').query.params.get('mode') == 'render'
+    is_render_uri = furl.furl(uri or '').query.params.get('mode') == 'render'
     return (
         # This header is sent for download requests that
         # originate from MFR, e.g. for the code pygments renderer
