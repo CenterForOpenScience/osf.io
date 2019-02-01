@@ -507,7 +507,7 @@ var FileViewPage = {
             // Special case to not show force check-in for read-only providers
             (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-t-xs', [
                 ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-addtimestamp', {href: 'addtimestamp'}, 'Request Trusted Timestamp') : null
-            ]) : '', 
+            ]) : '',
             (
                 ctrl.canEdit() &&
                 (ctrl.node.preprintFileId !== ctrl.file.id) &&

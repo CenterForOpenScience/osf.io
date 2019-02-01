@@ -115,7 +115,7 @@ INSTALLED_APPS = (
     'addons.swift',
     'addons.azureblobstorage',
     'addons.weko',
-    'addons.jupyterhub'
+    'addons.jupyterhub',
 )
 
 # local development using https

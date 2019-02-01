@@ -63,7 +63,7 @@ var ViewModel = oop.extend(OauthAddonFolderPicker,{
             if (self.useCustomHost()){
                 self.changeMessage('Please enter an Nextcloud server.', 'text-danger');
             } else {
-                self.changeMessage('Please select an Nextcloud server.', 'text-danger');            
+                self.changeMessage('Please select an Nextcloud server.', 'text-danger');
             }
             return;
         }

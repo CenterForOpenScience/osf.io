@@ -153,7 +153,7 @@ header h1 {
 
 #msg.errors {
   /*border: 1px dotted #BB0000;*/
-  color: #BB0000; 
+  color: #BB0000;
   /*padding-left: 100px;*/
   /*background: url(../../../images/error.png) no-repeat 20px center;*/
 }
@@ -269,21 +269,21 @@ footer a:link, footer a:visited {
   color: black;
 }
 
-@media only screen and (max-width: 960px) { 
+@media only screen and (max-width: 960px) {
   header { padding: 20px; }
   #container { width: 100%; }
-  #content { 
+  #content {
     -webkit-border-radius: 0px;
     -moz-border-radius: 0px;
     border-radius: 0px;
-  } 
+  }
 }
 
 #fm1 .row input[type=text],
 #fm1 .row input[type=password] { width: 100%; padding: 10px; box-sizing: border-box; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; }
 #fm1 .row .btn-reset { display: none; }
 
-@media only screen and (max-width: 799px) { 
+@media only screen and (max-width: 799px) {
   /*header { padding: 10px;}*/
   footer { width:  300px; }
   /*#logo { width: 80px; height: 80px; }*/

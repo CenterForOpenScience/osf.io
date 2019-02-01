@@ -11,7 +11,7 @@ import addons.weko.client as client
 fake_weko_last_index_id = 10
 fake_weko_host = 'http://localhost.weko.fake/'
 fake_weko_collection_url = '{0}collection'.format(fake_weko_host)
-fake_weko_servicedocument_url = "{0}servicedocument.php".format(fake_weko_host)
+fake_weko_servicedocument_url = '{0}servicedocument.php'.format(fake_weko_host)
 
 fake_weko_service_document_xml = """
 <?xml version="1.0" encoding="utf-8"?>

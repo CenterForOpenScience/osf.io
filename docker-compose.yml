@@ -445,8 +445,8 @@ services:
 
   admin:
     image: quay.io/centerforopenscience/osf:develop
-    command: 
-    - /bin/bash 
+    command:
+    - /bin/bash
     - -c
     - apt-get update && apt-get install -y libtk8.6 wkhtmltopdf xvfb cron curl jq &&
       /etc/init.d/cron start &&

@@ -16,7 +16,7 @@ var RdmAddonSettings = function() {
             var addonName = $parentDiv.data('addon-short-name');
             console.log(addonName);
             var config = data[addonName];
-            
+
             if (config.is_forced) {
                 $h4.find('small').remove();
             }
@@ -24,20 +24,20 @@ var RdmAddonSettings = function() {
                 if (!config.is_forced) {
                     $h4.append('<br>');
                 }
-                var small = '<small>' + 
+                var small = '<small>' +
                     '<a class="pull-right text-primary import-account">' +
                     'Import Account from Admin</a></small>' +
                     '<div class="clearfix"></div>';
                 $h4.append(small);
             }
-            
+
             $h4.find('.import-account').on('click', function() {
                 var context = ko.contextFor($parentDiv[0]);
                 importAdminAccount(addonName, context);
             });
         });
     };
-    
+
     var importAdminAccount = function(addonName, context) {
         var url = '/api/v1/rdm/addons/import/' + addonName + '/';
         $.ajax({
@@ -60,7 +60,7 @@ var RdmAddonSettings = function() {
             }
         });
     };
-    
+
     self.init = function() {
         var url = '/api/v1/rdm/addons/';
         $.ajax({
@@ -77,7 +77,7 @@ var RdmAddonSettings = function() {
             });
         });
     };
-    
+
 };
 $(function() {
     (new RdmAddonSettings()).init();

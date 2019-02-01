@@ -247,7 +247,7 @@ class TestCreateContainer(AzureBlobStorageAddonTestCase, OsfTestCase):
         error.message = 'This should work'
         mock_make.side_effect = error
 
-        url = "/api/v1/project/{0}/azureblobstorage/newcontainer/".format(self.project._id)
+        url = '/api/v1/project/{0}/azureblobstorage/newcontainer/'.format(self.project._id)
         ret = self.app.post_json(url, {'container_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
         assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to Azure Blob Storage"}')

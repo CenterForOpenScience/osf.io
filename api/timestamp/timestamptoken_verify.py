@@ -65,8 +65,10 @@ class TimeStampTokenVerifyCheck:
 
         return fname
 
-    def create_rdm_filetimestamptokenverify(self, file_id, project_id, provider, path,
-                                        inspection_result_status, userid):
+    def create_rdm_filetimestamptokenverify(
+        self, file_id, project_id, provider, path,
+        inspection_result_status, userid,
+    ):
 
         userKey = RdmUserKey.objects.get(guid=userid, key_kind=api_settings.PUBLIC_KEY_VALUE)
         create_data = RdmFileTimestamptokenVerifyResult()
@@ -106,8 +108,10 @@ class TimeStampTokenVerifyCheck:
                     # update verifyResult:'FILE missing'
                     ret = api_settings.FILE_NOT_EXISTS
                     verify_result_title = api_settings.FILE_NOT_EXISTS_MSG  # 'FILE missing'
-                    verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider,
-                                                                       path, ret, userid)
+                    verifyResult = self.create_rdm_filetimestamptokenverify(
+                        file_id, project_id, provider,
+                        path, ret, userid,
+                    )
                 elif baseFileNode.is_deleted and verifyResult and not verifyResult.timestamp_token:
                     # if file does not exist ,and verify result does not exist in db:
                     # update verifyResult 'FILE missing(Unverify)'
@@ -128,8 +132,10 @@ class TimeStampTokenVerifyCheck:
                     # update verifyResult 'TST missing(Unverify)'
                     ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG  # 'TST missing(Unverify)'
-                    verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider,
-                                                                            path, ret, userid)
+                    verifyResult = self.create_rdm_filetimestamptokenverify(
+                        file_id, project_id, provider,
+                        path, ret, userid,
+                    )
                 elif not baseFileNode.is_deleted and not verifyResult.timestamp_token:
                     # if file exists and  verifyResult.timestamp_token does not exist:
                     # update verifyResult 'TST missing(Retrieving Failed)'
@@ -145,8 +151,10 @@ class TimeStampTokenVerifyCheck:
                     # update verifyResult 'TST missing(Unverify)'
                     ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG  # 'TST missing(Unverify)'
-                    verifyResult = self.create_rdm_filetimestamptokenverify(file_id, project_id, provider,
-                                                                             path, ret, userid)
+                    verifyResult = self.create_rdm_filetimestamptokenverify(
+                        file_id, project_id, provider,
+                        path, ret, userid,
+                    )
                 elif not verifyResult.timestamp_token:
                     # if timestamptoken does not exist:
                     # update verifyResult 'TST missing(Retrieving Failed)'
@@ -167,13 +175,17 @@ class TimeStampTokenVerifyCheck:
                     raise err
 
                 # verify timestamptoken and rootCA
-                cmd = [api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_TS, api_settings.OPENSSL_OPTION_VERIFY,
-                       api_settings.OPENSSL_OPTION_DATA, file_name, api_settings.OPENSSL_OPTION_IN, timestamptoken_file_path,
-                       api_settings.OPENSSL_OPTION_CAFILE, os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)]
-                prc = subprocess.Popen(cmd, shell=False,
-                                       stdin=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
-                                       stdout=subprocess.PIPE)
+                cmd = [
+                    api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_TS, api_settings.OPENSSL_OPTION_VERIFY,
+                    api_settings.OPENSSL_OPTION_DATA, file_name, api_settings.OPENSSL_OPTION_IN, timestamptoken_file_path,
+                    api_settings.OPENSSL_OPTION_CAFILE, os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE),
+                ]
+                prc = subprocess.Popen(
+                    cmd, shell=False,
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                )
                 stdout_data, stderr_data = prc.communicate()
                 ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
                 if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
@@ -214,6 +226,8 @@ class TimeStampTokenVerifyCheck:
         ## RDM Logger ##
         rdmlogger = RdmLogger(rdmlog, {})
         rdmlogger.info('RDM Project', RDMINFO='TimeStampVerify', result_status=ret, user=guid, project=abstractNode.title, file_path=filepath, file_id=file_id)
-        return {'verify_result': ret, 'verify_result_title': verify_result_title,
-                'operator_user': operator_user, 'operator_date': operator_date,
-                'filepath': filepath}
+        return {
+            'verify_result': ret, 'verify_result_title': verify_result_title,
+            'operator_user': operator_user, 'operator_date': operator_date,
+            'filepath': filepath,
+        }

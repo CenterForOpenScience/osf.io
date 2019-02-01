@@ -20,12 +20,16 @@ class AddTimestamp:
 
     #2 create  tsq(timestamp request) from file, and keyinfo
     def get_timestamp_request(self, file_name):
-        cmd = [api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_TS, api_settings.OPENSSL_OPTION_QUERY, api_settings.OPENSSL_OPTION_DATA,
-               file_name, api_settings.OPENSSL_OPTION_CERT, api_settings.OPENSSL_OPTION_SHA512]
-        process = subprocess.Popen(cmd, shell=False,
+        cmd = [
+            api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_TS, api_settings.OPENSSL_OPTION_QUERY, api_settings.OPENSSL_OPTION_DATA,
+            file_name, api_settings.OPENSSL_OPTION_CERT, api_settings.OPENSSL_OPTION_SHA512,
+        ]
+        process = subprocess.Popen(
+            cmd, shell=False,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE,
+        )
 
         stdout_data, stderr_data = process.communicate()
         return stdout_data
@@ -34,14 +38,18 @@ class AddTimestamp:
     def get_timestamp_response(self, file_name, ts_request_file, key_file):
         res_content = None
         try:
-            retries = Retry(total=api_settings.REQUEST_TIME_OUT,
-                            backoff_factor=1, status_forcelist=api_settings.ERROR_HTTP_STATUS)
+            retries = Retry(
+                total=api_settings.REQUEST_TIME_OUT,
+                backoff_factor=1, status_forcelist=api_settings.ERROR_HTTP_STATUS,
+            )
             session = requests.Session()
             session.mount('http://', requests.adapters.HTTPAdapter(max_retries=retries))
             session.mount('https://', requests.adapters.HTTPAdapter(max_retries=retries))
 
-            res = requests.post(api_settings.TIME_STAMP_AUTHORITY_URL,
-                                headers=api_settings.REQUEST_HEADER, data=ts_request_file, stream=True)
+            res = requests.post(
+                api_settings.TIME_STAMP_AUTHORITY_URL,
+                headers=api_settings.REQUEST_HEADER, data=ts_request_file, stream=True,
+            )
             res_content = res.content
             res.close()
         except Exception as ex:
@@ -64,8 +72,10 @@ class AddTimestamp:
         return res
 
     #5 register verify result in db
-    def timestamptoken_register(self, file_id, project_id, provider, path,
-                                key_file, tsa_response, user_id, verify_data):
+    def timestamptoken_register(
+        self, file_id, project_id, provider, path,
+        key_file, tsa_response, user_id, verify_data,
+    ):
 
         try:
             # data not registered yet
@@ -114,9 +124,13 @@ class AddTimestamp:
         verify_data = self.get_data(file_id, project_id, provider, path)
 
         # register in db
-        self.timestamptoken_register(file_id, project_id, provider, path,
-                                     key_file_name, tsa_response, user_id, verify_data)
+        self.timestamptoken_register(
+            file_id, project_id, provider, path,
+            key_file_name, tsa_response, user_id, verify_data,
+        )
 
         # tsr verification request call
-        return TimeStampTokenVerifyCheck().timestamp_check(guid, file_id,
-                                                           project_id, provider, path, file_name, tmp_dir)
+        return TimeStampTokenVerifyCheck().timestamp_check(
+            guid, file_id,
+            project_id, provider, path, file_name, tmp_dir,
+        )

@@ -9,7 +9,7 @@ class RdmLogger(logging.LoggerAdapter):
             'extra': {
                 'kwargs': kwargs,
                 'structual': True,
-            }
+            },
         }
         return msg, information
 

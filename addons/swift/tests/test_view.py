@@ -385,7 +385,7 @@ class TestCreateContainer(SwiftAddonTestCase, OsfTestCase):
                                                  http_reason='because Im a test')
         mock_make.side_effect = error
 
-        url = "/api/v1/project/{0}/swift/newcontainer/".format(self.project._id)
+        url = '/api/v1/project/{0}/swift/newcontainer/'.format(self.project._id)
         ret = self.app.post_json(url, {'container_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
         assert_equals(ret.body, '{"message": "This should work", "title": "Problem creating container \'doesntevenmatter\'"}')

@@ -71,7 +71,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
             if (self.useCustomHost()){
                 self.setMessage('Please enter an Nextcloud server.', 'text-danger');
             } else {
-                self.setMessage('Please select an Nextcloud server.', 'text-danger');            
+                self.setMessage('Please select an Nextcloud server.', 'text-danger');
             }
             return;
         }

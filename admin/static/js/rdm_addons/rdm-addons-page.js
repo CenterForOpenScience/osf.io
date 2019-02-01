@@ -60,7 +60,7 @@ $('.is_allowed input').on('change', function() {
         bootbox.confirm({
             title: "Disallow "+$osf.htmlEscape(addonFullName)+"?",
             message: "Are you sure you want to disallow the "+$osf.htmlEscape(addonFullName)+"?<br>" +
-                     "This will revoke access to "+$osf.htmlEscape(addonFullName)+" for all projects using the accounts.<br><br>" + 
+                     "This will revoke access to "+$osf.htmlEscape(addonFullName)+" for all projects using the accounts.<br><br>" +
                      "Type the following to continue: <strong>" + $osf.htmlEscape(deletionKey) + "</strong><br><br>" +
                      "<input id='" + $osf.htmlEscape(id) + "' type='text' class='bootbox-input bootbox-input-text form-control'>",
             buttons: {

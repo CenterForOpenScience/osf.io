@@ -250,7 +250,7 @@ class TestAddonLogs(OsfTestCase):
         payload = self.build_payload(metadata=metadata)
         logging.info('---test_add_log_timestamptoken.payload: {}'.format(payload))
         nlogs = self.node.logs.count()
-        
+
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs + 1)

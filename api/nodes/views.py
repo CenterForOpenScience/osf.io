@@ -1546,7 +1546,8 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
                 institution_id = Institution.objects.get(_id=data['id']).id
                 guid = kwargs['node_id']
                 timestampPattern, _ = RdmTimestampGrantPattern.objects.get_or_create(
-                    institution_id=institution_id, node_guid=guid)
+                    institution_id=institution_id, node_guid=guid,
+                )
                 timestampPattern.save()
         except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
