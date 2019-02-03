@@ -14,12 +14,14 @@ from api.identifiers.serializers import NodeIdentifierSerializer, RegistrationId
 from api.nodes.permissions import (
     IsPublic,
     ExcludeWithdrawals,
+    AdminOrPublic,
+    EditIfPublic,
 )
 
 from osf.models import Node, Registration, Preprint, Identifier
 
 
-class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     """List of identifiers for a specified node. *Read-only*.
 
     ##Identifier Attributes
@@ -55,6 +57,8 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     permission_classes = (
         IsPublic,
+        EditIfPublic,
+        AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
