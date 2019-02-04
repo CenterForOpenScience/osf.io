@@ -329,7 +329,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'No, data collection has not begun\' is not of type \'object\''
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
+                                   ' field is invalid, your response must be one of the provided options.'
 
     def test_registration_metadata_question_keys_must_be_value(
             self, app, user, payload, url_draft_registrations):
@@ -342,7 +343,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'incorrect_key\' was unexpected)'
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
+                                   ' field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_metadata_must_be_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -356,7 +358,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'q11\' was unexpected)'
+        assert errors['detail'] == 'For your registration the \'datacompletion\' field is extraneous and not' \
+                                   ' permitted in your response.'
 
     def test_multiple_choice_question_value_must_match_value_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -369,7 +372,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'Nope, data collection has not begun\' is not one of [u\'No, data collection has not begun\', u\'Yes, data collection is underway or complete\', \'\']'
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' field' \
+                                   ' is invalid, your response must be one of the provided options.'
 
     def test_cannot_update_registration_schema(
             self, app, user, schema, payload,
@@ -483,7 +487,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'value\' was unexpected)'
+            'detail'] == 'For your registration your response to the \'Authors\' field is invalid.'
 
     def test_reviewer_can_update_nested_comment_fields_draft_registration(
             self, app, project_public, draft_registration_prereg, administer_permission):
@@ -551,7 +555,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'value\' was unexpected)'
+            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
 
 @pytest.mark.django_db
@@ -836,7 +840,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'values\' was unexpected)'
+            'detail'] == 'For your registration your response to the \'Title\' field is invalid.'
 
     def test_first_level_open_ended_answer_must_be_of_correct_type(
             self, app, user, payload, url_draft_registrations):
@@ -848,7 +852,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '12345 is not of type \'string\''
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Title\' field is invalid.'
 
     def test_first_level_open_ended_answer_not_expecting_more_nested_data(
             self, app, user, payload, url_draft_registrations):
@@ -864,7 +868,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '{u\'question\': {u\'value\': u\'This is my answer.\'}} is not of type \'string\''
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Title\' field is invalid.'
 
     def test_second_level_answers(
             self, app, user, payload, url_draft_registrations):
@@ -896,7 +900,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'questions\' was unexpected)'
+            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
     def test_third_level_open_ended_answer_must_have_correct_key(
             self, app, user, payload, url_draft_registrations):
@@ -913,7 +917,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == \
-               'Additional properties are not allowed (u\'values\' was unexpected)'
+               'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
     def test_second_level_open_ended_answer_must_have_correct_type(
             self, app, user, payload, url_draft_registrations):
@@ -927,7 +931,8 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'u\'This is my answer\' is not of type \'object\''
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Data collection procedures\'' \
+                                                  ' field is invalid.'
 
     def test_third_level_open_ended_answer_must_have_correct_type(
             self, app, user, payload, url_draft_registrations):
@@ -943,7 +948,8 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'True is not of type \'string\''
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Data collection procedures\'' \
+                                                  ' field is invalid.'
 
     def test_uploader_metadata(
             self, app, user, project_public,
@@ -997,7 +1003,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'selectedFileNames\' was unexpected)'
+            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
     def test_multiple_choice_questions_incorrect_choice(
             self, app, user, payload, url_draft_registrations):
@@ -1009,11 +1015,8 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert (
-            res.json['errors'][0]['detail'] == 'u\'This is my answer.\' is not one of [u\'No blinding is involved in this study.\', '
-            'u\'For studies that involve human subjects, they will not know the treatment group to which they have been assigned.\', '
-            'u\'Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.\', '
-            'u\'Research personnel who analyze the data collected from the study are not aware of the treatment applied to any given group.\']')
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Blinding\' field is invalid, your ' \
+                                                  'response must be one of the provided options.'
 
     def test_multiple_choice_questions(
             self, app, user, payload, url_draft_registrations):
