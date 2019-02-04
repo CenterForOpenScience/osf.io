@@ -1,4 +1,5 @@
 import pytz
+import markupsafe
 import logging
 
 from django.apps import apps
@@ -11,8 +12,8 @@ from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_pe
 
 from include import IncludeQuerySet
 
-from addons.base.utils import disconnect_addons
 from api.providers.workflows import Workflows, PUBLIC_STATES
+from framework import status
 from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
@@ -1207,7 +1208,7 @@ class ContributorMixin(models.Model):
 
         self.clear_permissions(contributor)
         # After remove callback
-        disconnect_addons(self, contributor, auth)
+        self.disconnect_addons(contributor, auth)
 
         if log:
             params = self.log_params
@@ -1519,6 +1520,26 @@ class ContributorMixin(models.Model):
             raise ValueError('User does not have permission {0}'.format(permission))
         if save:
             self.save()
+
+    def disconnect_addons(self, user, auth):
+        """
+        Loop through all the node's addons and remove user's authentication.
+        Used when removing users from nodes (either removing a contributor, removing an OSF Group,
+        removing an OSF Group from a node, or removing a member from an OSF group)
+        """
+        if not self.is_contributor_or_group_member(user):
+            for addon in self.get_addons():
+                # After remove callback
+                message = addon.after_remove_contributor(self, user, auth)
+                if message:
+                    # Because addons can return HTML strings, addons are responsible
+                    # for markupsafe-escaping any messages returned
+                    status.push_status_message(message, kind='info', trust=True, id='remove_addon', extra={
+                        'addon': markupsafe.escape(addon.config.full_name),
+                        'category': markupsafe.escape(self.category_display),
+                        'title': markupsafe.escape(self.title),
+                        'user': markupsafe.escape(user.fullname)
+                    })
 
 
 class SpamOverrideMixin(SpamMixin):

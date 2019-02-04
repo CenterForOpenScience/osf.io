@@ -1,6 +1,7 @@
 import bleach
 
 from django import forms
+from django.contrib.auth.models import Group
 
 from osf.models import PreprintProvider, Subject
 from admin.base.utils import (get_subject_rules, get_toplevel_subjects,
@@ -95,3 +96,19 @@ class PreprintProviderCustomTaxonomyForm(forms.Form):
             if hasattr(field, 'choices'):
                 if field.choices == []:
                     field.choices = subject_choices
+
+
+class PreprintProviderRegisterModeratorOrAdminForm(forms.Form):
+    """ A form that finds an existing OSF User, and grants permissions to that
+        user so that they can use the admin app"""
+
+    def __init__(self, *args, **kwargs):
+        provider_id = kwargs.pop('provider_id')
+        super(PreprintProviderRegisterModeratorOrAdminForm, self).__init__(*args, **kwargs)
+        self.fields['group_perms'] = forms.ModelMultipleChoiceField(
+            queryset=Group.objects.filter(name__startswith='reviews_preprint_{}'.format(provider_id)),
+            required=False,
+            widget=forms.CheckboxSelectMultiple
+        )
+
+    user_id = forms.CharField(required=True, max_length=5, min_length=5)

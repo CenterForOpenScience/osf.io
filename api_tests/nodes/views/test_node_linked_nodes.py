@@ -72,11 +72,11 @@ class TestNodeRelationshipNodeLinks:
 
     @pytest.fixture()
     def make_payload(self, node_admin):
-        def payload(node_ids=None):
+        def payload(node_ids=None, deprecated_type=True):
             node_ids = node_ids or [node_admin._id]
             env_linked_nodes = [
                 {
-                    'type': 'linked_nodes',
+                    'type': 'linked_nodes' if deprecated_type else 'nodes',
                     'id': node_id
                 } for node_id in node_ids]
             return {'data': env_linked_nodes}
@@ -139,6 +139,21 @@ class TestNodeRelationshipNodeLinks:
         res = app.post_json_api(
             url_private,
             make_payload([node_public._id]),
+            auth=user.auth
+        )
+
+        assert res.status_code == 201
+
+        ids = [data['id'] for data in res.json['data']]
+        assert node_public._id in ids
+        assert node_private._id in ids
+
+    def test_post_public_node_2_13(
+            self, app, user, node_private, node_public,
+            make_payload, url_private):
+        res = app.post_json_api(
+            '{}?version=2.13'.format(url_private),
+            make_payload([node_public._id], False),
             auth=user.auth
         )
 
@@ -370,6 +385,36 @@ class TestNodeRelationshipNodeLinks:
 
         assert res.status_code == 409
 
+    #   test_type_nodes_not_acceptable_below_2_13
+        res = app.post_json_api(
+            url_private,
+            {
+                'data': [{
+                    'type': 'nodes',
+                    'id': node_contrib._id
+                }]
+            },
+            auth=user.auth,
+            expect_errors=True
+        )
+
+        assert res.status_code == 409
+
+    #   test_type_linked_nodes_not_acceptable_as_of_2_13
+        res = app.post_json_api(
+            '{}?version=2.13'.format(url_private),
+            {
+                'data': [{
+                    'type': 'linked_nodes',
+                    'id': node_contrib._id
+                }]
+            },
+            auth=user.auth,
+            expect_errors=True
+        )
+
+        assert res.status_code == 409
+
     #   test_creates_public_linked_node_relationship_logged_out
         res = app.post_json_api(
             url_public, make_payload([node_public._id]),
@@ -487,6 +532,25 @@ class TestNodeLinkedNodes:
 
         for node_id in node_ids:
             assert node_id in nodes_returned
+
+    def test_linked_nodes_returns_everything_2_13(
+            self, app, user, node_ids, url_linked_nodes):
+        res = app.get('{}?version=2.13'.format(url_linked_nodes), auth=user.auth)
+
+        assert res.status_code == 200
+        nodes_returned = [
+            linked_node['id'] for linked_node in res.json['data']
+        ]
+        assert len(nodes_returned) == len(node_ids)
+
+        for node_id in node_ids:
+            assert node_id in nodes_returned
+
+        node_types = [
+            linked_node['type'] for linked_node in res.json['data']
+        ]
+        assert 'nodes' in node_types
+        assert 'linked_nodes' not in node_types
 
     def test_linked_nodes_only_return_viewable_nodes(
             self, app, user, node_one, node_two, node_public, node_ids):

@@ -9,7 +9,7 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
 
-from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, NodeSettings, Region
 from addons.wiki.models import NodeSettings as WikiNodeSettings
 from osf.models import AbstractNode, Preprint, Guid, NodeRelation, Contributor
 from osf.models.node import NodeGroupObjectPermission
@@ -87,6 +87,9 @@ class NodeOptimizationMixin(object):
         guid = Guid.objects.filter(content_type_id=abstract_node_contenttype_id, object_id=OuterRef('parent_id'))
         parent = NodeRelation.objects.annotate(parent__id=Subquery(guid.values('_id')[:1])).filter(child=OuterRef('pk'), is_node_link=False)
         wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
+        preprints = Preprint.objects.can_view(user=auth.user).filter(node_id=OuterRef('pk'))
+        region = Region.objects.filter(id=OuterRef('region_id'))
+        node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('_id')[:1])).filter(owner_id=OuterRef('pk'))
 
         admin_permission = Permission.objects.get(codename=permissions.ADMIN_NODE)
         write_permission = Permission.objects.get(codename=permissions.WRITE_NODE)
@@ -103,5 +106,7 @@ class NodeOptimizationMixin(object):
             has_wiki_addon=Exists(wiki_addon),
             annotated_parent_id=Subquery(parent.values('parent__id')[:1], output_field=CharField()),
             annotated_tags=ArrayAgg('tags__name'),
+            has_viewable_preprints=Exists(preprints),
             has_admin_scope=Value(admin_scope, output_field=BooleanField()),
+            region=Subquery(node_settings.values('region_abbrev')[:1]),
         )

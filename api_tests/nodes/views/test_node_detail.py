@@ -4,6 +4,7 @@ import pytest
 from urlparse import urlparse
 
 
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import NodeLog
@@ -131,6 +132,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert res.json['data']['attributes']['current_user_permissions'] == [permissions.ADMIN, permissions.WRITE, permissions.READ]
+        assert res.json['data']['relationships']['region']['data']['id'] == project_private.osfstorage_region._id
 
     #   test_return_private_project_details_logged_out
         res = app.get(url_private, expect_errors=True)
@@ -258,6 +260,17 @@ class TestNodeDetail:
         unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
         unread_comments_node = unread['node']
         assert unread_comments_node == 1
+
+    def test_node_has_correct_wiki_page_count(self, user, app, url_private, project_private):
+        res = app.get('{}?related_counts=True'.format(url_private), auth=user.auth)
+        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 0
+
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            wiki_page = WikiFactory(node=project_private, user=user)
+            WikiVersionFactory(wiki_page=wiki_page)
+
+        res = app.get('{}?related_counts=True'.format(url_private), auth=user.auth)
+        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
 
     def test_node_properties(self, app, url_public):
         res = app.get(url_public)

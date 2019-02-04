@@ -12,7 +12,7 @@ from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
-from api.base.serializers import AddonAccountSerializer
+from api.base.serializers import get_meta_type, AddonAccountSerializer
 from api.base.utils import (
     default_node_list_permission_queryset,
     get_object_or_error,
@@ -547,7 +547,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         # DELETEs normally dont get type checked
         # not the best way to do it, should be enforced everywhere, maybe write a test for it
         for val in data:
-            if val['type'] != self.serializer_class.Meta.type_:
+            if val['type'] != get_meta_type(self.serializer_class, self.request):
                 raise Conflict()
         for val in data:
             if val['id'] in current_institutions:
@@ -869,10 +869,9 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
             hashed_id = hashids.encode(email.id)
             serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, verified=True, primary=primary)
             serialized_emails.append(serialized_email)
-        email_verifications = user.email_verifications or []
-        for token in email_verifications:
-            is_merge = Email.objects.filter(address=email.address).exists()
-            detail = user.email_verifications[token]
+        email_verifications = user.email_verifications or {}
+        for token, detail in email_verifications.iteritems():
+            is_merge = Email.objects.filter(address=detail['email']).exists()
             serialized_unconfirmed_email = UserEmail(
                 email_id=token,
                 address=detail['email'],

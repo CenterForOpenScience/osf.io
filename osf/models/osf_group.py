@@ -7,7 +7,6 @@ from django.dispatch import receiver
 from guardian.shortcuts import assign_perm, remove_perm, get_perms, get_objects_for_group, get_group_perms
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
-from addons.base.utils import disconnect_addons
 from framework.exceptions import PermissionsError
 from framework.auth.core import get_user, Auth
 from framework.sentry import log_exception
@@ -287,7 +286,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
         for node in self.nodes:
             project_signals.contributor_removed.send(node, user=user)
-            disconnect_addons(node, user, auth)
+            node.disconnect_addons(user, auth)
 
     def set_group_name(self, name, auth=None):
         """Set the name of the group.
@@ -401,7 +400,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         node.update_search()
 
         for user in self.members:
-            disconnect_addons(node, user, auth)
+            node.disconnect_addons(user, auth)
             project_signals.contributor_removed.send(node, user=user)
 
     def get_permission_to_node(self, node):
@@ -442,7 +441,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
         for user in OSFUser.objects.filter(id__in=members):
             for node in nodes:
-                disconnect_addons(node, user, auth)
+                node.disconnect_addons(user, auth)
                 params = {
                     'group': group_id,
                     'node': node._id,

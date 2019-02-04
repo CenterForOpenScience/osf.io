@@ -69,6 +69,12 @@ class TestPreprintNodeRelationship:
         assert res.json['data']['id'] == supplemental_project._id
         assert url in res.json['links']['self']
 
+        res = app.get('{}?version=2.13'.format(url), auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['type'] == 'nodes'
+        assert res.json['data']['id'] == supplemental_project._id
+        assert url in res.json['links']['self']
+
         # No permission to the supplemental node
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
