@@ -9,7 +9,7 @@ from osf.utils.workflows import ChronosSubmissionStatus, ReviewStates
 from addons.osfstorage.models import OsfStorageFile
 from website.settings import (
     DOMAIN, CHRONOS_USE_FAKE_FILE, CHRONOS_FAKE_FILE_URL,
-    CHRONOS_API_KEY, CHRONOS_USERNAME, CHRONOS_PASSWORD, CHRONOS_HOST, DEBUG_MODE
+    CHRONOS_API_KEY, CHRONOS_USERNAME, CHRONOS_PASSWORD, CHRONOS_HOST, VERIFY_CHRONOS_SSL_CERT
 )
 
 
@@ -240,7 +240,7 @@ class ChronosRestClient(object):
     def __init__(self, username, password, api_key, host='http://sandbox.api.chronos-oa.com'):
         self._auth_key = None
         self._session = requests.Session()
-        self._session.verify = not DEBUG_MODE
+        self._session.verify = VERIFY_CHRONOS_SSL_CERT
 
         self._api_key = api_key
         self._host = host

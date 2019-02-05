@@ -1898,5 +1898,6 @@ CHRONOS_USERNAME = os_env.get('CHRONOS_USERNAME', '')
 CHRONOS_PASSWORD = os_env.get('CHRONOS_PASSWORD', '')
 CHRONOS_API_KEY = os_env.get('CHRONOS_API_KEY', '')
 CHRONOS_HOST = os_env.get('CHRONOS_HOST', 'http://sandbox.api.chronos-oa.com')
+VERIFY_CHRONOS_SSL_CERT = not DEV_MODE
 # Maximum minutes we allow ChronosSubmission status to be stale (only update when user is requesting it)
 CHRONOS_SUBMISSION_UPDATE_TIME = timedelta(minutes=5)
