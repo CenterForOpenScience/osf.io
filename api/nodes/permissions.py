@@ -105,8 +105,12 @@ class AdminOrPublic(permissions.BasePermission):
     acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings,)
 
     def has_object_permission(self, request, view, obj):
+        if isinstance(obj, dict) and 'self' in obj:
+            obj = obj['self']
+
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
+
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
         else:
@@ -224,18 +228,6 @@ class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
             return node.is_public or node.can_view(auth)
         else:
             return node.has_permission(auth.user, osf_permissions.WRITE)
-
-
-class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, dict)
-        auth = get_user_auth(request)
-        node = obj['self']
-
-        if request.method in permissions.SAFE_METHODS:
-            return node.is_public or node.can_view(auth)
-        else:
-            return node.has_permission(auth.user, osf_permissions.ADMIN)
 
 
 class ReadOnlyIfRegistration(permissions.BasePermission):

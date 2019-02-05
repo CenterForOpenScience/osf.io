@@ -25,7 +25,6 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ContributorOrPublic,
     ContributorOrPublicForRelationshipPointers,
-    AdminOrPublicForRelationshipInstitutions,
     AdminOrPublic,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
@@ -527,12 +526,13 @@ class RegistrationInstitutionsRelationship(NodeInstitutionsRelationship, Registr
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublicForRelationshipInstitutions,
+        AdminOrPublic,
     )
 
 
 class RegistrationWikiList(NodeWikiList, RegistrationMixin):
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_wikis_list).
+    """
     view_category = 'registrations'
     view_name = 'registration-wikis'
 
