@@ -35,7 +35,7 @@ class TestTokenListScopesasRelationships:
 
     @pytest.fixture()
     def url_token_list(self):
-        return api_v2_url('tokens/?version=2.11', base_route='/')
+        return api_v2_url('tokens/?version=2.15', base_route='/')
 
     @pytest.fixture()
     def read_scope(self):
@@ -329,7 +329,7 @@ class TestTokenListScopesAsAttributes:
 
     @pytest.mark.enable_implicit_clean
     def test_invalid_token_creation(
-            self, app, url_token_list, data_sample, user_one):
+            self, app, url_token_list, data_sample, user_one, tokens_user_one, write_token):
         # cannot create a token with a name over 100 characters
         data_sample['data']['attributes']['name'] = 'a' * 101
         res = app.post_json_api(
