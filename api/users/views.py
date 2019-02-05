@@ -31,8 +31,8 @@ from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.education.serializers import EducationSerializer
-from api.employment.serializers import EmploymentSerializer
+from api.education.serializers import EducationSerializer, EducationDetailSerializer
+from api.employment.serializers import EmploymentSerializer, EmploymentDetailSerializer
 
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
@@ -436,13 +436,13 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         return self.get_queryset_from_request()
 
 
-class UserEducation(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
+class UserEducationList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUser,
     )
 
-    # TODO - ordering! https://jsonapi.org/format/1.1/#crud-updating-to-many-relationships
     ordering = ('-created')
 
     serializer_class = EducationSerializer
@@ -457,7 +457,26 @@ class UserEducation(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilter
         return self.get_queryset_from_request()
 
 
-class UserEmployment(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
+class UserEducationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUser,
+    )
+
+    ordering = ('-created')
+
+    serializer_class = EducationDetailSerializer
+    view_category = 'users'
+    view_name = 'user-education-detail'
+
+    def get_object(self):
+        education = get_object_or_error(Education, self.kwargs['education_id'], self.request)
+        self.check_object_permissions(self.request, education)
+        return education
+
+
+class UserEmploymentList(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -469,6 +488,27 @@ class UserEmployment(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilte
     serializer_class = EmploymentSerializer
     view_category = 'users'
     view_name = 'user-employment'
+
+    def get_default_queryset(self):
+        user = self.get_user(check_permissions=True)
+        return Employment.objects.filter(user=user)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class UserEmploymentDetail(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    # TODO - ordering! https://jsonapi.org/format/1.1/#crud-updating-to-many-relationships
+    ordering = ('-created')
+
+    serializer_class = EmploymentDetailSerializer
+    view_category = 'users'
+    view_name = 'user-employment-detail'
 
     def get_default_queryset(self):
         user = self.get_user(check_permissions=True)
@@ -633,10 +673,9 @@ class UserEducationRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyA
     def perform_destroy(self, instance):
         data = self.request.data['data']
         user = self.request.user
-        current_education = set(user.education.values_list('_id', flat=True))
-
         for val in data:
-            if val['id'] in current_education:
+            education = get_object_or_error(Education, Q(_id=val['id']), self.request)
+            if education in user.education.all():
                 user.remove_education(val['id'])
         user.save()
 
@@ -672,10 +711,9 @@ class UserEmploymentRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroy
     def perform_destroy(self, instance):
         data = self.request.data['data']
         user = self.request.user
-        current_employment = set(user.employment.values_list('_id', flat=True))
-
         for val in data:
-            if val['id'] in current_employment:
+            employment = get_object_or_error(Employment, Q(_id=val['id']), self.request)
+            if employment in user.employment.all():
                 user.remove_employment(val['id'])
         user.save()
 
