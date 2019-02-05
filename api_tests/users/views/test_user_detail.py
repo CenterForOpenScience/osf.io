@@ -122,6 +122,15 @@ class TestUserDetail:
         href_url = user_json['relationships']['registrations']['links']['related']['href']
         assert registration_url in href_url
 
+    def test_education_employment_relationships(self, app, user_one):
+        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        education_url = '/{}users/{}/education/'.format(API_BASE, user_one._id)
+        employment_url = '/{}users/{}/employment/'.format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_json = res.json['data']
+        assert education_url in user_json['relationships']['education']['links']['related']['href']
+        assert employment_url in user_json['relationships']['employment']['links']['related']['href']
+
     def test_nodes_relationship_is_absent(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
