@@ -39,10 +39,10 @@ class FileMixin(object):
             obj = utils.get_object_or_error(BaseFileNode, self.kwargs[self.file_lookup_url_kwarg], self.request, display_name='file')
         except NotFound:
             obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg], self.request).referent
-            if obj.is_deleted:
-                raise Gone(detail='The requested file is no longer available.')
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
+            if obj.is_deleted:
+                raise Gone(detail='The requested file is no longer available.')
 
         if getattr(obj.target, 'deleted', None):
             raise Gone(detail='The requested file is no longer available')
