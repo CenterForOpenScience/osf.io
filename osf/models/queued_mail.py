@@ -130,6 +130,14 @@ NO_LOGIN = {
     'engagement': True
 }
 
+NO_SUPPLEMENTAL_NODE = {
+    'template': 'no_supplemental_node',
+    'subject': 'Add supplemental files to your ${preprint_word}',
+    'presend': presends.no_supplemental_node,
+    'categories': ['engagement', 'engagement-no-supplemental-node'],
+    'engagement': True
+}
+
 NEW_PUBLIC_PROJECT = {
     'template': 'new_public_project',
     'subject': 'Now, public. Next, impact.',
@@ -147,6 +155,7 @@ WELCOME_OSF4M = {
     'engagement': True
 }
 
+NO_SUPPLEMENTAL_NODE_TYPE = 'no_supplemental_node'
 NO_ADDON_TYPE = 'no_addon'
 NO_LOGIN_TYPE = 'no_login'
 NEW_PUBLIC_PROJECT_TYPE = 'new_public_project'
@@ -155,6 +164,7 @@ WELCOME_OSF4M_TYPE = 'welcome_osf4m'
 
 # Used to keep relationship from stored string 'email_type' to the predefined queued_email objects.
 queue_mail_types = {
+    NO_SUPPLEMENTAL_NODE_TYPE: NO_SUPPLEMENTAL_NODE,
     NO_ADDON_TYPE: NO_ADDON,
     NO_LOGIN_TYPE: NO_LOGIN,
     NEW_PUBLIC_PROJECT_TYPE: NEW_PUBLIC_PROJECT,

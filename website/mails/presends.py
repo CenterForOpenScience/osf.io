@@ -3,6 +3,13 @@ from django.utils import timezone
 
 from website import settings
 
+def no_supplemental_node(email):
+    print(email)
+    from osf.models import Preprint
+    preprint = Preprint.load(email.data['preprint_id'])
+    same_type_emails = email.find_sent_of_same_type_and_user()
+    return preprint.node is None and preprint.machine_state == 'accepted' and not len(same_type_emails)
+
 def no_addon(email):
     return len([addon for addon in email.user.get_addons() if addon.config.short_name != 'osfstorage']) == 0
 

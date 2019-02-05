@@ -168,6 +168,7 @@ OSF_HELP_LIST = 'Open Science Framework Help'
 PREREG_AGE_LIMIT = timedelta(weeks=12)
 PREREG_WAIT_TIME = timedelta(weeks=2)
 WAIT_BETWEEN_MAILS = timedelta(days=7)
+NO_SUPPLEMENTAL_NODE_WAIT_TIME = timedelta()
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)
 NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
 WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)

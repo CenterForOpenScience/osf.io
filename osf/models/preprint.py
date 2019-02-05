@@ -34,6 +34,7 @@ from osf.utils.requests import DummyRequest, get_request_and_user_id, get_header
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
+from website.preprints import signals as preprint_signals
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
@@ -570,6 +571,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 save=False,
             )
             self._send_preprint_confirmation(auth)
+            self._queue_no_supplemental_node_email()
 
         if save:
             self.save()
@@ -681,6 +683,15 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             user=recipient,
             **context
         )
+
+    def _queue_no_supplemental_node_email(self):
+        # If the preprint is not submitted to a moderated provider
+        # and doesn't have a supplemental node
+        # we queue an engagement email to be sent to the contributors
+        # For moderated providers, we handle it in the notify_accept_reject hook
+        if self.provider.reviews_workflow is None and self.node is None:
+            for contributor in self.contributors:
+                preprint_signals.preprint_submitted.send(contributor, preprint=self)
 
     # FOLLOWING BEHAVIOR NOT SPECIFIC TO PREPRINTS
 

@@ -6,9 +6,27 @@ from django.utils import timezone
 
 from website import settings
 from framework.auth import signals as auth_signals
+from website.preprints import signals as preprint_signals
 from website.project import signals as project_signals
 from website.conferences import signals as conference_signals
 
+@preprint_signals.preprint_submitted.connect
+def queue_no_supplemental_node_email(user, preprint):
+    """Queue an email for user who has just submitted a preprint
+    with no supplemental nodes.
+    """
+    from osf.models.queued_mail import queue_mail, NO_SUPPLEMENTAL_NODE
+    queue_mail(
+        to_addr=user.username,
+        mail=NO_SUPPLEMENTAL_NODE,
+        send_at=timezone.now() + settings.NO_SUPPLEMENTAL_NODE_WAIT_TIME,
+        user=user,
+        fullname=user.fullname,
+        title=preprint.title,
+        provider_name=preprint.provider.name,
+        preprint_word=preprint.provider.preprint_word,
+        preprint_id=preprint._id
+    )
 
 @auth_signals.unconfirmed_user_created.connect
 def queue_no_addon_email(user):

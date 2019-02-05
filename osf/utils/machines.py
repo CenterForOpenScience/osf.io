@@ -9,6 +9,7 @@ from osf.models.preprintlog import PreprintLog
 from osf.utils import permissions
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, DEFAULT_TRANSITIONS, REVIEWABLE_TRANSITIONS
 from website.mails import mails
+from website.preprints import signals as preprint_signals
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
@@ -143,6 +144,16 @@ class ReviewsMachine(BaseMachine):
         reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
                                            template='reviews_submission_status',
                                            action=self.action)
+        # If the preprint is accepted and doesn't have a supplemental node
+        # We queue an engagement email to be sent to the contributors
+        # This is only for moderated providers
+        # For non-moderated providers, we handle in the set_published() hook of Preprint model.
+        if self.action.from_state == DefaultStates.PENDING.value and \
+                        self.action.to_state == DefaultStates.ACCEPTED.value and \
+                        self.machineable.node is None:
+            for contributor in self.machineable.contributors:
+                preprint_signals.preprint_submitted.send(contributor, preprint=self.machineable)
+
     def notify_edit_comment(self, ev):
         context = self.get_context()
         context['comment'] = self.action.comment
