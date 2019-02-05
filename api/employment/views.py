@@ -9,12 +9,13 @@ from api.employment.serializers import EmploymentSerializer
 from api.base.views import JSONAPIBaseView
 
 
-class EmploymentDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+class EmploymentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     """The documentation for this endpoint is coming soon!
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        base_permissions.CurrentUserOrReadOnly,
     )
 
     required_read_scopes = [CoreScopes.EMPLOYMENT_READ]
@@ -37,12 +38,13 @@ class EmploymentDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return education_entry
 
 
-class EmploymentList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class EmploymentList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     """The documentation for this endpoint is coming soon!
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        base_permissions.CurrentUserOrReadOnly,
     )
 
     required_read_scopes = [CoreScopes.EDUCATION_READ]
