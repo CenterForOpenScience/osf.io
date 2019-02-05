@@ -91,6 +91,13 @@ def json_api_exception_handler(exc, context):
     return response
 
 
+def format_validation_error(e):
+    error_list = []
+    for key, value in e.message_dict.items():
+        error_list.append('There was an issue with the {} field. {}'.format(key, value[0]))
+    return error_list
+
+
 class EndpointNotImplementedError(APIException):
     status_code = status.HTTP_501_NOT_IMPLEMENTED
     default_detail = _('This endpoint is not yet implemented.')
