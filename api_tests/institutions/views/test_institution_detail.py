@@ -20,3 +20,13 @@ class TestInstitutionDetail:
         res = app.get(url)
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == institution.name
+        assert 'logo_path' in res.json['data']['attributes']
+        assert 'assets' in res.json['data']['attributes']
+        assert 'logo' in res.json['data']['attributes']['assets']
+        assert 'logo_rounded' in res.json['data']['attributes']['assets']
+
+        # test_return_without_logo_path
+        url = '/{}institutions/{}/?version=2.14&'.format(API_BASE, institution._id)
+        res = app.get(url)
+        assert res.status_code == 200
+        assert 'logo_path' not in res.json['data']['attributes']
