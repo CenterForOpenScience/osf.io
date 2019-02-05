@@ -244,6 +244,30 @@ class InstitutionFactory(DjangoModelFactory):
     class Meta:
         model = models.Institution
 
+class EducationFactory(DjangoModelFactory):
+    user = SubFactory(UserFactory)
+    institution = factory.Faker('company')
+    department = factory.Faker('word')
+    degree = factory.Faker('word')
+    start_date = factory.Faker('date')
+    end_date = factory.Faker('date')
+    ongoing = False
+
+    class Meta:
+        model = models.Education
+
+class EmploymentFactory(DjangoModelFactory):
+    user = SubFactory(UserFactory)
+    institution = factory.Faker('company')
+    department = factory.Faker('word')
+    title = factory.Faker('word')
+    start_date = factory.Faker('date')
+    end_date = factory.Faker('date')
+    ongoing = False
+
+    class Meta:
+        model = models.Employment
+
 
 class NodeLicenseRecordFactory(DjangoModelFactory):
     year = factory.Faker('year')
