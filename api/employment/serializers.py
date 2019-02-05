@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 from api.base.utils import absolute_reverse
-from api.base.serializers import BaseProfileSerializer
+from api.base.serializers import BaseProfileSerializer, IDField
 
 
 class EmploymentSerializer(BaseProfileSerializer):
@@ -16,3 +16,13 @@ class EmploymentSerializer(BaseProfileSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+class EmploymentDetailSerializer(EmploymentSerializer):
+    institution = ser.CharField(required=False)
+    id = IDField(source='_id', required=True)
+
+    def update(self, employment, validated_data):
+        for attr, value in validated_data.items():
+            setattr(employment, attr, value)
+        employment.save()
+        return employment

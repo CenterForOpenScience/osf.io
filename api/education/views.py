@@ -5,16 +5,17 @@ from osf.models import Education
 from api.base.filters import ListFilterMixin
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
-from api.education.serializers import EducationSerializer
+from api.education.serializers import EducationSerializer, EducationDetailSerializer
 from api.base.views import JSONAPIBaseView
 
 
-class EducationDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+class EducationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     """The documentation for this endpoint is coming soon!
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        base_permissions.CurrentUserOrReadOnly,
     )
 
     required_read_scopes = [CoreScopes.EDUCATION_READ]
@@ -24,6 +25,15 @@ class EducationDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_category = 'education'
     view_name = 'education-detail'
     lookup_url_kwarg = 'education_id'
+
+    def get_serializer_class(self):
+        """
+        Use EducationDetailSerializer which requires 'id' and does not require institution
+        """
+        if self.request.method in ('PUT', 'PATCH', 'DELETE'):
+            return EducationDetailSerializer
+        else:
+            return EducationSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -37,12 +47,13 @@ class EducationDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return education_entry
 
 
-class EducationList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class EducationList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     """The documentation for this endpoint is coming soon!
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        base_permissions.CurrentUserOrReadOnly,
     )
 
     required_read_scopes = [CoreScopes.EDUCATION_READ]
