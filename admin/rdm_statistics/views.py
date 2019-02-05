@@ -44,6 +44,8 @@ from admin.base import settings
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 from admin.rdm_addons import utils
 
+import logging
+logger = logging.getLogger(__name__)
 
 RANGE_STATISTICS = 10
 STATISTICS_IMAGE_WIDTH = 8
@@ -576,10 +578,26 @@ class GatherView(TemplateView):
                 if not ext:
                     ext = 'none'
                 if obj['attributes']['kind'] == 'file':
-                    self.count_list.append(['file', obj['id'], obj['attributes']['size'], ext])
+                    try:
+                        self.count_list.append(['file', obj['id'], int(obj['attributes']['size'] if obj['attributes']['size'] else 0), ext])
+                    except Exception as err:
+                        logger.error('resource:{} {}{} error occured (file size:{}). - {}'.format(obj['attributes']['resource'],
+                                                                                                  obj['attributes']['provider'],
+                                                                                                  obj['attributes']['path'],
+                                                                                                  obj['attributes']['size'],
+                                                                                                  err))
+                        pass
                 elif obj['attributes']['kind'] == 'folder':
                     path = re.sub('^' + provider, '', obj['id'])
-                    self.count_list.append(['folder', obj['id'], obj['attributes']['size'], ext])
+                    try:
+                        self.count_list.append(['folder', obj['id'], int(obj['attributes']['size'] if obj['attributes']['size'] else 0), ext])
+                    except Exception as err:
+                        logger.error('resource:{} {}{} error occured (file size:{}). - {}'.format(obj['attributes']['resource'],
+                                                                                                  obj['attributes']['provider'],
+                                                                                                  obj['attributes']['path'],
+                                                                                                  obj['attributes']['size'],
+                                                                                                  err))
+                        pass
                     self.count_project_files(provider=provider, node_id=node_id, path='/' + path, cookies=cookies)
 
 def simple_auth(access_token):
