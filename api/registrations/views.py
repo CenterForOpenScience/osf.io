@@ -136,12 +136,20 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
                 if not registration.can_edit(auth):
                     raise PermissionDenied
             return registrations
+
         blacklisted = self.is_blacklisted()
         registrations = self.get_queryset_from_request()
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
-            return registrations.exclude(retraction__isnull=False)
-        return registrations
+            registrations = registrations.exclude(retraction__isnull=False)
+
+        return registrations.select_related(
+            'root',
+            'root__embargo',
+            'root__embargo_termination_approval',
+            'root__retraction',
+            'root__registration_approval',
+        )
 
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
@@ -149,7 +157,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
+        ContributorOrPublic,
         base_permissions.TokenHasScope,
     )
 

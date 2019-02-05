@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import itsdangerous
 import mock
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import unittest
 from django.utils import timezone
 
@@ -14,7 +14,6 @@ from osf_tests.factories import (
 
 from api.base.settings.defaults import API_BASE
 
-from framework.auth.oauth_scopes import public_scopes
 from framework.auth.cas import CasResponse
 from website import settings
 from osf.models import ApiOAuth2PersonalToken, Session

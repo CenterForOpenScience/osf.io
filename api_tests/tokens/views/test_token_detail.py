@@ -54,12 +54,12 @@ class TestTokenDetailScopesAsRelationships:
 
     @pytest.fixture()
     def url_token_detail(self, user_one, token_user_one):
-        path = 'tokens/{}/?version=2.11'.format(token_user_one._id)
+        path = 'tokens/{}/?version=2.15'.format(token_user_one._id)
         return api_v2_url(path, base_route='/')
 
     @pytest.fixture()
     def url_token_list(self):
-        return api_v2_url('tokens/?version=2.11', base_route='/')
+        return api_v2_url('tokens/?version=2.15', base_route='/')
 
     @pytest.fixture()
     def read_scope(self):
@@ -225,9 +225,12 @@ class TestTokenDetailScopesAsRelationships:
         assert scopes_data[0]['id'] == scope.name
         assert scope.name != original_scope.name
 
+    @pytest.mark.enable_implicit_clean
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_token_detail_crud_with_wrong_payload(
-            self, app, url_token_list, url_token_detail,
+            self, mock_revoke, app, url_token_list, url_token_detail,
             token_user_one, user_one, user_two):
+        mock_revoke.return_value = True
 
         # test_non_owner_cant_delete
         res = app.delete(
@@ -606,6 +609,15 @@ class TestTokenDetailScopesAsAttributes:
         res = app.patch_json_api(
             url_token_detail,
             missing_type,
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+
+        # test token too long
+        payload = post_payload(name='A' * 101)
+        res = app.put_json_api(
+            url_token_detail,
+            payload,
             auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400

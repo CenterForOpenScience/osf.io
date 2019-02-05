@@ -26,7 +26,7 @@ class TestTokenScopes:
 
     @pytest.fixture()
     def url_token_scopes_list(self, token_user_one):
-        return api_v2_url('tokens/{}/scopes/?version=2.11'.format(token_user_one._id), base_route='/')
+        return api_v2_url('tokens/{}/scopes/?version=2.15'.format(token_user_one._id), base_route='/')
 
     @pytest.fixture()
     def read_scope(self):
@@ -49,6 +49,6 @@ class TestTokenScopes:
         assert res.status_code == 401
 
         # Token not found
-        url = api_v2_url('tokens/{}/scopes/?version=2.11'.format('bad_token'), base_route='/')
+        url = api_v2_url('tokens/{}/scopes/?version=2.15'.format('bad_token'), base_route='/')
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404

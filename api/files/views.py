@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -39,10 +39,13 @@ class FileMixin(object):
             obj = utils.get_object_or_error(BaseFileNode, self.kwargs[self.file_lookup_url_kwarg], self.request, display_name='file')
         except NotFound:
             obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg], self.request).referent
-            if obj.is_deleted:
-                raise Gone(detail='The requested file is no longer available.')
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
+            if obj.is_deleted:
+                raise Gone(detail='The requested file is no longer available.')
+
+        if getattr(obj.target, 'deleted', None):
+            raise Gone(detail='The requested file is no longer available')
 
         if getattr(obj.target, 'is_quickfiles', False) and getattr(obj.target, 'creator'):
             if obj.target.creator.is_disabled:
@@ -77,7 +80,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     def get_serializer_class(self):
         try:
             target = self.get_target()
-        except (NotFound, Gone):
+        except (NotFound, Gone, PermissionDenied):
             return FileDetailSerializer
         else:
             if isinstance(target, QuickFilesNode):

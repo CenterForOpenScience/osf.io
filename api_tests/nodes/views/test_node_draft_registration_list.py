@@ -57,10 +57,13 @@ class DraftRegistrationTestCase:
 
             for key, value in json_schema['properties'].items():
                 response = 'Test response'
-                if value['properties']['value'].get('enum'):
-                    response = value['properties']['value']['enum'][0]
-
-                if value['properties']['value'].get('properties'):
+                items = value['properties']['value'].get('items')
+                enum = value['properties']['value'].get('enum')
+                if items:  # multiselect
+                    response = [items['enum'][0]]
+                elif enum:  # singleselect
+                    response = enum[0]
+                elif value['properties']['value'].get('properties'):
                     response = {'question': {'value': 'Test Response'}}
 
                 test_metadata[key] = {'value': response}
@@ -346,36 +349,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
 
-    #   test_registration_supplement_must_be_most_recent_metaschema
-        schema = RegistrationSchema.objects.get(
-            name='Open-Ended Registration', schema_version=1)
-        draft_data = {
-            'data': {
-                'type': 'draft_registrations',
-                'attributes': {},
-                'relationships': {
-                    'registration_schema': {
-                        'data': {
-                            'type': 'registration_schema',
-                            'id': schema._id
-                        }
-                    },
-                    'provider': {
-                        'data': {
-                            'type': 'registration-providers',
-                            'id': provider._id,
-                        }
-                    }
-                }
-            }
-        }
-        res = app.post_json_api(
-            url_draft_registrations,
-            draft_data, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
-
     def test_cannot_create_draft_errors(
             self, app, user, project_public, payload):
 
@@ -508,7 +481,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'No, data collection has not begun\' is not of type \'object\''
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' field' \
+                                   ' is invalid, your response must be one of the provided options.'
 
     def test_registration_metadata_question_keys_must_be_value(
             self, app, user, payload, url_draft_registrations):
@@ -527,7 +501,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'incorrect_key\' was unexpected)'
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' ' \
+                                   'field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_metadata_must_be_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -547,7 +522,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'q11\' was unexpected)'
+        assert errors['detail'] == 'For your registration the \'datacompletion\' field is extraneous and not' \
+                                   ' permitted in your response.'
 
     def test_multiple_choice_question_value_must_match_value_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -566,7 +542,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'Nope, data collection has not begun\' is not one of [u\'No, data collection has not begun\', u\'Yes, data collection is underway or complete\']'
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
+                                   ' field is invalid, your response must be one of the provided options.'
 
     def test_reviewer_cannot_create_draft_registration(
             self, app, user_read_contrib, project_public,

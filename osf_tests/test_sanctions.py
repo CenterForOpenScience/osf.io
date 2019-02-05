@@ -8,12 +8,11 @@ from django.utils import timezone
 from django.contrib.auth.models import Permission
 
 from osf.models import DraftRegistrationApproval, RegistrationSchema, NodeLog
+from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
 
 from framework.auth import Auth
-
-from website.exceptions import NodeStateError
 
 
 @pytest.mark.django_db

@@ -11,7 +11,7 @@ from framework.exceptions import PermissionsError
 from framework.sessions import set_session
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from osf.utils import permissions
 from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
@@ -42,6 +42,7 @@ from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
+from osf.utils.workflows import DefaultStates
 from framework.auth.core import Auth
 
 from osf_tests.factories import (
@@ -52,9 +53,9 @@ from osf_tests.factories import (
     NodeLogFactory,
     UserFactory,
     UnregUserFactory,
+    PreprintFactory,
     RegistrationFactory,
     DraftRegistrationFactory,
-    PreprintFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     NodeRelationFactory,
@@ -90,6 +91,10 @@ def auth(user):
 @pytest.fixture()
 def subject():
     return SubjectFactory()
+
+@pytest.fixture()
+def preprint(user):
+    return PreprintFactory(creator=user)
 
 
 class TestParentNode:
@@ -215,11 +220,17 @@ class TestParentNode:
         assert greatgrandchild_1 in Node.objects.get_children(root).all()
         assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
 
+        assert 21 == Node.objects.get_children(root, include_root=True).count()
+        assert root in Node.objects.get_children(root, include_root=True)
+
     def test_get_children_root_with_no_children(self):
         root = ProjectFactory()
 
         assert 0 == len(Node.objects.get_children(root))
         assert isinstance(Node.objects.get_children(root), AbstractNodeQuerySet)
+
+        assert 1 == Node.objects.get_children(root, include_root=True).count()
+        assert root in Node.objects.get_children(root, include_root=True)
 
     def test_get_children_child_with_no_children(self):
         root = ProjectFactory()
@@ -228,6 +239,9 @@ class TestParentNode:
         assert 0 == Node.objects.get_children(child).count()
         assert isinstance(Node.objects.get_children(child), AbstractNodeQuerySet)
 
+        assert 1 == Node.objects.get_children(child, include_root=True).count()
+        assert child in Node.objects.get_children(child, include_root=True)
+
     def test_get_children_with_nested_projects(self):
         root = ProjectFactory()
         child = NodeFactory(parent=root)
@@ -235,6 +249,9 @@ class TestParentNode:
         result = Node.objects.get_children(child)
         assert result.count() == 1
         assert grandchild in result
+
+        assert 2 == Node.objects.get_children(child, include_root=True).count()
+        assert child in Node.objects.get_children(child, include_root=True)
 
     def test_get_children_with_links(self):
         root = ProjectFactory()
@@ -262,6 +279,7 @@ class TestParentNode:
         greatgrandchild_1.add_node_link(child, auth=Auth(child.creator))
 
         assert 20 == len(Node.objects.get_children(root))
+        assert 21 == len(Node.objects.get_children(root, include_root=True))
 
     def test_get_roots(self):
         top_level1 = ProjectFactory(is_public=True)
@@ -550,11 +568,11 @@ class TestNodeMODMCompat:
             node.save()
         assert excinfo.value.message_dict == {'title': ['This field cannot be blank.']}
 
-        too_long = 'a' * 201
+        too_long = 'a' * 513
         node = NodeFactory.build(title=too_long)
         with pytest.raises(ValidationError) as excinfo:
             node.save()
-        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
+        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 512 characters.']}
 
     def test_querying_on_guid_id(self):
         node = NodeFactory()
@@ -1761,7 +1779,7 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=1)
+        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
         data = {'some': 'data'}
         reg = root.register_node(
@@ -1999,7 +2017,7 @@ class TestNodeSpam:
                 project.set_privacy('private')
                 assert project.check_spam(user, None, None) is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail, project, user):
@@ -2027,7 +2045,7 @@ class TestNodeSpam:
                 project3.reload()
                 assert project3.is_public is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail, project, user):
@@ -3063,24 +3081,6 @@ def test_querying_on_contributors(node, user, auth):
     assert deleted not in result2
 
 
-@pytest.mark.enable_implicit_clean
-class TestDOIValidation:
-
-    def test_validate_bad_doi(self):
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='nope').save()
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='https://doi.org/10.123.456').save()  # should save the bare DOI, not a URL
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
-
-    def test_validate_good_doi(self, node):
-        doi = '10.11038/nwooo1170'
-        node.preprint_article_doi = doi
-        node.save()
-        assert node.preprint_article_doi == doi
-
-
 class TestLogMethods:
 
     @pytest.fixture()
@@ -3330,7 +3330,7 @@ class TestNodeUpdate:
 
     def test_set_title_fails_if_too_long(self, user, auth):
         proj = ProjectFactory(title='That Was Then', creator=user)
-        long_title = ''.join('a' for _ in range(201))
+        long_title = ''.join('a' for _ in range(513))
         with pytest.raises(ValidationValueError):
             proj.set_title(long_title, auth=auth)
 
@@ -3714,7 +3714,7 @@ class TestRemoveNode:
 
     def test_remove_project_without_children(self, parent_project, project, auth):
         project.remove_node(auth=auth)
-
+        project.reload()
         assert project.is_deleted
         # parent node should have a log of the event
         assert (
@@ -3725,20 +3725,30 @@ class TestRemoveNode:
     def test_delete_project_log_present(self, project, parent_project, auth):
         project.remove_node(auth=auth)
         parent_project.remove_node(auth=auth)
-
+        parent_project.reload()
         assert parent_project.is_deleted
         # parent node should have a log of the event
         assert parent_project.logs.latest().action == 'project_deleted'
 
-    def test_remove_project_with_project_child_fails(self, parent_project, project, auth):
-        with pytest.raises(NodeStateError):
-            parent_project.remove_node(auth)
+    def test_remove_project_with_project_child_deletes_all_in_hierarchy(self, parent_project, project, auth):
+        parent_project.remove_node(auth=auth)
+        parent_project.reload()
+        project.reload()
 
-    def test_remove_project_with_component_child_fails(self, user, project, parent_project, auth):
-        NodeFactory(creator=user, parent=project)
+        assert parent_project.is_deleted
+        assert project.is_deleted
 
-        with pytest.raises(NodeStateError):
-            parent_project.remove_node(auth)
+    def test_remove_project_with_component_child_deletes_all_in_hierarchy(self, user, project, parent_project, auth):
+        component = NodeFactory(creator=user, parent=project)
+
+        parent_project.remove_node(auth)
+        parent_project.reload()
+        project.reload()
+        component.reload()
+
+        assert parent_project.is_deleted
+        assert project.is_deleted
+        assert component.is_deleted
 
     def test_remove_project_with_pointer_child(self, auth, user, project, parent_project):
         target = ProjectFactory(creator=user)
@@ -3747,13 +3757,40 @@ class TestRemoveNode:
         assert project.linked_nodes.count() == 1
 
         project.remove_node(auth=auth)
-
+        project.reload()
         assert (project.is_deleted)
         # parent node should have a log of the event
         assert parent_project.logs.latest().action == 'node_removed'
 
         # target node shouldn't be deleted
+        target.reload()
         assert target.is_deleted is False
+
+    def test_remove_project_missing_perms_in_hierarchy(self, user, project, parent_project, auth):
+        user_two = AuthUserFactory()
+        component = NodeFactory(creator=user_two, parent=project)
+
+        with pytest.raises(PermissionsError):
+            project.remove_node(auth=auth)
+
+        project.reload()
+        parent_project.reload()
+        component.reload()
+
+        assert not project.is_deleted
+        assert not parent_project.is_deleted
+        assert not component.is_deleted
+
+    def test_remove_supplemental_project_for_preprints(self, auth, user, project, preprint):
+        preprint.node = project
+        preprint.save()
+
+        project.remove_node(auth=auth)
+        preprint.reload()
+        project.reload()
+
+        assert project.is_deleted is True
+        assert preprint.node is None
 
 
 class TestTemplateNode:
@@ -4293,13 +4330,27 @@ class TestAdminImplicitRead(object):
         assert project not in qs
 
 
-class TestPreprintProperties:
+class TestNodeProperties:
+    def test_has_linked_published_preprints(self, project, preprint, user):
+        # If no preprints, is False
+        assert project.has_linked_published_preprints is False
 
-    def test_preprint_url_does_not_return_unpublished_preprint_url(self):
-        node = ProjectFactory(is_public=True)
-        published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
-        PreprintFactory(project=node, is_published=False, filename='file2.txt')
-        assert node.preprint_url == published.url
+        # A published preprint attached to a project is True
+        preprint.node = project
+        preprint.save()
+        assert project.has_linked_published_preprints is True
+
+        # Abandoned preprint is False
+        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.save()
+        assert project.has_linked_published_preprints is False
+
+        # Unpublished preprint is False
+        preprint.machine_state = DefaultStates.ACCEPTED.value
+        preprint.is_published = False
+        preprint.save()
+        assert project.has_linked_published_preprints is False
+
 
 @pytest.mark.enable_bookmark_creation
 class TestCollectionProperties:

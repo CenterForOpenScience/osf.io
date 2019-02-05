@@ -327,8 +327,21 @@ class TestTokenListScopesAsAttributes:
         res = app.get(url_token_list, expect_errors=True)
         assert res.status_code == 401
 
-    def test_cannot_create_admin_token(
+    @pytest.mark.enable_implicit_clean
+    def test_invalid_token_creation(
             self, app, url_token_list, data_sample, user_one):
+        # cannot create a token with a name over 100 characters
+        data_sample['data']['attributes']['name'] = 'a' * 101
+        res = app.post_json_api(
+            url_token_list,
+            data_sample,
+            auth=user_one.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert 'Ensure this value has at most 100 characters (it has 101).' in res.json['errors'][0]['detail']
+
+        # test_cannot_create_admin_token
         data_sample['data']['attributes']['scopes'] = 'osf.admin'
         res = app.post_json_api(
             url_token_list,
@@ -338,8 +351,7 @@ class TestTokenListScopesAsAttributes:
         )
         assert res.status_code == 404
 
-    def test_cannot_create_usercreate_token(
-            self, app, url_token_list, data_sample, user_one):
+        # test_cannot_create_usercreate_token
         scope = ApiOAuth2ScopeFactory(name='osf.users.create')
         scope.is_public = False
         scope.save()

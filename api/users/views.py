@@ -11,13 +11,14 @@ from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
-from api.base.serializers import AddonAccountSerializer
+from api.base.serializers import get_meta_type, AddonAccountSerializer
 from api.base.utils import (
     default_node_list_queryset,
     default_node_list_permission_queryset,
     get_object_or_error,
     get_user_auth,
     hashids,
+    is_truthy,
 )
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle
@@ -54,11 +55,12 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
 from django.utils import timezone
 from framework.auth.core import get_user
+from framework.auth.views import send_confirm_email
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
 from framework.utils import throttle_period_expired
 from framework.sessions.utils import remove_sessions_for_user
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, HTTPError
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
@@ -71,7 +73,7 @@ from osf.models import (
     Guid,
     QuickFilesNode,
     AbstractNode,
-    PreprintService,
+    Preprint,
     Node,
     Registration,
     OSFUser,
@@ -384,7 +386,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         target_user = self.get_user(check_permissions=False)
 
         # Permissions on the list objects are handled by the query
-        default_qs = PreprintService.objects.filter(node___contributors__guids___id=target_user._id)
+        default_qs = Preprint.objects.filter(_contributors__guids___id=target_user._id).exclude(machine_state='initial')
         return self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
 
     def get_queryset(self):
@@ -507,7 +509,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         # DELETEs normally dont get type checked
         # not the best way to do it, should be enforced everywhere, maybe write a test for it
         for val in data:
-            if val['type'] != self.serializer_class.Meta.type_:
+            if val['type'] != get_meta_type(self.serializer_class, self.request):
                 raise Conflict()
         for val in data:
             if val['id'] in current_institutions:
@@ -741,8 +743,8 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         rely upon a flask context and placed in utils (or elsewhere).
 
         :param bool registered: Indicates which sender to call (passed in as keyword)
-        :param \*args: Positional arguments passed to senders
-        :param \*\*kwargs: Keyword arguments passed to senders
+        :param *args: Positional arguments passed to senders
+        :param **kwargs: Keyword arguments passed to senders
         :return: None
         """
         from website.app import app
@@ -777,7 +779,7 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         try:
             unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
         except KeyError:
-            if isinstance(record_referent, PreprintService) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
+            if isinstance(record_referent, Preprint) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
                 record_referent = record_referent.node
                 unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
             else:
@@ -785,20 +787,27 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
 
         if claimer.is_anonymous and email:
             claimer = get_user(email=email)
-            if claimer and claimer.is_registered:
-                self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
-            else:
-                self._send_claim_email(email, claimed_user, record_referent, notify=True, registered=False)
+            try:
+                if claimer and claimer.is_registered:
+                    self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+                else:
+                    self._send_claim_email(email, claimed_user, record_referent, notify=True, registered=False)
+            except HTTPError as e:
+                raise ValidationError(e.data['message_long'])
         elif isinstance(claimer, OSFUser):
             if unclaimed_record.get('referrer_id', '') == claimer._id:
                 raise ValidationError('Referrer cannot claim user.')
-            self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+            try:
+                self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
+            except HTTPError as e:
+                raise ValidationError(e.data['message_long'])
+
         else:
             raise ValidationError('Must either be logged in or specify claim email.')
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin):
+class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -808,27 +817,39 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
+    throttle_classes = (SendEmailThrottle, )
+
     view_category = 'users'
     view_name = 'user-emails'
 
     serializer_class = UserEmailsSerializer
 
-    # overrides ListAPIViewa
-    def get_queryset(self):
+    def get_default_queryset(self):
         user = self.get_user()
         serialized_emails = []
         for email in user.emails.all():
             primary = email.address == user.username
             hashed_id = hashids.encode(email.id)
-            serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, primary=primary)
+            serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, verified=True, primary=primary)
             serialized_emails.append(serialized_email)
-        email_verifications = user.email_verifications or []
-        for token in email_verifications:
-            detail = user.email_verifications[token]
-            serialized_unconfirmed_email = UserEmail(email_id=token, address=detail['email'], confirmed=detail['confirmed'], primary=False)
+        email_verifications = user.email_verifications or {}
+        for token, detail in email_verifications.iteritems():
+            is_merge = Email.objects.filter(address=detail['email']).exists()
+            serialized_unconfirmed_email = UserEmail(
+                email_id=token,
+                address=detail['email'],
+                confirmed=detail['confirmed'],
+                verified=False,
+                primary=False,
+                is_merge=is_merge,
+            )
             serialized_emails.append(serialized_unconfirmed_email)
 
         return serialized_emails
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
@@ -850,6 +871,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
     def get_object(self):
         email_id = self.kwargs['email_id']
         user = self.get_user()
+        email = None
 
         # check to see if it's a confirmed email with hashed id
         decoded_id = hashids.decode(email_id)
@@ -862,6 +884,8 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
                 primary = email.address == user.username
                 address = email.address
                 confirmed = True
+                verified = True
+                is_merge = False
 
         # check to see if it's an unconfirmed email with a token
         elif user.unconfirmed_emails:
@@ -869,14 +893,33 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
                 email = user.email_verifications[email_id]
                 address = email['email']
                 confirmed = email['confirmed']
+                verified = False
                 primary = False
+                is_merge = Email.objects.filter(address=address).exists()
             except KeyError:
                 email = None
 
         if not email:
             raise NotFound
 
-        return UserEmail(email_id=email_id, address=address, confirmed=confirmed, primary=primary)
+        # check for resend confirmation email query parameter in a GET request
+        if self.request.method == 'GET' and is_truthy(self.request.query_params.get('resend_confirmation')):
+            if not confirmed and settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+                if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                    send_confirm_email(user, email=address, renew=True)
+                    user.email_last_sent = timezone.now()
+                    user.save()
+
+        return UserEmail(email_id=email_id, address=address, confirmed=confirmed, verified=verified, primary=primary, is_merge=is_merge)
+
+    def get(self, request, *args, **kwargs):
+        response = super(UserEmailsDetail, self).get(request, *args, **kwargs)
+        if is_truthy(self.request.query_params.get('resend_confirmation')):
+            user = self.get_user()
+            email_id = kwargs.get('email_id')
+            if user.unconfirmed_emails and user.email_verifications.get(email_id):
+                response.status = response.status_code = status.HTTP_202_ACCEPTED
+        return response
 
     # Overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):

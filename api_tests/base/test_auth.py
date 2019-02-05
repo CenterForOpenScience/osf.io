@@ -5,11 +5,11 @@ Tests related to authenticating API requests
 import mock
 
 import pytest
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 from django.middleware import csrf
 from waffle.testutils import override_switch
 
-from framework.auth import cas, core, oauth_scopes
+from framework.auth import cas
 from website.util import api_v2_url
 from addons.twofactor.tests import _valid_code
 from website.settings import API_DOMAIN, COOKIE_NAME
@@ -17,7 +17,7 @@ from website.settings import API_DOMAIN, COOKIE_NAME
 from tests.base import ApiTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 
-from api.base.settings import API_BASE, SECRET_KEY, CSRF_COOKIE_NAME
+from api.base.settings import API_BASE, CSRF_COOKIE_NAME
 
 
 class TestBasicAuthenticationValidation(ApiTestCase):

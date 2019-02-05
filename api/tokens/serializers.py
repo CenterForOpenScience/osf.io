@@ -1,8 +1,10 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
+from osf.exceptions import ValidationError
 from osf.models import ApiOAuth2PersonalToken, ApiOAuth2Scope
 
+from api.base.exceptions import format_validation_error
 from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField, RelationshipField, StrictVersion
 
 
@@ -84,7 +86,11 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         if not scopes:
             raise exceptions.ValidationError('Cannot create a token without scopes.')
         instance = ApiOAuth2PersonalToken(**validated_data)
-        instance.save()
+        try:
+            instance.save()
+        except ValidationError as e:
+            detail = format_validation_error(e)
+            raise exceptions.ValidationError(detail=detail)
         for scope in scopes:
             instance.scopes.add(scope)
         return instance
@@ -103,8 +109,11 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
                 setattr(instance, attr, value)
         if scopes:
             update_scopes(instance, scopes)
-
-        instance.save()
+        try:
+            instance.save()
+        except ValidationError as e:
+            detail = format_validation_error(e)
+            raise exceptions.ValidationError(detail=detail)
         return instance
 
 
@@ -128,7 +137,7 @@ class ApiOAuth2PersonalTokenWritableSerializer(ApiOAuth2PersonalTokenSerializer)
 
 
 def expect_scopes_as_relationships(request):
-    return StrictVersion(getattr(request, 'version', '2.0')) > StrictVersion('2.10')
+    return StrictVersion(getattr(request, 'version', '2.0')) > StrictVersion('2.14')
 
 def update_scopes(token, scopes):
     to_remove = token.scopes.difference(scopes)

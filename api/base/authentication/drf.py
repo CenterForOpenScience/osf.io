@@ -16,6 +16,7 @@ from api.base.exceptions import (
 )
 from framework.auth import cas
 from framework.auth.core import get_user
+from osf import features
 from osf.models import OSFUser, Session
 from website import settings
 
@@ -105,7 +106,7 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         user_id = session.data.get('auth_user_id')
         user = OSFUser.load(user_id)
         if user:
-            if waffle.switch_is_active('enforce_csrf'):
+            if waffle.switch_is_active(features.ENFORCE_CSRF):
                 self.enforce_csrf(request)
                 # CSRF passed with authenticated user
             check_user(user)
@@ -147,7 +148,7 @@ class OSFBasicAuthentication(BasicAuthentication):
             self.authenticate_twofactor_credentials(user_auth_tuple[0], request)
         return user_auth_tuple
 
-    def authenticate_credentials(self, userid, password):
+    def authenticate_credentials(self, userid, password, request=None):
         """
         Authenticate the user by userid (email) and password.
 

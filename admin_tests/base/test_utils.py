@@ -1,4 +1,4 @@
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa: F403
 import datetime as datetime
 
 from django.db.models import Q
@@ -152,7 +152,7 @@ class TestNodeChanges(AdminTestCase):
             change_embargo_date(self.registration, self.user, self.date_too_soon)
 
         # Test that checks user has permission
-        with assert_raises( PermissionDenied):
+        with assert_raises(PermissionDenied):
             change_embargo_date(self.registration, UserFactory(), self.date_valid)
 
         assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
