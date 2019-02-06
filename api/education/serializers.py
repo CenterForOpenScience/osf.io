@@ -20,7 +20,8 @@ class EducationSerializer(BaseProfileSerializer):
         )
 
     def create(self, validated_data):
-        education = Education(**validated_data)
+        user = self.context['request'].user
+        education = Education(user=user, **validated_data)
         education.save()
         return education
 

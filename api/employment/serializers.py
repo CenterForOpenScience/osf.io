@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 from api.base.utils import absolute_reverse
 from api.base.serializers import BaseProfileSerializer, IDField
+from osf.models import Employment
 
 
 class EmploymentSerializer(BaseProfileSerializer):
@@ -16,6 +17,12 @@ class EmploymentSerializer(BaseProfileSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        employment = Employment(user=user, **validated_data)
+        employment.save()
+        return employment
 
 class EmploymentDetailSerializer(EmploymentSerializer):
     institution = ser.CharField(required=False)
