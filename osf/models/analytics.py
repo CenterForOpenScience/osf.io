@@ -102,7 +102,8 @@ class PageCounter(BaseModel):
     @staticmethod
     def deconstruct_id(page):
         """
-        Temporary method before Part II of PLAT-1171 is merged
+        Backwards compatible code for use in writing to both _id field and
+        action, resource, file, and version fields simultaneously.
         """
         split = page.split(':')
         action = split[0]
