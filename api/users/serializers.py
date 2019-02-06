@@ -15,8 +15,9 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.models import OSFUser, QuickFilesNode, Email
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
-from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
+from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL, OSF_SUPPORT_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
+from website import mails
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.nodes.serializers import NodeSerializer
 from api.users.schemas.utils import validate_user_json, from_json
@@ -357,13 +358,6 @@ class UserAccountExportSerializer(BaseAPISerializer):
         type_ = 'user-account-export-form'
 
 
-class UserAccountDeactivateSerializer(BaseAPISerializer):
-    type = TypeField()
-
-    class Meta:
-        type_ = 'user-account-deactivate-form'
-
-
 class UserChangePasswordSerializer(BaseAPISerializer):
     type = TypeField()
     existing_password = ser.CharField(write_only=True, required=True)
@@ -380,6 +374,7 @@ class UserSettingsSerializer(JSONAPISerializer):
     two_factor_confirmed = ser.SerializerMethodField(read_only=True)
     subscribe_osf_general_email = ser.SerializerMethodField()
     subscribe_osf_help_email = ser.SerializerMethodField()
+    deactivation_requested = ser.BooleanField(source='requested_deactivation', required=False)
     secret = ser.SerializerMethodField(read_only=True)
 
     def to_representation(self, instance):
@@ -412,7 +407,17 @@ class UserSettingsSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
+        'export': 'get_export_link',
     })
+
+    def get_export_link(self, obj):
+        return absolute_reverse(
+            'users:user-account-export',
+            kwargs={
+                'user_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -467,6 +472,20 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
             raise exceptions.PermissionDenied(detail='The two-factor verification code you provided is invalid.')
         two_factor_addon.save()
 
+    def request_deactivation(self, instance, requested_deactivation):
+        if instance.requested_deactivation != requested_deactivation:
+            if requested_deactivation:
+                mails.send_mail(
+                    to_addr=OSF_SUPPORT_EMAIL,
+                    mail=mails.REQUEST_DEACTIVATION,
+                    user=instance,
+                    can_change_preferences=False,
+                )
+                instance.email_last_sent = timezone.now()
+            instance.requested_deactivation = requested_deactivation
+            instance.save()
+        return
+
     def to_representation(self, instance):
         """
         Overriding to_representation allows using different serializers for the request and response.
@@ -483,6 +502,8 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
             elif 'two_factor_verification' == attr:
                 two_factor_addon = instance.get_addon('twofactor')
                 self.verify_two_factor(instance, value, two_factor_addon)
+            elif 'requested_deactivation' == attr:
+                self.request_deactivation(instance, value)
             elif attr in self.MAP_MAIL.keys():
                 self.update_email_preferences(instance, attr, value)
 
