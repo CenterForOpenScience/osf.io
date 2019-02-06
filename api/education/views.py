@@ -5,6 +5,7 @@ from osf.models import Education
 from api.base.filters import ListFilterMixin
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
+from api.users.permissions import ReadOnlyOrCurrentUser
 from api.education.serializers import EducationSerializer, EducationDetailSerializer
 from api.base.views import JSONAPIBaseView
 
@@ -15,7 +16,7 @@ class EducationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        base_permissions.CurrentUserOrReadOnly,
+        base_permissions.PermissionWithGetter(ReadOnlyOrCurrentUser, 'user'),
     )
 
     required_read_scopes = [CoreScopes.EDUCATION_READ]
@@ -53,7 +54,7 @@ class EducationList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        base_permissions.CurrentUserOrReadOnly,
+        base_permissions.PermissionWithGetter(ReadOnlyOrCurrentUser, 'user'),
     )
 
     required_read_scopes = [CoreScopes.EDUCATION_READ]

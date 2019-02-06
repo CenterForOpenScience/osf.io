@@ -7,6 +7,7 @@ from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.employment.serializers import EmploymentSerializer
 from api.base.views import JSONAPIBaseView
+from api.users.permissions import ReadOnlyOrCurrentUser
 
 
 class EmploymentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
@@ -15,7 +16,7 @@ class EmploymentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        base_permissions.CurrentUserOrReadOnly,
+        base_permissions.PermissionWithGetter(ReadOnlyOrCurrentUser, 'user'),
     )
 
     required_read_scopes = [CoreScopes.EMPLOYMENT_READ]
@@ -44,7 +45,7 @@ class EmploymentList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixi
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        base_permissions.CurrentUserOrReadOnly,
+        base_permissions.PermissionWithGetter(ReadOnlyOrCurrentUser, 'user'),
     )
 
     required_read_scopes = [CoreScopes.EDUCATION_READ]
