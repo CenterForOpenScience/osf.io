@@ -136,6 +136,12 @@ class UserSerializer(JSONAPISerializer):
         read_only=True,
     ))
 
+    settings = ShowIfCurrentUser(RelationshipField(
+        related_view='users:user_settings',
+        related_view_kwargs={'user_id': '<_id>'},
+        read_only=True,
+    ))
+
     class Meta:
         type_ = 'users'
 
@@ -371,8 +377,14 @@ class UserSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     two_factor_enabled = ser.SerializerMethodField()
+    two_factor_confirmed = ser.SerializerMethodField(read_only=True)
     subscribe_osf_general_email = ser.SerializerMethodField()
     subscribe_osf_help_email = ser.SerializerMethodField()
+    secret = ser.SerializerMethodField(read_only=True)
+
+    def to_representation(self, instance):
+        self.context['twofactor_addon'] = instance.get_addon('twofactor')
+        return super(UserSettingsSerializer, self).to_representation(instance)
 
     def get_two_factor_enabled(self, obj):
         try:
@@ -380,6 +392,17 @@ class UserSettingsSerializer(JSONAPISerializer):
             return not two_factor.deleted
         except TwoFactorUserSettings.DoesNotExist:
             return False
+
+    def get_two_factor_confirmed(self, obj):
+        two_factor_addon = self.context['twofactor_addon']
+        if two_factor_addon and two_factor_addon.is_confirmed:
+            return True
+        return False
+
+    def get_secret(self, obj):
+        two_factor_addon = self.context['twofactor_addon']
+        if two_factor_addon and not two_factor_addon.is_confirmed:
+            return two_factor_addon.totp_secret_b32
 
     def get_subscribe_osf_general_email(self, obj):
         return obj.mailchimp_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
