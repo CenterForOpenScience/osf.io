@@ -108,13 +108,16 @@ class PageCounter(BaseModel):
         date_string = date.strftime('%Y/%m/%d')
         visited_by_date = session.data.get('visited_by_date', {'date': date_string, 'pages': []})
         with transaction.atomic():
-            # Temporary backwards compat - when creating new PageCounters, temporarily keep writing to
+            # Temporary backwards compat - when creating new PageCounters, temporarily keep writing to _id field.
             # After we're sure this is stable, we can stop writing to the _id field, and query on
             # resource/file/action/version
-            try:
-                model_instance = cls.objects.get(_id=cleaned_page)
-            except cls.DoesNotExist:
-                model_instance = cls.objects.create(_id=cleaned_page, resource=resource, file=file, action=action, version=version)
+            model_instance, created = cls.objects.select_for_update().get_or_create(
+                _id=cleaned_page,
+                resource=resource,
+                file=file,
+                action=action,
+                version=version
+            )
 
             # if they visited something today
             if date_string == visited_by_date['date']:
