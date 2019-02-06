@@ -96,7 +96,7 @@ class PageCounter(BaseModel):
 
     @classmethod
     def update_counter(cls, resource, file, version, action, node_info):
-        if version:
+        if version is not None:
             page = '{0}:{1}:{2}:{3}'.format(action, resource._id, file._id, version)
         else:
             page = '{0}:{1}:{2}'.format(action, resource._id, file._id)
@@ -106,10 +106,11 @@ class PageCounter(BaseModel):
         date_string = date.strftime('%Y/%m/%d')
         visited_by_date = session.data.get('visited_by_date', {'date': date_string, 'pages': []})
         with transaction.atomic():
-            # Temporary backwards compat - when creating new PageCounters, temporarily write to _id, resource, file, action, and version fields.
-            # After we're sure this is stable, we can stop writing to the _id field.
+            # Temporary backwards compat - when creating new PageCounters, temporarily keep writing to
+            # After we're sure this is stable, we can stop writing to the _id field, and query on
+            # resource/file/action/version
             try:
-                model_instance = cls.objects.get(resource=resource, file=file, action=action, version=version)
+                model_instance = cls.objects.get(_id=cleaned_page)
             except cls.DoesNotExist:
                 model_instance = cls.objects.create(_id=cleaned_page, resource=resource, file=file, action=action, version=version)
 

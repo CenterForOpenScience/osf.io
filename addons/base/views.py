@@ -329,9 +329,9 @@ def get_auth(auth, **kwargs):
                     # version index is 0 based
                     version_index = version - 1
                     if action == 'render':
-                        update_analytics(node, file_id, version_index, 'view')
+                        update_analytics(node, filenode, version_index, 'view')
                     elif action == 'download' and not from_mfr:
-                        update_analytics(node, file_id, version_index, 'download')
+                        update_analytics(node, filenode, version_index, 'download')
                     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
                         if isinstance(node, Preprint):
                             metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
