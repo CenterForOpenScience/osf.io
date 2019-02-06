@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0157_pagecounter_id'),
+        ('osf', '0157_pagecounter_index'),
     ]
 
     operations = [

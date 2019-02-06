@@ -50,7 +50,7 @@ def separate_pagecounter_id(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0154_pagecounter_schema'),
+        ('osf', '0155_pagecounter_schema'),
     ]
 
     operations = [

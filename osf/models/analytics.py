@@ -7,7 +7,7 @@ from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from framework.sessions import session
-from osf.models.base import BaseModel, Guid, generate_object_id, ObjectIDMixin
+from osf.models.base import BaseModel, Guid
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -55,8 +55,9 @@ class UserActivityCounter(BaseModel):
         return True
 
 
-class PageCounter(BaseModel, ObjectIDMixin):
-    _id = models.CharField(max_length=50, default=generate_object_id, unique=True)
+class PageCounter(BaseModel):
+    _id = models.CharField(max_length=300, null=False, blank=False, db_index=True,
+                           unique=True)  # 272 in prod
 
     date = DateTimeAwareJSONField(default=dict)
 
@@ -105,7 +106,12 @@ class PageCounter(BaseModel, ObjectIDMixin):
         date_string = date.strftime('%Y/%m/%d')
         visited_by_date = session.data.get('visited_by_date', {'date': date_string, 'pages': []})
         with transaction.atomic():
-            model_instance, created = cls.objects.select_for_update().get_or_create(resource=resource, file=file, version=version, action=action)
+            # Temporary backwards compat - when creating new PageCounters, temporarily write to _id, resource, file, action, and version fields.
+            # After we're sure this is stable, we can stop writing to the _id field.
+            try:
+                model_instance = cls.objects.get(resource=resource, file=file, action=action, version=version)
+            except cls.DoesNotExist:
+                model_instance = cls.objects.create(_id=cleaned_page, resource=resource, file=file, action=action, version=version)
 
             # if they visited something today
             if date_string == visited_by_date['date']:

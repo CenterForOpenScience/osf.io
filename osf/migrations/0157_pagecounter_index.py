@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     atomic = False  # CREATE INDEX CONCURRENTLY cannot be run in a txn
 
     dependencies = [
-        ('osf', '0155_pagecounter_data'),
+        ('osf', '0156_pagecounter_data'),
     ]
 
     operations = [
