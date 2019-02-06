@@ -35,6 +35,7 @@ from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
     ReadOnlyOrCurrentUserRelationship,
     ClaimUserPermission,
+    ReadOnlyOrCurrentUserProfile,
 )
 from api.users.serializers import (
     UserAddonSettingsSerializer,
@@ -402,7 +403,7 @@ class UserEducationList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin, 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ReadOnlyOrCurrentUser,
+        ReadOnlyOrCurrentUserProfile,
     )
 
     ordering = ('-created')
@@ -423,7 +424,7 @@ class UserEducationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ReadOnlyOrCurrentUser,
+        ReadOnlyOrCurrentUserProfile,
     )
 
     ordering = ('-created')
