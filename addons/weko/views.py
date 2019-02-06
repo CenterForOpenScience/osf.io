@@ -20,7 +20,7 @@ from addons.weko import client
 from addons.weko.serializer import WEKOSerializer
 from addons.weko import settings as weko_settings
 from addons.weko.provider import REPOID_BASIC_AUTH, WEKOProvider
-from website.util import permissions
+from osf.utils import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
@@ -28,7 +28,6 @@ from website.project.decorators import (
 )
 
 from website.util import rubeus, api_url_for
-from website.util.sanitize import assert_clean
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
 
@@ -118,12 +117,6 @@ def weko_set_config(node_addon, user_addon, auth, **kwargs):
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
-
-    try:
-        assert_clean(request.json)
-    except AssertionError:
-        # TODO: Test me!
-        raise HTTPError(http.NOT_ACCEPTABLE)
 
     index_id = request.json.get('index', {}).get('id')
 
