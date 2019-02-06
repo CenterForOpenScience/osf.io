@@ -93,7 +93,9 @@ class TestSerializerMetaType(ApiTestCase):
             ), 'Serializer {} has no Meta'.format(ser)
             assert hasattr(
                 ser.Meta, 'type_'
-            ), 'Serializer {} has no Meta.type_'.format(ser)
+            ) or hasattr(
+                ser.Meta, 'get_type'
+            ), 'Serializer {} has no Meta.type_ or Meta.get_type()'.format(ser)
 
 
 class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
