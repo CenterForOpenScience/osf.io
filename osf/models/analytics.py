@@ -56,6 +56,8 @@ class UserActivityCounter(BaseModel):
 
 
 class PageCounter(BaseModel):
+    primary_identifier_name = '_id'
+
     _id = models.CharField(max_length=300, null=False, blank=False, db_index=True,
                            unique=True)  # 272 in prod
 
