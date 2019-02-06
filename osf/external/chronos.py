@@ -237,7 +237,7 @@ class ChronosClient(object):
 
 class ChronosRestClient(object):
 
-    def __init__(self, username, password, api_key, host='http://sandbox.api.chronos-oa.com'):
+    def __init__(self, username, password, api_key, host='https://sandbox.api.chronos-oa.com'):
         self._auth_key = None
         self._session = requests.Session()
         self._session.verify = VERIFY_CHRONOS_SSL_CERT
