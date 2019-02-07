@@ -7,7 +7,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from api.base.exceptions import Conflict, InvalidModelValueError
 
-from api.base.utils import absolute_reverse, get_user_auth
+from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
@@ -34,8 +34,10 @@ class RegistrationSerializer(NodeSerializer):
         'custom_citation',
         'description',
         'is_public',
+        'is_retracted',
         'license',
         'license_type',
+        'retraction',
     ]
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -357,8 +359,26 @@ class RegistrationSerializer(NodeSerializer):
         except NodeStateError as err:
             raise Conflict(str(err))
 
+    def retract_registration(self, registration, validated_data, user):
+        is_retracted = validated_data.pop('is_retracted', None)
+        retraction = validated_data.pop('retraction', None)
+        if retraction and not is_retracted:
+            raise exceptions.ValidationError(
+                'You cannot provide a withdrawal_justification without a concurrent withdrawal request.',
+            )
+        if is_truthy(is_retracted):
+            if registration.is_pending_retraction:
+                raise exceptions.ValidationError('This registration is already pending withdrawal.')
+            withdrawal_justification = retraction['justification'] if retraction else None
+            try:
+                retraction = registration.retract_registration(user, withdrawal_justification, save=True)
+            except NodeStateError as err:
+                raise exceptions.ValidationError(str(err))
+            retraction.ask(registration.get_active_contributors_recursive(unique_users=True))
+        elif is_retracted is not None:
+            raise exceptions.ValidationError('You cannot set withdrawn to False.')
+
     def update(self, registration, validated_data):
-        # TODO - when withdrawal is added, make sure to restrict to admin only here
         user = self.context['request'].user
         auth = Auth(user)
         self.check_admin_perms(registration, user, validated_data)
@@ -378,9 +398,12 @@ class RegistrationSerializer(NodeSerializer):
             new_institutions = [{'_id': institution} for institution in institutions_list]
             update_institutions(registration, new_institutions, user)
             registration.save()
+        if 'retraction' in validated_data or 'is_retracted' in validated_data:
+            self.retract_registration(registration, validated_data, user)
         if 'is_public' in validated_data:
             if validated_data.get('is_public') is False:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+
         try:
             registration.update(validated_data, auth=auth)
         except ValidationError as e:
@@ -425,7 +448,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             orphan_files_names = [file_data['selectedFileName'] for file_data in orphan_files]
             raise exceptions.ValidationError('All files attached to this form must be registered to complete the process. '
                                              'The following file(s) are attached, but are not part of a component being'
-                                             ' registered: {}'.format(','.join(orphan_files_names)))
+                                             ' registered: {}'.format(', '.join(orphan_files_names)))
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
@@ -469,10 +492,16 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
 class RegistrationDetailSerializer(RegistrationSerializer):
     """
-    Overrides RegistrationSerializer to make id required.
+    Overrides RegistrationSerializer to make id required, and to make withdrawn and withdrawal_justification writable.
     """
 
     id = IDField(source='_id', required=True)
+
+    withdrawn = ser.BooleanField(
+        source='is_retracted', required=False,
+        help_text='The registration has been withdrawn.',
+    )
+    withdrawal_justification = ser.CharField(source='retraction.justification', required=False)
 
 
 class RegistrationNodeLinksSerializer(NodeLinksSerializer):

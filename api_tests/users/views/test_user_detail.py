@@ -133,6 +133,20 @@ class TestUserDetail:
         res = app.get(url)
         assert 'emails' not in res.json['data']['relationships'].keys()
 
+    def test_user_settings_relationship(self, app, user_one, user_two):
+        # settings relationship does not show for anonymous request
+        url = '/{}users/{}/'.format(API_BASE, user_one._id)
+        res = app.get(url)
+        assert 'settings' not in res.json['data']['relationships'].keys()
+
+        # settings does not appear for a different user
+        res = app.get(url, auth=user_two.auth)
+        assert 'settings' not in res.json['data']['relationships'].keys()
+
+        # settings is present for the current user
+        res = app.get(url, auth=user_one.auth)
+        assert 'settings' in res.json['data']['relationships'].keys()
+
     # Regression test for https://openscience.atlassian.net/browse/OSF-8966
     def test_browsable_api_for_user_detail(self, app, user_one):
         url = '/{}users/{}/?format=api'.format(API_BASE, user_one._id)
