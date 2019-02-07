@@ -50,6 +50,17 @@ class IsPublic(permissions.BasePermission):
         return obj.is_public or obj.can_view(auth)
 
 
+class EditIfPublic(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode,)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        if request.method not in permissions.SAFE_METHODS:
+            return obj.is_public
+        return True
+
+
 class IsAdmin(permissions.BasePermission):
     acceptable_models = (AbstractNode, PrivateLink)
 
