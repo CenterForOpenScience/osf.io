@@ -361,15 +361,14 @@ class RegistrationSerializer(NodeSerializer):
 
     def retract_registration(self, registration, validated_data, user):
         is_retracted = validated_data.pop('is_retracted', None)
-        retraction = validated_data.pop('retraction', None)
-        if retraction and not is_retracted:
+        withdrawal_justification = validated_data.pop('withdrawal_justification', None)
+        if withdrawal_justification and not is_retracted:
             raise exceptions.ValidationError(
                 'You cannot provide a withdrawal_justification without a concurrent withdrawal request.',
             )
         if is_truthy(is_retracted):
             if registration.is_pending_retraction:
                 raise exceptions.ValidationError('This registration is already pending withdrawal.')
-            withdrawal_justification = retraction['justification'] if retraction else None
             try:
                 retraction = registration.retract_registration(user, withdrawal_justification, save=True)
             except NodeStateError as err:
@@ -398,7 +397,7 @@ class RegistrationSerializer(NodeSerializer):
             new_institutions = [{'_id': institution} for institution in institutions_list]
             update_institutions(registration, new_institutions, user)
             registration.save()
-        if 'retraction' in validated_data or 'is_retracted' in validated_data:
+        if 'withdrawal_justification' in validated_data or 'is_retracted' in validated_data:
             self.retract_registration(registration, validated_data, user)
         if 'is_public' in validated_data:
             if validated_data.get('is_public') is False:
@@ -501,7 +500,7 @@ class RegistrationDetailSerializer(RegistrationSerializer):
         source='is_retracted', required=False,
         help_text='The registration has been withdrawn.',
     )
-    withdrawal_justification = ser.CharField(source='retraction.justification', required=False)
+    withdrawal_justification = ser.CharField(required=False)
 
 
 class RegistrationNodeLinksSerializer(NodeLinksSerializer):
