@@ -353,17 +353,17 @@ class RegistrationSerializer(NodeSerializer):
                     raise exceptions.PermissionDenied()
             else:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
-        if 'retraction' in validated_data or 'is_retracted' in validated_data:
+        if 'withdrawal_justification' in validated_data or 'is_retracted' in validated_data:
             if user_is_admin:
                 is_retracted = validated_data.get('is_retracted', None)
-                if validated_data.get('retraction') and not is_retracted:
+                withdrawal_justification = validated_data.get('withdrawal_justification', None)
+                if withdrawal_justification and not is_retracted:
                     raise exceptions.ValidationError(
                         'You cannot provide a withdrawal_justification without a concurrent withdrawal request.',
                     )
                 if is_truthy(is_retracted):
                     if registration.is_pending_retraction:
                         raise exceptions.ValidationError('This registration is already pending withdrawal')
-                    withdrawal_justification = validated_data['retraction']['justification'] if validated_data.get('retraction') else None
                     try:
                         retraction = registration.retract_registration(user, withdrawal_justification, save=True)
                     except NodeStateError as err:
@@ -461,7 +461,7 @@ class RegistrationDetailSerializer(RegistrationSerializer):
         source='is_retracted', required=False,
         help_text='The registration has been withdrawn.',
     )
-    withdrawal_justification = ser.CharField(source='retraction.justification', required=False)
+    withdrawal_justification = ser.CharField(required=False)
 
 
 class RegistrationNodeLinksSerializer(NodeLinksSerializer):
