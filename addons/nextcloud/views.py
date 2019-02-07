@@ -18,6 +18,8 @@ from addons.nextcloud.models import NextcloudProvider
 from addons.nextcloud.serializer import NextcloudSerializer
 from addons.nextcloud import settings
 
+from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
+
 SHORT_NAME = 'nextcloud'
 FULL_NAME = 'Nextcloud'
 
@@ -38,6 +40,7 @@ nextcloud_deauthorize_node = generic_views.deauthorize_node(
 ## Config ##
 
 @must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
 def nextcloud_add_user_account(auth, **kwargs):
     """
         Verifies new external account credentials and adds to user's list

@@ -6,7 +6,7 @@ from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, InstitutionFactory
 from framework.exceptions import HTTPError
 
 from addons.base.tests.views import (
@@ -15,6 +15,7 @@ from addons.base.tests.views import (
 from addons.weko.tests.utils import WEKOAddonTestCase
 from website.util import api_url_for
 from addons.weko.tests.utils import ConnectionMock
+from admin.rdm_addons.utils import get_rdm_addon_option
 
 
 class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -31,6 +32,22 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         self.mock_connect_or_error.stop()
         self.mock_connect_from_settings.stop()
         super(TestWEKOViews, self).tearDown()
+
+    def test_weko_settings_rdm_addons_denied(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, self.ADDON_SHORT_NAME)
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+        url = self.project.api_url_for('weko_add_user_account')
+        rv = self.app.post_json(url,{
+            'sword_url': 'http://dummy.io',
+            'access_key': 'aldkjf',
+            'secret_key': 'las'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', rv.body)
 
     def test_weko_set_index_no_settings(self):
         user = AuthUserFactory()

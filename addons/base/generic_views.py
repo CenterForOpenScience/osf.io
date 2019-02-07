@@ -16,10 +16,13 @@ from website.project.decorators import (
     must_be_valid_project
 )
 
+from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
+
 def import_auth(addon_short_name, Serializer):
     @must_have_addon(addon_short_name, 'user')
     @must_have_addon(addon_short_name, 'node')
     @must_have_permission(permissions.WRITE)
+    @must_be_rdm_addons_allowed(addon_short_name)
     def _import_auth(auth, node_addon, user_addon, **kwargs):
         """Import add-on credentials from the currently logged-in user to a node.
         """

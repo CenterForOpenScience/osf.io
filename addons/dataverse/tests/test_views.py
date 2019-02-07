@@ -13,10 +13,11 @@ from addons.dataverse.tests.utils import (
     create_mock_connection, DataverseAddonTestCase, create_external_account,
 )
 from framework.auth.decorators import Auth
-from osf_tests.factories import AuthUserFactory
+from osf_tests.factories import AuthUserFactory, InstitutionFactory
 from tests.base import OsfTestCase
 from addons.dataverse.serializer import DataverseSerializer
 from website.util import api_url_for
+from admin.rdm_addons.utils import get_rdm_addon_option
 
 pytestmark = pytest.mark.django_db
 
@@ -145,6 +146,21 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         # Nothing was logged
         self.project.reload()
         assert_equal(self.project.logs.count(), num_old_logs)
+
+    def test_add_user_account_rdm_addons_denied(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, self.ADDON_SHORT_NAME)
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+        url = self.project.api_url_for('dataverse_add_user_account')
+        rv = self.app.post_json(url,{
+            'access_key': 'aldkjf',
+            'secret_key': 'las'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', rv.body)
 
 
 class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):

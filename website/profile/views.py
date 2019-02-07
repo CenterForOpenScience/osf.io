@@ -37,6 +37,7 @@ from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
+from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 logger = logging.getLogger(__name__)
 
@@ -503,8 +504,18 @@ def collect_user_config_js(addon_configs):
 @must_be_logged_in
 def user_choose_addons(**kwargs):
     auth = kwargs['auth']
-    json_data = escape_html(request.get_json())
-    auth.user.config_addons(json_data, auth)
+    config = escape_html(request.get_json())
+    try:
+        for addon_name, enabled in config.iteritems():
+            if enabled:
+                validate_rdm_addons_allowed(auth, addon_name)
+    except PermissionsError as e:
+        raise HTTPError(
+            http.FORBIDDEN,
+            data=dict(message_long=e.message)
+        )
+
+    auth.user.config_addons(config, auth)
 
 @must_be_logged_in
 def user_choose_mailing_lists(auth, **kwargs):

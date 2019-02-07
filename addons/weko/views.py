@@ -31,17 +31,21 @@ from website.util import rubeus, api_url_for
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
 
+from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
+
 logger = logging.getLogger('addons.weko.views')
 
 SHORT_NAME = 'weko'
 FULL_NAME = 'WEKO'
 
 @must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
 def weko_oauth_connect(repoid, auth):
     service = get_service(SHORT_NAME)
     return redirect(service.get_repo_auth_url(repoid))
 
 @must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
 def weko_oauth_callback(repoid, auth):
     user = auth.user
     provider = get_service(SHORT_NAME)
@@ -131,6 +135,7 @@ def weko_set_config(node_addon, user_addon, auth, **kwargs):
     return {'index': index.title}, http.OK
 
 @must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
 def weko_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
     try:

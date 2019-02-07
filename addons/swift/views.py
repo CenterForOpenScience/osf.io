@@ -17,6 +17,8 @@ from website.project.decorators import (
     must_be_addon_authorizer,
 )
 
+from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
+
 SHORT_NAME = 'swift'
 FULL_NAME = 'OpenStack Swift'
 
@@ -59,6 +61,7 @@ def swift_folder_list(node_addon, **kwargs):
     return node_addon.get_folders()
 
 @must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
 def swift_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
     try:

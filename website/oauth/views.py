@@ -5,11 +5,12 @@ import httplib as http
 from flask import redirect
 
 from framework.auth.decorators import must_be_logged_in
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from osf.models import ExternalAccount
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
 from requests.exceptions import ConnectionError
+from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 
 @must_be_logged_in
@@ -36,6 +37,14 @@ def oauth_disconnect(external_account_id, auth):
 
 @must_be_logged_in
 def oauth_connect(service_name, auth):
+    try:
+        validate_rdm_addons_allowed(auth, service_name)
+    except PermissionsError as e:
+        raise HTTPError(
+            http.FORBIDDEN,
+            data=dict(message_long=e.message)
+        )
+
     service = get_service(service_name)
 
     return redirect(service.auth_url)
@@ -43,6 +52,14 @@ def oauth_connect(service_name, auth):
 
 @must_be_logged_in
 def osf_oauth_callback(service_name, auth):
+    try:
+        validate_rdm_addons_allowed(auth, service_name)
+    except PermissionsError as e:
+        raise HTTPError(
+            http.FORBIDDEN,
+            data=dict(message_long=e.message)
+        )
+
     user = auth.user
     provider = get_service(service_name)
 

@@ -101,6 +101,7 @@ from website.views import (
     userkey_generation,
     userkey_generation_check,
 )
+from admin.rdm_addons.utils import get_rdm_addon_option
 import os
 
 @mock_app.route('/errorexc')
@@ -960,6 +961,127 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get('/{}/'.format(reg_file.guids.first()._id))
         assert_equal(res.status_code, 200)
         assert_in('This project is a withdrawn registration of', res.body)
+
+    # TODO: Use mock add-on (same as a TODO of TestAddonUserViews)
+    def test_choose_addons_add(self):
+        url = self.project.api_url_for('node_choose_addons')
+        self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user1.auth,
+        ).maybe_follow()
+        self.project.reload()
+        assert_true(self.project.get_addon('github'))
+
+    def test_choose_addons_remove(self):
+        url = self.project.api_url_for('node_choose_addons')
+        self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user1.auth,
+        ).maybe_follow()
+        self.app.post_json(
+            url,
+            {'github': False},
+            auth=self.user1.auth
+        ).maybe_follow()
+        self.project.reload()
+        assert_false(self.project.get_addon('github'))
+
+    def test_choose_addons_add_addon_denied_by_rdm_addons(self):
+        institution = InstitutionFactory()
+        self.user1.affiliated_institutions.add(institution)
+        self.user1.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+
+        url = self.project.api_url_for('node_choose_addons')
+        res = self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user1.auth, expect_errors=True,
+        )
+        res.maybe_follow()
+        self.project.reload()
+        assert_equal(res.status_int, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', res.body)
+        assert_false(self.project.get_addon('github'))
+
+    def test_choose_addons_add_addons_including_denied_by_rdm_addons(self):
+        institution = InstitutionFactory()
+        self.user1.affiliated_institutions.add(institution)
+        self.user1.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+
+        url = self.project.api_url_for('node_choose_addons')
+        res = self.app.post_json(
+            url,
+            {'github': True, 's3': True},
+            auth=self.user1.auth, expect_errors=True,
+        )
+        res.maybe_follow()
+        self.project.reload()
+        assert_equal(res.status_int, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', res.body)
+        assert_false(self.project.get_addon('github'))
+        assert_false(self.project.get_addon('s3'))
+
+    def test_choose_addons_remove_addon_denied_by_rdm_addons(self):
+        institution = InstitutionFactory()
+        self.user1.affiliated_institutions.add(institution)
+        self.user1.save()
+
+        url = self.project.api_url_for('node_choose_addons')
+        self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user1.auth,
+        ).maybe_follow()
+        self.project.reload()
+        assert_true(self.project.get_addon('github'))
+
+        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+
+        self.app.post_json(
+            url,
+            {'github': False},
+            auth=self.user1.auth,
+        ).maybe_follow()
+        self.project.reload()
+        assert_false(self.project.get_addon('github'))
+
+    def test_choose_addons_remove_addons_including_denied_by_rdm_addons(self):
+        institution = InstitutionFactory()
+        self.user1.affiliated_institutions.add(institution)
+        self.user1.save()
+
+        url = self.project.api_url_for('node_choose_addons')
+        self.app.post_json(
+            url,
+            {'github': True, 's3': True},
+            auth=self.user1.auth,
+        ).maybe_follow()
+        self.project.reload()
+        assert_true(self.project.get_addon('github'))
+        assert_true(self.project.get_addon('s3'))
+
+        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+
+        self.app.post_json(
+            url,
+            {'github': False, 's3': False},
+            auth=self.user1.auth,
+        ).maybe_follow()
+        self.project.reload()
+        assert_false(self.project.get_addon('github'))
+        assert_false(self.project.get_addon('s3'))
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -4075,6 +4197,101 @@ class TestAddonUserViews(OsfTestCase):
         ).maybe_follow()
         self.user.reload()
         assert_false(self.user.get_addon('github'))
+
+    def test_choose_addons_add_addon_denied_by_rdm_addons(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+
+        url = '/api/v1/settings/addons/'
+        res = self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user.auth, expect_errors=True,
+        )
+        res.maybe_follow()
+        self.user.reload()
+        assert_equal(res.status_int, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', res.body)
+        assert_false(self.user.get_addon('github'))
+
+    def test_choose_addons_add_addons_including_denied_by_rdm_addons(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+
+        url = '/api/v1/settings/addons/'
+        res = self.app.post_json(
+            url,
+            {'github': True, 's3': True},
+            auth=self.user.auth, expect_errors=True,
+        )
+        res.maybe_follow()
+        self.user.reload()
+        assert_equal(res.status_int, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', res.body)
+        assert_false(self.user.get_addon('github'))
+        assert_false(self.user.get_addon('s3'))
+
+    def test_choose_addons_remove_addon_denied_by_rdm_addons(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+
+        url = '/api/v1/settings/addons/'
+        self.app.post_json(
+            url,
+            {'github': True},
+            auth=self.user.auth,
+        ).maybe_follow()
+        self.user.reload()
+        assert_true(self.user.get_addon('github'))
+
+        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+
+        self.app.post_json(
+            url,
+            {'github': False},
+            auth=self.user.auth,
+        ).maybe_follow()
+        self.user.reload()
+        assert_false(self.user.get_addon('github'))
+
+    def test_choose_addons_remove_addons_including_denied_by_rdm_addons(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+
+        url = '/api/v1/settings/addons/'
+        self.app.post_json(
+            url,
+            {'github': True, 's3': True},
+            auth=self.user.auth,
+        ).maybe_follow()
+        self.user.reload()
+        assert_true(self.user.get_addon('github'))
+        assert_true(self.user.get_addon('s3'))
+
+        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+
+        self.app.post_json(
+            url,
+            {'github': False, 's3': False},
+            auth=self.user.auth,
+        ).maybe_follow()
+        self.user.reload()
+        assert_false(self.user.get_addon('github'))
+        assert_false(self.user.get_addon('s3'))
 
 
 @pytest.mark.enable_enqueue_task

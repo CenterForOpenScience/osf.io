@@ -25,6 +25,8 @@ from website.project.decorators import (
 )
 from website.util import api_url_for
 
+from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
+
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +88,7 @@ def gitlab_user_config_get(auth, **kwargs):
     }, http.OK
 
 @must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
 def gitlab_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
 

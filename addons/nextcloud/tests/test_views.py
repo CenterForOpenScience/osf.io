@@ -5,6 +5,8 @@ import pytest
 
 import httplib as http
 
+from osf_tests.factories import InstitutionFactory
+
 from addons.base.tests.views import (
     OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
 )
@@ -12,6 +14,7 @@ from addons.nextcloud.models import NextcloudProvider
 from tests.base import OsfTestCase
 from addons.nextcloud.serializer import NextcloudSerializer
 from addons.nextcloud.tests.utils import NextcloudAddonTestCase
+from admin.rdm_addons.utils import get_rdm_addon_option
 
 pytestmark = pytest.mark.django_db
 
@@ -64,3 +67,18 @@ class TestConfigViews(NextcloudAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
             self.user,
         )
         assert_equal(serialized, res.json['result'])
+
+    def test_add_user_account_rdm_addons_denied(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, self.ADDON_SHORT_NAME)
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+        url = self.project.api_url_for('nextcloud_add_user_account')
+        rv = self.app.post_json(url,{
+            'access_key': 'aldkjf',
+            'secret_key': 'las'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', rv.body)

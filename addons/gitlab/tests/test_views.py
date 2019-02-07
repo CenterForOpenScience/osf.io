@@ -9,7 +9,7 @@ from json import dumps
 
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory, InstitutionFactory
 
 from github3.repos.branch import Branch
 
@@ -25,6 +25,7 @@ from addons.gitlab.serializer import GitLabSerializer
 from addons.gitlab.utils import check_permissions
 from addons.gitlab.tests.utils import create_mock_gitlab, GitLabAddonTestCase
 from addons.gitlab.tests.factories import GitLabAccountFactory
+from admin.rdm_addons.utils import get_rdm_addon_option
 
 pytestmark = pytest.mark.django_db
 
@@ -83,6 +84,21 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
             '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
         )
         mock_add_hook.assert_called_once()
+
+    def test_add_user_account_rdm_addons_denied(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, self.ADDON_SHORT_NAME)
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+        url = self.project.api_url_for('gitlab_add_user_account')
+        rv = self.app.post_json(url,{
+            'access_key': 'aldkjf',
+            'secret_key': 'las'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', rv.body)
 
 
 # TODO: Test remaining CRUD methods

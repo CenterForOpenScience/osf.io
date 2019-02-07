@@ -4,10 +4,13 @@ import os
 
 from django.urls import reverse
 
+from framework.exceptions import PermissionsError
+
 from osf.models import RdmAddonOption, RdmAddonNoInstitutionOption
 from website import settings
 from admin.base.settings import BASE_DIR
 from admin.rdm.utils import get_institution_id
+from admin.base.settings import UNSUPPORTED_FORCE_TO_USE_ADDONS
 
 def get_institusion_settings_template(config):
     """get template file settings"""
@@ -27,6 +30,7 @@ def get_addon_template_config(config, user):
         'institution_settings_template': get_institusion_settings_template(config),
         'is_enabled': user_addon is not None,
         'addon_icon_url': reverse('addons:icon', args=[config.short_name, config.icon]),
+        'is_supported_force_to_use': config.short_name not in UNSUPPORTED_FORCE_TO_USE_ADDONS,
     }
     ret.update(user_addon.to_json(user) if user_addon else {})
     return ret
@@ -73,3 +77,10 @@ def update_with_rdm_addon_settings(addon_setting, user):
         addon['is_forced'] = rdm_addon_option.is_forced
         addon['has_external_accounts'] = rdm_addon_option.external_accounts.exists()
         addon['has_user_external_accounts'] = user.external_accounts.filter(provider=addon_name).exists()
+
+def validate_rdm_addons_allowed(auth, addon_name):
+    institution_id = get_institution_id(auth.user)
+    rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
+    if not rdm_addon_option.is_allowed:
+        raise PermissionsError('Unable to access account.\n'
+                               'You are prohibited from using this add-on.')

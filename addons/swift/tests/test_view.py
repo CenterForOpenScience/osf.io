@@ -7,7 +7,7 @@ from swiftclient import exceptions as swift_exceptions
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, InstitutionFactory
 
 from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin
@@ -15,6 +15,7 @@ from addons.base.tests.views import (
 from addons.swift.tests.utils import SwiftAddonTestCase
 from addons.swift.utils import validate_container_name
 from website.util import api_url_for
+from admin.rdm_addons.utils import get_rdm_addon_option
 
 
 class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -191,6 +192,26 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
         assert_in('The field `project_domain_name` is required when you choose identity V3.', rv.body)
+
+    def test_swift_settings_rdm_addons_denied(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, self.ADDON_SHORT_NAME)
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+        url = self.project.api_url_for('swift_add_user_account')
+        rv = self.app.post_json(url,{
+            'auth_version': '3',
+            'auth_url': '1234',
+            'access_key': 'aldkjf',
+            'secret_key': 'las',
+            'tenant_name': 'ten',
+            'user_domain_name': 'Default',
+            'project_domain_name': 'Default'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', rv.body)
 
     def test_swift_set_bucket_no_settings(self):
         user = AuthUserFactory()

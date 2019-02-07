@@ -15,7 +15,7 @@ from framework import status
 from framework.utils import iso8601format
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from osf.models.nodelog import NodeLog
 from osf.utils.functional import rapply
 
@@ -55,6 +55,7 @@ from addons.wiki.models import WikiVersion
 from addons.dataverse.utils import serialize_dataverse_widget
 from addons.forward.utils import serialize_forward_widget
 from addons.jupyterhub.utils import serialize_jupyterhub_widget
+from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
@@ -419,6 +420,17 @@ def collect_node_config_js(addons):
 @must_have_permission(WRITE)
 @must_not_be_registration
 def node_choose_addons(auth, node, **kwargs):
+    config = request.json
+    try:
+        for addon_name, enabled in config.iteritems():
+            if enabled:
+                validate_rdm_addons_allowed(auth, addon_name)
+    except PermissionsError as e:
+        raise HTTPError(
+            http.FORBIDDEN,
+            data=dict(message_long=e.message)
+        )
+
     node.config_addons(request.json, auth)
 
 
