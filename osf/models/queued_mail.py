@@ -132,7 +132,7 @@ NO_LOGIN = {
 
 NO_SUPPLEMENTAL_NODE = {
     'template': 'no_supplemental_node',
-    'subject': 'Add supplemental files to your ${preprint_word}',
+    'subject': 'Add supplemental materials to your ${preprint_word}',
     'presend': presends.no_supplemental_node,
     'categories': ['engagement', 'engagement-no-supplemental-node'],
     'engagement': True

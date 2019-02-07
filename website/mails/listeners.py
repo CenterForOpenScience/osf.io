@@ -16,6 +16,10 @@ def queue_no_supplemental_node_email(user, preprint):
     with no supplemental nodes.
     """
     from osf.models.queued_mail import queue_mail, NO_SUPPLEMENTAL_NODE
+    if preprint.provider._id == 'osf':
+        logo = settings.OSF_PREPRINTS_LOGO
+    else:
+        logo = preprint.provider._id
     queue_mail(
         to_addr=user.username,
         mail=NO_SUPPLEMENTAL_NODE,
@@ -25,7 +29,8 @@ def queue_no_supplemental_node_email(user, preprint):
         title=preprint.title,
         provider_name=preprint.provider.name,
         preprint_word=preprint.provider.preprint_word,
-        preprint_id=preprint._id
+        preprint_id=preprint._id,
+        logo=logo
     )
 
 @auth_signals.unconfirmed_user_created.connect
