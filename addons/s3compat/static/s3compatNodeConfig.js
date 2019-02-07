@@ -48,6 +48,19 @@ var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             },
             tbOpts
         );
+
+        // Description about an attached service
+        self.attachedService = null;
+        self.nodeHasAuth.subscribe(function(newValue) {
+            if (newValue && self.urls().length > 0) {
+                self.fetchAttachedService(self);
+            }
+        });
+        self.urls.subscribe(function(newValue) {
+            if (self.nodeHasAuth()) {
+                self.fetchAttachedService(self);
+            }
+        });
     },
 
     connectAccount: function() {
@@ -134,12 +147,13 @@ var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         self.accessKey(null);
     },
 
-    createBucket: function(self, bucketName) {
+    createBucket: function(self, bucketName, bucketLocation) {
         $osf.block();
         bucketName = bucketName.toLowerCase();
         return $osf.postJSON(
             self.urls().createBucket, {
-                bucket_name: bucketName
+                bucket_name: bucketName,
+                bucket_location: bucketLocation
             }
         ).done(function(response) {
             $osf.unblock();
@@ -173,8 +187,56 @@ var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         });
     },
 
+    fetchAttachedService: function(self) {
+        var url = self.urls().attachedService;
+        $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function (data) {
+            var targetServices = self.availableServices().filter(function(service) {
+              return service.host == data.host;
+            });
+            self.attachedService = targetServices[0];
+        }).fail(function(xhr, status, error) {
+          Raven.captureMessage('Error while retrieving addon info', {
+              extra: {
+                  url: url,
+                  status: status,
+                  error: error
+              }
+          });
+        });
+    },
+
     openCreateBucket: function() {
         var self = this;
+
+        // Generates html options for key-value pairs in BUCKET_LOCATION_MAP
+        function generateBucketOptions() {
+            if (self.attachedService == null || (! self.attachedService.bucketLocations)) {
+                return '<option value="">(Default Location)</option>';
+            }
+            var options = '';
+            var locations = self.attachedService.bucketLocations;
+            var names = new Array();
+            for (var location in locations) {
+                if (locations.hasOwnProperty(location)) {
+                    var name = locations[location]['name'];
+                    if (names.indexOf(name) < 0) {
+                        options = options + ['<option value="', location, '">', $osf.htmlEscape(name), '</option>', '\n'].join('');
+                        names.push(name);
+                    }
+                }
+            }
+            return options;
+        }
+
+        function generateBucketSelector() {
+          return '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
+                      generateBucketOptions() +
+                 '</select>';
+        }
 
         bootbox.dialog({
             title: 'Create a new bucket',
@@ -191,6 +253,12 @@ var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                                         '</div>'+
                                     '</div>' +
                                 '</div>' +
+                                '<div class="form-group"> ' +
+                                    '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
+                                    '<div class="col-md-8"> ' +
+                                        generateBucketSelector() +
+                                    '</div>' +
+                                '</div>' +
                             '</form>' +
                         '</div>' +
                     '</div>',
@@ -204,6 +272,7 @@ var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                     className: 'btn-success',
                     callback: function () {
                         var bucketName = $('#bucketName').val();
+                        var bucketLocation = $('#bucketLocation').val();
 
                         if (!bucketName) {
                             var errorMessage = $('#bucketModalErrorMessage');
@@ -227,7 +296,7 @@ var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                                 }
                             });
                         } else {
-                            self.createBucket(self, bucketName);
+                            self.createBucket(self, bucketName, bucketLocation);
                         }
                     }
                 }

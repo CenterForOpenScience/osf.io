@@ -68,6 +68,15 @@ api_routes = {
         ),
         Rule(
             [
+                '/project/<pid>/s3compat/attached/',
+                '/project/<pid>/node/<nid>/s3compat/attached/',
+            ],
+            'get',
+            views.s3compat_attached_service,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/s3compat/newbucket/',
                 '/project/<pid>/node/<nid>/s3compat/newbucket/',
             ],

@@ -21,6 +21,7 @@ class S3CompatSerializer(StorageAddonSerializer):
             'folders': node.api_url_for('s3compat_folder_list'),
             'config': node.api_url_for('s3compat_set_config'),
             'files': node.web_url_for('collect_file_trees'),
+            'attachedService': node.api_url_for('s3compat_attached_service'),
         }
         if user_settings:
             result['owner'] = web_url_for('profile_view_id',

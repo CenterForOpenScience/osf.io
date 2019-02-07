@@ -61,6 +61,17 @@ def s3compat_folder_list(node_addon, **kwargs):
     """
     return node_addon.get_folders()
 
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_addon_authorizer(SHORT_NAME)
+def s3compat_attached_service(node_addon, **kwargs):
+    """ Returns the description about the attached S3 service.
+    """
+    result = {}
+    if node_addon.external_account is not None:
+        host = node_addon.external_account.provider_id.split('\t')[0]
+        result['host'] = host
+    return result
+
 @must_be_logged_in
 @must_be_rdm_addons_allowed(SHORT_NAME)
 def s3compat_add_user_account(auth, **kwargs):
@@ -133,6 +144,7 @@ def s3compat_add_user_account(auth, **kwargs):
 @must_have_permission('write')
 def s3compat_create_bucket(auth, node_addon, **kwargs):
     bucket_name = request.json.get('bucket_name', '')
+    bucket_location = request.json.get('bucket_location', '')
 
     if not utils.validate_bucket_name(bucket_name):
         return {
@@ -140,8 +152,15 @@ def s3compat_create_bucket(auth, node_addon, **kwargs):
             'title': 'Invalid bucket name',
         }, httplib.BAD_REQUEST
 
+    # Get location and verify it is valid
+    if not utils.validate_bucket_location(node_addon, bucket_location):
+        return {
+            'message': 'That bucket location is not valid.',
+            'title': 'Invalid bucket location',
+        }, httplib.BAD_REQUEST
+
     try:
-        utils.create_bucket(node_addon, bucket_name)
+        utils.create_bucket(node_addon, bucket_name, bucket_location)
     except exception.S3ResponseError as e:
         return {
             'message': e.message,

@@ -191,8 +191,12 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
         super(TestS3CompatViews, self).test_folder_list()
 
     @mock.patch('addons.s3compat.models.bucket_exists')
-    def test_set_config(self, mock_exists):
+    @mock.patch('addons.s3compat.models.get_bucket_location_or_error')
+    @mock.patch('addons.s3compat.models.find_service_by_host')
+    def test_set_config(self, mock_service, mock_location, mock_exists):
         mock_exists.return_value = True
+        mock_location.return_value = ''
+        mock_service.return_value = {'name': 'Dummy', 'host': 'dummy.example.com'}
         self.node_settings.set_auth(self.external_account, self.user)
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.put_json(url, {
