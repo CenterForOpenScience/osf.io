@@ -1,19 +1,25 @@
 import mock
 import pytest
+import datetime
 from urlparse import urlparse
 
 from rest_framework import exceptions
+from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from osf.utils import permissions
 from osf.models import Registration, NodeLog
 from framework.auth import Auth
+from website.project.signals import contributor_added
+from api_tests.utils import disconnected_from_listeners
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf_tests.factories import (
     ProjectFactory,
+    NodeFactory,
     RegistrationFactory,
     RegistrationApprovalFactory,
     AuthUserFactory,
+    UnregUserFactory,
     WithdrawnRegistrationFactory,
     OSFGroupFactory,
     CommentFactory,
@@ -205,8 +211,7 @@ class TestRegistrationDetail:
         assert 'registrations' not in res.json['data']['relationships']
 
 
-@pytest.mark.django_db
-class TestRegistrationUpdate:
+class TestRegistrationUpdateTestCase:
 
     @pytest.fixture()
     def read_only_contributor(self):
@@ -290,6 +295,10 @@ class TestRegistrationUpdate:
                 }
             }
         return payload
+
+
+@pytest.mark.django_db
+class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 
     def test_update_registration(
             self, app, user, read_only_contributor,
@@ -465,6 +474,8 @@ class TestRegistrationUpdate:
             'registration_choice',
             'lift_embargo',
             'children',
+            'withdrawn',
+            'withdrawal_justification',
             'tags',
             'custom_citation']
 
@@ -505,6 +516,116 @@ class TestRegistrationUpdate:
         )
         res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
+
+
+@pytest.mark.django_db
+class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
+
+    @pytest.fixture
+    def public_payload(self, public_registration, make_payload):
+        return make_payload(
+            id=public_registration._id,
+            attributes={'withdrawn': True, 'withdrawal_justification': 'Not enough oopmh.'}
+        )
+
+    def test_withdraw_registration_fails(
+            self, app, user, read_write_contributor, public_registration, make_payload,
+            private_registration, public_url, private_url, public_project, public_payload):
+        # test withdrawal with no auth
+        res = app.put_json_api(public_url, public_payload, expect_errors=True)
+        assert res.status_code == 401
+
+        # test withdrawal from a read write contrib
+        public_registration.add_contributor(read_write_contributor, permissions=[permissions.WRITE])
+        public_registration.save()
+        res = app.put_json_api(public_url, public_payload, auth=read_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test withdrawal private registration fails
+        payload_private = make_payload(
+            id=private_registration._id,
+            attributes={'withdrawn': True, 'withdrawal_justification': 'fine whatever'}
+        )
+        res = app.put_json_api(private_url, payload_private, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # test withdrawal component fails
+        project = ProjectFactory(is_public=True, creator=user)
+        NodeFactory(is_public=True, creator=user, parent=project)
+        registration_with_comp = RegistrationFactory(is_public=True, project=project)
+        registration_comp = registration_with_comp._nodes.first()
+        payload_component = make_payload(
+            id=registration_comp._id,
+            attributes={'withdrawn': True}
+        )
+        url = '/{}registrations/{}/'.format(API_BASE, registration_comp._id)
+        res = app.put_json_api(url, payload_component, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # setting withdraw to false fails
+        public_payload['data']['attributes'] = {'withdrawn': False}
+        res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # test withdrawal with just withdrawal_justification key
+        public_payload['data']['attributes'] = {'withdrawal_justification': 'Not enough oopmh.'}
+        res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # withdraw on a registration already pending withdrawal fails
+        public_registration._initiate_retraction(user)
+        res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+    @mock.patch('website.mails.send_mail')
+    def test_withdraw_registration_success(self, mock_send_mail, app, user, public_registration, public_url, public_payload):
+        res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        assert res.status_code == 200
+        public_registration.refresh_from_db()
+        assert public_registration.is_pending_retraction
+        assert public_registration.registered_from.logs.first().action == 'retraction_initiated'
+        assert mock_send_mail.called
+
+    def test_withdraw_registration_with_embargo_ends_embargo(
+            self, app, user, public_project, public_registration, public_url, public_payload):
+        public_registration.embargo_registration(
+            user,
+            (timezone.now() + datetime.timedelta(days=10)),
+            for_existing_registration=True
+        )
+        public_registration.save()
+        assert public_registration.is_pending_embargo
+
+        approval_token = public_registration.embargo.approval_state[user._id]['approval_token']
+        public_registration.embargo.approve(user, approval_token)
+        assert public_registration.embargo_end_date
+
+        res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        assert res.status_code == 200
+        public_registration.reload()
+        assert public_registration.is_pending_retraction
+        assert not public_registration.is_pending_embargo
+
+    @mock.patch('website.mails.send_mail')
+    def test_withdraw_request_does_not_send_email_to_unregistered_admins(
+            self, mock_send_mail, app, user, public_registration, public_url, public_payload):
+        unreg = UnregUserFactory()
+        with disconnected_from_listeners(contributor_added):
+            public_registration.add_unregistered_contributor(
+                unreg.fullname,
+                unreg.email,
+                auth=Auth(user),
+                permissions=['read', 'write', 'admin'],
+                existing_user=unreg,
+                save=True
+            )
+
+        res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        assert res.status_code == 200
+
+        # Only the creator gets an email; the unreg user does not get emailed
+        assert public_registration._contributors.count() == 2
+        assert mock_send_mail.call_count == 1
 
 
 @pytest.mark.django_db
