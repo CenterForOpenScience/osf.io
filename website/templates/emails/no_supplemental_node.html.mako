@@ -5,9 +5,9 @@
     <br>
         Hello ${fullname},
         <br><br>
-        Thanks for sharing ${title} on ${provider_name}.
+        Thanks for sharing <a href="${absolute_url}">${title}</a> on ${provider_name}.
         Sharing your research doesn’t have to stop there. Add supplemental materials such as data, code, protocols, and other materials that comprise your ${preprint_word} to help others get the most from your research.
-        Supplemental files will be stored in an OSF project that connects to your ${preprint_word}. Just edit your ${preprint_word}, and follow the instructions below:
+        Supplemental materials will be stored in an OSF project that connects to your ${preprint_word}. Just edit your ${preprint_word}, and follow the instructions below:
         <br><br>
         <ul>
             <li>

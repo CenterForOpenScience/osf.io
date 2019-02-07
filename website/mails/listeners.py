@@ -30,6 +30,7 @@ def queue_no_supplemental_node_email(user, preprint):
         provider_name=preprint.provider.name,
         preprint_word=preprint.provider.preprint_word,
         preprint_id=preprint._id,
+        absolute_url=preprint.absolute_url,
         logo=logo
     )
 
