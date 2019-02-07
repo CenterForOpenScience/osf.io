@@ -24,6 +24,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/forks/$', views.RegistrationForksList.as_view(), name=views.RegistrationForksList.view_name),
     url(r'^(?P<node_id>\w+)/identifiers/$', views.RegistrationIdentifierList.as_view(), name=views.RegistrationIdentifierList.view_name),
     url(r'^(?P<node_id>\w+)/institutions/$', views.RegistrationInstitutionsList.as_view(), name=views.RegistrationInstitutionsList.view_name),
+    url(r'^(?P<node_id>\w+)/relationships/institutions/$', views.RegistrationInstitutionsRelationship.as_view(), name=views.RegistrationInstitutionsRelationship.view_name),
     url(r'^(?P<node_id>\w+)/linked_nodes/$', views.RegistrationLinkedNodesList.as_view(), name=views.RegistrationLinkedNodesList.view_name),
     url(r'^(?P<node_id>\w+)/linked_registrations/$', views.RegistrationLinkedRegistrationsList.as_view(), name=views.RegistrationLinkedRegistrationsList.view_name),
     url(r'^(?P<node_id>\w+)/linked_by_nodes/$', views.RegistrationLinkedByNodesList.as_view(), name=views.RegistrationLinkedByNodesList.view_name),
