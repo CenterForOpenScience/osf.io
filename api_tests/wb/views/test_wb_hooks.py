@@ -73,11 +73,11 @@ def sign_payload(payload):
 class TestMove():
     @pytest.fixture()
     def move_url(self, node):
-        return '/_/wb/hooks/{}/move/?version=2.10'.format(node._id)
+        return '/_/wb/hooks/{}/move/'.format(node._id)
 
     @pytest.fixture()
     def quickfiles_move_url(self, quickfiles_node):
-        return '/_/wb/hooks/{}/move/?version=2.10'.format(quickfiles_node._id)
+        return '/_/wb/hooks/{}/move/'.format(quickfiles_node._id)
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):
@@ -605,11 +605,11 @@ class TestMovePreprint():
 class TestCopy():
     @pytest.fixture()
     def copy_url(self, node):
-        return '/_/wb/hooks/{}/copy/?version=2.10'.format(node._id)
+        return '/_/wb/hooks/{}/copy/'.format(node._id)
 
     @pytest.fixture()
     def quickfiles_copy_url(self, quickfiles_node):
-        return '/_/wb/hooks/{}/copy/?version=2.10'.format(quickfiles_node._id)
+        return '/_/wb/hooks/{}/copy/'.format(quickfiles_node._id)
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):
