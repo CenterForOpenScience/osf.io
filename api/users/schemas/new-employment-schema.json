@@ -1,0 +1,43 @@
+{
+	"type": "object",
+	"properties": {
+        "title": {
+            "type": "string"
+        },
+        "start_date": {
+            "type": "string"
+        },
+        "end_date": {
+            "type": "string"
+        },
+        "ongoing": {
+            "oneOf": [{
+                    "const": false,
+                    "required": ["start_date", "end_date"]
+                },
+                {
+                    "const": true,
+                    "required": ["start_date"],
+                    "not": {
+                        "required": ["end_date"]
+                    }
+                }
+            ],
+            "type": "boolean"
+        },
+        "department": {
+            "type": "string"
+        },
+        "institution": {
+            "type": "string",
+            "minLength": 1
+        }
+    },
+    "required": [
+        "institution"
+    ],
+    "additionalProperties": false,
+    "dependencies": {
+        "end_date": ["start_date"]
+    }
+}

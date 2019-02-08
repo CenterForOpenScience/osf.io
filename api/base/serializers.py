@@ -19,6 +19,7 @@ from osf.utils import sanitize
 from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
+from api.users.schemas.utils import validate_user_json
 from framework.auth import core as auth_core
 from osf.models import AbstractNode, MaintenanceState, Preprint
 from website import settings
@@ -1812,5 +1813,9 @@ class BaseProfileSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
 
-    def get_id(self, obj):
-        return obj._id
+    def run_validation(self, *args, **kwargs):
+        to_validate = self.initial_data.copy()
+        to_validate.pop('id')
+        to_validate.pop('type')
+        validate_user_json(to_validate, self.schema)
+        return super(BaseProfileSerializer, self).run_validation(*args, **kwargs)
