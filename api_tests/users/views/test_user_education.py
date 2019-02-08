@@ -143,6 +143,10 @@ class TestUerEducationCreate:
         res = app.post_json(list_url, not_really_ongoing, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
+    def test_create_education(self, app, list_url, user):
+        # TODO - do this
+        pass
+
 
 @pytest.mark.django_db
 class TestUserEducationUpdate:

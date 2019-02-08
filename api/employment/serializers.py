@@ -1,6 +1,8 @@
 from rest_framework import serializers as ser
+
 from api.base.utils import absolute_reverse
 from api.base.serializers import BaseProfileSerializer, IDField
+from api.users.schemas.utils import validate_user_json
 from osf.models import Employment
 
 
@@ -20,6 +22,7 @@ class EmploymentSerializer(BaseProfileSerializer):
         )
 
     def create(self, validated_data):
+        validate_user_json(validated_data, 'new-employment-schema.json')
         user = self.context['request'].user
         employment = Employment(user=user, **validated_data)
         employment.save()
@@ -30,6 +33,7 @@ class EmploymentDetailSerializer(EmploymentSerializer):
     id = IDField(source='_id', required=True)
 
     def update(self, employment, validated_data):
+        validate_user_json(validated_data, 'new-employment-schema.json')
         for attr, value in validated_data.items():
             setattr(employment, attr, value)
         employment.save()

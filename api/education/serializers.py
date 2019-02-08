@@ -7,6 +7,7 @@ from osf.models import Education
 
 class EducationSerializer(BaseProfileSerializer):
     degree = ser.CharField(required=False)
+    schema = 'new-education-schema.json'
 
     class Meta:
         type_ = 'education'
