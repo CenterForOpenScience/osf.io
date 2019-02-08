@@ -14,11 +14,11 @@ def user_two():
 
 @pytest.fixture
 def employment_one(user):
-    return EmploymentFactory(user=user)
+    return EmploymentFactory(user=user, institution='Employment One')
 
 @pytest.fixture
 def employment_two(user):
-    return EmploymentFactory(user=user)
+    return EmploymentFactory(user=user, institution='Employment Two')
 
 
 @pytest.fixture
@@ -29,25 +29,39 @@ def url_one(user, employment_one):
 @pytest.mark.django_db
 class TestEmployment:
 
-    def test_get_employment_detail(self, app, user, url_one, employment_one):
-        # unauthoized can access
-        res = app.get(url_one)
+    def test_get_employment_list_get(self, app, user, user_two, employment_one, employment_two):
+        url = '/{}employment/'.format(API_BASE)
+
+        # unauthorized can access
+        res = app.get(url)
         assert res.status_code == 200
 
         # another authorized user can access
-        other_user = AuthUserFactory()
-        res = app.get(url_one, auth=other_user.auth)
+        res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
 
         # authorized can access self
-        res = app.get(url_one, auth=user.auth)
+        res = app.get(url, auth=user.auth)
         assert res.status_code == 200
 
-    def test_get_employment_list_get(self, app, user):
-        pass   # TODO
-        # unauthorized can access
+        ids = [result['id'] for result in res.json['data']]
+        assert employment_one._id in ids
+        assert employment_two._id in ids
 
-        # another authorized user can access
+        # self link is the user employment detail view
+        first = res.json['data'][0]
+        assert 'users/{}/employment/{}'.format(user._id, employment_one._id) in first['links']['self']
 
-    def test_filter_employment_list(self, app, user):
-        pass  # TODO
+    def test_filter_employment_list(self, app, user, employment_one, employment_two):
+        employment_one_two = EmploymentFactory(user=user, institution='Employment One')
+        employment_two_two = EmploymentFactory(user=user, institution='Employment Two')
+
+        # filter by institution
+        url = '/{}employment/?filter[institution]=Employment One'.format(API_BASE)
+        res = app.get(url)
+
+        ids = [result['id'] for result in res.json['data']]
+        assert employment_one._id in ids
+        assert employment_one_two._id in ids
+        assert employment_two._id not in ids
+        assert employment_two_two._id not in ids
