@@ -12,8 +12,9 @@ class EmploymentSerializer(BaseProfileSerializer):
 
     def self_url(self, obj):
         return absolute_reverse(
-            'employment:employment-detail', kwargs={
+            'users:user-employment-detail', kwargs={
                 'employment_id': obj._id,
+                'user_id': obj.user._id,
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )

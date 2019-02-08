@@ -13,8 +13,9 @@ class EducationSerializer(BaseProfileSerializer):
 
     def self_url(self, obj):
         return absolute_reverse(
-            'education:education-detail', kwargs={
+            'users:user-education-detail', kwargs={
                 'education_id': obj._id,
+                'user_id': obj.user._id,
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )

@@ -29,21 +29,6 @@ def url_one(user, education_one):
 @pytest.mark.django_db
 class TestEducation:
 
-    def test_get_education_detail(self, app, user, user_two, url_one, education_one):
-        url = '/{}education/{}/'.format(API_BASE, education_one._id)
-
-        # unauthoized can access
-        res = app.get(url)
-        assert res.status_code == 200
-
-        # another authorized user can access
-        res = app.get(url, auth=user_two.auth)
-        assert res.status_code == 200
-
-        # authorized can access self
-        res = app.get(url, auth=user.auth)
-        assert res.status_code == 200
-
     def test_get_education_list_get(self, app, user, user_two, education_one, education_two):
         url = '/{}education/'.format(API_BASE)
 
@@ -62,6 +47,10 @@ class TestEducation:
         ids = [result['id'] for result in res.json['data']]
         assert education_one._id in ids
         assert education_two._id in ids
+
+        # self link is the user education detail view
+        first = res.json['data'][0]
+        assert 'users/{}/education/{}'.format(user._id, education_one._id) in first['links']['self']
 
     def test_filter_education_list(self, app, user, education_one, education_two):
         education_one_two = EducationFactory(user=user, institution='Edu One')
