@@ -21,9 +21,11 @@ def checkin_files_task(node_id, user_id):
     with transaction.atomic():
         AbstractNode = apps.get_model('osf.AbstractNode')
         Preprint = apps.get_model('osf.Preprint')
+        Guid = apps.get_model('osf.Guid')
         OSFUser = apps.get_model('osf.OSFUser')
 
-        node = AbstractNode.load(node_id) or Preprint.load(node_id)
+        node = Guid.load(node_id).referent
+        assert isinstance(node, (AbstractNode, Preprint))
         user = OSFUser.load(user_id)
 
         # If user doesn't have any permissions through their OSF group or through contributorship,
