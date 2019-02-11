@@ -1,25 +1,25 @@
 import pytest
 
 from api.base.settings import API_BASE
-from osf_tests.factories import EducationFactory
+from osf_tests.factories import EmploymentFactory
 from api_tests.users.views.user_profile_test_mixin import (
     UserProfileListMixin, UserProfileDetailMixin, UserProfileCreateMixin,
     UserProfileUpdateMixin, UserProfileRelationshipMixin)
 
 
-class UserEducationMixin:
+class UserEmploymentMixin:
 
     @pytest.fixture
     def resource_factory(self):
-        return EducationFactory
+        return EmploymentFactory
 
     @pytest.fixture()
     def profile_type(self):
-        return 'education'
+        return 'employment'
 
 
 @pytest.mark.django_db
-class TestUserEducationList(UserEducationMixin, UserProfileListMixin):
+class TestUserEmploymentList(UserEmploymentMixin, UserProfileListMixin):
 
     @pytest.fixture
     def list_url(self, user, profile_type):
@@ -27,7 +27,7 @@ class TestUserEducationList(UserEducationMixin, UserProfileListMixin):
 
 
 @pytest.mark.django_db
-class TestEducationDetail(UserEducationMixin, UserProfileDetailMixin):
+class TestEmploymentDetail(UserEmploymentMixin, UserProfileDetailMixin):
 
     @pytest.fixture
     def detail_url(self, user, profile_item_one, profile_type):
@@ -35,7 +35,7 @@ class TestEducationDetail(UserEducationMixin, UserProfileDetailMixin):
 
 
 @pytest.mark.django_db
-class TestUerEducationCreate(UserEducationMixin, UserProfileCreateMixin):
+class TestUerEmploymentCreate(UserEmploymentMixin, UserProfileCreateMixin):
 
     @pytest.fixture
     def list_url(self, user, profile_type):
@@ -43,7 +43,7 @@ class TestUerEducationCreate(UserEducationMixin, UserProfileCreateMixin):
 
 
 @pytest.mark.django_db
-class TestUserEducationUpdate(UserEducationMixin, UserProfileUpdateMixin):
+class TestUserEmploymentUpdate(UserEmploymentMixin, UserProfileUpdateMixin):
 
     @pytest.fixture
     def detail_url(self, user, profile_item_one, profile_type):
@@ -51,7 +51,7 @@ class TestUserEducationUpdate(UserEducationMixin, UserProfileUpdateMixin):
 
 
 @pytest.mark.django_db
-class TestUserEducationRelationship(UserEducationMixin, UserProfileRelationshipMixin):
+class TestUserEmploymentRelationship(UserEmploymentMixin, UserProfileRelationshipMixin):
 
     @pytest.fixture()
     def url(self, user, profile_type):
