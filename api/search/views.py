@@ -662,7 +662,7 @@ class SearchCollections(BaseSearchView):
         return [
             'abstract',
             'collectedType',
-            'contributors',
+            'contributors.fullname',
             'status',
             'subjects',
             'provider',
