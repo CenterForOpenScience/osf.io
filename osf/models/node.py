@@ -369,17 +369,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return None
 
     @property
-    def tag_names(self):
-        """
-        Optimization property. If node has been annotated with "annotated_tags"
-        in a queryset, use that value.  Otherwise, fetch the tags.
-        """
-        if hasattr(self, 'annotated_tags'):
-            return [] if self.annotated_tags == [None] else self.annotated_tags
-        else:
-            return self.tags.values_list('name', flat=True)
-
-    @property
     def nodes(self):
         """Return queryset of nodes."""
         return self.get_nodes()

@@ -14,6 +14,7 @@ from api.base.serializers import (
     ShowIfVersion, TargetTypeField, TypeField,
     WaterbutlerLink, relationship_diff, BaseAPISerializer,
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
+    ValuesListField,
 )
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (
@@ -276,7 +277,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     preprint = ser.SerializerMethodField()
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
-    tags = ser.ListField(source='tag_names', child=ser.CharField(), required=False)
+    tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
@@ -684,8 +685,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             affiliated_institutions = validated_data.pop('affiliated_institutions')
         if 'region_id' in validated_data:
             region_id = validated_data.pop('region_id')
-        if 'tag_names' in validated_data:
-            tags = validated_data.pop('tag_names')
+        if 'tags' in validated_data:
+            tags = validated_data.pop('tags')
             for tag in tags:
                 tag_instance, created = Tag.objects.get_or_create(name=tag, defaults=dict(system=False))
                 tag_instances.append(tag_instance)
@@ -756,8 +757,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if validated_data:
             if 'custom_citation' in validated_data:
                 node.update_custom_citation(validated_data.pop('custom_citation'), auth)
-            if 'tag_names' in validated_data:
-                new_tags = set(validated_data.pop('tag_names', []))
+            if 'tags' in validated_data:
+                new_tags = set(validated_data.pop('tags', []))
                 node.update_tags(new_tags, auth=auth)
             if 'region' in validated_data:
                 validated_data.pop('region')
