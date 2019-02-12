@@ -158,7 +158,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
             if not comment.id:
                 # must have id before accessing M2M
                 comment.save()
-            new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
+            new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors_and_group_members)
             if new_mentions:
                 project_signals.mention_added.send(comment, new_mentions=new_mentions, auth=auth)
                 comment.ever_mentioned.add(*comment.node.contributors.filter(guids___id__in=new_mentions))
@@ -190,7 +190,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         self.content = content
         self.edited = True
         self.modified = timezone.now()
-        new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
+        new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors_and_group_members)
 
         if save:
             if new_mentions:

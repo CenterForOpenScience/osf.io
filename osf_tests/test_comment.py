@@ -24,7 +24,8 @@ from .factories import (
     NodeFactory,
     UserFactory,
     UnregUserFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    OSFGroupFactory,
 )
 
 # All tests will require a databse
@@ -171,6 +172,21 @@ class TestCommentModel:
             )
         assert mock_signals.signals_sent() == ({comment_added, mention_added})
 
+    def test_create_sends_mention_added_signal_if_group_member_mentions(self, node, user, auth):
+        manager = AuthUserFactory()
+        group = OSFGroupFactory(creator=manager)
+        node.add_osf_group(group)
+        assert node.is_contributor_or_group_member(manager) is True
+        with capture_signals() as mock_signals:
+            Comment.create(
+                auth=auth,
+                user=user,
+                node=node,
+                target=node.guids.all()[0],
+                content='This is a comment with a group member mention [@Group Member](http://localhost:5000/' + manager._id + '/).'
+            )
+        assert mock_signals.signals_sent() == ({comment_added, mention_added})
+
     def test_create_does_not_send_mention_added_signal_if_unconfirmed_contributor_mentioned(self, node, user, auth):
         with pytest.raises(ValidationError) as error:
             with capture_signals() as mock_signals:
@@ -200,7 +216,7 @@ class TestCommentModel:
                     content='This is a comment with a bad mention [@Non-contributor User](http://localhost:5000/' + user._id + '/).'
                 )
         assert mock_signals.signals_sent() == set([])
-        assert error.value.message == 'Mentioned user is not a contributor.'
+        assert error.value.message == 'Mentioned user is not a contributor or group member.'
 
     def test_create_does_not_send_mention_added_signal_if_nonuser_mentioned(self, node, user, auth):
         with pytest.raises(ValidationError) as error:
@@ -264,7 +280,7 @@ class TestCommentModel:
                     save=True
                 )
         assert mock_signals.signals_sent() == set([])
-        assert error.value.message == 'Mentioned user is not a contributor.'
+        assert error.value.message == 'Mentioned user is not a contributor or group member.'
 
     def test_edit_does_not_send_mention_added_signal_if_unconfirmed_contributor_mentioned(self):
         comment = CommentFactory()

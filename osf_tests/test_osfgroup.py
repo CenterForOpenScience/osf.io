@@ -410,6 +410,15 @@ class TestOSFGroup:
 
 
 class TestNodeGroups:
+    def test_node_contributors_and_group_members(self, manager, member, osf_group, project, user, user_two):
+        assert project.contributors_and_group_members.count() == 1
+        project.add_osf_group(osf_group, ADMIN)
+        assert project.contributors_and_group_members.count() == 2
+        project.add_contributor(user, WRITE)
+        project.add_contributor(user_two, READ)
+        project.save()
+        assert project.contributors_and_group_members.count() == 4
+
     def test_add_osf_group_to_node_already_connected(self, manager, member, osf_group, project):
         project.add_osf_group(osf_group, ADMIN)
         assert project.has_permission(member, ADMIN) is True

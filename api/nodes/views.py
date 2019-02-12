@@ -545,6 +545,30 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
         return queryset
 
 
+class NodeContributorsAndGroupMembersList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
+    permission_classes = (
+        AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    model_class = OSFUser
+
+    serializer_class = UserSerializer
+    view_category = 'nodes'
+    view_name = 'node-contributors-and-group-members'
+
+    def get_default_queryset(self):
+        return self.get_node().contributors_and_group_members
+
+    def get_queryset(self):
+        queryset = self.get_queryset_from_request()
+        return queryset
+
+
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_list).
     """

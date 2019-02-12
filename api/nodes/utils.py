@@ -3,7 +3,6 @@ from distutils.version import StrictVersion
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery, CharField, Value, BooleanField
 from django.contrib.auth.models import Permission
-from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.contrib.contenttypes.models import ContentType
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
@@ -105,7 +104,6 @@ class NodeOptimizationMixin(object):
             has_admin=Exists(node_group.filter(permission_id=admin_permission.id)),
             has_wiki_addon=Exists(wiki_addon),
             annotated_parent_id=Subquery(parent.values('parent__id')[:1], output_field=CharField()),
-            annotated_tags=ArrayAgg('tags__name'),
             has_viewable_preprints=Exists(preprints),
             has_admin_scope=Value(admin_scope, output_field=BooleanField()),
             region=Subquery(node_settings.values('region_abbrev')[:1]),

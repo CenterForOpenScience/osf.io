@@ -369,17 +369,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return None
 
     @property
-    def tag_names(self):
-        """
-        Optimization property. If node has been annotated with "annotated_tags"
-        in a queryset, use that value.  Otherwise, fetch the tags.
-        """
-        if hasattr(self, 'annotated_tags'):
-            return [] if self.annotated_tags == [None] else self.annotated_tags
-        else:
-            return self.tags.values_list('name', flat=True)
-
-    @property
     def nodes(self):
         """Return queryset of nodes."""
         return self.get_nodes()
@@ -984,6 +973,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return OSFUser.objects.filter(
             guids___id__in=self.parent_admin_user_ids
         ).order_by('family_name')
+
+    @property
+    def contributors_and_group_members(self):
+        """
+        Returns a queryset of all users who are either contributors
+        on the node, or have permission through OSFGroup membership
+        """
+        return self.get_users_with_perm(READ)
 
     @property
     def contributor_email_template(self):

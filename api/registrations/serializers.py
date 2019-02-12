@@ -7,7 +7,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from api.base.exceptions import Conflict
 
-from api.base.utils import absolute_reverse, get_user_auth
+from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
@@ -329,7 +329,6 @@ class RegistrationSerializer(NodeSerializer):
         return obj.comment_set.filter(page='node', is_deleted=False).count()
 
     def update(self, registration, validated_data):
-        # TODO - when withdrawal is added, make sure to restrict to admin only here
         user = self.context['request'].user
         auth = Auth(user)
         user_is_admin = registration.has_permission(user, permissions.ADMIN)
@@ -359,6 +358,26 @@ class RegistrationSerializer(NodeSerializer):
                     raise exceptions.PermissionDenied()
             else:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+        if 'withdrawal_justification' in validated_data or 'is_retracted' in validated_data:
+            if user_is_admin:
+                is_retracted = validated_data.get('is_retracted', None)
+                withdrawal_justification = validated_data.get('withdrawal_justification', None)
+                if withdrawal_justification and not is_retracted:
+                    raise exceptions.ValidationError(
+                        'You cannot provide a withdrawal_justification without a concurrent withdrawal request.',
+                    )
+                if is_truthy(is_retracted):
+                    if registration.is_pending_retraction:
+                        raise exceptions.ValidationError('This registration is already pending withdrawal')
+                    try:
+                        retraction = registration.retract_registration(user, withdrawal_justification, save=True)
+                    except NodeStateError as err:
+                        raise exceptions.ValidationError(str(err))
+                    retraction.ask(registration.get_active_contributors_recursive(unique_users=True))
+                elif is_retracted is not None:
+                    raise exceptions.ValidationError('You cannot set withdrawn to False.')
+            else:
+                raise exceptions.PermissionDenied()
         return registration
 
     class Meta:
@@ -438,10 +457,16 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
 class RegistrationDetailSerializer(RegistrationSerializer):
     """
-    Overrides RegistrationSerializer to make id required.
+    Overrides RegistrationSerializer to make id required, and to make withdrawn and withdrawal_justification writable.
     """
 
     id = IDField(source='_id', required=True)
+
+    withdrawn = ser.BooleanField(
+        source='is_retracted', required=False,
+        help_text='The registration has been withdrawn.',
+    )
+    withdrawal_justification = ser.CharField(required=False)
 
 
 class RegistrationNodeLinksSerializer(NodeLinksSerializer):
