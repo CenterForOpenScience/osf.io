@@ -454,7 +454,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'registration_choice',
             'lift_embargo',
             'children',
-            'withdrawn',
+            'pending_withdrawal',
             'withdrawal_justification',
             'tags',
             'custom_citation']
@@ -475,7 +475,6 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             self, app, user, unapproved_registration, unapproved_url, make_payload):
         attribute_list = {
             'public': True,
-            'withdrawn': True
         }
         unapproved_registration_payload = make_payload(
             id=unapproved_registration._id, attributes=attribute_list)
@@ -505,68 +504,69 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
     def public_payload(self, public_registration, make_payload):
         return make_payload(
             id=public_registration._id,
-            attributes={'withdrawn': True, 'withdrawal_justification': 'Not enough oopmh.'}
+            attributes={'pending_withdrawal': True, 'withdrawal_justification': 'Not enough oopmh.'}
         )
 
-    def test_withdraw_registration_fails(
+    def test_initiate_withdraw_registration_fails(
             self, app, user, read_write_contributor, public_registration, make_payload,
             private_registration, public_url, private_url, public_project, public_payload):
-        # test withdrawal with no auth
+        # test set pending_withdrawal with no auth
         res = app.put_json_api(public_url, public_payload, expect_errors=True)
         assert res.status_code == 401
 
-        # test withdrawal from a read write contrib
+        # test set pending_withdrawal from a read write contrib
         public_registration.add_contributor(read_write_contributor, permissions=[permissions.WRITE])
         public_registration.save()
         res = app.put_json_api(public_url, public_payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # test withdrawal private registration fails
+        # test set pending_withdrawal private registration fails
         payload_private = make_payload(
             id=private_registration._id,
-            attributes={'withdrawn': True, 'withdrawal_justification': 'fine whatever'}
+            attributes={'pending_withdrawal': True, 'withdrawal_justification': 'fine whatever'}
         )
         res = app.put_json_api(private_url, payload_private, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-        # test withdrawal component fails
+        # test set pending_withdrawal for component fails
         project = ProjectFactory(is_public=True, creator=user)
         NodeFactory(is_public=True, creator=user, parent=project)
         registration_with_comp = RegistrationFactory(is_public=True, project=project)
         registration_comp = registration_with_comp._nodes.first()
         payload_component = make_payload(
             id=registration_comp._id,
-            attributes={'withdrawn': True}
+            attributes={'pending_withdrawal': True}
         )
         url = '/{}registrations/{}/'.format(API_BASE, registration_comp._id)
         res = app.put_json_api(url, payload_component, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-        # setting withdraw to false fails
-        public_payload['data']['attributes'] = {'withdrawn': False}
+        # setting pending_withdrawal to false fails
+        public_payload['data']['attributes'] = {'pending_withdrawal': False}
         res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-        # test withdrawal with just withdrawal_justification key
+        # test set pending_withdrawal with just withdrawal_justification key
         public_payload['data']['attributes'] = {'withdrawal_justification': 'Not enough oopmh.'}
         res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-        # withdraw on a registration already pending withdrawal fails
+        # set pending_withdrawal on a registration already pending withdrawal fails
         public_registration._initiate_retraction(user)
         res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
     @mock.patch('website.mails.send_mail')
-    def test_withdraw_registration_success(self, mock_send_mail, app, user, public_registration, public_url, public_payload):
+    def test_initiate_withdrawal_success(self, mock_send_mail, app, user, public_registration, public_url, public_payload):
         res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
+        assert res.json['data']['attributes']['pending_withdrawal'] is True
         public_registration.refresh_from_db()
         assert public_registration.is_pending_retraction
         assert public_registration.registered_from.logs.first().action == 'retraction_initiated'
         assert mock_send_mail.called
 
-    def test_withdraw_registration_with_embargo_ends_embargo(
+    def test_initiate_withdrawal_with_embargo_ends_embargo(
             self, app, user, public_project, public_registration, public_url, public_payload):
         public_registration.embargo_registration(
             user,
@@ -582,6 +582,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
         res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
+        assert res.json['data']['attributes']['pending_withdrawal'] is True
         public_registration.reload()
         assert public_registration.is_pending_retraction
         assert not public_registration.is_pending_embargo
