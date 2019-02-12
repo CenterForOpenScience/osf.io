@@ -536,7 +536,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert res.status_code == 401
 
         # test withdrawal from a read write contrib
-        public_registration.add_contributor(read_write_contributor, permissions=[permissions.WRITE])
+        public_registration.add_contributor(read_write_contributor, permissions=permissions.WRITE)
         public_registration.save()
         res = app.put_json_api(public_url, public_payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
@@ -615,7 +615,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
                 unreg.fullname,
                 unreg.email,
                 auth=Auth(user),
-                permissions=['read', 'write', 'admin'],
+                permissions=permissions.ADMIN,
                 existing_user=unreg,
                 save=True
             )
