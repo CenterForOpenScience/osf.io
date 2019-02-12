@@ -975,6 +975,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ).order_by('family_name')
 
     @property
+    def contributors_and_group_members(self):
+        """
+        Returns a queryset of all users who are either contributors
+        on the node, or have permission through OSFGroup membership
+        """
+        return self.get_users_with_perm(READ)
+
+    @property
     def contributor_email_template(self):
         return 'default'
 
