@@ -128,6 +128,11 @@ class RegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_contrib_count'},
     )
 
+    bibliographic_contributors = RelationshipField(
+        related_view='registrations:registration-bibliographic-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
     implicit_contributors = RelationshipField(
         related_view='registrations:registration-implicit-contributors',
         related_view_kwargs={'node_id': '<_id>'},

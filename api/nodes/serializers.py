@@ -338,6 +338,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_contrib_count'},
     )
 
+    bibliographic_contributors = RelationshipField(
+        related_view='nodes:node-bibliographic-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
     implicit_contributors = RelationshipField(
         related_view='nodes:node-implicit-contributors',
         related_view_kwargs={'node_id': '<_id>'},
