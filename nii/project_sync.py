@@ -84,7 +84,7 @@ def leave_group_project_sync(node, dict_new_contributors):
 
 def project_sync_one(node, cgapi=None):
     from osf.models.user import OSFUser
-    from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
+    from osf.utils.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     if not node.group:
         return

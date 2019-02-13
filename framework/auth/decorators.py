@@ -170,7 +170,7 @@ def create_group_project(user, groupname):
     node.save()
 
 def create_or_join_group_projects(user):
-    from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
+    from osf.utils.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
     for group in user.cggroups.all():
         groupname = group.name
         group_admin = is_group_admin(user, groupname)
