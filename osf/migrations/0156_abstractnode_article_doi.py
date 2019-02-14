@@ -9,7 +9,7 @@ import osf.models.validators
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0154_remove_ember_project_registrations_flag'),
+        ('osf', '0155_merge_20190115_1437'),
     ]
 
     operations = [
