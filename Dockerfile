@@ -206,7 +206,7 @@ RUN cd ./admin \
 # Copy the rest of the code over
 COPY ./ ./
 
-RUN invoke requirements --quick
+RUN invoke requirements --all
 RUN invoke assets --dev
 
 RUN invoke admin.assets --dev
