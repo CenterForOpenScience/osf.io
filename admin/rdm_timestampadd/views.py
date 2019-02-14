@@ -23,7 +23,7 @@ import time
 from api.timestamp.add_timestamp import AddTimestamp
 import os
 import shutil
-from website.util import waterbutler_api_url_for
+from api.base.utils import waterbutler_api_url_for
 
 class InstitutionList(RdmPermissionMixin, UserPassesTestMixin, ListView):
 

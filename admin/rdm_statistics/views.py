@@ -32,7 +32,7 @@ from osf.models import (
     RdmStatistics)
 from website import settings as website_settings
 from website.settings import SUPPORT_EMAIL
-from website.util import waterbutler_api_url_for
+from api.base.utils import waterbutler_api_url_for
 import matplotlib as mpl           # noqa
 mpl.use('Agg')                     # noqa
 import matplotlib.pyplot as plt    # noqa
