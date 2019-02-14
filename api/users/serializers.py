@@ -20,7 +20,7 @@ from osf.models.provider import AbstractProviderGroupObjectPermission
 from website import mails
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.nodes.serializers import NodeSerializer
-from api.users.schemas.utils import validate_user_json, from_json
+from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
 
 
