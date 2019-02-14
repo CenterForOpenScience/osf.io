@@ -38,26 +38,6 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
     if node.get_identifier_value('doi') and bool(node.IDENTIFIER_UPDATE_FIELDS.intersection(saved_fields)):
         node.request_identifier_update(category='doi')
 
-@celery_app.task(ignore_results=True)
-def update_files_count(node_id):
-    AbstractNode = apps.get_model('osf.AbstractNode')
-    node = AbstractNode.load(node_id)
-
-    if node is None:
-        return
-
-    field = AbstractNode._meta.get_field('modified')
-    # Do not update modified upon save()
-    field.auto_now = False
-
-    if node.is_registration:
-        node.files_count = node.files.filter(deleted_on__isnull=True).count()
-    # else:
-        # TODO: Do node specific files_count update
-
-    node.save()
-    field.auto_now = True
-
 def update_collecting_metadata(node, saved_fields):
     from website.search.search import update_collected_metadata
     if node.is_collected:

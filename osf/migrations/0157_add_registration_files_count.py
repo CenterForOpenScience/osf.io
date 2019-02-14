@@ -18,7 +18,7 @@ def add_registration_files_count(state, *args, **kwargs):
     registrations_to_update = []
     for registration in registrations:
         job = registration.archive_jobs.first() if registration.archive_jobs.count() else None
-        archiving = job and not job.done and (job.status != 'SUCCESS')
+        archiving = job and (job.status != 'SUCCESS')
         if archiving:
             # Skip stuck, failed, or archiving registrations.
             continue
@@ -40,7 +40,7 @@ def noop(*args, **kwargs):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0154_remove_ember_project_registrations_flag'),
+        ('osf', '0156_abstractnode_article_doi'),
     ]
 
     operations = [

@@ -33,7 +33,7 @@ from django.utils import timezone
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from framework.exceptions import HTTPError
-from osf.models import Node, NodeLog, Registration, BaseFileNode
+from osf.models import Node, NodeLog, Registration, BaseFileNode, AbstractNode
 from api.base.utils import waterbutler_api_url_for
 from scripts import utils as script_utils
 from website.archiver import ARCHIVER_SUCCESS
@@ -129,6 +129,13 @@ PERMISSIBLE_ADDONS = {
 }
 
 def complete_archive_target(reg, addon_short_name):
+    # Update files_count on registration
+    field = AbstractNode._meta.get_field('modified')
+    field.auto_now = False
+    reg.files_count = reg.files.filter(deleted_on__isnull=True).count()
+    reg.save()
+    field.auto_now = True
+
     archive_job = reg.archive_job
     target = archive_job.get_target(addon_short_name)
     target.status = ARCHIVER_SUCCESS
