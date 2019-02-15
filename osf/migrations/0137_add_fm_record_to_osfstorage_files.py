@@ -8,7 +8,7 @@ from django.db import migrations, connection
 
 logger = logging.getLogger(__name__)
 
-increment = 100000
+increment = 500000
 
 def remove_records_from_files(state, schema):
     FileMetadataRecord = state.get_model('osf', 'filemetadatarecord')
@@ -19,11 +19,11 @@ def add_records_to_files_sql(state, schema):
     FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
     datacite_schema_id = FileMetadataSchema.objects.filter(_id='datacite').values_list('id', flat=True)[0]
     OsfStorageFile = state.get_model('osf', 'osfstoragefile')
-    max_fid = OsfStorageFile.objects.last().id
+    max_fid = getattr(OsfStorageFile.objects.last(), 'id', 0)
 
     sql = """
         INSERT INTO osf_filemetadatarecord (created, modified, _id, metadata, file_id, schema_id)
-        SELECT NOW(), NOW(), generate_object_id(), '{}', OSF_FILE.id, %d
+        SELECT NOW(), NOW(), generate_object_id(), '{{}}', OSF_FILE.id, %d
             FROM osf_basefilenode OSF_FILE
                 WHERE (OSF_FILE.type = 'osf.osfstoragefile'
                        AND OSF_FILE.provider = 'osfstorage'
@@ -48,7 +48,6 @@ def add_records_to_files_sql(state, schema):
             logger.info('Cleaning up...')
         with connection.cursor() as cursor:
             cursor.execute(sql.format(
-                '{}',
                 page_start,
                 page_end
             ))
