@@ -36,16 +36,11 @@ def add_records_to_files_sql(state, schema):
     page_start = 0
     page_end = 0
     page = 0
-    while page_end <= (max_fid + increment):
+    while page_end <= (max_fid):
         page += 1
         page_end += increment
         if page <= total_pages:
             logger.info('Updating page {} / {}'.format(page_end / increment, total_pages))
-        else:
-            # An extra page is included to cover the edge case where:
-            #       max_fid == (total_pages * increment) - 1
-            # and two additional objects are created during runtime.
-            logger.info('Cleaning up...')
         with connection.cursor() as cursor:
             cursor.execute(sql.format(
                 page_start,
