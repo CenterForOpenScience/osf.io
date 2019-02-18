@@ -299,12 +299,9 @@ def archive_success(dst_pk, job_pk):
     """
     create_app_context()
     dst = AbstractNode.load(dst_pk)
+
     # Cache registration files count
-    field = AbstractNode._meta.get_field('modified')
-    field.auto_now = False  # Do not update modified upon save()
-    dst.files_count = dst.files.filter(deleted_on__isnull=True).count()
-    dst.save()
-    field.auto_now = True
+    dst.update_files_count()
 
     # The filePicker extension addded with the Prereg Challenge registration schema
     # allows users to select files in OSFStorage as their response to some schema
