@@ -100,3 +100,11 @@ class RegistrationSchema(AbstractSchema):
         except jsonschema.SchemaError as e:
             raise ValidationValueError(e.message)
         return
+
+
+class FileMetadataSchema(AbstractSchema):
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/schemas/files/{}/'.format(self._id)
+        return api_v2_url(path)
