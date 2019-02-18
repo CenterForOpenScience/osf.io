@@ -260,6 +260,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'subjects',
     ]
 
+    subjects_related_view = 'nodes:node-subjects'
+    subjects_related_view_kwargs = {'node_id': '<_id>'}
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
@@ -737,7 +740,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             if 'subjects' in validated_data:
                 subjects = validated_data.pop('subjects', None)
                 try:
-                    node.set_subjects(subjects, auth)
+                    self.update_subjects(node, subjects, auth)
                 except PermissionsError as e:
                     raise exceptions.PermissionDenied(detail=str(e))
                 except ValueError as e:

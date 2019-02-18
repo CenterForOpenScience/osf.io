@@ -23,7 +23,7 @@ from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
 from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
-from osf.models.validators import validate_subject_hierarchy
+from osf.models.validators import validate_subject_hierarchy, validate_subjects
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN, READ, WRITE, reduce_permissions, expand_permissions, REVIEW_GROUPS
@@ -739,6 +739,52 @@ class TaxonomizableMixin(models.Model):
             ]
         return []
 
+    def check_subject_perms(self, auth):
+        AbstractNode = apps.get_model('osf.AbstractNode')
+        Preprint = apps.get_model('osf.Preprint')
+        CollectionSubmission = apps.get_model('osf.CollectionSubmission')
+
+        if isinstance(self, (AbstractNode, Preprint)):
+            if not self.has_permission(auth.user, ADMIN):
+                raise PermissionsError('Only admins can change subjects.')
+        elif isinstance(self, CollectionSubmission):
+            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
+                raise PermissionsError('Only admins can change subjects.')
+        return
+
+    def add_subjects_log(self, old_subjects, auth):
+        self.add_log(
+            action=NodeLog.SUBJECTS_UPDATED,
+            params={
+                'subjects': list(self.subjects.values('_id', 'text')),
+                'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text'))
+            },
+            auth=auth,
+            save=False,
+        )
+        return
+
+    def set_subjects_from_relationships(self, subjects, auth, add_log=True):
+        """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
+        Only authorized admins may set subjects.
+
+        :param list[Subject._id] new_subjects: List of flattened subject hierarchies
+        :param Auth auth: Auth object for requesting user
+        :param bool add_log: Whether or not to add a log (if called on a Loggable object)
+
+        :return: None
+        """
+        self.check_subject_perms(auth)
+        old_subjects = list(self.subjects.values_list('id', flat=True))
+        self.subjects.clear()
+        for subj in validate_subjects(subjects):
+            self.subjects.add(subj)
+
+        if add_log and hasattr(self, 'add_log'):
+            self.add_subjects_log(old_subjects, auth)
+
+        self.save(old_subjects=old_subjects)
+
     def set_subjects(self, new_subjects, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.
         Only authorized admins may set subjects.
@@ -749,17 +795,7 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
-        AbstractNode = apps.get_model('osf.AbstractNode')
-        Preprint = apps.get_model('osf.Preprint')
-        CollectionSubmission = apps.get_model('osf.CollectionSubmission')
-        if getattr(self, 'is_registration', False):
-            raise PermissionsError('Registrations may not be modified.')
-        if isinstance(self, (AbstractNode, Preprint)):
-            if not self.has_permission(auth.user, ADMIN):
-                raise PermissionsError('Only admins can change subjects.')
-        elif isinstance(self, CollectionSubmission):
-            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
-                raise PermissionsError('Only admins can change subjects.')
+        self.check_subject_perms(auth)
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
@@ -773,15 +809,7 @@ class TaxonomizableMixin(models.Model):
                     self.subjects.add(Subject.load(s_id))
 
         if add_log and hasattr(self, 'add_log'):
-            self.add_log(
-                action=NodeLog.SUBJECTS_UPDATED,
-                params={
-                    'subjects': list(self.subjects.values('_id', 'text')),
-                    'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text'))
-                },
-                auth=auth,
-                save=False,
-            )
+            self.add_subjects_log(old_subjects, auth)
 
         self.save(old_subjects=old_subjects)
 

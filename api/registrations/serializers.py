@@ -21,6 +21,7 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
 from osf.exceptions import ValidationValueError, NodeStateError
 from osf.models import Node
 from osf.utils import permissions
@@ -37,8 +38,12 @@ class RegistrationSerializer(NodeSerializer):
         'is_public',
         'license',
         'license_type',
+        'subjects',
         'withdrawal_justification',
     ]
+    subjects_related_view = 'registrations:registration-subjects'
+    subjects_related_view_kwargs = {'node_id': '<_id>'}
+
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
@@ -402,6 +407,16 @@ class RegistrationSerializer(NodeSerializer):
             new_institutions = [{'_id': institution} for institution in institutions_list]
             update_institutions(registration, new_institutions, user)
             registration.save()
+        if 'subjects' in validated_data:
+            subjects = validated_data.pop('subjects', None)
+            try:
+                self.update_subjects(registration, subjects, auth)
+            except PermissionsError as e:
+                raise exceptions.PermissionDenied(detail=str(e))
+            except ValueError as e:
+                raise exceptions.ValidationError(detail=str(e))
+            except NodeStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
         if 'withdrawal_justification' in validated_data or 'is_pending_retraction' in validated_data:
             self.retract_registration(registration, validated_data, user)
         if 'is_public' in validated_data:

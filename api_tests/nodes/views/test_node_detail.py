@@ -1190,7 +1190,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert target_object.is_public
         assert not mock_update_doi_metadata.called
 
-    def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
+    def test_set_subjects_as_attributes(self, app, user, project_public, subject, url_public, make_node_payload):
         # test_write_contrib_cannot_set_subjects
         write_contrib = AuthUserFactory()
         project_public.add_contributor(write_contrib, permissions=['read', 'write'], auth=Auth(user), save=True)
@@ -1221,6 +1221,47 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
         assert not project_public.subjects.filter(_id=subject._id).exists()
         update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
+
+        res = app.patch_json_api(url_public, update_subjects_payload, auth=admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        assert project_public.subjects.filter(_id=subject._id).exists()
+
+    def test_set_subjects_as_relationships(self, app, user, project_public, subject, url_public, make_node_payload):
+        url_public = '{}?version=2.15'.format(url_public)
+        # test_write_contrib_cannot_set_subjects
+        write_contrib = AuthUserFactory()
+        project_public.add_contributor(write_contrib, permissions=['read', 'write'], auth=Auth(user), save=True)
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+        update_subjects_payload = make_node_payload(project_public, attributes={}, relationships={
+            'subjects': {
+                'data': [
+                    {'id': subject._id, 'type': 'subjects'}
+                ]
+            }
+        })
+
+        res = app.patch_json_api(url_public, update_subjects_payload, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+
+        # test_non_contrib_cannot_set_subjects
+        non_contrib = AuthUserFactory()
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+
+        res = app.patch_json_api(url_public, update_subjects_payload, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+
+        # test_admin_can_set_subjects
+        admin_contrib = AuthUserFactory()
+        project_public.add_contributor(admin_contrib, permissions=['read', 'write', 'admin'], auth=Auth(user), save=True)
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
 
         res = app.patch_json_api(url_public, update_subjects_payload, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 200

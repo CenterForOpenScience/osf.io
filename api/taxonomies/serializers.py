@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField, ShowIfVersion
+from distutils.version import StrictVersion
+from api.base.serializers import JSONAPISerializer, LinksField, ShowIfVersion, RelationshipField
 from osf.models import Subject
 
 class TaxonomyField(ser.Field):
@@ -28,7 +29,20 @@ class TaxonomizableSerializerMixin(ser.Serializer):
         'subjects',
     ])
 
-    subjects = ser.SerializerMethodField()
+    def __init__(self, *args, **kwargs):
+        super(TaxonomizableSerializerMixin, self).__init__(*args, **kwargs)
+        request = kwargs['context']['request']
+
+        if self.expect_subjects_as_relationships(request):
+            self.fields['subjects'] = RelationshipField(
+                related_view=self.subjects_related_view,
+                related_view_kwargs=self.subjects_related_view_kwargs,
+                read_only=False,
+                many=True,
+                required=False,
+            )
+        else:
+            self.fields['subjects'] = ser.SerializerMethodField()
 
     def get_subjects(self, obj):
         from api.taxonomies.serializers import TaxonomyField
@@ -37,6 +51,14 @@ class TaxonomizableSerializerMixin(ser.Serializer):
                 TaxonomyField().to_representation(subj) for subj in hier
             ] for hier in obj.subject_hierarchy
         ]
+
+    def update_subjects(self, node, subjects, auth):
+        if self.expect_subjects_as_relationships(self.context['request']):
+            return node.set_subjects_from_relationships(subjects, auth)
+        return node.set_subjects(subjects, auth)
+
+    def expect_subjects_as_relationships(self, request):
+        return StrictVersion(getattr(request, 'version', '2.0')) > StrictVersion('2.14')
 
 
 class TaxonomySerializer(JSONAPISerializer):
