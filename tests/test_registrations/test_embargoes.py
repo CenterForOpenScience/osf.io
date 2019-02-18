@@ -24,7 +24,7 @@ from framework.auth import Auth
 from osf.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
-from website import tokens
+from osf.utils import tokens
 from osf.models import AbstractNode
 from osf.models.sanctions import PreregCallbackMixin, Embargo
 from osf.utils import permissions

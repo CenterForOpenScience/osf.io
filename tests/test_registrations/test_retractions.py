@@ -17,7 +17,7 @@ from osf_tests.factories import (
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
     UnregUserFactory
 )
-from website import tokens
+from osf.utils import tokens
 from osf.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     NodeStateError,

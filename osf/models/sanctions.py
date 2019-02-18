@@ -14,7 +14,7 @@ from website.prereg import utils as prereg_utils
 from framework.auth import Auth
 from framework.exceptions import HTTPError, PermissionsError
 from website import settings as osf_settings
-from website import tokens, mails
+from website import mails
 from osf.exceptions import (
     InvalidSanctionRejectionToken,
     InvalidSanctionApprovalToken,
@@ -25,6 +25,7 @@ from website.project import tasks as project_tasks
 from osf.models import RegistrationSchema
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils import tokens
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
