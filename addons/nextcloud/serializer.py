@@ -24,7 +24,7 @@ class NextcloudSerializer(StorageAddonSerializer):
             oc.login(provider.username, provider.password)
             oc.logout()
             return True
-        except:
+        except Exception:
             return False
 
     @property

@@ -78,7 +78,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def get_folders(self, **kwargs):
         try:
             containers = get_container_names(self)
-        except:
+        except Exception:
             raise exceptions.InvalidAuthError()
 
         return [
