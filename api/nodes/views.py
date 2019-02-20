@@ -105,7 +105,7 @@ from api.registrations.serializers import RegistrationSerializer, RegistrationCr
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
-from api.taxonomies.serializers import TaxonomySerializer
+from api.subjects.serializers import SubjectSerializer
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
@@ -1571,7 +1571,7 @@ class NodeSubjectsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, N
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.SUBJECTS_READ]
     required_write_scopes = [CoreScopes.NULL]
-    serializer_class = TaxonomySerializer
+    serializer_class = SubjectSerializer
 
     model = Subject
     view_category = 'nodes'
