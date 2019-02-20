@@ -41,6 +41,7 @@
     "file_updated" : "A user updated a file in a project",
     "file_removed" : "A user removed a file from a project",
     "file_restored" : "A user restored a file from a project",
+    "file_metadata_updated": "A user updated the file metadata for a file",
     "checked_out":  "A user checked out a file from a project",
     "checked_in":   "A user checked in a file to a project",
     "comment_added" : "A user added a comment to a project",

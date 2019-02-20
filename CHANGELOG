@@ -2,6 +2,34 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.2.0 (2019-02-18)
+===================
+- Backend for File Metadata
+- Make embedded wiki images viewable with VOL
+- APIv2: Two factor improvements
+- APIv2: Request deactivation through user settings
+- APIv2: Initiate registration withdrawal
+- APIv2: Handle validation errors on tokens and applications requests
+- APIv2: Handle requesting user guid from files endpoint
+
+19.1.0 (2019-01-30)
+===================
+- Track OSFS file versions
+- Fix last_logged date on existing forks
+
+19.0.0 (2019-01-23)
+===================
+- APIv2: Allow doubly confirming new emails and account merges
+- APIv2: Deleting nodes deletes entire hierarchy
+- APIv2: Initiate resending confirmation emails for unconfirmed emails
+- Learn more license link opens in new tab
+- APIv2 - withdrawal date/justification included on children
+- Limit file size uploads
+- Impact: request relevant indices
+- Fix institution settings FAQ link
+- Remove legacy registrations
+- Don't add provider=osf query param when clicking on preprint in search
+
 18.9.0 (2018-12-19)
 ===================
 

@@ -10,6 +10,7 @@ from flask import request
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db.models import Q, OuterRef, Exists, Subquery
+import waffle
 
 from framework import status
 from framework.utils import iso8601format
@@ -25,7 +26,7 @@ from website import language
 
 from website.util import rubeus
 from website.ember_osf_web.views import use_ember_app
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.project import new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
@@ -251,9 +252,10 @@ def project_before_template(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 @must_not_be_registration
-@ember_flag_is_active(features.EMBER_PROJECT_REGISTRATIONS)
 def node_registrations(auth, node, **kwargs):
-    return _view_project(node, auth, primary=True, embed_registrations=True)
+    if request.path.startswith('/project/'):
+        return redirect('/{}/registrations/'.format(node._id))
+    return use_ember_app()
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
@@ -269,7 +271,9 @@ def node_forks(auth, node, **kwargs):
 @must_have_permission(READ)
 @ember_flag_is_active(features.EMBER_PROJECT_SETTINGS)
 def node_setting(auth, node, **kwargs):
-
+    if node.is_registration and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+        # Registration settings page obviated during redesign
+        return redirect(node.url)
     auth.user.update_affiliated_institutions_by_email_domain()
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
@@ -589,7 +593,6 @@ def component_remove(auth, node, **kwargs):
                 'message_long': 'Could not delete component: ' + str(e)
             },
         )
-    node.save()
 
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
@@ -737,15 +740,12 @@ def _view_project(node, auth, primary=False,
             'is_pending_registration': node.is_pending_registration if is_registration else False,
             'is_retracted': node.is_retracted if is_registration else False,
             'is_pending_retraction': node.is_pending_retraction if is_registration else False,
-            'retracted_justification': getattr(node.retraction, 'justification', None) if is_registration else None,
-            'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)) if is_registration else '',
+            'retracted_justification': getattr(node.root.retraction, 'justification', None) if is_registration else None,
+            'date_retracted': iso8601format(getattr(node.root.retraction, 'date_retracted', None)) if is_registration else '',
             'embargo_end_date': node.embargo_end_date.strftime('%A, %b %d, %Y') if is_registration and node.embargo_end_date else '',
             'is_pending_embargo': node.is_pending_embargo if is_registration else False,
             'is_embargoed': node.is_embargoed if is_registration else False,
-            'is_pending_embargo_termination': is_registration and node.is_embargoed and (
-                node.embargo_termination_approval and
-                node.embargo_termination_approval.is_pending_approval
-            ),
+            'is_pending_embargo_termination': is_registration and node.is_pending_embargo_termination,
             'registered_from_url': node.registered_from.url if is_registration else '',
             'registered_date': iso8601format(node.registered_date) if is_registration else '',
             'root_id': node.root._id if node.root else None,

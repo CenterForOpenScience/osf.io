@@ -162,6 +162,9 @@ REST_FRAMEWORK = {
         '2.9',
         '2.10',
         '2.11',
+        '2.12',
+        '2.13',
+        '2.14',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -302,7 +305,3 @@ ELASTICSEARCH_DSL = {
 }
 # Store yearly indices for time-series metrics
 ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
-
-# Prereg challenge data is uploaded to this project TODO: Delete when Prereg challenge ends
-PREREG_DATA_STORE_TOKEN = None
-PREREG_DATA_STORE_GUID = None

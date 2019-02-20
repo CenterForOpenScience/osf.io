@@ -11,7 +11,7 @@ from framework.exceptions import PermissionsError
 from framework.sessions import set_session
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from osf.utils import permissions
 from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
@@ -220,11 +220,17 @@ class TestParentNode:
         assert greatgrandchild_1 in Node.objects.get_children(root).all()
         assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
 
+        assert 21 == Node.objects.get_children(root, include_root=True).count()
+        assert root in Node.objects.get_children(root, include_root=True)
+
     def test_get_children_root_with_no_children(self):
         root = ProjectFactory()
 
         assert 0 == len(Node.objects.get_children(root))
         assert isinstance(Node.objects.get_children(root), AbstractNodeQuerySet)
+
+        assert 1 == Node.objects.get_children(root, include_root=True).count()
+        assert root in Node.objects.get_children(root, include_root=True)
 
     def test_get_children_child_with_no_children(self):
         root = ProjectFactory()
@@ -233,6 +239,9 @@ class TestParentNode:
         assert 0 == Node.objects.get_children(child).count()
         assert isinstance(Node.objects.get_children(child), AbstractNodeQuerySet)
 
+        assert 1 == Node.objects.get_children(child, include_root=True).count()
+        assert child in Node.objects.get_children(child, include_root=True)
+
     def test_get_children_with_nested_projects(self):
         root = ProjectFactory()
         child = NodeFactory(parent=root)
@@ -240,6 +249,9 @@ class TestParentNode:
         result = Node.objects.get_children(child)
         assert result.count() == 1
         assert grandchild in result
+
+        assert 2 == Node.objects.get_children(child, include_root=True).count()
+        assert child in Node.objects.get_children(child, include_root=True)
 
     def test_get_children_with_links(self):
         root = ProjectFactory()
@@ -267,6 +279,7 @@ class TestParentNode:
         greatgrandchild_1.add_node_link(child, auth=Auth(child.creator))
 
         assert 20 == len(Node.objects.get_children(root))
+        assert 21 == len(Node.objects.get_children(root, include_root=True))
 
     def test_get_roots(self):
         top_level1 = ProjectFactory(is_public=True)
@@ -3701,7 +3714,7 @@ class TestRemoveNode:
 
     def test_remove_project_without_children(self, parent_project, project, auth):
         project.remove_node(auth=auth)
-
+        project.reload()
         assert project.is_deleted
         # parent node should have a log of the event
         assert (
@@ -3712,20 +3725,30 @@ class TestRemoveNode:
     def test_delete_project_log_present(self, project, parent_project, auth):
         project.remove_node(auth=auth)
         parent_project.remove_node(auth=auth)
-
+        parent_project.reload()
         assert parent_project.is_deleted
         # parent node should have a log of the event
         assert parent_project.logs.latest().action == 'project_deleted'
 
-    def test_remove_project_with_project_child_fails(self, parent_project, project, auth):
-        with pytest.raises(NodeStateError):
-            parent_project.remove_node(auth)
+    def test_remove_project_with_project_child_deletes_all_in_hierarchy(self, parent_project, project, auth):
+        parent_project.remove_node(auth=auth)
+        parent_project.reload()
+        project.reload()
 
-    def test_remove_project_with_component_child_fails(self, user, project, parent_project, auth):
-        NodeFactory(creator=user, parent=project)
+        assert parent_project.is_deleted
+        assert project.is_deleted
 
-        with pytest.raises(NodeStateError):
-            parent_project.remove_node(auth)
+    def test_remove_project_with_component_child_deletes_all_in_hierarchy(self, user, project, parent_project, auth):
+        component = NodeFactory(creator=user, parent=project)
+
+        parent_project.remove_node(auth)
+        parent_project.reload()
+        project.reload()
+        component.reload()
+
+        assert parent_project.is_deleted
+        assert project.is_deleted
+        assert component.is_deleted
 
     def test_remove_project_with_pointer_child(self, auth, user, project, parent_project):
         target = ProjectFactory(creator=user)
@@ -3734,13 +3757,29 @@ class TestRemoveNode:
         assert project.linked_nodes.count() == 1
 
         project.remove_node(auth=auth)
-
+        project.reload()
         assert (project.is_deleted)
         # parent node should have a log of the event
         assert parent_project.logs.latest().action == 'node_removed'
 
         # target node shouldn't be deleted
+        target.reload()
         assert target.is_deleted is False
+
+    def test_remove_project_missing_perms_in_hierarchy(self, user, project, parent_project, auth):
+        user_two = AuthUserFactory()
+        component = NodeFactory(creator=user_two, parent=project)
+
+        with pytest.raises(PermissionsError):
+            project.remove_node(auth=auth)
+
+        project.reload()
+        parent_project.reload()
+        component.reload()
+
+        assert not project.is_deleted
+        assert not parent_project.is_deleted
+        assert not component.is_deleted
 
     def test_remove_supplemental_project_for_preprints(self, auth, user, project, preprint):
         preprint.node = project
@@ -3748,8 +3787,9 @@ class TestRemoveNode:
 
         project.remove_node(auth=auth)
         preprint.reload()
+        project.reload()
 
-        assert project.is_deleted
+        assert project.is_deleted is True
         assert preprint.node is None
 
 

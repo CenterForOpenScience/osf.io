@@ -3,7 +3,7 @@ from rest_framework import exceptions
 from rest_framework import serializers as ser
 
 from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider
-from osf.exceptions import ValidationError
+from osf.exceptions import ValidationError, NodeStateError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
@@ -12,7 +12,6 @@ from api.nodes.serializers import NodeLinksSerializer
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from osf.utils.permissions import WRITE
-from website.exceptions import NodeStateError
 
 
 class CollectionProviderRelationshipField(RelationshipField):
@@ -226,6 +225,12 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
             obj.status = validated_data.pop('status')
         if 'collected_type' in validated_data:
             obj.collected_type = validated_data.pop('collected_type')
+        if 'volume' in validated_data:
+            obj.volume = validated_data.pop('volume')
+        if 'issue' in validated_data:
+            obj.issue = validated_data.pop('issue')
+        if 'program_area' in validated_data:
+            obj.program_area = validated_data.pop('program_area')
         obj.save()
         return obj
 
@@ -365,6 +370,3 @@ class CollectedPreprintsRelationshipSerializer(CollectedAbstractNodeRelationship
                 list(self.context['view'].collection_preprints(obj, user=get_user_auth(self.context['request']).user)),
             'self': obj,
         }
-
-    class Meta:
-        type_ = 'linked_preprints'
