@@ -23,7 +23,7 @@ from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
 from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
-from osf.models.validators import validate_subject_hierarchy, validate_subjects
+from osf.models.validators import validate_subject_hierarchy, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN, READ, WRITE, reduce_permissions, expand_permissions, REVIEW_GROUPS
@@ -764,7 +764,7 @@ class TaxonomizableMixin(models.Model):
         )
         return
 
-    def set_subjects_from_relationships(self, subjects, auth, add_log=True):
+    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
         Only authorized admins may set subjects.
 
@@ -777,13 +777,19 @@ class TaxonomizableMixin(models.Model):
         self.check_subject_perms(auth)
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
-        for subj in validate_subjects(subjects):
+        for subj in expand_subject_hierarchy(subjects_list):
             self.subjects.add(subj)
 
         if add_log and hasattr(self, 'add_log'):
             self.add_subjects_log(old_subjects, auth)
 
         self.save(old_subjects=old_subjects)
+
+    def assert_subject_format_is_list(self, subj_list, error_msg):
+        """ Helper for asserting subject request is formatted properly
+        """
+        if not type(subj_list) is list:
+            raise ValidationValueError('Subjects are improperly formatted. {}'.format(error_msg))
 
     def set_subjects(self, new_subjects, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.
@@ -796,10 +802,12 @@ class TaxonomizableMixin(models.Model):
         :return: None
         """
         self.check_subject_perms(auth)
+        self.assert_subject_format_is_list(new_subjects, error_msg='Expecting list of lists.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
         for subj_list in new_subjects:
+            self.assert_subject_format_is_list(subj_list, error_msg='Expecting list of lists.')
             subj_hierarchy = []
             for s in subj_list:
                 subj_hierarchy.append(s)

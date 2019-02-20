@@ -31,7 +31,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.osfstorage.models import Region
-from osf.exceptions import NodeStateError
+from osf.exceptions import NodeStateError, ValidationValueError
 from osf.models import (
     Comment, DraftRegistration, Institution,
     RegistrationSchema, AbstractNode, PrivateLink,
@@ -745,6 +745,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                     raise exceptions.PermissionDenied(detail=str(e))
                 except ValueError as e:
                     raise exceptions.ValidationError(detail=str(e))
+                except ValidationValueError as e:
+                    raise exceptions.ValidationError(detail=e[0])
                 except NodeStateError as e:
                     raise exceptions.ValidationError(detail=str(e))
 
