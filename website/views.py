@@ -298,11 +298,13 @@ def resolve_guid(guid, suffix=None):
 
             return send_from_directory(ember_osf_web_dir, 'index.html')
 
-        if isinstance(referent, Registration) and not suffix:
+        if isinstance(referent, Registration) and (
+                not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components')
+        ):
             if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
                 # Route only the base detail view to ember
                 if PROXY_EMBER_APPS:
-                    resp = requests.get(EXTERNAL_EMBER_APPS['registries']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
+                    resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
                     return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
                 return send_from_directory(registries_dir, 'index.html')

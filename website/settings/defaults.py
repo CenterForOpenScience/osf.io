@@ -470,9 +470,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_events',
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
-        'scripts.generate_prereg_csv',
         'scripts.add_missing_identifiers_to_preprints',
-        'scripts.remove_after_use.end_prereg_challenge',
     )
 
     # Modules that need metrics and release requirements
@@ -579,15 +577,6 @@ class CeleryConfig:
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
             },
-            'generate_prereg_csv': {
-                'task': 'scripts.generate_prereg_csv',
-                'schedule': crontab(minute=0, hour=10, day_of_week=0),  # Sunday 5:00 a.m.
-            },
-            'end_prereg_challenge': {  # TODO: remove after Dec 31st 2018
-                'task': 'scripts.remove_after_use.end_prereg_challenge',
-                'schedule': crontab(day_of_month=1, month_of_year=1, hour=5),  # Jan 1st 12:00 a.m.
-                'kwargs': {'dry_run': False}
-            }
         }
 
         # Tasks that need metrics and release requirements

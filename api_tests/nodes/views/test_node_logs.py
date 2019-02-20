@@ -208,7 +208,6 @@ class TestNodeLogList:
 
         # Delete pointer and make sure no data shown
         pointer.remove_node(Auth(user))
-        pointer.save()
 
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
@@ -247,7 +246,6 @@ class TestNodeLogList:
 
         # Delete pointer and make sure no data shown
         pointer_registration.remove_node(Auth(user))
-        pointer_registration.save()
 
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
@@ -285,7 +283,6 @@ class TestNodeLogList:
 
         # Delete pointer and make sure no data shown
         pointer_embargo.remove_node(Auth(user))
-        pointer_embargo.save()
 
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200

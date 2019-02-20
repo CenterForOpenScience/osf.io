@@ -2985,9 +2985,9 @@ class TestCollectionRelationshipNodeLinks:
 
     @pytest.fixture()
     def make_payload(self, node_admin):
-        def payload(node_ids=None):
+        def payload(node_ids=None, deprecated_type=True):
             node_ids = node_ids or [node_admin._id]
-            env_linked_nodes = [{'type': 'linked_nodes',
+            env_linked_nodes = [{'type': 'linked_nodes' if deprecated_type else 'nodes',
                                  'id': node_id} for node_id in node_ids]
             return {'data': env_linked_nodes}
         return payload
@@ -3001,6 +3001,18 @@ class TestCollectionRelationshipNodeLinks:
         assert collection_private.linked_nodes_self_url in res.json['links']['self']
         assert collection_private.linked_nodes_related_url in res.json['links']['html']
         assert res.json['data'][0]['id'] == node_private._id
+        assert res.json['data'][0]['type'] == 'linked_nodes'
+
+    def test_get_relationship_linked_nodes_2_13(
+            self, app, url_private_linked_nodes,
+            user_one, collection_private, node_private
+    ):
+        res = app.get('{}?version=2.13'.format(url_private_linked_nodes), auth=user_one.auth)
+        assert res.status_code == 200
+        assert collection_private.linked_nodes_self_url in res.json['links']['self']
+        assert collection_private.linked_nodes_related_url in res.json['links']['html']
+        assert res.json['data'][0]['id'] == node_private._id
+        assert res.json['data'][0]['type'] == 'nodes'
 
     def test_get_relationship_linked_registrations(
             self, app, registration_private,
@@ -3012,6 +3024,19 @@ class TestCollectionRelationshipNodeLinks:
         assert collection_private.linked_registrations_self_url in res.json['links']['self']
         assert collection_private.linked_registrations_related_url in res.json['links']['html']
         assert res.json['data'][0]['id'] == registration_private._id
+        assert res.json['data'][0]['type'] == 'linked_registrations'
+
+    def test_get_relationship_linked_registrations_2_13(
+            self, app, registration_private,
+            url_private_linked_regs, user_one,
+            collection_private
+    ):
+        res = app.get('{}?version=2.13'.format(url_private_linked_regs), auth=user_one.auth)
+        assert res.status_code == 200
+        assert collection_private.linked_registrations_self_url in res.json['links']['self']
+        assert collection_private.linked_registrations_related_url in res.json['links']['html']
+        assert res.json['data'][0]['id'] == registration_private._id
+        assert res.json['data'][0]['type'] == 'registrations'
 
     def test_get_public_relationship_linked_nodes_logged_out(
             self, app, url_public_linked_nodes, node_public):
@@ -3050,6 +3075,22 @@ class TestCollectionRelationshipNodeLinks:
     ):
         res = app.post_json_api(
             url_private_linked_nodes, make_payload([node_contributor._id]),
+            auth=user_one.auth
+        )
+
+        assert res.status_code == 201
+
+        ids = [data['id'] for data in res.json['data']]
+        assert node_contributor._id in ids
+        assert node_private._id in ids
+
+    def test_post_contributing_node_2_13(
+            self, app, url_private_linked_nodes,
+            make_payload, user_one, node_contributor,
+            node_private
+    ):
+        res = app.post_json_api(
+            '{}?version=2.13'.format(url_private_linked_nodes), make_payload([node_contributor._id], False),
             auth=user_one.auth
         )
 
@@ -3285,6 +3326,16 @@ class TestCollectionRelationshipNodeLinks:
             auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
 
+        # test_type_mistyped_2_13
+        res = app.post_json_api(
+            '{}?version=2.13'.format(url_private_linked_nodes),
+            {'data': [{
+                'type': 'linked_nodes',
+                'id': node_contributor._id}
+            ]},
+            auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
+
         # test_creates_public_linked_node_relationship_logged_out
         res = app.post_json_api(url_public_linked_nodes, make_payload(
             [node_public._id]), expect_errors=True)
@@ -3418,9 +3469,9 @@ class TestCollectionRelationshipPreprintLinks:
 
     @pytest.fixture()
     def make_payload(self, preprint_admin):
-        def payload(preprint_ids=None):
+        def payload(preprint_ids=None, deprecated_type=True):
             preprint_ids = preprint_ids or [preprint_admin._id]
-            env_linked_preprints = [{'type': 'linked_preprints',
+            env_linked_preprints = [{'type': 'linked_preprints' if deprecated_type else 'preprints',
                                  'id': preprint_id} for preprint_id in preprint_ids]
             return {'data': env_linked_preprints}
         return payload
@@ -3433,6 +3484,17 @@ class TestCollectionRelationshipPreprintLinks:
         assert res.status_code == 200
         assert collection_private.linked_preprints_self_url in res.json['links']['self']
         assert res.json['data'][0]['id'] == preprint_private._id
+        assert res.json['data'][0]['type'] == 'linked_preprints'
+
+    def test_get_relationship_linked_preprints_2_13(
+            self, app, url_private_linked_preprints,
+            user_one, collection_private, preprint_private
+    ):
+        res = app.get('{}?version=2.13'.format(url_private_linked_preprints), auth=user_one.auth)
+        assert res.status_code == 200
+        assert collection_private.linked_preprints_self_url in res.json['links']['self']
+        assert res.json['data'][0]['id'] == preprint_private._id
+        assert res.json['data'][0]['type'] == 'preprints'
 
     def test_get_public_relationship_linked_preprints_logged_out(
             self, app, url_public_linked_preprints, preprint_public):
@@ -3456,6 +3518,22 @@ class TestCollectionRelationshipPreprintLinks:
     ):
         res = app.post_json_api(
             url_private_linked_preprints, make_payload([preprint_contributor._id]),
+            auth=user_one.auth
+        )
+
+        assert res.status_code == 201
+
+        ids = [data['id'] for data in res.json['data']]
+        assert preprint_contributor._id in ids
+        assert preprint_private._id in ids
+
+    def test_post_contributing_preprint_2_13(
+            self, app, url_private_linked_preprints,
+            make_payload, user_one, preprint_contributor,
+            preprint_private
+    ):
+        res = app.post_json_api(
+            '{}?version=2.13'.format(url_private_linked_preprints), make_payload([preprint_contributor._id], False),
             auth=user_one.auth
         )
 
@@ -3649,6 +3727,16 @@ class TestCollectionRelationshipPreprintLinks:
             url_private_linked_preprints,
             {'data': [{
                 'type': 'not_linked_preprints',
+                'id': preprint_contributor._id}
+            ]},
+            auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
+
+        # test_type_mistyped_2_13
+        res = app.post_json_api(
+            '{}?version=2.13'.format(url_private_linked_preprints),
+            {'data': [{
+                'type': 'linked_preprints',
                 'id': preprint_contributor._id}
             ]},
             auth=user_one.auth, expect_errors=True)

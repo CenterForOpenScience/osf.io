@@ -38,6 +38,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
     CHANGED_LICENSE = 'license_changed'
 
     FILE_UPDATED = 'file_updated'
+    FILE_METADATA_UPDATED = 'file_metadata_updated'
 
     SUBJECTS_UPDATED = 'subjects_updated'
 
@@ -48,7 +49,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
 
     actions = ([DELETED, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
                 PERMISSIONS_UPDATED, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, CHANGED_LICENSE,
-                EDITED_DESCRIPTION, FILE_UPDATED, MADE_CONTRIBUTOR_VISIBLE, SUPPLEMENTAL_NODE_ADDED,
+                EDITED_DESCRIPTION, FILE_UPDATED, FILE_METADATA_UPDATED, MADE_CONTRIBUTOR_VISIBLE, SUPPLEMENTAL_NODE_ADDED,
                 MADE_CONTRIBUTOR_INVISIBLE, SUBJECTS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, PUBLISHED] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
