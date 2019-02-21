@@ -1,7 +1,6 @@
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField
-from api.base.utils import absolute_reverse
 
 
 class SubjectSerializer(JSONAPISerializer):
@@ -30,13 +29,7 @@ class SubjectSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        return absolute_reverse(
-            'subjects:subject-detail',
-            kwargs={
-                'subject_id': self.context['request'].parser_context['kwargs']['subject_id'],
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
+        return obj.absolute_api_v2_subject_url
 
     def get_children_count(self, obj):
         return obj.child_count()

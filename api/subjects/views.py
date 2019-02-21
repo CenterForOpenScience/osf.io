@@ -16,10 +16,10 @@ class SubjectMixin(object):
     """Mixin with convenience methods for retrieving the current subject based on the
     current URL. By default, fetches the current subject based on the subject_id kwarg.
     """
-    node_lookup_url_kwarg = 'subject_id'
+    subject_lookup_url_kwarg = 'subject_id'
 
     def get_subject(self, check_object_permissions=True):
-        subject_id = self.kwargs['subject_id']
+        subject_id = self.kwargs[self.subject_lookup_url_kwarg]
 
         try:
             subject = optimize_subject_query(Subject.objects).get(_id=subject_id)
@@ -54,6 +54,22 @@ class SubjectList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        # TODO: Queries on 'parents' should be deprecated
+        if field_name == 'parent':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'parent___id'
+            else:
+                if len(operation['value']) > 1:
+                    operation['source_field_name'] = 'parent___id__in'
+                elif len(operation['value']) == 1:
+                    operation['source_field_name'] == 'parent___id'
+                    operation['value'] = operation['value'][0]
+                else:
+                    operation['source_field_name'] = 'parent__isnull'
+                    operation['value'] = True
 
 
 class SubjectDetail(JSONAPIBaseView, generics.RetrieveAPIView, SubjectMixin):
