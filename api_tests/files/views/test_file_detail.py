@@ -131,6 +131,11 @@ class TestFileView:
         assert guid is not None
         assert res.json['data']['attributes']['guid'] == guid._id
 
+    def test_file_with_wrong_guid(self, app, user):
+        url = '/{}files/{}/'.format(API_BASE, user._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+
     @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
     def test_file_guid_not_created_with_basic_auth(
             self, mock_allow, app, user, file_url):
