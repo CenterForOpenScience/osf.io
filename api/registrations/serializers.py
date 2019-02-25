@@ -347,7 +347,7 @@ class RegistrationSerializer(NodeSerializer):
         return obj.comment_set.filter(page='node', is_deleted=False).count()
 
     def get_files_count(self, obj):
-        return obj.files_count
+        return obj.files_count or 0
 
     def check_admin_perms(self, registration, user, validated_data):
         """
