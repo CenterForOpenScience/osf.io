@@ -51,9 +51,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def folder_path(self):
         return self.folder_name
 
-    def fetch_folder_name(self):
-        return self.folder_name
-
     @property
     def display_name(self):
         return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
