@@ -359,10 +359,16 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return utils.copy_files(self, destination_parent.target, destination_parent, name=name)
 
     def move_under(self, destination_parent, name=None):
+        renaming = name != self.name
         self.name = name or self.name
         self.parent = destination_parent
+
         self._update_node(save=True)  # Trust _update_node to save us
 
+        if renaming:
+            newest_version = self.versions.first()
+            newest_version.name = self.name
+            newest_version.save()
         return self
 
     def belongs_to_node(self, target_id):
