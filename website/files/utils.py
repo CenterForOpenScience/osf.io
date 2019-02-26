@@ -6,6 +6,7 @@ def copy_files(src, target_node, parent=None, name=None):
     :param Folder parent: The parent of to attach the clone of src to, if applicable
     """
     assert not parent or not parent.is_file, 'Parent must be a folder'
+    renaming = src.name != name
 
     cloned = src.clone()
     cloned.parent = parent
@@ -24,10 +25,16 @@ def copy_files(src, target_node, parent=None, name=None):
             # create a new most recent version and update the region before adding
             new_fileversion = most_recent_fileversion.clone()
             new_fileversion.region = target_node.osfstorage_region
+            new_fileversion.name = cloned.name
             new_fileversion.save()
             cloned.versions.add(new_fileversion)
         else:
             cloned.versions.add(*src.versions.all())
+
+        if renaming:
+            latest_version = cloned.versions.first()
+            latest_version.name = cloned.name
+            latest_version.save()
 
         # copy over file metadata records
         if cloned.provider == 'osfstorage':

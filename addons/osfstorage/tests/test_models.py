@@ -298,11 +298,23 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_copy(self):
         to_copy = self.node_settings.get_root().append_file('Carp')
         copy_to = self.node_settings.get_root().append_folder('Cloud')
-
+        version = to_copy.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
+        assert_equal(to_copy.versions.first().name, 'Carp')
         copied = to_copy.copy_under(copy_to)
 
         assert_not_equal(copied, to_copy)
         assert_equal(copied.parent, copy_to)
+        assert_equal(copied.versions.first().name, 'Carp')
         assert_equal(to_copy.parent, self.node_settings.get_root())
 
     def test_copy_node_file_to_preprint(self):
@@ -336,10 +348,22 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_copy_rename(self):
         to_copy = self.node_settings.get_root().append_file('Carp')
         copy_to = self.node_settings.get_root().append_folder('Cloud')
-
+        version = to_copy.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
+        assert_equal(to_copy.versions.first().name, 'Carp')
         copied = to_copy.copy_under(copy_to, name='But')
 
         assert_equal(copied.name, 'But')
+        assert_equal(copied.versions.first().name, 'But')
         assert_not_equal(copied, to_copy)
         assert_equal(to_copy.name, 'Carp')
         assert_equal(copied.parent, copy_to)
@@ -347,21 +371,47 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_move(self):
         to_move = self.node_settings.get_root().append_file('Carp')
+        version = to_move.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
         move_to = self.node_settings.get_root().append_folder('Cloud')
+        assert_equal(to_move.versions.first().name, 'Carp')
 
         moved = to_move.move_under(move_to)
 
         assert_equal(to_move, moved)
+        assert_equal(moved.versions.first().name, 'Carp')
         assert_equal(moved.parent, move_to)
 
     def test_move_and_rename(self):
         to_move = self.node_settings.get_root().append_file('Carp')
-        move_to = self.node_settings.get_root().append_folder('Cloud')
+        version = to_move.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
+        assert_equal(to_move.versions.first().name, 'Carp')
 
+        move_to = self.node_settings.get_root().append_folder('Cloud')
         moved = to_move.move_under(move_to, name='Tuna')
 
         assert_equal(to_move, moved)
         assert_equal(to_move.name, 'Tuna')
+        assert_equal(to_move.versions.first().name, 'Tuna')
         assert_equal(moved.parent, move_to)
 
     def test_move_preprint_primary_file_to_node(self):

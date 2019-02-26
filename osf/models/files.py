@@ -365,7 +365,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         self._update_node(save=True)  # Trust _update_node to save us
 
-        if renaming:
+        if renaming and self.is_file and self.versions.exists():
             newest_version = self.versions.first()
             newest_version.name = self.name
             newest_version.save()

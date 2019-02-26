@@ -270,6 +270,7 @@ class TestUploadFileHook(HookTestCase):
         assert_is_not(version, None)
         assert_equal([version], list(record.versions.all()))
         assert_not_in(version, self.record.versions.all())
+        assert_equal(version.name, record.name)
         assert_equal(record.serialize(), res.json['data'])
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
 
@@ -317,6 +318,7 @@ class TestUploadFileHook(HookTestCase):
         record = parent.find_child_by_name(name)
         assert_in(version, record.versions.all())
         assert_equals(record.name, name)
+        assert_equals(record.versions.first().name, name)
         assert_equals(record.parent, parent)
 
     def test_upload_create_child_with_same_name(self):
@@ -337,6 +339,7 @@ class TestUploadFileHook(HookTestCase):
         record = parent.find_child_by_name(name)
         assert_in(version, record.versions.all())
         assert_equals(record.name, name)
+        assert_equals(record.versions.first().name, name)
         assert_equals(record.parent, parent)
 
     def test_upload_fail_to_create_version_due_to_checkout(self):
@@ -476,6 +479,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
         assert_equal([version], list(record.versions.all()))
         assert_not_in(version, self.record.versions.all())
         assert_equal(record.serialize(), res.json['data'])
+        assert_equal(version.name, record.name)
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
 
     def test_upload_update(self):
@@ -1115,6 +1119,35 @@ class TestMoveHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 200)
+
+    def test_can_rename_file(self):
+        file = create_test_file(self.project, self.user, filename='road_dogg.mp3')
+        new_name = 'JesseJames.mp3'
+
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'guid': self.project._id},
+            payload={
+                'action': 'rename',
+                'source': file._id,
+                'target': self.root_node._id,
+                'user': self.user._id,
+                'name': file.name,
+                'destination': {
+                    'parent': self.root_node._id,
+                    'target': self.project._id,
+                    'name': new_name,
+                }
+            },
+            target=self.project,
+            method='post_json',
+            expect_errors=True,
+        )
+        file.reload()
+
+        assert_equal(res.status_code, 200)
+        assert_equal(file.name, new_name)
+        assert_equal(file.versions.first().name, new_name)
 
     def test_can_move_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
