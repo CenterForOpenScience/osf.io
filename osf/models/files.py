@@ -478,6 +478,7 @@ class File(models.Model):
         # if revision is none then version is the latest version
         # Dont save the latest information
         if revision is not None:
+            version.name = self.name
             version.save()
             self.versions.add(version)
         for entry in self.history:
@@ -736,6 +737,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
     seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
     region = models.ForeignKey('addons_osfstorage.Region', null=True, blank=True, on_delete=models.CASCADE)
+    name = models.TextField(blank=True)
 
     includable_objects = IncludeManager()
 

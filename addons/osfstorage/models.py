@@ -295,7 +295,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
-        version = FileVersion(identifier=self.versions.count() + 1, creator=creator, location=location)
+        version = FileVersion(identifier=self.versions.count() + 1, creator=creator, location=location, name=self.name)
 
         if latest_version and latest_version.is_duplicate(version):
             return latest_version

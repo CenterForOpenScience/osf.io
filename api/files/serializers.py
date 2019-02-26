@@ -410,6 +410,7 @@ class FileVersionSerializer(JSONAPISerializer):
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
     date_created = VersionedDateTimeField(source='created', read_only=True, help_text='The date that this version was created')
+    name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     links = LinksField({
         'self': 'self_url',
         'html': 'absolute_url',
