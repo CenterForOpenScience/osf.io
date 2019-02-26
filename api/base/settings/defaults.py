@@ -162,6 +162,9 @@ REST_FRAMEWORK = {
         '2.9',
         '2.10',
         '2.11',
+        '2.12',
+        '2.13',
+        '2.14',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -297,5 +300,8 @@ HASHIDS_SALT = 'pinkhimalayan'
 ELASTICSEARCH_DSL = {
     'default': {
         'hosts': os.environ.get('ELASTIC6_URI', '127.0.0.1:9201'),
+        'retry_on_timeout': True,
     },
 }
+# Store yearly indices for time-series metrics
+ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'

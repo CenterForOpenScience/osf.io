@@ -4,16 +4,19 @@ from collections import OrderedDict
 from django.core.urlresolvers import resolve, reverse
 import furl
 import pytz
+import jsonschema
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, OSFUser, Comment, PreprintService, AbstractNode
+from osf.models import BaseFileNode, OSFUser, Comment, Preprint, AbstractNode
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from website import settings
 from website.util import api_v2_url
 
+from addons.base.utils import get_mfr_url
+
 from api.base.serializers import (
-    FileCommentRelationshipField,
+    FileRelationshipField,
     format_relationship_links,
     IDField,
     JSONAPIListField,
@@ -26,11 +29,12 @@ from api.base.serializers import (
     WaterbutlerLink,
     VersionedDateTimeField,
     TargetField,
+    HideIfPreprint,
     ShowIfVersion,
 )
-from api.base.exceptions import Conflict
-from api.base.utils import absolute_reverse
-from api.base.utils import get_user_auth
+from api.base.utils import absolute_reverse, get_user_auth
+from api.base.exceptions import Conflict, InvalidModelValueError
+from api.base.schemas.utils import from_json
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -189,11 +193,15 @@ class BaseFileSerializer(JSONAPISerializer):
         related_view_kwargs={'file_id': '<_id>'},
         kind='file',
     )
-    comments = FileCommentRelationshipField(
+    comments = HideIfPreprint(FileRelationshipField(
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<target._id>'},
         related_meta={'unread': 'get_unread_comments_count'},
         filter={'target': 'get_file_guid'},
+    ))
+    metadata_records = FileRelationshipField(
+        related_view='files:metadata-records',
+        related_view_kwargs={'file_id': '<_id>'},
     )
 
     links = LinksField({
@@ -202,12 +210,26 @@ class BaseFileSerializer(JSONAPISerializer):
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
         'download': 'get_download_link',
+        'render': 'get_render_link',
+        'html': 'absolute_url',
         'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder'),
     })
+
+    def absolute_url(self, obj):
+        if obj.is_file:
+            return furl.furl(settings.DOMAIN).set(
+                path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
+            ).url
 
     def get_download_link(self, obj):
         if obj.is_file:
             return get_file_download_link(obj, view_only=self.context['request'].query_params.get('view_only'))
+
+    def get_render_link(self, obj):
+        if obj.is_file:
+            mfr_url = get_mfr_url(obj.target, obj.provider)
+            download_url = self.get_download_link(obj)
+            return get_file_render_link(mfr_url, download_url)
 
     class Meta:
         type_ = 'files'
@@ -267,7 +289,9 @@ class BaseFileSerializer(JSONAPISerializer):
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
-        return obj.target.can_comment(auth)
+        if isinstance(obj.target, AbstractNode):
+            return obj.target.can_comment(auth)
+        return False
 
     def get_unread_comments_count(self, obj):
         user = self.context['request'].user
@@ -334,7 +358,7 @@ class FileSerializer(BaseFileSerializer):
 
     def get_target_type(self, obj):
         target_type = 'node'
-        if isinstance(obj, PreprintService):
+        if isinstance(obj, Preprint):
             target_type = 'preprint'
         return target_type
 
@@ -390,6 +414,7 @@ class FileVersionSerializer(JSONAPISerializer):
         'self': 'self_url',
         'html': 'absolute_url',
         'download': 'get_download_link',
+        'render': 'get_render_link',
     })
 
     class Meta:
@@ -420,6 +445,72 @@ class FileVersionSerializer(JSONAPISerializer):
             view_only=self.context['request'].query_params.get('view_only'),
         )
 
+    def get_render_link(self, obj):
+        file = self.context['file']
+        mfr_url = get_mfr_url(file.target, file.provider)
+        download_url = self.get_download_link(obj)
+
+        return get_file_render_link(mfr_url, download_url, version=obj.identifier)
+
+class FileMetadataRecordSerializer(JSONAPISerializer):
+
+    id = IDField(source='_id', required=True)
+    type = TypeField()
+
+    metadata = ser.DictField()
+
+    file = RelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<file._id>'},
+    )
+
+    schema = RelationshipField(
+        related_view='schemas:file-metadata-schema-detail',
+        related_view_kwargs={'schema_id': '<schema._id>'},
+    )
+
+    links = LinksField({
+        'download': 'get_download_link',
+        'self': 'get_absolute_url',
+    })
+
+    def validate_metadata(self, value):
+        schema = from_json(self.instance.serializer.osf_schema)
+        try:
+            jsonschema.validate(value, schema)
+        except jsonschema.ValidationError as e:
+            if e.relative_schema_path[0] == 'additionalProperties':
+                error_message = e.message
+            else:
+                error_message = 'Your response of {} for the field {} was invalid.'.format(
+                    e.instance,
+                    e.absolute_path[0],
+                )
+            raise InvalidModelValueError(detail=error_message, meta={'metadata_schema': schema})
+        return value
+
+    def update(self, record, validated_data):
+        if validated_data:
+            user = self.context['request'].user
+            proposed_metadata = validated_data.pop('metadata')
+            record.update(proposed_metadata, user)
+        return record
+
+    def get_download_link(self, obj):
+        return absolute_reverse(
+            'files:metadata-record-download', kwargs={
+                'file_id': obj.file._id,
+                'record_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    class Meta:
+        type_ = 'metadata_records'
+
 
 def get_file_download_link(obj, version=None, view_only=None):
     guid = obj.get_guid()
@@ -435,3 +526,22 @@ def get_file_download_link(obj, version=None, view_only=None):
     if view_only:
         url.args['view_only'] = view_only
     return url.url
+
+
+def get_file_render_link(mfr_url, download_url, version=None):
+    download_url_args = {
+        'direct': None,
+        'mode': 'render',
+    }
+    if version:
+        download_url_args['revision'] = version
+
+    render_url = furl.furl(mfr_url).set(
+        path=['render'],
+        args={
+            'url': furl.furl(download_url).set(
+                args=download_url_args,
+            ),
+        },
+    )
+    return render_url.url

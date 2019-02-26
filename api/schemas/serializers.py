@@ -25,8 +25,16 @@ class SchemaSerializer(JSONAPISerializer):
 
 class RegistrationSchemaSerializer(SchemaSerializer):
 
+    filterable_fields = ['active']
+
     class Meta:
         type_ = 'registration_schemas'
+
+
+class FileMetadataSchemaSerializer(SchemaSerializer):
+
+    class Meta:
+        type_ = 'file_metadata_schemas'
 
 
 class DeprecatedMetaSchemaSerializer(SchemaSerializer):

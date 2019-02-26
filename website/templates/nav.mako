@@ -83,7 +83,7 @@
                 %else :
                 <li class="dropdown sign-in">
                     <div class="col-sm-12">
-                        <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${web_url_for('auth_register', _absolute=True)}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
+                        <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${sign_up_url}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
                         <a data-bind="click: trackClick.bind($data, 'SignIn')" href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign In</a>
                     </div>
                 </li>

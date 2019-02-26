@@ -3,8 +3,8 @@ from rest_framework import exceptions
 from rest_framework import serializers as ser
 
 from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider
-from osf.exceptions import ValidationError
-from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer
+from osf.exceptions import ValidationError, NodeStateError
+from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
@@ -12,7 +12,6 @@ from api.nodes.serializers import NodeLinksSerializer
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from osf.utils.permissions import WRITE
-from website.exceptions import NodeStateError
 
 
 class CollectionProviderRelationshipField(RelationshipField):
@@ -100,6 +99,14 @@ class CollectionSerializer(JSONAPISerializer):
         self_view_kwargs={'collection_id': '<_id>'},
     )
 
+    linked_preprints = RelationshipField(
+        related_view='collections:linked-preprints',
+        related_view_kwargs={'collection_id': '<_id>'},
+        self_view='collections:collection-preprint-pointer-relationship',
+        self_view_kwargs={'collection_id': '<_id>'},
+        related_meta={'count': 'get_preprint_links_count'},
+    )
+
     class Meta:
         type_ = 'collections'
 
@@ -113,11 +120,17 @@ class CollectionSerializer(JSONAPISerializer):
 
     def get_node_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        return Node.objects.filter(guids__in=obj.guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
+        node_ids = obj.guid_links.all().values_list('_id', flat=True)
+        return Node.objects.filter(guids___id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
 
     def get_registration_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        return Registration.objects.filter(guids__in=obj.guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
+        registration_ids = obj.guid_links.all().values_list('_id', flat=True)
+        return Registration.objects.filter(guids___id__in=registration_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
+
+    def get_preprint_links_count(self, obj):
+        auth = get_user_auth(self.context['request'])
+        return self.context['view'].collection_preprints(obj, auth.user).count()
 
     def create(self, validated_data):
         node = Collection(**validated_data)
@@ -212,6 +225,12 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
             obj.status = validated_data.pop('status')
         if 'collected_type' in validated_data:
             obj.collected_type = validated_data.pop('collected_type')
+        if 'volume' in validated_data:
+            obj.volume = validated_data.pop('volume')
+        if 'issue' in validated_data:
+            obj.issue = validated_data.pop('issue')
+        if 'program_area' in validated_data:
+            obj.program_area = validated_data.pop('program_area')
         obj.save()
         return obj
 
@@ -341,3 +360,13 @@ class CollectedNodeRelationshipSerializer(CollectedAbstractNodeRelationshipSeria
 
 class CollectedRegistrationsRelationshipSerializer(CollectedAbstractNodeRelationshipSerializer, LinkedRegistrationsRelationshipSerializer):
     _abstract_node_subclass = Registration
+
+class CollectedPreprintsRelationshipSerializer(CollectedAbstractNodeRelationshipSerializer, LinkedPreprintsRelationshipSerializer):
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {
+            'data':
+                list(self.context['view'].collection_preprints(obj, user=get_user_auth(self.context['request']).user)),
+            'self': obj,
+        }

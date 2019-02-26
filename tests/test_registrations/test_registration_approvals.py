@@ -10,7 +10,7 @@ from osf_tests.factories import (
 )
 
 from framework.exceptions import PermissionsError
-from website.exceptions import (
+from osf.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens

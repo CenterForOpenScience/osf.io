@@ -11,15 +11,16 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
-from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated
+from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
-from osf.exceptions import ValidationValueError, ValidationError
-from osf.models import OSFUser, QuickFilesNode
-from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
+from osf.models import OSFUser, QuickFilesNode, Email
+from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
+from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL, OSF_SUPPORT_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
+from website import mails
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.nodes.serializers import NodeSerializer
-from api.users.schemas.utils import validate_user_json, from_json
+from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
 
 
@@ -133,6 +134,12 @@ class UserSerializer(JSONAPISerializer):
     default_region = ShowIfCurrentUser(RelationshipField(
         related_view='regions:region-detail',
         related_view_kwargs={'region_id': 'get_default_region_id'},
+        read_only=True,
+    ))
+
+    settings = ShowIfCurrentUser(RelationshipField(
+        related_view='users:user_settings',
+        related_view_kwargs={'user_id': '<_id>'},
         read_only=True,
     ))
 
@@ -351,13 +358,6 @@ class UserAccountExportSerializer(BaseAPISerializer):
         type_ = 'user-account-export-form'
 
 
-class UserAccountDeactivateSerializer(BaseAPISerializer):
-    type = TypeField()
-
-    class Meta:
-        type_ = 'user-account-deactivate-form'
-
-
 class UserChangePasswordSerializer(BaseAPISerializer):
     type = TypeField()
     existing_password = ser.CharField(write_only=True, required=True)
@@ -371,8 +371,15 @@ class UserSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     two_factor_enabled = ser.SerializerMethodField()
+    two_factor_confirmed = ser.SerializerMethodField(read_only=True)
     subscribe_osf_general_email = ser.SerializerMethodField()
     subscribe_osf_help_email = ser.SerializerMethodField()
+    deactivation_requested = ser.BooleanField(source='requested_deactivation', required=False)
+    secret = ser.SerializerMethodField(read_only=True)
+
+    def to_representation(self, instance):
+        self.context['twofactor_addon'] = instance.get_addon('twofactor')
+        return super(UserSettingsSerializer, self).to_representation(instance)
 
     def get_two_factor_enabled(self, obj):
         try:
@@ -380,6 +387,17 @@ class UserSettingsSerializer(JSONAPISerializer):
             return not two_factor.deleted
         except TwoFactorUserSettings.DoesNotExist:
             return False
+
+    def get_two_factor_confirmed(self, obj):
+        two_factor_addon = self.context['twofactor_addon']
+        if two_factor_addon and two_factor_addon.is_confirmed:
+            return True
+        return False
+
+    def get_secret(self, obj):
+        two_factor_addon = self.context['twofactor_addon']
+        if two_factor_addon and not two_factor_addon.is_confirmed:
+            return two_factor_addon.totp_secret_b32
 
     def get_subscribe_osf_general_email(self, obj):
         return obj.mailchimp_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
@@ -389,7 +407,17 @@ class UserSettingsSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
+        'export': 'get_export_link',
     })
+
+    def get_export_link(self, obj):
+        return absolute_reverse(
+            'users:user-account-export',
+            kwargs={
+                'user_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -444,6 +472,20 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
             raise exceptions.PermissionDenied(detail='The two-factor verification code you provided is invalid.')
         two_factor_addon.save()
 
+    def request_deactivation(self, instance, requested_deactivation):
+        if instance.requested_deactivation != requested_deactivation:
+            if requested_deactivation:
+                mails.send_mail(
+                    to_addr=OSF_SUPPORT_EMAIL,
+                    mail=mails.REQUEST_DEACTIVATION,
+                    user=instance,
+                    can_change_preferences=False,
+                )
+                instance.email_last_sent = timezone.now()
+            instance.requested_deactivation = requested_deactivation
+            instance.save()
+        return
+
     def to_representation(self, instance):
         """
         Overriding to_representation allows using different serializers for the request and response.
@@ -460,6 +502,8 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
             elif 'two_factor_verification' == attr:
                 two_factor_addon = instance.get_addon('twofactor')
                 self.verify_two_factor(instance, value, two_factor_addon)
+            elif 'requested_deactivation' == attr:
+                self.request_deactivation(instance, value)
             elif attr in self.MAP_MAIL.keys():
                 self.update_email_preferences(instance, attr, value)
 
@@ -467,21 +511,33 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
 
 class UserEmail(object):
-    def __init__(self, email_id, address, confirmed, primary):
+    def __init__(self, email_id, address, confirmed, verified, primary, is_merge=False):
         self.id = email_id
         self.address = address
         self.confirmed = confirmed
+        self.verified = verified
         self.primary = primary
+        self.is_merge = is_merge
 
 
 class UserEmailsSerializer(JSONAPISerializer):
+
+    filterable_fields = frozenset([
+        'confirmed',
+        'verified',
+        'primary',
+    ])
+
     id = IDField(read_only=True)
     type = TypeField()
     email_address = ser.CharField(source='address')
-    confirmed = ser.BooleanField(read_only=True)
+    confirmed = ser.BooleanField(read_only=True, help_text='User has clicked the confirmation link in an email.')
+    verified = ser.BooleanField(required=False, help_text='User has verified adding the email on the OSF, i.e. via a modal.')
     primary = ser.BooleanField(required=False)
+    is_merge = ser.BooleanField(read_only=True, required=False, help_text='This unconfirmed email is already confirmed to another user.')
     links = LinksField({
         'self': 'get_absolute_url',
+        'resend_confirmation': 'get_resend_confirmation_url',
     })
 
     def get_absolute_url(self, obj):
@@ -495,12 +551,18 @@ class UserEmailsSerializer(JSONAPISerializer):
             },
         )
 
+    def get_resend_confirmation_url(self, obj):
+        if not obj.confirmed:
+            url = self.get_absolute_url(obj)
+            return '{}?resend_confirmation=true'.format(url)
+
     class Meta:
         type_ = 'user_emails'
 
     def create(self, validated_data):
         user = self.context['request'].user
         address = validated_data['address']
+        is_merge = Email.objects.filter(address=address).exists()
         if address in user.unconfirmed_emails or address in user.emails.all().values_list('address', flat=True):
             raise Conflict('This user already has registered with the email address {}'.format(address))
         try:
@@ -508,19 +570,35 @@ class UserEmailsSerializer(JSONAPISerializer):
             user.save()
             if CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=address)
+                user.email_last_sent = timezone.now()
+                user.save()
         except ValidationError as e:
             raise exceptions.ValidationError(e.args[0])
+        except BlacklistedEmailError:
+            raise exceptions.ValidationError('This email address domain is blacklisted.')
 
-        return UserEmail(email_id=token, address=address, confirmed=False, primary=False)
+        return UserEmail(email_id=token, address=address, confirmed=False, verified=False, primary=False, is_merge=is_merge)
 
     def update(self, instance, validated_data):
         user = self.context['request'].user
         primary = validated_data.get('primary', None)
+        verified = validated_data.get('verified', None)
         if primary and instance.confirmed:
             user.username = instance.address
             user.save()
         elif primary and not instance.confirmed:
             raise exceptions.ValidationError('You cannot set an unconfirmed email address as your primary email address.')
+
+        if verified and not instance.verified:
+            if not instance.confirmed:
+                raise exceptions.ValidationError('You cannot verify an email address that has not been confirmed by a user.')
+            user.confirm_email(token=instance.id, merge=instance.is_merge)
+            instance.verified = True
+            instance.is_merge = False
+            new_email = Email.objects.get(address=instance.address, user=user)
+            instance.id = hashids.encode(new_email.id)
+            user.save()
+
         return instance
 
 

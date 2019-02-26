@@ -3,7 +3,9 @@ from __future__ import unicode_literals
 import logging
 
 from django.apps import apps
+from django.dispatch import receiver
 from django.db import models, connection
+from django.db.models.signals import post_save
 from django.contrib.contenttypes.models import ContentType
 from psycopg2._psycopg import AsIs
 
@@ -15,6 +17,7 @@ from framework.auth.core import Auth
 from osf.models.mixins import Loggable
 from osf.models import AbstractNode
 from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
+from osf.models.metaschema import FileMetadataSchema
 from osf.utils import permissions
 from website.files import exceptions
 from website.files import utils as files_utils
@@ -153,7 +156,10 @@ class OsfStorageFileNode(BaseFileNode):
 
     @property
     def is_preprint_primary(self):
-        return getattr(self.target, 'preprint_file', None) == self and not getattr(self.target, '_has_abandoned_preprint', None)
+        return (
+            getattr(self.target, 'primary_file', None) == self and
+            not getattr(self.target, 'is_deleted', None)
+        )
 
     def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
@@ -431,9 +437,9 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
     @property
     def is_preprint_primary(self):
-        if hasattr(self.target, 'preprint_file') and self.target.preprint_file:
+        if hasattr(self.target, 'primary_file') and self.target.primary_file:
             for child in self.children.all():
-                if getattr(child.target, 'preprint_file', None):
+                if getattr(child.target, 'primary_file', None):
                     if child.is_preprint_primary:
                         return True
         return False
@@ -591,3 +597,11 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             auth=auth,
             params=params
         )
+
+
+@receiver(post_save, sender=OsfStorageFile)
+def create_metadata_records(sender, instance, created, **kwargs):
+    if created:
+        from osf.models.metadata import FileMetadataRecord
+        for schema in FileMetadataSchema.objects.all():
+            FileMetadataRecord.objects.create(file=instance, schema=schema)
