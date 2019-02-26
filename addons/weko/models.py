@@ -36,7 +36,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     index_title = models.TextField(blank=True, null=True)
     index_id = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
@@ -154,7 +154,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     ##### Callback overrides #####
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 

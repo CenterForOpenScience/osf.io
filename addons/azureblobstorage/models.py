@@ -37,13 +37,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_path(self):
-        return self.folder_name
-
-    def fetch_folder_name(self):
         return self.folder_name
 
     @property
@@ -141,5 +138,5 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             },
         )
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), log=True)

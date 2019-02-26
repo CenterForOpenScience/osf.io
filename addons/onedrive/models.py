@@ -98,7 +98,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     folder_id = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
@@ -127,10 +127,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             return urllib.unquote(os.path.split(self.folder_path)[1].encode('utf-8')).decode('utf-8')
         else:
             return '/ (Full OneDrive)'
-
-    def fetch_folder_name(self):
-        """Required.  Called by base views"""
-        return self.folder_name
 
     def clear_settings(self):
         self.folder_id = None
