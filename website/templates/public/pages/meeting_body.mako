@@ -61,11 +61,11 @@
             didn't have an GakuNin RDM account, one will be created automatically and a link
             to set your password will be emailed to you; if you do, we will simply create
             a new project in your account. By creating an account you agree to our
-            <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a>
+            <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">Terms</a>
             and that you have read our
-            <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>,
+            <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>,
             including our information on
-            <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.
+            <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Cookie Use</a>.
         </p>
     </div>
 % endif

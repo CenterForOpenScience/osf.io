@@ -145,7 +145,7 @@
                 <div class="form-group">
                     <div class="pull-right">
                         <input type="checkbox" data-bind="checked: acceptedTermsOfService, disable: submitted()">
-                        <label style="margin-right: 15px">I have read and agree to the <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> and <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>.</label>
+                        <label style="margin-right: 15px">I have read and agree to the <a target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">Terms of Use</a> and <a target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>.</label>
                         <p class="help-block" data-bind="validationMessage: acceptedTermsOfService" style="display: none;"></p>
                     </div>
                 </div>

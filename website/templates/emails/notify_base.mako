@@ -77,7 +77,7 @@
                         <tr>
                             <td style="border-collapse: collapse;">
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2018 Center For Open Science, All rights reserved. |
-                                    <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
+                                    <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>
                                 </p>
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN</p>
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">${self.footer()}</p>

@@ -1921,9 +1921,9 @@ OSF_LOGO_LIST = [OSF_LOGO, OSF_PREPRINTS_LOGO, OSF_MEETINGS_LOGO, OSF_PREREG_LOG
 INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
 
 FOOTER_LINKS = {
-    'terms': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md',
-    'privacyPolicy': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md',
-    'cookies': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies',
+    'terms': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419',
+    'privacyPolicy': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
+    'cookies': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
     'cos': 'https://cos.io',
     'statusPage': 'https://status.cos.io/',
     'apiDocs': 'https://developer.osf.io/',

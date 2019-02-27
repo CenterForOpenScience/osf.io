@@ -23,7 +23,7 @@
             % endif
             <div class='form-group'>
                 ${form.accepted_terms_of_service(required='required') | unicode, n }
-                <label>I have read and agree to the <a target="_blank" href='https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md'>Terms of Use</a> and <a target="_blank" href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md'>Privacy Policy</a>.</label>
+                <label>I have read and agree to the <a target="_blank" href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419'>Terms of Use</a> and <a target="_blank" href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'>Privacy Policy</a>.</label>
             </div>
             <button type='submit' class='btn btn-primary'>Send</button>
             <a href='/logout' class='btn btn-danger'>Cancel</a>
