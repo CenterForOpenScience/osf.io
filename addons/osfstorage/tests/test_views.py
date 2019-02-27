@@ -30,7 +30,7 @@ from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
-from api_tests.utils import create_test_file
+from api_tests.utils import create_test_file, create_test_preprint_file
 
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 
@@ -1121,12 +1121,12 @@ class TestMoveHook(HookTestCase):
         assert_equal(res.status_code, 200)
 
     def test_can_rename_file(self):
-        file = create_test_file(self.project, self.user, filename='road_dogg.mp3')
+        file = create_test_file(self.node, self.user, filename='road_dogg.mp3')
         new_name = 'JesseJames.mp3'
 
         res = self.send_hook(
             'osfstorage_move_hook',
-            {'guid': self.project._id},
+            {'guid': self.node._id},
             payload={
                 'action': 'rename',
                 'source': file._id,
@@ -1135,11 +1135,11 @@ class TestMoveHook(HookTestCase):
                 'name': file.name,
                 'destination': {
                     'parent': self.root_node._id,
-                    'target': self.project._id,
+                    'target': self.node._id,
                     'name': new_name,
                 }
             },
-            target=self.project,
+            target=self.node,
             method='post_json',
             expect_errors=True,
         )
@@ -1237,6 +1237,35 @@ class TestMoveHookPreprint(TestMoveHook):
             expect_errors=True,
         )
         assert_equal(res.status_code, 403)
+
+    def test_can_rename_file(self):
+        file = create_test_preprint_file(self.node, self.user, filename='road_dogg.mp3')
+        new_name = 'JesseJames.mp3'
+
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'guid': self.node._id},
+            payload={
+                'action': 'rename',
+                'source': file._id,
+                'target': self.root_node._id,
+                'user': self.user._id,
+                'name': file.name,
+                'destination': {
+                    'parent': self.root_node._id,
+                    'target': self.node._id,
+                    'name': new_name,
+                }
+            },
+            target=self.node,
+            method='post_json',
+            expect_errors=True,
+        )
+        file.reload()
+
+        assert_equal(res.status_code, 200)
+        assert_equal(file.name, new_name)
+        assert_equal(file.versions.first().name, new_name)
 
 
 @pytest.mark.django_db

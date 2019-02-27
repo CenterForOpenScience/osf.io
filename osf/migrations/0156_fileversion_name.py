@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import logging
+import progressbar
 
 from django.db import migrations, models
 from django_bulk_update.helper import bulk_update
@@ -11,14 +12,20 @@ logger = logging.getLogger(__file__)
 
 
 def populate_fileversion_name(state, *args, **kwargs):
+    logger.info('starting fileversion name!')
     FileVersion = state.get_model('osf.fileversion')
     file_versions_to_update = []
-    for fv in FileVersion.includable_objects.all():
+    file_versions = FileVersion.includable_objects.all()
+    progress_bar = progressbar.ProgressBar(maxval=file_versions.count() or 1).start()
+
+    for i, fv in enumerate(file_versions, 1):
         fv.name = fv.basefilenode_set.first().name
         file_versions_to_update.append(fv)
+        progress_bar.update(i)
 
-    bulk_update(file_versions_to_update, update_fields=['name'], batch_size=1000)
+    bulk_update(file_versions_to_update, update_fields=['name'], batch_size=10000)
     logger.info('Populated `name` on a total of {} file versions'.format(len(file_versions_to_update)))
+    progress_bar.finish()
 
 def noop(*args, **kwargs):
     pass
