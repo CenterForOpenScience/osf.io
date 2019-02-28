@@ -13,6 +13,8 @@ from rest_framework.fields import SkipField
 from website import settings
 from website.util import api_v2_url
 
+from addons.base.utils import get_mfr_url
+
 from api.base.serializers import (
     FileRelationshipField,
     format_relationship_links,
@@ -30,9 +32,8 @@ from api.base.serializers import (
     HideIfPreprint,
     ShowIfVersion,
 )
+from api.base.utils import absolute_reverse, get_user_auth
 from api.base.exceptions import Conflict, InvalidModelValueError
-from api.base.utils import absolute_reverse
-from api.base.utils import get_user_auth
 from api.base.schemas.utils import from_json
 
 class CheckoutField(ser.HyperlinkedRelatedField):
@@ -209,12 +210,26 @@ class BaseFileSerializer(JSONAPISerializer):
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
         'download': 'get_download_link',
+        'render': 'get_render_link',
+        'html': 'absolute_url',
         'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder'),
     })
+
+    def absolute_url(self, obj):
+        if obj.is_file:
+            return furl.furl(settings.DOMAIN).set(
+                path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
+            ).url
 
     def get_download_link(self, obj):
         if obj.is_file:
             return get_file_download_link(obj, view_only=self.context['request'].query_params.get('view_only'))
+
+    def get_render_link(self, obj):
+        if obj.is_file:
+            mfr_url = get_mfr_url(obj.target, obj.provider)
+            download_url = self.get_download_link(obj)
+            return get_file_render_link(mfr_url, download_url)
 
     class Meta:
         type_ = 'files'
@@ -399,6 +414,7 @@ class FileVersionSerializer(JSONAPISerializer):
         'self': 'self_url',
         'html': 'absolute_url',
         'download': 'get_download_link',
+        'render': 'get_render_link',
     })
 
     class Meta:
@@ -428,6 +444,13 @@ class FileVersionSerializer(JSONAPISerializer):
             self.context['file'], version=obj.identifier,
             view_only=self.context['request'].query_params.get('view_only'),
         )
+
+    def get_render_link(self, obj):
+        file = self.context['file']
+        mfr_url = get_mfr_url(file.target, file.provider)
+        download_url = self.get_download_link(obj)
+
+        return get_file_render_link(mfr_url, download_url, version=obj.identifier)
 
 class FileMetadataRecordSerializer(JSONAPISerializer):
 
@@ -503,3 +526,22 @@ def get_file_download_link(obj, version=None, view_only=None):
     if view_only:
         url.args['view_only'] = view_only
     return url.url
+
+
+def get_file_render_link(mfr_url, download_url, version=None):
+    download_url_args = {
+        'direct': None,
+        'mode': 'render',
+    }
+    if version:
+        download_url_args['revision'] = version
+
+    render_url = furl.furl(mfr_url).set(
+        path=['render'],
+        args={
+            'url': furl.furl(download_url).set(
+                args=download_url_args,
+            ),
+        },
+    )
+    return render_url.url
