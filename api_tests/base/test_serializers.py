@@ -122,6 +122,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
         # fields that are visible for withdrawals
         visible_on_withdrawals = [
             'contributors',
+            'bibliographic_contributors',
             'implicit_contributors',
             'date_created',
             'date_modified',
@@ -129,6 +130,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'id',
             'links',
             'registration',
+            'article_doi',
             'title',
             'type',
             'current_user_can_comment',
@@ -538,7 +540,7 @@ class TestShowIfVersion(ApiTestCase):
             self.registration,
             context={'request': req}
         ).data['data']
-        assert_in('node_links', data['attributes'])
+        assert_in('node_links', data['relationships'])
 
     def test_node_links_bad_version_registration_serializer(self):
         req = make_drf_request_with_version(version='2.1')
@@ -546,7 +548,25 @@ class TestShowIfVersion(ApiTestCase):
             self.registration,
             context={'request': req}
         ).data['data']
-        assert_not_in('node_links', data['attributes'])
+        assert_not_in('node_links', data['relationships'])
+
+    def test_node_links_withdrawn_registration(self):
+        factories.WithdrawnRegistrationFactory(
+            registration=self.registration)
+
+        req = make_drf_request_with_version(version='2.0')
+        data = RegistrationSerializer(
+            self.registration,
+            context={'request': req}
+        ).data['data']
+        assert_not_in('node_links', data['relationships'])
+
+        req = make_drf_request_with_version(version='2.1')
+        data = RegistrationSerializer(
+            self.registration,
+            context={'request': req}
+        ).data['data']
+        assert_not_in('node_links', data['relationships'])
 
 
 class VersionedDateTimeField(DbTestCase):

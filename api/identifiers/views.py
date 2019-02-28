@@ -14,54 +14,25 @@ from api.identifiers.serializers import NodeIdentifierSerializer, RegistrationId
 from api.nodes.permissions import (
     IsPublic,
     ExcludeWithdrawals,
+    AdminOrPublic,
+    EditIfPublic,
 )
 
 from osf.models import Node, Registration, Preprint, Identifier
 
 
-class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """List of identifiers for a specified node. *Read-only*.
-
-    ##Identifier Attributes
-
-    OSF Identifier entities have the "identifiers" `type`.
-
-        name           type                   description
-        ----------------------------------------------------------------------------
-        category       string                 e.g. 'ark', 'doi'
-        value          string                 the identifier value itself
-
-    ##Links
-
-        self: this identifier's detail page
-
-    ##Relationships
-
-    ###Referent
-
-    The identifier is refers to this node.
-
-    ##Actions
-
-    *None*.
-
-    ##Query Params
-
-     Identifiers may be filtered by their category.
-
-    #This Request/Response
-
-    """
-
+class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     permission_classes = (
         IsPublic,
+        EditIfPublic,
+        AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.IDENTIFIERS_WRITE]
 
     view_category = 'identifiers'
     view_name = 'identifier-list'
