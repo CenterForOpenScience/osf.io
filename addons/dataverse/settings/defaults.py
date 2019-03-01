@@ -4,3 +4,6 @@ DEFAULT_HOSTS = [
 ]
 
 REQUEST_TIMEOUT = 60
+
+# Max file size permitted by frontend in megabytes
+MAX_UPLOAD_SIZE = 2 * 1024  # 2 GB

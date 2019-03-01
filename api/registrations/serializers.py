@@ -7,7 +7,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from api.base.exceptions import Conflict
 
-from api.base.utils import absolute_reverse, get_user_auth
+from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
@@ -17,7 +17,7 @@ from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer, RegistrationProviderRelationshipField
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
-    FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
+    FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
@@ -57,6 +57,10 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True, source='is_pending_embargo',
         help_text='The associated Embargo is awaiting approval by project admins.',
     ))
+    pending_embargo_termination_approval = HideIfWithdrawal(ser.BooleanField(
+        read_only=True, source='is_pending_embargo_termination',
+        help_text='The associated Embargo early termination is awaiting approval by project admins',
+    ))
     embargoed = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_embargoed'))
     pending_registration_approval = HideIfWithdrawal(ser.BooleanField(
         source='is_pending_registration', read_only=True,
@@ -73,11 +77,11 @@ class RegistrationSerializer(NodeSerializer):
     )
 
     date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    date_withdrawn = VersionedDateTimeField(source='retraction.date_retracted', read_only=True, help_text='Date time of when this registration was retracted.')
+    date_withdrawn = VersionedDateTimeField(read_only=True, help_text='Date time of when this registration was retracted.')
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
     custom_citation = HideIfWithdrawal(ser.CharField(allow_blank=True, required=False))
 
-    withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
+    withdrawal_justification = ser.CharField(read_only=True)
     template_from = HideIfWithdrawal(ser.CharField(
         read_only=True, allow_blank=False, allow_null=False,
         help_text='Specify a node id for a node you would like to use as a template for the '
@@ -111,7 +115,10 @@ class RegistrationSerializer(NodeSerializer):
     comments = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
+        related_meta={
+            'unread': 'get_unread_comments_count',
+            'count': 'get_total_comments_count',
+        },
         filter={'target': '<_id>'},
     ))
 
@@ -135,6 +142,7 @@ class RegistrationSerializer(NodeSerializer):
     wikis = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-wikis',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_wiki_page_count'},
     ))
 
     forked_from = HideIfWithdrawal(RelationshipField(
@@ -312,8 +320,10 @@ class RegistrationSerializer(NodeSerializer):
     def get_view_only_links_count(self, obj):
         return obj.private_links.filter(is_deleted=False).count()
 
+    def get_total_comments_count(self, obj):
+        return obj.comment_set.filter(page='node', is_deleted=False).count()
+
     def update(self, registration, validated_data):
-        # TODO - when withdrawal is added, make sure to restrict to admin only here
         user = self.context['request'].user
         auth = Auth(user)
         user_is_admin = registration.has_permission(user, permissions.ADMIN)
@@ -343,6 +353,26 @@ class RegistrationSerializer(NodeSerializer):
                     raise exceptions.PermissionDenied()
             else:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+        if 'withdrawal_justification' in validated_data or 'is_pending_retraction' in validated_data:
+            if user_is_admin:
+                is_pending_retraction = validated_data.get('is_pending_retraction', None)
+                withdrawal_justification = validated_data.get('withdrawal_justification', None)
+                if withdrawal_justification and not is_pending_retraction:
+                    raise exceptions.ValidationError(
+                        'You cannot provide a withdrawal_justification without a concurrent withdrawal request.',
+                    )
+                if is_truthy(is_pending_retraction):
+                    if registration.is_pending_retraction:
+                        raise exceptions.ValidationError('This registration is already pending withdrawal')
+                    try:
+                        retraction = registration.retract_registration(user, withdrawal_justification, save=True)
+                    except NodeStateError as err:
+                        raise exceptions.ValidationError(str(err))
+                    retraction.ask(registration.get_active_contributors_recursive(unique_users=True))
+                elif is_pending_retraction is not None:
+                    raise exceptions.ValidationError('You cannot set is_pending_withdrawal to False.')
+            else:
+                raise exceptions.PermissionDenied()
         return registration
 
     class Meta:
@@ -378,7 +408,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             orphan_files_names = [file_data['selectedFileName'] for file_data in orphan_files]
             raise exceptions.ValidationError('All files attached to this form must be registered to complete the process. '
                                              'The following file(s) are attached, but are not part of a component being'
-                                             ' registered: {}'.format(','.join(orphan_files_names)))
+                                             ' registered: {}'.format(', '.join(orphan_files_names)))
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
@@ -422,10 +452,16 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
 class RegistrationDetailSerializer(RegistrationSerializer):
     """
-    Overrides RegistrationSerializer to make id required.
+    Overrides RegistrationSerializer make _id required and other fields writeable
     """
 
     id = IDField(source='_id', required=True)
+
+    pending_withdrawal = HideIfWithdrawal(ser.BooleanField(
+        source='is_pending_retraction', required=False,
+        help_text='The registration is awaiting withdrawal approval by project admins.',
+    ))
+    withdrawal_justification = ser.CharField(required=False)
 
 
 class RegistrationNodeLinksSerializer(NodeLinksSerializer):
@@ -460,7 +496,7 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
         kind='folder',
     )
 
-    comments = FileCommentRelationshipField(
+    comments = FileRelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<target._id>'},
         related_meta={'unread': 'get_unread_comments_count'},

@@ -1158,7 +1158,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.node_registrations,
-            OsfWebRenderer('project/registrations.mako', trust=False)
+            notemplate,
         ),
         Rule(
             [

@@ -230,7 +230,8 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         url = self.project_url + 'registrations/?view_only={}'.format(self.link.key)
         res = self.app.get(url)
 
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 302)
+        assert_in(url.replace('/project/', ''), res.location)
 
     def test_check_can_access_valid(self):
         contributor = AuthUserFactory()
@@ -747,6 +748,7 @@ class TestProjectViews(OsfTestCase):
     def test_suspended_project(self):
         node = NodeFactory(parent=self.project, creator=self.user1)
         node.remove_node(Auth(self.user1))
+        node.reload()
         node.suspended = True
         node.save()
         url = node.api_url
@@ -870,7 +872,6 @@ class TestProjectViews(OsfTestCase):
         fork = project.fork_node(auth)
         project.save()
         fork.remove_node(auth)
-        fork.save()
 
         url = project.api_url_for('view_project')
         res = self.app.get(url, auth=user.auth)

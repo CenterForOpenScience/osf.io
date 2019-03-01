@@ -19,6 +19,23 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         return RegistrationFactory(creator=user, project=project_public)
 
     @pytest.fixture()
+    def registration_with_child(self, user, project_public):
+        project = ProjectFactory(creator=user, is_public=True)
+        child = ProjectFactory(creator=user, is_public=True, parent=project)
+
+        registration = RegistrationFactory(project=project, is_public=True)
+        RegistrationFactory(project=child, is_public=True)
+        return registration
+
+    @pytest.fixture()
+    def withdrawn_registration_with_child(self, user, registration_with_child):
+        withdrawn_registration = WithdrawnRegistrationFactory(
+            registration=registration_with_child, user=registration_with_child.creator)
+        withdrawn_registration.justification = 'We made a major error.'
+        withdrawn_registration.save()
+        return withdrawn_registration
+
+    @pytest.fixture()
     def withdrawn_registration(self, registration):
         withdrawn_registration = WithdrawnRegistrationFactory(
             registration=registration, user=registration.creator)
@@ -191,3 +208,14 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
+
+    def test_child_inherits_withdrawl_justication_and_date_withdrawn(
+            self, app, user, withdrawn_registration_with_child, registration_with_child):
+
+        reg_child = registration_with_child.node_relations.first().child
+        url = '/{}registrations/{}/?version=2.2'.format(API_BASE, reg_child._id)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['withdrawal_justification'] == withdrawn_registration_with_child.justification
+        formatted_date_retracted = withdrawn_registration_with_child.date_retracted.isoformat().replace('+00:00', 'Z')
+        assert res.json['data']['attributes']['date_withdrawn'] == formatted_date_retracted

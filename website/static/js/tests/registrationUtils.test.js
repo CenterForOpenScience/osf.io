@@ -15,7 +15,6 @@ var Page = registrationUtils.Page;
 var MetaSchema = registrationUtils.MetaSchema;
 var Draft = registrationUtils.Draft;
 var RegistrationEditor = registrationUtils.RegistrationEditor;
-var RegistrationManager = registrationUtils.RegistrationManager;
 
 sinon.collection.restore();
 
