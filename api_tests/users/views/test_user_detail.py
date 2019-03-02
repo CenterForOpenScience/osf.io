@@ -461,7 +461,7 @@ class TestUserUpdate:
                 'relationships': {
                     'default_region': {
                         'data': {
-                            'type': 'region',
+                            'type': 'regions',
                             'id': region._id
                         }
                     }
@@ -631,6 +631,7 @@ class TestUserUpdate:
         assert user_one.osfstorage_region == region
         assert user_one.osfstorage_region != original_user_region
         assert res.json['data']['relationships']['default_region']['data']['id'] == region._id
+        assert res.json['data']['relationships']['default_region']['data']['type'] == 'regions'
 
         # Updating with invalid region
         region_payload['data']['relationships']['default_region']['data']['id'] = 'bad_region'
