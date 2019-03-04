@@ -100,3 +100,15 @@ class TestAnonRateThrottle(BaseThrottle, AnonRateThrottle):
 class SendEmailThrottle(BaseThrottle, UserRateThrottle):
 
     scope = 'send-email'
+
+
+class SendEmailDeactivationThrottle(SendEmailThrottle):
+
+    def allow_request(self, request, view):
+        """
+        Throttle deactivation requests on the UserSettings endpoint
+        """
+        if not request.data.get('deactivation_requested'):
+            return True
+
+        return super(SendEmailDeactivationThrottle, self).allow_request(request, view)

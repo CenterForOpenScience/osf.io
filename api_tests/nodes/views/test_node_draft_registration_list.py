@@ -481,7 +481,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'No, data collection has not begun\' is not of type \'object\''
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' field' \
+                                   ' is invalid, your response must be one of the provided options.'
 
     def test_registration_metadata_question_keys_must_be_value(
             self, app, user, payload, url_draft_registrations):
@@ -500,7 +501,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'incorrect_key\' was unexpected)'
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' ' \
+                                   'field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_metadata_must_be_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -520,7 +522,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'q11\' was unexpected)'
+        assert errors['detail'] == 'For your registration the \'datacompletion\' field is extraneous and not' \
+                                   ' permitted in your response.'
 
     def test_multiple_choice_question_value_must_match_value_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -539,7 +542,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'Nope, data collection has not begun\' is not one of [u\'No, data collection has not begun\', u\'Yes, data collection is underway or complete\']'
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
+                                   ' field is invalid, your response must be one of the provided options.'
 
     def test_reviewer_cannot_create_draft_registration(
             self, app, user_read_contrib, project_public,
