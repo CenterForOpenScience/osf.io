@@ -212,16 +212,15 @@ class TimeStampTokenVerifyCheck:
             logging.exception(err)
 
         # RDMINFO: TimeStampVerify
+        abstractNode = self.get_abstractNode(Guid.objects.get(_id=project_id).object_id)
         if provider == 'osfstorage':
             if not baseFileNode._path:
                 filename = self.get_filenameStruct(baseFileNode, '')
             else:
                 filename = baseFileNode._path
             filepath = baseFileNode.provider + filename
-            abstractNode = self.get_abstractNode(baseFileNode.node_id)
         else:
             filepath = provider + path
-            abstractNode = self.get_abstractNode(Guid.objects.get(_id=project_id).object_id)
 
         ## RDM Logger ##
         rdmlogger = RdmLogger(rdmlog, {})

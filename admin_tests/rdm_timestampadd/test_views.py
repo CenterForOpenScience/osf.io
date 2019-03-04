@@ -76,12 +76,14 @@ class TestInstitutionNodeList(AdminTestCase):
 
         rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
         pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
-        os.remove(pvt_key_path)
+        if os.path.exists(pvt_key_path):
+            os.remove(pvt_key_path)
         rdmuserkey_pvt_key.delete()
 
         rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
         pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
-        os.remove(pub_key_path)
+        if os.path.exists(pub_key_path):
+            os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
     def test_get_context_data(self, **kwargs):
@@ -125,12 +127,14 @@ class TestTimeStampAddList(AdminTestCase):
 
         rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
         pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
-        os.remove(pvt_key_path)
+        if os.path.exists(pvt_key_path):
+            os.remove(pvt_key_path)
         rdmuserkey_pvt_key.delete()
 
         rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
         pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
-        os.remove(pub_key_path)
+        if os.path.exists(pub_key_path):
+            os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
     def test_get_context_data(self, **kwargs):
@@ -169,12 +173,14 @@ class TestTimestampVerifyData(AdminTestCase):
 
         rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
         pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
-        os.remove(pvt_key_path)
+        if os.path.exists(pvt_key_path):
+            os.remove(pvt_key_path)
         rdmuserkey_pvt_key.delete()
 
         rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
         pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
-        os.remove(pub_key_path)
+        if os.path.exists(pub_key_path):
+            os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
     @mock.patch('website.project.views.timestamp.do_get_timestamp_error_data',
@@ -187,7 +193,7 @@ class TestTimestampVerifyData(AdminTestCase):
     def test_post(self, mock_func, **kwargs):
         from api_tests.utils import create_test_file
 
-        file_node = create_test_file(node=self.node, user=self.user, filename='test_get_timestamp_error_data')
+        file_node = create_test_file(target=self.node, user=self.user, filename='test_get_timestamp_error_data')
         self.post_data = {
             'provider': [str(file_node.provider)],
             'file_id': [str(file_node._id)],
@@ -241,12 +247,14 @@ class TestAddTimestampData(AdminTestCase):
 
         rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
         pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
-        os.remove(pvt_key_path)
+        if os.path.exists(pvt_key_path):
+            os.remove(pvt_key_path)
         rdmuserkey_pvt_key.delete()
 
         rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
         pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
-        os.remove(pub_key_path)
+        if os.path.exists(pub_key_path):
+            os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
     def test_post(self, **kwargs):

@@ -344,8 +344,8 @@ def serialize_addons(node, auth):
 
     addon_settings = []
     addons_available = [addon for addon in settings.ADDONS_AVAILABLE
-                        if addon not in settings.SYSTEM_ADDED_ADDONS['node'] and
-                        addon.short_name not in ('wiki', 'forward', 'twofactor')]
+                        if addon not in settings.SYSTEM_ADDED_ADDONS['node']
+                        and addon.short_name not in ('wiki', 'forward', 'twofactor')]
 
 ### forced Admin Settings
     from admin.rdm_addons.utils import update_with_rdm_addon_settings
@@ -353,17 +353,17 @@ def serialize_addons(node, auth):
     owners_addons_available = sorted([
         owners_addon
         for owners_addon in settings.ADDONS_AVAILABLE
-        if 'node' in owners_addon.owners and
-        owners_addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and
-        owners_addon.short_name not in ['wiki', 'forward', 'twofactor']
+        if 'node' in owners_addon.owners
+        and owners_addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
+        and owners_addon.short_name not in ['wiki', 'forward', 'twofactor']
     ], key=lambda owners_addon: owners_addon.full_name.lower())
     rdm_addon_settings = [{'addon_short_name': owners_addon.short_name} for owners_addon in owners_addons_available]
     update_with_rdm_addon_settings(rdm_addon_settings, auth.user)
     addons_allowed = [
         addon['addon_short_name']
         for addon in rdm_addon_settings
-        if (addon['is_allowed'] and not addon['is_forced']) or
-        (addon['is_allowed'] and addon['is_forced'] and addon['has_user_external_accounts'])
+        if (addon['is_allowed'] and not addon['is_forced'])
+        or (addon['is_allowed'] and addon['is_forced'] and addon['has_user_external_accounts'])
     ]
 
     for addon in addons_available:
@@ -740,14 +740,15 @@ def _view_project(node, auth, primary=False,
         user.groups_sync.add(node.group)  # checked
         user.save()
 
+    in_bookmark_collection = False
+    bookmark_collection_id = ''
+
     parent = node.find_readable_antecedent(auth)
     if user:
         bookmark_collection = find_bookmark_collection(user)
-        bookmark_collection_id = bookmark_collection._id
-        in_bookmark_collection = bookmark_collection.guid_links.filter(_id=node._id).exists()
-    else:
-        in_bookmark_collection = False
-        bookmark_collection_id = ''
+        if bookmark_collection:
+            bookmark_collection_id = bookmark_collection._id
+            in_bookmark_collection = bookmark_collection.guid_links.filter(_id=node._id).exists()
 
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
@@ -807,8 +808,8 @@ def _view_project(node, auth, primary=False,
             'is_pending_embargo': node.is_pending_embargo if is_registration else False,
             'is_embargoed': node.is_embargoed if is_registration else False,
             'is_pending_embargo_termination': is_registration and node.is_embargoed and (
-                node.embargo_termination_approval and
-                node.embargo_termination_approval.is_pending_approval
+                node.embargo_termination_approval
+                and node.embargo_termination_approval.is_pending_approval
             ),
             'registered_from_url': node.registered_from.url if is_registration else '',
             'registered_date': iso8601format(node.registered_date) if is_registration else '',
@@ -945,8 +946,8 @@ def serialize_collections(cgms, auth):
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
         'logo': cgm.collection.provider.get_asset_url('favicon')
-    } for cgm in cgms if cgm.collection.provider and (cgm.collection.is_public or
-        (auth.user and auth.user.has_perm('read_collection', cgm.collection)))]
+    } for cgm in cgms if cgm.collection.provider and (cgm.collection.is_public
+        or (auth.user and auth.user.has_perm('read_collection', cgm.collection)))]
 
 def serialize_children(child_list, nested, indent=0):
     """
