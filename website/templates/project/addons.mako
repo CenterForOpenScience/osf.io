@@ -131,7 +131,7 @@
                                             Follow the steps in the <a class="alert-link" href="http://help.osf.io/a/850865-reauthorize-github" target="_black">help guide</a> to resolve the issue. <br>
                                         </p>
                                         <p>
-                                            Please contact <a class="alert-link" href="mailto:support@osf.io">support@osf.io</a> if you have questions.
+                                            Please contact <a class="alert-link" href="mailto:nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a> if you have questions.
                                         </p>
                                     </div>
                                 </div>

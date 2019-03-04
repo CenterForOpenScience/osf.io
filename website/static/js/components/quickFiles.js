@@ -118,7 +118,7 @@ var QuickFiles = {
             // Error message if the request fails
             ctrl.failed ? m('p', [
                     'Unable to retrieve quickfiles at this time. Please refresh the page or contact ',
-                    m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
+                    m('a', {'href': 'mailto:nii-rdmp@meatmail.jp'}, 'nii-rdmp@meatmail.jp'),
                     ' if the problem persists.'
                 ]) :
 

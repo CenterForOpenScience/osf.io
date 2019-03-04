@@ -873,7 +873,7 @@ class TestContributorMethods:
             node.add_contributor(unregistered_user, auth=Auth(user))
         assert excinfo.value.message == 'This contributor cannot be added. ' \
                                         'If the problem persists please report it to please report it to' \
-                                        ' <a href="mailto:support@osf.io">support@osf.io</a>.'
+                                        ' <a href="mailto:nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>.'
 
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
