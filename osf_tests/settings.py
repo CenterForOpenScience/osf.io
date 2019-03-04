@@ -1,5 +1,8 @@
 # Use API settings.
 from api.base.settings import *  # noqa
+import sys
+
+sys.setrecursionlimit(10000)
 
 DEBUG_PROPAGATE_EXCEPTIONS = True
 #DATABASES = {
