@@ -334,8 +334,8 @@ def get_auth(auth, **kwargs):
                         update_analytics(node, file_id, version_index, 'download')
                     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
                         user = auth.user
-                        if isinstance(node, Preprint) and not node.is_contributor(user):
-                            metric_class = get_metric_class_for_action(action)
+                        if isinstance(node, Preprint):
+                            metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
                             if metric_class:
                                 metrics = data.get('metrics', {})
                                 try:

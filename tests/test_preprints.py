@@ -17,28 +17,23 @@ from waffle.testutils import override_switch
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
-from addons.osfstorage.models import OsfStorageFile
 from api_tests import utils as api_test_utils
-from framework.auth import Auth
-from framework.celery_tasks import handlers
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
-from framework.exceptions import PermissionsError
 from website import settings, mails
 from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
 from website.project.views.contributor import find_preprint_provider
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
 from website.util.share import format_user
-from framework.auth import Auth, cas, signing
+from framework.auth import signing
 from framework.celery_tasks import handlers
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue, postcommit_celery_queue
+from framework.postcommit_tasks.handlers import get_task_from_postcommit_queue, postcommit_celery_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
 from osf import features
 from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, Subject, Session
-from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError, PreprintProviderError
+from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 
 from osf.utils.permissions import READ, WRITE, ADMIN
 from osf.utils.workflows import DefaultStates, RequestTypes
@@ -49,7 +44,6 @@ from tests.utils import assert_preprint_logs
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    UserFactory,
     PreprintFactory,
     NodeFactory,
     TagFactory,
@@ -2341,7 +2335,7 @@ class TestPreprintOsfStorage(OsfTestCase):
         options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
             action=kwargs.get('action', 'download'),
             nid=self.preprint._id,
-            path='/test',
+            path=self.preprint.primary_file.path,
             metrics=dict(origin='Foles',
                          referrer='Ertz',
                          user_agent='Agholor',
@@ -2373,13 +2367,13 @@ class TestPreprintOsfStorage(OsfTestCase):
         res = self.app.get(url, auth=Auth(user=user))
         assert res.status_code == 200
         mock_metrics.assert_called_once_with(origin='Foles',
-                                             path='/test',
+                                             path=self.preprint.primary_file.path,
                                              preprint=self.preprint,
                                              referrer='Ertz',
                                              uri='Sproles',
                                              user=user,
                                              user_agent='Agholor',
-                                             version=None)
+                                             version=u'1')
 
     @mock.patch('addons.base.views.PreprintView.record_for_preprint')
     def test_metrics_view(self, mock_metrics):
@@ -2392,13 +2386,13 @@ class TestPreprintOsfStorage(OsfTestCase):
         res = self.app.get(url, auth=Auth(user=user))
         assert res.status_code == 200
         mock_metrics.assert_called_once_with(origin='Foles',
-                                             path='/test',
+                                             path=self.preprint.primary_file.path,
                                              preprint=self.preprint,
                                              referrer='Ertz',
                                              uri='Sproles',
                                              user=user,
                                              user_agent='Agholor',
-                                             version=None)
+                                             version=u'1')
 
 
 class TestCheckPreprintAuth(OsfTestCase):
