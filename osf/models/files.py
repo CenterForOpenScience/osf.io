@@ -743,7 +743,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
     seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
     region = models.ForeignKey('addons_osfstorage.Region', null=True, blank=True, on_delete=models.CASCADE)
-    name = models.TextField(blank=True)
+    name = models.TextField(blank=True, null=True)
 
     includable_objects = IncludeManager()
 
