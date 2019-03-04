@@ -159,6 +159,8 @@ class CoreScopes(object):
 
     IDENTIFIERS_READ = 'identifiers.data_read'
 
+    METRICS_READ = 'metrics_read'
+    METRICS_WRITE = 'metrics_write'
 
 class ComposedScopes(object):
     """
@@ -212,8 +214,8 @@ class ComposedScopes(object):
                      CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
 
     # Preprints collection
-    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ,)
-    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE,)
+    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ, CoreScopes.METRICS_READ,)
+    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE, CoreScopes.METRICS_WRITE,)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
