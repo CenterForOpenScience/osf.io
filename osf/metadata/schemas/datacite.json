@@ -1,0 +1,607 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "datacite-v4.0.json",
+  "title": "DataCite v4.0",
+  "description": "JSON representation of the DataCite v4.0 schema.",
+  "additionalProperties": false,
+  "definitions": {
+    "doi": {
+      "description": "Digital object identifier.",
+      "type": "string",
+      "pattern": "10\\..+/.+"
+    },
+    "year": {
+      "type": "string"
+    },
+    "language": {
+      "description": "Allowed values are taken from IETF BCP 47, ISO 639-1 language codes.",
+      "type": "string"
+    },
+    "uri": {
+      "description": "For adding future URI validation.",
+      "type": "string"
+    },
+    "nameIdentifiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nameIdentifier": {
+            "type": "string"
+          },
+          "nameIdentifierScheme": {
+            "type": "string"
+          },
+          "schemeURI": {
+            "$ref": "#/definitions/uri"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "nameIdentifier",
+          "nameIdentifierScheme"
+        ]
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "identifier": {
+      "description": "A persistent identifier that identifies a resource. Currently, only DOI is allowed.",
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "$ref": "#/definitions/doi"
+        },
+        "identifierType": {
+          "enum": [
+            "DOI"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "identifier",
+        "identifierType"
+      ]
+    },
+    "creators": {
+      "description": "The main researchers involved working on the data, or the authors of the publication in priority order. May be a corporate/institutional or personal name. Format: Family, Given",
+      "type": "array",
+      "items": {
+        "creatorName": {
+          "type": "string"
+        },
+        "nameIdentifiers": {
+          "$ref": "#/definitions/nameIdentifiers"
+        },
+        "affiliations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "familyName": {
+          "type": "string"
+        },
+        "givenName": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "creatorName"
+      ]
+    },
+    "titles": {
+      "type": "array",
+      "items": {
+        "description": "A name or title by which a resource is known.",
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "description": "WARNING: This field has been superseded by 'titleType'",
+            "enum": [
+              "AlternativeTitle",
+              "Subtitle",
+              "TranslatedTitle",
+              "Other"
+            ]
+          },
+          "titleType": {
+            "enum": [
+              "AlternativeTitle",
+              "Subtitle",
+              "TranslatedTitle",
+              "Other"
+            ]
+          },
+          "lang": {
+            "$ref": "#/definitions/language"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "title"
+        ]
+      }
+    },
+    "publisher": {
+      "description": "The name of the entity that holds, archives, publishes prints, distributes, releases, issues, or produces the resource. This property will be used to formulate the citation, so consider the prominence of the role. In the case of datasets, \"publish\" is understood to mean making the data available to the community of researchers.",
+      "type": "string",
+      "minLength": 1
+    },
+    "publicationYear": {
+      "description": "Year when the data is made publicly available. If an embargo period has been in effect, use the date when the embargo period ends. In the case of datasets, \"publish\" is understood to mean making the data available on a specific date to the community of researchers. If there is no standard publication year value, use the date that would be preferred from a citation perspective.",
+      "$ref": "#/definitions/year"
+    },
+    "subjects": {
+      "type": "array",
+      "items": {
+        "description": "Subject, keywords, classification codes, or key phrases describing the resource.",
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "subjectScheme": {
+            "type": "string"
+          },
+          "schemeURI": {
+            "$ref": "#/definitions/uri"
+          },
+          "valueURI": {
+            "$ref": "#/definitions/uri"
+          },
+          "lang": {
+            "$ref": "#/definitions/language"
+          }
+        },
+        "additionalProperties": false,
+        "minProperties": 1
+      }
+    },
+    "contributors": {
+      "description": "The institution or person responsible for collecting, creating, or otherwise contributing to the developement of the dataset. The personal name format should be: Family, Given.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "contributorType": {
+            "enum": [
+              "ContactPerson",
+              "DataCollector",
+              "DataCurator",
+              "DataManager",
+              "Distributor",
+              "Editor",
+              "HostingInstitution",
+              "Other",
+              "Producer",
+              "ProjectLeader",
+              "ProjectManager",
+              "ProjectMember",
+              "RegistrationAgency",
+              "RegistrationAuthority",
+              "RelatedPerson",
+              "ResearchGroup",
+              "RightsHolder",
+              "Researcher",
+              "Sponsor",
+              "Supervisor",
+              "WorkPackageLeader"
+            ]
+          },
+          "contributorName": {
+            "type": "string"
+          },
+          "nameIdentifiers": {
+            "$ref": "#/definitions/nameIdentifiers"
+          },
+          "affiliations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "familyName": {
+            "type": "string"
+          },
+          "givenName": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "contributorName",
+          "contributorType"
+        ]
+      }
+    },
+    "dates": {
+      "description": "Different dates relevant to the work.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "description": "YYYY,YYYY-MM-DD, YYYY-MM-DDThh:mm:ssTZD or any other format or level of granularity described in W3CDTF. Use RKMS-ISO8601 standard for depicting date ranges.",
+            "type": "string"
+          },
+          "dateType": {
+            "enum": [
+              "Accepted",
+              "Available",
+              "Collected",
+              "Copyrighted",
+              "Created",
+              "Issued",
+              "Submitted",
+              "Updated",
+              "Valid"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": ["dateType"]
+      }
+    },
+    "language": {
+      "description": "Primary language of the resource.",
+      "$ref": "#/definitions/language"
+    },
+    "resourceType": {
+      "description": "The type of a resource. You may enter an additional free text description. The format is open, but the preferred format is a single term of some detail so that a pair can be formed with the sub-property.",
+      "type": "object",
+      "properties": {
+        "resourceType": {
+          "type": "string"
+        },
+        "resourceTypeGeneral": {
+          "description": "The general type of a resource.",
+          "enum": [
+            "Audiovisual",
+            "Collection",
+            "Dataset",
+            "Event",
+            "Image",
+            "InteractiveResource",
+            "Model",
+            "PhysicalObject",
+            "Service",
+            "Software",
+            "Sound",
+            "Text",
+            "Workflow",
+            "Other"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": ["resourceTypeGeneral"]
+    },
+    "alternateIdentifiers": {
+      "description": "An identifier or identifiers other than the primary Identifier applied to the resource being registered. This may be any alphanumeric string which is unique within its domain of issue. May be used for local identifiers. AlternateIdentifier should be used for another identifier of the same instance (same location, same file).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "alternateIdentifier": {
+            "type": "string"
+          },
+          "alternateIdentifierType": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "alternateIdentifier",
+          "alternateIdentifierType"
+        ]
+      }
+    },
+    "relatedIdentifiers": {
+      "description": "Identifiers of related resources. Use this property to indicate subsets of properties, as appropriate.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "relatedIdentifier": {
+            "type": "string"
+          },
+          "relatedIdentifierType": {
+            "enum": [
+              "ARK",
+              "arXiv",
+              "bibcode",
+              "DOI",
+              "EAN13",
+              "EISSN",
+              "Handle",
+              "IGSN",
+              "ISBN",
+              "ISSN",
+              "ISTC",
+              "LISSN",
+              "LSID",
+              "PMID",
+              "PURL",
+              "UPC",
+              "URL",
+              "URN"
+            ]
+          },
+          "relationType": {
+            "enum": [
+              "IsCitedBy",
+              "Cites",
+              "IsSupplementTo",
+              "IsSupplementedBy",
+              "IsContinuedBy",
+              "Continues",
+              "IsNewVersionOf",
+              "IsPreviousVersionOf",
+              "IsPartOf",
+              "HasPart",
+              "IsReferencedBy",
+              "References",
+              "IsDocumentedBy",
+              "Documents",
+              "IsCompiledBy",
+              "Compiles",
+              "IsVariantFormOf",
+              "IsOriginalFormOf",
+              "IsIdenticalTo",
+              "HasMetadata",
+              "IsMetadataFor",
+              "Reviews",
+              "IsReviewedBy",
+              "IsDerivedFrom",
+              "IsSourceOf"
+            ]
+          },
+          "relatedMetadataScheme": {
+            "type": "string"
+          },
+          "schemeURI": {
+            "$ref": "#/definitions/uri"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "relatedIdentifier",
+          "relationType",
+          "relatedIdentifierType"
+        ]
+      }
+    },
+    "sizes": {
+      "description": "Unstructures size information about the resource.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "formats": {
+      "description": "Technical format of the resource. Use file extension or MIME type where possible.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "description": "Version number of the resource. If the primary resource has changed the version number increases. Register a new identifier for a major version change. Individual stewards need to determine which are major vs. minor versions. May be used in conjunction with properties 11 and 12 (AlternateIdentifier and RelatedIdentifier) to indicate various information updates. May be used in conjunction with property 17 (Description) to indicate the nature and file/record range of version.",
+      "type": "string"
+    },
+    "rightsList": {
+      "description": "Any rights information for this resource. Provide a rights management statement for the resource or reference a service providing such information. Include embargo information if applicable. Use the complete title of a license and include version information if applicable.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rightsURI": {
+            "$ref": "#/definitions/uri"
+          },
+          "rights": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "minProperties": 1
+      }
+    },
+    "descriptions": {
+      "description": "All additional information that does not fit in any of the other categories. May be used for technical information. It is a best practice to supply a description.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "descriptionType": {
+            "type": "string",
+            "description": "The type of the description.",
+            "enum": [
+              "Abstract",
+              "Methods",
+              "SeriesInformation",
+              "TableOfContents",
+              "TechnicalInfo",
+              "Other"
+            ]
+          },
+          "lang": {
+            "$ref": "#/definitions/language"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "description",
+          "descriptionType"
+        ]
+      }
+    },
+    "fundingReferences": {
+      "description": "Information about financial support (funding) for the resource being registered.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "funderName": {
+            "description": "Name of the funding provider.",
+            "type": "string"
+            },
+          "funderIdentifier": {
+            "description": "Uniquely identifies a funding entity, according to various types.",
+            "type": "object",
+            "properties": {
+              "funderIdentifier": {
+                "type": "string"
+              },
+              "funderIdentifierType": {
+                "type": "string",
+                "enum": [
+                  "ISNI",
+                  "GRID",
+                  "Crossref Funder ID",
+                  "Other"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "funderIdentifier",
+              "funderIdentifierType"
+            ]
+          },
+          "awardNumber": {
+            "description": "The code assigned by the funder to a sponsored award (grant).",
+            "type": "object",
+            "properties": {
+              "awardNumber": {
+                "type": "string"
+              },
+              "awardURI": {
+                "$ref": "#/definitions/uri"
+              }
+            },
+            "additionalProperties": false,
+            "required": ["awardNumber"]
+          },
+          "awardTitle": {
+            "description": "The human readable title of the award (grant).",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": ["funderName"]
+      }
+    },
+    "geoLocations": {
+      "description": "Spatial region or named place where the data was gathered or about which the data is focused.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "geoLocationPoint": {
+            "description": "A point location in space.",
+            "type": "object",
+            "properties": {
+              "pointLongitude": {
+                "description": "Longitudinal dimension of point.",
+                "type": "number"
+              },
+              "pointLatitude": {
+                "description": "Latitudinal dimension of point.",
+                "type": "number"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "pointLongitude",
+              "pointLatitude"
+            ]
+          },
+          "geoLocationBox": {
+            "description": "The spatial limits of a box.",
+            "type": "object",
+            "properties": {
+              "westBoundLongitude": {
+                "description": "Western longitudinal dimension of box.",
+                "type": "number"
+              },
+              "eastBoundLongitude": {
+                "description": "Eastern longitudinal dimension of box.",
+                "type": "number"
+              },
+              "southBoundLatitude": {
+                "description": "Southern latitudinal dimension of box.",
+                "type": "number"
+              },
+              "northBoundLatitude": {
+                "description": "Northern latitudinal dimension of box.",
+                "type": "number"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "westBoundLongitude",
+              "eastBoundLongitude",
+              "southBoundLatitude",
+              "northBoundLatitude"
+            ]
+          },
+          "geoLocationPlace": {
+            "description": "Spatial region or named place where the data was gathered or about which the data is focused.",
+            "type": "string"
+          },
+          "geoLocationPolygon": {
+            "description": "A drawn polygon area, defined by a set of points and lines connecting the points in a closed chain.",
+            "type": "object",
+            "properties": {
+              "polygonPoints": {
+                "description": "A point location in a polygon.",
+                "type": "array",
+                "minItems": 3,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "pointLongitude": {
+                      "description": "Longitudinal dimension of point.",
+                      "type": "number"
+                    },
+                    "pointLatitude": {
+                      "description": "Latitudinal dimension of point.",
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "pointLongitude",
+                    "pointLatitude"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false,
+            "required": ["polygonPoints"]
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "identifier",
+    "creators",
+    "titles",
+    "publisher",
+    "publicationYear",
+    "resourceType"
+  ]
+}

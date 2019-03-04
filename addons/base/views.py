@@ -228,12 +228,26 @@ def make_auth(user):
         }
     return {}
 
-def get_metric_class_for_action(action):
+def download_is_from_mfr(req, payload):
+    metrics_data = payload['metrics']
+    uri = metrics_data['uri']
+    is_render_uri = furl.furl(uri or '').query.params.get('mode') == 'render'
+    return (
+        # This header is sent for download requests that
+        # originate from MFR, e.g. for the code pygments renderer
+        req.headers.get('X-Cos-Mfr-Render-Request', None) or
+        # Need to check the URI in order to account
+        # for renderers that send XHRs from the
+        # rendered content, e.g. PDFs
+        is_render_uri
+    )
+
+
+def get_metric_class_for_action(action, from_mfr):
     metric_class = None
-    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
     if action == 'render':
         metric_class = PreprintView
-    elif action == 'download' and not download_is_from_mfr:
+    elif action == 'download' and not from_mfr:
         metric_class = PreprintDownload
     return metric_class
 
@@ -289,8 +303,6 @@ def get_auth(auth, **kwargs):
             raise HTTPError(httplib.BAD_REQUEST)
 
     path = data.get('path')
-    version = data.get('version')
-
     credentials = None
     waterbutler_settings = None
     fileversion = None
@@ -301,7 +313,7 @@ def get_auth(auth, **kwargs):
             filenode = OsfStorageFileNode.load(path.strip('/'))
             if filenode and filenode.is_file:
                 # default to most recent version if none is provided in the response
-                version = version or filenode.versions.count()
+                version = int(data['version']) if data.get('version') else filenode.versions.count()
                 try:
                     fileversion = FileVersion.objects.filter(
                         basefilenode___id=file_id,
@@ -313,20 +325,40 @@ def get_auth(auth, **kwargs):
                     # mark fileversion as seen
                     FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
                 if not node.is_contributor(auth.user):
-                    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
+                    from_mfr = download_is_from_mfr(request, payload=data)
                     # version index is 0 based
                     version_index = version - 1
                     if action == 'render':
                         update_analytics(node, file_id, version_index, 'view')
-                    elif action == 'download' and not download_is_from_mfr:
+                    elif action == 'download' and not from_mfr:
                         update_analytics(node, file_id, version_index, 'download')
-        if fileversion:
+                    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
+                        user = auth.user
+                        if isinstance(node, Preprint) and not node.is_contributor(user):
+                            metric_class = get_metric_class_for_action(action)
+                            if metric_class:
+                                metrics = data.get('metrics', {})
+                                try:
+                                    metric_class.record_for_preprint(
+                                        preprint=node,
+                                        user=user,
+                                        version=fileversion.identifier if fileversion else None,
+                                        path=path,
+                                        referrer=metrics.get('referrer'),
+                                        user_agent=metrics.get('user_agent'),
+                                        origin=metrics.get('origin'),
+                                        uri=metrics.get('uri')
+                                    )
+                                except es_exceptions.ConnectionError:
+                                    log_exception()
+        if fileversion and provider_settings:
             region = fileversion.region
             credentials = region.waterbutler_credentials
             waterbutler_settings = fileversion.serialize_waterbutler_settings(
                 node_id=provider_settings.owner._id,
                 root_id=provider_settings.root_node._id,
             )
+
     # If they haven't been set by version region, use the NodeSettings or Preprint directly
     if not (credentials and waterbutler_settings):
         if provider_settings:
@@ -335,27 +367,6 @@ def get_auth(auth, **kwargs):
         elif isinstance(node, Preprint):
             credentials = node.serialize_waterbutler_credentials()
             waterbutler_settings = node.serialize_waterbutler_settings()
-
-    # TODO: Add a signal here?
-    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-        user = auth.user
-        if isinstance(node, Preprint) and not node.is_contributor(user):
-            metric_class = get_metric_class_for_action(action)
-            if metric_class:
-                metrics = data.get('metrics', {})
-                try:
-                    metric_class.record_for_preprint(
-                        preprint=node,
-                        user=user,
-                        version=fileversion.identifier if fileversion else None,
-                        path=path,
-                        referrer=metrics.get('referrer'),
-                        user_agent=metrics.get('user_agent'),
-                        origin=metrics.get('origin'),
-                        uri=metrics.get('uri')
-                    )
-                except es_exceptions.ConnectionError:
-                    log_exception()
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),

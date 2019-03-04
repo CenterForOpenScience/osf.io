@@ -6,6 +6,7 @@ import pytest
 import pytz
 from django.utils import timezone
 
+from addons.base.utils import get_mfr_url
 from addons.github.models import GithubFileNode
 from addons.osfstorage import settings as osfstorage_settings
 from api.base.settings.defaults import API_BASE
@@ -129,6 +130,11 @@ class TestFileView:
         assert res.status_code == 200
         assert guid is not None
         assert res.json['data']['attributes']['guid'] == guid._id
+
+    def test_file_with_wrong_guid(self, app, user):
+        url = '/{}files/{}/'.format(API_BASE, user._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
 
     @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
     def test_file_guid_not_created_with_basic_auth(
@@ -678,6 +684,26 @@ class TestFileVersionView:
         )
         assert res.status_code == 200
         assert res.json['data']['id'] == '1'
+
+        mfr_url = get_mfr_url(file, 'osfstorage')
+
+        render_link = res.json['data']['links']['render']
+        download_link = res.json['data']['links']['download']
+        assert mfr_url in render_link
+        assert download_link in render_link
+        assert 'revision=1' in render_link
+
+        guid = file.get_guid(create=True)._id
+        res = app.get(
+            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            auth=user.auth,
+        )
+        render_link = res.json['data']['links']['render']
+        download_link = res.json['data']['links']['download']
+        assert mfr_url in render_link
+        assert download_link in render_link
+        assert guid in render_link
+        assert 'revision=1' in render_link
 
         # test_read_only
         assert app.put(
