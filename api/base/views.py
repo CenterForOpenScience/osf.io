@@ -23,6 +23,7 @@ from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
 from api.base.serializers import (
+    get_meta_type,
     MaintenanceStateSerializer,
     LinkedNodesRelationshipSerializer,
     LinkedRegistrationsRelationshipSerializer,
@@ -147,9 +148,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds = self.request.query_params.getlist('embed') or self.request.query_params.getlist('embed[]')
 
         fields_check = self.get_serializer_class()._declared_fields.copy()
-        if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
+        serializer_class_type = get_meta_type(self.serializer_class, self.request)
+        if 'fields[{}]'.format(serializer_class_type) in self.request.query_params:
             # Check only requested and mandatory fields
-            sparse_fields = self.request.query_params['fields[{}]'.format(self.serializer_class.Meta.type_)]
+            sparse_fields = self.request.query_params['fields[{}]'.format(serializer_class_type)]
             for field in fields_check.copy().keys():
                 if field not in ('type', 'id', 'links') and field not in sparse_fields:
                     fields_check.pop(field)
@@ -194,7 +196,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -212,7 +214,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -233,7 +235,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -300,7 +302,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -318,7 +320,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -339,7 +341,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
