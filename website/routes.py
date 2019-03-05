@@ -96,6 +96,7 @@ def get_globals():
 
     return {
         'embedded_ds': settings.to_bool('USE_EMBEDDED_DS', False),
+        'embedded_ds_url': settings.EMBEDDED_DS_URL,
         'nav_dropdown': settings.to_bool('NAV_DROPDOWN', True),
         'nav_quickfiles': settings.to_bool('NAV_QUICKFILES', True),
         'nav_search': settings.to_bool('NAV_SEARCH', True),

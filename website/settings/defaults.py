@@ -1944,6 +1944,8 @@ OSF_PAGE_NAME = 'OSF'
 
 # use ePPN (eduPersonPrincipalName) for login (OSFUser.eppn)
 LOGIN_BY_EPPN = False
+USE_EMBEDDED_DS = False
+EMBEDDED_DS_URL = 'https://test-ds.gakunin.nii.ac.jp/WAYF/embedded-wayf.js'
 
 #USER_TIMEZONE = 'Asia/Tokyo'
 #USER_LOCALE = 'ja'

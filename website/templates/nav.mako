@@ -114,7 +114,7 @@
 <div id="wayfInMenu" style="float: right; clear: right; position: relative;">
 <script type="text/javascript" src="/js/embedded-wayf_config.js"></script>
 <script type="text/javascript" charset="UTF-8"><!--
-  document.write('<script type="text/javascript" src="https://test-ds.gakunin.nii.ac.jp/WAYF/embedded-wayf.js?' + (new Date().getTime()) + '"></scr'+'ipt>');
+  document.write('<script type="text/javascript" src="${embedded_ds_url}?' + (new Date().getTime()) + '"></scr'+'ipt>');
     //-->
 </script>
 </div>
