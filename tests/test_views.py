@@ -5582,6 +5582,7 @@ class TestAddonFileViewTimestampFunc(OsfTestCase):
         filename='tests.test_views.test_timestamptoken_verify'
         file_node = create_test_file(target=self.node, user=self.user, filename=filename)
         tmp_dir = tempfile.mkdtemp()
+        tmp_file = os.path.join(tmp_dir, file_node.name)
         with open(tmp_file, 'wb') as file:
             file.write(numpy.random.bytes(1000))
         version = file_node.get_version(1, required=True)
