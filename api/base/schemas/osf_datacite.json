@@ -1,0 +1,58 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "/osf_datacite",
+    "title": "OSF Specific Fields for the Datacite Schema",
+    "description": "This is validation for file metadata fields that the OSF allows to be edited by the user. These fields will match the fields presented to the user on a file metadata form on the OSF.",
+    "type": "object",
+    "properties": {
+        "resource_type": {
+            "type": "string",
+            "enum": [
+                "Audio/Video",
+                "Dataset",
+                "Image",
+                "Model",
+                "Software",
+                "Book",
+                "Funding Submission",
+                "Journal Article",
+                "Lesson",
+                "Poster",
+                "Preprint",
+                "Presentation",
+                "Research Tool",
+                "Thesis",
+                "Other"
+            ]
+        },
+        "file_description": {
+            "description": "The description of the file",
+            "type": "string"
+        },
+        "related_publication_doi": {
+            "description": "The DOI of a related resource.",
+            "type": "string",
+            "pattern": "10\\..+/.+"
+        },
+        "funders": {
+            "description": "Funders responsible for funding the resource.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "funding_agency": {
+                        "description": "The name of the funding provider",
+                        "type": "string"
+                    },
+                    "grant_number": {
+                        "description": "The code assigned by the funder to a sponsored award (grant).",
+                        "type": "string"
+                    }
+                },
+                "required": ["funding_agency"],
+                "additionalProperties": false
+            }
+        }
+    },
+    "additionalProperties": false
+}
