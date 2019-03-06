@@ -5310,12 +5310,14 @@ class TestRdmUserKey(OsfTestCase):
         if key_exists_check:
             rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
             pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
-            os.remove(pvt_key_path)
+            if os.path.exists(pvt_key_path):
+                os.remove(pvt_key_path)
             rdmuserkey_pvt_key.delete()
 
             rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
             pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
-            os.remove(pub_key_path)
+            if os.path.exists(pub_key_path):
+                os.remove(pub_key_path)
             rdmuserkey_pub_key.delete()
         self.user.delete()
 
@@ -5409,7 +5411,7 @@ def create_rdmfiletimestamptokenverifyresult(self, filename='test_file_timestamp
     from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
     import shutil
     ## create file_node(BaseFileNode record)
-    file_node = create_test_file(node=self.node, user=self.user, filename=filename)
+    file_node = create_test_file(target=self.node, user=self.user, filename=filename)
     file_node.save()
     ## create tmp_dir
     current_datetime = dt.datetime.now(pytz.timezone('Asia/Tokyo'))
@@ -5434,7 +5436,6 @@ def create_rdmfiletimestamptokenverifyresult(self, filename='test_file_timestamp
 class TestTimestampView(OsfTestCase):
 
     def setUp(self):
-        from website.util import permissions
 
         super(TestTimestampView, self).setUp()
         self.user = AuthUserFactory()
@@ -5465,11 +5466,13 @@ class TestTimestampView(OsfTestCase):
 
         rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
         pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
-        os.remove(pvt_key_path)
+        if os.path.exists(pvt_key_path):
+            os.remove(pvt_key_path)
         rdmuserkey_pvt_key.delete()
         rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
         pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
-        os.remove(pub_key_path)
+        if os.path.exists(pub_key_path):
+            os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
     def test_get_init_timestamp_error_data_list(self):
@@ -5519,7 +5522,7 @@ class TestTimestampView(OsfTestCase):
         assert 's3_test_file1.status_3' in res
 
     def test_get_timestamp_error_data(self):
-        file_node = create_test_file(node=self.node, user=self.user, filename='test_get_timestamp_error_data')
+        file_node = create_test_file(target=self.node, user=self.user, filename='test_get_timestamp_error_data')
         api_url_get_timestamp_error_data = self.project.api_url + 'timestamp/timestamp_error_data/'
         res = self.app.post_json(
             api_url_get_timestamp_error_data,
@@ -5559,45 +5562,44 @@ class TestAddonFileViewTimestampFunc(OsfTestCase):
 
         rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
         pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
-        os.remove(pvt_key_path)
+        if os.path.exists(pvt_key_path):
+            os.remove(pvt_key_path)
         rdmuserkey_pvt_key.delete()
 
         rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
         pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
-        os.remove(pub_key_path)
+        if os.path.exists(pub_key_path):
+            os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
     def test_adding_timestamp(self):
         from api.timestamp.add_timestamp import AddTimestamp
         from website.project.utils import serialize_node
         import numpy
+        import tempfile
         import shutil
 
-        ret = serialize_node(self.node, self.auth_obj, primary=True)
-        user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
         filename='tests.test_views.test_timestamptoken_verify'
-        file_node = create_test_file(node=self.node, user=self.user, filename=filename)
-        tmp_dir = '/tmp/tmp_{}'.format(ret['user']['id'])
-        os.mkdir(tmp_dir)
+        file_node = create_test_file(target=self.node, user=self.user, filename=filename)
+        tmp_dir = tempfile.mkdtemp()
         tmp_file = os.path.join(tmp_dir, file_node.name)
         with open(tmp_file, 'wb') as file:
             file.write(numpy.random.bytes(1000))
         version = file_node.get_version(1, required=True)
         addTimestamp = AddTimestamp()
-        result = addTimestamp.add_timestamp(ret['user']['id'],
+        result = addTimestamp.add_timestamp(self.user._id,
                                             file_node._id,
                                             self.node._id, file_node.provider,
                                             file_node._path,
                                             tmp_file, tmp_dir)
         shutil.rmtree(tmp_dir)
         assert_in('verify_result', result)
-        assert_equal(result['verify_result'], 1)
 
     def test_timestamptoken_verify(self):
         from addons.base.views import timestamptoken_verify
 
         filename='tests.test_views.test_timestamptoken_verify'
-        file_node = create_test_file(node=self.node, user=self.user, filename=filename)
+        file_node = create_test_file(target=self.node, user=self.user, filename=filename)
         version = file_node.get_version(1, required=True)
         verify_result = timestamptoken_verify(self.auth_obj, self.node, file_node, version, self.user.id)
         assert_in('verify_result', verify_result)

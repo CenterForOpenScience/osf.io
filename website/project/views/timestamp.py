@@ -14,6 +14,7 @@ from website.project.decorators import must_be_contributor_or_public
 from website.project.views.node import _view_project
 from website import settings
 from website import util
+from api.base.utils import waterbutler_api_url_for
 from osf.models import OSFUser, Guid, RdmFileTimestamptokenVerifyResult, BaseFileNode
 from datetime import datetime
 from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
@@ -127,7 +128,7 @@ def collect_timestamp_trees(auth, node, **kwargs):
     provider_list = []
 
     for provider_data in provider_json_res['data']:
-        waterbutler_meta_url = util.waterbutler_api_url_for(
+        waterbutler_meta_url = waterbutler_api_url_for(
             kwargs.get('pid'),
             provider_data['attributes']['provider'],
             '/',
@@ -341,7 +342,7 @@ def collect_timestamp_trees_to_json(auth, node, **kwargs):
     provider_list = []
 
     for provider_data in provider_json_res['data']:
-        waterbutler_meta_url = util.waterbutler_api_url_for(
+        waterbutler_meta_url = waterbutler_api_url_for(
             kwargs.get('pid'),
             provider_data['attributes']['provider'],
             '/',
@@ -407,13 +408,13 @@ def collect_timestamp_trees_to_json(auth, node, **kwargs):
 def waterbutler_folder_file_info(pid, provider, path, node, cookies, headers):
     # get waterbutler folder file
     if provider == 'osfstorage':
-        waterbutler_meta_url = util.waterbutler_api_url_for(
+        waterbutler_meta_url = waterbutler_api_url_for(
             pid, provider,
             '/' + path,
             **dict(waterbutler_meta_parameter())
         )
     else:
-        waterbutler_meta_url = util.waterbutler_api_url_for(
+        waterbutler_meta_url = waterbutler_api_url_for(
             pid, provider,
             path,
             **dict(waterbutler_meta_parameter())

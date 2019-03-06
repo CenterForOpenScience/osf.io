@@ -235,7 +235,7 @@ class TestAddonLogs(OsfTestCase):
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
         userkey_generation(self.user._id)
-        file_node = create_test_file(node=self.node, user=self.user, filename=path)
+        file_node = create_test_file(target=self.node, user=self.user, filename=path)
         file_node._path = '/' + path
         file_node.save()
         metadata = {
@@ -265,12 +265,14 @@ class TestAddonLogs(OsfTestCase):
         from osf.models import RdmUserKey
         rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=self.user.id, key_kind=api_settings.PRIVATE_KEY_VALUE)
         pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
-        os.remove(pvt_key_path)
+        if os.path.exists(pvt_key_path):
+            os.remove(pvt_key_path)
         rdmuserkey_pvt_key.delete()
 
         rdmuserkey_pub_key = RdmUserKey.objects.get(guid=self.user.id, key_kind=api_settings.PUBLIC_KEY_VALUE)
         pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
-        os.remove(pub_key_path)
+        if os.path.exists(pub_key_path):
+            os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
     @mock.patch('website.notifications.events.files.FileAdded.perform')
