@@ -59,41 +59,45 @@ a {
     list-style-type: none;
 }
 
-/* Cookie Banner */
-#cookieBanner {
-    position:fixed;
-    width: 100%;
-    z-index: 10;
-    bottom:0;
+/* Warning Banner for cookies and browser depreciation goes on bottom of page */
+.warningBanner {
     margin-bottom: 0px;
-    left:0;
     background-color: #263947;
     color:white;
     text-align: left;
-    border: 0px;
+    border-width: 1px;
+    border-color: white;
     display: none;
     align-items: center;
 }
 
-#cookieText {
+footBanners {
+    position:fixed;
+    width: 100%;
+    z-index: 10;
+    bottom:0;
+    left:0;
+}
+
+.warningBannerText {
     margin-left: 10%;
     margin-right: 75px;
 }
 
-#cookieAccept {
+.warningBannerAcceptBtn {
    margin-right: 10%
 }
 
-#cookieBanner a {
+.warningBanner a {
     color: white;
     text-decoration: underline;
 }
 
-#cookieBanner a:hover {
+.warningBanner a:hover {
     color: #ADCCE6;
 }
 
-#cookieBanner a:visited {
+.warningBanner a:visited {
     color: #ADCCE6;
 }
 
