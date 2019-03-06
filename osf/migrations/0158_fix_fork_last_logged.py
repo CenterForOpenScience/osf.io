@@ -36,7 +36,7 @@ def transfer_forked_date(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0154_remove_ember_project_registrations_flag'),
+        ('osf', '0157_add_storage_usage_flag'),
     ]
 
     operations = [
