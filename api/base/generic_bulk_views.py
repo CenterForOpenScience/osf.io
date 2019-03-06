@@ -4,6 +4,7 @@ from rest_framework_bulk import generics as bulk_generics
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q
 
+from api.base.serializers import get_meta_type
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException, Gone
 from api.base.utils import is_bulk_request
@@ -139,7 +140,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
             )
 
         user = self.request.user
-        object_type = self.serializer_class.Meta.type_
+        object_type = get_meta_type(self.serializer_class, self.request)
 
         resource_object_list = self.get_requested_resources(request=request, request_data=data)
 

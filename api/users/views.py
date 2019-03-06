@@ -11,7 +11,7 @@ from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
-from api.base.serializers import AddonAccountSerializer
+from api.base.serializers import get_meta_type, AddonAccountSerializer
 from api.base.utils import (
     default_node_list_queryset,
     default_node_list_permission_queryset,
@@ -21,7 +21,7 @@ from api.base.utils import (
     is_truthy,
 )
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.throttling import SendEmailThrottle
+from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationSerializer
@@ -47,7 +47,6 @@ from api.users.serializers import (
     UserSettingsUpdateSerializer,
     UserQuickFilesSerializer,
     UserAccountExportSerializer,
-    UserAccountDeactivateSerializer,
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
 )
@@ -509,7 +508,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         # DELETEs normally dont get type checked
         # not the best way to do it, should be enforced everywhere, maybe write a test for it
         for val in data:
-            if val['type'] != self.serializer_class.Meta.type_:
+            if val['type'] != get_meta_type(self.serializer_class, self.request):
                 raise Conflict()
         for val in data:
             if val['id'] in current_institutions:
@@ -615,38 +614,6 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        CurrentUser,
-    )
-
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
-
-    view_category = 'users'
-    view_name = 'user-account-deactivate'
-
-    serializer_class = UserAccountDeactivateSerializer
-    throttle_classes = (SendEmailThrottle, )
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = self.get_user()
-        mails.send_mail(
-            to_addr=settings.OSF_SUPPORT_EMAIL,
-            mail=mails.REQUEST_DEACTIVATION,
-            user=user,
-            can_change_preferences=False,
-        )
-        user.email_last_sent = timezone.now()
-        user.requested_deactivation = True
-        user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -708,6 +675,7 @@ class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+    throttle_classes = (SendEmailDeactivationThrottle, )
 
     view_category = 'users'
     view_name = 'user_settings'

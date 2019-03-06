@@ -3,19 +3,22 @@ from __future__ import unicode_literals
 import json
 import requests
 
+from django.http import Http404
 from django.core import serializers
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse_lazy, reverse
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, TemplateView, UpdateView
+from django.views.generic.edit import FormView
 from django.core.management import call_command
+from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect, render
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
-from osf.models import PreprintProvider, Subject, NodeLicense
+from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm, PreprintProviderRegisterModeratorOrAdminForm
+from osf.models import PreprintProvider, Subject, NodeLicense, OSFUser
 from osf.models.provider import rules_to_subjects, WhitelistedSHAREPreprintProvider
 from website import settings as osf_settings
 
@@ -439,3 +442,43 @@ class SharePreprintProviderWhitelist(PermissionRequiredMixin, View):
         share_api_url = settings.SHARE_URL
         api_v2_url = settings.API_DOMAIN + settings.API_BASE
         return render(request, self.template_name, {'share_api_url': share_api_url, 'api_v2_url': api_v2_url})
+
+
+class PreprintProviderRegisterModeratorOrAdmin(PermissionRequiredMixin, FormView):
+    permission_required = 'osf.change_preprintprovider'
+    raise_exception = True
+    template_name = 'preprint_providers/register_moderator_admin.html'
+    form_class = PreprintProviderRegisterModeratorOrAdminForm
+
+    def get_form_kwargs(self):
+        kwargs = super(PreprintProviderRegisterModeratorOrAdmin, self).get_form_kwargs()
+        kwargs['provider_id'] = self.kwargs['preprint_provider_id']
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super(PreprintProviderRegisterModeratorOrAdmin, self).get_context_data(**kwargs)
+        context['provider_name'] = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id']).name
+        return context
+
+    def form_valid(self, form):
+        user_id = form.cleaned_data.get('user_id')
+        osf_user = OSFUser.load(user_id)
+
+        if not osf_user:
+            raise Http404('OSF user with id "{}" not found. Please double check.'.format(user_id))
+
+        for group in form.cleaned_data.get('group_perms'):
+            osf_user.groups.add(group)
+            split = group.name.split('_')
+            group_type = split[0]
+            if group_type == 'reviews':
+                provider_id = split[2]
+                provider = PreprintProvider.objects.get(id=provider_id)
+                provider.notification_subscriptions.get(event_name='new_pending_submissions').add_user_to_subscription(osf_user, 'email_transactional')
+
+        osf_user.save()
+        messages.success(self.request, 'Permissions update successful for OSF User {}!'.format(osf_user.username))
+        return super(PreprintProviderRegisterModeratorOrAdmin, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('preprint_providers:register_moderator_admin', kwargs={'preprint_provider_id': self.kwargs['preprint_provider_id']})
