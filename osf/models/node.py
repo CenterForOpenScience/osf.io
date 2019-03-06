@@ -13,6 +13,7 @@ from django.apps import apps
 from django_bulk_update.helper import bulk_update
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.db import models, connection
@@ -63,6 +64,8 @@ from osf.utils.requests import get_headers_from_request
 from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, expand_permissions
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from api.caching.tasks import update_storage_usage
+from api.caching import settings as cache_settings
 
 
 logger = logging.getLogger(__name__)
@@ -2219,6 +2222,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log_date=timezone.now(),
         )
         self.save()
+
+    @property
+    def storage_usage(self):
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self._id)
+
+        storage_usage_total = cache.get(key)
+        if storage_usage_total:
+            return storage_usage_total
+        else:
+            update_storage_usage(self)  # sets cache
+            return cache.get(key)
 
 
 class Node(AbstractNode):
