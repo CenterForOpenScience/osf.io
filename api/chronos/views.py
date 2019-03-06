@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-from django.db.models import Q
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
@@ -99,13 +98,14 @@ class ChronosSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
 
         # Get the list of stale submissions and queue a task to update them
         update_list_id = queryset.filter(
-            modified__lt=chronos_submission_stale_time()).values_list('id', flat=True)
+            modified__lt=chronos_submission_stale_time(),
+        ).values_list('id', flat=True)
         if len(update_list_id) > 0:
             enqueue_task(update_submissions_status_async.s(list(update_list_id)))
 
         # If the user is a contributor on this preprint, show all submissions
         # Otherwise, only show submissions in status 3 or 4 (accepted or published)
-        if (preprint_contributors.filter(id=user.id).exists()):
+        if user and preprint_contributors.filter(id=user.id).exists():
             return queryset
         else:
             return queryset.filter(status__in=[3, 4])

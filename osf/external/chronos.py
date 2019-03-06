@@ -8,7 +8,7 @@ from osf.models import ChronosJournal
 from osf.models import ChronosSubmission
 from osf.utils.workflows import ChronosSubmissionStatus, ReviewStates
 from website.settings import (
-    DOMAIN, CHRONOS_USE_FAKE_FILE, CHRONOS_FAKE_FILE_URL,
+    CHRONOS_USE_FAKE_FILE, CHRONOS_FAKE_FILE_URL,
     CHRONOS_API_KEY, CHRONOS_USERNAME, CHRONOS_PASSWORD, CHRONOS_HOST, VERIFY_CHRONOS_SSL_CERT
 )
 
