@@ -3,10 +3,10 @@ import requests
 
 from django.db import transaction
 
+from api.files.serializers import get_file_download_link
 from osf.models import ChronosJournal
 from osf.models import ChronosSubmission
 from osf.utils.workflows import ChronosSubmissionStatus, ReviewStates
-from addons.osfstorage.models import OsfStorageFile
 from website.settings import (
     DOMAIN, CHRONOS_USE_FAKE_FILE, CHRONOS_FAKE_FILE_URL,
     CHRONOS_API_KEY, CHRONOS_USERNAME, CHRONOS_PASSWORD, CHRONOS_HOST, VERIFY_CHRONOS_SSL_CERT
@@ -59,8 +59,7 @@ class ChronosSerializer(object):
                 for contrib in preprint.contributor_set.filter(visible=True).select_related('user')
             ],
             'MANUSCRIPT_FILES': [
-                cls.serialize_file(preprint, file_node)
-                for file_node in OsfStorageFile.objects.filter(preprint=preprint)
+                cls.serialize_file(preprint, preprint.primary_file)
             ],
             'STATUS_CODE': status,
             'ABSTRACT': preprint.description,
@@ -99,7 +98,7 @@ class ChronosSerializer(object):
 
     @classmethod
     def serialize_file(cls, preprint, file_node):
-        """Serialize an AbstractFileNode for submission to Chronos.
+        """Serialize an BaseFileNode for submission to Chronos.
 
         It is currently unclear what MANUSCRIPT_FILE_CATEGORY should be.
         Possible options are:
@@ -127,7 +126,7 @@ class ChronosSerializer(object):
         if CHRONOS_USE_FAKE_FILE:
             file_url = CHRONOS_FAKE_FILE_URL
         else:
-            file_url = '/'.join([DOMAIN.strip('/'), 'download', file_node._id])
+            file_url = get_file_download_link(file_node)
 
         return {
             'FILE_DOWNLOAD_URL': file_url,
