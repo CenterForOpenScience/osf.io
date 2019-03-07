@@ -185,15 +185,21 @@ class TestChronosSubmissionAutomaticUpdate:
     @pytest.fixture()
     def submission_stale(self, preprint, journal_one, submitter):
         with disable_auto_now_fields(models=[ChronosSubmission]):
-            submission = ChronosSubmission(submitter=submitter, journal=journal_one, preprint=preprint, status=2,
-                                           raw_response='',)
+            submission = ChronosSubmission(
+                submitter=submitter, journal=journal_one, preprint=preprint, status=2,
+                raw_response='', publication_id='fake-publication-id-stale',
+            )
             submission.modified = timezone.now() - settings.CHRONOS_SUBMISSION_UPDATE_TIME - timedelta(days=1)
             submission.save()
             return submission
 
     @pytest.fixture()
     def submission_fresh(self, preprint, journal_two, submitter):
-        return ChronosSubmissionFactory(submitter=submitter, journal=journal_two, preprint=preprint, status=2)
+        return ChronosSubmissionFactory(
+            submitter=submitter, journal=journal_two,
+            preprint=preprint, status=2,
+            publication_id='fake-publication-id-fresh',
+        )
 
     @pytest.fixture()
     def url(self, preprint):
