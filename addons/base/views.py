@@ -491,7 +491,13 @@ def create_waterbutler_log(payload, **kwargs):
 
             if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
 
-                file_node = BaseFileNode.objects.get(_id=payload['metadata']['path'])
+                if payload['provider'] == 'osfstorage':
+                    file_node = BaseFileNode.objects.get(_id=metadata['path'])
+                else:
+                    file_node = BaseFileNode.resolve_class(
+                        metadata['provider'], BaseFileNode.FILE
+                    ).get_or_create(node, metadata.get('materialized'))
+                    file_node.save()
 
                 fileinfo = FileInfo()                
                 fileinfo.file = file_node
@@ -516,40 +522,48 @@ def addon_delete_file_node(self, target, user, event_type, payload):
     Required so that the guids of deleted addon files are not re-pointed when an
     addon file or folder is moved or renamed.
     """
-    file_info = FileInfo.objects.filter(file=BaseFileNode.objects.get(_id=payload['metadata']['path'])).first()
-    if file_info:
-        file_info.delete()
-
-    if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
-        print("!!! TEST 2  !!!")
-        provider = payload['provider']
-        path = payload['metadata']['path']
-        materialized_path = payload['metadata']['materialized']
-        content_type = ContentType.objects.get_for_model(target)
-        if path.endswith('/'):
-            folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
-                provider=provider,
-                target_object_id=target.id,
-                target_content_type=content_type,
-                _materialized_path__startswith=materialized_path
-            )
-            for item in folder_children:
-                if item.kind == 'file' and not TrashedFileNode.load(item._id):
-                    item.delete(user=user)
-                elif item.kind == 'folder':
-                    BaseFileNode.delete(item)
-        else:
-            try:
-                file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
+    if event_type == 'file_removed':
+        if payload.get('provider', None) != 'osfstorage':
+            provider = payload['provider']
+            path = payload['metadata']['path']
+            materialized_path = payload['metadata']['materialized']
+            content_type = ContentType.objects.get_for_model(target)
+            if path.endswith('/'):
+                folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
+                    provider=provider,
                     target_object_id=target.id,
                     target_content_type=content_type,
-                    _materialized_path=materialized_path
+                    _materialized_path__startswith=materialized_path
                 )
-            except BaseFileNode.DoesNotExist:
-                file_node = None
+                for item in folder_children:
+                    if item.kind == 'file' and not TrashedFileNode.load(item._id):
+                        file_info = FileInfo.objects.filter(file=item).first()
+                        if file_info:
+                            file_info.delete()
+                        item.delete(user=user)
+                    elif item.kind == 'folder':
+                        BaseFileNode.delete(item)
+            else:
+                try:
+                    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
+                        target_object_id=target.id,
+                        target_content_type=content_type,
+                        _materialized_path=materialized_path
+                    )
+                except BaseFileNode.DoesNotExist:
+                    file_node = None
 
-            if file_node and not TrashedFileNode.load(file_node._id):
-                file_node.delete(user=user)
+                if file_node and not TrashedFileNode.load(file_node._id):
+                    file_info = FileInfo.objects.filter(file=file_node).first()
+                    if file_info:
+                        file_info.delete()
+                    file_node.delete(user=user)
+
+        else:
+            file_node = BaseFileNode.objects.get(_id=payload['metadata']['path'])
+            file_info = FileInfo.objects.filter(file=file_node).first()
+            if file_info:
+                file_info.delete()
 
 
 @must_be_valid_project
@@ -1044,3 +1058,4 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
         shutil.rmtree(tmp_dir)
 
     return result
+
