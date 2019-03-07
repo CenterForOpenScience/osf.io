@@ -1853,6 +1853,7 @@ class BaseProfileSerializer(JSONAPISerializer):
     ongoing = ser.BooleanField(default=False, required=False)
 
     id = IDField(source='_id', read_only=True)
+    type = TypeField()
 
     links = LinksField({'self': 'self_url'})
 
