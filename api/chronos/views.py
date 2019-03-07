@@ -139,7 +139,7 @@ class ChronosSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     view_name = 'chronos-submission-detail'
 
     def get_serializer_class(self):
-        if self.request.method == 'PATCH':
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
             return ChronosSubmissionDetailSerializer
         else:
             return ChronosSubmissionSerializer

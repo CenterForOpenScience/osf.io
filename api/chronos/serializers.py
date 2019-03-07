@@ -56,6 +56,7 @@ class ChronosSubmissionSerializer(JSONAPISerializer):
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<submitter._id>'},
     )
+    links = LinksField({'self': 'get_absolute_url'})
 
     def get_absolute_url(self, obj):
         return absolute_reverse('chronos:chronos-submission-detail', kwargs={'preprint_id': obj.preprint._id, 'submission_id': obj.publication_id})
