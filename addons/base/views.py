@@ -516,7 +516,12 @@ def addon_delete_file_node(self, target, user, event_type, payload):
     Required so that the guids of deleted addon files are not re-pointed when an
     addon file or folder is moved or renamed.
     """
+    file_info = FileInfo.objects.filter(file=BaseFileNode.objects.get(_id=payload['metadata']['path'])).first()
+    if file_info:
+        file_info.delete()
+
     if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
+        print("!!! TEST 2  !!!")
         provider = payload['provider']
         path = payload['metadata']['path']
         materialized_path = payload['metadata']['materialized']
