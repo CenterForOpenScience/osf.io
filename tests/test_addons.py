@@ -31,7 +31,7 @@ from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.tests.factories import FileVersionFactory
-from osf.models import Session, RegistrationSchema, QuickFilesNode
+from osf.models import Session, RegistrationSchema, QuickFilesNode, FileInfo
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
 from website.project import new_private_link
@@ -437,6 +437,66 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs + 1)
         assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
+
+    @pytest.mark.skip('Not yet implemented')
+    @mock.patch('addons.base.views.upload_file_add_timestamptoken')
+    def test_add_file_info_osfstorage(self, mock_ts):
+        self.configure_osf_addon()
+        file_info_query = FileInfo.objects.filter(file=self.file)
+        assert_false(file_info_query.exists())
+
+        self.app.put_json(
+            self.node.api_url_for('create_waterbutler_log'),
+            self.build_payload(metadata={
+                'provider': 'osfstorage',
+                'name': 'testfile',
+                'materialized': '/filename',
+                'path': '/' + self.file._id,
+                'kind': 'file',
+                'size': 1000,
+                'created_utc': '',
+                'modified_utc': '',
+                'extra': {
+                    'version': '1'
+                }
+            }),
+            headers={'Content-Type': 'application/json'}
+        )
+
+        file_info_list = FileInfo.objects.filter(file=self.file).all()
+        assert_equal(file_info_list.count(), 1)
+        file_info = file_info_list.first()
+        assert_equal(file_info.file_size, 1000)
+
+    @pytest.mark.skip('Not yet implemented')
+    @mock.patch('addons.base.views.upload_file_add_timestamptoken')
+    def test_add_file_info_github(self, mock_ts):
+        self.configure_osf_addon()
+        self.app.put_json(
+            self.node.api_url_for('create_waterbutler_log'),
+            self.build_payload(metadata={
+                'provider': 'github',
+                'name': 'githubfile',
+                'materialized': '/githubfile',
+                'path': '/githubfile',
+                'kind': 'file',
+                'size': 1000,
+                'created_utc': '',
+                'modified_utc': '',
+                'extra': {
+                    'version': '1'
+                }
+            }),
+            headers={'Content-Type': 'application/json'}
+        )
+        file_node = BaseFileNode.resolve_class(
+            'github', BaseFileNode.FILE
+        ).objects.get(_path='/githubfile')
+
+        file_info_list = FileInfo.objects.filter(file=file_node).all()
+        assert_equal(file_info_list.count(), 1)
+        file_info = file_info_list.first()
+        assert_equal(file_info.file_size, 1000)
 
 
 class TestCheckAuth(OsfTestCase):
