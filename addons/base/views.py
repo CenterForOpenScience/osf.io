@@ -36,7 +36,7 @@ from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, RegistrationSchema,
-                        Guid, FileVersionUserMetadata, FileVersion)
+                        Guid, FileVersionUserMetadata, FileVersion, FileInfo)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -490,6 +490,14 @@ def create_waterbutler_log(payload, **kwargs):
             metadata['path'] = metadata['path'].lstrip('/')
 
             if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
+
+                file_node = BaseFileNode.objects.get(_id=payload['metadata']['path'])
+
+                fileinfo = FileInfo()                
+                fileinfo.file = file_node
+                fileinfo.file_size = payload['metadata']['size']
+                fileinfo.save()
+
                 upload_file_add_timestamptoken(payload, node)
 
             node_addon.create_waterbutler_log(auth, action, metadata)
