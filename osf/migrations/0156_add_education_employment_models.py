@@ -26,6 +26,18 @@ def populate_new_models(state, schema):
     set_model_content(Employment, users_with_employment, 'jobs')
 
 
+def parse_model_datetime(month, year):
+    month = format(month, '02')
+    year = format(year, '02')
+    try:
+        parsed = datetime.strptime('{} {}'.format(month, year), '%m %Y')
+    except ValueError:
+        parsed = datetime.strptime('{} {}'.format(month, year), '%m %y')
+    except ValueError:
+        parsed = None
+    return parsed
+
+
 def set_model_content(model, queryset, original_attribute):
     for user in queryset:
         original_entries = getattr(user, original_attribute)
@@ -43,24 +55,54 @@ def set_model_content(model, queryset, original_attribute):
                 start_year = entry.get('startYear', None)
                 start_month = entry['startMonth'] if start_year else None
                 if start_year and start_month:
-                    new_object.start_date = datetime.strptime('{} {}'.format(start_month, start_year), '%m %Y')
+                    new_object.start_date = parse_model_datetime(start_month, start_year)
 
                 end_year = entry.get('endYear', None)
                 end_month = entry['endMonth'] if end_year else None
                 if end_year and end_month:
-                    new_object.end_date = datetime.strptime('{} {}'.format(end_month, end_year), '%m %Y')
+                    new_object.end_date = parse_model_datetime(end_month, end_year)
 
                 new_object.save()
 
+def reset_field_content(model, queryset, original_attribute):
+    for entry in queryset:
+        user = entry.user
+        start_date = entry.start_date
+        end_date = entry.end_date
+        attributes = {
+            'institution': entry.institution,
+            'startYear': start_date.year if start_date else None,
+            'startMonth': start_date.month if start_date else None,
+            'endYear': end_date.month if end_date else None,
+            'endMonth': end_date.month if end_date else None,
+            'department': entry.department,
+            'ongoing': entry.ongoing,
+        }
+        if original_attribute == 'schools':
+            attributes['degree'] = entry.degree
+        elif original_attribute == 'jobs':
+            attributes['title'] = entry.title
 
-def noop(state, schema):
-    pass
+        user_entries = getattr(user, original_attribute, [])
+        user_entries.append(attributes)
+        setattr(user, original_attribute, user_entries)
+        user.save()
+
+def put_jobs_and_schools_back(state, schema):
+    Education = state.get_model('osf', 'education')
+    Employment = state.get_model('osf', 'employment')
+
+    education_queryset = Education.objects.all()
+    reset_field_content(Education, education_queryset, 'schools')
+
+    employment_queryset = Employment.objects.all()
+    reset_field_content(Employment, employment_queryset, 'jobs')
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0154_remove_ember_project_registrations_flag'),
+        ('osf', '0155_merge_20190115_1437'),
     ]
 
     operations = [
@@ -104,5 +146,5 @@ class Migration(migrations.Migration):
             name='education',
             order_with_respect_to='user',
         ),
-        migrations.RunPython(populate_new_models, noop),
+        migrations.RunPython(populate_new_models, put_jobs_and_schools_back),
     ]
