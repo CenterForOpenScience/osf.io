@@ -49,3 +49,4 @@ from osf.models.rdm_statistics import RdmStatistics  # noqa
 from osf.models.rdm_file_timestamptoken_verify_result import RdmFileTimestamptokenVerifyResult  # noqa
 from osf.models.rdm_user_key import RdmUserKey  # noqa
 from osf.models.rdm_timestamp_grant_pattern import RdmTimestampGrantPattern  # noqa
+from osf.models.fileinfo import FileInfo  # noqa
