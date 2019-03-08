@@ -1048,4 +1048,3 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
         shutil.rmtree(tmp_dir)
 
     return result
-
