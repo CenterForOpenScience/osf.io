@@ -19,7 +19,7 @@ from osf.utils import sanitize
 from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
-from api.users.schemas.utils import validate_user_json
+from api.base.schemas.utils import validate_user_json
 from framework.auth import core as auth_core
 from osf.models import AbstractNode, MaintenanceState, Preprint
 from website import settings

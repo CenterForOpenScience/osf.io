@@ -245,14 +245,6 @@ class UserSerializer(JSONAPISerializer):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
 
-    def validate_employment(self, value):
-        validate_user_json(value, 'employment-schema.json')
-        return value
-
-    def validate_education(self, value):
-        validate_user_json(value, 'education-schema.json')
-        return value
-
     def validate_social(self, value):
         schema = from_json('social-schema.json')
         try:
