@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-
 def generate_preprint_csv(preprint_ids):
     search = PreprintDownload.search().aggs.metric('times', {'date_histogram': {'field': 'timestamp', 'interval': 'day', 'format': 'yyyy-MM-dd'}})
     output = io.BytesIO()
@@ -22,12 +21,15 @@ def generate_preprint_csv(preprint_ids):
     writer.writeheader()
     for preprint_id in preprint_ids:
         data = search.filter('match', preprint_id=preprint_id).execute()
-        writer.writerow({bucket['key_as_string']: bucket['doc_count'] for bucket in data.aggregations.times.buckets})
+        if data.aggregations.times.buckets:
+            writer.writerow({bucket['key_as_string']: 0 for bucket in data.aggregations.times.buckets})
+        else:
+            logger.info('preprint {} could not be found skipping')
 
     return output
 
 def main():
-    preprint_guids_to_search = ['ahvdn']
+    preprint_guids_to_search = ['vdz32', 'hv28a', 'yj8xw', '35juv', 'pbhr4', 'mky9j', 'qt3k6', 'kr3z8', 'nbhxq', 'az5bg', 'd7av9', '447b3']
     preprint_csv = generate_preprint_csv(preprint_guids_to_search)
     with open('top_ten_preprints.csv', 'wb') as writeFile:
         writeFile.write(preprint_csv.getvalue())
