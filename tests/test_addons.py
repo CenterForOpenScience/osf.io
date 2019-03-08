@@ -1402,3 +1402,4 @@ class TestViewUtils(OsfTestCase):
         # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
         default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
         assert not any('/{}/'.format(addon) in asset_paths for addon in default_addons)
+
