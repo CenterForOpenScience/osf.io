@@ -493,18 +493,19 @@ def create_waterbutler_log(payload, **kwargs):
 
                 if payload['provider'] == 'osfstorage':
                     file_node = BaseFileNode.objects.get(_id=metadata['path'])
-                else:
-                    file_node = BaseFileNode.resolve_class(
-                        metadata['provider'], BaseFileNode.FILE
-                    ).get_or_create(node, metadata.get('materialized'))
-                    file_node.save()
-
-                fileinfo = FileInfo()                
-                fileinfo.file = file_node
-                fileinfo.file_size = payload['metadata']['size']
-                fileinfo.save()
+                    fileinfo = FileInfo()                
+                    fileinfo.file = file_node
+                    fileinfo.file_size = payload['metadata']['size']
+                    fileinfo.save()
 
                 upload_file_add_timestamptoken(payload, node)
+
+            elif action == NodeLog.FILE_REMOVED:
+                if payload['provider'] == 'osfstorage':
+                    file_node = BaseFileNode.objects.get(_id=metadata['path'])
+                    file_info = FileInfo.objects.filter(file=file_node).first()
+                    if file_info:
+                        file_info.delete()
 
             node_addon.create_waterbutler_log(auth, action, metadata)
 
@@ -529,6 +530,7 @@ def addon_delete_file_node(self, target, user, event_type, payload):
             materialized_path = payload['metadata']['materialized']
             content_type = ContentType.objects.get_for_model(target)
             if path.endswith('/'):
+                print("DIRECTORY")
                 folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
                     provider=provider,
                     target_object_id=target.id,
@@ -537,9 +539,6 @@ def addon_delete_file_node(self, target, user, event_type, payload):
                 )
                 for item in folder_children:
                     if item.kind == 'file' and not TrashedFileNode.load(item._id):
-                        file_info = FileInfo.objects.filter(file=item).first()
-                        if file_info:
-                            file_info.delete()
                         item.delete(user=user)
                     elif item.kind == 'folder':
                         BaseFileNode.delete(item)
@@ -554,16 +553,7 @@ def addon_delete_file_node(self, target, user, event_type, payload):
                     file_node = None
 
                 if file_node and not TrashedFileNode.load(file_node._id):
-                    file_info = FileInfo.objects.filter(file=file_node).first()
-                    if file_info:
-                        file_info.delete()
                     file_node.delete(user=user)
-
-        else:
-            file_node = BaseFileNode.objects.get(_id=payload['metadata']['path'])
-            file_info = FileInfo.objects.filter(file=file_node).first()
-            if file_info:
-                file_info.delete()
 
 
 @must_be_valid_project
