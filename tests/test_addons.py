@@ -468,6 +468,36 @@ class TestAddonLogs(OsfTestCase):
         file_info = file_info_list.first()
         assert_equal(file_info.file_size, 1000)
 
+    @pytest.mark.skip('Not yet implemented')
+    @mock.patch('addons.base.views.upload_file_add_timestamptoken')
+    def test_update_file_info(self, mock_ts):
+        file_info = FileInfo(file=self.file, file_size=1000)
+        file_info.save()
+
+        self.app.put_json(
+            self.node.api_url_for('create_waterbutler_log'),
+            self.build_payload(
+                action='update',
+                metadata={
+                    'provider': 'osfstorage',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': '/' + self.file._id,
+                    'kind': 'file',
+                    'size': 2500,
+                    'created_utc': '',
+                    'modified_utc': '',
+                    'extra': {
+                        'version': '2'
+                    }
+                }
+            ),
+            headers={'Content-Type': 'application/json'}
+        )
+
+        file_info = FileInfo.objects.get(file=self.file)
+        assert_equal(file_info.file_size, 2500)
+
 
 class TestCheckAuth(OsfTestCase):
 
