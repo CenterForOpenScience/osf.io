@@ -493,11 +493,12 @@ def create_waterbutler_log(payload, **kwargs):
 
                 if payload['provider'] == 'osfstorage':
                     file_node = BaseFileNode.objects.get(_id=metadata['path'])
-                    if not FileInfo.objects.filter(file=file_node).first():
+                    fileinfo = FileInfo.objects.filter(file=file_node).first()
+                    if not fileinfo:
                         fileinfo = FileInfo()                
                         fileinfo.file = file_node
-                        fileinfo.file_size = metadata['size']
-                        fileinfo.save()
+                    fileinfo.file_size = metadata['size']
+                    fileinfo.save()
 
                 upload_file_add_timestamptoken(payload, node)
 
