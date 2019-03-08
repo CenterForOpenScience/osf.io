@@ -293,7 +293,7 @@ class TestAddonLogs(OsfTestCase):
         quickfiles = QuickFilesNode.objects.get_for_user(self.user)
         materialized_path = 'pizza'
         url = quickfiles.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'path': 'abc123', 'materialized': materialized_path, 'kind': 'file'}, provider='osfstorage')
+        payload = self.build_payload(metadata={'path': 'abc123', 'materialized': materialized_path, 'kind': 'file'}, provider='github')
         resp = self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         assert resp.status_code == 200
 
@@ -420,7 +420,7 @@ class TestAddonLogs(OsfTestCase):
         self.configure_osf_addon()
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        payload = self.build_payload(provider='github', metadata={'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.node.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
@@ -431,7 +431,7 @@ class TestAddonLogs(OsfTestCase):
         self.configure_osf_addon()
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
+        payload = self.build_payload(provider='github', metadata={'materialized': path, 'kind': 'folder', 'path': path})
         nlogs = self.node.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
@@ -1342,3 +1342,4 @@ class TestViewUtils(OsfTestCase):
         # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
         default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
         assert not any('/{}/'.format(addon) in asset_paths for addon in default_addons)
+
