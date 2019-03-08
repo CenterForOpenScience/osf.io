@@ -42,7 +42,7 @@ from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
-from osf.models.validators import validate_email, validate_social, validate_history_item
+from osf.models.validators import validate_email, validate_social
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
@@ -160,8 +160,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'merged_by',
         'date_disabled',
         'date_confirmed',
-        'jobs',
-        'schools',
         'social',
     }
 
@@ -317,34 +315,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #       ...
     #   },
     #   ...
-    # }
-
-    # Employment history
-    jobs = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
-    # Format: list of {
-    #     'title': <position or job title>,
-    #     'institution': <institution or organization>,
-    #     'department': <department>,
-    #     'location': <location>,
-    #     'startMonth': <start month>,
-    #     'startYear': <start year>,
-    #     'endMonth': <end month>,
-    #     'endYear': <end year>,
-    #     'ongoing: <boolean>
-    # }
-
-    # Educational history
-    schools = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
-    # Format: list of {
-    #     'degree': <position or job title>,
-    #     'institution': <institution or organization>,
-    #     'department': <department>,
-    #     'location': <location>,
-    #     'startMonth': <start month>,
-    #     'startYear': <start year>,
-    #     'endMonth': <end month>,
-    #     'endYear': <end year>,
-    #     'ongoing: <boolean>
     # }
 
     # Social links
@@ -1655,8 +1625,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.osf_mailing_lists = {}
         self.verification_key = None
         self.suffix = ''
-        self.jobs = []
-        self.schools = []
         self.social = []
         self.unclaimed_records = {}
         self.notifications_configured = {}
