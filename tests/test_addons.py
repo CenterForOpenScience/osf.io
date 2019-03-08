@@ -29,7 +29,7 @@ from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import Session, RegistrationSchema, QuickFilesNode, FileInfo
 from osf.models import files as file_models
@@ -495,6 +495,55 @@ class TestAddonLogs(OsfTestCase):
 
         file_info_query = FileInfo.objects.filter(file=self.file)
         assert_false(file_info_query.exists())
+
+    @mock.patch('addons.base.views.upload_file_add_timestamptoken')
+    def test_remove_folder_info(self, mock_ts):
+        folder = OsfStorageFolder(
+            target=self.node,
+            name='test',
+        )
+        folder.save()
+        file1 = OsfStorageFileNode.create(
+            target=self.node,
+            name='testfile1',
+            parent_id=folder.id
+        )
+        file1.save()
+        file2 = OsfStorageFileNode.create(
+            target=self.node,
+            name='testfile2',
+            parent_id=folder.id
+        )
+        file2.save()
+
+        file1_info = FileInfo(file=file1, file_size=2000)
+        file1_info.save()
+        file2_info = FileInfo(file=file2, file_size=3000)
+        file2_info.save()
+
+        assert_true(FileInfo.objects.filter(file=file1).exists())
+        assert_true(FileInfo.objects.filter(file=file2).exists())
+
+        self.app.put_json(
+            self.node.api_url_for('create_waterbutler_log'),
+            self.build_payload(
+                action='delete',
+                metadata={
+                    'provider': 'osfstorage',
+                    'name': 'test',
+                    'nid': self.node._id,
+                    'resource': self.node._id,
+                    'materialized': '/file/',
+                    'path': '/{}/'.format(folder._id),
+                    'kind': 'folder',
+                    'extra': {}
+                }
+            ),
+            headers={'Content-Type': 'application/json'}
+        )
+
+        assert_false(FileInfo.objects.filter(file=file1).exists())
+        assert_false(FileInfo.objects.filter(file=file2).exists())
 
 
 class TestCheckAuth(OsfTestCase):
