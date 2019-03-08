@@ -440,7 +440,7 @@ class TestAddonLogs(OsfTestCase):
 
     @pytest.mark.skip('Not yet implemented')
     @mock.patch('addons.base.views.upload_file_add_timestamptoken')
-    def test_add_file_info_osfstorage(self, mock_ts):
+    def test_add_file_info(self, mock_ts):
         self.configure_osf_addon()
         file_info_query = FileInfo.objects.filter(file=self.file)
         assert_false(file_info_query.exists())
@@ -470,37 +470,7 @@ class TestAddonLogs(OsfTestCase):
 
     @pytest.mark.skip('Not yet implemented')
     @mock.patch('addons.base.views.upload_file_add_timestamptoken')
-    def test_add_file_info_github(self, mock_ts):
-        self.configure_osf_addon()
-        self.app.put_json(
-            self.node.api_url_for('create_waterbutler_log'),
-            self.build_payload(metadata={
-                'provider': 'github',
-                'name': 'githubfile',
-                'materialized': '/githubfile',
-                'path': '/githubfile',
-                'kind': 'file',
-                'size': 1000,
-                'created_utc': '',
-                'modified_utc': '',
-                'extra': {
-                    'version': '1'
-                }
-            }),
-            headers={'Content-Type': 'application/json'}
-        )
-        file_node = BaseFileNode.resolve_class(
-            'github', BaseFileNode.FILE
-        ).objects.get(_path='/githubfile')
-
-        file_info_list = FileInfo.objects.filter(file=file_node).all()
-        assert_equal(file_info_list.count(), 1)
-        file_info = file_info_list.first()
-        assert_equal(file_info.file_size, 1000)
-
-    @pytest.mark.skip('Not yet implemented')
-    @mock.patch('addons.base.views.upload_file_add_timestamptoken')
-    def test_remove_file_info_osfstorage(self, mock_ts):
+    def test_remove_file_info(self, mock_ts):
         file_info = FileInfo(file=self.file, file_size=1000)
         file_info.save()
 
@@ -524,39 +494,6 @@ class TestAddonLogs(OsfTestCase):
         )
 
         file_info_query = FileInfo.objects.filter(file=self.file)
-        assert_false(file_info_query.exists())
-
-    @pytest.mark.skip('Not yet implemented')
-    @mock.patch('addons.base.views.upload_file_add_timestamptoken')
-    def test_remove_file_info_github(self, mock_ts):
-        file_node = BaseFileNode.resolve_class(
-            'github', BaseFileNode.FILE
-        ).get_or_create(self.node, '/githubfile')
-        file_node.save()
-
-        file_info = FileInfo(file=file_node, file_size=1000)
-        file_info.save()
-
-        file_info_query = FileInfo.objects.filter(file=file_node)
-        assert_true(file_info_query.exists())
-
-        self.app.put_json(
-            self.node.api_url_for('create_waterbutler_log'),
-            self.build_payload(
-                action='delete',
-                metadata={
-                    'provider': 'github',
-                    'name': 'githubfile',
-                    'materialized': '/githubfile',
-                    'path': '/githubfile',
-                    'kind': 'file',
-                    'extra': {}
-                }
-            ),
-            headers={'Content-Type': 'application/json'}
-        )
-
-        file_info_query = FileInfo.objects.filter(file=file_node)
         assert_false(file_info_query.exists())
 
 
