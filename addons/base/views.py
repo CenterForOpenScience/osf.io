@@ -493,19 +493,13 @@ def create_waterbutler_log(payload, **kwargs):
 
                 if payload['provider'] == 'osfstorage':
                     file_node = BaseFileNode.objects.get(_id=metadata['path'])
-                    fileinfo = FileInfo()                
-                    fileinfo.file = file_node
-                    fileinfo.file_size = payload['metadata']['size']
-                    fileinfo.save()
+                    if not FileInfo.objects.filter(file=file_node).first():
+                        fileinfo = FileInfo()                
+                        fileinfo.file = file_node
+                        fileinfo.file_size = metadata['size']
+                        fileinfo.save()
 
                 upload_file_add_timestamptoken(payload, node)
-
-            elif action == NodeLog.FILE_REMOVED:
-                if payload['provider'] == 'osfstorage':
-                    file_node = BaseFileNode.objects.get(_id=metadata['path'])
-                    file_info = FileInfo.objects.filter(file=file_node).first()
-                    if file_info:
-                        file_info.delete()
 
             node_addon.create_waterbutler_log(auth, action, metadata)
 
@@ -530,7 +524,6 @@ def addon_delete_file_node(self, target, user, event_type, payload):
             materialized_path = payload['metadata']['materialized']
             content_type = ContentType.objects.get_for_model(target)
             if path.endswith('/'):
-                print("DIRECTORY")
                 folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
                     provider=provider,
                     target_object_id=target.id,
@@ -1048,3 +1041,4 @@ def timestamptoken_verify(auth, node, file_node, version, guid):
         shutil.rmtree(tmp_dir)
 
     return result
+
