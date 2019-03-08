@@ -1,10 +1,12 @@
 {% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
 {% load static %}
 {% load user_extras %}
 {% load spam_extras %}
 
 {% block top_includes %}
   <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tiny-date-picker/3.2.8/tiny-date-picker.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block title %}
@@ -13,49 +15,243 @@
 
 {% block content %}
 <h3>TimeStamp Add ({{ project_title }})</h3>
-<form action "" id="addTimestampForm">
-    <a class="btn btn-success" id="btn-verify">Verify</a>
-{% comment GRDM 7117 disable some timestamp features %}
-    <a class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</a>
-{% endcomment %}
-    <font color="red">
-        <h4 id="timestamp_errors_spinner"></h4>
-    </font>
-    <table id="datatables" class="table table-striped table-bordered" cellspacing="0" width="100%">
-        <thead>
-            <tr>
-                <th width="1%"><input type="checkBox" id="addTimestampAllCheck" style="width: 14px; height: 14px;" /></th>
-                <th>FilePath</th>
-                <th>TimestampUpdateUser</th>
-                <th>TimestampUpdateDate</th>
-                <th>Timestamp verification</th>
-            </tr>
-        </thead>
-        <tbody id="timestamp_error_list">
-        {% for provider_error_info in init_project_timestamp_error_list %}
-            <tr><td colspan="5"><b>{{ provider_error_info.provider }}</b></td></tr>
-            {% for error_info in provider_error_info.error_list %}
-            <tr class="addTimestamp">
-                <td width="1%"><input type="checkBox" id="addTimestampCheck" style="width: 14px; height: 14px;" /></td>
-                <td>
-                    {{ error_info.file_path }}
-                    <input type="hidden" name="provider" id="provider" value="{{ provider_error_info.provider }}" />
-                    <input type="hidden" name="file_id" id="file_id" value="{{ error_info.file_id }}" />
-                    <input type="hidden" name="file_path" id="file_path" value="{{ error_info.file_path }}" />
-                    <input type="hidden" name="project_id" id="project_id" value="{{ error_info.project_id }}" />
-                    <input type="hidden" name="version" id="version" value="{{ error_info.version }}" />
-                    <input type="hidden" name="file_name" id="file_name" value="{{ error_info.file_name }}" />
-                </td>
-                <td>{{ error_info.operator_user }}</td>
-                <td>{{ error_info.operator_date }}</td>
-                <td>{{ error_info.verify_result_title }}</td>
-            </tr>
+<div id="timestamp-form">
+    <div class="row">
+        <div class="col-xl-8 col-lg-10 col-sm-12">
+            <form>
+                <div class="form-group row">
+                    <div class="col-sm-6">
+                        <div class="input-group">
+                            <div class="input-group-addon">Start Date</div>
+                            <input id="startDateFilter" type="text" placeholder="YYYY-MM-DD" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="input-group">
+                            <div class="input-group-addon">End Date</div>
+                            <input id="endDateFilter" type="text" placeholder="YYYY-MM-DD" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="input-group">
+                            <div class="input-group-addon">User</div>
+                            <select id="userFilterSelect" class="form-control">
+                                <option value=""></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-sm-12">
+                        <button type="button" class="btn btn-primary" id="applyFiltersButton">Apply</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-12" style="margin-bottom: 10px;">
+            <div class="row">
+                <div class="col-sm-7">
+                    <span>
+                        <button type="button" class="btn btn-success" id="btn-verify">Verify</button>
+                        <button type="button" class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</button>
+                    </span>
+                </div>
+                <div class="col-sm-5"></div>
+            </div>
+        </div>
+    </div>
+    <div class="row" style="display: none;">
+        <!--
+            Same block as in web, but as the styling here is different,
+            we permanently hide it. The clicks on the visible pagination
+            elements are redirected to these hidden elements.
+            List.js don't generate page navigation as it was requested,
+            that's why we're doing this.
+        -->
+        <div class="col-sm-8">
+            <ul class="pagination-wrap" style="display: none;">
+                <li class="pagination-prev">
+                    <a class="page">&#060;</a>
+                </li>
+                <ul class="listjs-pagination"></ul>
+                <li class="pagination-next">
+                    <a class="page">&#062;</a>
+                </li>
+            </ul>
+        </div>
+        <div class="col-sm-2">
+            <label class="pull-right" style="margin: 20px 0;">per page:</label>
+        </div>
+        <div class="col-sm-2">
+            <select id="pageLength" class="form-control" style="margin: 15px 0;">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="pagination pagination-lg">
+                <span>
+                    <div class="btn btn-primary disabled" id="first-page">|</div>
+                    <div class="btn btn-primary disabled" id="previous-page"><i class="fa fa-angle-left"></i></div>
+                    <span class="current">Page of </span>
+                    <div class="btn btn-primary disabled" id="next-page"><i class="fa fa-angle-right"></i></div>
+                    <div class="btn btn-primary disabled" id="last-page">|</div>
+                </span>
+                <span>
+                    <div class="btn btn-primary" id="pageLength-10">10</div>
+                    <div class="btn btn-primary" id="pageLength-25">25</div>
+                    <div class="btn btn-primary" id="pageLength-50">50</div>
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <font color="red">
+            <h4 id="timestamp_errors_spinner"></h4>
+        </font>
+        <table id="datatables" class="table table-striped table-bordered" cellspacing="0" width="100%">
+            <thead>
+                <tr>
+                    <th width="3%">
+                        <input type="checkBox" id="addTimestampAllCheck" style="width: 15px; height: 15px;"/>
+                    </th>
+                    <th width="14%">
+                        <span class="header_text" title="Provider">Provider</span>
+                        <span class="sorter">
+                            <a id="sort_down_provider" class="caret"></a>
+                            <span class="dropup">
+                                <a id="sort_up_provider" class="caret"></a>
+                            </span>
+                        </span>
+                    </th>
+                    <th width="29%">
+                        <span class="header_text" title="File Path">File Path</span>
+                        <span class="sorter">
+                            <a id="sort_down_file_path" class="caret"></a>
+                            <span class="dropup">
+                                <a id="sort_up_file_path" class="caret"></a>
+                            </span>
+                        </span>
+                    </th>
+                    <th width="15%">
+                        <span class="header_text" title="Timestamp by">Timestamp by</span>
+                        <span class="sorter">
+                            <a id="sort_down_verify_user_name_id" class="caret"></a>
+                            <span class="dropup">
+                                <a id="sort_up_verify_user_name_id" class="caret"></a>
+                            </span>
+                        </span>
+                    </th>
+                    <th width="19%">
+                        <span class="header_text" title="Updated at">Updated at</span>
+                        <span class="sorter">
+                            <a id="sort_down_verify_date" class="caret"></a>
+                            <span class="dropup">
+                                <a id="sort_up_verify_date" class="caret"></a>
+                            </span>
+                        </span>
+                    </th>
+                    <th width="20%">
+                        <span class="header_text" title="Timestamp Verification">Timestamp Verification</span>
+                        <span class="sorter">
+                            <a id="sort_down_verify_result_title" class="caret"></a>
+                            <span class="dropup">
+                                <a id="sort_up_verify_result_title" class="caret"></a>
+                            </span>
+                        </span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="list" id="timestamp_error_list">
+            {% for provider_error_info in init_project_timestamp_error_list %}
+                {% for error_info in provider_error_info.error_list %}
+                <tr class="addTimestamp">
+                    <td width="1%"><input type="checkBox" id="addTimestampCheck" style="width: 14px; height: 14px;" /></td>
+                    <td class="provider">{{ provider_error_info.provider }}</td>
+                    <td>{{ error_info.file_path }}</td>
+
+                    <input type="hidden" class="creator_name" value="{{ error_info.creator_name }}" />
+                    <input type="hidden" class="creator_email" value="{{ error_info.creator_email }}" />
+                    <input type="hidden" class="creator_id" value="{{ error_info.creator_id }}" />
+                    <input type="hidden" class="file_path" value="{{ error_info.file_path }}" />
+                    <input type="hidden" class="file_id" value="{{ error_info.file_id }}" />
+                    <input type="hidden" class="file_create_date_on_upload" value="{{ error_info.file_create_date_on_upload }}" />
+                    <input type="hidden" class="file_create_date_on_verify" value="{{ error_info.file_create_date_on_verify }}" />
+                    <input type="hidden" class="file_modify_date_on_upload" value="{{ error_info.file_modify_date_on_upload }}" />
+                    <input type="hidden" class="file_modify_date_on_verify" value="{{ error_info.file_modify_date_on_verify }}" />
+                    <input type="hidden" class="file_size_on_upload" value="{{ error_info.file_size_on_upload }}" />
+                    <input type="hidden" class="file_size_on_verify" value="{{ error_info.file_size_on_verify }}" />
+                    <input type="hidden" class="file_version" value="{{ error_info.file_version }}" />
+                    <input type="hidden" class="project_id" value="{{ error_info.project_id }}" />
+                    <input type="hidden" class="organization_id" value="{{ error_info.organization_id }}" />
+                    <input type="hidden" class="organization_name" value="{{ error_info.organization_name }}" />
+                    <input type="hidden" class="provider" value="{{ provider_error_info.provider }}" />
+                    <input type="hidden" class="verify_user_id" value="{{ error_info.verify_user_id }}" />
+                    <input type="hidden" class="verify_user_name" value="{{ error_info.verify_user_name }}" />
+                    <input type="hidden" class="verify_date" value="{{ error_info.verify_date }}" />
+                    <input type="hidden" class="verify_result_title" value="{{ error_info.verify_result_title }}" />
+
+                    <td class="verify_user_name_id">{{ error_info.verify_user_name }} ({{ error_info.verify_user_id }})</td>
+                    <td class="verify_date">{{ error_info.verify_date }}</td>
+                    <td class="verify_result_title">{{ error_info.verify_result_title }}</td>
+                </tr>
+                {% endfor %}
             {% endfor %}
-        {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+    <div class="row">
+        <div class="col-sm-3">
+            <span>
+                <select id="fileFormat" class="form-control">
+                    <option value="csv">CSV</option>
+                    <option value="json-ld">JSON/LD</option>
+                    <option value="rdf-xml">RDF/XML</option>
+                </select>
+            </span>
+        </div>
+        <div class="col-sm-2">
+            <span>
+                <button type="button" class="btn btn-success" id="btn-download">Download</button>
+            </span>
+        </div>
+        <div class="col-sm-7"></div>
+    </div>
     {% csrf_token %}
-</form>
+</div>
+
+<style type="text/css">
+.table>thead>tr>th {
+    vertical-align: middle;
+}
+.form-group .input-group {
+    margin-bottom: 10px;
+}
+.caret {
+    cursor: pointer;
+}
+.table {
+    table-layout: fixed;
+}
+.table td {
+    word-wrap: break-word;
+}
+.table .sorter {
+    display: block;
+    float: left;
+    margin-left: -28px;
+}
+.table .header_text {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    float: left;
+    margin-right: 30px;
+    width: calc(100% - 30px);
+}
+</style>
 
 <script charset="utf-8">
     window.timestampaddUrls = {
@@ -65,5 +261,9 @@
         addtimestamp: "{% url 'timestampadd:addtimestamp' institution_id=institution_id guid=guid %}"
     };
 </script>
-<script src={{ '/static/public/js/rdm-timestampadd-page.js' }}></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tiny-date-picker/3.2.8/tiny-date-picker.min.js"></script>
 {% endblock content %}
+
+{% block bottom_js %}
+    {% render_bundle 'rdm-timestampadd-page' %}
+{% endblock %}

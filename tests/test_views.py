@@ -7,12 +7,13 @@ from __future__ import absolute_import
 import datetime as dt
 import httplib as http
 import json
+import os
+import shutil
+import tempfile
 import time
 import unittest
 import urllib
-
-from framework.logging import logging
-logger = logging.getLogger(__name__)
+import uuid
 
 from flask import request
 import mock
@@ -25,6 +26,7 @@ from django.db import connection, transaction
 from django.test import TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 
+from api.base import settings as api_settings
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.wiki.models import WikiPage
 from framework.auth import cas
@@ -47,6 +49,7 @@ from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscr
 from website.project.decorators import check_can_access
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added
+from website.project.utils import serialize_node
 from website.project.views.contributor import (
     deserialize_contributors,
     notify_added_contributor,
@@ -56,6 +59,7 @@ from website.project.views.contributor import (
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
+from website.util.timestamp import userkey_generation, AddTimestamp
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
@@ -69,11 +73,11 @@ from tests.base import (
     assert_datetime_equal,
 )
 from tests.base import test_app as mock_app
-from api_tests.utils import create_test_file
+from tests.test_timestamp import create_test_file, create_rdmfiletimestamptokenverifyresult
 
 pytestmark = pytest.mark.django_db
 
-from osf.models import NodeRelation, QuickFilesNode
+from osf.models import BaseFileNode, NodeRelation, QuickFilesNode, Guid, RdmUserKey, RdmFileTimestamptokenVerifyResult
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -94,15 +98,6 @@ from osf_tests.factories import (
     UnregUserFactory,
     RegionFactory
 )
-from osf.models import RdmUserKey, RdmTimestampGrantPattern, RdmFileTimestamptokenVerifyResult, Guid, BaseFileNode
-from api.base import settings as api_settings
-
-from website.views import (
-    userkey_generation,
-    userkey_generation_check,
-)
-from admin.rdm_addons.utils import get_rdm_addon_option
-import os
 
 @mock_app.route('/errorexc')
 def error_exc():
@@ -961,127 +956,6 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get('/{}/'.format(reg_file.guids.first()._id))
         assert_equal(res.status_code, 200)
         assert_in('This project is a withdrawn registration of', res.body)
-
-    # TODO: Use mock add-on (same as a TODO of TestAddonUserViews)
-    def test_choose_addons_add(self):
-        url = self.project.api_url_for('node_choose_addons')
-        self.app.post_json(
-            url,
-            {'github': True},
-            auth=self.user1.auth,
-        ).maybe_follow()
-        self.project.reload()
-        assert_true(self.project.get_addon('github'))
-
-    def test_choose_addons_remove(self):
-        url = self.project.api_url_for('node_choose_addons')
-        self.app.post_json(
-            url,
-            {'github': True},
-            auth=self.user1.auth,
-        ).maybe_follow()
-        self.app.post_json(
-            url,
-            {'github': False},
-            auth=self.user1.auth
-        ).maybe_follow()
-        self.project.reload()
-        assert_false(self.project.get_addon('github'))
-
-    def test_choose_addons_add_addon_denied_by_rdm_addons(self):
-        institution = InstitutionFactory()
-        self.user1.affiliated_institutions.add(institution)
-        self.user1.save()
-        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
-        rdm_addon_option.is_allowed = False
-        rdm_addon_option.save()
-
-        url = self.project.api_url_for('node_choose_addons')
-        res = self.app.post_json(
-            url,
-            {'github': True},
-            auth=self.user1.auth, expect_errors=True,
-        )
-        res.maybe_follow()
-        self.project.reload()
-        assert_equal(res.status_int, http.FORBIDDEN)
-        assert_in('You are prohibited from using this add-on.', res.body)
-        assert_false(self.project.get_addon('github'))
-
-    def test_choose_addons_add_addons_including_denied_by_rdm_addons(self):
-        institution = InstitutionFactory()
-        self.user1.affiliated_institutions.add(institution)
-        self.user1.save()
-        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
-        rdm_addon_option.is_allowed = False
-        rdm_addon_option.save()
-
-        url = self.project.api_url_for('node_choose_addons')
-        res = self.app.post_json(
-            url,
-            {'github': True, 's3': True},
-            auth=self.user1.auth, expect_errors=True,
-        )
-        res.maybe_follow()
-        self.project.reload()
-        assert_equal(res.status_int, http.FORBIDDEN)
-        assert_in('You are prohibited from using this add-on.', res.body)
-        assert_false(self.project.get_addon('github'))
-        assert_false(self.project.get_addon('s3'))
-
-    def test_choose_addons_remove_addon_denied_by_rdm_addons(self):
-        institution = InstitutionFactory()
-        self.user1.affiliated_institutions.add(institution)
-        self.user1.save()
-
-        url = self.project.api_url_for('node_choose_addons')
-        self.app.post_json(
-            url,
-            {'github': True},
-            auth=self.user1.auth,
-        ).maybe_follow()
-        self.project.reload()
-        assert_true(self.project.get_addon('github'))
-
-        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
-        rdm_addon_option.is_allowed = False
-        rdm_addon_option.save()
-
-        self.app.post_json(
-            url,
-            {'github': False},
-            auth=self.user1.auth,
-        ).maybe_follow()
-        self.project.reload()
-        assert_false(self.project.get_addon('github'))
-
-    def test_choose_addons_remove_addons_including_denied_by_rdm_addons(self):
-        institution = InstitutionFactory()
-        self.user1.affiliated_institutions.add(institution)
-        self.user1.save()
-
-        url = self.project.api_url_for('node_choose_addons')
-        self.app.post_json(
-            url,
-            {'github': True, 's3': True},
-            auth=self.user1.auth,
-        ).maybe_follow()
-        self.project.reload()
-        assert_true(self.project.get_addon('github'))
-        assert_true(self.project.get_addon('s3'))
-
-        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
-        rdm_addon_option.is_allowed = False
-        rdm_addon_option.save()
-
-        self.app.post_json(
-            url,
-            {'github': False, 's3': False},
-            auth=self.user1.auth,
-        ).maybe_follow()
-        self.project.reload()
-        assert_false(self.project.get_addon('github'))
-        assert_false(self.project.get_addon('s3'))
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -4198,101 +4072,6 @@ class TestAddonUserViews(OsfTestCase):
         self.user.reload()
         assert_false(self.user.get_addon('github'))
 
-    def test_choose_addons_add_addon_denied_by_rdm_addons(self):
-        institution = InstitutionFactory()
-        self.user.affiliated_institutions.add(institution)
-        self.user.save()
-        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
-        rdm_addon_option.is_allowed = False
-        rdm_addon_option.save()
-
-        url = '/api/v1/settings/addons/'
-        res = self.app.post_json(
-            url,
-            {'github': True},
-            auth=self.user.auth, expect_errors=True,
-        )
-        res.maybe_follow()
-        self.user.reload()
-        assert_equal(res.status_int, http.FORBIDDEN)
-        assert_in('You are prohibited from using this add-on.', res.body)
-        assert_false(self.user.get_addon('github'))
-
-    def test_choose_addons_add_addons_including_denied_by_rdm_addons(self):
-        institution = InstitutionFactory()
-        self.user.affiliated_institutions.add(institution)
-        self.user.save()
-        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
-        rdm_addon_option.is_allowed = False
-        rdm_addon_option.save()
-
-        url = '/api/v1/settings/addons/'
-        res = self.app.post_json(
-            url,
-            {'github': True, 's3': True},
-            auth=self.user.auth, expect_errors=True,
-        )
-        res.maybe_follow()
-        self.user.reload()
-        assert_equal(res.status_int, http.FORBIDDEN)
-        assert_in('You are prohibited from using this add-on.', res.body)
-        assert_false(self.user.get_addon('github'))
-        assert_false(self.user.get_addon('s3'))
-
-    def test_choose_addons_remove_addon_denied_by_rdm_addons(self):
-        institution = InstitutionFactory()
-        self.user.affiliated_institutions.add(institution)
-        self.user.save()
-
-        url = '/api/v1/settings/addons/'
-        self.app.post_json(
-            url,
-            {'github': True},
-            auth=self.user.auth,
-        ).maybe_follow()
-        self.user.reload()
-        assert_true(self.user.get_addon('github'))
-
-        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
-        rdm_addon_option.is_allowed = False
-        rdm_addon_option.save()
-
-        self.app.post_json(
-            url,
-            {'github': False},
-            auth=self.user.auth,
-        ).maybe_follow()
-        self.user.reload()
-        assert_false(self.user.get_addon('github'))
-
-    def test_choose_addons_remove_addons_including_denied_by_rdm_addons(self):
-        institution = InstitutionFactory()
-        self.user.affiliated_institutions.add(institution)
-        self.user.save()
-
-        url = '/api/v1/settings/addons/'
-        self.app.post_json(
-            url,
-            {'github': True, 's3': True},
-            auth=self.user.auth,
-        ).maybe_follow()
-        self.user.reload()
-        assert_true(self.user.get_addon('github'))
-        assert_true(self.user.get_addon('s3'))
-
-        rdm_addon_option = get_rdm_addon_option(institution.id, 'github')
-        rdm_addon_option.is_allowed = False
-        rdm_addon_option.save()
-
-        self.app.post_json(
-            url,
-            {'github': False, 's3': False},
-            auth=self.user.auth,
-        ).maybe_follow()
-        self.user.reload()
-        assert_false(self.user.get_addon('github'))
-        assert_false(self.user.get_addon('s3'))
-
 
 @pytest.mark.enable_enqueue_task
 class TestConfigureMailingListViews(OsfTestCase):
@@ -4394,7 +4173,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         user.mailchimp_mailing_lists = {'OSF General': False}
         user.save()
 
-        # user subscribes and webhook sends request to OSF
+        # user subscribes and webhook sends request to GakuNin RDM
         data = {
             'type': 'subscribe',
             'data[list_id]': list_id,
@@ -5296,152 +5075,14 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
         )
         assert_equal(res.status_code, 403)
 
-class TestRdmUserKey(OsfTestCase):
-
-    def setUp(self):
-        super(TestRdmUserKey, self).setUp()
-        self.user = AuthUserFactory()
-
-    def tearDown(self):
-        super(TestRdmUserKey, self).tearDown()
-        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-
-        key_exists_check = userkey_generation_check(self.user._id)
-        if key_exists_check:
-            rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
-            pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
-            if os.path.exists(pvt_key_path):
-                os.remove(pvt_key_path)
-            rdmuserkey_pvt_key.delete()
-
-            rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
-            pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
-            if os.path.exists(pub_key_path):
-                os.remove(pub_key_path)
-            rdmuserkey_pub_key.delete()
-        self.user.delete()
-
-    def test_userkey_generation_check_return_true(self):
-        userkey_generation(self.user._id)
-        assert_true(userkey_generation_check(self.user._id))
-
-    def test_userkey_generation_check_return_false(self):
-        assert_false(userkey_generation_check(self.user._id))
-
-    def test_userkey_generation(self):
-        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        userkey_generation(self.user._id)
-
-        rdmuserkey_pvt_key = RdmUserKey.objects.filter(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
-        assert_equal(rdmuserkey_pvt_key.count(), 1)
-
-        rdmuserkey_pub_key = RdmUserKey.objects.filter(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
-        assert_equal(rdmuserkey_pub_key.count(), 1)
-
-
-class TestTimestampPatternUserView(OsfTestCase):
-
-    def setUp(self):
-        super(TestTimestampPatternUserView, self).setUp()
-
-    def tearDown(self):
-        super(TestTimestampPatternUserView, self).tearDown()
-
-    def test_node_setting_timestamp_pattern_init(self):
-        inst = InstitutionFactory(email_domains=['foo.bar'])
-        user = AuthUserFactory()
-        user.emails.create(address='queen@foo.bar')
-        user.save()
-        project = ProjectFactory(creator=user)
-        timestampPattern, _ =  RdmTimestampGrantPattern.objects.get_or_create(institution_id=inst.id, node_guid=project._id)
-        timestampPattern.save()
-        assert_equal(timestampPattern.timestamp_pattern_division, 1)
-
-        ## check timestampPattern.timestamp_pattern_division=1
-        url = project.url + 'settings/'
-        res = self.app.get(url, auth=user.auth)
-        assert_equal(res.status_code, 200)
-        assert_in('window.contextVars.timestampPattern = 1;', res)
-
-    def test_node_setting_timestamp_pattern_change(self):
-        inst = InstitutionFactory(email_domains=['foo.bar'])
-        user = AuthUserFactory()
-        user.emails.create(address='queen@foo.bar')
-        user.save()
-        project = ProjectFactory(creator=user)
-        timestampPattern, _ =  RdmTimestampGrantPattern.objects.get_or_create(institution_id=inst.id, node_guid=project._id)
-        timestampPattern.save()
-        assert_equal(timestampPattern.timestamp_pattern_division, 1)
-
-        ## check timestampPattern.timestamp_pattern_division=1
-        url_settings = project.url + 'settings/'
-        res = self.app.get(url_settings, auth=user.auth)
-        assert_equal(res.status_code, 200)
-        assert_in('window.contextVars.timestampPattern = 1;', res)
-
-        ## change timestampPattern.timestamp_pattern_division 1 => 2
-        from tests.json_api_test_app import JSONAPITestApp
-        url_change_node = project.api_v2_url #ex. /v2/nodes/anr9u/
-        data = {
-            'data': {
-                'type': 'nodes',
-                'id': project._id,
-                'attributes': {
-                    'title': project.title,
-                    'category': project.category,
-                    'description': project.description,
-                    'timestampPattern': 2
-                }
-            }
-        }
-        json_api_testapp = JSONAPITestApp()
-        res_patch = json_api_testapp.patch_json_api(url_change_node, data, auth=user.auth)
-        timestampPattern_c = RdmTimestampGrantPattern.objects.get(institution_id=inst.id, node_guid=project._id)
-        assert_equal(res_patch.status_code, 200)
-
-        ## check timestampPattern.timestamp_pattern_division=2
-        res = self.app.get(url_settings, auth=user.auth)
-        assert_equal(res.status_code, 200)
-        assert_in('window.contextVars.timestampPattern = 2;', res)
-
-
-def create_rdmfiletimestamptokenverifyresult(self, filename='test_file_timestamp_check', provider='osfstorage', inspection_result_status_1=True):
-    import pytz
-    from api.timestamp.add_timestamp import AddTimestamp
-    from api.timestamp.timestamptoken_verify import TimeStampTokenVerifyCheck
-    import shutil
-    ## create file_node(BaseFileNode record)
-    file_node = create_test_file(target=self.node, user=self.user, filename=filename)
-    file_node.save()
-    ## create tmp_dir
-    current_datetime = dt.datetime.now(pytz.timezone('Asia/Tokyo'))
-    current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-    tmp_dir = '/tmp/tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-    os.mkdir(tmp_dir)
-    ## create tmp_file (file_node)
-    tmp_file = os.path.join(tmp_dir, filename)
-    with open(tmp_file, 'wb') as fout:
-        fout.write('filename:{}, provider:{}, inspection_result_status_1(true:1 or false:3):{}'.format(filename, provider, inspection_result_status_1))
-    if inspection_result_status_1:
-        ## add timestamp
-        addTimestamp = AddTimestamp()
-        ret = addTimestamp.add_timestamp(self.user._id, file_node._id, self.node._id, provider, os.path.join('/', filename), tmp_file, tmp_dir)
-    else:
-        ## verify timestamptoken
-        verifyCheck = TimeStampTokenVerifyCheck()
-        ret = verifyCheck.timestamp_check(self.user._id, file_node._id, self.node._id, provider, os.path.join('/', filename), tmp_file, tmp_dir)
-    shutil.rmtree(tmp_dir)
-
 
 class TestTimestampView(OsfTestCase):
-
     def setUp(self):
-
         super(TestTimestampView, self).setUp()
         self.user = AuthUserFactory()
         self.other_user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, is_public=True)
-        self.project.add_contributor(self.other_user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        self.project.add_contributor(self.other_user, permissions=['read', 'write'], save=True)
         self.node = self.project
         self.auth_obj = Auth(user=self.project.creator)
         userkey_generation(self.user._id)
@@ -5475,7 +5116,8 @@ class TestTimestampView(OsfTestCase):
             os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
-    def test_get_init_timestamp_error_data_list(self):
+    @mock.patch('website.project.views.node.find_bookmark_collection')
+    def test_get_init_timestamp_error_data_list(self, mock_collection):
         url_timestamp = self.project.url + 'timestamp/'
         res = self.app.get(url_timestamp, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -5485,8 +5127,17 @@ class TestTimestampView(OsfTestCase):
         assert 'osfstorage_test_file2.status_3' in res
         assert 'osfstorage_test_file3.status_3' in res
         assert 's3_test_file1.status_3' in res
-    @mock.patch('requests.get', '')
-    def test_add_timestamp_token(self):
+
+        assert 'class="creator_name" value="Freddie Mercury' in res
+        assert 'class="creator_email" value="freddiemercury' in res
+
+    @mock.patch('website.project.views.node.find_bookmark_collection')
+    @mock.patch('website.util.waterbutler.shutil')
+    @mock.patch('requests.get')
+    def test_add_timestamp_token(self, mock_get, mock_shutil, mock_collection):
+        mock_get.return_value.content = ''
+        mock_get.return_value.status_code = 200
+
         url_timestamp = self.project.url + 'timestamp/'
         res = self.app.get(url_timestamp, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -5505,8 +5156,11 @@ class TestTimestampView(OsfTestCase):
             {
                 'provider': [file_verify_result.provider],
                 'file_id': [file_verify_result.file_id],
-                'file_path': [file_verify_result.path],
+                'file_path': [file_node.path],
                 'file_name': [file_node.name],
+                'size': [2345],
+                'created': ['2018-12-17 00:00'],
+                'modified': ['2018-12-19 00:00'],
                 'version': [file_node.current_version_number]
             },
             content_type='application/json',
@@ -5518,11 +5172,15 @@ class TestTimestampView(OsfTestCase):
         ## check TimestampError(TimestampVerifyResult.inspection_result_statu != 1) in response
         assert 'osfstorage_test_file1.status_1' not in res
         assert 'osfstorage_test_file2.status_3' in res
-        assert 'osfstorage_test_file3.status_3' in res
+        assert 'osfstorage_test_file3.status_3' not in res
         assert 's3_test_file1.status_3' in res
 
-    def test_get_timestamp_error_data(self):
-        file_node = create_test_file(target=self.node, user=self.user, filename='test_get_timestamp_error_data')
+    @mock.patch('website.util.waterbutler.shutil')
+    @mock.patch('requests.get')
+    def test_get_timestamp_error_data(self, mock_get, mock_shutil):
+        mock_get.return_value.content = ''
+
+        file_node = create_test_file(node=self.node, user=self.user, filename='test_get_timestamp_error_data')
         api_url_get_timestamp_error_data = self.project.api_url + 'timestamp/timestamp_error_data/'
         res = self.app.post_json(
             api_url_get_timestamp_error_data,
@@ -5541,7 +5199,6 @@ class TestTimestampView(OsfTestCase):
 
 
 class TestAddonFileViewTimestampFunc(OsfTestCase):
-
     def setUp(self):
         super(TestAddonFileViewTimestampFunc, self).setUp()
         self.user = AuthUserFactory()
@@ -5572,37 +5229,35 @@ class TestAddonFileViewTimestampFunc(OsfTestCase):
             os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
-    def test_adding_timestamp(self):
-        from api.timestamp.add_timestamp import AddTimestamp
-        from website.project.utils import serialize_node
-        import numpy
-        import tempfile
-        import shutil
-
+    @mock.patch('website.project.views.node.find_bookmark_collection')
+    def test_adding_timestamp(self, mock_collection):
+        ret = serialize_node(self.node, self.auth_obj, primary=True)
+        user_info = OSFUser.objects.get(id=Guid.objects.get(_id=ret['user']['id']).object_id)
         filename='tests.test_views.test_timestamptoken_verify'
-        file_node = create_test_file(target=self.node, user=self.user, filename=filename)
+        file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         tmp_dir = tempfile.mkdtemp()
         tmp_file = os.path.join(tmp_dir, file_node.name)
         with open(tmp_file, 'wb') as file:
-            file.write(numpy.random.bytes(1000))
+            file.write(str(uuid.uuid4()))
         version = file_node.get_version(1, required=True)
         addTimestamp = AddTimestamp()
-        result = addTimestamp.add_timestamp(self.user._id,
-                                            file_node._id,
-                                            self.node._id, file_node.provider,
-                                            file_node._path,
-                                            tmp_file, tmp_dir)
+        file_data = {
+            'file_id': file_node._id,
+            'file_name': 'Hello.txt',
+            'file_path': file_node._path,
+            'size': 1234,
+            'created': None,
+            'modified': None,
+            'version': '',
+            'provider': file_node.provider
+        }
+        result = addTimestamp.add_timestamp(
+            ret['user']['id'], file_data, self.node._id, tmp_file, tmp_dir
+        )
         shutil.rmtree(tmp_dir)
         assert_in('verify_result', result)
+        assert_equal(result['verify_result'], 1)
 
-    def test_timestamptoken_verify(self):
-        from addons.base.views import timestamptoken_verify
-
-        filename='tests.test_views.test_timestamptoken_verify'
-        file_node = create_test_file(target=self.node, user=self.user, filename=filename)
-        version = file_node.get_version(1, required=True)
-        verify_result = timestamptoken_verify(self.auth_obj, self.node, file_node, version, self.user.id)
-        assert_in('verify_result', verify_result)
 
 if __name__ == '__main__':
     unittest.main()
