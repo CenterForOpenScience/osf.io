@@ -438,7 +438,6 @@ class TestAddonLogs(OsfTestCase):
         assert_equal(self.node.logs.count(), nlogs + 1)
         assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
-    @pytest.mark.skip('Not yet implemented')
     @mock.patch('addons.base.views.upload_file_add_timestamptoken')
     def test_add_file_info(self, mock_ts):
         self.configure_osf_addon()
@@ -468,7 +467,6 @@ class TestAddonLogs(OsfTestCase):
         file_info = file_info_list.first()
         assert_equal(file_info.file_size, 1000)
 
-    @pytest.mark.skip('Not yet implemented')
     @mock.patch('addons.base.views.upload_file_add_timestamptoken')
     def test_update_file_info(self, mock_ts):
         file_info = FileInfo(file=self.file, file_size=1000)
@@ -490,7 +488,8 @@ class TestAddonLogs(OsfTestCase):
                     'extra': {
                         'version': '2'
                     }
-                }
+                },
+                provider='osfstorage'
             ),
             headers={'Content-Type': 'application/json'}
         )

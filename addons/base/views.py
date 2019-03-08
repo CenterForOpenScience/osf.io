@@ -495,7 +495,7 @@ def create_waterbutler_log(payload, **kwargs):
                     file_node = BaseFileNode.objects.get(_id=metadata['path'])
                     fileinfo = FileInfo.objects.filter(file=file_node).first()
                     if not fileinfo:
-                        fileinfo = FileInfo()                
+                        fileinfo = FileInfo()
                         fileinfo.file = file_node
                     fileinfo.file_size = metadata['size']
                     fileinfo.save()
