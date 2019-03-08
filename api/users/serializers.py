@@ -21,7 +21,7 @@ from osf.models.provider import AbstractProviderGroupObjectPermission
 from website import mails
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.nodes.serializers import NodeSerializer
-from api.base.schemas.utils import validate_user_json, from_json
+from api.base.schemas.utils import from_json
 from framework.auth.views import send_confirm_email
 
 
@@ -199,14 +199,6 @@ class UserSerializer(JSONAPISerializer):
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
-
-    def validate_employment(self, value):
-        validate_user_json(value, 'employment-schema.json')
-        return value
-
-    def validate_education(self, value):
-        validate_user_json(value, 'education-schema.json')
-        return value
 
     def validate_social(self, value):
         schema = from_json('social-schema.json')

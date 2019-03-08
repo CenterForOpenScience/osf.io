@@ -439,13 +439,13 @@ class UserEducationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         return education
 
 
-class UserEmploymentList(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
+class UserEmploymentList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserProfile,
     )
 
-    # TODO - ordering! https://jsonapi.org/format/1.1/#crud-updating-to-many-relationships
     ordering = ('-created')
 
     serializer_class = EmploymentSerializer
@@ -460,25 +460,23 @@ class UserEmploymentList(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListF
         return self.get_queryset_from_request()
 
 
-class UserEmploymentDetail(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
+class UserEmploymentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserProfile,
     )
 
-    # TODO - ordering! https://jsonapi.org/format/1.1/#crud-updating-to-many-relationships
     ordering = ('-created')
 
     serializer_class = EmploymentDetailSerializer
     view_category = 'users'
     view_name = 'user-employment-detail'
 
-    def get_default_queryset(self):
-        user = self.get_user(check_permissions=True)
-        return Employment.objects.filter(user=user)
-
-    def get_queryset(self):
-        return self.get_queryset_from_request()
+    def get_object(self):
+        employment = get_object_or_error(Employment, self.kwargs['employment_id'], self.request)
+        self.check_object_permissions(self.request, employment)
+        return employment
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
