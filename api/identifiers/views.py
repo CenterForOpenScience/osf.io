@@ -13,7 +13,6 @@ from api.identifiers.serializers import NodeIdentifierSerializer, RegistrationId
 
 from api.nodes.permissions import (
     IsPublic,
-    ExcludeWithdrawals,
     AdminOrPublic,
     EditIfPublic,
 )
@@ -28,7 +27,6 @@ class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixi
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
