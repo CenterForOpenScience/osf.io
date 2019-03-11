@@ -69,6 +69,10 @@
            ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
            ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}<!-- , ${profile["number_public_projects"]} public -->
         </h2>
+        <h2>
+            Usage of NII storage<br />
+            &nbsp;&nbsp;${profile['quota']['used']}[GB] / ${profile['quota']['max']}[GB]
+        </h2>
     </div>
 
     <div class="col-sm-6">
