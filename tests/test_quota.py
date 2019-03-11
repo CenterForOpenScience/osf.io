@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from nose.tools import * # noqa (PEP8 asserts)
+import datetime
+from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 
 from addons.osfstorage.models import OsfStorageFileNode
@@ -23,8 +24,6 @@ class QuotaTestCase(OsfTestCase):
 
     @pytest.mark.skip('Not yet implemented')
     def test_calculate_used_quota(self):
-        assert_equal(self.user, self.node[0].creator)
-        assert_equal(self.node[0].creator, self.node[1].creator)
         file_list = []
 
         # No files
@@ -47,3 +46,16 @@ class QuotaTestCase(OsfTestCase):
         file_list[1].save()
         FileInfo.objects.create(file=file_list[1], file_size=1000)
         assert_equal(quota.used_quota(self.user._id), 1500)
+
+    @pytest.mark.skip('Not yet implemented')
+    def test_calculate_used_quota_deleted_file(self):
+        # Add a (deleted) file to node[0]
+        file_node = OsfStorageFileNode.create(
+            target=self.node[0],
+            name='file0',
+            deleted_on=datetime.datetime.now(),
+            deleted_by=self.user
+        )
+        file_node.save()
+        FileInfo.objects.create(file=file_node, file_size=500)
+        assert_equal(quota.used_quota(self.user._id), 0)
