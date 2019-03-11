@@ -10,6 +10,7 @@ from osf.utils.permissions import reduce_permissions
 
 from osf.utils import workflows
 from website.ember_osf_web.decorators import storage_i18n_flag_active
+from website.util import quota
 
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
@@ -90,6 +91,10 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
 
         default_region = user.get_addon('osfstorage').default_region
         available_regions = [region for region in Region.objects.all().values('_id', 'name')]
+        quota_info = {
+            'max': 100,
+            'used': int(round(float(quota.used_quota(user._id)) / (1024 * 1024 * 1024)))
+        }
         ret.update({
             'activity_points': user.get_activity_points(),
             'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_LARGE),
@@ -98,6 +103,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             'storage_flag_is_active': storage_i18n_flag_active(),
             'default_region': {'name': default_region.name, '_id': default_region._id},
             'merged_by': merged_by,
+            'quota': quota_info
         })
         if include_node_counts:
             projects = user.nodes.exclude(is_deleted=True).filter(type='osf.node').get_roots()
