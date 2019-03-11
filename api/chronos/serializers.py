@@ -2,7 +2,7 @@ from rest_framework import serializers as ser
 from rest_framework.exceptions import NotFound
 
 from api.base.exceptions import Conflict
-from api.base.serializers import JSONAPISerializer, RelationshipField
+from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField
 from api.base.utils import absolute_reverse
 from osf.external.chronos import ChronosClient
 from osf.models import ChronosJournal
@@ -25,6 +25,8 @@ class ChronosJournalSerializer(JSONAPISerializer):
     id = ser.CharField(source='journal_id', read_only=True)
     name = ser.CharField(read_only=True)
     title = ser.CharField(read_only=True)
+
+    links = LinksField({'self': 'get_absolute_url'})
 
     def get_absolute_url(self, obj):
         return absolute_reverse('chronos:chronos-journal-detail', kwargs={'journal_id': obj.journal_id})
@@ -54,6 +56,7 @@ class ChronosSubmissionSerializer(JSONAPISerializer):
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<submitter._id>'},
     )
+    links = LinksField({'self': 'get_absolute_url'})
 
     def get_absolute_url(self, obj):
         return absolute_reverse('chronos:chronos-submission-detail', kwargs={'preprint_id': obj.preprint._id, 'submission_id': obj.publication_id})
@@ -62,8 +65,13 @@ class ChronosSubmissionSerializer(JSONAPISerializer):
         value_lookup = {val.value: key for key, val in ChronosSubmissionStatus.__members__.items()}
         return value_lookup[obj.status]
 
+
+class ChronosSubmissionDetailSerializer(ChronosSubmissionSerializer):
+    id = ser.CharField(source='publication_id', required=True)
+
     def update(self, instance, validated_data):
         return ChronosClient().update_manuscript(instance)
+
 
 class ChronosSubmissionCreateSerializer(ChronosSubmissionSerializer):
     journal = ChronosJournalRelationshipField(
