@@ -7,9 +7,12 @@
                           {"name": "Wasabi",
                            "host": "s3.wasabisys.com",
                            "bucketLocations": {
-                             "us-west-1": {"name": "Oregon", "host": "s3.us-west-1.wasabisys.com"},
-                             "us-east-1": {"name": "Virginia"},
-                             "": {"name": "Virginia"}
-                           }}],
+                             "us-east": {"name": "us-east", "host": "s3.wasabisys.com"},
+                             "us-west-1": {"name": "us-west-1", "host": "s3.us-west-1.wasabisys.com"},
+                             "eu-central": {"name": "eu-central", "host": "s3.eu-central-1.wasabisys.com"},
+                             "": {"name": "Virginia"}}}
+                           {"name": "RDM Minio",
+                           "host": "minio.rdm.nii.ac.jp"}
+                           ],
     "encryptUploads": true
 }
