@@ -18,11 +18,11 @@ def used_quota(user_id):
     for project in projects:
         logging.info('project id {}'.format(project.id))
         files = OsfStorageFileNode.objects.filter(
-          target_object_id=project.id,
-          target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-          type='osf.osfstoragefilenode',
-          deleted_on=None,
-          deleted_by_id=None,
+            target_object_id=project.id,
+            target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+            type='osf.osfstoragefilenode',
+            deleted_on=None,
+            deleted_by_id=None,
         )
         logging.info('num files {}'.format(len(files)))
         all_files += files
