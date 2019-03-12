@@ -316,21 +316,6 @@ SSL_GENERATE_SELF_SIGNED = 'openssl req -x509 -nodes -days 365 -newkey rsa:2048 
 SSL_PRIVATE_KEY_GENERATION = 'openssl genrsa -out {0} {1}'
 SSL_PUBLIC_KEY_GENERATION = 'openssl rsa -in {0} -pubout -out {1}'
 
-# Timestamp(API) Settings
-# openssl cmd const
-OPENSSL_MAIN_CMD = 'openssl'
-OPENSSL_OPTION_TS = 'ts'
-OPENSSL_OPTION_VERIFY = '-verify'
-OPENSSL_OPTION_QUERY = '-query'
-OPENSSL_OPTION_DATA = '-data'
-OPENSSL_OPTION_CERT = '-cert'
-OPENSSL_OPTION_IN = '-in'
-OPENSSL_OPTION_SHA512 = '-sha512'
-OPENSSL_OPTION_CAFILE = '-CAfile'
-OPENSSL_OPTION_GENRSA = 'genrsa'
-OPENSSL_OPTION_OUT = '-out'
-OPENSSL_OPTION_RSA = 'rsa'
-OPENSSL_OPTION_PUBOUT = '-pubout'
 # UserKey Placement destination
 KEY_NAME_PRIVATE = 'pvt'
 KEY_NAME_PUBLIC = 'pub'
@@ -340,6 +325,9 @@ KEY_SAVE_PATH = '/user_key_info/'
 KEY_NAME_FORMAT = '{0}_{1}_{2}{3}'
 PRIVATE_KEY_VALUE = 1
 PUBLIC_KEY_VALUE = 2
+# FreeTSA openation commands
+SSL_CREATE_TIMESTAMP_REQUEST = 'openssl ts -query -data {0} -cert -sha512'
+SSL_GET_TIMESTAMP_RESPONSE = 'openssl ts -verify -data {0} -in {1} -CAfile {2}'
 # openssl ts verify check value
 OPENSSL_VERIFY_RESULT_OK = 'OK'
 # timestamp verify rootKey
@@ -350,17 +338,29 @@ TIME_STAMP_AUTHORITY_URL = 'http://eswg.jnsa.org/freetsa'
 ERROR_HTTP_STATUS = [400, 401, 402, 403, 500, 502, 503, 504]
 REQUEST_TIME_OUT = 5
 RETRY_COUNT = 3
+
+# UPKI flag
+USE_UPKI = False
+
+#uPKI operation commands
+UPKI_TIMESTAMP_URL = ''
+UPKI_CREATE_TIMESTAMP = ''
+UPKI_VERIFY_TIMESTAMP = ''
+UPKI_VERIFY_INVALID_MSG = 'LPC_ERR_VERIFY_INVALID'
+
 # TimeStamp Inspection Status
 TIME_STAMP_TOKEN_UNCHECKED = 0
 TIME_STAMP_TOKEN_CHECK_SUCCESS = 1
 TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG = 'OK'
 TIME_STAMP_TOKEN_CHECK_NG = 2
-TIME_STAMP_TOKEN_CHECK_NG_MSG = 'NG'
+TIME_STAMP_TOKEN_CHECK_NG_MSG = 'NG: file modified.'
 TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND = 3
-TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG = 'TST missing(Unverify)'
+TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG = 'NG: not inspected.'
 TIME_STAMP_TOKEN_NO_DATA = 4
-TIME_STAMP_TOKEN_NO_DATA_MSG = 'TST missing(Retrieving Failed)'
+TIME_STAMP_TOKEN_NO_DATA_MSG = 'Error: some errors has occurred in processing.'
 FILE_NOT_EXISTS = 5
-FILE_NOT_EXISTS_MSG = 'FILE missing'
+FILE_NOT_EXISTS_MSG = 'NG: deleted file.'
 FILE_NOT_FOUND = 6
-FILE_NOT_FOUND_MSG = 'FILE missing(Unverify)'
+FILE_NOT_FOUND_MSG = 'NG: file was gone.'
+TIME_STAMP_VERIFICATION_ERR = 7
+TIME_STAMP_VERIFICATION_ERR_MSG = 'Error: some errors has occurred in verification.'
