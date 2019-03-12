@@ -71,7 +71,7 @@
         </h2>
         <h2>
             Usage of NII storage<br />
-            &nbsp;&nbsp;${profile['quota']['used']}[GB] / ${profile['quota']['max']}[GB]
+            ${profile['quota']['rate']}%, ${profile['quota']['used']} / ${profile['quota']['max']}[GB]
         </h2>
     </div>
 
