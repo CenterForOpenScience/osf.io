@@ -9,6 +9,8 @@
 "@centerforopenscience/markdown-it-atrules@^0.1.0":
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/markdown-it-atrules/-/markdown-it-atrules-0.1.0.tgz#73c6c9a3a818330201c3c15cd3a5796d3619ca9b"
+  dependencies:
+    np "^3.0.4"
 
 "@centerforopenscience/markdown-it-toc@~1.1.1":
   version "1.1.1"
@@ -2728,6 +2730,12 @@ linkifyjs@^2.0.3:
     react ">=0.14.0"
     react-dom ">=0.14.0"
 
+list.js@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/list.js/-/list.js-1.5.0.tgz#a4cbfc8281ddefc02fdb2d30c8748bfae25fbcda"
+  dependencies:
+    string-natural-compare "^2.0.2"
+
 load-json-file@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/load-json-file/-/load-json-file-2.0.0.tgz#7947e42149af80d696cbf797bcaabcfe1fe29ca8"
@@ -4415,6 +4423,10 @@ strict-uri-encode@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/strict-uri-encode/-/strict-uri-encode-1.1.0.tgz#279b225df1d582b1f54e65addd4352e18faa0713"
 
+string-natural-compare@^2.0.2:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/string-natural-compare/-/string-natural-compare-2.0.3.tgz#9dbe1dd65490a5fe14f7a5c9bc686fc67cb9c6e4"
+
 string-width@^1.0.1, string-width@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-1.0.2.tgz#118bdf5b8cdc51a2a7e70d211e07e2b0b9b107d3"
@@ -4802,6 +4814,10 @@ verror@1.10.0:
     assert-plus "^1.0.0"
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
+
+vkbeautify@^0.99.3:
+  version "0.99.3"
+  resolved "https://registry.yarnpkg.com/vkbeautify/-/vkbeautify-0.99.3.tgz#4769b3238c5d772c6ea967545dd1df5582f23297"
 
 vm-browserify@0.0.4:
   version "0.0.4"

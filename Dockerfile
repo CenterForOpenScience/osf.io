@@ -227,6 +227,6 @@ RUN for module in \
     ; do \
         touch $file && chmod o+w $file \
     ; done \
-    && rm ./website/settings/local.py ./api/base/settings/local.py ./api/timestamp/local.py
+    && rm ./website/settings/local.py ./api/base/settings/local.py
 
 CMD ["gosu", "nobody", "invoke", "--list"]
