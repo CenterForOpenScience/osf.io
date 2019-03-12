@@ -1,9 +1,16 @@
 """
 Serialize user
 """
+from api.base import settings as api_settings
+from django.core.exceptions import ObjectDoesNotExist
 
 
 def serialize_user(user):
+    try:
+        max_quota = user.userquota.max_quota
+    except ObjectDoesNotExist:
+        max_quota = api_settings.DEFAULT_MAX_QUOTA
+
     return {
         'username': user.username,
         'name': user.fullname,
@@ -18,7 +25,8 @@ def serialize_user(user):
         'osf_link': user.absolute_url,
         'system_tags': user.system_tags,
         'unclaimed': bool(user.unclaimed_records),
-        'requested_deactivation': bool(user.requested_deactivation)
+        'requested_deactivation': bool(user.requested_deactivation),
+        'quota': max_quota
     }
 
 
