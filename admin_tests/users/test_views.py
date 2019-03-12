@@ -13,11 +13,13 @@ from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 
+from api.base import settings as api_settings
 from tests.base import AdminTestCase
 from website import settings
 from framework.auth import Auth
 from osf.models.user import OSFUser
 from osf.models.tag import Tag
+from osf.models import UserQuota
 from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
@@ -780,3 +782,62 @@ class TestUserMerge(AdminTestCase):
 
         view.form_valid(valid_form)
         nt.assert_true(mock_merge_user.called_with())
+
+
+class TestGetUserQuota(AdminTestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.view = views.UserView()
+
+    def test_get_default_quota(self):
+        response = setup_view(
+            self.view,
+            RequestFactory().get(reverse('users:user', kwargs={'guid': self.user._id})),
+            guid=self.user._id
+        )
+        context = response.get_object()
+        nt.assert_equal(context['quota'], api_settings.DEFAULT_MAX_QUOTA)
+
+    def test_get_custom_quota(self):
+        UserQuota.objects.create(user=self.user, max_quota=200)
+        response = setup_view(
+            self.view,
+            RequestFactory().get(reverse('users:user', kwargs={'guid': self.user._id})),
+            guid=self.user._id
+        )
+        context = response.get_object()
+        nt.assert_equal(context['quota'], 200)
+
+
+class TestSetUserQuota(AdminTestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.view = views.UserQuotaView.as_view()
+
+    def test_new_quota(self):
+        response = self.view(
+            RequestFactory().post(
+                reverse('users:quota', kwargs={'guid': self.user._id}),
+                {'maxQuota': 150}),
+            guid=self.user._id
+        )
+        nt.assert_equal(response.status_code, 302)
+
+        user_quota = UserQuota.objects.filter(user=self.user).first()
+        nt.assert_is_not_none(user_quota)
+        nt.assert_equal(user_quota.max_quota, 150)
+
+    def test_update_quota(self):
+        UserQuota.objects.create(user=self.user, max_quota=100)
+
+        response = self.view(
+            RequestFactory().post(
+                reverse('users:quota', kwargs={'guid': self.user._id}),
+                {'maxQuota': 200}),
+            guid=self.user._id
+        )
+        nt.assert_equal(response.status_code, 302)
+
+        user_quota = UserQuota.objects.filter(user=self.user).first()
+        nt.assert_is_not_none(user_quota)
+        nt.assert_equal(user_quota.max_quota, 200)
