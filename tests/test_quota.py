@@ -22,7 +22,7 @@ class QuotaTestCase(OsfTestCase):
     def tearDown(self):
         super(QuotaTestCase, self).tearDown()
 
-    @pytest.mark.skip('Not yet implemented')
+    # @pytest.mark.skip('Not yet implemented')
     def test_calculate_used_quota(self):
         file_list = []
 
@@ -47,7 +47,7 @@ class QuotaTestCase(OsfTestCase):
         FileInfo.objects.create(file=file_list[1], file_size=1000)
         assert_equal(quota.used_quota(self.user._id), 1500)
 
-    @pytest.mark.skip('Not yet implemented')
+    # @pytest.mark.skip('Not yet implemented')
     def test_calculate_used_quota_deleted_file(self):
         # Add a (deleted) file to node[0]
         file_node = OsfStorageFileNode.create(
