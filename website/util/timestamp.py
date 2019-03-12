@@ -401,7 +401,6 @@ def userkey_generation_check(guid):
     return RdmUserKey.objects.filter(guid=Guid.objects.get(_id=guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id).exists()
 
 def userkey_generation(guid):
-    logger.info('userkey_generation guid:' + guid)
 
     try:
         generation_date = datetime.datetime.now()
@@ -412,20 +411,15 @@ def userkey_generation(guid):
         generation_pub_key_name = api_settings.KEY_NAME_FORMAT.format(
             guid, generation_date_hash, api_settings.KEY_NAME_PUBLIC, api_settings.KEY_EXTENSION)
         # private key generation
-        pvt_key_generation_cmd = [
-            api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_GENRSA,
-            api_settings.OPENSSL_OPTION_OUT,
+        pvt_key_generation_cmd = api_settings.SSL_PRIVATE_KEY_GENERATION.format(
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pvt_key_name),
             api_settings.KEY_BIT_VALUE
-        ]
+        ).split(' ')
 
-        pub_key_generation_cmd = [
-            api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_RSA,
-            api_settings.OPENSSL_OPTION_IN,
+        pub_key_generation_cmd = api_settings.SSL_PUBLIC_KEY_GENERATION.format(
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pvt_key_name),
-            api_settings.OPENSSL_OPTION_PUBOUT, api_settings.OPENSSL_OPTION_OUT,
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pub_key_name)
-        ]
+        ).split(' ')
 
         prc = subprocess.Popen(
             pvt_key_generation_cmd, shell=False, stdin=subprocess.PIPE,
