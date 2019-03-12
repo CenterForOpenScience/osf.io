@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -48,6 +48,11 @@ class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixi
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+    def create(self, *args, **kwargs):
+        obj = self.get_object()
+        if hasattr(obj, 'is_retracted') and obj.is_retracted:
+            raise PermissionDenied(detail='Not allowed to create identifiers for withdrawn preprints or registrations')
+        return super(IdentifierList, self).create(*args, **kwargs)
 
 class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """List of identifiers for a specified node. *Read-only*.
