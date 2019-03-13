@@ -12,4 +12,5 @@ urlpatterns = [
     url(r'^(?P<institution_id>[0-9]+)/delete/$', views.DeleteInstitution.as_view(), name='delete'),
     url(r'^(?P<institution_id>[0-9]+)/cannot_delete/$', views.CannotDeleteInstitution.as_view(), name='cannot_delete'),
     url(r'^(?P<institution_id>[0-9]+)/nodes/$', views.InstitutionNodeList.as_view(), name='nodes'),
+    url(r'^user_list_by_institution_id/(?P<institution_id>.*)/$', views.UserListByInstitutionID.as_view(), name='institution_id'),
 ]
