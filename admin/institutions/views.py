@@ -36,6 +36,26 @@ class InstitutionList(PermissionRequiredMixin, ListView):
         kwargs.setdefault('logohost', settings.OSF_URL)
         return super(InstitutionList, self).get_context_data(**kwargs)
 
+class InstitutionUserList(PermissionRequiredMixin, ListView):
+    paginate_by = 25
+    template_name = 'institutions/institution_list.html'
+    ordering = 'name'
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+    model = Institution
+
+    def get_queryset(self):
+        return Institution.objects.all().order_by(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        kwargs.setdefault('institutions', query_set)
+        kwargs.setdefault('page', page)
+        kwargs.setdefault('logohost', settings.OSF_URL)
+        return super(InstitutionUserList, self).get_context_data(**kwargs)
+
 
 class InstitutionDisplay(PermissionRequiredMixin, DetailView):
     model = Institution

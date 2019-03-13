@@ -5,6 +5,7 @@ app_name = 'admin'
 
 urlpatterns = [
     url(r'^$', views.InstitutionList.as_view(), name='list'),
+    url(r'^institution_list/$', views.InstitutionUserList.as_view(), name='institution_list'),
     url(r'^create/$', views.CreateInstitution.as_view(), name='create'),
     url(r'^import/$', views.ImportInstitution.as_view(), name='import'),
     url(r'^(?P<institution_id>[0-9]+)/$', views.InstitutionDetail.as_view(), name='detail'),
