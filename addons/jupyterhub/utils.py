@@ -11,3 +11,9 @@ def serialize_jupyterhub_widget(node):
     }
     ret.update(jupyterhub.config.to_json())
     return ret
+
+
+def get_jupyterhub_import_url(node, base_url):
+    if not base_url.endswith('/'):
+        base_url += '/'
+    return base_url + node._id

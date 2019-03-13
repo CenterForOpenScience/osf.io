@@ -4,6 +4,7 @@ from flask import request
 import logging
 
 from . import settings
+from .utils import get_jupyterhub_import_url
 from framework.exceptions import HTTPError
 from website.project.decorators import (
     must_be_contributor_or_public,
@@ -57,5 +58,7 @@ def jupyterhub_set_config(**kwargs):
 def jupyterhub_get_services(**kwargs):
     node = kwargs['node'] or kwargs['project']
     jupyterhub = node.get_addon('jupyterhub')
-    return {'data': [dict(zip(['name', 'base_url'], s))
-                     for s in jupyterhub.get_services() + settings.SERVICES]}
+    services = jupyterhub.get_services() + settings.SERVICES
+    return {'data': [{'name': name, 'base_url': base_url,
+                      'import_url': get_jupyterhub_import_url(node, base_url)}
+                     for name, base_url in services]}
