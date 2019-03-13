@@ -28,6 +28,6 @@ class TestJupyterhubViews(JupyterhubAddonTestCase, OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         import_url = 'https://jh1.test/' + self.node_settings.owner._id
         assert_equals(len(res.json['data']), 1)
-        assert_equals(res.json['data'][0]['name'] == 'jh1')
-        assert_equals(res.json['data'][0]['base_url'] == 'https://jh1.test/')
-        assert_equals(res.json['data'][0]['import_url'] == import_url)
+        assert_equals(res.json['data'][0]['name'], 'jh1')
+        assert_equals(res.json['data'][0]['base_url'], 'https://jh1.test/')
+        assert_equals(res.json['data'][0]['import_url'], import_url)
