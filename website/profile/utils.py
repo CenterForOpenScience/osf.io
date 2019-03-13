@@ -106,6 +106,15 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         else:
             used_quota_abbr = '{:.1f}[{}]'.format(used_quota_abbr[0], used_quota_abbr[1])
 
+        used_rate = float(used_quota) / (max_quota * 1024 ** 3)
+        icon_name = None
+        if used_rate < api_settings.WARNING_THRESHOLD:
+            icon_name = 'storage_ok.png'
+        elif used_rate <= 1:
+            icon_name = 'storage_warning.png'
+        else:
+            icon_name = 'storage_error.png'
+
         ret.update({
             'activity_points': user.get_activity_points(),
             'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_LARGE),
@@ -117,7 +126,8 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             'quota': {
                 'max': max_quota,
                 'used': used_quota_abbr,
-                'rate': '{:.1f}'.format(float(used_quota) / (max_quota * 1024 ** 3) * 100)
+                'rate': '{:.1f}'.format(used_rate * 100),
+                'icon_url': '{}static/img/{}'.format(settings.DOMAIN, icon_name)
             }
         })
         if include_node_counts:

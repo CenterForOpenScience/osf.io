@@ -67,6 +67,39 @@ class TestQuotaProfileView(OsfTestCase):
         )
         assert_in(self.quota_text.format(5.2, 5.2, 'GB', 100), response.body)
 
+    @mock.patch('website.util.quota.used_quota')
+    def test_used_quota_storage_icon_ok(self, mock_usedquota):
+        mock_usedquota.return_value = 0
+
+        UserQuota.objects.create(user=self.user, max_quota=100)
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        assert_in('storage_ok.png', response.body)
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_used_quota_storage_icon_warning(self, mock_usedquota):
+        mock_usedquota.return_value = 95 * 1024 ** 3
+
+        UserQuota.objects.create(user=self.user, max_quota=100)
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        assert_in('storage_warning.png', response.body)
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_used_quota_storage_icon_error(self, mock_usedquota):
+        mock_usedquota.return_value = 105 * 1024 ** 3
+
+        UserQuota.objects.create(user=self.user, max_quota=100)
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        assert_in('storage_error.png', response.body)
+
 
 class TestAbbreviateSize(OsfTestCase):
     def setUp(self):
