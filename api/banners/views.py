@@ -21,7 +21,6 @@ class CurrentBanner(JSONAPIBaseView, generics.RetrieveAPIView):
 
     serializer_class = BannerSerializer
     # This view goes under the _/ namespace
-    versioning_class = None
     view_category = 'banners'
     view_name = 'current'
 
