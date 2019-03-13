@@ -51,6 +51,36 @@ class TestInstitutionList(AdminTestCase):
         nt.assert_is_instance(res['institutions'][0], Institution)
 
 
+class TestInstitutionUserList(AdminTestCase):
+
+    def setUp(self):
+
+        super(TestInstitutionUserList, self).setUp()
+        self.institution1 = InstitutionFactory()
+        self.institution2 = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.request = RequestFactory().get('/institution_list')
+        self.view = views.InstitutionUserList()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+    def test_get_list(self, *args, **kwargs):
+        res = self.view.get(self.request, *args, **kwargs)
+        nt.assert_equal(res.status_code, 200)
+
+    def test_get_queryset(self):
+        institutions_returned = list(self.view.get_queryset())
+        inst_list = [self.institution1, self.institution2]
+        nt.assert_items_equal(institutions_returned, inst_list)
+        nt.assert_is_instance(institutions_returned[0], Institution)
+
+    def test_context_data(self):
+        self.view.object_list = self.view.get_queryset()
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res, dict)
+        nt.assert_equal(len(res['institutions']), 2)
+        nt.assert_is_instance(res['institutions'][0], Institution)
+
+
 class TestInstitutionDisplay(AdminTestCase):
     def setUp(self):
         super(TestInstitutionDisplay, self).setUp()
