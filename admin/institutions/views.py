@@ -14,6 +14,7 @@ from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm
 from osf.models import Institution, Node, OSFUser
+from website.util import quota
 
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -195,21 +196,20 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
     permission_required = 'osf.view_osfuser'
     raise_exception = True
     paginate_by = 10
-    from website.util import quota
     def get_user_list_institute_id(self):
         user_query_set = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
         dict_of_list = []
-        ratio_to_quota = 0
-        usage = 0
-        limit_value = 0
         for user in user_query_set:
+            usage = quota.used_quota(user.guids.first()._id)
+            limit_value = quota.get_max_limit_temp(user.guids.first()._id)
+            ratio_to_quota = quota.get_ratio_to_quota_temp(usage, limit_value)
             dict_of_list.append({
                 'id': user.guids.first()._id,
                 'name': user.fullname,
                 'username': user.username,
                 'ratio_to_quota': ratio_to_quota,
-                'usage': usage,
-                'limit_value': limit_value
+                'usage': str(usage)+ ' MB',
+                'limit_value': str(limit_value/1000)+ ' GB'
         })
         return dict_of_list
 
