@@ -36,7 +36,7 @@ from website.project.decorators import (
     must_not_be_registration,
     must_not_be_retracted_registration,
 )
-from website.tokens import process_token_or_pass
+from osf.utils.tokens import process_token_or_pass
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm

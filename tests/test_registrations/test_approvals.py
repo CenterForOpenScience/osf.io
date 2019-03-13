@@ -10,7 +10,7 @@ from osf_tests.factories import (
     RegistrationFactory, UserFactory, DraftRegistrationFactory
 )
 
-from website import tokens
+from osf.utils import tokens
 
 
 DUMMY_TOKEN = tokens.encode({
@@ -31,4 +31,3 @@ class DraftRegistrationApprovalTestCase(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project)
         self.embargo = EmbargoFactory(user=self.user)
         self.valid_embargo_end_date = timezone.now() + datetime.timedelta(days=3)
-
