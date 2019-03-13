@@ -12,7 +12,6 @@ urlpatterns = [
     url(r'^workshop$', views.UserWorkshopFormView.as_view(), name='workshop'),
     url(r'^(?P<guid>[a-z0-9]+)/$', views.UserView.as_view(), name='user'),
     url(r'^search/(?P<name>.*)/$', views.UserSearchList.as_view(), name='search_list'),
-    url(r'^user-list-by-institute/(?P<name>.*)/$', views.UserListByInstitute.as_view(), name='snu_list'),
     url(r'^(?P<guid>[a-z0-9]+)/reset-password/$', views.ResetPasswordView.as_view(), name='reset_password'),
     url(r'^(?P<guid>[a-z0-9]+)/disable/$', views.UserDeleteView.as_view(), name='disable'),
     url(r'^(?P<guid>[a-z0-9]+)/disable_spam/$', views.SpamUserDeleteView.as_view(), name='spam_disable'),

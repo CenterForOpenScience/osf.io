@@ -25,11 +25,11 @@
     {% for institution in institutions %}
     <tr>
         <td>
-            <a href="{% url 'institutions:user-list-by-institute' institution_id=institution.id %}">
+            <a href="{% url 'institutions:institution_user_list' institution_id=institution.id %}">
                 <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
             </a>
         </td>
-        <td><a href="{% url 'institutions:user-list-by-institute' institution_id=institution.id %}">{{ institution.name }}</a></td>
+        <td><a href="{% url 'institutions:institution_user_list' institution_id=institution.id %}">{{ institution.name }}</a></td>
         <td>{{ institution.description | safe}}</td>
     </tr>
     {% endfor %}
