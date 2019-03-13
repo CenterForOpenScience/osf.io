@@ -13,8 +13,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm
-from osf.models import Institution, Node
-
+from osf.models import Institution, Node, OSFUser
 
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -190,3 +189,37 @@ class CannotDeleteInstitution(TemplateView):
         context = super(CannotDeleteInstitution, self).get_context_data(**kwargs)
         context['institution'] = Institution.objects.get(id=self.kwargs['institution_id'])
         return context
+
+class UserListByInstitutionID(PermissionRequiredMixin, ListView):
+    template_name = 'institutions/list_institute.html'
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+    paginate_by = 10
+    from website.util import quota
+    def get_user_list_institute_id(self):
+        user_query_set = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
+        dict_of_list = []
+        ratio_to_quota = 0
+        usage = 0
+        limit_value = 0
+        for user in user_query_set:
+            dict_of_list.append({
+                'id': user.guids.first()._id,
+                'name': user.fullname,
+                'username': user.username,
+                'ratio_to_quota': ratio_to_quota,
+                'usage': usage,
+                'limit_value': limit_value
+        })
+        return dict_of_list
+
+    def get_queryset(self):
+        return self.get_user_list_institute_id()
+
+    def get_context_data(self, **kwargs):
+        self.users = self.get_queryset()
+        kwargs['users']= self.users
+        self.page_size = self.get_paginate_by(self.users)
+        self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.users, self.page_size)
+        kwargs['page'] = self.page
+        return super(UserListByInstitutionID, self).get_context_data(**kwargs)
