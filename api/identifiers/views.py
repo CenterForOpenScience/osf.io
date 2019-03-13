@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -15,6 +15,7 @@ from api.nodes.permissions import (
     IsPublic,
     AdminOrPublic,
     EditIfPublic,
+    ReadOnlyIfWithdrawn,
 )
 
 from osf.models import Node, Registration, Preprint, Identifier
@@ -27,6 +28,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixi
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ReadOnlyIfWithdrawn,
     )
 
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
@@ -47,12 +49,6 @@ class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixi
     # overrides ListCreateAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
-
-    def create(self, *args, **kwargs):
-        obj = self.get_object()
-        if hasattr(obj, 'is_retracted') and obj.is_retracted:
-            raise PermissionDenied(detail='Not allowed to create identifiers for withdrawn preprints or registrations')
-        return super(IdentifierList, self).create(*args, **kwargs)
 
 class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """List of identifiers for a specified node. *Read-only*.

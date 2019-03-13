@@ -578,8 +578,6 @@ class TestRegistrationIdentifierCreate(TestNodeIdentifierCreate):
     def retraction(self, resource, user):
         return WithdrawnRegistrationFactory(registration=resource)
 
-    def test_create_doi_for_withdrawn_registration(self, app, user, retraction, identifier_url, identifier_payload, client):
-        with mock.patch('osf.models.AbstractNode.get_doi_client') as mock_get_doi:
-            mock_get_doi.return_value = client
-            res = app.post_json_api(identifier_url, identifier_payload, auth=user.auth, expect_errors=True)
+    def test_create_doi_for_withdrawn_registration(self, app, user, retraction, identifier_url, identifier_payload):
+        res = app.post_json_api(identifier_url, identifier_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
