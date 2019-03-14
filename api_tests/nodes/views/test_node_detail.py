@@ -1642,10 +1642,10 @@ class TestUpdateNodeSubjects:
         assert res.json['errors'][0]['detail'] == 'Subject not found.'
 
         # test_attribute_payload_instead_of_relationships_payload
-        update_subjects_payload = make_resource_payload(resource, resource_type_plural, attributes={'subjects': grandparent._id})
+        update_subjects_payload = make_resource_payload(resource, resource_type_plural, attributes={'subjects': [[grandparent._id]]})
         res = app.patch_json_api(resource_url, update_subjects_payload, auth=user_admin.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "unicode".'
+        assert res.json['errors'][0]['detail'] == 'Subjects are improperly formatted. Expecting a list of subjects.'
 
     def test_set_subjects_as_relationships_hierarchies(self, app, user_admin, resource, subject, resource_type_plural,
             resource_url, make_resource_payload):

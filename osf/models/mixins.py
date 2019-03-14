@@ -775,6 +775,10 @@ class TaxonomizableMixin(models.Model):
         :return: None
         """
         self.check_subject_perms(auth)
+        self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
+        if subjects_list:
+            self.assert_subject_format(subjects_list[0], expect_list=False, error_msg='Expecting a list of subjects.')
+
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
         for subj in expand_subject_hierarchy(subjects_list):
@@ -785,10 +789,12 @@ class TaxonomizableMixin(models.Model):
 
         self.save(old_subjects=old_subjects)
 
-    def assert_subject_format_is_list(self, subj_list, error_msg):
+    def assert_subject_format(self, subj_list, expect_list, error_msg):
         """ Helper for asserting subject request is formatted properly
         """
-        if not type(subj_list) is list:
+        is_list = type(subj_list) is list
+
+        if (expect_list and not is_list) or (not expect_list and is_list):
             raise ValidationValueError('Subjects are improperly formatted. {}'.format(error_msg))
 
     def set_subjects(self, new_subjects, auth, add_log=True):
@@ -802,12 +808,12 @@ class TaxonomizableMixin(models.Model):
         :return: None
         """
         self.check_subject_perms(auth)
-        self.assert_subject_format_is_list(new_subjects, error_msg='Expecting list of lists.')
+        self.assert_subject_format(new_subjects, expect_list=True, error_msg='Expecting list of lists.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
         for subj_list in new_subjects:
-            self.assert_subject_format_is_list(subj_list, error_msg='Expecting list of lists.')
+            self.assert_subject_format(subj_list, expect_list=True, error_msg='Expecting list of lists.')
             subj_hierarchy = []
             for s in subj_list:
                 subj_hierarchy.append(s)

@@ -7,11 +7,16 @@ from rest_framework.exceptions import APIException, AuthenticationFailed
 
 def get_resource_object_member(error_key, context):
     from api.base.serializers import RelationshipField
-    field = context['view'].serializer_class._declared_fields.get(error_key, None)
+    serializer = context['view'].get_serializer()
+    field = serializer.fields.get(error_key, None)
+
     if field:
+        if hasattr(serializer, 'get_unwrapped_field'):
+            # If field is potentially nested
+            field = serializer.get_unwrapped_field(field)
+
         return 'relationships' if isinstance(field, RelationshipField) else 'attributes'
-    # If field cannot be found (where read/write operations have different serializers,
-    # assume error was in 'attributes' by default
+    # If field cannot be found assume error was in 'attributes' by default
     return 'attributes'
 
 def dict_error_formatting(errors, context, index=None):
