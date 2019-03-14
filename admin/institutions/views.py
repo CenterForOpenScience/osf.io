@@ -248,7 +248,7 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         self.users = self.get_queryset()
-        kwargs['users']= self.users
+        kwargs['users'] = self.users
         self.page_size = self.get_paginate_by(self.users)
         self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.users, self.page_size)
         kwargs['page'] = self.page
