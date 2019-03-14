@@ -1040,7 +1040,7 @@ def main(env):
                 'description': 'This service is supported by the <a href="https://www.lib.fsu.edu/">FSU Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). FSU\'s <a href="http://regulations.fsu.edu/sites/g/files/upcbnu486/files/policies/research/FSU%20Policy%207A-26.pdf">Research Data Management Policy</a> applies. For assistance please contact the FSU Libraries <a href="mailto:lib-datamgmt@fsu.edu">Research Data Management Program</a>.',
                 'banner_name': 'fsu-banner.png',
                 'logo_name': 'fsu-shield.png',
-                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.its.fsu.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.fsu.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-fsu.cos.io'],
                 'email_domains': [],
