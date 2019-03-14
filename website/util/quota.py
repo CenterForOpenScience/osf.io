@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
 from django.contrib.contenttypes.models import ContentType
 from osf.models import Guid, OSFUser, AbstractNode, FileInfo
 from addons.osfstorage.models import OsfStorageFileNode
 import logging
+
 
 def used_quota(user_id):
 
@@ -39,3 +39,9 @@ def used_quota(user_id):
             total += fileinfo.file_size
 
     return total
+
+def get_ratio_to_quota_temp(usage, max_limit):
+    return float(usage)/float(max_limit) * float(100)
+
+def get_max_limit_temp(user_id):
+    return float(100000)
