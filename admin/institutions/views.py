@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import json
 
 from django.core import serializers
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse_lazy
@@ -13,6 +14,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm
+from api.base import settings as api_settings
 from osf.models import Institution, Node, OSFUser
 from website.util import quota
 
@@ -216,21 +218,29 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
     permission_required = 'osf.view_osfuser'
     raise_exception = True
     paginate_by = 10
+
     def get_user_list_institute_id(self):
         user_query_set = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
         dict_of_list = []
         for user in user_query_set:
-            usage = quota.used_quota(user.guids.first()._id)
-            limit_value = quota.get_max_limit_temp(user.guids.first()._id)
-            ratio_to_quota = quota.get_ratio_to_quota_temp(usage, limit_value)
+            try:
+                max_quota = user.userquota.max_quota
+            except ObjectDoesNotExist:
+                max_quota = api_settings.DEFAULT_MAX_QUOTA
+            used_quota = quota.used_quota(user.guids.first()._id)
+            used_quota_abbr = quota.abbreviate_size(used_quota)
+            if used_quota_abbr[1] == 'B':
+                used_quota_abbr = '{:.0f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
+            else:
+                used_quota_abbr = '{:.1f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
             dict_of_list.append({
                 'id': user.guids.first()._id,
                 'name': user.fullname,
                 'username': user.username,
-                'ratio_to_quota': ratio_to_quota,
-                'usage': str(usage)+ ' MB',
-                'limit_value': str(limit_value/1000)+ ' GB'
-        })
+                'ratio_to_quota': '{:.1f}%'.format(float(used_quota) / (max_quota * 1024 ** 3) * 100),
+                'usage': used_quota_abbr,
+                'limit_value': str(max_quota) + ' GB'
+            })
         return dict_of_list
 
     def get_queryset(self):

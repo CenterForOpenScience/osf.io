@@ -40,8 +40,13 @@ def used_quota(user_id):
 
     return total
 
-def get_ratio_to_quota_temp(usage, max_limit):
-    return float(usage)/float(max_limit) * float(100)
+def abbreviate_size(size):
+    size = float(size)
+    abbr_dict = {0: 'B', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
 
-def get_max_limit_temp(user_id):
-    return float(100000)
+    power = 0
+    while size > 1024 and power < 4:
+        size /= 1024
+        power += 1
+
+    return (size, abbr_dict[power])
