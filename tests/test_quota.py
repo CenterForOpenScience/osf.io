@@ -1,18 +1,142 @@
 # -*- coding: utf-8 -*-
 import datetime
+import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 
 from addons.osfstorage.models import OsfStorageFileNode
-from osf.models import FileInfo
-from osf_tests.factories import ProjectFactory, UserFactory
+from api.base import settings as api_settings
 from tests.base import OsfTestCase
-from website.util import quota
+from osf.models import FileInfo, UserQuota
+from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
+from website.util import web_url_for, quota
 
 
-class QuotaTestCase(OsfTestCase):
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
+class TestQuotaProfileView(OsfTestCase):
     def setUp(self):
-        super(QuotaTestCase, self).setUp()
+        super(TestQuotaProfileView, self).setUp()
+        self.user = AuthUserFactory()
+        self.quota_text = '{}%, {}[{}] / {}[GB]'
+
+    def tearDown(self):
+        super(TestQuotaProfileView, self).tearDown()
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_default_quota(self, mock_usedquota):
+        mock_usedquota.return_value = 0
+
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        expected = self.quota_text.format(0.0, 0, 'B', api_settings.DEFAULT_MAX_QUOTA)
+        assert_in(expected, response.body)
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_custom_quota(self, mock_usedquota):
+        mock_usedquota.return_value = 0
+
+        UserQuota.objects.create(user=self.user, max_quota=200)
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        assert_in(self.quota_text.format(0.0, 0, 'B', 200), response.body)
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_used_quota_bytes(self, mock_usedquota):
+        mock_usedquota.return_value = 560
+
+        UserQuota.objects.create(user=self.user, max_quota=100)
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        assert_in(self.quota_text.format(0.0, 560, 'B', 100), response.body)
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_used_quota_giga(self, mock_usedquota):
+        mock_usedquota.return_value = 5.2 * 1024 ** 3
+
+        UserQuota.objects.create(user=self.user, max_quota=100)
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        assert_in(self.quota_text.format(5.2, 5.2, 'GB', 100), response.body)
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_used_quota_storage_icon_ok(self, mock_usedquota):
+        mock_usedquota.return_value = 0
+
+        UserQuota.objects.create(user=self.user, max_quota=100)
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        assert_in('storage_ok.png', response.body)
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_used_quota_storage_icon_warning(self, mock_usedquota):
+        mock_usedquota.return_value = 95 * 1024 ** 3
+
+        UserQuota.objects.create(user=self.user, max_quota=100)
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        assert_in('storage_warning.png', response.body)
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_used_quota_storage_icon_error(self, mock_usedquota):
+        mock_usedquota.return_value = 105 * 1024 ** 3
+
+        UserQuota.objects.create(user=self.user, max_quota=100)
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        assert_in('storage_error.png', response.body)
+
+
+class TestAbbreviateSize(OsfTestCase):
+    def setUp(self):
+        super(TestAbbreviateSize, self).setUp()
+
+    def tearDown(self):
+        super(TestAbbreviateSize, self).tearDown()
+
+    def test_abbreviate_byte(self):
+        abbr_size = quota.abbreviate_size(512)
+        assert_equal(abbr_size[0], 512)
+        assert_equal(abbr_size[1], 'B')
+
+    def test_abbreviate_kilobyte(self):
+        abbr_size = quota.abbreviate_size(512 * 1024)
+        assert_equal(abbr_size[0], 512)
+        assert_equal(abbr_size[1], 'KB')
+
+    def test_abbreviate_megabyte(self):
+        abbr_size = quota.abbreviate_size(512 * 1024 ** 2)
+        assert_equal(abbr_size[0], 512)
+        assert_equal(abbr_size[1], 'MB')
+
+    def test_abbreviate_gigabyte(self):
+        abbr_size = quota.abbreviate_size(512 * 1024 ** 3)
+        assert_equal(abbr_size[0], 512)
+        assert_equal(abbr_size[1], 'GB')
+
+    def test_abbreviate_terabyte(self):
+        abbr_size = quota.abbreviate_size(512 * 1024 ** 4)
+        assert_equal(abbr_size[0], 512)
+        assert_equal(abbr_size[1], 'TB')
+
+
+class TestUsedQuota(OsfTestCase):
+    def setUp(self):
+        super(TestUsedQuota, self).setUp()
         self.user = UserFactory()
         self.node = [
             ProjectFactory(creator=self.user),
@@ -20,9 +144,8 @@ class QuotaTestCase(OsfTestCase):
         ]
 
     def tearDown(self):
-        super(QuotaTestCase, self).tearDown()
+        super(TestUsedQuota, self).tearDown()
 
-    # @pytest.mark.skip('Not yet implemented')
     def test_calculate_used_quota(self):
         file_list = []
 
@@ -47,7 +170,6 @@ class QuotaTestCase(OsfTestCase):
         FileInfo.objects.create(file=file_list[1], file_size=1000)
         assert_equal(quota.used_quota(self.user._id), 1500)
 
-    # @pytest.mark.skip('Not yet implemented')
     def test_calculate_used_quota_deleted_file(self):
         # Add a (deleted) file to node[0]
         file_node = OsfStorageFileNode.create(
