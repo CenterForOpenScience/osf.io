@@ -16,4 +16,4 @@ def serialize_jupyterhub_widget(node):
 def get_jupyterhub_import_url(node, base_url):
     if not base_url.endswith('/'):
         base_url += '/'
-    return base_url + node._id
+    return base_url + 'rcosrepo/import/' + node._id
