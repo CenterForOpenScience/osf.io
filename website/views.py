@@ -32,6 +32,10 @@ from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
 
+# mapcore library
+from nii.mapcore import mapcore_get_authcode
+from nii.mapcore import mapcore_set_authcode
+
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 registries_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['registries']['path']))
@@ -159,6 +163,7 @@ def find_bookmark_collection(user):
 
 @must_be_logged_in
 def dashboard(auth):
+    logger.info("Views dashboard called")
     return use_ember_app()
 
 
@@ -501,3 +506,13 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
     userkey_info.created_time = date
 
     return userkey_info
+
+
+# mAP core
+def oauth_start(**kwargs):
+    # enterance for OAuth
+    return redirect(mapcore_get_authcode())
+
+def oauth_finish(**kwargs):
+    # Redirect to COS News page
+    return redirect(mapcore_set_authcode(request.args))

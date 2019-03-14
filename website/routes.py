@@ -402,6 +402,22 @@ def make_url_map(app):
 
     process_rules(app, [
 
+        # mapcore OAuth start
+        Rule(
+            '/oauth_start/',
+            'get',
+            website_views.oauth_start,
+            notemplate
+        ),
+
+        # mapcore Oauth result catcher
+        Rule(
+            '/oauth_finish/',
+            'get',
+            website_views.oauth_finish,
+            notemplate
+        ),
+
         Rule(
             '/dashboard/',
             'get',
