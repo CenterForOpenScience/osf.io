@@ -1388,6 +1388,18 @@ def main(env):
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'universityofkent',
+                'name': 'University of Kent [Test]',
+                'description': 'Collaboration Platform for University of Kent Research | <a href="https://www.kent.ac.uk/governance/policies-and-procedures/documents/Information-security-policy-v1-1.pdf">Information Security policy</a> | <a href="mailto:researchsupport@kent.ac.uk">Help and Support</a>',
+                'banner_name': 'universityofkent-banner.png',
+                'logo_name': 'universityofkent-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sso.id.kent.ac.uk/idp')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-universityofkent.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'usc',
                 'name': 'University of Southern California [Test]',
                 'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
