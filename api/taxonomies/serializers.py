@@ -1,7 +1,11 @@
 from rest_framework import serializers as ser
 
+from rest_framework import exceptions
 from distutils.version import StrictVersion
+from framework.exceptions import PermissionsError
+
 from api.base.serializers import JSONAPISerializer, LinksField, ShowIfVersion, RelationshipField
+from osf.exceptions import NodeStateError, ValidationValueError
 from osf.models import Subject
 
 class TaxonomyField(ser.Field):
@@ -44,7 +48,27 @@ class TaxonomizableSerializerMixin(ser.Serializer):
         else:
             self.fields['subjects'] = ser.SerializerMethodField()
 
+    @property
+    def subjects_related_view(self):
+        """
+        For building the subjects RelationshipField on __init__
+        for later API versions only
+        """
+        raise NotImplementedError()
+
+    @property
+    def subjects_related_view_kwargs(self):
+        """
+        For building the subjects RelationshipField on __init__
+        for later API versions only
+        """
+        raise NotImplementedError
+
     def get_subjects(self, obj):
+        """
+        `subjects` is a SerializerMethodField for older versions of the API,
+        serialized under attributes
+        """
         from api.taxonomies.serializers import TaxonomyField
         return [
             [
@@ -52,12 +76,43 @@ class TaxonomizableSerializerMixin(ser.Serializer):
             ] for hier in obj.subject_hierarchy
         ]
 
-    def update_subjects(self, node, subjects, auth):
+    def update_subjects_method(self, resource, subjects, auth):
+        """Runs a different method to update the resource's subjects,
+        depending on the request's version.
+
+        :param object resource: Object for which you want to update subjects
+        :param list subjects: Subjects array (or array of arrays)
+        :param object Auth object
+        """
         if self.expect_subjects_as_relationships(self.context['request']):
-            return node.set_subjects_from_relationships(subjects, auth)
-        return node.set_subjects(subjects, auth)
+            return resource.set_subjects_from_relationships(subjects, auth)
+        return resource.set_subjects(subjects, auth)
+
+    def update_subjects(self, resource, subjects, auth):
+        """Updates subjects on resource and handles errors.
+
+        :param object resource: Object for which you want to update subjects
+        :param list subjects: Subjects array (or array of arrays)
+        :param object Auth object
+        """
+        try:
+            self.update_subjects_method(resource, subjects, auth)
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=str(e))
+        except ValueError as e:
+            raise exceptions.ValidationError(detail=str(e))
+        except ValidationValueError as e:
+            raise exceptions.ValidationError(detail=e[0])
+        except NodeStateError as e:
+            raise exceptions.ValidationError(detail=str(e))
 
     def expect_subjects_as_relationships(self, request):
+        """Determines whether subjects should be serialized as a relationship.
+        Earlier versions serialize subjects as an attribute.
+
+        :param object request: Request object
+        :return bool: Subjects should be serialized as relationships
+        """
         return StrictVersion(getattr(request, 'version', '2.0')) > StrictVersion('2.14')
 
 

@@ -195,6 +195,17 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         related_view_kwargs={'guids': '<guid._id>'},
         always_embed=True,
     )
+
+    @property
+    def subjects_related_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'collections:collected-metadata-subjects'
+
+    @property
+    def subjects_related_view_kwargs(self):
+        # Overrides TaxonomizableSerializerMixin
+        return {'collection_id': '<collection._id>', 'cgm_id': '<guid._id>'}
+
     collected_type = ser.CharField(required=False)
     status = ser.CharField(required=False)
     volume = ser.CharField(required=False)
@@ -215,12 +226,8 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         if validated_data and 'subjects' in validated_data:
             auth = get_user_auth(self.context['request'])
             subjects = validated_data.pop('subjects', None)
-            try:
-                obj.set_subjects(subjects, auth)
-            except PermissionsError as e:
-                raise exceptions.PermissionDenied(detail=str(e))
-            except (ValueError, NodeStateError) as e:
-                raise exceptions.ValidationError(detail=str(e))
+            self.update_subjects(obj, subjects, auth)
+
         if 'status' in validated_data:
             obj.status = validated_data.pop('status')
         if 'collected_type' in validated_data:

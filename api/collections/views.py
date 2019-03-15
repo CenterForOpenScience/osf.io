@@ -7,6 +7,8 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
+from api.base.parsers import JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON
+
 from api.base.views import JSONAPIBaseView
 from api.base.views import BaseLinkedList
 from api.base.views import LinkedNodesRelationship
@@ -33,6 +35,7 @@ from api.collections.serializers import (
     CollectedRegistrationsRelationshipSerializer,
 )
 from api.nodes.serializers import NodeSerializer
+from api.nodes.views import NodeSubjectsList
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from osf.models import (
@@ -71,6 +74,18 @@ class CollectionMixin(object):
                 guids__in=collection.guid_links.all(), deleted__isnull=True,
             ), user=user,
         )
+
+    def get_cgm(self, check_object_permissions=True):
+        cgm = get_object_or_error(
+            CollectionSubmission,
+            self.kwargs['cgm_id'],
+            self.request,
+            'submission',
+        )
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, cgm)
+        return cgm
 
 
 class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, CollectionMixin):
@@ -120,7 +135,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     New Organizer Collections are created by issuing a POST request to this endpoint.  The `title` field is
     mandatory. All other fields not listed above will be ignored.  If the Organizer Collection creation is successful
     the API will return a 201 response with the representation of the new node in the body.
-    For the new Collection's canonical URL, see the `/links/self` field of the response.
+    For the new Collection canonical URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -297,6 +312,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
         collection = self.get_object()
         collection.delete()
 
+
 class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -342,17 +358,11 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     view_category = 'collected-metadata'
     view_name = 'collected-metadata-detail'
 
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
     # overrides RetrieveAPIView
     def get_object(self):
-        cgm = get_object_or_error(
-            CollectionSubmission,
-            self.kwargs['cgm_id'],
-            self.request,
-            'submission',
-        )
-        # May raise a permission denied
-        self.check_object_permissions(self.request, cgm)
-        return cgm
+        return self.get_cgm()
 
     def perform_destroy(self, instance):
         # Skip collection permission check -- perms class checks when getting CGM
@@ -361,6 +371,20 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
 
     def perform_update(self, serializer):
         serializer.save()
+
+
+class CollectedMetaSubjectsList(NodeSubjectsList, CollectionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanUpdateDeleteCGMOrPublic,
+        base_permissions.TokenHasScope,
+    )
+
+    view_category = 'collections'
+    view_name = 'collected-metadata-subjects'
+
+    def get_queryset(self):
+        return self.get_cgm().subjects.all()
 
 
 class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):

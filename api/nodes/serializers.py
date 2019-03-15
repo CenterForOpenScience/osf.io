@@ -31,7 +31,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.osfstorage.models import Region
-from osf.exceptions import NodeStateError, ValidationValueError
+from osf.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, Institution,
     RegistrationSchema, AbstractNode, PrivateLink,
@@ -260,9 +260,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'subjects',
     ]
 
-    subjects_related_view = 'nodes:node-subjects'
-    subjects_related_view_kwargs = {'node_id': '<_id>'}
-
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
@@ -487,6 +484,16 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-preprints',
         related_view_kwargs={'node_id': '<_id>'},
     ))
+
+    @property
+    def subjects_related_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'nodes:node-subjects'
+
+    @property
+    def subjects_related_view_kwargs(self):
+        # Overrides TaxonomizableSerializerMixin
+        return {'node_id': '<_id>'}
 
     def get_current_user_permissions(self, obj):
         request_version = self.context['request'].version
@@ -739,16 +746,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 node.save()
             if 'subjects' in validated_data:
                 subjects = validated_data.pop('subjects', None)
-                try:
-                    self.update_subjects(node, subjects, auth)
-                except PermissionsError as e:
-                    raise exceptions.PermissionDenied(detail=str(e))
-                except ValueError as e:
-                    raise exceptions.ValidationError(detail=str(e))
-                except ValidationValueError as e:
-                    raise exceptions.ValidationError(detail=e[0])
-                except NodeStateError as e:
-                    raise exceptions.ValidationError(detail=str(e))
+                self.update_subjects(node, subjects, auth)
 
             try:
                 node.update(validated_data, auth=auth)

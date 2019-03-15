@@ -21,7 +21,6 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
-from framework.exceptions import PermissionsError
 from osf.exceptions import ValidationValueError, NodeStateError
 from osf.models import Node
 from osf.utils import permissions
@@ -41,8 +40,6 @@ class RegistrationSerializer(NodeSerializer):
         'subjects',
         'withdrawal_justification',
     ]
-    subjects_related_view = 'registrations:registration-subjects'
-    subjects_related_view_kwargs = {'node_id': '<_id>'}
 
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -306,6 +303,11 @@ class RegistrationSerializer(NodeSerializer):
 
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
+    @property
+    def subjects_related_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'registrations:registration-subjects'
+
     def get_registration_url(self, obj):
         return absolute_reverse(
             'registrations:registration-detail', kwargs={
@@ -409,14 +411,7 @@ class RegistrationSerializer(NodeSerializer):
             registration.save()
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
-            try:
-                self.update_subjects(registration, subjects, auth)
-            except PermissionsError as e:
-                raise exceptions.PermissionDenied(detail=str(e))
-            except ValueError as e:
-                raise exceptions.ValidationError(detail=str(e))
-            except NodeStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
+            self.update_subjects(registration, subjects, auth)
         if 'withdrawal_justification' in validated_data or 'is_pending_retraction' in validated_data:
             self.retract_registration(registration, validated_data, user)
         if 'is_public' in validated_data:

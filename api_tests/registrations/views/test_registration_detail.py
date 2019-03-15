@@ -6,6 +6,7 @@ from urlparse import urlparse
 from rest_framework import exceptions
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE
+from api_tests.subjects.mixins import TestUpdateSubjectsMixin
 from osf.utils import permissions
 from osf.models import Registration, NodeLog, NodeLicense
 from framework.auth import Auth
@@ -1075,3 +1076,17 @@ class TestUpdateRegistrationLicense(TestNodeUpdateLicense):
                 }
             }
         return payload
+
+
+@pytest.mark.django_db
+class TestUpdateRegistrationSubjects(TestUpdateSubjectsMixin):
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        registration = RegistrationFactory(creator=user_admin_contrib, is_public=False)
+        registration.add_contributor(user_write_contrib, auth=Auth(user_admin_contrib))
+        registration.add_contributor(
+            user_read_contrib,
+            auth=Auth(user_admin_contrib),
+            permissions=['read'])
+        registration.save()
+        return registration

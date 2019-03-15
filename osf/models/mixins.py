@@ -744,9 +744,12 @@ class TaxonomizableMixin(models.Model):
         Preprint = apps.get_model('osf.Preprint')
         CollectionSubmission = apps.get_model('osf.CollectionSubmission')
 
-        if isinstance(self, (AbstractNode, Preprint)):
+        if isinstance(self, AbstractNode):
             if not self.has_permission(auth.user, ADMIN):
                 raise PermissionsError('Only admins can change subjects.')
+        elif isinstance(self, Preprint):
+            if not self.has_permission(auth.user, WRITE):
+                raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
         elif isinstance(self, CollectionSubmission):
             if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
                 raise PermissionsError('Only admins can change subjects.')
@@ -763,31 +766,6 @@ class TaxonomizableMixin(models.Model):
             save=False,
         )
         return
-
-    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
-        """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
-        Only authorized admins may set subjects.
-
-        :param list[Subject._id] new_subjects: List of flattened subject hierarchies
-        :param Auth auth: Auth object for requesting user
-        :param bool add_log: Whether or not to add a log (if called on a Loggable object)
-
-        :return: None
-        """
-        self.check_subject_perms(auth)
-        self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
-        if subjects_list:
-            self.assert_subject_format(subjects_list[0], expect_list=False, error_msg='Expecting a list of subjects.')
-
-        old_subjects = list(self.subjects.values_list('id', flat=True))
-        self.subjects.clear()
-        for subj in expand_subject_hierarchy(subjects_list):
-            self.subjects.add(subj)
-
-        if add_log and hasattr(self, 'add_log'):
-            self.add_subjects_log(old_subjects, auth)
-
-        self.save(old_subjects=old_subjects)
 
     def assert_subject_format(self, subj_list, expect_list, error_msg):
         """ Helper for asserting subject request is formatted properly
@@ -821,6 +799,31 @@ class TaxonomizableMixin(models.Model):
                 validate_subject_hierarchy(subj_hierarchy)
                 for s_id in subj_hierarchy:
                     self.subjects.add(Subject.load(s_id))
+
+        if add_log and hasattr(self, 'add_log'):
+            self.add_subjects_log(old_subjects, auth)
+
+        self.save(old_subjects=old_subjects)
+
+    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
+        """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
+        Only authorized admins may set subjects.
+
+        :param list[Subject._id] new_subjects: List of flattened subject hierarchies
+        :param Auth auth: Auth object for requesting user
+        :param bool add_log: Whether or not to add a log (if called on a Loggable object)
+
+        :return: None
+        """
+        self.check_subject_perms(auth)
+        self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
+        if subjects_list:
+            self.assert_subject_format(subjects_list[0], expect_list=False, error_msg='Expecting a list of subjects.')
+
+        old_subjects = list(self.subjects.values_list('id', flat=True))
+        self.subjects.clear()
+        for subj in expand_subject_hierarchy(subjects_list):
+            self.subjects.add(subj)
 
         if add_log and hasattr(self, 'add_log'):
             self.add_subjects_log(old_subjects, auth)

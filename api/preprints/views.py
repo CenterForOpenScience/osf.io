@@ -44,7 +44,7 @@ from api.nodes.serializers import (
 
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
-from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList, NodeStorageProvidersList, NodeStorageProvider
+from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList, NodeSubjectsList, NodeStorageProvidersList, NodeStorageProvider
 from api.preprints.permissions import (
     PreprintPublishedOrAdmin,
     PreprintPublishedOrWrite,
@@ -428,6 +428,23 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
         context['default_email'] = 'preprint'
         return context
 
+
+class PreprintSubjectsList(NodeSubjectsList, PreprintMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_subjects_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ModeratorIfNeverPublicWithdrawn,
+        ContributorOrPublic,
+        PreprintPublishedOrWrite,
+    )
+
+    view_category = 'preprints'
+    view_name = 'preprint-subjects'
+
+    def get_queryset(self):
+        return self.get_preprint().subjects.all()
 
 class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
     """Action List *Read-only*

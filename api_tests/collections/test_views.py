@@ -4,6 +4,7 @@ from urlparse import urlparse
 from django.utils.timezone import now
 
 from api.base.settings.defaults import API_BASE
+from api_tests.subjects.mixins import TestUpdateSubjectsMixin
 from framework.auth.core import Auth
 from osf_tests.factories import (
     CollectionFactory,
@@ -4321,6 +4322,34 @@ class TestCollectedMetaList:
         res = app.get('{}?filter[collected_type]=asdf'.format(url.format(collection_with_three_cgm._id)), auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
+
+
+@pytest.mark.django_db
+class TestUpdateCollectedMetaSubjects(TestUpdateSubjectsMixin):
+
+    @pytest.fixture()
+    def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        project = ProjectFactory(creator=user_admin_contrib)
+        project.add_contributor(user_write_contrib, permissions=['write', 'read'])
+        project.add_contributor(user_read_contrib, permissions=['read'])
+        return project
+
+    @pytest.fixture()
+    def collection(self, user_admin_contrib):
+        return CollectionFactory(creator=user_admin_contrib, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
+        cgm = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
+        return cgm
+
+    @pytest.fixture()
+    def resource_type_plural(self, resource):
+        return 'collected-metadata'
+
+    @pytest.fixture()
+    def url(self, collection, resource):
+        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, resource.guid._id)
 
 
 @pytest.mark.django_db
