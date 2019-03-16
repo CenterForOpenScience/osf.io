@@ -115,16 +115,17 @@ class FilterMixin(object):
 
         :raises InvalidFilterError: If the filter field is not valid
         """
-        serializer_class = self.serializer_class
-        if field_name not in serializer_class._declared_fields:
+        serializer_fields = self.get_serializer().fields
+
+        if field_name not in serializer_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
-        if field_name not in getattr(serializer_class, 'filterable_fields', set()):
+        if field_name not in getattr(self.serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        field = serializer_class._declared_fields[field_name]
+        field = serializer_fields[field_name]
         # You cannot filter on deprecated fields.
         if isinstance(field, ShowIfVersion) and utils.is_deprecated(self.request.version, field.min_version, field.max_version):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        return serializer_class._declared_fields[field_name]
+        return serializer_fields[field_name]
 
     def _validate_operator(self, field, field_name, op):
         """
@@ -311,7 +312,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='date',
                 )
-        elif isinstance(field, (self.RELATIONSHIP_FIELDS, ser.SerializerMethodField)):
+        elif isinstance(field, (self.RELATIONSHIP_FIELDS, ser.SerializerMethodField, ser.ManyRelatedField)):
             if value == 'null':
                 value = None
             return value
