@@ -9,7 +9,7 @@ from waffle.testutils import override_switch
 from osf import features
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
-from api_tests.subjects.mixins import TestUpdateSubjectsMixin
+from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
 from osf.models import NodeLicense, PreprintContributor
 from osf.utils.workflows import DefaultStates
@@ -752,7 +752,7 @@ class TestPreprintUpdate:
 
 
 @pytest.mark.django_db
-class TestPreprintUpdateSubjects(TestUpdateSubjectsMixin):
+class TestPreprintUpdateSubjects(UpdateSubjectsMixin):
     @pytest.fixture()
     def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         preprint = PreprintFactory(creator=user_admin_contrib, is_published=True)

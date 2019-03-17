@@ -10,7 +10,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-class TestUpdateSubjectsMixin(object):
+class UpdateSubjectsMixin(object):
     @pytest.fixture()
     def user_admin_contrib(self):
         return AuthUserFactory()

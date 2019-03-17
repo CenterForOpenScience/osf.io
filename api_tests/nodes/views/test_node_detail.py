@@ -6,7 +6,7 @@ from urlparse import urlparse
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
-from api_tests.subjects.mixins import TestUpdateSubjectsMixin
+from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
 from osf.models import NodeLog
 from osf.models.licenses import NodeLicense
@@ -1447,7 +1447,7 @@ class TestReturnDeletedNode:
 
 
 @pytest.mark.django_db
-class TestUpdateNodeSubjects(TestUpdateSubjectsMixin):
+class TestUpdateNodeSubjects(UpdateSubjectsMixin):
 
     @pytest.fixture()
     def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):

@@ -4,7 +4,7 @@ from urlparse import urlparse
 from django.utils.timezone import now
 
 from api.base.settings.defaults import API_BASE
-from api_tests.subjects.mixins import TestUpdateSubjectsMixin
+from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
 from osf_tests.factories import (
     CollectionFactory,
@@ -4325,7 +4325,7 @@ class TestCollectedMetaList:
 
 
 @pytest.mark.django_db
-class TestUpdateCollectedMetaSubjects(TestUpdateSubjectsMixin):
+class TestUpdateCollectedMetaSubjects(UpdateSubjectsMixin):
 
     @pytest.fixture()
     def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
