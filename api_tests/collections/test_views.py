@@ -4,7 +4,7 @@ from urlparse import urlparse
 from django.utils.timezone import now
 
 from api.base.settings.defaults import API_BASE
-from api_tests.subjects.mixins import UpdateSubjectsMixin
+from api_tests.subjects.mixins import UpdateSubjectsMixin, SubjectsFilterMixin
 from framework.auth.core import Auth
 from osf_tests.factories import (
     CollectionFactory,
@@ -4322,6 +4322,36 @@ class TestCollectedMetaList:
         res = app.get('{}?filter[collected_type]=asdf'.format(url.format(collection_with_three_cgm._id)), auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
+
+
+class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def project_one(self, user):
+        project = ProjectFactory(creator=user)
+        return project
+
+    @pytest.fixture()
+    def project_two(self, user):
+        project = ProjectFactory(creator=user)
+        return project
+
+    @pytest.fixture()
+    def collection(self, user):
+        return CollectionFactory(creator=user, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+
+    @pytest.fixture()
+    def resource(self, user, collection, project_one):
+        cgm = collection.collect_object(project_one, user, status='one', collected_type='asdf')
+        return cgm
+
+    @pytest.fixture()
+    def resource_two(self, user, collection, project_two):
+        cgm = collection.collect_object(project_two, user, status='one', collected_type='asdf')
+        return cgm
+
+    @pytest.fixture()
+    def url(self, collection):
+        return '/{}collections/{}/collected_metadata/'.format(API_BASE, collection._id)
 
 
 @pytest.mark.django_db

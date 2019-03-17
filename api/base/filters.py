@@ -440,11 +440,14 @@ class ListFilterMixin(FilterMixin):
             )
             operation['op'] = 'in'
         if field_name == 'subjects':
-            if Subject.objects.filter(_id=operation['value']).exists():
-                operation['source_field_name'] = 'subjects___id'
-            else:
-                operation['source_field_name'] = 'subjects__text'
-                operation['op'] = 'iexact'
+            self.postprocess_subject_query_param(operation)
+
+    def postprocess_subject_query_param(self, operation):
+        if Subject.objects.filter(_id=operation['value']).exists():
+            operation['source_field_name'] = 'subjects___id'
+        else:
+            operation['source_field_name'] = 'subjects__text'
+            operation['op'] = 'iexact'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
@@ -512,12 +515,7 @@ class PreprintFilterMixin(ListFilterMixin):
             operation['source_field_name'] = 'guids___id'
 
         if field_name == 'subjects':
-            try:
-                Subject.objects.get(_id=operation['value'])
-                operation['source_field_name'] = 'subjects___id'
-            except Subject.DoesNotExist:
-                operation['source_field_name'] = 'subjects__text'
-                operation['op'] = 'iexact'
+            self.postprocess_subject_query_param(operation)
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
         return Preprint.objects.can_view(

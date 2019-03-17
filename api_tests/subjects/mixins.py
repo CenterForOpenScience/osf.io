@@ -10,6 +10,118 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
+class SubjectsFilterMixin(object):
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def resource(self, user):
+        # Return a project, preprint, collection, etc., with the appropriate
+        # contributors already added
+        raise NotImplementedError()
+
+    @pytest.fixture()
+    def resource_two(self, user):
+        # Return a project, preprint, collection, etc., with the appropriate
+        # contributors already added
+        raise NotImplementedError()
+
+    @pytest.fixture()
+    def url(self, resource):
+        # List url for resource
+        raise NotImplementedError()
+
+    @pytest.fixture()
+    def has_subject(self, url):
+        return '{}?filter[subjects]='.format(url)
+
+    @pytest.fixture()
+    def subject_one(self):
+        return SubjectFactory(text='First Subject')
+
+    @pytest.fixture()
+    def subject_two(self):
+        return SubjectFactory(text='Second Subject')
+
+    def test_subject_filter_using_id_v_2_2(
+            self, app, user, subject_one, subject_two, resource, resource_two,
+            has_subject):
+
+        resource.subjects.add(subject_one)
+        resource_two.subjects.add(subject_two)
+
+        expected = set([resource._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_one._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+        expected = set([resource_two._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_two._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_text_v_2_2(
+            self, app, user, subject_two, resource, resource_two,
+            has_subject):
+        resource_two.subjects.add(subject_two)
+        expected = set([resource_two._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_two.text),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_id_v_2_14(
+            self, app, user, subject_one, subject_two, resource, resource_two,
+            has_subject):
+
+        resource.subjects.add(subject_one)
+        resource_two.subjects.add(subject_two)
+
+        expected = set([resource._id])
+        res = app.get(
+            '{}{}&version=2.14'.format(has_subject, subject_one._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+        expected = set([resource_two._id])
+        res = app.get(
+            '{}{}&version=2.14'.format(has_subject, subject_two._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_text_v_2_14(
+            self, app, user, subject_two, resource, resource_two,
+            has_subject):
+        resource_two.subjects.add(subject_two)
+        expected = set([resource_two._id])
+        res = app.get(
+            '{}{}&version=2.14'.format(has_subject, subject_two.text),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_unknown_subject_filter(self, app, user, has_subject):
+        res = app.get(
+            '{}notActuallyASubjectIdOrTestMostLikely'.format(has_subject),
+            auth=user.auth)
+        assert len(res.json['data']) == 0
+
+
+@pytest.mark.django_db
 class UpdateSubjectsMixin(object):
     @pytest.fixture()
     def user_admin_contrib(self):
