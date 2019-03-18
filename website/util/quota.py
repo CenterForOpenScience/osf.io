@@ -20,7 +20,6 @@ def used_quota(user_id):
         files = OsfStorageFileNode.objects.filter(
             target_object_id=project.id,
             target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-            type='osf.osfstoragefilenode',
             deleted_on=None,
             deleted_by_id=None,
         )
