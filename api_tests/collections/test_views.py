@@ -4340,18 +4340,84 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
         return CollectionFactory(creator=user, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
 
     @pytest.fixture()
-    def resource(self, user, collection, project_one):
+    def resource(self, user, collection, project_one, subject_one):
         cgm = collection.collect_object(project_one, user, status='one', collected_type='asdf')
+        cgm.subjects.add(subject_one)
         return cgm
 
     @pytest.fixture()
-    def resource_two(self, user, collection, project_two):
+    def resource_two(self, user, collection, project_two, subject_two):
         cgm = collection.collect_object(project_two, user, status='one', collected_type='asdf')
+        cgm.subjects.add(subject_two)
         return cgm
 
     @pytest.fixture()
     def url(self, collection):
         return '/{}collections/{}/collected_metadata/'.format(API_BASE, collection._id)
+
+    def test_subject_filter_using_id_v_2_2(
+            self, app, user, subject_one, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+
+        expected = set([project_one._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_one._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_two._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_text_v_2_2(
+            self, app, user, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version=2.2'.format(has_subject, subject_two.text),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_id_v_2_14(
+            self, app, user, subject_one, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+
+        expected = set([project_one._id])
+        res = app.get(
+            '{}{}&version=2.14'.format(has_subject, subject_one._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version=2.14'.format(has_subject, subject_two._id),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
+
+    def test_subject_filter_using_text_v_2_14(
+            self, app, user, subject_two, resource, resource_two,
+            has_subject, project_one, project_two):
+        resource_two.subjects.add(subject_two)
+        expected = set([project_two._id])
+        res = app.get(
+            '{}{}&version=2.14'.format(has_subject, subject_two.text),
+            auth=user.auth
+        )
+        actual = set([obj['id'] for obj in res.json['data']])
+        assert expected == actual
 
 
 class TestCollectedMetaSubjectsList(SubjectsListMixin):
