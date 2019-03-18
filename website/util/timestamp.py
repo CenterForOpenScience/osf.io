@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-'''
-Common functions for timestamp.
-'''
+"""Common functions for timestamp.
+"""
 from __future__ import absolute_import
 import datetime
 import hashlib
@@ -46,9 +45,8 @@ RESULT_MESSAGE = {
 }
 
 def get_error_list(pid):
-    '''
-    Retrieve from the database the list of all timestamps that has an error.
-    '''
+    """Retrieve from the database the list of all timestamps that has an error.
+    """
     data_list = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=pid).order_by('provider', 'path')
     provider_error_list = []
     provider = None
@@ -150,9 +148,8 @@ def get_error_list(pid):
     return provider_error_list
 
 def get_full_list(uid, pid, node):
-    '''
-    Get a full list of timestamps from all files uploaded to a storage.
-    '''
+    """Get a full list of timestamps from all files uploaded to a storage.
+    """
     user_info = OSFUser.objects.get(id=uid)
     cookie = user_info.get_or_create_cookie()
 
