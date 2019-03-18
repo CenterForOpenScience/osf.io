@@ -227,9 +227,4 @@ RUN for module in \
     ; done \
     && rm ./website/settings/local.py ./api/base/settings/local.py
 
-# Copy uPKI liblaries
-COPY ./upki_lib/ ./upki_lib/
-RUN chmod +x /code/upki_lib/bin_linux/LpkCmd.sh && \
-    chmod +x /code/upki_lib/bin_linux/LpkCmd
-
 CMD ["gosu", "nobody", "invoke", "--list"]
