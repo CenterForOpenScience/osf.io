@@ -3,7 +3,7 @@ from flask import request
 from framework.auth import Auth, decorators
 from framework.utils import iso8601format
 from website.registries import utils
-
+from website import util
 
 def _view_registries_landing_page(campaign=None, **kwargs):
     """Landing page for the various registrations"""
@@ -19,13 +19,14 @@ def _view_registries_landing_page(campaign=None, **kwargs):
     else:
         has_projects = False
 
+    campaign_url_param = 'osf-registered-reports' if campaign == 'registered_report' else 'prereg'
     return {
         'is_logged_in': is_logged_in,
         'has_draft_registrations': bool(utils.drafts_for_user(auth.user, campaign)),
         'has_projects': has_projects,
         'campaign_long': utils.REG_CAMPAIGNS.get(campaign),
-        'campaign_short': campaign
-
+        'campaign_short': campaign,
+        'sign_up_url': util.web_url_for('auth_register', _absolute=True, campaign=campaign_url_param, next=request.url),
     }
 
 
