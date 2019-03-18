@@ -314,6 +314,30 @@ def add_token(uid, node, data):
         logger.exception(err)
         raise
 
+def get_file_info(cookie, file_node, version):
+    headers = {'content-type': 'application/json'}
+    file_data_request = requests.get(
+        file_node.generate_waterbutler_url(
+            version=version.identifier, meta='', _internal=True
+        ), headers=headers, cookies={settings.COOKIE_NAME: cookie}
+    )
+    if file_data_request.status_code == 200:
+        file_data = file_data_request.json().get('data')
+        file_info = {
+            'provider': file_node.provider,
+            'file_id': file_node._id,
+            'file_name': file_data['attributes'].get('name'),
+            'file_path': file_data['attributes'].get('materialized'),
+            'size': file_data['attributes'].get('size'),
+            'created': file_data['attributes'].get('created_utc'),
+            'modified': file_data['attributes'].get('modified_utc'),
+            'version': ''
+        }
+        if file_node.provider == 'osfstorage':
+            file_info['version'] = file_data['attributes']['extra'].get('version')
+        return file_info
+    return None
+
 def file_created_or_updated(node, metadata, user_id, created_flag):
     if metadata['provider'] != 'osfstorage':
         file_node = BaseFileNode.resolve_class(
