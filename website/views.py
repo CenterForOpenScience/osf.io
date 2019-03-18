@@ -33,8 +33,8 @@ from website.project.model import has_anonymous_link
 from osf.utils import permissions
 
 # mapcore library
-from nii.mapcore import mapcore_get_authcode
-from nii.mapcore import mapcore_set_authcode
+from nii.mapcore import mapcore_request_authcode
+from nii.mapcore import mapcore_recieve_authcode
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
@@ -511,8 +511,9 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
 # mAP core
 def oauth_start(**kwargs):
     # enterance for OAuth
-    return redirect(mapcore_get_authcode())
+    return redirect(mapcore_request_authcode(_get_current_user() or MockUser()))
 
 def oauth_finish(**kwargs):
     # Redirect to COS News page
-    return redirect(mapcore_set_authcode(request.args))
+    logger.info("Enter oauth_finish()")
+    return redirect(mapcore_recieve_authcode(_get_current_user() or MockUser(), request.args.to_dict()))

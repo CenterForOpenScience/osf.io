@@ -6,25 +6,32 @@ import sys
 import json
 import time
 import datetime
+import json
 from logging import getLogger
 
+import requests
 import urllib
-from flask import request
 
-# from website.app import init_app
+from website.app import init_app
+from website import settings
+from osf.models.user import OSFUser, mApUser, mApGroup
+import framework.auth
 
 # global setting
 logger = getLogger(__name__)
 
-map_hostname      = os.getenv('MAPCORE_HOSTNAME', 'https://dev2.cg.gakunin.jp')
-map_authcode_path = os.getenv('MAPCORE_AUTHCODE_PATH', '/oauth/shib/shibrequst.php')
-map_token_path    = os.getenv('MAPCORE_TOKEN_PATH', '/oauth/token.php')
-map_refresh_path  = os.getenv('MAPCORE_REFRESH_PATH', '/oauth/token.php')
-map_clientid      = os.getenv('MAPCORE_CLIENTID', '52a83b87810af9cb')
-map_secret        = os.getenv('MAPCORE_SECRET', '9f734efa99f1c36a5e184547015be41f')
-map_redirect      = os.getenv('MAPCORE_REDIRECT', 'https://www.dev1.rdm.nii.ac.jp/oauth_finish')
 
-def mapcore_get_authcode():
+map_hostname      = settings.MAPCORE_HOSTNAME
+map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
+map_token_path    = settings.MAPCORE_TOKEN_PATH
+map_refresh_path  = settings.MAPCORE_REFRESH_PATH
+map_clientid      = settings.MAPCORE_CLIENTID
+map_secret        = settings.MAPCORE_SECRET
+map_redirect      = settings.MAPCORE_REDIRECT
+map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
+
+
+def mapcore_request_authcode():
     '''get an authorization code from mAP. this process will redirect some times.'''
     logger.info("enter mapcore_get_authcode.")
     logger.info("MAPCORE_HOSTNAME: " + map_hostname)
@@ -40,22 +47,105 @@ def mapcore_get_authcode():
     params = {"response_type" : "code",
               "redirect_uri" : map_redirect,
               "client_id" : map_clientid,
-              "state" : __name__}
+              "state" : 'GRDM_mAP_AuthCode'}
     query = url + '?' + urllib.urlencode(params)
     logger.info("redirect to AuthCode request: " + query)
     return query
 
 
-def mapcore_set_authcode(arg):
-    '''decode request parameters'''
-    for k, v in arg.items():
-        print("RETVAL: %s => %s" % (k, v))
-    # logger.info("RETVAL: %s => %s" % (k, v))
-    return ('http://www.dev2.rdm.nii.ac.jp/dashboard')
+def mapcore_recieve_authcode(user, params):
+    '''here is the starting point of user registraion for mAP'''
+    ''':param user  OSFUser object of current user'''
+    ''':param arg   dict of url parameters in request'''
+    logger.info("get an oatuh response:")
+    s = ''
+    for k, v in params.items():
+        s += "(" + k + ',' + v + ") "
+    logger.info("oauth returned parameters: " + s )
+
+    # authorization code check
+    if 'code' not in params or 'state' not in params or params['state'] != map_authcode_magic:
+        raise ValueError('invalid response from oauth provider')
+
+    # exchange autorization code to access token
+    authcode = params['code']
+    #authcode = 'AUTHORIZATIONCODESAMPLE'
+    #eppn = 'foobar@esample.com'
+    (access_token, refresh_token) = mapcore_get_accesstoken(authcode)
+
+    # set mAP attribute into current user
+    logger.info('User [' + user.eppn + '] get access_token [' + access_token)
+    user.map_user = mApUser.objects.update_or_create(eppn = user.eppn,
+                                                     oauth_access_token = access_token,
+                                                     oauth_refresh_token = refresh_token,
+                                                     oauth_refresh_tiem = datetime.utcnow())
+    user.map_user.save()
+    user.save()
+
+    return map_hostname  # redirect to home -> will redirect to dashboard
+
+
+def mapcore_get_accesstoken(authcode, clientid = map_clientid, secret = map_secret, rediret = map_redirect):
+    '''transfer authorization code to access token and refresh token'''
+    '''API call returns the JSON response from mAP authorization code service'''
+
+    logger.info("mapcore_get_accesstoken started.")
+    url = map_hostname + map_token_path
+    basic_auth = (map_clientid, map_secret)
+    param = {"grant_type": "authorization_code",
+             "redirect_uri": map_redirect,
+             "code": authcode}
+    headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
+    res = requests.post(url, data=basic_auth, headers=headers, auth=basic_auth)
+    res.raise_for_status()  # error check
+    json = res.json()
+    logger.info("mapcore_get_accesstoken response: " + json )
+    return (json['access_tokes'], json['refresh_token'])
+
+
+def mapcore_refresh_accesstoken(user, force = False):
+    '''refresh access token with refresh token'''
+    ''':param user     OSFUser'''
+    ''':param force    falg to avoid availablity check'''
+    ''':return resulut 0..success, 1..must be login again, -1..any error'''
+
+    logger.info('refuresh token for [' + user.eppn + '].')
+    url = map_hostname + map_token_path
+
+    # access token availability check
+    if not force:
+        param = {'access_token' : user.oauth_access_token}
+        headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
+        res = requests.post(url, data=param, headers=headers)
+        if res.status_code == 200 and 'success' in res.json():
+            return 0  # notihng to do
+
+    # do refresh
+    basic_auth = (map_clientid, map_secret)
+    param = {"grant_type": "refresh_token",
+             "refresh_token": user.oauth_refresh_token}
+    headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
+    res = requests.post(url, data=basic_auth, headers=headers, auth=basic_auth)
+    json = res.json()
+    if res.status_code != 200 or 'access_token' not in json:
+        return -1
+    logger.info('User [' + user.eppn + '] refresh access_token by [' + json['access_token'])
+
+    # update database
+    u = user.map_user.objects.get(eppn=user.eppn)
+    u.oauth_access_token = json['access_token']
+    u.oauth_refresh_token = json['refresh_token']
+    u.oauth_refres_time = datetime.utcnow()
+    u.save()
+
+    return 0
 
 
 if __name__ == '__main__':
-    dic = {"A": 1, "B":2, "C":3}
-    mapcore_set_authcode(dic)
-    print ("authcode: " + mapcore_get_authcode())
+
+
+
+    #dic = {"A": 1, "B":2, "C":3}
+    #mapcore_set_authcode(dic)
+    print ("authcode: " + mapcore_request_authcode())
 
