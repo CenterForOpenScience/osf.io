@@ -122,6 +122,76 @@ class SubjectsFilterMixin(object):
 
 
 @pytest.mark.django_db
+class SubjectsListMixin(object):
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_non_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_write_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_read_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        # Return a project, preprint, collection, etc., with the appropriate
+        # contributors already added
+        raise NotImplementedError()
+
+    @pytest.fixture()
+    def url(self, resource):
+        # Subject List url
+        raise NotImplementedError()
+
+    @pytest.fixture()
+    def subject(self):
+        return SubjectFactory()
+
+    @pytest.fixture()
+    def subject_two(self):
+        return SubjectFactory()
+
+    def test_get_resource_subjects_permissions(self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib, resource, url):
+        # test_unauthorized
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_noncontrib
+        res = app. get(url, auth=user_non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_read_contrib
+        res = app. get(url, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # test_write_contrib
+        res = app. get(url, auth=user_read_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_get_resource_subjects(self, app, url, resource, user_admin_contrib, subject,
+            subject_two):
+        resource.subjects.add(subject)
+        resource.subjects.add(subject_two)
+
+        assert resource.subjects.count() == 2
+
+        res = app.get(url, auth=user_admin_contrib.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+        subjects = [subj['id'] for subj in res.json['data']]
+        assert subject._id in subjects
+        assert subject_two._id in subjects
+
+
+@pytest.mark.django_db
 class UpdateSubjectsMixin(object):
     @pytest.fixture()
     def user_admin_contrib(self):

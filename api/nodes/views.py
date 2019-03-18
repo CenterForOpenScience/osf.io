@@ -1566,7 +1566,6 @@ class NodeSubjectsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, N
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.SUBJECTS_READ]
