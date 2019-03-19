@@ -474,7 +474,7 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
 class AddTimestamp:
     #1 create tsq (timestamp request) from file, and keyinfo
     def get_timestamp_request(self, file_name):
-        cmd = api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name).split(' ')
+        cmd = api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name.encode('utf-8')).split(' ')
         process = subprocess.Popen(
             cmd, shell=False, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -508,7 +508,7 @@ class AddTimestamp:
 
     def get_timestamp_upki(self, file_name, tmp_dir):
         cmd = api_settings.UPKI_CREATE_TIMESTAMP.format(
-            file_name,
+            file_name.encode('utf-8'),
             '/dev/stdout'
         ).split(' ')
         try:
@@ -718,7 +718,7 @@ class TimeStampTokenVerifyCheck:
                         raise err
 
                     cmd = api_settings.SSL_GET_TIMESTAMP_RESPONSE.format(
-                        file_name,
+                        file_name.encode('utf-8'),
                         timestamptoken_file_path,
                         os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
                     ).split(' ')
@@ -744,8 +744,8 @@ class TimeStampTokenVerifyCheck:
                     except Exception as err:
                         raise err
                     cmd = api_settings.UPKI_VERIFY_TIMESTAMP.format(
-                        file_name,
-                        file_name + '.tst'
+                        file_name.encode('utf-8'),
+                        file_name.encode('utf-8') + '.tst'
                     ).split(' ')
                     try:
                         process = subprocess.Popen(
@@ -770,7 +770,7 @@ class TimeStampTokenVerifyCheck:
                     except Exception as err:
                         ret = api_settings.TIME_STAMP_VERIFICATION_ERR
                         verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'FAIL'
-                        logger.error(err)
+                        logger.error('upki verify error({}):{}'.format(file_name.encode('utf-8'), err))
 
                 verify_result.inspection_result_status = ret
 
