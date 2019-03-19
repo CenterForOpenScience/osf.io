@@ -438,6 +438,7 @@ services:
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+      - /host_server/user_key_info:/user_key_info
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
 #      - ./ssl/celery-client.cert.pem:/etc/ssl/certs/worker.pem:ro
 #      - ./ssl/celery-client.key.pem:/etc/ssl/private/worker.key:ro

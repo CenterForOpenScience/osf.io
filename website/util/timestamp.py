@@ -18,17 +18,19 @@ import requests
 
 from api.base import settings as api_settings
 from api.base.utils import waterbutler_api_url_for
+from celery.contrib.abortable import AbortableTask, AbortableAsyncResult
 from django.utils import timezone
 from osf.models import (
     AbstractNode, BaseFileNode, Guid, RdmFileTimestamptokenVerifyResult, RdmUserKey,
-    OSFUser
+    OSFUser, TimestampTask
 )
 from website import util
 from website import settings
 from website.util import waterbutler
 
-
 from django.contrib.contenttypes.models import ContentType
+from framework.celery_tasks import app as celery_app
+
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,19 @@ RESULT_MESSAGE = {
     api_settings.TIME_STAMP_VERIFICATION_ERR:
         api_settings.TIME_STAMP_VERIFICATION_ERR_MSG,
 }
+
+def get_async_task_data(node):
+    task_data = {
+        'ready': True,
+        'requester': None
+    }
+    timestamp_task = TimestampTask.objects.filter(node=node).first()
+    if timestamp_task is not None:
+        task = AbortableAsyncResult(timestamp_task.task_id)
+        task_data['ready'] = task.ready()
+        task_data['status'] = task.state
+        task_data['requester'] = timestamp_task.requester.username
+    return task_data
 
 def get_error_list(pid):
     '''
@@ -251,7 +266,7 @@ def check_file_timestamp(uid, node, data):
             if file_data.exists() and \
                     file_data.get().inspection_result_status not in intentional_remove_status:
                 file_data.update(inspection_result_status=api_settings.FILE_NOT_FOUND)
-            return False
+            return None
 
         if not userkey_generation_check(user._id):
             userkey_generation(user._id)
@@ -270,6 +285,69 @@ def check_file_timestamp(uid, node, data):
             shutil.rmtree(tmp_dir)
         logger.exception(err)
         raise
+
+@celery_app.task(bind=True, base=AbortableTask)
+def celery_verify_timestamp_token(self, uid, node_id):
+    secs_to_wait = 60.0 / api_settings.TS_REQUESTS_PER_MIN
+    last_run = None
+
+    celery_app.current_task.update_state(state='PROGRESS', meta={'progress': 0})
+    node = AbstractNode.objects.get(id=node_id)
+    celery_app.current_task.update_state(state='PROGRESS', meta={'progress': 50})
+    for provider_dict in get_full_list(uid, node._id, node):
+        for p_item in provider_dict['provider_file_list']:
+            if self.is_aborted():
+                break
+            p_item['provider'] = provider_dict['provider']
+            last_run = time.time()
+            result = check_file_timestamp(uid, node, p_item)
+            if result is None:
+                continue
+            # Do not let the task run too many requests
+            # An sleep would stop the celery process (and all its tasks)
+            if provider_dict['provider'] != 'osfstorage':
+                while time.time() < last_run + secs_to_wait:
+                    pass
+    if self.is_aborted():
+        logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
+    celery_app.current_task.update_state(state='SUCCESS', meta={'progress': 100})
+
+@celery_app.task(bind=True, base=AbortableTask)
+def celery_add_timestamp_token(self, uid, node_id, request_data):
+    '''
+    Celery Timestamptoken add method
+    '''
+    secs_to_wait = 60.0 / api_settings.TS_REQUESTS_PER_MIN
+    last_run = None
+
+    node = AbstractNode.objects.get(id=node_id)
+    for _, data in enumerate(request_data):
+        if self.is_aborted():
+            break
+        last_run = time.time()
+        result = add_token(uid, node, data)
+        if result is None:
+            continue
+        # Do not let the task run too many requests
+        # An sleep would stop the celery process (and all its tasks)
+        if data['provider'] != 'osfstorage':
+            while time.time() < last_run + secs_to_wait:
+                pass
+    if self.is_aborted():
+        logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
+
+def cancel_celery_task(node):
+    result = {
+        'success': False,
+    }
+    timestamp_task = TimestampTask.objects.filter(node=node).first()
+    if timestamp_task is not None:
+        task = AbortableAsyncResult(timestamp_task.task_id)
+        if not task.ready():
+            task.revoke()
+            task.abort()
+            result['success'] = True
+    return result
 
 def add_token(uid, node, data):
     user = OSFUser.objects.get(id=uid)
