@@ -1,7 +1,6 @@
 import datetime
 import httplib
 import os
-import requests
 import uuid
 import markupsafe
 import urllib
