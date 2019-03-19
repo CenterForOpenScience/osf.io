@@ -26,6 +26,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': False,
+                'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
             }
         )
 
@@ -38,6 +39,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_long': 'OSF Preregistration',
                     'campaign_short': 'prereg',
                     'is_logged_in': False,
+                    'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
                 }
             )
 
@@ -50,6 +52,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': True,
+                'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
             }
         )
 
@@ -62,6 +65,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_long': 'OSF Preregistration',
                     'campaign_short': 'prereg',
                     'is_logged_in': True,
+                    'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
                 }
             )
 
@@ -76,6 +80,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': True,
+                'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
             }
         )
 
@@ -88,6 +93,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_long': 'OSF Preregistration',
                     'campaign_short': 'prereg',
                     'is_logged_in': True,
+                    'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
                 }
             )
 
@@ -106,6 +112,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': True,
+                'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
             }
         )
 
@@ -123,6 +130,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_long': 'OSF Preregistration',
                     'campaign_short': 'prereg',
                     'is_logged_in': True,
+                    'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
                 }
             )
 
