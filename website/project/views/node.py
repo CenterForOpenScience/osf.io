@@ -56,6 +56,9 @@ from addons.dataverse.utils import serialize_dataverse_widget
 from addons.forward.utils import serialize_forward_widget
 from addons.jupyterhub.utils import serialize_jupyterhub_widget
 from admin.rdm_addons.utils import validate_rdm_addons_allowed
+from api.base import settings as api_settings
+from website.util import quota
+
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
@@ -476,6 +479,7 @@ def configure_requests(node, **kwargs):
 @ember_flag_is_active('ember_project_detail_page')
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
+
     ret = _view_project(node, auth,
                         primary=primary,
                         embed_contributors=True,
@@ -502,6 +506,7 @@ def view_project(auth, node, **kwargs):
         'dataverse': None,
         'jupyterhub': None
     }
+
 
     if 'wiki' in ret['addons']:
         addons_widget_data['wiki'] = serialize_wiki_widget(node)
@@ -772,6 +777,15 @@ def _view_project(node, auth, primary=False,
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     NodeRelation = apps.get_model('osf.NodeRelation')
 
+    try:
+        max_quota = user.userquota.max_quota
+
+    except ObjectDoesNotExist:
+
+        max_quota = api_settings.DEFAULT_MAX_QUOTA
+
+    used_quota = quota.used_quota(user._id)
+    threshhold = api_settings.WARNING_THRESHOLD
     is_registration = node.is_registration
     timestamp_pattern = get_timestamp_pattern_division(auth, node)
     data = {
@@ -781,6 +795,9 @@ def _view_project(node, auth, primary=False,
             'title': node.title,
             'category': node.category_display,
             'category_short': node.category,
+            'used_quota': used_quota,
+	    'max_quota':max_quota,
+            'threshhold':threshhold,
             'node_type': node.project_or_component,
             'description': node.description or '',
             'license': serialize_node_license_record(node.license),
