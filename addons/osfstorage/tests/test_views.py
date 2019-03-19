@@ -1061,7 +1061,7 @@ class TestFileTags(StorageTestCase):
 @pytest.mark.enable_bookmark_creation
 class TestFileViews(StorageTestCase):
 
-    @mock.patch('addons.base.views.requests')
+    @mock.patch('website.util.timestamp.requests')
     def test_file_views(self, mock_requests):
         # Pretend timestamp request to waterbutler failed
         mock_requests.get.return_value.status_code = 400
