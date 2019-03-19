@@ -4,12 +4,11 @@ from __future__ import unicode_literals
 from admin.base import settings
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.generic import ListView, View, TemplateView
-from osf.models import Institution, Node, AbstractNode, Guid, TimestampTask
+from osf.models import Institution, Node, AbstractNode, TimestampTask
 from website.util import timestamp
 import json
 
