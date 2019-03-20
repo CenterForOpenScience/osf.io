@@ -56,7 +56,6 @@ def get_async_task_data(node):
     if timestamp_task is not None:
         task = AbortableAsyncResult(timestamp_task.task_id)
         task_data['ready'] = task.ready()
-        task_data['status'] = task.state
         task_data['requester'] = timestamp_task.requester.username
     return task_data
 
