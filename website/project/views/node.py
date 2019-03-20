@@ -506,8 +506,6 @@ def view_project(auth, node, **kwargs):
         'dataverse': None,
         'jupyterhub': None
     }
-
-
     if 'wiki' in ret['addons']:
         addons_widget_data['wiki'] = serialize_wiki_widget(node)
 
