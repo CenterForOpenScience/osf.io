@@ -776,14 +776,10 @@ def _view_project(node, auth, primary=False,
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     NodeRelation = apps.get_model('osf.NodeRelation')
-
     try:
         max_quota = user.userquota.max_quota
-
     except ObjectDoesNotExist:
-
         max_quota = api_settings.DEFAULT_MAX_QUOTA
-
     used_quota = quota.used_quota(user._id)
     threshhold = api_settings.WARNING_THRESHOLD
     is_registration = node.is_registration
@@ -796,8 +792,8 @@ def _view_project(node, auth, primary=False,
             'category': node.category_display,
             'category_short': node.category,
             'used_quota': used_quota,
-	    'max_quota':max_quota,
-            'threshhold':threshhold,
+	    'max_quota': max_quota,
+            'threshhold': threshhold,
             'node_type': node.project_or_component,
             'description': node.description or '',
             'license': serialize_node_license_record(node.license),
