@@ -998,7 +998,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
      console.log(res_provider);
      treebeard.options.uploadInProgress = false;
 
-  if(res_provider =='osfstorage'){
+  if(res_provider === 'osfstorage'){
 
         var usedgb = parseFloat(window.contextVars.used_quota/1073741824).toFixed( 2 );
 
