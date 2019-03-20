@@ -775,10 +775,10 @@ def _view_project(node, auth, primary=False,
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     NodeRelation = apps.get_model('osf.NodeRelation')
     try:
-        max_quota = user.userquota.max_quota
+        max_quota = node.creator.userquota.max_quota
     except ObjectDoesNotExist:
         max_quota = api_settings.DEFAULT_MAX_QUOTA
-    used_quota = quota.used_quota(user._id)
+    used_quota = quota.used_quota(node.creator._id)
     threshhold = api_settings.WARNING_THRESHOLD
     is_registration = node.is_registration
     timestamp_pattern = get_timestamp_pattern_division(auth, node)
