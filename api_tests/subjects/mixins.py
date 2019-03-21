@@ -79,7 +79,7 @@ class SubjectsFilterMixin(object):
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
-    def test_subject_filter_using_id_v_2_14(
+    def test_subject_filter_using_id_v_2_15(
             self, app, user, subject_one, subject_two, resource, resource_two,
             has_subject):
 
@@ -88,7 +88,7 @@ class SubjectsFilterMixin(object):
 
         expected = set([resource._id])
         res = app.get(
-            '{}{}&version=2.14'.format(has_subject, subject_one._id),
+            '{}{}&version=2.15'.format(has_subject, subject_one._id),
             auth=user.auth
         )
         actual = set([obj['id'] for obj in res.json['data']])
@@ -96,19 +96,19 @@ class SubjectsFilterMixin(object):
 
         expected = set([resource_two._id])
         res = app.get(
-            '{}{}&version=2.14'.format(has_subject, subject_two._id),
+            '{}{}&version=2.15'.format(has_subject, subject_two._id),
             auth=user.auth
         )
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
-    def test_subject_filter_using_text_v_2_14(
+    def test_subject_filter_using_text_v_2_15(
             self, app, user, subject_two, resource, resource_two,
             has_subject):
         resource_two.subjects.add(subject_two)
         expected = set([resource_two._id])
         res = app.get(
-            '{}{}&version=2.14'.format(has_subject, subject_two.text),
+            '{}{}&version=2.15'.format(has_subject, subject_two.text),
             auth=user.auth
         )
         actual = set([obj['id'] for obj in res.json['data']])

@@ -202,7 +202,12 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         return 'collections:collected-metadata-subjects'
 
     @property
-    def subjects_related_view_kwargs(self):
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'collections:collected-metadata-relationships-subjects'
+
+    @property
+    def subjects_view_kwargs(self):
         # Overrides TaxonomizableSerializerMixin
         return {'collection_id': '<collection._id>', 'cgm_id': '<guid._id>'}
 

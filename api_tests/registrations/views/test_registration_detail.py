@@ -213,6 +213,15 @@ class TestRegistrationDetail:
         assert res.status_code == 200
         assert 'registrations' not in res.json['data']['relationships']
 
+    #   test_registration_has_subjects_links_for_later_versions
+        res = app.get(public_url + '?version=2.15')
+        related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
+        expected_url = '{}subjects/'.format(public_url)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
+        expected_url = '{}relationships/subjects/'.format(public_url)
+        assert urlparse(self_url).path == expected_url
+
 
 class TestRegistrationUpdateTestCase:
 

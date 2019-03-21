@@ -186,7 +186,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         return 'preprints:preprint-subjects'
 
     @property
-    def subjects_related_view_kwargs(self):
+    def subjects_view_kwargs(self):
         # Overrides TaxonomizableSerializerMixin
         return {'preprint_id': '<_id>'}
 

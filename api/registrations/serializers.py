@@ -308,6 +308,11 @@ class RegistrationSerializer(NodeSerializer):
         # Overrides TaxonomizableSerializerMixin
         return 'registrations:registration-subjects'
 
+    @property
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'registrations:registration-relationships-subjects'
+
     def get_registration_url(self, obj):
         return absolute_reverse(
             'registrations:registration-detail', kwargs={

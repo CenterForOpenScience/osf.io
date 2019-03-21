@@ -4588,6 +4588,15 @@ class TestCollectedMetaDetail:
         assert res.status_code == 200
         assert res.json['data']['id'] == cgm.guid._id
 
+    #   test_cgm_has_subjects_links_for_later_versions
+        res = app.get(url + '?version=2.15')
+        related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
+        expected_url = '{}subjects/'.format(url)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
+        expected_url = '{}relationships/subjects/'.format(url)
+        assert urlparse(self_url).path == expected_url
+
         res = app.patch_json_api(
             url,
             payload(status='asdf'),

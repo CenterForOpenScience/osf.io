@@ -491,9 +491,14 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return 'nodes:node-subjects'
 
     @property
-    def subjects_related_view_kwargs(self):
+    def subjects_view_kwargs(self):
         # Overrides TaxonomizableSerializerMixin
         return {'node_id': '<_id>'}
+
+    @property
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'nodes:node-relationships-subjects'
 
     def get_current_user_permissions(self, obj):
         request_version = self.context['request'].version

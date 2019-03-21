@@ -36,13 +36,19 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
         request = kwargs['context']['request']
 
         if self.expect_subjects_as_relationships(request):
-            self.fields['subjects'] = RelationshipField(
-                related_view=self.subjects_related_view,
-                related_view_kwargs=self.subjects_related_view_kwargs,
-                read_only=False,
-                many=True,
-                required=False,
-            )
+            subject_kwargs = {
+                'related_view': self.subjects_related_view,
+                'related_view_kwargs': self.subjects_view_kwargs,
+                'read_only': False,
+                'many': True,
+                'required': False
+            }
+
+            if self.subjects_self_view:
+                subject_kwargs['self_view'] = self.subjects_self_view
+                subject_kwargs['self_view_kwargs'] = self.subjects_view_kwargs
+
+            self.fields['subjects'] = RelationshipField(**subject_kwargs)
         else:
             self.fields['subjects'] = ser.SerializerMethodField()
 
@@ -55,12 +61,20 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
         raise NotImplementedError()
 
     @property
-    def subjects_related_view_kwargs(self):
+    def subjects_view_kwargs(self):
         """
         For building the subjects RelationshipField on __init__
         for later API versions only
         """
         raise NotImplementedError
+
+    @property
+    def subjects_self_view(self):
+        """
+        For building the subjects RelationshipField on __init__
+        for later API versions only
+        """
+        pass
 
     def get_subjects(self, obj):
         """

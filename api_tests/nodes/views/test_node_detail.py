@@ -220,6 +220,15 @@ class TestNodeDetail:
         expected_url = '{}relationships/institutions/'.format(url_public)
         assert urlparse(self_url).path == expected_url
 
+    #   test_node_has_subjects_links_for_later_versions
+        res = app.get(url_public + '?version=2.15')
+        related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
+        expected_url = '{}subjects/'.format(url_public)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
+        expected_url = '{}relationships/subjects/'.format(url_public)
+        assert urlparse(self_url).path == expected_url
+
     def test_node_has_comments_link(
             self, app, user, project_public, url_public):
         CommentFactory(node=project_public, user=user)
