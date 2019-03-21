@@ -463,3 +463,121 @@ class UpdateSubjectsMixin(object):
         assert len(subjects) == 2
         assert parent in subjects
         assert grandparent in subjects
+
+
+@pytest.mark.django_db
+class SubjectsRelationshipMixin(object):
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_non_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_write_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_read_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        # Return a project, preprint, collection, etc., with the appropriate
+        # contributors already added
+        raise NotImplementedError()
+
+    @pytest.fixture()
+    def url(self, resource):
+        # Subject List url
+        raise NotImplementedError()
+
+    @pytest.fixture()
+    def subject(self):
+        return SubjectFactory()
+
+    @pytest.fixture()
+    def subject_two(self, subject):
+        return SubjectFactory(parent=subject)
+
+    @pytest.fixture()
+    def payload(self, subject):
+        return {
+            'data': [{
+                'type': 'subjects',
+                'id': subject._id
+            }]
+        }
+
+    def test_update_subjects_relationship_permissions(self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib, resource, url, payload):
+        # test_unauthorized
+        res = app.patch_json_api(url, payload, expect_errors=True)
+        assert res.status_code == 401
+
+        # test_noncontrib
+        res = app.patch_json_api(url, payload, auth=user_non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_write_contrib
+        res = app.patch_json_api(url, payload, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test_read_contrib
+        res = app.patch_json_api(url, payload, auth=user_read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_update_subjects(self, app, user_admin_contrib, resource, url, payload, subject):
+        # Add subject via relationship payload
+        res = app.patch_json_api(url, payload, auth=user_admin_contrib.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == subject._id
+        assert resource.subjects.count() == 1
+        assert subject in resource.subjects.all()
+
+    def test_update_subjects_relationship_invalid_payload(self, app, user_admin_contrib, url):
+        payload = {
+            'data': [{
+                'id': 'bad_id',
+                'type': 'subjects'
+            }]
+        }
+
+        res = app.patch_json_api(url, payload, auth=user_admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Subject not found.'
+
+    def test_update_subjects_empty_payload(self, app, user_admin_contrib, resource, url, subject):
+        resource.subjects.add(subject)
+
+        payload = {
+            'data': []
+        }
+
+        res = app.patch_json_api(url, payload, auth=user_admin_contrib.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+        assert resource.subjects.count() == 0
+
+    def test_update_subjects_populates_parents_hierarchy(self, app, user_admin_contrib, url, resource, subject, subject_two):
+        resource.subjects.clear()
+        payload = {
+            'data': [{
+                'id': subject_two._id,
+                'type': 'subjects'
+            }]
+        }
+        res = app.patch_json_api(url, payload, auth=user_admin_contrib.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 2
+        returned_ids = [subj['id'] for subj in data]
+        assert subject._id in returned_ids
+        assert subject_two._id in returned_ids
+
+        assert resource.subjects.count() == 2
+        assert subject in resource.subjects.all()
+        assert subject_two in resource.subjects.all()

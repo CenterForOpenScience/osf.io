@@ -16,7 +16,7 @@ from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMul
 from api.base.utils import get_user_auth, default_node_list_permission_queryset, is_bulk_request, is_truthy
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
-from api.nodes.views import NodeIdentifierList, NodeBibliographicContributorsList, NodeSubjectsList
+from api.nodes.views import NodeIdentifierList, NodeBibliographicContributorsList, NodeSubjectsList, NodeSubjectsRelationship
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 
@@ -531,6 +531,13 @@ class RegistrationSubjectsList(NodeSubjectsList, RegistrationMixin):
     """
     view_category = 'registrations'
     view_name = 'registration-subjects'
+
+
+class RegistrationSubjectsRelationship(NodeSubjectsRelationship, RegistrationMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_subjects_relationship).
+    """
+    view_category = 'registrations'
+    view_name = 'registration-relationships-subjects'
 
 
 class RegistrationInstitutionsRelationship(NodeInstitutionsRelationship, RegistrationMixin):

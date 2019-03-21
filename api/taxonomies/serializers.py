@@ -1,11 +1,9 @@
 from rest_framework import serializers as ser
 
-from rest_framework import exceptions
 from distutils.version import StrictVersion
-from framework.exceptions import PermissionsError
 
 from api.base.serializers import JSONAPISerializer, LinksField, ShowIfVersion, RelationshipField
-from osf.exceptions import NodeStateError, ValidationValueError
+from api.subjects.serializers import UpdateSubjectsMixin
 from osf.models import Subject
 
 class TaxonomyField(ser.Field):
@@ -23,7 +21,7 @@ class TaxonomyField(ser.Field):
         return subject_id
 
 
-class TaxonomizableSerializerMixin(ser.Serializer):
+class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
     """ Mixin for Taxonomizable objects
 
     Note: subclasses will need to update `filterable_fields` and `update`
@@ -76,6 +74,7 @@ class TaxonomizableSerializerMixin(ser.Serializer):
             ] for hier in obj.subject_hierarchy
         ]
 
+    # Overrides UpdateSubjectsMixin
     def update_subjects_method(self, resource, subjects, auth):
         """Runs a different method to update the resource's subjects,
         depending on the request's version.
@@ -87,24 +86,6 @@ class TaxonomizableSerializerMixin(ser.Serializer):
         if self.expect_subjects_as_relationships(self.context['request']):
             return resource.set_subjects_from_relationships(subjects, auth)
         return resource.set_subjects(subjects, auth)
-
-    def update_subjects(self, resource, subjects, auth):
-        """Updates subjects on resource and handles errors.
-
-        :param object resource: Object for which you want to update subjects
-        :param list subjects: Subjects array (or array of arrays)
-        :param object Auth object
-        """
-        try:
-            self.update_subjects_method(resource, subjects, auth)
-        except PermissionsError as e:
-            raise exceptions.PermissionDenied(detail=str(e))
-        except ValueError as e:
-            raise exceptions.ValidationError(detail=str(e))
-        except ValidationValueError as e:
-            raise exceptions.ValidationError(detail=e[0])
-        except NodeStateError as e:
-            raise exceptions.ValidationError(detail=str(e))
 
     def expect_subjects_as_relationships(self, request):
         """Determines whether subjects should be serialized as a relationship.

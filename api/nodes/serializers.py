@@ -890,14 +890,14 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
         return set_folder, folder_info
 
     def get_account_or_error(self, addon_name, external_account_id, auth):
-            external_account = ExternalAccount.load(external_account_id)
-            if not external_account:
-                raise exceptions.NotFound('Unable to find requested account.')
-            if not auth.user.external_accounts.filter(id=external_account.id).exists():
-                raise exceptions.PermissionDenied('Requested action requires account ownership.')
-            if external_account.provider != addon_name:
-                raise Conflict('Cannot authorize the {} addon with an account for {}'.format(addon_name, external_account.provider))
-            return external_account
+        external_account = ExternalAccount.load(external_account_id)
+        if not external_account:
+            raise exceptions.NotFound('Unable to find requested account.')
+        if not auth.user.external_accounts.filter(id=external_account.id).exists():
+            raise exceptions.PermissionDenied('Requested action requires account ownership.')
+        if external_account.provider != addon_name:
+            raise Conflict('Cannot authorize the {} addon with an account for {}'.format(addon_name, external_account.provider))
+        return external_account
 
     def should_call_set_folder(self, folder_info, instance, auth, node_settings):
         if (folder_info and not (   # If we have folder information to set

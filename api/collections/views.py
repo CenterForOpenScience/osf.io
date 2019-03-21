@@ -37,6 +37,7 @@ from api.collections.serializers import (
 from api.nodes.serializers import NodeSerializer
 from api.nodes.views import NodeSubjectsList
 from api.preprints.serializers import PreprintSerializer
+from api.subjects.views import SubjectRelationshipBaseView
 from api.registrations.serializers import RegistrationSerializer
 from osf.models import (
     AbstractNode,
@@ -374,6 +375,8 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
 
 
 class CollectedMetaSubjectsList(NodeSubjectsList, CollectionMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanUpdateDeleteCGMOrPublic,
@@ -385,6 +388,22 @@ class CollectedMetaSubjectsList(NodeSubjectsList, CollectionMixin):
 
     def get_queryset(self):
         return self.get_cgm().subjects.all()
+
+
+class CollectedMetaSubjectsRelationship(SubjectRelationshipBaseView, CollectionMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects_relationship).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanUpdateDeleteCGMOrPublic,
+        base_permissions.TokenHasScope,
+    )
+
+    view_category = 'collections'
+    view_name = 'collected-metadata-relationships-subjects'
+
+    def get_resource(self, check_object_permissions=True):
+        return self.get_cgm(check_object_permissions)
 
 
 class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):

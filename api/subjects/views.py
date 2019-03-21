@@ -5,8 +5,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
+from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base import permissions as base_permissions
-from api.subjects.serializers import SubjectSerializer
+from api.subjects.serializers import SubjectSerializer, SubjectsRelationshipSerializer
 from api.taxonomies.utils import optimize_subject_query
 from osf.models import Subject
 from framework.auth.oauth_scopes import CoreScopes
@@ -30,6 +31,46 @@ class SubjectMixin(object):
             self.check_object_permissions(self.request, subject)
 
         return subject
+
+
+class SubjectRelationshipBaseView(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
+    """ Relationship Endpoint for Node -> Institutions Relationship
+
+    Used to update the subjects on a resource
+
+    ##Actions
+
+    ###Update
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "subjects",   # required
+                           "id": <subject_id>   # required
+                         }]
+                       }
+        Success:       200
+
+        This requires write permissions on the resource. This will delete
+        subjects not listed, meaning a data: [] payload deletes all the subjects.
+
+    """
+    serializer_class = SubjectsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    def get_resource(self, check_object_permissions=True):
+        raise NotImplementedError()
+
+    def get_object(self):
+        resource = self.get_resource(check_object_permissions=False)
+        obj = {
+            'data': resource.subjects.all(),
+            'self': resource,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class SubjectList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):

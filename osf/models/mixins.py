@@ -739,6 +739,14 @@ class TaxonomizableMixin(models.Model):
             ]
         return []
 
+    @property
+    def subjects_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/subjects/'
+
+    @property
+    def subjects_url(self):
+        return self.absolute_api_v2_url + 'subjects/'
+
     def check_subject_perms(self, auth):
         AbstractNode = apps.get_model('osf.AbstractNode')
         Preprint = apps.get_model('osf.Preprint')

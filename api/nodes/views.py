@@ -106,6 +106,7 @@ from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
 from api.subjects.serializers import SubjectSerializer
+from api.subjects.views import SubjectRelationshipBaseView
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
@@ -1566,6 +1567,7 @@ class NodeSubjectsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, N
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.SUBJECTS_READ]
@@ -1580,6 +1582,28 @@ class NodeSubjectsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, N
 
     def get_queryset(self):
         return self.get_node().subjects.all()
+
+
+class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/node_subjects_relationship).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.SUBJECTS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'nodes'
+    view_name = 'node-relationships-subjects'
+
+    ordering = ('-id',)
+
+    def get_resource(self, check_object_permissions=True):
+        return self.get_node(check_object_permissions=check_object_permissions)
 
 
 class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListFilterMixin):

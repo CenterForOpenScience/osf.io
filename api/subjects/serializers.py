@@ -1,6 +1,41 @@
 from rest_framework import serializers as ser
+from rest_framework import exceptions
 
-from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField
+from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
+
+from api.base.serializers import (
+    JSONAPISerializer,
+    JSONAPIRelationshipSerializer,
+    LinksField,
+    RelationshipField,
+    BaseAPISerializer
+)
+from osf.exceptions import NodeStateError, ValidationValueError
+
+
+class UpdateSubjectsMixin(object):
+    def update_subjects_method(self, resource, subjects, auth):
+        # Method to update subjects on resource
+        raise NotImplementedError()
+
+    def update_subjects(self, resource, subjects, auth):
+        """Updates subjects on resource and handles errors.
+
+        :param object resource: Object for which you want to update subjects
+        :param list subjects: Subjects array (or array of arrays)
+        :param object Auth object
+        """
+        try:
+            self.update_subjects_method(resource, subjects, auth)
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=str(e))
+        except ValueError as e:
+            raise exceptions.ValidationError(detail=str(e))
+        except ValidationValueError as e:
+            raise exceptions.ValidationError(detail=e[0])
+        except NodeStateError as e:
+            raise exceptions.ValidationError(detail=str(e))
 
 
 class SubjectSerializer(JSONAPISerializer):
@@ -36,3 +71,46 @@ class SubjectSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'subjects'
+
+
+class SubjectRelated(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+    class Meta:
+        type_ = 'subjects'
+
+
+class SubjectsRelationshipSerializer(BaseAPISerializer, UpdateSubjectsMixin):
+    data = ser.ListField(child=SubjectRelated())
+    links = LinksField({
+        'self': 'get_self_url',
+        'html': 'get_related_url',
+    })
+
+    def get_self_url(self, obj):
+        return obj['self'].subjects_relationship_url
+
+    def get_related_url(self, obj):
+        return obj['self'].subjects_url
+
+    class Meta:
+        type_ = 'subjects'
+
+    def make_instance_obj(self, obj):
+        return {
+            'data': obj.subjects.all(),
+            'self': obj,
+        }
+
+    def format_subjects(self, subjects):
+        return [subj['_id'] for subj in subjects]
+
+    def update_subjects_method(self, resource, subjects, auth):
+        # Overrides UpdateSubjectsMixin
+        return resource.set_subjects_from_relationships(subjects, auth)
+
+    def update(self, instance, validated_data):
+        resource = instance['self']
+        user = self.context['request'].user
+        auth = Auth(user if not user.is_anonymous else None)
+        self.update_subjects(resource, self.format_subjects(validated_data['data']), auth)
+        return self.make_instance_obj(resource)
