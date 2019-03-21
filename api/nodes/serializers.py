@@ -230,6 +230,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'title',
         'description',
         'category',
+        'creator',
         'date_created',
         'date_modified',
         'registration',
@@ -301,6 +302,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<license.node_license._id>'},
         read_only=False,
+    )
+
+    creator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
     )
 
     children = RelationshipField(
