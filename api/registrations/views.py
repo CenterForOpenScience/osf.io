@@ -532,10 +532,17 @@ class RegistrationSubjectsList(NodeSubjectsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-subjects'
 
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
 
 class RegistrationSubjectsRelationship(NodeSubjectsRelationship, RegistrationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_subjects_relationship).
     """
+
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
+
     view_category = 'registrations'
     view_name = 'registration-relationships-subjects'
 

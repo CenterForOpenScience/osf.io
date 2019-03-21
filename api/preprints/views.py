@@ -440,6 +440,9 @@ class PreprintSubjectsList(NodeSubjectsList, PreprintMixin):
         PreprintPublishedOrWrite,
     )
 
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
     view_category = 'preprints'
     view_name = 'preprint-subjects'
 

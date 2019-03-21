@@ -383,6 +383,9 @@ class CollectedMetaSubjectsList(NodeSubjectsList, CollectionMixin):
         base_permissions.TokenHasScope,
     )
 
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
     view_category = 'collections'
     view_name = 'collected-metadata-subjects'
 
@@ -398,6 +401,9 @@ class CollectedMetaSubjectsRelationship(SubjectRelationshipBaseView, CollectionM
         CanUpdateDeleteCGMOrPublic,
         base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
     view_category = 'collections'
     view_name = 'collected-metadata-relationships-subjects'

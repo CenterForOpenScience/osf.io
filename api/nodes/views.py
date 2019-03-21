@@ -1594,8 +1594,8 @@ class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):
         ExcludeWithdrawals,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.SUBJECTS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     view_category = 'nodes'
     view_name = 'node-relationships-subjects'
