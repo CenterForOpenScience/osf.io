@@ -1970,12 +1970,12 @@ ADMIN_URL='http://localhost:8001/'
 ADMIN_INTERNAL_DOCKER_URL='http://192.168.168.167:8001/'
 
 # mAP core paramters
-MAPCORE_HOSTNAME = https://sptest.cg.gakunin.jp
-MAPCORE_AUTHCODE_PATH = /oauth/shib/shibrequest.php
-MAPCORE_TOKEN_PATH = /oauth/token.php
-MAPCORE_API_PATH = /api2/v1
-MAPCORE_REFRESH_PATH = /oauth/token.php
-MAPCORE_REDIRECT = https://www.dev1.rdm.nii.ac.jp/oauth_finish
-MAPCORE_AUTHCODE_MAGIC = GRDM_mAP_AuthCode
+MAPCORE_HOSTNAME = 'https://sptest.cg.gakunin.jp'
+MAPCORE_AUTHCODE_PATH = '/oauth/shib/shibrequest.php'
+MAPCORE_TOKEN_PATH = '/oauth/token.php'
+MAPCORE_API_PATH = '/api2/v1'
+MAPCORE_REFRESH_PATH = '/oauth/token.php'
+MAPCORE_REDIRECT = 'https://www.dev1.rdm.nii.ac.jp/oauth_finish'
+MAPCORE_AUTHCODE_MAGIC = 'GRDM_mAP_AuthCode'
 MAPCORE_CLIENTID = None
 MAPCORE_SECRET = None
