@@ -34,7 +34,7 @@ from osf.utils import permissions
 
 # mapcore library
 from nii.mapcore import mapcore_request_authcode
-from nii.mapcore import mapcore_recieve_authcode
+from nii.mapcore import mapcore_receive_authcode
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
@@ -516,4 +516,4 @@ def oauth_start(**kwargs):
 def oauth_finish(**kwargs):
     # Redirect to COS News page
     logger.info("Enter oauth_finish()")
-    return redirect(mapcore_recieve_authcode(_get_current_user() or MockUser(), request.args.to_dict()))
+    return redirect(mapcore_receive_authcode(_get_current_user() or MockUser(), request.args.to_dict()))
