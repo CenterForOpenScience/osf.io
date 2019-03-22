@@ -231,7 +231,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'title',
         'description',
         'category',
-        'creator',
         'date_created',
         'date_modified',
         'registration',
