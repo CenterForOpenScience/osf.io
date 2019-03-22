@@ -19,7 +19,13 @@ def _view_registries_landing_page(campaign=None, **kwargs):
     else:
         has_projects = False
 
-    campaign_url_param = 'osf-registered-reports' if campaign == 'registered_report' else 'prereg'
+    if campaign == 'registered_report':
+        campaign_url_param = 'osf-registered-reports'
+    elif campaign == 'prereg_challenge' or campaign == 'prereg':
+        campaign_url_param = 'prereg'
+    else:
+        campaign_url_param = ''
+
     return {
         'is_logged_in': is_logged_in,
         'has_draft_registrations': bool(utils.drafts_for_user(auth.user, campaign)),

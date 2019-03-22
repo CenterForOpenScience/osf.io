@@ -7,6 +7,7 @@ from osf.features import OSF_PREREGISTRATION
 from website.prereg import prereg_landing_page as landing_page
 from website.prereg.utils import get_prereg_schema
 from website.registries.utils import drafts_for_user
+from website.settings import DOMAIN
 
 from tests.base import OsfTestCase
 from osf_tests import factories
@@ -26,7 +27,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': False,
-                'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
+                'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
             }
         )
 
@@ -39,7 +40,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_long': 'OSF Preregistration',
                     'campaign_short': 'prereg',
                     'is_logged_in': False,
-                    'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
+                    'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
                 }
             )
 
@@ -52,7 +53,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': True,
-                'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
+                'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
             }
         )
 
@@ -65,7 +66,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_long': 'OSF Preregistration',
                     'campaign_short': 'prereg',
                     'is_logged_in': True,
-                    'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
+                    'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
                 }
             )
 
@@ -80,7 +81,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': True,
-                'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
+                'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
             }
         )
 
@@ -93,7 +94,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_long': 'OSF Preregistration',
                     'campaign_short': 'prereg',
                     'is_logged_in': True,
-                    'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
+                    'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
                 }
             )
 
@@ -112,7 +113,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg_challenge',
                 'is_logged_in': True,
-                'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
+                'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
             }
         )
 
@@ -130,7 +131,7 @@ class TestPreregLandingPage(OsfTestCase):
                     'campaign_long': 'OSF Preregistration',
                     'campaign_short': 'prereg',
                     'is_logged_in': True,
-                    'sign_up_url': 'http://localhost:5000/register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F',
+                    'sign_up_url': '{}register/?campaign=prereg&next=http%3A%2F%2Flocalhost%2F'.format(DOMAIN),
                 }
             )
 
