@@ -21,6 +21,7 @@ from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
 from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer, RegistrationProviderSerializer
 from api.subjects.views import SubjectList
+from api.subjects.serializers import SubjectSerializer
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
@@ -187,15 +188,22 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
 
 
 class CollectionProviderTaxonomies(GenericProviderTaxonomies):
+    """
+    To be deprecated: In favor of CollectionProviderSubjects
+    """
     view_category = 'collection-providers'
     _model_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
 
 class RegistrationProviderTaxonomies(GenericProviderTaxonomies):
+    """
+    To be deprecated: In favor of RegistrationProviderSubjects
+    """
     view_category = 'registration-providers'
     _model_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
 
 class PreprintProviderTaxonomies(GenericProviderTaxonomies):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_taxonomies_list).
+    """
+    To be deprecated: In favor of PreprintProviderSubjects
     """
     view_category = 'preprint-providers'
     _model_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
@@ -232,7 +240,7 @@ class PreprintProviderSubjects(BaseProviderSubjects):
     _model_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
 
 
-class GenericProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIView):
+class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -248,6 +256,35 @@ class GenericProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIVie
     def get_queryset(self):
         provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
         return optimize_subject_query(Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text'))
+
+
+class CollectionProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxonomyList):
+    """
+    To be deprecated: In favor of CollectionProviderHighlightedSubjectList
+    """
+    view_category = 'collection-providers'
+    _model_class = CollectionProvider
+
+
+class RegistrationProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxonomyList):
+    """
+    To be deprecated: In favor of RegistrationProviderHighlightedSubjectList
+    """
+    view_category = 'registration-providers'
+    _model_class = RegistrationProvider
+
+
+class PreprintProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxonomyList):
+    """
+    To be deprecated: In favor of PreprintProviderHighlightedSubjectList
+    """
+    view_category = 'preprint-providers'
+    _model_class = PreprintProvider
+
+
+class GenericProviderHighlightedSubjectList(GenericProviderHighlightedTaxonomyList):
+    view_name = 'highlighted-subject-list'
+    serializer_class = SubjectSerializer
 
 
 class CollectionProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):

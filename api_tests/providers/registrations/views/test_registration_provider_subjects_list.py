@@ -18,7 +18,7 @@ class TestRegistrationProviderSpecificTaxonomies(ProviderSpecificSubjectsMixin):
         return '/{}providers/registrations/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
 
 
-class TestRegistrationProviderHighlightedSubjects(ProviderHighlightedSubjectsMixin):
+class TestRegistrationProviderHighlightedTaxonomies(ProviderHighlightedSubjectsMixin):
     provider_class = RegistrationProviderFactory
 
     @pytest.fixture()
@@ -44,3 +44,19 @@ class TestRegistrationProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
     @pytest.fixture()
     def url_2(self, provider_2):
         return '/{}providers/registrations/{}/subjects/?page[size]=15&'.format(API_BASE, provider_2._id)
+
+
+class TestRegistrationProviderHighlightedSubjects(ProviderHighlightedSubjectsMixin):
+    provider_class = RegistrationProviderFactory
+
+    @pytest.fixture()
+    def url(self, provider):
+        return '/{}providers/registrations/{}/subjects/highlighted/'.format(API_BASE, provider._id)
+
+
+class TestRegistrationProviderCustomSubjects(ProviderCustomTaxonomyMixin):
+    provider_class = RegistrationProviderFactory
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}providers/registrations/{}/subjects/'

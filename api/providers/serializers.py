@@ -43,6 +43,12 @@ class ProviderSerializer(JSONAPISerializer):
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
+    highlighted_subjects = TypedRelationshipField(
+        related_view='providers:highlighted-subject-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+        related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'},
+    )
+
     taxonomies = TypedRelationshipField(
         related_view='providers:taxonomy-list',
         related_view_kwargs={'provider_id': '<_id>'},
