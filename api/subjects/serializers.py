@@ -9,7 +9,7 @@ from api.base.serializers import (
     JSONAPIRelationshipSerializer,
     LinksField,
     RelationshipField,
-    BaseAPISerializer
+    BaseAPISerializer,
 )
 from osf.exceptions import NodeStateError, ValidationValueError
 

@@ -41,7 +41,7 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
                 'related_view_kwargs': self.subjects_view_kwargs,
                 'read_only': False,
                 'many': True,
-                'required': False
+                'required': False,
             }
 
             if self.subjects_self_view:

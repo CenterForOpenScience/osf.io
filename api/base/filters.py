@@ -115,7 +115,11 @@ class FilterMixin(object):
 
         :raises InvalidFilterError: If the filter field is not valid
         """
-        serializer_fields = self.get_serializer().fields if hasattr(self, 'get_serializer') else self.serializer_class._declared_fields
+        predeclared_fields = self.serializer_class._declared_fields
+        initialized_fields = self.get_serializer().fields if hasattr(self, 'get_serializer') else {}
+
+        serializer_fields = predeclared_fields.copy()
+        serializer_fields.update(initialized_fields)
 
         if field_name not in serializer_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
