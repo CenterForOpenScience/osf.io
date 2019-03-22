@@ -42,16 +42,16 @@ map_redirect      = os.getenv('MAPCORE_REDIRECT', 'https://www.dev1.rdm.nii.ac.j
 map_api_path        = os.getenv('MAPCORE_API_PATH', '/api2/v1')
 map_access_token    = "77bee0c32408b2f3c9b466a6d35747192ae56e54"
 
-class mAPCore:
-    MODE_MEMBER = 0
-    MODE_ADMIN = 2
+class MAPCore:
+    MODE_MEMBER = 0     # Ordinary member
+    MODE_ADMIN = 2      # Administrator member
 
-    m_client_secret = False
-    m_access_token = False
+    client_secret = False
+    access_token = False
 
     def __init__(self, client_secret, access_token):
-        self.m_client_secret = client_secret
-        self.m_access_token = access_token
+        self.client_secret = client_secret
+        self.access_token = access_token
 
     #
     # Get API version.
@@ -63,7 +63,7 @@ class mAPCore:
 
         url = map_hostname + map_api_path + "/version"
         payload = { 'time_stamp': time_stamp, 'signature': signature }
-        headers = { "Authorization": "Bearer " + self.m_access_token }
+        headers = { "Authorization": "Bearer " + self.access_token }
 
         r = requests.get(url, headers = headers, params = payload)
         j = self.check_result(r)
@@ -84,7 +84,7 @@ class mAPCore:
             'signature': signature,
             'searchWord': group_name.encode('utf-8')
         }
-        headers = { "Authorization": "Bearer " + self.m_access_token }
+        headers = { "Authorization": "Bearer " + self.access_token }
 
         r = requests.get(url, headers = headers, params = payload)
         j = self.check_result(r)
@@ -107,7 +107,7 @@ class mAPCore:
 
         url = map_hostname + map_api_path + "/group/" + group_key
         payload = { 'time_stamp': time_stamp, 'signature': signature }
-        headers = { "Authorization": "Bearer " + self.m_access_token }
+        headers = { "Authorization": "Bearer " + self.access_token }
 
         r = requests.get(url, headers = headers, params = payload)
         j = self.check_result(r)
@@ -144,7 +144,7 @@ class mAPCore:
 
         url = map_hostname + map_api_path + "/group"
         headers = {
-            "Authorization": "Bearer " + self.m_access_token,
+            "Authorization": "Bearer " + self.access_token,
             "Content-Type": "application/json; charset=utf-8",
             "Content-Length": str(len(params))
         }
@@ -189,7 +189,7 @@ class mAPCore:
 
         url = map_hostname + map_api_path + "/group/" + group_key
         headers = {
-            "Authorization": "Bearer " + self.m_access_token,
+            "Authorization": "Bearer " + self.access_token,
             "Content-Type": "application/json; charset=utf-8",
             "Content-Length": str(len(params))
         }
@@ -209,7 +209,7 @@ class mAPCore:
 
         url = map_hostname + map_api_path + "/member/" + group_key
         payload = { 'time_stamp': time_stamp, 'signature': signature }
-        headers = { "Authorization": "Bearer " + self.m_access_token }
+        headers = { "Authorization": "Bearer " + self.access_token }
 
         r = requests.get(url, headers = headers, params = payload)
         j = self.check_result(r)
@@ -226,7 +226,7 @@ class mAPCore:
 
         url = map_hostname + map_api_path + "/mygroup"
         payload = { 'time_stamp': time_stamp, 'signature': signature }
-        headers = { "Authorization": "Bearer " + self.m_access_token }
+        headers = { "Authorization": "Bearer " + self.access_token }
 
         r = requests.get(url, headers = headers, params = payload)
         j = self.check_result(r)
@@ -253,7 +253,7 @@ class mAPCore:
 
         url = map_hostname + map_api_path + "/member/" + group_key + "/" + eppn
         headers = {
-            "Authorization": "Bearer " + self.m_access_token,
+            "Authorization": "Bearer " + self.access_token,
             "Content-Type": "application/json; charset=utf-8",
             "Content-Length": str(len(params))
         }
@@ -273,7 +273,7 @@ class mAPCore:
 
         url = map_hostname + map_api_path + "/member/" + group_key + "/" + eppn
         payload = { 'time_stamp': time_stamp, 'signature': signature }
-        headers = { "Authorization": "Bearer " + self.m_access_token }
+        headers = { "Authorization": "Bearer " + self.access_token }
 
         r = requests.delete(url, headers = headers, params = payload)
         j = self.check_result(r)
@@ -299,7 +299,7 @@ class mAPCore:
     #
     def calc_signature(self):
         time_stamp = str(int(time.time()))
-        s = self.m_client_secret + self.m_access_token + time_stamp
+        s = self.client_secret + self.access_token + time_stamp
 
         digest = hashlib.sha256(s.encode('utf-8')).hexdigest()
         return time_stamp, digest
@@ -329,7 +329,7 @@ class mAPCore:
 #
 # テスト用メインプログラム
 #
-mapcore = mAPCore(map_secret, map_access_token)
+mapcore = MAPCore(map_secret, map_access_token)
 
 j = mapcore.get_api_version()
 if j == False:
@@ -390,7 +390,7 @@ else:
 #
 # test008@nii.ac.jp を一般会員としてメンバーに追加
 #
-j = mapcore.add_to_group(group_key, "test008@nii.ac.jp", mAPCore.MODE_MEMBER)
+j = mapcore.add_to_group(group_key, "test008@nii.ac.jp", MAPCore.MODE_MEMBER)
 if j == False:
     logger.debug("Error")
     sys.exit()
@@ -400,7 +400,7 @@ else:
 #
 # test008@nii.ac.jp をグループ管理者に変更
 #
-j = mapcore.edit_member(group_key, "test008@nii.ac.jp", mAPCore.MODE_ADMIN)
+j = mapcore.edit_member(group_key, "test008@nii.ac.jp", MAPCore.MODE_ADMIN)
 if j == False:
     logger.debug("Error")
     sys.exit()
