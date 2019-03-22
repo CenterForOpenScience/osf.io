@@ -14,7 +14,7 @@ from api.base.serializers import (
     WaterbutlerLink, relationship_diff, BaseAPISerializer,
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
 )
-from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
+from api.base.settings import ADDONS_FOLDER_CONFIGURABLE, DEFAULT_MAX_QUOTA, WARNING_THRESHOLD
 from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
@@ -22,7 +22,7 @@ from api.base.utils import (
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from osf.models import Tag
@@ -42,6 +42,7 @@ from website.project import new_private_link
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
+from website.util import quota
 from osf.utils import permissions as osf_permissions
 
 
@@ -468,6 +469,22 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-preprints',
         related_view_kwargs={'node_id': '<_id>'},
     ))
+
+    quota_rate = ser.SerializerMethodField()
+    quota_threshold = ser.SerializerMethodField()
+
+    def get_quota_rate(self, obj):
+        try:
+            max_quota = obj.creator.userquota.max_quota
+        except ObjectDoesNotExist:
+            max_quota = DEFAULT_MAX_QUOTA
+        used_quota = quota.used_quota(obj.creator._id)
+        if max_quota <= 0:
+            return 2
+        return float(used_quota) / (max_quota * 1024 ** 3) * 100
+
+    def get_quota_threshold(self, obj):
+        return WARNING_THRESHOLD
 
     def get_current_user_permissions(self, obj):
         if hasattr(obj, 'contrib_admin'):
