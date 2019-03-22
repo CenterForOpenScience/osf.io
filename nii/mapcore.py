@@ -14,8 +14,10 @@ import urllib
 
 from website.app import init_app
 from website import settings
-from osf.models.user import OSFUser, mApUser, mApGroup
+from osf.models.user import OSFUser, MAPuser, MAPgroup
 import framework.auth
+
+
 
 # global setting
 logger = getLogger(__name__)
@@ -75,7 +77,7 @@ def mapcore_recieve_authcode(user, params):
 
     # set mAP attribute into current user
     logger.info('User [' + user.eppn + '] get access_token [' + access_token)
-    user.map_user = mApUser.objects.update_or_create(eppn = user.eppn,
+    user.map_user = MAPuser.objects.update_or_create(eppn = user.eppn,
                                                      oauth_access_token = access_token,
                                                      oauth_refresh_token = refresh_token,
                                                      oauth_refresh_tiem = datetime.utcnow())
@@ -109,36 +111,56 @@ def mapcore_refresh_accesstoken(user, force = False):
     ''':param force    falg to avoid availablity check'''
     ''':return resulut 0..success, 1..must be login again, -1..any error'''
 
-    logger.info('refuresh token for [' + user.eppn + '].')
-    url = map_hostname + map_token_path
+    map_user = user.map_user
+    if not map_user:
+        logger.info("refresh tokan called, but user [" + user.name + '] has no map_user')
+    else:
+        logger.info('refuresh token for [' + map_user.eppn + '].')
 
     # access token availability check
+    url = map_hostname + map_token_path
     if not force:
-        param = {'access_token' : user.oauth_access_token}
+        param = {'access_token' : map_user.oauth_access_token}
         headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
         res = requests.post(url, data=param, headers=headers)
         if res.status_code == 200 and 'success' in res.json():
-            return 0  # notihng to do
+            return 0  # access token is available -> notihng to do
 
     # do refresh
     basic_auth = (map_clientid, map_secret)
     param = {"grant_type": "refresh_token",
-             "refresh_token": user.oauth_refresh_token}
+             "refresh_token": map_user.oauth_refresh_token}
     headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
     res = requests.post(url, data=basic_auth, headers=headers, auth=basic_auth)
     json = res.json()
     if res.status_code != 200 or 'access_token' not in json:
+        logger.info('refresh token is faild with [' + json + ']')
         return -1
-    logger.info('User [' + user.eppn + '] refresh access_token by [' + json['access_token'])
+    logger.info('User [' + map_user.eppn + '] refresh access_token by [' + json['access_token'])
 
     # update database
-    u = user.map_user.objects.get(eppn=user.eppn)
-    u.oauth_access_token = json['access_token']
-    u.oauth_refresh_token = json['refresh_token']
-    u.oauth_refres_time = datetime.utcnow()
-    u.save()
+    map_user.oauth_access_token = json['access_token']
+    map_user.oauth_refresh_token = json['refresh_token']
+    map_user.oauth_refres_time = datetime.utcnow()
+    map_user.save()
 
     return 0
+
+###
+### sync functions
+###
+
+def
+
+
+def mapcore_get_users_groups(user):
+    '''get nAP groups by a user'''
+    ''':param user OSFUser'''
+
+    # get user data from mAP
+
+
+
 
 
 if __name__ == '__main__':
