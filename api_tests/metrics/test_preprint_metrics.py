@@ -10,7 +10,7 @@ from waffle.testutils import override_switch
 from elasticsearch.exceptions import RequestError
 
 from osf import features
-from api.base.settings import API_BASE
+from api.base.settings import API_PRIVATE_BASE as API_BASE
 from osf.metrics import PreprintDownload, PreprintView
 from osf_tests.factories import AuthUserFactory, PreprintFactory, NodeFactory
 
@@ -86,50 +86,6 @@ class TestPreprintMetrics:
     def base_url(self):
         return '/{}metrics/preprints/'.format(API_BASE)
 
-    @mock.patch('api.metrics.views.timezone.now')
-    def test_incorrect_dates(self, mock_timezone, app, user, base_url, preprint):
-        mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
-
-        base_url = '{}downloads/?guids={}'.format(base_url, preprint._id)
-
-        start_date = '2019-01-01'
-        end_date = '2019-02-01'
-
-        # test on_date and start_date fails
-        url = '{}&on_date={}&start_datetime={}'.format(base_url, start_date, start_date)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
-        # test on_date and end_date fails
-        url = '{}&on_date={}&end_datetime={}'.format(base_url, start_date, start_date)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
-        # test end date before start date fails
-        url = '{}&start_datetime={}&end_datetime={}'.format(base_url, end_date, start_date)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
-        # error if both on_date and a date range
-        url = '{}&on_date={}&end_datetime={}'.format(base_url, end_date, start_date)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
-        # error if a time is used for a specific date request
-        url = '{}&on_date=2018-01-01T01:01'.format(base_url)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
-        # error if an end_datetime is provided without a start_datetime
-        url = '{}&end_datetime={}'.format(base_url, end_date)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
-        # error if a time is used in one datetime and not the other
-        url = '{}&start_datetime={}&end_datetime={}'.format(base_url, start_date, end_date + 'T01:01:01')
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
     @mock.patch('api.metrics.views.PreprintDownloadMetrics.execute_search')
     def test_custom_metric_misformed_query(self, mock_execute, app, user, base_url):
         mock_execute.side_effect = RequestError
@@ -165,9 +121,10 @@ class TestPreprintMetrics:
         assert res.json == mock_return
 
     @pytest.mark.parametrize('metric_name', ['downloads', 'views'])
-    @mock.patch('api.metrics.views.timezone.now')
+    @mock.patch('api.metrics.utils.timezone.now')
     def test_preprint_list_with_metrics_fails(self, mock_timezone, app, user, base_url, preprint, preprint_two,
                                                 preprint_three, metric_name, other_user, project, project_two):
+        mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         url = '{}{}/'.format(base_url, metric_name)
 
         one_preprint_url = '{}?guids={}'.format(url, preprint._id)
@@ -179,33 +136,10 @@ class TestPreprintMetrics:
         res = app.get(one_preprint_url, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # all non-guids
-        fake_guids_list = ['nota', 'reallist', 'of', 'guids']
-        fake_guids_url = '{}?guids={}'.format(url, ','.join(fake_guids_list))
-        res = app.get(fake_guids_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
-        # one non-guid fails
-        one_fake_list = [preprint._id, preprint_two._id, 'notanid']
-        one_fake_url = '{}?guids={}'.format(url, ','.join(one_fake_list))
-        res = app.get(one_fake_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
-        # guids of non-preprints fails
-        projs = [project._id, project_two._id]
-        projs_url = '{}?guids={}'.format(url, ','.join(projs))
-        res = app.get(projs_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
-        # one guid of a non-preprint fails
-        one_non_preprint_list = [preprint._id, preprint_two._id, project._id]
-        one_non_preprint_url = '{}?guids={}'.format(url, ','.join(one_non_preprint_list))
-        res = app.get(one_non_preprint_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-
     @pytest.mark.skip('Return results will be entirely mocked so does not make a lot of sense to run on travis.')
-    @mock.patch('api.metrics.views.timezone.now')
+    @mock.patch('api.metrics.utils.timezone.now')
     def test_preprint_with_metrics_succeeds(self, mock_timezone, app, user, base_url, preprint, other_user, preprint_no_results, metric_dates):
+        mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         self.add_views_and_downloads(preprint, other_user, metric_dates)
         metric_name = 'downloads'
 
