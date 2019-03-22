@@ -55,24 +55,32 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
     @property
     def subjects_related_view(self):
         """
-        For building the subjects RelationshipField on __init__
-        for later API versions only
+        For dynamically building the subjects RelationshipField on __init__
+
+        Return format '<view_category>:<view_name>, for the desired related view,
+        for example, 'nodes:node-subjects'
         """
         raise NotImplementedError()
 
     @property
     def subjects_view_kwargs(self):
         """
-        For building the subjects RelationshipField on __init__
-        for later API versions only
+        For dynamically building the subjects RelationshipField on __init__
+
+        Return kwargs needed to build the related/self view links,
+        for example: {'node_id': '<_id>'}
         """
         raise NotImplementedError
 
     @property
     def subjects_self_view(self):
         """
-        For building the subjects RelationshipField on __init__
-        for later API versions only
+        Optional: For dynamically building the subjects RelationshipField on __init__
+
+        If you're going to provide a subjects `self` link, return the desired self view
+        in format '<view_category>:<view_name>.
+
+        For example, 'nodes:node-relationships-subjects'
         """
         pass
 
@@ -90,8 +98,9 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
 
     # Overrides UpdateSubjectsMixin
     def update_subjects_method(self, resource, subjects, auth):
-        """Runs a different method to update the resource's subjects,
-        depending on the request's version.
+        """Depending on the request's version, runs a different method
+        to update the resource's subjects. Will expect request to be formatted
+        differently, depending on the version.
 
         :param object resource: Object for which you want to update subjects
         :param list subjects: Subjects array (or array of arrays)
@@ -112,6 +121,9 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
 
 
 class TaxonomySerializer(JSONAPISerializer):
+    """
+    Will be deprecated in the future and replaced by SubjectSerializer
+    """
     filterable_fields = frozenset([
         'text',
         'parents',

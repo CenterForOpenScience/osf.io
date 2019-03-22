@@ -105,15 +105,14 @@ from api.registrations.serializers import RegistrationSerializer, RegistrationCr
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
-from api.subjects.serializers import SubjectSerializer
-from api.subjects.views import SubjectRelationshipBaseView
+from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 from api.wikis.serializers import NodeWikiSerializer
 from framework.exceptions import HTTPError
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode
-from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, Subject, )
+from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
 from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
@@ -1560,7 +1559,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         return ret
 
 
-class NodeSubjectsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
+class NodeSubjectsList(BaseResourceSubjectsList, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_subjects_list).
     """
     permission_classes = (
@@ -1570,18 +1569,13 @@ class NodeSubjectsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, N
         ExcludeWithdrawals,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.SUBJECTS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-    serializer_class = SubjectSerializer
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
 
-    model = Subject
     view_category = 'nodes'
     view_name = 'node-subjects'
 
-    ordering = ('-id',)
-
-    def get_queryset(self):
-        return self.get_node().subjects.all()
+    def get_resource(self):
+        return self.get_node()
 
 
 class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):

@@ -87,12 +87,13 @@ class TestSubject:
             assert child.parent == subject
 
     def test_get_subject_detail(self, app, url_subject_detail, subject, subject_child_one, subject_child_two):
-        res = app.get(url_subject_detail + '?version=2.15')
+        res = app.get(url_subject_detail + '?version=2.15&related_counts=children')
         data = res.json['data']
         assert data['attributes']['text'] == subject.text
         assert 'children' in data['relationships']
         assert 'parent' in data['relationships']
         assert data['relationships']['parent']['data'] is None
+        assert data['relationships']['children']['links']['related']['meta']['count'] == 2
 
         # Follow children link
         children_link = data['relationships']['children']['links']['related']['href']

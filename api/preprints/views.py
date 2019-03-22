@@ -44,7 +44,7 @@ from api.nodes.serializers import (
 
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
-from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList, NodeSubjectsList, NodeStorageProvidersList, NodeStorageProvider
+from api.nodes.views import NodeMixin, NodeContributorsList, NodeContributorDetail, NodeFilesList, NodeStorageProvidersList, NodeStorageProvider
 from api.preprints.permissions import (
     PreprintPublishedOrAdmin,
     PreprintPublishedOrWrite,
@@ -59,6 +59,7 @@ from api.nodes.permissions import (
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
+from api.subjects.views import BaseResourceSubjectsList
 from api.base.metrics import MetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
 
@@ -429,7 +430,7 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
         return context
 
 
-class PreprintSubjectsList(NodeSubjectsList, PreprintMixin):
+class PreprintSubjectsList(BaseResourceSubjectsList, PreprintMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_subjects_list).
     """
     permission_classes = (
@@ -441,13 +442,12 @@ class PreprintSubjectsList(NodeSubjectsList, PreprintMixin):
     )
 
     required_read_scopes = [CoreScopes.PREPRINTS_READ]
-    required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'preprints'
     view_name = 'preprint-subjects'
 
-    def get_queryset(self):
-        return self.get_preprint().subjects.all()
+    def get_resource(self):
+        return self.get_preprint()
 
 class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
     """Action List *Read-only*

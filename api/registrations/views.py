@@ -533,7 +533,6 @@ class RegistrationSubjectsList(NodeSubjectsList, RegistrationMixin):
     view_name = 'registration-subjects'
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
 
 
 class RegistrationSubjectsRelationship(NodeSubjectsRelationship, RegistrationMixin):

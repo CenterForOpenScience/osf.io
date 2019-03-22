@@ -35,9 +35,8 @@ from api.collections.serializers import (
     CollectedRegistrationsRelationshipSerializer,
 )
 from api.nodes.serializers import NodeSerializer
-from api.nodes.views import NodeSubjectsList
 from api.preprints.serializers import PreprintSerializer
-from api.subjects.views import SubjectRelationshipBaseView
+from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
 from api.registrations.serializers import RegistrationSerializer
 from osf.models import (
     AbstractNode,
@@ -325,7 +324,7 @@ class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionM
 
     model_class = CollectionSubmission
     serializer_class = CollectionSubmissionSerializer
-    view_category = 'collected-metadata'
+    view_category = 'collections'
     view_name = 'collected-metadata-list'
 
     def get_serializer_class(self):
@@ -356,7 +355,7 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
     serializer_class = CollectionSubmissionSerializer
-    view_category = 'collected-metadata'
+    view_category = 'collections'
     view_name = 'collected-metadata-detail'
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
@@ -374,7 +373,7 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         serializer.save()
 
 
-class CollectedMetaSubjectsList(NodeSubjectsList, CollectionMixin):
+class CollectedMetaSubjectsList(BaseResourceSubjectsList, CollectionMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects).
     """
     permission_classes = (
@@ -384,13 +383,12 @@ class CollectedMetaSubjectsList(NodeSubjectsList, CollectionMixin):
     )
 
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'collections'
     view_name = 'collected-metadata-subjects'
 
-    def get_queryset(self):
-        return self.get_cgm().subjects.all()
+    def get_resource(self):
+        return self.get_cgm()
 
 
 class CollectedMetaSubjectsRelationship(SubjectRelationshipBaseView, CollectionMixin):

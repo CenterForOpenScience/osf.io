@@ -46,6 +46,7 @@ class SubjectSerializer(JSONAPISerializer):
     ])
     id = ser.CharField(source='_id', required=True)
     text = ser.CharField(max_length=200)
+    share_title = ser.CharField(source='provider.share_title', read_only=True)
 
     parent = RelationshipField(
         related_view='subjects:subject-detail',
@@ -67,7 +68,7 @@ class SubjectSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_subject_url
 
     def get_children_count(self, obj):
-        return obj.child_count()
+        return obj.children_count if hasattr(obj, 'children_count') else obj.child_count
 
     class Meta:
         type_ = 'subjects'

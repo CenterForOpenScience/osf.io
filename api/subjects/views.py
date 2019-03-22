@@ -33,8 +33,27 @@ class SubjectMixin(object):
         return subject
 
 
+class BaseResourceSubjectsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    permission_classes = ()
+
+    required_read_scopes = []
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = SubjectSerializer
+    model = Subject
+    view_category = ''
+    view_name = ''
+
+    ordering = ('-id',)
+
+    def get_resource(self):
+        raise NotImplementedError()
+
+    def get_queryset(self):
+        return self.get_resource().subjects.all()
+
+
 class SubjectRelationshipBaseView(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
-    """ Relationship Endpoint for Node -> Institutions Relationship
+    """ Relationship Endpoint for Resource -> Subjects Relationship
 
     Used to update the subjects on a resource
 
@@ -98,7 +117,6 @@ class SubjectList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
-        # TODO: Queries on 'parents' should be deprecated
         if field_name == 'parent':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'parent___id'

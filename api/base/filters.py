@@ -117,8 +117,8 @@ class FilterMixin(object):
         """
         predeclared_fields = self.serializer_class._declared_fields
         initialized_fields = self.get_serializer().fields if hasattr(self, 'get_serializer') else {}
-
         serializer_fields = predeclared_fields.copy()
+        # Merges fields that were declared on serializer with fields that may have been dynamically added
         serializer_fields.update(initialized_fields)
 
         if field_name not in serializer_fields:

@@ -30,7 +30,7 @@ def test_validate_expand_subject_hierarchy():
     assert apple in expanded
     assert grapes in expanded
 
-    # test send in top level of a 3-tier hierarchy
+    # test send in third level of a 3-tier hierarchy
     subject_list = [raisins._id]
     expanded = validators.expand_subject_hierarchy(subject_list)
     assert len(expanded) == 3
