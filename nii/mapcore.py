@@ -53,7 +53,7 @@ def mapcore_request_authcode():
     return query
 
 
-def mapcore_recieve_authcode(user, params):
+def mapcore_receive_authcode(user, params):
     '''here is the starting point of user registraion for mAP'''
     ''':param user  OSFUser object of current user'''
     ''':param arg   dict of url parameters in request'''
