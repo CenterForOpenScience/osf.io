@@ -38,6 +38,11 @@ class ProviderSerializer(JSONAPISerializer):
         'external_url': 'get_external_url',
     })
 
+    subjects = TypedRelationshipField(
+        related_view='providers:subject-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
     taxonomies = TypedRelationshipField(
         related_view='providers:taxonomy-list',
         related_view_kwargs={'provider_id': '<_id>'},

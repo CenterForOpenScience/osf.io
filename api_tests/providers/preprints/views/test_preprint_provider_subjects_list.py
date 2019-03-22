@@ -56,7 +56,7 @@ class TestPreprintProviderSpecificSubjectsForDeprecatedEndpoint(ProviderSpecific
         return '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
 
 
-class TestPreprintProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
+class TestPreprintProviderSpecificTaxonomies(ProviderSpecificSubjectsMixin):
     provider_class = PreprintProviderFactory
 
     @pytest.fixture()
@@ -66,6 +66,18 @@ class TestPreprintProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
     @pytest.fixture()
     def url_2(self, provider_2):
         return '/{}providers/preprints/{}/taxonomies/?page[size]=15&'.format(API_BASE, provider_2._id)
+
+
+class TestPreprintProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
+    provider_class = PreprintProviderFactory
+
+    @pytest.fixture()
+    def url_1(self, provider_1):
+        return '/{}providers/preprints/{}/subjects/?page[size]=15&'.format(API_BASE, provider_1._id)
+
+    @pytest.fixture()
+    def url_2(self, provider_2):
+        return '/{}providers/preprints/{}/subjects/?page[size]=15&'.format(API_BASE, provider_2._id)
 
 
 @pytest.mark.django_db

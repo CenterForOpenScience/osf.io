@@ -6,7 +6,7 @@ from api_tests.providers.mixins import ProviderSpecificSubjectsMixin, ProviderHi
 from osf_tests.factories import RegistrationProviderFactory
 
 
-class TestRegistrationProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
+class TestRegistrationProviderSpecificTaxonomies(ProviderSpecificSubjectsMixin):
     provider_class = RegistrationProviderFactory
 
     @pytest.fixture()
@@ -32,3 +32,15 @@ class TestRegistrationProviderCustomTaxonomy(ProviderCustomTaxonomyMixin):
     @pytest.fixture()
     def url(self):
         return '/{}providers/registrations/{}/taxonomies/'
+
+
+class TestRegistrationProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
+    provider_class = RegistrationProviderFactory
+
+    @pytest.fixture()
+    def url_1(self, provider_1):
+        return '/{}providers/registrations/{}/subjects/?page[size]=15&'.format(API_BASE, provider_1._id)
+
+    @pytest.fixture()
+    def url_2(self, provider_2):
+        return '/{}providers/registrations/{}/subjects/?page[size]=15&'.format(API_BASE, provider_2._id)

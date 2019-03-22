@@ -20,6 +20,7 @@ from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
 from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer, RegistrationProviderSerializer
+from api.subjects.views import SubjectList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
@@ -195,6 +196,37 @@ class RegistrationProviderTaxonomies(GenericProviderTaxonomies):
 
 class PreprintProviderTaxonomies(GenericProviderTaxonomies):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_taxonomies_list).
+    """
+    view_category = 'preprint-providers'
+    _model_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
+
+
+class BaseProviderSubjects(SubjectList):
+    pagination_class = IncreasedPageSizePagination
+    view_name = 'subject-list'
+
+    def get_default_queryset(self):
+        parent = self.request.query_params.get('filter[parent]', None)
+        provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
+        if parent:
+            if parent == 'null':
+                return provider.top_level_subjects
+            return optimize_subject_query(provider.all_subjects.filter(parent___id=parent))
+        return optimize_subject_query(provider.all_subjects)
+
+
+class CollectionProviderSubjects(BaseProviderSubjects):
+    view_category = 'collection-providers'
+    _model_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
+
+
+class RegistrationProviderSubjects(BaseProviderSubjects):
+    view_category = 'registration-providers'
+    _model_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
+
+
+class PreprintProviderSubjects(BaseProviderSubjects):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_subjects_list).
     """
     view_category = 'preprint-providers'
     _model_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues

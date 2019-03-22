@@ -6,7 +6,7 @@ from api_tests.providers.mixins import ProviderSpecificSubjectsMixin, ProviderHi
 from osf_tests.factories import CollectionProviderFactory
 
 
-class TestProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
+class TestProviderSpecificTaxonomies(ProviderSpecificSubjectsMixin):
     provider_class = CollectionProviderFactory
 
     @pytest.fixture()
@@ -32,3 +32,15 @@ class TestCustomTaxonomy(ProviderCustomTaxonomyMixin):
     @pytest.fixture()
     def url(self):
         return '/{}providers/collections/{}/taxonomies/'
+
+
+class TestProviderSpecificSubjects(ProviderSpecificSubjectsMixin):
+    provider_class = CollectionProviderFactory
+
+    @pytest.fixture()
+    def url_1(self, provider_1):
+        return '/{}providers/collections/{}/subjects/?page[size]=15&'.format(API_BASE, provider_1._id)
+
+    @pytest.fixture()
+    def url_2(self, provider_2):
+        return '/{}providers/collections/{}/subjects/?page[size]=15&'.format(API_BASE, provider_2._id)
