@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-'''
-Common functions for timestamp.
-'''
+"""Common functions for timestamp.
+"""
 from __future__ import absolute_import
 import datetime
 import hashlib
@@ -46,9 +45,8 @@ RESULT_MESSAGE = {
 }
 
 def get_error_list(pid):
-    '''
-    Retrieve from the database the list of all timestamps that has an error.
-    '''
+    """Retrieve from the database the list of all timestamps that has an error.
+    """
     data_list = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=pid).order_by('provider', 'path')
     provider_error_list = []
     provider = None
@@ -150,9 +148,8 @@ def get_error_list(pid):
     return provider_error_list
 
 def get_full_list(uid, pid, node):
-    '''
-    Get a full list of timestamps from all files uploaded to a storage.
-    '''
+    """Get a full list of timestamps from all files uploaded to a storage.
+    """
     user_info = OSFUser.objects.get(id=uid)
     cookie = user_info.get_or_create_cookie()
 
@@ -313,6 +310,30 @@ def add_token(uid, node, data):
             shutil.rmtree(tmp_dir)
         logger.exception(err)
         raise
+
+def get_file_info(cookie, file_node, version):
+    headers = {'content-type': 'application/json'}
+    file_data_request = requests.get(
+        file_node.generate_waterbutler_url(
+            version=version.identifier, meta='', _internal=True
+        ), headers=headers, cookies={settings.COOKIE_NAME: cookie}
+    )
+    if file_data_request.status_code == 200:
+        file_data = file_data_request.json().get('data')
+        file_info = {
+            'provider': file_node.provider,
+            'file_id': file_node._id,
+            'file_name': file_data['attributes'].get('name'),
+            'file_path': file_data['attributes'].get('materialized'),
+            'size': file_data['attributes'].get('size'),
+            'created': file_data['attributes'].get('created_utc'),
+            'modified': file_data['attributes'].get('modified_utc'),
+            'version': ''
+        }
+        if file_node.provider == 'osfstorage':
+            file_info['version'] = file_data['attributes']['extra'].get('version')
+        return file_info
+    return None
 
 def file_created_or_updated(node, metadata, user_id, created_flag):
     if metadata['provider'] != 'osfstorage':
