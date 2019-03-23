@@ -78,7 +78,7 @@ def mapcore_receive_authcode(user, params):
     user.map_user = mApUser.objects.update_or_create(eppn = user.eppn,
                                                      oauth_access_token = access_token,
                                                      oauth_refresh_token = refresh_token,
-                                                     oauth_refresh_tiem = datetime.utcnow())
+                                                     oauth_refresh_time = datetime.utcnow())
     user.map_user.save()
     user.save()
 
