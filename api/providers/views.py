@@ -407,7 +407,12 @@ class PreprintProviderWithdrawRequestList(JSONAPIBaseView, generics.ListAPIView,
         return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
 
     def get_default_queryset(self):
-        return PreprintRequest.objects.filter(request_type=RequestTypes.WITHDRAWAL.value, target__provider_id=self.get_provider().id)
+        return PreprintRequest.objects.filter(
+            request_type=RequestTypes.WITHDRAWAL.value,
+            target__provider_id=self.get_provider().id,
+            target__is_public=True,
+            target__deleted__isnull=True,
+        )
 
     def get_renderer_context(self):
         context = super(PreprintProviderWithdrawRequestList, self).get_renderer_context()

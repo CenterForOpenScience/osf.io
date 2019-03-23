@@ -18,6 +18,7 @@ urlpatterns = [
                 url(r'^wb/', include('api.wb.urls', namespace='wb')),
                 url(r'^banners/', include('api.banners.urls', namespace='banners')),
                 url(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
+                url(r'^chronos/', include('api.chronos.urls', namespace='chronos')),
             ],
         ),
     ),

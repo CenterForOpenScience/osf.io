@@ -17,7 +17,7 @@ from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer, RegistrationProviderRelationshipField
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
-    FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
+    FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
@@ -358,15 +358,15 @@ class RegistrationSerializer(NodeSerializer):
                     raise exceptions.PermissionDenied()
             else:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
-        if 'withdrawal_justification' in validated_data or 'is_retracted' in validated_data:
+        if 'withdrawal_justification' in validated_data or 'is_pending_retraction' in validated_data:
             if user_is_admin:
-                is_retracted = validated_data.get('is_retracted', None)
+                is_pending_retraction = validated_data.get('is_pending_retraction', None)
                 withdrawal_justification = validated_data.get('withdrawal_justification', None)
-                if withdrawal_justification and not is_retracted:
+                if withdrawal_justification and not is_pending_retraction:
                     raise exceptions.ValidationError(
                         'You cannot provide a withdrawal_justification without a concurrent withdrawal request.',
                     )
-                if is_truthy(is_retracted):
+                if is_truthy(is_pending_retraction):
                     if registration.is_pending_retraction:
                         raise exceptions.ValidationError('This registration is already pending withdrawal')
                     try:
@@ -374,8 +374,8 @@ class RegistrationSerializer(NodeSerializer):
                     except NodeStateError as err:
                         raise exceptions.ValidationError(str(err))
                     retraction.ask(registration.get_active_contributors_recursive(unique_users=True))
-                elif is_retracted is not None:
-                    raise exceptions.ValidationError('You cannot set withdrawn to False.')
+                elif is_pending_retraction is not None:
+                    raise exceptions.ValidationError('You cannot set is_pending_withdrawal to False.')
             else:
                 raise exceptions.PermissionDenied()
         return registration
@@ -457,15 +457,15 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
 class RegistrationDetailSerializer(RegistrationSerializer):
     """
-    Overrides RegistrationSerializer to make id required, and to make withdrawn and withdrawal_justification writable.
+    Overrides RegistrationSerializer make _id required and other fields writeable
     """
 
     id = IDField(source='_id', required=True)
 
-    withdrawn = ser.BooleanField(
-        source='is_retracted', required=False,
-        help_text='The registration has been withdrawn.',
-    )
+    pending_withdrawal = HideIfWithdrawal(ser.BooleanField(
+        source='is_pending_retraction', required=False,
+        help_text='The registration is awaiting withdrawal approval by project admins.',
+    ))
     withdrawal_justification = ser.CharField(required=False)
 
 
@@ -501,7 +501,7 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
         kind='folder',
     )
 
-    comments = FileCommentRelationshipField(
+    comments = FileRelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<target._id>'},
         related_meta={'unread': 'get_unread_comments_count'},

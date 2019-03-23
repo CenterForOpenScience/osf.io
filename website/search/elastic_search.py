@@ -615,6 +615,7 @@ def serialize_cgm(cgm):
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),
+        'tags': list(obj.tag_names),
         'category': 'collectionSubmission',
     }
 

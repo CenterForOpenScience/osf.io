@@ -105,7 +105,7 @@ class TestUserChangePassword:
     def payload(self, user_one):
         return {
             'data': {
-                'type': 'user_password',
+                'type': 'user_passwords',
                 'id': user_one._id,
                 'attributes': {
                     'existing_password': 'password1',
