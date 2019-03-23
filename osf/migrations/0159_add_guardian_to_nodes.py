@@ -178,7 +178,7 @@ drop_preprint_group_dfk_table = [
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0156_guardian_direct_fks'),
+        ('osf', '0158_guardian_direct_fks'),
     ]
 
     operations = [

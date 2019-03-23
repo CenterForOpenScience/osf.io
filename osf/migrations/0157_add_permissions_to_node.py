@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0154_remove_ember_project_registrations_flag'),
+        ('osf', '0156_auto_20190306_1648'),
     ]
 
     operations = [

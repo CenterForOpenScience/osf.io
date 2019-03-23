@@ -12,7 +12,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0158_remove_contributor_permission_fields'),
+        ('osf', '0160_remove_contributor_permission_fields'),
     ]
 
     operations = [
