@@ -1,6 +1,6 @@
 
 from rest_framework import generics, permissions as drf_permissions
-
+from django.db.models import Q
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
@@ -23,7 +23,7 @@ class MeetingMixin(object):
     def get_meeting(self):
         meeting = get_object_or_error(
             Conference,
-            self.kwargs[self.meeting_lookup_url_kwarg],
+            Q(endpoint=self.kwargs[self.meeting_lookup_url_kwarg]),
             self.request,
             display_name='meeting',
         )
