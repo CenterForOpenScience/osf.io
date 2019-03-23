@@ -158,6 +158,54 @@ class TestNodeChildrenList:
 
         assert pointed_to._id not in ids
 
+    # Regression test for https://openscience.atlassian.net/browse/EMB-593
+    # Duplicates returned in child count
+    def test_node_children_related_counts_duplicate_query_results(self, app, user, public_project,
+            private_project, public_project_url):
+        user_2 = AuthUserFactory()
+
+        # Adding a child component
+        child = NodeFactory(parent=public_project, creator=user, is_public=True, category='software')
+        child.add_contributor(user_2, permissions.WRITE, save=True)
+        # Adding a grandchild
+        NodeFactory(parent=child, creator=user, is_public=True)
+        # Adding a node link
+        public_project.add_pointer(
+            private_project,
+            auth=Auth(public_project.creator)
+        )
+        # Assert NodeChildrenList returns one result
+        res = app.get(public_project_url, auth=user.auth)
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == child._id
+
+        project_url = '/{}nodes/{}/?related_counts=children'.format(API_BASE, public_project._id)
+        res = app.get(project_url, auth=user.auth)
+        assert res.status_code == 200
+        # Verifying related_counts match direct children count (grandchildren not included, pointers not included)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+    def test_node_children_related_counts(self, app, user, public_project):
+        parent = ProjectFactory(creator=user, is_public=False)
+        user_2 = AuthUserFactory()
+        parent.add_contributor(user_2, permissions.ADMIN)
+
+        child = NodeFactory(parent=parent, creator=user_2, is_public=False, category='software')
+        NodeFactory(parent=child, creator=user_2, is_public=False)
+
+        # child has one component. `user` can view due to implict admin perms
+        component_url = '/{}nodes/{}/children/'.format(API_BASE, child._id, auth=user.auth)
+        res = app.get(component_url, auth=user.auth)
+
+        assert len(res.json['data']) == 1
+
+        project_url = '/{}nodes/{}/?related_counts=children'.format(API_BASE, child._id)
+
+        res = app.get(project_url, auth=user.auth)
+        assert res.status_code == 200
+        # Nodes with implicit admin perms are also included in the count
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
 
 @pytest.mark.django_db
 class TestNodeChildrenListFiltering:

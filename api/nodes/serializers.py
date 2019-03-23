@@ -572,13 +572,36 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return obj.logs.count()
 
     def get_node_count(self, obj):
+        """
+        Returns the count of a node's direct children that the user has permission to view.
+        Implict admin and group membership are factored in when determining perms.
+        """
         auth = get_user_auth(self.context['request'])
         user_id = getattr(auth.user, 'id', None)
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT DISTINCT
-                  COUNT(child_id)
+                 WITH RECURSIVE parents AS (
+                  SELECT parent_id, child_id
+                  FROM osf_noderelation
+                  WHERE child_id = %s AND is_node_link IS FALSE
+                UNION ALL
+                  SELECT osf_noderelation.parent_id, parents.parent_id AS child_id
+                  FROM parents JOIN osf_noderelation ON parents.PARENT_ID = osf_noderelation.child_id
+                  WHERE osf_noderelation.is_node_link IS FALSE
+                ), has_admin AS (SELECT EXISTS(
+                    SELECT P.codename
+                    FROM auth_permission AS P
+                    INNER JOIN osf_nodegroupobjectpermission AS G ON (P.id = G.permission_id)
+                    INNER JOIN osf_osfuser_groups AS UG ON (G.group_id = UG.group_id)
+                    WHERE (P.codename = 'admin_node'
+                           AND G.content_object_id IN (
+                                SELECT parent_id
+                                FROM parents
+                           ) OR G.content_object_id = %s
+                           AND UG.osfuser_id = %s)
+                ) )
+                SELECT COUNT(DISTINCT child_id)
                 FROM
                   osf_noderelation
                 JOIN osf_abstractnode ON osf_noderelation.child_id = osf_abstractnode.id
@@ -588,6 +611,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 AND osf_abstractnode.is_deleted IS FALSE
                 AND (
                   osf_abstractnode.is_public
+                  OR (TRUE IN (SELECT TRUE FROM has_admin))
                   OR (SELECT EXISTS(
                       SELECT P.codename
                       FROM auth_permission AS P
@@ -599,18 +623,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                       )
                   )
                   OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
-                  OR (SELECT EXISTS(
-                      SELECT P.codename
-                      FROM auth_permission AS P
-                      INNER JOIN osf_nodegroupobjectpermission AS G ON (P.id = G.permission_id)
-                      INNER JOIN osf_osfuser_groups AS UG ON (G.group_id = UG.group_id)
-                      WHERE (P.codename = 'admin_node'
-                             AND G.content_object_id = parent_id
-                             AND UG.osfuser_id = %s)
-                      )
-                  )
                 );
-            """, [obj.id, user_id, auth.private_key, user_id],
+            """, [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key],
             )
 
             return int(cursor.fetchone()[0])
