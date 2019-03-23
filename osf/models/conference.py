@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+import urlparse
+
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 
 from website.conferences.exceptions import ConferenceError
+from website.util import api_v2_url
+from website import settings
 
 # leaving this at module scope for any existing imports.
 DEFAULT_FIELD_NAMES = {
@@ -72,6 +76,15 @@ class Conference(ObjectIDMixin, BaseModel):
     @classmethod
     def get_by_endpoint(cls, endpoint, active):
         return cls.objects.get_by_endpoint(endpoint, active)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/meetings/{}/'.format(self._id)
+        return api_v2_url(path)
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, '/view/{}'.format(self.endpoint))
 
     class Meta:
         # custom permissions for use in the OSF Admin App

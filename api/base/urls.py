@@ -41,6 +41,7 @@ urlpatterns = [
                 url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
                 url(r'^licenses/', include('api.licenses.urls', namespace='licenses')),
                 url(r'^logs/', include('api.logs.urls', namespace='logs')),
+                url(r'^meetings/', include('api.meetings.urls', namespace='meetings')),
                 url(r'^metaschemas/', include('api.metaschemas.urls', namespace='metaschemas')),
                 url(r'^schemas/', include('api.schemas.urls', namespace='schemas')),
                 url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),

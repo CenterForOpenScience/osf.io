@@ -1,5 +1,6 @@
 from django.db import connection
 from distutils.version import StrictVersion
+from django.contrib.contenttypes.models import ContentType
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -280,6 +281,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
+    submission_download_count = ser.SerializerMethodField()
     template_from = ser.CharField(
         required=False, allow_blank=False, allow_null=False,
         help_text='Specify a node id for a node you would like to use as a template for the '
@@ -539,6 +541,28 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_logs_count(self, obj):
         return obj.logs.count()
+
+    def get_submission_download_count(self, obj):
+        """
+        Return the download counts of the first osfstorage file
+        """
+        node_ct = ContentType.objects.get_for_model(AbstractNode).id
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT P.total
+                FROM osf_basefilenode F, osf_pagecounter P
+                WHERE (F.type = 'osf.osfstoragefile'
+                     AND F.provider = 'osfstorage'
+                     AND F.target_content_type_id = %s
+                     AND F.target_object_id = %s
+                     AND P._id = 'download:' || %s || ':' || F._id)
+                ORDER BY F.id ASC
+                LIMIT 1;
+            """, [node_ct, obj.id, obj._id],
+            )
+
+            return int(cursor.fetchone()[0])
 
     def get_node_count(self, obj):
         auth = get_user_auth(self.context['request'])
