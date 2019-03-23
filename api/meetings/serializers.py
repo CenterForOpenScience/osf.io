@@ -12,12 +12,15 @@ from api.base.serializers import (
 
 class MeetingSerializer(JSONAPISerializer):
 
-    id = IDField(source='_id', read_only=True)
+    id = IDField(source='endpoint', read_only=True)
     type = TypeField()
     name = ser.CharField(read_only=True)
     location = ser.CharField(read_only=True)
     start_date = VersionedDateTimeField(read_only=True)
     end_date = VersionedDateTimeField(read_only=True)
+    info_url = ser.URLField(read_only=True)
+    logo_url = ser.URLField(read_only=True)
+    field_names = ser.DictField(read_only=True)
 
     submissions = RelationshipField(
         related_view='meetings:meeting-submissions',

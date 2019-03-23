@@ -73,14 +73,12 @@ class MeetingDetail(JSONAPIBaseView, generics.RetrieveAPIView, MeetingMixin):
     view_category = 'meetings'
     view_name = 'meeting-list'
 
-    ordering = ('-modified', )  # default ordering
-
     def get_object(self):
         return self.get_meeting()
 
 
 class MeetingSubmissionList(JSONAPIBaseView, generics.ListAPIView, MeetingMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/meetings_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/meetings_submission_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
