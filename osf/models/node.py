@@ -662,6 +662,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def should_request_identifiers(self):
         return not self.all_tags.filter(name='qatest').exists()
 
+    @property
+    def meeting_submission(self):
+        """
+        First osfstoragefile on a node - if the node was created for a meeting,
+        assuming its first file is the meeting submission.
+        """
+        return self.files.first()
+
     @classmethod
     def bulk_update_search(cls, nodes, index=None):
         from website import search

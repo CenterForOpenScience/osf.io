@@ -281,7 +281,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
-    submission_download_count = ser.SerializerMethodField()
     template_from = ser.CharField(
         required=False, allow_blank=False, allow_null=False,
         help_text='Specify a node id for a node you would like to use as a template for the '
@@ -447,6 +446,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-logs',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_logs_count'},
+    )
+
+    meeting_submission = RelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<meeting_submission._id>'},
+        read_only=False,
+        related_meta={'download_count': 'get_submission_download_count'},
     )
 
     linked_nodes = RelationshipField(
