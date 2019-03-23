@@ -6,6 +6,7 @@ from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.meetings.serializers import MeetingSerializer
+from api.nodes.permissions import ContributorOrPublic
 from api.nodes.serializers import NodeSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -84,9 +85,10 @@ class MeetingSubmissionList(JSONAPIBaseView, generics.ListAPIView, MeetingMixin)
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic,
     )
 
-    required_read_scopes = [CoreScopes.MEETINGS_READ]
+    required_read_scopes = [CoreScopes.MEETINGS_READ, CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
     model = Conference
 
