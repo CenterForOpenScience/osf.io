@@ -91,12 +91,17 @@ def mapcore_get_accesstoken(authcode, clientid = map_clientid, secret = map_secr
 
     logger.info("mapcore_get_accesstoken started.")
     url = map_hostname + map_token_path
-    basic_auth = (map_clientid, map_secret)
-    param = {"grant_type": "authorization_code",
-             "redirect_uri": map_redirect,
-             "code": authcode}
-    headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
-    res = requests.post(url, data=basic_auth, headers=headers, auth=basic_auth)
+    basic_auth = ( map_clientid, map_secret )
+    param = {
+        "grant_type": "authorization_code",
+        "redirect_uri": map_redirect,
+        "code": authcode
+    }
+    param = urllib.urlencode(param)
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
+    }
+    res = requests.post(url, data = param, headers = headers, auth = basic_auth)
     res.raise_for_status()  # error check
     json = res.json()
     logger.info("mapcore_get_accesstoken response: " + json )
@@ -121,11 +126,16 @@ def mapcore_refresh_accesstoken(user, force = False):
             return 0  # notihng to do
 
     # do refresh
-    basic_auth = (map_clientid, map_secret)
-    param = {"grant_type": "refresh_token",
-             "refresh_token": user.oauth_refresh_token}
-    headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
-    res = requests.post(url, data=basic_auth, headers=headers, auth=basic_auth)
+    basic_auth = ( map_clientid, map_secret )
+    param = {
+        "grant_type": "refresh_token",
+        "refresh_token": user.oauth_refresh_token
+    }
+    param = urllib.urlencode(param)
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
+    }
+    res = requests.post(url, data = param, headers = headers, auth = basic_auth)
     json = res.json()
     if res.status_code != 200 or 'access_token' not in json:
         return -1
