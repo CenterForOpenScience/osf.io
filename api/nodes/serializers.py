@@ -600,7 +600,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                                 FROM parents
                            ) OR G.content_object_id = %s
                            AND UG.osfuser_id = %s)
-                ) )
+                ))
                 SELECT COUNT(DISTINCT child_id)
                 FROM
                   osf_noderelation
@@ -611,7 +611,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 AND osf_abstractnode.is_deleted IS FALSE
                 AND (
                   osf_abstractnode.is_public
-                  OR (TRUE IN (SELECT TRUE FROM has_admin))
+                  OR (SELECT exists from has_admin) = TRUE
                   OR (SELECT EXISTS(
                       SELECT P.codename
                       FROM auth_permission AS P
