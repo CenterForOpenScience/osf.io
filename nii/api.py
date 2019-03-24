@@ -24,7 +24,7 @@ logger.setLevel(10)
 stdout = logging.StreamHandler()
 logger.addHandler(stdout)
 
-map_hostname      = os.getenv('MAPCORE_HOSTNAME', 'https://dev2.cg.gakunin.jp')
+map_hostname      = os.getenv('MAPCORE_HOSTNAME', 'https://sptest.cg.gakunin.jp')
 map_authcode_path = os.getenv('MAPCORE_AUTHCODE_PATH', '/oauth/shib/shibrequst.php')
 map_token_path    = os.getenv('MAPCORE_TOKEN_PATH', '/oauth/token.php')
 map_refresh_path  = os.getenv('MAPCORE_REFRESH_PATH', '/oauth/token.php')
@@ -36,22 +36,53 @@ map_redirect      = os.getenv('MAPCORE_REDIRECT', 'https://www.dev1.rdm.nii.ac.j
 #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 #
 
-###
-### 下の 2行はテストのための決め打ち項目につき、適宜変更のこと
-###
-map_api_path        = os.getenv('MAPCORE_API_PATH', '/api2/v1')
-map_access_token    = "77bee0c32408b2f3c9b466a6d35747192ae56e54"
-
 class MAPCore:
     MODE_MEMBER = 0     # Ordinary member
     MODE_ADMIN = 2      # Administrator member
 
+    client_id = False
     client_secret = False
     access_token = False
+    refresh_token = False
 
-    def __init__(self, client_secret, access_token):
+    #
+    # Constructor.
+    #
+    def __init__(self, client_id, client_secret,
+            access_token, refresh_token):
+        self.client_id = client_id
         self.client_secret = client_secret
         self.access_token = access_token
+        self.refresh_token = refresh_token
+
+    #
+    # Refresh token.
+    #
+    def refresh(self):
+        logger.info("* refresh")
+
+        url = map_hostname + map_refresh_path
+        logger.info("url=" + url)
+
+        basic_auth = ( self.client_id, self.client_secret )
+        logger.info("client_id=" + self.client_id)
+        logger.info("client_secret=" + self.client_secret)
+
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
+        }
+        params = {
+            "grant_type": "refresh_token",
+            "refresh_token": self.refresh_token
+        }
+        params = urllib.urlencode(params)
+        logger.info("refresh_token=" + self.refresh_token)
+        logger.info("params=" + params)
+
+        r = requests.post(url, auth = basic_auth, headers = headers, data = params)
+        logger.info("RESULT=" + r.text)
+
+        return False
 
     #
     # Get API version.
@@ -329,19 +360,29 @@ class MAPCore:
 #
 # テスト用メインプログラム
 #
-mapcore = MAPCore(map_secret, map_access_token)
+map_api_path        = os.getenv('MAPCORE_API_PATH', '/api2/v1')
+map_clientid        = "a449628385f9cc98"
+map_secret          = "5b3671e5cb405299265874d86ab75aad"
+map_access_token    = "185a6e99d498ebd85f43c43948452da9709526dd"
+map_refresh_token   = "37164dc3f35735a0b2d7f7b6bcc191f0f7069165"
+
+group_name = u"mAP連携テスト用01"
+introduction = u"GRDM - mAP連携テスト用01"
+user_eppn = "toshi-f@openidp.nii.ac.jp"
+
+mapcore = MAPCore(map_clientid, map_secret,
+    map_access_token, map_refresh_token)
 
 j = mapcore.get_api_version()
 if j == False:
     logger.debug("Error")
+    k = mapcore.refresh()
+    logger.info(json.dumps(k))
     sys.exit()
 else:
     logger.info("  version=" + str(j["result"]["version"]))
     logger.info("  revision=" + j["result"]["revision"])
     logger.info("  author=" + j["result"]["author"])
-
-group_name = u"RDM 連携グループ (1)"
-introduction = u"RDM 連携のための試験グループ"
 
 #
 # 新規グループ作成 (group_name をグループ名として)
@@ -349,10 +390,10 @@ introduction = u"RDM 連携のための試験グループ"
 '''
 j = mapcore.create_group(group_name)
 if j == False:
-    logger.debug("Error")
+    logger.debug("    Error")
     sys.exit()
 else:
-    logger.info(json.dumps(j))
+    logger.info(json.dumps(j, indent = 2))
 '''
 
 #
@@ -360,73 +401,73 @@ else:
 #
 j = mapcore.get_group_by_name(group_name)
 if j == False:
-    logger.debug("Error")
+    logger.info("    Error")
     sys.exit()
 else:
     group_key = j["result"]["groups"][0]["group_key"]
-    logger.info("  Group key for " + group_name + " found, " + group_key)
-    logger.info(json.dumps(j))
+    logger.info("    Group key for " + group_name + " found, " + group_key)
+    logger.info(json.dumps(j, indent = 2))
 
 #
 # group_key で指定したグループの名前、紹介文を変更
 #
 j = mapcore.edit_group(group_key, group_name, introduction)
 if j == False:
-    logger.debug("Error")
+    logger.info("    Error")
     sys.exit()
 else:
-    logger.info(json.dumps(j))
+    logger.info(json.dumps(j, indent = 2))
 
 #
 # group_key で指定したグループの情報を取得
 #
 j = mapcore.get_group_by_key(group_key)
 if j == False:
-    logger.debug("Error")
+    logger.info("    Error")
     sys.exit()
 else:
-    logger.info(json.dumps(j))
+    logger.info(json.dumps(j, indent = 2))
 
 #
-# test008@nii.ac.jp を一般会員としてメンバーに追加
+# user_eppn を一般会員としてメンバーに追加
 #
-j = mapcore.add_to_group(group_key, "test008@nii.ac.jp", MAPCore.MODE_MEMBER)
+j = mapcore.add_to_group(group_key, user_eppn, MAPCore.MODE_MEMBER)
 if j == False:
-    logger.debug("Error")
+    logger.info("    Error")
     sys.exit()
 else:
-    logger.info(json.dumps(j))
+    logger.info("    Completed")
 
 #
-# test008@nii.ac.jp をグループ管理者に変更
+# user_eppn をグループ管理者に変更
 #
-j = mapcore.edit_member(group_key, "test008@nii.ac.jp", MAPCore.MODE_ADMIN)
+j = mapcore.edit_member(group_key, user_eppn, MAPCore.MODE_ADMIN)
 if j == False:
-    logger.debug("Error")
+    logger.info("    Error")
     sys.exit()
 else:
-    logger.info(json.dumps(j))
+    logger.info("    Completed")
 
 #
 # 上記グループのメンバーリストを取得
 #
 j = mapcore.get_group_members(group_key)
 if j == False:
-    logger.debug("Error")
+    logger.info("    Error")
     sys.exit()
 else:
     for i in range(len(j["result"]["accounts"])):
-        logger.info("! " + j["result"]["accounts"][i]["org_name"] + ", eppn=" + j["result"]["accounts"][i]["eppn"] + ", mail=" + j["result"]["accounts"][i]["mail"] + ", admin=" + str(j["result"]["accounts"][i]["admin"]))
+        logger.info("    eppn=" + j["result"]["accounts"][i]["eppn"] + ", mail=" + j["result"]["accounts"][i]["mail"] + ", admin=" + str(j["result"]["accounts"][i]["admin"]))
 
 #
-# test008@nii.ac.jp をメンバーから追加
+# user_eppn をメンバーから追加
 #
-j = mapcore.remove_from_group(group_key, "test008@nii.ac.jp")
+j = mapcore.remove_from_group(group_key, user_eppn)
 if j == False:
-    logger.debug("Error")
+    logger.info("    Error")
     sys.exit()
 else:
-    logger.info(json.dumps(j))
+    logger.info("    Completed")
 
 #
 # 自身が所属しいているグループのリストを取得
@@ -437,4 +478,4 @@ if j == False:
     sys.exit()
 else:
     for i in range(len(j["result"]["groups"])):
-        logger.info("! " + j["result"]["groups"][i]["group_name"] + ", key=" + j["result"]["groups"][i]["group_key"])
+        logger.info("    " + j["result"]["groups"][i]["group_name"] + " (key=" + j["result"]["groups"][i]["group_key"] + ")")
