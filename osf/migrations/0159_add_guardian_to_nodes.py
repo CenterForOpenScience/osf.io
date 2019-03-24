@@ -24,59 +24,8 @@ def post_migrate_signal(state, schema):
 def reverse_func(state, schema):
     return
 
-# Reverse migration for node contributors
-repopulate_contributors = [
-    """
-    -- Repopulate contributor table with read perms
-    UPDATE osf_contributor C
-    SET read = TRUE
-    FROM osf_osfuser_groups UG, osf_nodegroupobjectpermission NG, auth_permission AS PERM
-    WHERE UG.group_id = NG.group_id
-    AND C.node_id = NG.content_object_id
-    AND PERM.codename='read_node'
-    AND NG.permission_id = PERM.id
-    AND C.user_id = UG.osfuser_id;
-
-    -- Repopulate contributor table with write perms
-    UPDATE osf_contributor C
-    SET write = TRUE
-    FROM osf_osfuser_groups UG, osf_nodegroupobjectpermission NG, auth_permission AS PERM
-    WHERE UG.group_id = NG.group_id
-    AND C.node_id = NG.content_object_id
-    AND PERM.codename='write_node'
-    AND NG.permission_id = PERM.id
-    AND C.user_id = UG.osfuser_id;
-
-    -- Repopulate contributor table with admin perms
-    UPDATE osf_contributor C
-    SET admin = TRUE
-    FROM osf_osfuser_groups UG, osf_nodegroupobjectpermission NG, auth_permission AS PERM
-    WHERE UG.group_id = NG.group_id
-    AND C.node_id = NG.content_object_id
-    AND PERM.codename='admin_node'
-    AND NG.permission_id = PERM.id
-    AND C.user_id = UG.osfuser_id;
-
-    -- Drop NodeGroupObjectPermission table - table gives node django groups
-    -- permissions to node
-    DELETE FROM osf_nodegroupobjectpermission;
-
-    -- Remove user membership in Node read/write/admin Django groups
-    DELETE FROM osf_osfuser_groups
-    WHERE group_id IN (
-      SELECT id
-      FROM auth_group
-      WHERE name LIKE '%' || 'node_' || '%'
-    );
-
-    -- Remove admin/write/read node django groups
-    DELETE FROM auth_group
-    WHERE name LIKE '%' || 'node_' || '%';
-    """
-]
-
-# Forward migration - added guardian to nodes
-migrate_nodes_to_django_guardian = [
+# Forward migration - for each node, create a read, write, and admin Django group
+add_node_read_write_admin_auth_groups = [
     """
     INSERT INTO auth_group (name)
     (SELECT 'node_' || N.id || '_read' FROM osf_abstractnode AS N
@@ -84,7 +33,21 @@ migrate_nodes_to_django_guardian = [
     SELECT 'node_' || N.id || '_write' FROM osf_abstractnode AS N
     UNION
     SELECT 'node_' || N.id || '_admin' FROM osf_abstractnode AS N);
+    """
+]
 
+# Reverse migration - remove read/write/admin node Django groups
+remove_node_read_write_admin_auth_groups = [
+    """
+    DELETE FROM auth_group
+    WHERE name LIKE '%' || 'node_' || '%';
+    """
+]
+
+# Forward migration - add read permissions to all node django read groups, add read/write perms
+# to all node django write groups, and add read/write/admin perms to all node django admin groups
+add_permissions_to_node_groups = [
+    """
     -- Adds "read_node" permissions to all Node read groups - uses NodeGroupObjectPermission table
     INSERT INTO osf_nodegroupobjectpermission (content_object_id, group_id, permission_id)
     SELECT N.id as content_object_id, G.id as group_id, PERM.id AS permission_id
@@ -123,7 +86,24 @@ migrate_nodes_to_django_guardian = [
     FROM osf_abstractnode AS N, auth_group G, auth_permission AS PERM
     WHERE G.name = 'node_' || N.id || '_admin'
     AND PERM.codename = 'admin_node';
+    """
+]
 
+# Reverse migration - removes all data from NodeGroupObjectPermission table -
+# basically removes all the permissions from the node django groups
+remove_node_group_object_permission_table = [
+    """
+    -- Drop NodeGroupObjectPermission table - table gives node django groups
+    -- permissions to node
+    DELETE FROM osf_nodegroupobjectpermission;
+    """
+]
+
+# Forward migration - for every contributor that has read perms only to a node,
+# add that contributor to the node's read group - this allows us to start using
+# guardian to track which permissions a contributor has.
+add_read_contribs_to_read_groups = [
+    """
     -- Add users with read permissions only on the node to the node's read group
     INSERT INTO osf_osfuser_groups (osfuser_id, group_id)
     SELECT C.user_id as osfuser_id, G.id as group_id
@@ -133,7 +113,14 @@ migrate_nodes_to_django_guardian = [
     AND C.write = FALSE
     AND C.admin = FALSE
     AND G.name = 'node_' || N.id || '_read';
+    """
+]
 
+# Forward migration - for every contributor that has write and read perms to a node,
+# add that contributor to the node's write group - this allows us to start using
+# guardian to track which permissions a contributor has.
+add_write_contribs_to_write_groups = [
+    """
     -- Add users with write permissions on node to the node's write group
     INSERT INTO osf_osfuser_groups (osfuser_id, group_id)
     SELECT C.user_id as osfuser_id, G.id as group_id
@@ -143,7 +130,14 @@ migrate_nodes_to_django_guardian = [
     AND C.write = TRUE
     AND C.admin = FALSE
     AND G.name = 'node_' || N.id || '_write';
+    """
+]
 
+# Forward migration - for every contributor that has admin/write/read perms to a node,
+# add that contributor to the node's admin group - this allows us to start using
+# guardian to track which permissions a contributor has.
+add_admin_contribs_to_admin_groups = [
+    """
     -- Add users with admin permissions on the node to the node's admin group
     INSERT INTO osf_osfuser_groups (osfuser_id, group_id)
     SELECT C.user_id as osfuser_id, G.id as group_id
@@ -153,6 +147,19 @@ migrate_nodes_to_django_guardian = [
     AND C.write = TRUE
     AND C.admin = TRUE
     AND G.name = 'node_' || N.id || '_admin';
+    """
+]
+
+# Reverse migration
+remove_user_contribs_from_node_groups = [
+    """
+    -- Remove user membership in Node read/write/admin Django groups
+    DELETE FROM osf_osfuser_groups
+    WHERE group_id IN (
+      SELECT id
+      FROM auth_group
+      WHERE name LIKE '%' || 'node_' || '%'
+    );
     """
 ]
 
@@ -183,6 +190,10 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(post_migrate_signal, reverse_func),
-        migrations.RunSQL(migrate_nodes_to_django_guardian, repopulate_contributors),
+        migrations.RunSQL(add_node_read_write_admin_auth_groups, remove_node_read_write_admin_auth_groups),
+        migrations.RunSQL(add_permissions_to_node_groups, remove_node_group_object_permission_table),
+        migrations.RunSQL(add_read_contribs_to_read_groups, remove_user_contribs_from_node_groups),
+        migrations.RunSQL(add_write_contribs_to_write_groups, migrations.RunSQL.noop),
+        migrations.RunSQL(add_admin_contribs_to_admin_groups, migrations.RunSQL.noop,),
         migrations.RunSQL(migrate_preprints_to_dfk_table, drop_preprint_group_dfk_table)
     ]

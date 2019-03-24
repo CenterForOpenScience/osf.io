@@ -16,4 +16,8 @@ class Migration(migrations.Migration):
             name='abstractnode',
             options={'base_manager_name': 'objects', 'permissions': (('view_node', 'Can view node details'), ('read_node', 'Can read the node'), ('write_node', 'Can edit the node'), ('admin_node', 'Can manage the node'))},
         ),
+        migrations.AlterModelOptions(
+            name='node',
+            options={},
+        ),
     ]
