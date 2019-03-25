@@ -23,7 +23,7 @@ class TestParseDatetimes:
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         try:
             parse_datetimes({'on_date': end_date, 'start_datetime': start_date})
-            assert False # parsed properly
+            assert False
         except ValidationError:
             assert True
 
@@ -32,7 +32,7 @@ class TestParseDatetimes:
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         try:
             parse_datetimes({'on_date': start_date, 'end_datetime': end_date})
-            assert False # parsed properly
+            assert False
         except ValidationError:
             assert True
 
@@ -41,7 +41,7 @@ class TestParseDatetimes:
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         try:
             parse_datetimes({'start_datetime': end_date, 'end_datetime': start_date})
-            assert False # parsed properly
+            assert False
         except ValidationError:
             assert True
 
@@ -50,7 +50,7 @@ class TestParseDatetimes:
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         try:
             parse_datetimes({'on_date': end_date, 'end_datetime': start_date})
-            assert False # parsed properly
+            assert False
         except ValidationError:
             assert True
 
@@ -59,7 +59,7 @@ class TestParseDatetimes:
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         try:
             parse_datetimes({'on_date': '{}T01:01:01'.format(start_date)})
-            assert False # parsed properly
+            assert False
         except ValidationError:
             assert True
 
@@ -68,7 +68,7 @@ class TestParseDatetimes:
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         try:
             parse_datetimes({'end_datetime': end_date})
-            assert False # parsed properly
+            assert False
         except ValidationError:
             assert True
 
@@ -80,6 +80,6 @@ class TestParseDatetimes:
                 'end_datetime': end_date,
                 'start_datetime': '{}T01:01:01'.format(start_date),
             })
-            assert False # parsed properly
+            assert False
         except ValidationError:
             assert True
