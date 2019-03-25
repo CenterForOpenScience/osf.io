@@ -3,7 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from osf.models import PreprintLog, NodeLog
 from api_tests import utils
-from osf.permissions import READ
+from osf.utils.permissions import READ
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
