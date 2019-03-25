@@ -41,6 +41,7 @@
     "file_updated":     "${user} updated file in ${node}",
     "file_removed":     "${user} removed ${path_type} ${path} from ${node}",
     "file_restored":    "${user} restored file ${path} from ${node}",
+    "file_metadata_updated": "${user} updated the file metadata for ${path}",
     "checked_out":  "${user} checked out ${kind} ${path} from ${node}",
     "checked_in":   "${user} checked in ${kind} ${path} to ${node}",
     "comment_added":    "${user} added a comment ${comment_location} in ${node}",

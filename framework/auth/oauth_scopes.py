@@ -135,6 +135,9 @@ class CoreScopes(object):
 
     PROVIDERS_WRITE = 'providers_write'
 
+    CHRONOS_SUBMISSION_READ = 'chronos_submission_read'
+    CHRONOS_SUBMISSION_WRITE = 'chronos_submission_write'
+
     WAFFLE_READ = 'waffle_read'
 
     NULL = 'null'
