@@ -14,7 +14,8 @@ import urllib
 
 from website.app import init_app
 from website import settings
-from osf.models.user import OSFUser, mApUser, mApGroup
+from osf.models.user import OSFUser, mApGroup
+from osf.models.map import MAPProfile
 import framework.auth
 
 # global setting
@@ -75,10 +76,10 @@ def mapcore_receive_authcode(user, params):
 
     # set mAP attribute into current user
     logger.info('User [' + user.eppn + '] get access_token [' + access_token)
-    user.map_user = mApUser.objects.update_or_create(eppn = user.eppn,
-                                                     oauth_access_token = access_token,
-                                                     oauth_refresh_token = refresh_token,
-                                                     oauth_refresh_time = datetime.utcnow())
+    user.map_user = MAPProfile.objects.update_or_create(
+        oauth_access_token = access_token,
+        oauth_refresh_token = refresh_token,
+        oauth_refresh_time = datetime.utcnow())
     user.map_user.save()
     user.save()
 
