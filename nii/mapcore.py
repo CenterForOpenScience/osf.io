@@ -119,7 +119,7 @@ def mapcore_refresh_accesstoken(user, force = False):
 
     # access token availability check
     if not force:
-        param = {'access_token' : user.oauth_access_token}
+        param = {'access_token' : user.map_user.oauth_access_token}
         headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
         res = requests.post(url, data=param, headers=headers)
         if res.status_code == 200 and 'success' in res.json():
@@ -129,11 +129,11 @@ def mapcore_refresh_accesstoken(user, force = False):
     basic_auth = ( map_clientid, map_secret )
     param = {
         "grant_type": "refresh_token",
-        "refresh_token": user.oauth_refresh_token
+        "refresh_token": user.map_user.oauth_refresh_token
     }
     param = urllib.urlencode(param)
     headers = {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
+        'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
     }
     res = requests.post(url, data = param, headers = headers, auth = basic_auth)
     json = res.json()
