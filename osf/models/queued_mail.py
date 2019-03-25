@@ -64,13 +64,13 @@ class QueuedMail(ObjectIDMixin, BaseModel):
             self.__class__.delete(self)
             return False
 
-    def find_sent_of_same_type_and_user(self):
+    def sent_email_same_type(self):
         """
         Queries up for all emails of the same type as self, sent to the same user as self.
         Does not look for queue-up emails.
-        :return: a list of those emails
+        :return: a boolean of whether such emails exist
         """
-        return self.__class__.objects.filter(email_type=self.email_type, user=self.user).exclude(sent_at=None)
+        return bool(self.__class__.objects.filter(email_type=self.email_type, user=self.user).exclude(sent_at=None))
 
 
 def queue_mail(to_addr, mail, send_at, user, **context):

@@ -23,6 +23,7 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_tas
 from framework.exceptions import PermissionsError
 from website import settings, mails
 from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
+from website.preprints.signals import preprint_submitted
 from website.project.views.contributor import find_preprint_provider
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
@@ -39,7 +40,7 @@ from osf.exceptions import PreprintStateError, ValidationError, ValidationValueE
 
 from osf.utils.permissions import READ, WRITE, ADMIN
 from osf.utils.workflows import DefaultStates, RequestTypes
-from osf_tests.utils import MockShareResponse
+from osf_tests.utils import MockShareResponse, capture_signals
 from tests.base import assert_datetime_equal, OsfTestCase
 from tests.utils import assert_preprint_logs
 
@@ -292,6 +293,58 @@ class TestSearch:
 
 
 class TestPreprintCreation:
+
+    @mock.patch('website.mails.send_mail')
+    def test_preprint_submitted_signal_non_moderated_provider(self, mock_mail, fake):
+        user = UserFactory()
+        with capture_signals() as mock_signals:
+            preprint = PreprintFactory(
+                creator=user,
+                provider=PreprintProviderFactory(),
+                subject=SubjectFactory(),
+            )
+            assert preprint_submitted in mock_signals.signals_sent()
+
+    @mock.patch('website.mails.mails.send_mail')
+    def test_preprint_submitted_signal_moderated_provider(self, mock_mail, fake):
+        user = UserFactory()
+        with capture_signals() as mock_signals:
+            preprint = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False)
+            preprint.run_submit(user)
+            assert preprint_submitted not in mock_signals.signals_sent()
+            preprint.run_accept(user, 'Yes or Yes!')
+            assert preprint_submitted in mock_signals.signals_sent()
+
+    @mock.patch('website.mails.send_mail')
+    def test_preprint_submitted_signal_non_moderated_provider_with_supplemental_node(self, mock_mail, fake):
+        user = UserFactory()
+        with capture_signals() as mock_signals:
+            preprint = PreprintFactory(
+                creator=user,
+                provider=PreprintProviderFactory(),
+                subject=SubjectFactory(),
+                project=NodeFactory()
+            )
+            assert preprint_submitted not in mock_signals.signals_sent()
+
+    @mock.patch('website.mails.mails.send_mail')
+    def test_preprint_submitted_signal_moderated_provider_with_supplemental_node(self, mock_mail, fake):
+        user = UserFactory()
+        with capture_signals() as mock_signals:
+            preprint = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, project=NodeFactory())
+            preprint.run_submit(user)
+            assert preprint_submitted not in mock_signals.signals_sent()
+            preprint.run_accept(user, 'Yes or Yes!')
+            assert preprint_submitted not in mock_signals.signals_sent()
+
+    @mock.patch('osf.models.queued_mail')
+    @mock.patch('website.mails.send_mail')
+    def test_no_supplemental_email_queued_on_preprint_submitted_signal(self, mock_queued_mail, mock_send_mail, fake):
+        from website.preprints.signals import preprint_submitted
+        user = UserFactory()
+        preprint = PreprintFactory(provider___id='osf')
+        preprint_submitted.send(user, preprint=preprint)
+        mock_queued_mail.assert_called_once()
 
     def test_creator_is_added_as_contributor(self, fake):
         user = UserFactory()

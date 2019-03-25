@@ -3,15 +3,16 @@ from django.utils import timezone
 
 from website import settings
 
+
 def no_supplemental_node(email):
-    print(email)
     from osf.models import Preprint
     preprint = Preprint.load(email.data['preprint_id'])
-    same_type_emails = email.find_sent_of_same_type_and_user()
-    return preprint.node is None and preprint.machine_state == 'accepted' and not len(same_type_emails)
+    return preprint.node is None and preprint.machine_state == 'accepted' and not email.sent_email_same_type()
+
 
 def no_addon(email):
     return len([addon for addon in email.user.get_addons() if addon.config.short_name != 'osfstorage']) == 0
+
 
 def no_login(email):
     from osf.models.queued_mail import QueuedMail, NO_LOGIN_TYPE
@@ -19,6 +20,7 @@ def no_login(email):
     if sent.exists():
         return False
     return email.user.date_last_login < timezone.now() - settings.NO_LOGIN_WAIT_TIME
+
 
 def new_public_project(email):
     """ Will check to make sure the project that triggered this presend is still public
@@ -36,8 +38,7 @@ def new_public_project(email):
 
     if not node:
         return False
-    public = email.find_sent_of_same_type_and_user()
-    return node.is_public and not len(public)
+    return node.is_public and not email.sent_email_same_type()
 
 
 def welcome_osf4m(email):

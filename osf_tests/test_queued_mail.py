@@ -101,9 +101,9 @@ class TestQueuedMail:
             user=user,
             mail=NO_ADDON,
         )
-        assert len(mail.find_sent_of_same_type_and_user()) == 0
+        assert mail.sent_email_same_type() is False
         mail.send_mail()
-        assert len(mail.find_sent_of_same_type_and_user()) == 1
+        assert mail.sent_email_same_type() is True
 
     @mock.patch('osf.models.queued_mail.send_mail')
     def test_user_is_active(self, mock_mail, user):

@@ -5,6 +5,7 @@ from website.project import signals as project
 from addons.base import signals as event
 from website.conferences import signals as conference
 from website.reviews import signals as reviews
+from website.preprints import signals as preprint
 
 ALL_SIGNALS = [
     project.comment_added,
@@ -21,5 +22,6 @@ ALL_SIGNALS = [
     auth.unconfirmed_user_created,
     event.file_updated,
     conference.osf4m_user_created,
-    reviews.reviews_email
+    reviews.reviews_email,
+    preprint.preprint_submitted,
 ]
