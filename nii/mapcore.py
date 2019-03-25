@@ -14,7 +14,7 @@ import urllib
 
 from website.app import init_app
 from website import settings
-from osf.models.user import OSFUser, mApGroup
+from osf.models.user import OSFUser
 from osf.models.map import MAPProfile
 import framework.auth
 

@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 class MAPProfile(BaseModel):
     oauth_access_token = models.CharField(blank=True, max_length=255, db_index=False, unique=True, null=True)
     oauth_refresh_token = models.CharField(blank=True, max_length=255, db_index=False, unique=True, null=True)
-    oauth_refresh_time = NonNaiveDateTimeField(null=True, blank=True)
     # Reference to OSFUser
     user = models.OneToOneField(OSFUser,
         null = False, related_name = 'map_user')

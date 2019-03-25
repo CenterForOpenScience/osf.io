@@ -111,31 +111,8 @@ class Email(BaseModel):
     def __unicode__(self):
         return self.address
 
-class mApUser(BaseModel):
-    eppn = models.CharField(blank=True, max_length=255, db_index=True, primary_key=True)  # eduPersonPrincipalName
-    oauth_access_token = models.CharField(blank=True, max_length=255, db_index=False, unique=True, null=True)
-    oauth_refresh_token = models.CharField(blank=True, max_length=255, db_index=False, unique=True, null=True)
-    oauth_refresh_time = NonNaiveDateTimeField(null=True, blank=True)
-
-    def __unicode__(self):
-        return self.eppn
-
-class mApGroup(BaseModel):
-    group_key = models.CharField(max_length=32, primary_key=True)
-    name = models.CharField(max_length=255, unique=True)
-    introduction = models.CharField(max_length=255, unique=False)
-    is_active = models.BooleanField(db_index=True, default=False)
-    is_public = models.BooleanField(db_index=True, default=False)
-    is_inspect_join = models.BooleanField(db_index=True, default=False)
-    is_open_member = models.PositiveIntegerField(db_index=True, default=False)
-
-    def __unicode__(self):
-        return self.name
-
 class CGGroup(BaseModel):
     name = models.CharField(max_length=255, unique=True)
-    map_group = models.ManyToManyField(mApGroup, related_name='map_group')
-
     def __unicode__(self):
         return self.name
 
@@ -416,10 +393,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     cggroups_sync = models.ManyToManyField(CGGroup, related_name='users_group_sync')
     cggroups_initialized = models.BooleanField(default=False)
     date_last_access = NonNaiveDateTimeField(null=True, blank=True)
-    map_user  = models.OneToOneField(mApUser, null=True, related_name='map_user')
 
     def __repr__(self):
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
+
+    @property
+    def oauth_access_token(self):
+        return self.map_user.oauth_access_token
 
     @property
     def deep_url(self):
