@@ -187,11 +187,12 @@ def migrate_nodes_to_guardian(state, schema):
                 ))
             page_start = page_end
     logger.info('Finished adding guardian to nodes.')
+    return
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0159_post_migrate'),
+        ('osf', '0160_migrate_preprints_to_direct_fks'),
     ]
 
     operations = [

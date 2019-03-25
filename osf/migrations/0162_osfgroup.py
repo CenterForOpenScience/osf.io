@@ -12,7 +12,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0161_migrate_preprints_to_direct_fks'),
+        ('osf', '0161_add_guardian_to_nodes'),
     ]
 
     operations = [
