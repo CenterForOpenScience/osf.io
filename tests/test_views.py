@@ -5244,6 +5244,30 @@ class TestTimestampView(OsfTestCase):
         assert_false(cancel_res.json['success'])
         assert_equal(mock_task.return_value.abort.call_count, 0)
 
+    @mock.patch('website.util.timestamp.TimestampTask')
+    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    def test_get_task_progress_ready(self, mock_task, mock_tstaskmodel):
+        mock_task.return_value.ready.return_value = True
+
+        url_progress = self.project.api_url + 'timestamp/task_status/'
+        status_res = self.app.post_json(
+            url_progress, {}, content_type='application/json', auth=self.user.auth)
+
+        assert_equal(status_res.status_code, 200)
+        assert_true(status_res.json['ready'])
+
+    @mock.patch('website.util.timestamp.TimestampTask')
+    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    def test_get_task_progress_not_ready(self, mock_task, mock_tstaskmodel):
+        mock_task.return_value.ready.return_value = False
+
+        url_progress = self.project.api_url + 'timestamp/task_status/'
+        status_res = self.app.post_json(
+            url_progress, {}, content_type='application/json', auth=self.user.auth)
+
+        assert_equal(status_res.status_code, 200)
+        assert_false(status_res.json['ready'])
+
 
 class TestAddonFileViewTimestampFunc(OsfTestCase):
     def setUp(self):
