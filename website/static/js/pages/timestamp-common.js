@@ -4,6 +4,7 @@ var $ = require('jquery');
 var List = require('list.js');
 var $osf = require('js/osfHelpers');
 var vkbeautify = require('vkbeautify');
+var taskStatusUpdaterIntervalId = null;
 
 var dateString = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric',
@@ -163,6 +164,7 @@ var verify = function (params) {
         method: 'POST'
     }).done(function () {
         $osf.growl('Timestamp', 'A verify request is being processed!', 'success');
+        taskStatusUpdaterIntervalId = setInterval(taskStatusUpdater, 1500);
     }).fail(function () {
         $osf.growl('Timestamp', 'Something went wrong with the Verify request.', 'danger');
     });
@@ -205,6 +207,7 @@ var add = function (param) {
         dataType: 'json'
     }).done(function () {
         $osf.growl('Timestamp', 'Timestamp is being added to the selected files!', 'success');
+        taskStatusUpdaterIntervalId = setInterval(taskStatusUpdater, 1500);
     }).fail(function () {
         $osf.growl('Timestamp', 'Something went wrong with the Request Trusted Timestamp request.', 'danger');
     });
@@ -218,7 +221,7 @@ var cancel = function (url) {
         method: 'POST'
     }).done(function (result) {
         if (result.success === true) {
-            loadingAnimation(false);
+            $('#btn-cancel').attr('disabled', true);
         } else {
             $osf.growl('Timestamp', 'The task already finished.', 'info');
         }
@@ -846,9 +849,34 @@ function initDatePickers() {
 
 }
 
+function taskStatusUpdater () {
+    $.ajax({
+        url: window.contextVars.node.urls.api + 'timestamp/task_status/',
+        method: 'POST'
+    }).done(function (taskStatus) {
+        if (taskStatus.ready) {
+            clearInterval(taskStatusUpdaterIntervalId);
+            taskStatusUpdaterIntervalId = null;
+            window.location.reload(true);
+        }
+    }).fail(function () {
+        $osf.growl('Timestamp', 'Failed to get the current task status.', 'danger');
+        clearInterval(taskStatusUpdaterIntervalId);
+        taskStatusUpdaterIntervalId = null;
+    });
+}
+
+function checkHasTaskRunning () {
+    var cancelBtnEnabled = $('#btn-cancel').attr('disabled');
+    if (!cancelBtnEnabled) {
+        taskStatusUpdaterIntervalId = setInterval(taskStatusUpdater, 1500);
+    }
+}
+
 function init() {
     initList();
     initDatePickers();
+    checkHasTaskRunning();
 }
 
 module.exports = {

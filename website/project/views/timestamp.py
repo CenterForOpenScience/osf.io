@@ -50,3 +50,7 @@ def add_timestamp_token(auth, node, **kwargs):
 @must_be_contributor_or_public
 def cancel_task(auth, node, **kwargs):
     return timestamp.cancel_celery_task(node)
+
+@must_be_contributor_or_public
+def task_status(auth, node, **kwargs):
+    return timestamp.get_celery_task_progress(node)

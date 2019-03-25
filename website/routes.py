@@ -1818,6 +1818,15 @@ def make_url_map(app):
             project_views.timestamp.cancel_task,
             json_renderer,
         ),
+        Rule(
+            [
+                '/project/<pid>/timestamp/task_status/',
+                '/project/<pid>/node/<nid>/timestamp/task_status/',
+            ],
+            ['post'],
+            project_views.timestamp.task_status,
+            json_renderer,
+        ),
 
     ], prefix='/api/v1')
 

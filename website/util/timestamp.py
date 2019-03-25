@@ -335,17 +335,31 @@ def celery_add_timestamp_token(self, uid, node_id, request_data):
     if self.is_aborted():
         logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
 
+def get_celery_task(node):
+    task = None
+    timestamp_task = TimestampTask.objects.filter(node=node).first()
+    if timestamp_task is not None:
+        task = AbortableAsyncResult(timestamp_task.task_id)
+    return task
+
+def get_celery_task_progress(node):
+    status = {
+        'ready': True
+    }
+    task = get_celery_task(node)
+    if task is not None:
+        status['ready'] = task.ready()
+    return status
+
 def cancel_celery_task(node):
     result = {
         'success': False,
     }
-    timestamp_task = TimestampTask.objects.filter(node=node).first()
-    if timestamp_task is not None:
-        task = AbortableAsyncResult(timestamp_task.task_id)
-        if not task.ready():
-            task.revoke()
-            task.abort()
-            result['success'] = True
+    task = get_celery_task(node)
+    if task is not None and not task.ready():
+        task.revoke()
+        task.abort()
+        result['success'] = True
     return result
 
 def add_token(uid, node, data):
