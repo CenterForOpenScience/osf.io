@@ -496,6 +496,12 @@ def create_waterbutler_log(payload, **kwargs):
             if metadata['kind'] == 'file':
                 created_flag = action == NodeLog.FILE_ADDED
                 timestamp.file_created_or_updated(node, metadata, user.id, created_flag)
+        # Update moved, or renamed timestamp records
+        elif action in (NodeLog.FILE_MOVED, NodeLog.FILE_RENAMED):
+            src_path = payload['source']['materialized']
+            dest_path = payload['destination']['materialized']
+            provider = payload['source']['provider']
+            timestamp.file_node_moved(node._id, provider, src_path, dest_path)
         # Update status of deleted timestamp records
         elif action in (NodeLog.FILE_REMOVED):
             src_path = metadata['materialized']

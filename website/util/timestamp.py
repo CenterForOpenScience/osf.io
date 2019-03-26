@@ -6,6 +6,7 @@ import datetime
 import hashlib
 import logging
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -229,6 +230,8 @@ def get_full_list(uid, pid, node):
                     node,
                     file_data['attributes']['path']
                 )
+                basefile_node.materialized_path = file_data['attributes']['path']
+                basefile_node.name = os.path.basename(file_data['attributes']['path'])
                 basefile_node.save()
                 file_info = {
                     'file_id': basefile_node._id,
@@ -485,6 +488,72 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
         verify_data.upload_file_size = file_info['size']
         verify_data.save()
 
+def file_node_moved(project_id, provider, src_path, dest_path):
+    src_path = src_path if src_path[0] == '/' else '/' + src_path
+    dest_path = dest_path if dest_path[0] == '/' else '/' + dest_path
+    target_object_id = Guid.objects.get(_id=project_id,
+                                        content_type_id=ContentType.objects.get_for_model(AbstractNode).id).object_id
+    deleted_files = RdmFileTimestamptokenVerifyResult.objects.filter(
+        path__startswith=dest_path,
+        project_id=project_id,
+        provider=provider
+    ).exclude(
+        inspection_result_status=api_settings.FILE_NOT_EXISTS
+    ).all()
+    for deleted_file in deleted_files:
+        file_node_overwitten(project_id, target_object_id, provider, dest_path)
+
+    moved_files = RdmFileTimestamptokenVerifyResult.objects.filter(
+        path__startswith=src_path,
+        project_id=project_id,
+        provider=provider
+    ).exclude(
+        inspection_result_status__in=STATUS_NOT_ACCESSIBLE
+    ).all()
+    for moved_file in moved_files:
+        moved_file.path = moved_file.path.replace(src_path, dest_path, 1)
+        moved_file.save()
+
+    if provider != 'osfstorage' and src_path[-1:] == '/':
+        file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
+                                                 provider=provider,
+                                                 deleted_on__isnull=True,
+                                                 _path__startswith=src_path).all()
+        for file_node in file_nodes:
+            file_node._path = re.sub(r'^' + src_path, dest_path, file_node._path)
+            file_node._materialized_path = re.sub(r'^' + src_path, dest_path, file_node._path)
+            file_node.save()
+    else:
+        file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
+                                                 provider=provider,
+                                                 deleted_on__isnull=True,
+                                                 _path=src_path).all()
+        for file_node in file_nodes:
+            file_node._path = dest_path
+            file_node._materialized_path = dest_path
+            file_node.save()
+
+def file_node_overwitten(project_id, target_object_id, addon_name, src_path):
+    src_path = src_path if src_path[0] == '/' else '/' + src_path
+    RdmFileTimestamptokenVerifyResult.objects.filter(
+        project_id=project_id,
+        provider=addon_name,
+        path__startswith=src_path
+    ).delete()
+    if addon_name != 'osfstorage':
+        if src_path[-1:] == '/':
+            file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
+                                                     provider=addon_name,
+                                                     deleted_on__isnull=True,
+                                                     _path__startswith=src_path).all()
+        else:
+            file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
+                                                     provider=addon_name,
+                                                     deleted_on__isnull=True,
+                                                     _path=src_path).all()
+        for file_node in file_nodes:
+            file_node.delete()
+
 def file_node_deleted(project_id, addon_name, src_path):
     src_path = src_path if src_path[0] == '/' else '/' + src_path
 
@@ -547,6 +616,8 @@ def waterbutler_folder_file_info(pid, provider, path, node, cookies, headers):
                 node,
                 file_data['attributes']['path']
             )
+            basefile_node.materialized_path = file_data['attributes']['path']
+            basefile_node.name = os.path.basename(file_data['attributes']['path'])
             basefile_node.save()
             if provider == 'osfstorage':
                 file_info = {
