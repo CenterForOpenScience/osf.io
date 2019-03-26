@@ -28,9 +28,9 @@ map_hostname      = os.getenv('MAPCORE_HOSTNAME', 'https://sptest.cg.gakunin.jp'
 map_authcode_path = os.getenv('MAPCORE_AUTHCODE_PATH', '/oauth/shib/shibrequst.php')
 map_token_path    = os.getenv('MAPCORE_TOKEN_PATH', '/oauth/token.php')
 map_refresh_path  = os.getenv('MAPCORE_REFRESH_PATH', '/oauth/token.php')
-map_clientid      = os.getenv('MAPCORE_CLIENTID', 'c6ad1a28a2a6fd61')
-map_secret        = os.getenv('MAPCORE_SECRET', 'd31024010c4e00547858fb4eb57cbc8e')
-map_redirect      = os.getenv('MAPCORE_REDIRECT', 'https://www.dev1.rdm.nii.ac.jp/oauth_finish')
+map_clientid      = os.getenv('MAPCORE_CLIENTID', '2b336baae74ebc0e')
+map_secret        = os.getenv('MAPCORE_SECRET', '80df3572a1d0fbb17db24b22d5637e1c')
+map_redirect      = os.getenv('MAPCORE_REDIRECT', 'https://www.dev1.rdm.nii.ac.jp/oauth_complete')
 
 #
 #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -361,8 +361,8 @@ class MAPCore:
 # テスト用メインプログラム
 #
 map_api_path        = os.getenv('MAPCORE_API_PATH', '/api2/v1')
-map_clientid        = "a449628385f9cc98"
-map_secret          = "5b3671e5cb405299265874d86ab75aad"
+map_clientid        = "2b336baae74ebc0e"
+map_secret          = "80df3572a1d0fbb17db24b22d5637e1c"
 map_access_token    = "185a6e99d498ebd85f43c43948452da9709526dd"
 map_refresh_token   = "37164dc3f35735a0b2d7f7b6bcc191f0f7069165"
 
