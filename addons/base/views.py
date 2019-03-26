@@ -508,7 +508,6 @@ def create_waterbutler_log(payload, **kwargs):
             provider = payload['metadata']['provider']
             timestamp.file_node_deleted(node._id, provider, src_path)
 
-
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
 
