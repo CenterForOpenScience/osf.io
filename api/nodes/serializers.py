@@ -581,7 +581,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                 WITH RECURSIVE parents AS (
+                WITH RECURSIVE parents AS (
                   SELECT parent_id, child_id
                   FROM osf_noderelation
                   WHERE child_id = %s AND is_node_link IS FALSE

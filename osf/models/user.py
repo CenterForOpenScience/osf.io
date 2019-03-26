@@ -586,10 +586,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def osf_groups(self):
+        """
+        OSFGroups that the user belongs to
+        """
         OSFGroup = apps.get_model('osf.OSFGroup')
         return get_objects_for_user(self, 'member_group', OSFGroup, with_superuser=False)
 
     def group_role(self, group):
+        """
+        For the given OSFGroup, return the user's role - either member or manager
+        """
         if group.is_manager(self):
             return MANAGER
         elif group.is_member(self):

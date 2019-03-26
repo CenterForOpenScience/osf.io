@@ -656,6 +656,8 @@ bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contri
 def update_contributors_async(self, user_id):
     OSFUser = apps.get_model('osf.OSFUser')
     user = OSFUser.objects.get(id=user_id)
+    # If search updated so group member names are displayed on project search results,
+    # then update nodes that the user has group membership as well
     p = Paginator(user.visible_contributor_to.order_by('id'), 100)
     for page_num in p.page_range:
         bulk_update_contributors(p.page(page_num).object_list)
