@@ -540,12 +540,12 @@ def userkey_generation(guid):
         pvt_key_generation_cmd = api_settings.SSL_PRIVATE_KEY_GENERATION.format(
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pvt_key_name),
             api_settings.KEY_BIT_VALUE
-        ).split(' ')
+        ).split(api_settings.TST_COMMAND_DELIMITER)
 
         pub_key_generation_cmd = api_settings.SSL_PUBLIC_KEY_GENERATION.format(
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pvt_key_name),
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pub_key_name)
-        ).split(' ')
+        ).split(api_settings.TST_COMMAND_DELIMITER)
 
         prc = subprocess.Popen(
             pvt_key_generation_cmd, shell=False, stdin=subprocess.PIPE,
@@ -586,7 +586,7 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
 class AddTimestamp:
     #1 create tsq (timestamp request) from file, and keyinfo
     def get_timestamp_request(self, file_name):
-        cmd = api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name.encode('utf-8')).split(' ')
+        cmd = api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name.encode('utf-8')).split(api_settings.TST_COMMAND_DELIMITER)
         process = subprocess.Popen(
             cmd, shell=False, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -622,7 +622,7 @@ class AddTimestamp:
         cmd = api_settings.UPKI_CREATE_TIMESTAMP.format(
             file_name.encode('utf-8'),
             '/dev/stdout'
-        ).split(' ')
+        ).split(api_settings.TST_COMMAND_DELIMITER)
         try:
             process = subprocess.Popen(
                 cmd, shell=False, stdin=subprocess.PIPE,
@@ -833,7 +833,7 @@ class TimeStampTokenVerifyCheck:
                         file_name.encode('utf-8'),
                         timestamptoken_file_path,
                         os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
-                    ).split(' ')
+                    ).split(api_settings.TST_COMMAND_DELIMITER)
                     prc = subprocess.Popen(
                         cmd, shell=False, stdin=subprocess.PIPE,
                         stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -858,7 +858,7 @@ class TimeStampTokenVerifyCheck:
                     cmd = api_settings.UPKI_VERIFY_TIMESTAMP.format(
                         file_name.encode('utf-8'),
                         file_name.encode('utf-8') + '.tst'
-                    ).split(' ')
+                    ).split(api_settings.TST_COMMAND_DELIMITER)
                     try:
                         process = subprocess.Popen(
                             cmd, shell=False, stdin=subprocess.PIPE,

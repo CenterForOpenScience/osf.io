@@ -129,7 +129,7 @@ class TestAddTimestamp(ApiTestCase):
         addTimestamp = AddTimestamp()
         file_data = {
             'file_id': file_node._id,
-            'file_name': 'Hello.txt',
+            'file_name': 'Hello World.txt',
             'file_path': os.path.join('/', filename),
             'size': 1234,
             'created': None,

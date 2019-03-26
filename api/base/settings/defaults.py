@@ -311,13 +311,53 @@ INSTALLED_APPS += ('addons.nextcloud',)
 ADDONS_FOLDER_CONFIGURABLE.append('nextcloud')
 ADDONS_OAUTH.append('nextcloud')
 
+
+#TST commands delmiter
+TST_COMMAND_DELIMITER = '\0'
+
 # RSA key generation settings
-SSL_GENERATE_KEY = 'openssl genrsa -des3 -out {0}.key {1}'
-SSL_GENERATE_KEY_NOPASS = 'openssl rsa -in {0}.key -out {0}.key.nopass'
-SSL_GENERATE_CSR = 'openssl req -new -key {0}.key.nopass -out {0}.csr'
-SSL_GENERATE_SELF_SIGNED = 'openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout {0}.key -out {0}.crt'
-SSL_PRIVATE_KEY_GENERATION = 'openssl genrsa -out {0} {1}'
-SSL_PUBLIC_KEY_GENERATION = 'openssl rsa -in {0} -pubout -out {1}'
+SSL_GENERATE_KEY = 'openssl' + TST_COMMAND_DELIMITER + \
+                   'genrsa' + TST_COMMAND_DELIMITER + \
+                   '-des3' + TST_COMMAND_DELIMITER + \
+                   '-out' + TST_COMMAND_DELIMITER + \
+                   '{0}.key {1}'
+SSL_GENERATE_KEY_NOPASS = 'openssl' + TST_COMMAND_DELIMITER + \
+                          'rsa' + TST_COMMAND_DELIMITER + \
+                          '-in' + TST_COMMAND_DELIMITER + \
+                          '{0}.key' + TST_COMMAND_DELIMITER + \
+                          '-out' + TST_COMMAND_DELIMITER + \
+                          '{0}.key.nopass'
+SSL_GENERATE_CSR = 'openssl' + TST_COMMAND_DELIMITER + \
+                   'req' + TST_COMMAND_DELIMITER + \
+                   '-new' + TST_COMMAND_DELIMITER + \
+                   '-key' + TST_COMMAND_DELIMITER + \
+                   '{0}.key.nopass' + TST_COMMAND_DELIMITER + \
+                   '-out' + TST_COMMAND_DELIMITER + \
+                   '{0}.csr'
+SSL_GENERATE_SELF_SIGNED = 'openssl' + TST_COMMAND_DELIMITER + \
+                           'req' + TST_COMMAND_DELIMITER + \
+                           '-x509' + TST_COMMAND_DELIMITER + \
+                           '-nodes' + TST_COMMAND_DELIMITER + \
+                           '-days' + TST_COMMAND_DELIMITER + \
+                           '365' + TST_COMMAND_DELIMITER + \
+                           '-newkey' + TST_COMMAND_DELIMITER + \
+                           'rsa:2048' + TST_COMMAND_DELIMITER + \
+                           '-keyout' + TST_COMMAND_DELIMITER + \
+                           '{0}.key' + TST_COMMAND_DELIMITER + \
+                           '-out' + TST_COMMAND_DELIMITER + \
+                           '{0}.crt'
+SSL_PRIVATE_KEY_GENERATION = 'openssl' + TST_COMMAND_DELIMITER + \
+                             'genrsa' + TST_COMMAND_DELIMITER + \
+                             '-out' + TST_COMMAND_DELIMITER + \
+                             '{0}' + TST_COMMAND_DELIMITER + \
+                             '{1}'
+SSL_PUBLIC_KEY_GENERATION = 'openssl' + TST_COMMAND_DELIMITER + \
+                            'rsa' + TST_COMMAND_DELIMITER + \
+                            '-in' + TST_COMMAND_DELIMITER + \
+                            '{0}' + TST_COMMAND_DELIMITER + \
+                            '-pubout' + TST_COMMAND_DELIMITER + \
+                            '-out' + TST_COMMAND_DELIMITER + \
+                            '{1}'
 
 # UserKey Placement destination
 KEY_NAME_PRIVATE = 'pvt'
@@ -329,8 +369,22 @@ KEY_NAME_FORMAT = '{0}_{1}_{2}{3}'
 PRIVATE_KEY_VALUE = 1
 PUBLIC_KEY_VALUE = 2
 # FreeTSA openation commands
-SSL_CREATE_TIMESTAMP_REQUEST = 'openssl ts -query -data {0} -cert -sha512'
-SSL_GET_TIMESTAMP_RESPONSE = 'openssl ts -verify -data {0} -in {1} -CAfile {2}'
+SSL_CREATE_TIMESTAMP_REQUEST = 'openssl' + TST_COMMAND_DELIMITER + \
+                               'ts' + TST_COMMAND_DELIMITER + \
+                               '-query' + TST_COMMAND_DELIMITER + \
+                               '-data' + TST_COMMAND_DELIMITER + \
+                               '{0}' + TST_COMMAND_DELIMITER + \
+                               '-cert' + TST_COMMAND_DELIMITER + \
+                               '-sha512'
+SSL_GET_TIMESTAMP_RESPONSE = 'openssl' + TST_COMMAND_DELIMITER + \
+                             'ts' + TST_COMMAND_DELIMITER + \
+                             '-verify' + TST_COMMAND_DELIMITER + \
+                             '-data' + TST_COMMAND_DELIMITER + \
+                             '{0}' + TST_COMMAND_DELIMITER + \
+                             '-in' + TST_COMMAND_DELIMITER + \
+                             '{1}' + TST_COMMAND_DELIMITER + \
+                             '-CAfile' + TST_COMMAND_DELIMITER + \
+                             '{2}'
 # openssl ts verify check value
 OPENSSL_VERIFY_RESULT_OK = 'OK'
 # timestamp verify rootKey
