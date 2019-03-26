@@ -5131,12 +5131,16 @@ class TestTimestampView(OsfTestCase):
         assert 'class="creator_name" value="Freddie Mercury' in res
         assert 'class="creator_email" value="freddiemercury' in res
 
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult.ready')
+    @mock.patch('celery.contrib.abortable.AbortableTask.is_aborted')
     @mock.patch('website.project.views.node.find_bookmark_collection')
     @mock.patch('website.util.waterbutler.shutil')
     @mock.patch('requests.get')
-    def test_add_timestamp_token(self, mock_get, mock_shutil, mock_collection):
+    def test_add_timestamp_token(self, mock_get, mock_shutil, mock_collection, mock_aborted, mock_ready):
         mock_get.return_value.content = ''
         mock_get.return_value.status_code = 200
+        mock_aborted.return_value = False
+        mock_ready.return_value = True
 
         url_timestamp = self.project.url + 'timestamp/'
         res = self.app.get(url_timestamp, auth=self.user.auth)
@@ -5153,16 +5157,16 @@ class TestTimestampView(OsfTestCase):
         api_url_add_timestamp = self.project.api_url + 'timestamp/add_timestamp/'
         self.app.post_json(
             api_url_add_timestamp,
-            {
-                'provider': [file_verify_result.provider],
-                'file_id': [file_verify_result.file_id],
-                'file_path': [file_node.path],
-                'file_name': [file_node.name],
-                'size': [2345],
-                'created': ['2018-12-17 00:00'],
-                'modified': ['2018-12-19 00:00'],
-                'version': [file_node.current_version_number]
-            },
+            [{
+                'provider': file_verify_result.provider,
+                'file_id': file_verify_result.file_id,
+                'file_path': file_node.path,
+                'file_name': file_node.name,
+                'size': 2345,
+                'created': '2018-12-17 00:00',
+                'modified': '2018-12-19 00:00',
+                'version': file_node.current_version_number
+            }],
             content_type='application/json',
             auth=self.user.auth
         )
@@ -5175,27 +5179,94 @@ class TestTimestampView(OsfTestCase):
         assert 'osfstorage_test_file3.status_3' not in res
         assert 's3_test_file1.status_3' in res
 
+    @mock.patch('website.util.timestamp.check_file_timestamp')
+    @mock.patch('website.util.timestamp.get_full_list')
+    @mock.patch('celery.contrib.abortable.AbortableTask.is_aborted')
     @mock.patch('website.util.waterbutler.shutil')
     @mock.patch('requests.get')
-    def test_get_timestamp_error_data(self, mock_get, mock_shutil):
+    def test_verify_timestamp_token(self, mock_get, mock_shutil, mock_aborted, mock_getfulllist, mock_checkfilets):
         mock_get.return_value.content = ''
+        mock_aborted.return_value = False
+        mock_getfulllist.return_value = [
+            {
+                'provider': 'osfstorage',
+                'provider_file_list': [
+                    { 'file_name': 'file1.txt' },
+                    { 'file_name': 'file2.txt' },
+                    { 'file_name': 'file3.txt' },
+                ]
+            },
+            {
+                'provider': 'github',
+                'provider_file_list': [
+                    { 'file_name': 'file1.txt' },
+                ]
+            },
+        ]
 
         file_node = create_test_file(node=self.node, user=self.user, filename='test_get_timestamp_error_data')
-        api_url_get_timestamp_error_data = self.project.api_url + 'timestamp/timestamp_error_data/'
+        api_url_get_timestamp_error_data = self.project.url + 'timestamp/json/'
         res = self.app.post_json(
             api_url_get_timestamp_error_data,
-            {
-                'provider': [file_node.provider],
-                'file_id': [file_node._id],
-                'file_path': ['/' + file_node.name],
-                'file_name': [file_node.name],
-                'version': [file_node.current_version_number]
-            },
+            {},
             content_type='application/json',
             auth=self.user.auth
         )
         self.project.reload()
         assert_equal(res.status_code, 200)
+
+        assert_equal(mock_getfulllist.call_count, 1)
+        assert_equal(mock_checkfilets.call_count, 4)  # 4 files, 3 on osfstorage and 1 on github
+
+    @mock.patch('website.util.timestamp.TimestampTask')
+    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    def test_cancel_success(self, mock_task, mock_tstaskmodel):
+        mock_task.return_value.ready.return_value = False
+
+        url_cancel = self.project.api_url + 'timestamp/cancel_task/'
+        cancel_res = self.app.post_json(
+            url_cancel, {}, content_type='application/json', auth=self.user.auth)
+
+        assert_equal(cancel_res.status_code, 200)
+        assert_true(cancel_res.json['success'])
+        assert_equal(mock_task.return_value.abort.call_count, 1)
+
+    @mock.patch('website.util.timestamp.TimestampTask')
+    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    def test_cancel_fail(self, mock_task, mock_tstaskmodel):
+        mock_task.return_value.ready.return_value = True
+
+        url_cancel = self.project.api_url + 'timestamp/cancel_task/'
+        cancel_res = self.app.post_json(
+            url_cancel, {}, content_type='application/json', auth=self.user.auth)
+
+        assert_equal(cancel_res.status_code, 200)
+        assert_false(cancel_res.json['success'])
+        assert_equal(mock_task.return_value.abort.call_count, 0)
+
+    @mock.patch('website.util.timestamp.TimestampTask')
+    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    def test_get_task_progress_ready(self, mock_task, mock_tstaskmodel):
+        mock_task.return_value.ready.return_value = True
+
+        url_progress = self.project.api_url + 'timestamp/task_status/'
+        status_res = self.app.post_json(
+            url_progress, {}, content_type='application/json', auth=self.user.auth)
+
+        assert_equal(status_res.status_code, 200)
+        assert_true(status_res.json['ready'])
+
+    @mock.patch('website.util.timestamp.TimestampTask')
+    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    def test_get_task_progress_not_ready(self, mock_task, mock_tstaskmodel):
+        mock_task.return_value.ready.return_value = False
+
+        url_progress = self.project.api_url + 'timestamp/task_status/'
+        status_res = self.app.post_json(
+            url_progress, {}, content_type='application/json', auth=self.user.auth)
+
+        assert_equal(status_res.status_code, 200)
+        assert_false(status_res.json['ready'])
 
 
 class TestAddonFileViewTimestampFunc(OsfTestCase):
