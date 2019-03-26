@@ -42,6 +42,7 @@ from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
+from osf.models.map import MAPProfile
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
@@ -103,7 +104,6 @@ class OSFUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-
 class Email(BaseModel):
     address = LowercaseEmailField(unique=True, db_index=True, validators=[validate_email])
     user = models.ForeignKey('OSFUser', related_name='emails', on_delete=models.CASCADE)
@@ -113,9 +113,11 @@ class Email(BaseModel):
 
 class CGGroup(BaseModel):
     name = models.CharField(max_length=255, unique=True)
+    # Group identifier for mAP Core API
+    geoup_key = models.CharField(max_length=255,
+        unique=True, blank=True, null=True, db_index=False)
     def __unicode__(self):
         return self.name
-
 
 class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     FIELD_ALIASES = {
@@ -393,6 +395,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     cggroups_sync = models.ManyToManyField(CGGroup, related_name='users_group_sync')
     cggroups_initialized = models.BooleanField(default=False)
     date_last_access = NonNaiveDateTimeField(null=True, blank=True)
+
+    # MAPProfile link.
+    map_profile = models.OneToOneField(MAPProfile,
+        on_delete=models.SET_NULL, blank=True, null=True)
 
     def __repr__(self):
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
