@@ -421,3 +421,7 @@ FILE_NOT_FOUND = 6
 FILE_NOT_FOUND_MSG = 'NG: file was gone.'
 TIME_STAMP_VERIFICATION_ERR = 7
 TIME_STAMP_VERIFICATION_ERR_MSG = 'Error: some errors has occurred in verification.'
+TIME_STAMP_STORAGE_DISCONNECTED = 8
+TIME_STAMP_STORAGE_DISCONNECTED_MSG = 'Error: storage disconnected.'
+TIME_STAMP_STORAGE_NOT_ACCESSIBLE = 9
+TIME_STAMP_STORAGE_NOT_ACCESSIBLE_MSG = 'Error: storage service connection error occurred.'
