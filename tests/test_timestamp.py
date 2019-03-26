@@ -42,6 +42,7 @@ def create_rdmfiletimestamptokenverifyresult(self, filename='test_file_timestamp
     file_node.save()
     ## create tmp_dir
     tmp_dir = tempfile.mkdtemp()
+
     ## create tmp_file (file_node)
     tmp_file = os.path.join(tmp_dir, filename)
     with open(tmp_file, 'wb') as fout:
@@ -115,10 +116,7 @@ class TestAddTimestamp(ApiTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         download_file_path = os.path.join(tmp_dir, filename)
@@ -195,10 +193,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
@@ -262,10 +257,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
@@ -333,10 +325,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
@@ -386,10 +375,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
@@ -440,10 +426,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node.delete()
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
@@ -492,10 +475,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node.delete()
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
