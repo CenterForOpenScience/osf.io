@@ -169,6 +169,20 @@ def mapcore_refresh_accesstoken(user, force = False):
 
     return 0
 
+###
+### sync functions
+###
+
+
+def mapcore_get_users_groups(user):
+    '''get nAP groups by a user'''
+    ''':param user OSFUser'''
+
+    # get user data from mAP
+
+
+
+
 
 if __name__ == '__main__':
     init_app(routes=False, set_backends=False)

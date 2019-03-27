@@ -15,6 +15,7 @@ import logging
 import hashlib
 import requests
 import urllib
+from website import settings
 #from website.app import init_app
 #from osf.models.user import OSFUser
 
@@ -24,13 +25,15 @@ logger.setLevel(10)
 stdout = logging.StreamHandler()
 logger.addHandler(stdout)
 
-map_hostname      = os.getenv('MAPCORE_HOSTNAME', 'https://sptest.cg.gakunin.jp')
-map_authcode_path = os.getenv('MAPCORE_AUTHCODE_PATH', '/oauth/shib/shibrequst.php')
-map_token_path    = os.getenv('MAPCORE_TOKEN_PATH', '/oauth/token.php')
-map_refresh_path  = os.getenv('MAPCORE_REFRESH_PATH', '/oauth/token.php')
-map_clientid      = os.getenv('MAPCORE_CLIENTID', '2b336baae74ebc0e')
-map_secret        = os.getenv('MAPCORE_SECRET', '80df3572a1d0fbb17db24b22d5637e1c')
-map_redirect      = os.getenv('MAPCORE_REDIRECT', 'https://www.dev1.rdm.nii.ac.jp/oauth_complete')
+map_hostname      = settings.MAPCORE_HOSTNAME
+map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
+map_token_path    = settings.MAPCORE_TOKEN_PATH
+map_refresh_path  = settings.MAPCORE_REFRESH_PATH
+map_api_path      = settings.MAPCORE_API_PATH
+map_clientid      = settings.MAPCORE_CLIENTID
+map_secret        = settings.MAPCORE_SECRET
+map_redirect      = settings.MAPCORE_REDIRECT
+map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 
 #
 #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
