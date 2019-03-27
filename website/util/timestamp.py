@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-'''
-Common functions for timestamp.
-'''
+"""Common functions for timestamp.
+"""
 from __future__ import absolute_import
 import datetime
 import hashlib
@@ -62,9 +61,8 @@ def get_async_task_data(node):
     return task_data
 
 def get_error_list(pid):
-    '''
-    Retrieve from the database the list of all timestamps that has an error.
-    '''
+    """Retrieve from the database the list of all timestamps that has an error.
+    """
     data_list = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=pid).order_by('provider', 'path')
     provider_error_list = []
     provider = None
@@ -166,9 +164,8 @@ def get_error_list(pid):
     return provider_error_list
 
 def get_full_list(uid, pid, node):
-    '''
-    Get a full list of timestamps from all files uploaded to a storage.
-    '''
+    """Get a full list of timestamps from all files uploaded to a storage.
+    """
     user_info = OSFUser.objects.get(id=uid)
     cookie = user_info.get_or_create_cookie()
 
@@ -410,6 +407,30 @@ def add_token(uid, node, data):
         logger.exception(err)
         raise
 
+def get_file_info(cookie, file_node, version):
+    headers = {'content-type': 'application/json'}
+    file_data_request = requests.get(
+        file_node.generate_waterbutler_url(
+            version=version.identifier, meta='', _internal=True
+        ), headers=headers, cookies={settings.COOKIE_NAME: cookie}
+    )
+    if file_data_request.status_code == 200:
+        file_data = file_data_request.json().get('data')
+        file_info = {
+            'provider': file_node.provider,
+            'file_id': file_node._id,
+            'file_name': file_data['attributes'].get('name'),
+            'file_path': file_data['attributes'].get('materialized'),
+            'size': file_data['attributes'].get('size'),
+            'created': file_data['attributes'].get('created_utc'),
+            'modified': file_data['attributes'].get('modified_utc'),
+            'version': ''
+        }
+        if file_node.provider == 'osfstorage':
+            file_info['version'] = file_data['attributes']['extra'].get('version')
+        return file_info
+    return None
+
 def file_created_or_updated(node, metadata, user_id, created_flag):
     if metadata['provider'] != 'osfstorage':
         file_node = BaseFileNode.resolve_class(
@@ -570,7 +591,7 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
 class AddTimestamp:
     #1 create tsq (timestamp request) from file, and keyinfo
     def get_timestamp_request(self, file_name):
-        cmd = api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name).split(' ')
+        cmd = api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name.encode('utf-8')).split(' ')
         process = subprocess.Popen(
             cmd, shell=False, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -604,7 +625,7 @@ class AddTimestamp:
 
     def get_timestamp_upki(self, file_name, tmp_dir):
         cmd = api_settings.UPKI_CREATE_TIMESTAMP.format(
-            file_name,
+            file_name.encode('utf-8'),
             '/dev/stdout'
         ).split(' ')
         try:
@@ -814,7 +835,7 @@ class TimeStampTokenVerifyCheck:
                         raise err
 
                     cmd = api_settings.SSL_GET_TIMESTAMP_RESPONSE.format(
-                        file_name,
+                        file_name.encode('utf-8'),
                         timestamptoken_file_path,
                         os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
                     ).split(' ')
@@ -840,8 +861,8 @@ class TimeStampTokenVerifyCheck:
                     except Exception as err:
                         raise err
                     cmd = api_settings.UPKI_VERIFY_TIMESTAMP.format(
-                        file_name,
-                        file_name + '.tst'
+                        file_name.encode('utf-8'),
+                        file_name.encode('utf-8') + '.tst'
                     ).split(' ')
                     try:
                         process = subprocess.Popen(
@@ -866,7 +887,7 @@ class TimeStampTokenVerifyCheck:
                     except Exception as err:
                         ret = api_settings.TIME_STAMP_VERIFICATION_ERR
                         verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'FAIL'
-                        logger.error(err)
+                        logger.error('upki verify error({}):{}'.format(file_name.encode('utf-8'), err))
 
                 verify_result.inspection_result_status = ret
 

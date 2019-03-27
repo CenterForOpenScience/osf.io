@@ -1,7 +1,6 @@
 import datetime
 import httplib
 import os
-import requests
 import uuid
 import markupsafe
 import urllib
@@ -763,26 +762,8 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if action == 'addtimestamp':
         cookie = auth.user.get_or_create_cookie()
-        headers = {'content-type': 'application/json'}
-        file_data_request = requests.get(
-            file_node.generate_waterbutler_url(
-                version=version.identifier, meta='', _internal=True
-            ), headers=headers, cookies={settings.COOKIE_NAME: cookie}
-        )
-        if file_data_request.status_code == 200:
-            file_data = file_data_request.json().get('data')
-            file_info = {
-                'provider': file_node.provider,
-                'file_id': file_node._id,
-                'file_name': file_data['attributes'].get('name'),
-                'file_path': file_data['attributes'].get('materialized'),
-                'size': file_data['attributes'].get('size'),
-                'created': file_data['attributes'].get('created_utc'),
-                'modified': file_data['attributes'].get('modified_utc'),
-                'version': ''
-            }
-            if file_node.provider == 'osfstorage':
-                file_info['version'] = file_data['attributes']['extra'].get('version')
+        file_info = timestamp.get_file_info(cookie, file_node, version)
+        if file_info is not None:
             timestamp.add_token(auth.user.id, target, file_info)
         else:
             raise HTTPError(httplib.BAD_REQUEST, data={
@@ -871,32 +852,16 @@ def addon_view_file(auth, node, file_node, version):
     )
 
     # Verify file
-    verify_result = {
-        'verify_result': '',
-        'verify_result_title': ''
-    }
+    verify_result = None
     cookie = auth.user.get_or_create_cookie()
-    headers = {'content-type': 'application/json'}
-    file_data_request = requests.get(
-        file_node.generate_waterbutler_url(
-            version=version.identifier, meta='', _internal=True
-        ), headers=headers, cookies={settings.COOKIE_NAME: cookie}
-    )
-    if file_data_request.status_code == 200:
-        file_data = file_data_request.json().get('data')
-        file_info = {
-            'provider': file_node.provider,
-            'file_id': file_node._id,
-            'file_name': file_data['attributes'].get('name'),
-            'file_path': file_data['attributes'].get('materialized'),
-            'size': file_data['attributes'].get('size'),
-            'created': file_data['attributes'].get('created_utc'),
-            'modified': file_data['attributes'].get('modified_utc'),
-            'version': ''
-        }
-        if file_node.provider == 'osfstorage':
-            file_info['version'] = file_data['attributes']['extra'].get('version')
+    file_info = timestamp.get_file_info(cookie, file_node, version)
+    if file_info is not None:
         verify_result = timestamp.check_file_timestamp(auth.user.id, node, file_info)
+    else:
+        verify_result = {
+            'verify_result': '',
+            'verify_result_title': ''
+        }
 
     mfr_url = get_mfr_url(node, file_node.provider)
     render_url = furl.furl(mfr_url).set(

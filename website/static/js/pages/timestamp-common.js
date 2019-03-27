@@ -470,7 +470,6 @@ function generateJson(fileList) {
 function generateRdf (fileList) {
     var i, key;
     var doc = document.implementation.createDocument('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf:RDF', null);
-    doc.xmlVersion = '1.0';
 
     // Auxiliary functions for generating the RDF file
     var createEl = function (doc, elementName, attributes, text) {
