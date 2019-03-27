@@ -57,6 +57,8 @@ def get_async_task_data(node):
         task = AbortableAsyncResult(timestamp_task.task_id)
         task_data['ready'] = task.ready()
         task_data['requester'] = timestamp_task.requester.username
+        if task_data['ready']:
+            TimestampTask.objects.filter(node=node).delete()
     return task_data
 
 def get_error_list(pid):
@@ -349,6 +351,8 @@ def get_celery_task_progress(node):
     task = get_celery_task(node)
     if task is not None:
         status['ready'] = task.ready()
+        if status['ready']:
+            TimestampTask.objects.filter(node=node).delete()
     return status
 
 def cancel_celery_task(node):
@@ -360,6 +364,7 @@ def cancel_celery_task(node):
         task.revoke()
         task.abort()
         result['success'] = True
+    TimestampTask.objects.filter(node=node).delete()
     return result
 
 def add_token(uid, node, data):
