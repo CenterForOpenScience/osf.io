@@ -6,8 +6,8 @@
   "author": "National Institute of Informatics",
   "license": "Apache-2.0",
   "dependencies": {
-    "@centerforopenscience/markdown-it-atrules": "^0.1.0",
     "@centerforopenscience/list-of-licenses": "1.1.0",
+    "@centerforopenscience/markdown-it-atrules": "^0.1.0",
     "@centerforopenscience/markdown-it-toc": "~1.1.1",
     "@centerforopenscience/osf-style": "https://github.com/CenterForOpenScience/osf-style#370b544affcdafc5734cdd388587575895e4b33a",
     "URIjs": "^1.14.1",
@@ -40,6 +40,7 @@
     "knockout.validation": "^2.0.2",
     "less": "^2.5.3",
     "linkifyjs": "^2.0.3",
+    "list.js": "^1.5.0",
     "loaders.css": "^0.1.2",
     "lodash.chunk": "^4.0.6",
     "lodash.find": "^4.3.0",
@@ -65,6 +66,7 @@
     "typeahead.js": "^0.10.5",
     "url-loader": "0.5.7",
     "uuid": "^2.0.1",
+    "vkbeautify": "^0.99.3",
     "webpack": "3.8.1",
     "zxcvbn": "^4.2.0"
   },

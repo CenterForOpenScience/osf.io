@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""OSF mailing utilities.
+"""GakuNin RDM mailing utilities.
 
 Email templates go in website/templates/emails
 Templates must end in ``.txt.mako`` for plaintext emails or``.html.mako`` for html emails.
@@ -183,14 +183,14 @@ EXTERNAL_LOGIN_LINK_SUCCESS = Mail(
     subject='GakuNin RDM Account Verification Success'
 )
 
-# Sign up confirmation emails for OSF, native campaigns and branded campaigns
+# Sign up confirmation emails for GakuNin RDM, native campaigns and branded campaigns
 INITIAL_CONFIRM_EMAIL = Mail(
     'initial_confirm',
     subject='GakuNin RDM Account Verification'
 )
 CONFIRM_EMAIL = Mail(
     'confirm',
-    subject='Add a new email to your OSF account'
+    subject='Add a new email to your GakuNin RDM account'
 )
 CONFIRM_EMAIL_PREREG = Mail(
     'confirm_prereg',
@@ -206,7 +206,7 @@ CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
 )
 CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
     'confirm_registries_osf',
-    subject='GakuNin RDM Account Verification, OSF Registries'
+    subject='GakuNin RDM Account Verification, GakuNin RDM Registries'
 )
 CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
     'confirm_moderation',
@@ -221,7 +221,7 @@ PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email cha
 # Contributor added confirmation emails
 INVITE_DEFAULT = Mail(
     'invite_default',
-    subject='You have been added as a contributor to an OSF project.'
+    subject='You have been added as a contributor to an GakuNin RDM project.'
 )
 INVITE_PREPRINT = lambda template, provider: Mail(
     'invite_preprints_{}'.format(template),
@@ -229,7 +229,7 @@ INVITE_PREPRINT = lambda template, provider: Mail(
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
-    subject='You have been added as a contributor to an OSF project.'
+    subject='You have been added as a contributor to an GakuNin RDM project.'
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
     'contributor_added_preprints_{}'.format(template),
@@ -237,7 +237,7 @@ CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
 )
 CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
-    subject='You have been added as a contributor to an OSF project.'
+    subject='You have been added as a contributor to an GakuNin RDM project.'
 )
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
@@ -245,20 +245,20 @@ MODERATOR_ADDED = lambda provider: Mail(
 )
 CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',
-    subject='Your access request to an OSF project has been approved'
+    subject='Your access request to an GakuNin RDM project has been approved'
 )
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
-PASSWORD_RESET = Mail('password_reset', subject='Your OSF password has been reset')
+PASSWORD_RESET = Mail('password_reset', subject='Your GakuNin RDM password has been reset')
 PENDING_VERIFICATION = Mail('pending_invite', subject='Your account is almost ready!')
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
 
-REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
-REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
+REQUEST_EXPORT = Mail('support_request', subject='[via GakuNin RDM] Export Request')
+REQUEST_DEACTIVATION = Mail('support_request', subject='[via GakuNin RDM] Deactivation Request')
 
-SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as spam')
+SPAM_USER_BANNED = Mail('spam_user_banned', subject='[GakuNin RDM] Account flagged as spam')
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',
@@ -274,7 +274,7 @@ CONFERENCE_FAILED = Mail(
 )
 
 DIGEST = Mail(
-    'digest', subject='OSF Notifications',
+    'digest', subject='GakuNin RDM Notifications',
     categories=['notifications', 'notifications-digest']
 )
 
@@ -284,7 +284,7 @@ DIGEST_REVIEWS_MODERATORS = Mail(
 )
 
 TRANSACTIONAL = Mail(
-    'transactional', subject='OSF: ${subject}',
+    'transactional', subject='GakuNin RDM: ${subject}',
     categories=['notifications', 'notifications-transactional']
 )
 
@@ -429,12 +429,12 @@ REVIEWS_SUBMISSION_CONFIRMATION = Mail(
 
 ACCESS_REQUEST_SUBMITTED = Mail(
     'access_request_submitted',
-    subject='An OSF user has requested access to your ${node.project_or_component}'
+    subject='An GakuNin RDM user has requested access to your ${node.project_or_component}'
 )
 
 ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
-    subject='Your access request to an OSF project has been declined'
+    subject='Your access request to an GakuNin RDM project has been declined'
 )
 
 CROSSREF_ERROR = Mail(

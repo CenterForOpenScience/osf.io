@@ -108,6 +108,32 @@ module.exports = {
                         $osf.osfSupportLink(),
             submitSettingsSuccess : 'Folder Successfully linked',
         },
+        swift: {
+            authError: 'Could not connect to OpenStack Swift at this time. Please try again later.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+        },
+        azureblobstorage: {
+            authError: 'Could not connect to Azure Blob Storage at this time. Please try again later.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+        },
+        weko: {
+            authError: 'Could not connect to WEKO at this time. Please try again later.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+        },
+        s3compat: {
+            authError: 'Could not connect to S3 Compatible Storage at this time. Please try again later.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+        },
+        nextcloud: {
+            authError: 'Invalid Nextcloud server',
+            authInvalid: 'Invalid credentials. Please enter a valid username and password.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+        },
     },
     apiOauth2Application: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',

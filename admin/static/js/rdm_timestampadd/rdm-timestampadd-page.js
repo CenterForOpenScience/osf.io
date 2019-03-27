@@ -1,29 +1,14 @@
 'use strict';
 
 var $ = require('jquery');
-var jQuery = $;
-var Raven = require('raven-js');
+var Cookie = require('js-cookie');
 var urls = window.timestampaddUrls;
 var timestampCommon = require('js/pages/timestamp-common.js');  // website/static/js/pages
+timestampCommon.setWebOrAdmin('admin');
 
 
 $(function () {
-    function getCookie (name) {
-        var cookieValue = null;
-        if (document.cookie && document.cookie != '') {
-            var cookies = document.cookie.split(';');
-            for (var i = 0; i < cookies.length; i++) {
-                var cookie = jQuery.trim(cookies[i]);
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    var csrftoken = getCookie('admin-csrf');
+    var csrftoken = Cookie.get('admin-csrf');
     function csrfSafeMethod (method) {
         // these HTTP methods do not require CSRF protection
         return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
@@ -38,7 +23,7 @@ $(function () {
     });
 
     var btnVerify_onclick = function () {
-        if ($('#btn-verify').attr('disabled') != undefined || $('#btn-addtimestamp').attr('disabled') != undefined) {
+        if ($('#btn-verify').attr('disabled') !== undefined || $('#btn-addtimestamp').attr('disabled') !== undefined) {
             return false;
         }
         timestampCommon.verify({
@@ -49,7 +34,7 @@ $(function () {
     };
 
     var btnAddtimestamp_onclick = function () {
-        if ($('#btn-verify').attr('disabled') != undefined || $('#btn-addtimestamp').attr('disabled') != undefined) {
+        if ($('#btn-verify').attr('disabled') !== undefined || $('#btn-addtimestamp').attr('disabled') !== undefined) {
             return false;
         }
         timestampCommon.add({
@@ -58,13 +43,69 @@ $(function () {
         });
     };
 
-    $('#addTimestampAllCheck').on('change', function () {
-        $('input[id=addTimestampCheck]').prop('checked', this.checked);
+    var updatePaginationElements = function () {
+        // Page info
+        var currentPage = $('.listjs-pagination .active a').text();
+        var numPages = $('.listjs-pagination li a').last().text();
+        $('.pagination .current').text('Page ' + currentPage + ' of ' + numPages);
+
+        // Enable/disable buttons
+        $('#first-page').removeClass('disabled');
+        $('#previous-page').removeClass('disabled');
+        $('#last-page').removeClass('disabled');
+        $('#next-page').removeClass('disabled');
+        if (!currentPage || currentPage === '1') {
+            $('#first-page').addClass('disabled');
+            $('#previous-page').addClass('disabled');
+        }
+        if (currentPage === numPages) {
+            $('#last-page').addClass('disabled');
+            $('#next-page').addClass('disabled');
+        }
+    };
+
+    $('#first-page').on('click', function () {
+        $('.listjs-pagination li').first().click();
+        updatePaginationElements();
     });
 
-    var document_onready = function () {
+    $('#previous-page').on('click', function () {
+        $('.pagination-prev').click();
+        updatePaginationElements();
+    });
+
+    $('#next-page').on('click', function () {
+        $('.pagination-next').click();
+        updatePaginationElements();
+    });
+
+    $('#last-page').on('click', function () {
+        $('.listjs-pagination li').last().click();
+        updatePaginationElements();
+    });
+
+    $('#pageLength-10').on('click', function () {
+        $('#pageLength').val(10).change();
+        updatePaginationElements();
+    });
+
+    $('#pageLength-25').on('click', function () {
+        $('#pageLength').val(25).change();
+        updatePaginationElements();
+    });
+
+    $('#pageLength-50').on('click', function () {
+        $('#pageLength').val(50).change();
+        updatePaginationElements();
+    });
+
+    $(document).ready(function () {
+        timestampCommon.init();
         $('#btn-verify').on('click', btnVerify_onclick).focus();
         $('#btn-addtimestamp').on('click', btnAddtimestamp_onclick).focus();
-    };
-    $(document).ready(document_onready);
+        $('#btn-download').on('click', function () {
+            timestampCommon.download();
+        });
+        updatePaginationElements();
+    });
 });

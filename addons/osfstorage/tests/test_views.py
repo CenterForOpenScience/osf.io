@@ -1061,7 +1061,11 @@ class TestFileTags(StorageTestCase):
 @pytest.mark.enable_bookmark_creation
 class TestFileViews(StorageTestCase):
 
-    def test_file_views(self):
+    @mock.patch('website.util.timestamp.requests')
+    def test_file_views(self, mock_requests):
+        # Pretend timestamp request to waterbutler failed
+        mock_requests.get.return_value.status_code = 400
+
         file = create_test_file(target=self.node, user=self.user)
         url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
         # Test valid url file 200 on redirect
