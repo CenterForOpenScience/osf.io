@@ -412,9 +412,9 @@ def make_url_map(app):
 
         # mapcore Oauth result catcher
         Rule(
-            '/oauth_finish',
+            '/oauth_complete',
             'get',
-            website_views.oauth_finish,
+            website_views.oauth_complete,
             notemplate
         ),
 

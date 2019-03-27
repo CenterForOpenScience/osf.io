@@ -301,6 +301,13 @@ def node_setting(auth, node, **kwargs):
     ret['group'] = node.group.name if node.group is not None else None
     ret['can_delete'] = True if node.group is None else False
 
+    ###
+    if node.group is None:
+        logger.info("!!!! NODE SETTING: group is None")
+    else:
+        logger.info("!!!! NODE SETTING: group_key=" + node.group.name)
+    ###
+
     return ret
 
 @must_be_valid_project
@@ -475,6 +482,12 @@ def configure_requests(node, **kwargs):
 @must_be_contributor_or_public
 @ember_flag_is_active('ember_project_detail_page')
 def view_project(auth, node, **kwargs):
+    '''
+    if node.group is None:
+        logger.info("!!!! VIEW PROJECT: group is None")
+    else:
+        logger.info("!!!! VIEW PROJECT: group_key=" + node.group.name)
+    '''
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth,
                         primary=primary,

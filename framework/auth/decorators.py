@@ -173,6 +173,10 @@ def create_or_join_group_projects(user):
     from osf.utils.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
     for group in user.cggroups.all():
         groupname = group.name
+        ###### TTTTTTTTTTTTTTTTTTTTTTTTTTTT
+        group_key = group.group_key
+        logger.info("!!!! create_or_join_group_projects: group_key=" + group_key)
+        ###### TTTTTTTTTTTTTTTTTTTTTTTTTTTT
         group_admin = is_group_admin(user, groupname)
         node = get_group_node(groupname)
         if node is not None:  # exists

@@ -511,9 +511,9 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
 # mAP core
 def oauth_start(**kwargs):
     # enterance for OAuth
-    return redirect(mapcore_request_authcode(_get_current_user() or MockUser()))
+    return redirect(mapcore_request_authcode())
 
-def oauth_finish(**kwargs):
+def oauth_complete(**kwargs):
     # Redirect to COS News page
     logger.info("Enter oauth_finish()")
     return redirect(mapcore_receive_authcode(_get_current_user() or MockUser(), request.args.to_dict()))

@@ -405,7 +405,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def oauth_access_token(self):
-        return self.map_user.oauth_access_token
+        return self.map_profile.oauth_access_token
+
+    @property
+    def oauth_refresh_token(self):
+        return self.map_profile.oauth_refresh_token
+
+    @property
+    def oauth_refresh_time(self):
+        return self.map_profile.oauth_refresh_time
 
     @property
     def deep_url(self):

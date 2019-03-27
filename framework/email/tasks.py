@@ -61,6 +61,9 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
 def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True, username=None, password=None):
     username = username or settings.MAIL_USERNAME
     password = password or settings.MAIL_PASSWORD
+    if username and password:
+        ttls=True
+        login=True
 
     if login and (username is None or password is None):
         logger.error('Mail username and password not set; skipping send.')

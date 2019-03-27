@@ -5,7 +5,7 @@ import os
 import sys
 import json
 import time
-import datetime
+from datetime import datetime as dt
 import json
 from logging import getLogger
 
@@ -30,6 +30,7 @@ map_clientid      = settings.MAPCORE_CLIENTID
 map_secret        = settings.MAPCORE_SECRET
 map_redirect      = settings.MAPCORE_REDIRECT
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
+my_home = settings.DOMAIN
 
 
 def mapcore_request_authcode():
@@ -58,6 +59,12 @@ def mapcore_receive_authcode(user, params):
     '''here is the starting point of user registraion for mAP'''
     ''':param user  OSFUser object of current user'''
     ''':param arg   dict of url parameters in request'''
+    if isinstance(user, OSFUser):
+        logger.info("in mapcore_receive_authcode, user is instance of OSFUser")
+    else:
+        logger.info("in mapcore_receive_authcode, user is NOT instance of OSFUser")
+
+
     logger.info("get an oatuh response:")
     s = ''
     for k, v in params.items():
@@ -75,15 +82,27 @@ def mapcore_receive_authcode(user, params):
     (access_token, refresh_token) = mapcore_get_accesstoken(authcode)
 
     # set mAP attribute into current user
-    logger.info('User [' + user.eppn + '] get access_token [' + access_token)
-    user.map_user = MAPProfile.objects.update_or_create(
-        oauth_access_token = access_token,
-        oauth_refresh_token = refresh_token,
-        oauth_refresh_time = datetime.utcnow())
-    user.map_user.save()
+    map_user, created = MAPProfile.objects.get_or_create(eppn = user.eppn)
+    if created:
+        logger.info("MAPprofile new record created for " + user.eppn)
+    map_user.oauth_access_token = access_token
+    map_user.oauth_refresh_token = refresh_token
+    map_user.oauth_refresh_time = dt.utcnow()
+    map_user.save()
+    user.map_profile = map_user
+    logger.info('User [' + user.eppn + '] get access_token [' + access_token + '] -> saved')
     user.save()
 
-    return map_hostname  # redirect to home -> will redirect to dashboard
+
+    logger.info('In database:')
+    me = OSFUser.objects.get(eppn='nagahara@openidp.nii.ac.jp')
+    logger.info('name: ' + me.fullname)
+    logger.info('eppn: ' + me.eppn)
+    logger.info('access_token: ' + me.oauth_access_token)
+    logger.info('refresh_token: ' + me.oauth_refresh_token)
+
+
+    return my_home  # redirect to home -> will redirect to dashboard
 
 
 def mapcore_get_accesstoken(authcode, clientid = map_clientid, secret = map_secret, rediret = map_redirect):
@@ -104,9 +123,9 @@ def mapcore_get_accesstoken(authcode, clientid = map_clientid, secret = map_secr
     }
     res = requests.post(url, data = param, headers = headers, auth = basic_auth)
     res.raise_for_status()  # error check
+    logger.info("mapcore_get_accesstoken response: " + res.text )
     json = res.json()
-    logger.info("mapcore_get_accesstoken response: " + json )
-    return (json['access_tokes'], json['refresh_token'])
+    return (json['access_token'], json['refresh_token'])
 
 
 def mapcore_refresh_accesstoken(user, force = False):
@@ -143,20 +162,26 @@ def mapcore_refresh_accesstoken(user, force = False):
     logger.info('User [' + user.eppn + '] refresh access_token by [' + json['access_token'])
 
     # update database
-    u = user.map_user.objects.get(eppn=user.eppn)
-    u.oauth_access_token = json['access_token']
-    u.oauth_refresh_token = json['refresh_token']
-    u.oauth_refres_time = datetime.utcnow()
-    u.save()
+    user.map_profile = MAPProfile(oauth_access_token = json['access_token'],
+                                  oauth_refresh_token = json['refreshtoken'],
+                                  oauth_refresh_time = dt.utcnow())
+    user.save()
 
     return 0
 
 
 if __name__ == '__main__':
+    init_app(routes=False, set_backends=False)
+    me = OSFUser.objects.get(eppn='nagahra@openidp.nii.ac.jp')
+    print('name:', me.fullname)
+    print('eppn:', me.eppn)
+    print('access_token:', me.oauth_access_token)
+    print('refresh_token:', me.oauth_refresh_token)
+
 
 
 
     #dic = {"A": 1, "B":2, "C":3}
     #mapcore_set_authcode(dic)
-    print ("authcode: " + mapcore_request_authcode())
+    #print ("authcode: " + mapcore_request_authcode())
 
