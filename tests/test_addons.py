@@ -450,8 +450,7 @@ class TestAddonLogs(OsfTestCase):
         assert_equal(self.node.logs.count(), nlogs + 1)
         assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
-    @mock.patch('addons.base.views.upload_file_add_timestamptoken')
-    def test_add_file_info(self, mock_ts):
+    def test_add_file_info(self):
         self.configure_osf_addon()
         file_info_query = FileInfo.objects.filter(file=self.file)
         assert_false(file_info_query.exists())
@@ -479,8 +478,7 @@ class TestAddonLogs(OsfTestCase):
         file_info = file_info_list.first()
         assert_equal(file_info.file_size, 1000)
 
-    @mock.patch('addons.base.views.upload_file_add_timestamptoken')
-    def test_update_file_info(self, mock_ts):
+    def test_update_file_info(self):
         file_info = FileInfo(file=self.file, file_size=1000)
         file_info.save()
 
