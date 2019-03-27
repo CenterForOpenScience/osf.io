@@ -13,4 +13,6 @@ urlpatterns = [
         views.AddTimestamp.as_view(), name='add_timestamp_data'),
     url(r'^(?P<institution_id>[0-9]+)/nodes/(?P<guid>[a-z0-9]+)/addtimestamp/cancel_task/$',
         views.CancelTask.as_view(), name='cancel_task'),
+    url(r'^(?P<institution_id>[0-9]+)/nodes/(?P<guid>[a-z0-9]+)/addtimestamp/task_status/$',
+        views.TaskStatus.as_view(), name='task_status'),
 ]
