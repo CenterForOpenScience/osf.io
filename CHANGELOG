@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.4.0 (2019-03-28)
+===================
+- Chronos backend
+- APIv2: user_passwords type change
+- Preprint withdrawal email template changes
+
 19.3.0 (2019-03-04)
 ===================
 - Generate absolute url for confirmation url in claim user email
