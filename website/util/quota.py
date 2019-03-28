@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum
+from django.db.models.functions import Coalesce
 from osf.models import Guid, OSFUser, AbstractNode, FileInfo
 from addons.osfstorage.models import OsfStorageFileNode
 
@@ -21,8 +22,9 @@ def used_quota(user_id):
     ).all()
     files_ids = list(map(lambda f: f.id, files))
 
-    db_sum = FileInfo.objects.filter(file_id__in=files_ids).aggregate(Sum('file_size'))
-    return db_sum['file_size__sum']
+    db_sum = FileInfo.objects.filter(file_id__in=files_ids).aggregate(
+        filesize_sum=Coalesce(Sum('file_size'), 0))
+    return db_sum['filesize_sum']
 
 def abbreviate_size(size):
     size = float(size)
