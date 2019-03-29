@@ -312,9 +312,8 @@ def celery_verify_timestamp_token(self, uid, node_id):
 
 @celery_app.task(bind=True, base=AbortableTask)
 def celery_add_timestamp_token(self, uid, node_id, request_data):
-    '''
-    Celery Timestamptoken add method
-    '''
+    """Celery Timestamptoken add method
+    """
     secs_to_wait = 60.0 / api_settings.TS_REQUESTS_PER_MIN
     last_run = None
 
