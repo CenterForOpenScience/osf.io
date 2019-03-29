@@ -191,6 +191,24 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
     def can_view(self, user=None, private_link=None):
         return self.get_queryset().can_view(user=user, private_link=private_link)
 
+    def get_objects_for_user(self, user, permission=READ_NODE, base_queryset=None, include_public=False):
+        """
+        Return all AbstractNodes that the user has explicit permissions to - either through contributorship or group membership
+        - similar to guardian.get_objects_for_user(self, READ_NODE, AbstractNode, with_superuser=False), but not looking at
+        NodeUserObjectPermissions, just NodeGroupObjectPermissions.
+        """
+        OSFUserGroup = apps.get_model('osf', 'osfuser_groups')
+        if base_queryset is None:
+            base_queryset = self
+        permission_object_id = Permission.objects.get(codename=permission).id
+        user_groups = OSFUserGroup.objects.filter(osfuser_id=user.id if user else None).values_list('group_id', flat=True)
+        node_groups = NodeGroupObjectPermission.objects.filter(group_id__in=user_groups, permission_id=permission_object_id).values_list('content_object_id', flat=True)
+        nodes = base_queryset.filter(is_deleted=False)
+        query = Q(id__in=node_groups)
+        if include_public:
+            query |= Q(is_public=True)
+        return nodes.filter(query)
+
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin, GuardianMixin,
                    NodeLinkMixin, CommentableMixin, SpamOverrideMixin, TaxonomizableMixin,

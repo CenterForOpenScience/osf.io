@@ -221,7 +221,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return self.optimize_node_queryset(default_node_list_permission_queryset(user=self.request.user, model_cls=Node))
+        return default_node_list_permission_queryset(user=self.request.user, model_cls=Node)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):

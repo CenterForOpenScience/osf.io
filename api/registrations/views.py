@@ -111,7 +111,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return self.optimize_node_queryset(default_node_list_permission_queryset(user=self.request.user, model_cls=Registration))
+        return default_node_list_permission_queryset(user=self.request.user, model_cls=Registration)
 
     def is_blacklisted(self):
         query_params = self.parse_query_params(self.request.query_params)

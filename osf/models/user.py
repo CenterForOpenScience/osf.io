@@ -49,7 +49,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
-from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, READ_NODE, ADMIN
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -548,18 +548,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def all_nodes(self):
         """
-        Return all nodes that the user has explicit permissions to - either through contributorship or group membership
+        Return all AbstractNodes that the user has explicit permissions to - either through contributorship or group membership
+        - similar to guardian.get_objects_for_user(self, READ_NODE, AbstractNode, with_superuser=False), but not looking at
+        NodeUserObjectPermissions, just NodeGroupObjectPermissions.
         """
         from osf.models import AbstractNode
-
-        return get_objects_for_user(self, READ_NODE, AbstractNode, with_superuser=False)
+        return AbstractNode.objects.get_objects_for_user(self)
 
     @property
     def contributor_or_group_member_to(self):
         """
-        Nodes that user has perms to through contributorship - group membership not factored in
+        Nodes that user has perms to through contributorship or group membership
         """
-        return self.all_nodes.filter(is_deleted=False, type__in=['osf.node', 'osf.registration'])
+        return self.all_nodes.filter(type='osf.node')
 
     def set_unusable_username(self):
         """Sets username to an unusable value. Used for, e.g. for invited contributors
@@ -1424,7 +1425,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Returns projects that both self and other_user have in common; both are either contributors or group members
         """
-        return get_objects_for_user(other_user, READ_NODE, self.contributor_or_group_member_to.filter(type='osf.node', is_deleted=False), with_superuser=False)
+        from osf.models import AbstractNode
+
+        return AbstractNode.objects.get_objects_for_user(other_user, base_queryset=self.contributor_or_group_member_to)
 
     def get_projects_in_common(self, other_user):
         """Returns either a collection of "shared projects" (projects that both users are contributors or group members for)
