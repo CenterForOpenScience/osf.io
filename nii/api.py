@@ -359,126 +359,127 @@ class MAPCore:
 #
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
+if __name__ == '__main__':
 
-#
-# テスト用メインプログラム
-#
-map_api_path        = os.getenv('MAPCORE_API_PATH', '/api2/v1')
-map_clientid        = "2b336baae74ebc0e"
-map_secret          = "80df3572a1d0fbb17db24b22d5637e1c"
-map_access_token    = "185a6e99d498ebd85f43c43948452da9709526dd"
-map_refresh_token   = "37164dc3f35735a0b2d7f7b6bcc191f0f7069165"
+    #
+    # テスト用メインプログラム
+    #
+    map_api_path        = os.getenv('MAPCORE_API_PATH', '/api2/v1')
+    map_clientid        = "2b336baae74ebc0e"
+    map_secret          = "80df3572a1d0fbb17db24b22d5637e1c"
+    map_access_token    = "185a6e99d498ebd85f43c43948452da9709526dd"
+    map_refresh_token   = "37164dc3f35735a0b2d7f7b6bcc191f0f7069165"
 
-group_name = u"mAP連携テスト用01"
-introduction = u"GRDM - mAP連携テスト用01"
-user_eppn = "toshi-f@openidp.nii.ac.jp"
+    group_name = u"mAP連携テスト用01"
+    introduction = u"GRDM - mAP連携テスト用01"
+    user_eppn = "toshi-f@openidp.nii.ac.jp"
 
-mapcore = MAPCore(map_clientid, map_secret,
-    map_access_token, map_refresh_token)
+    mapcore = MAPCore(map_clientid, map_secret,
+        map_access_token, map_refresh_token)
 
-j = mapcore.get_api_version()
-if j == False:
-    logger.debug("Error")
-    k = mapcore.refresh()
-    logger.info(json.dumps(k))
-    sys.exit()
-else:
-    logger.info("  version=" + str(j["result"]["version"]))
-    logger.info("  revision=" + j["result"]["revision"])
-    logger.info("  author=" + j["result"]["author"])
+    j = mapcore.get_api_version()
+    if j == False:
+        logger.debug("Error")
+        k = mapcore.refresh()
+        logger.info(json.dumps(k))
+        sys.exit()
+    else:
+        logger.info("  version=" + str(j["result"]["version"]))
+        logger.info("  revision=" + j["result"]["revision"])
+        logger.info("  author=" + j["result"]["author"])
 
-#
-# 新規グループ作成 (group_name をグループ名として)
-#
-'''
-j = mapcore.create_group(group_name)
-if j == False:
-    logger.debug("    Error")
-    sys.exit()
-else:
-    logger.info(json.dumps(j, indent = 2))
-'''
+    #
+    # 新規グループ作成 (group_name をグループ名として)
+    #
+    '''
+    j = mapcore.create_group(group_name)
+    if j == False:
+        logger.debug("    Error")
+        sys.exit()
+    else:
+        logger.info(json.dumps(j, indent = 2))
+    '''
 
-#
-# group_name を名前に持つグループを検索
-#
-j = mapcore.get_group_by_name(group_name)
-if j == False:
-    logger.info("    Error")
-    sys.exit()
-else:
-    group_key = j["result"]["groups"][0]["group_key"]
-    logger.info("    Group key for " + group_name + " found, " + group_key)
-    logger.info(json.dumps(j, indent = 2))
+    #
+    # group_name を名前に持つグループを検索
+    #
+    j = mapcore.get_group_by_name(group_name)
+    if j == False:
+        logger.info("    Error")
+        sys.exit()
+    else:
+        group_key = j["result"]["groups"][0]["group_key"]
+        logger.info("    Group key for " + group_name + " found, " + group_key)
+        logger.info(json.dumps(j, indent = 2))
 
-#
-# group_key で指定したグループの名前、紹介文を変更
-#
-j = mapcore.edit_group(group_key, group_name, introduction)
-if j == False:
-    logger.info("    Error")
-    sys.exit()
-else:
-    logger.info(json.dumps(j, indent = 2))
+    #
+    # group_key で指定したグループの名前、紹介文を変更
+    #
+    j = mapcore.edit_group(group_key, group_name, introduction)
+    if j == False:
+        logger.info("    Error")
+        sys.exit()
+    else:
+        logger.info(json.dumps(j, indent = 2))
 
-#
-# group_key で指定したグループの情報を取得
-#
-j = mapcore.get_group_by_key(group_key)
-if j == False:
-    logger.info("    Error")
-    sys.exit()
-else:
-    logger.info(json.dumps(j, indent = 2))
+    #
+    # group_key で指定したグループの情報を取得
+    #
+    j = mapcore.get_group_by_key(group_key)
+    if j == False:
+        logger.info("    Error")
+        sys.exit()
+    else:
+        logger.info(json.dumps(j, indent = 2))
 
-#
-# user_eppn を一般会員としてメンバーに追加
-#
-j = mapcore.add_to_group(group_key, user_eppn, MAPCore.MODE_MEMBER)
-if j == False:
-    logger.info("    Error")
-    sys.exit()
-else:
-    logger.info("    Completed")
+    #
+    # user_eppn を一般会員としてメンバーに追加
+    #
+    j = mapcore.add_to_group(group_key, user_eppn, MAPCore.MODE_MEMBER)
+    if j == False:
+        logger.info("    Error")
+        sys.exit()
+    else:
+        logger.info("    Completed")
 
-#
-# user_eppn をグループ管理者に変更
-#
-j = mapcore.edit_member(group_key, user_eppn, MAPCore.MODE_ADMIN)
-if j == False:
-    logger.info("    Error")
-    sys.exit()
-else:
-    logger.info("    Completed")
+    #
+    # user_eppn をグループ管理者に変更
+    #
+    j = mapcore.edit_member(group_key, user_eppn, MAPCore.MODE_ADMIN)
+    if j == False:
+        logger.info("    Error")
+        sys.exit()
+    else:
+        logger.info("    Completed")
 
-#
-# 上記グループのメンバーリストを取得
-#
-j = mapcore.get_group_members(group_key)
-if j == False:
-    logger.info("    Error")
-    sys.exit()
-else:
-    for i in range(len(j["result"]["accounts"])):
-        logger.info("    eppn=" + j["result"]["accounts"][i]["eppn"] + ", mail=" + j["result"]["accounts"][i]["mail"] + ", admin=" + str(j["result"]["accounts"][i]["admin"]))
+    #
+    # 上記グループのメンバーリストを取得
+    #
+    j = mapcore.get_group_members(group_key)
+    if j == False:
+        logger.info("    Error")
+        sys.exit()
+    else:
+        for i in range(len(j["result"]["accounts"])):
+            logger.info("    eppn=" + j["result"]["accounts"][i]["eppn"] + ", mail=" + j["result"]["accounts"][i]["mail"] + ", admin=" + str(j["result"]["accounts"][i]["admin"]))
 
-#
-# user_eppn をメンバーから追加
-#
-j = mapcore.remove_from_group(group_key, user_eppn)
-if j == False:
-    logger.info("    Error")
-    sys.exit()
-else:
-    logger.info("    Completed")
+    #
+    # user_eppn をメンバーから追加
+    #
+    j = mapcore.remove_from_group(group_key, user_eppn)
+    if j == False:
+        logger.info("    Error")
+        sys.exit()
+    else:
+        logger.info("    Completed")
 
-#
-# 自身が所属しいているグループのリストを取得
-#
-j = mapcore.get_my_groups()
-if j == False:
-    logger.debug("Error")
-    sys.exit()
-else:
-    for i in range(len(j["result"]["groups"])):
-        logger.info("    " + j["result"]["groups"][i]["group_name"] + " (key=" + j["result"]["groups"][i]["group_key"] + ")")
+    #
+    # 自身が所属しいているグループのリストを取得
+    #
+    j = mapcore.get_my_groups()
+    if j == False:
+        logger.debug("Error")
+        sys.exit()
+    else:
+        for i in range(len(j["result"]["groups"])):
+            logger.info("    " + j["result"]["groups"][i]["group_name"] + " (key=" + j["result"]["groups"][i]["group_key"] + ")")

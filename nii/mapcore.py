@@ -11,11 +11,14 @@ from logging import getLogger
 
 import requests
 import urllib
+from operator import attrgetter
 
 from website.app import init_app
 from website import settings
 from osf.models.user import OSFUser
+from osf.models.node import Node
 from osf.models.map import MAPProfile
+from nii.api import MAPCore
 import framework.auth
 
 # global setting
@@ -98,8 +101,8 @@ def mapcore_receive_authcode(user, params):
     me = OSFUser.objects.get(eppn='nagahara@openidp.nii.ac.jp')
     logger.info('name: ' + me.fullname)
     logger.info('eppn: ' + me.eppn)
-    logger.info('access_token: ' + me.oauth_access_token)
-    logger.info('refresh_token: ' + me.oauth_refresh_token)
+    logger.info('access_token: ' + me.map_profile.oauth_access_token)
+    logger.info('refresh_token: ' + me.map_profile.oauth_refresh_token)
 
 
     return my_home  # redirect to home -> will redirect to dashboard
@@ -162,9 +165,9 @@ def mapcore_refresh_accesstoken(user, force = False):
     logger.info('User [' + user.eppn + '] refresh access_token by [' + json['access_token'])
 
     # update database
-    user.map_profile = MAPProfile(oauth_access_token = json['access_token'],
-                                  oauth_refresh_token = json['refreshtoken'],
-                                  oauth_refresh_time = dt.utcnow())
+    user.map_profile.oauth_access_token = json['access_token']
+    user.map_profile.oauth_refresh_token = json['refreshtoken']
+    user.map_profile.oauth_refresh_time = dt.utcnow()
     user.save()
 
     return 0
@@ -177,11 +180,78 @@ def mapcore_refresh_accesstoken(user, force = False):
 def mapcore_get_users_groups(user):
     '''get nAP groups by a user'''
     ''':param user OSFUser'''
-
     # get user data from mAP
+    return
+
+class RDMmember:
+    '''a RDM user'''
+    def __init__(self, node, user):
+        self.eppn = user.eppn        # ePPN
+        self.user_id = user._id      # RDM internal user_id
+        if node.has_permission(user, 'admin', check_parent=False):
+            self.is_admin = True
+            self.access_token = user.map_profile.oauth_access_token
+            self.refresh_token = user.map_profile.oauth_refresh_time
+        else:
+            self.is_admin = False
+
+
+def mapcore_group_sync(node, is_map2rdm = True):
+    '''sync group members RDM Project <--> mAP Group'''
+    ''':param node  RDM Node object '''
+    ''':param directin boolean True when mAP -> RDM'''
+
+    logger.info("mapcore_group_sync started for [" + node.group.name + ']')
+
+    # check Node attribute
+    if node.is_deleted:
+        logger.info("Node is deleted.  nothing to do.")
+        return
+
+    # get the RDM contributor and make lists
+    rdm_members = []
+    rdm_admins = []
+    for member in node.contributors:
+        rdmu = RDMmember(member)
+        rdm_members.append(rdmu)
+        if rdmu.is_admin:
+            rdm_admins.append(rdmu)
+    rdm_members.sort(key=attrgetter('eppn'))
+    rdm_admins.sort(key=attrgetter('eppn'))
+
+    # get admin privilaged tokens
+    if len(rdm_admins) == 0:
+        logger.warning('Node (' + node.group.name + ') has no admin.')
+        return
+
+    # get the mAP group and make lists
+    map_members =[]
+    map_admins = []
+    logger.info('group [' + node.group.name + '] sync is done by [' + rdm_admins[0].eppn + ']')
+    mapcore = MAPCore(map_clientid, map_secret, rdm_admins[0].access_token, rdm_admins[0].refresh_token)
+    map_group = mapcore.get_group_by_name(node.group.name)  # 1 returns 1 group only
+    if map_group == False:
+        return
+    map_group = map_group['result']['groups'][0]
+    map_member_list = mapcore.get_group_members(map_group['group_key'])
+    if map_member_list == False:
+        return
+    map_member_list = map_member_list['result']['accounts']
+    map_member_list.sort(key=lambda u:u['eppn'])
+    for map_member in map_member_list:
+        if map_member['admin'] == 2:
+            map_admins.append(map_member)
+
+    # compare member lists and decide actions
 
 
 
+
+
+    contributors = node.contributors.objects.all()
+
+
+    return
 
 
 if __name__ == '__main__':

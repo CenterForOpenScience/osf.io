@@ -178,8 +178,9 @@ def create_or_join_group_projects(user):
         logger.info("!!!! create_or_join_group_projects: group_key=" + group_key)
         ###### TTTTTTTTTTTTTTTTTTTTTTTTTTTT
         group_admin = is_group_admin(user, groupname)
-        node = get_group_node(groupname)
-        if node is not None:  # exists
+        group_node = get_group_node(groupname)
+        if group_node is not None:  # exists
+            node = group_node
             if node.is_deleted is True and group_admin:
                 node.is_deleted = False   # re-enabled
                 node.save()

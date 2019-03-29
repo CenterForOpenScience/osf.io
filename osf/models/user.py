@@ -404,18 +404,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
 
     @property
-    def oauth_access_token(self):
-        return self.map_profile.oauth_access_token
-
-    @property
-    def oauth_refresh_token(self):
-        return self.map_profile.oauth_refresh_token
-
-    @property
-    def oauth_refresh_time(self):
-        return self.map_profile.oauth_refresh_time
-
-    @property
     def deep_url(self):
         """Used for GUID resolution."""
         return '/profile/{}/'.format(self._primary_key)
