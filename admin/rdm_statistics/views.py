@@ -61,12 +61,7 @@ class InstitutionListViewStat(RdmPermissionMixin, UserPassesTestMixin, TemplateV
 
     def test_func(self):
         """check user permissions"""
-        if not self.is_authenticated:
-            return False
-        # allow superuser and institution_administrator
-        if self.is_super_admin or self.is_admin:
-            return True
-        return False
+        return self.is_authenticated and (self.is_super_admin or self.is_admin)
 
     def get(self, request, *args, **kwargs):
         """get contexts"""
@@ -402,12 +397,10 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
 
     def test_func(self):
         """check user permissions"""
-        institution_id = int(self.kwargs.get('institution_id'))
-        if not self.is_authenticated:
+        if not self.is_authenticated or not (self.is_super_admin or self.is_admin):
             return False
-        if self.is_super_admin or self.is_admin:
-            return self.has_auth(institution_id)
-        return False
+        institution_id = int(self.kwargs.get('institution_id'))
+        return self.has_auth(institution_id)
 
     def get(self, request, *args, **kwargs):
         """get context data"""
@@ -714,12 +707,10 @@ class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
 
     def test_func(self):
         """check user permissions"""
-        institution_id = int(self.kwargs.get('institution_id'))
-        if not self.is_authenticated:
+        if not self.is_authenticated or not (self.is_super_admin or self.is_admin):
             return False
-        if self.is_super_admin or self.is_admin:
-            return self.has_auth(institution_id)
-        return False
+        institution_id = int(self.kwargs.get('institution_id'))
+        return self.has_auth(institution_id)
 
     def get_context_data(self, **kwargs):
         """get contexts"""
@@ -822,67 +813,6 @@ class IndexView(TemplateView):
         }
 
         return self.render_to_response(ctx)
-
-
-class DummyCreateView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
-    """simulate data collecting."""
-    template_name = 'rdm_statistics/index.html'
-    raise_exception = True
-
-    def test_func(self):
-        """check user permissions"""
-        institution_id = int(self.kwargs.get('institution_id'))
-        return self.has_auth(institution_id)
-
-    def get_context_data(self, **kwargs):
-        """get contexts"""
-        ctx = super(DummyCreateView, self).get_context_data(**kwargs)
-        user = self.request.user
-        institution_id = int(kwargs['institution_id'])
-        institution = Institution.objects.get(pk=institution_id)
-        current_date = get_current_date()
-        result = self.insert_data(user=user, institution=institution)
-        data = {
-            'current date': current_date,
-            'data': result
-        }
-        ctx['data'] = data
-        return ctx
-
-    def insert_data(self, **kwargs):
-        """get data"""
-        user = kwargs['user']
-        institution = kwargs['institution']
-        user = kwargs['user']
-        # for test data
-        accounts_addons = [addon for addon in website_settings.ADDONS_AVAILABLE
-                           if 'accounts' in addon.configs]
-        addon_list = [addon.short_name for addon in accounts_addons]
-        provider_list = np.random.choice(addon_list, 3, replace=False)
-        TEST_TIMES = 2
-        TEST_RANGE = RANGE_STATISTICS * TEST_TIMES
-        RdmStatistics.objects.filter(institution=institution).delete()
-        for provider in provider_list:
-            current_date = get_current_date()
-            ext_list = ['jpg', 'png', 'docx', 'xlsx']
-            for ext_type in ext_list:
-                x = np.random.randint(1000 * TEST_RANGE / 10, size=TEST_RANGE)
-                y = np.random.randint(100 * TEST_RANGE / 10, size=TEST_RANGE)
-                count_list = np.sort(y)
-                size_list = np.sort(x)
-                for i in range(TEST_RANGE):
-                    date = current_date - datetime.timedelta(weeks=(TEST_RANGE - 1 - i))
-                    RdmStatistics.objects.create(project_id=7,
-                                                 owner=user,
-                                                 institution=institution,
-                                                 provider=provider,
-                                                 storage_account_id='aaa',
-                                                 project_root_path='/',
-                                                 sextention_type=ext_type,
-                                                 subtotal_file_number=count_list[i],
-                                                 subtotal_file_size=size_list[i],
-                                                 date_acquired=date)
-        return RdmStatistics.objects.all()
 
 def test_mail(request, status=None):
     """send email test """
