@@ -187,22 +187,21 @@ var add = function (param) {
     }
 
     loadingAnimation(true);
-    var new_postData = [];
+    var postData = [];
 
     for (var i = 0; i < fileList.length; i++) {
-        var post_data = {
+        postData.push({
             'provider': fileList[i].provider,
             'file_id': fileList[i].file_id,
             'file_path': fileList[i].file_path,
             'file_version': fileList[i].file_version
-        };
-        new_postData.push(post_data);
+        });
     }
 
     $.ajax({
         type: 'POST',
         url: param.url,
-        data: JSON.stringify(new_postData),
+        data: JSON.stringify(postData),
         contentType: 'application/json; charset=utf-8',
         dataType: 'json'
     }).done(function () {
