@@ -44,4 +44,5 @@ from osf.models.dismissed_alerts import DismissedAlert  # noqa
 from osf.models.action import ReviewAction  # noqa
 from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAction  # noqa
 from osf.models.storage import ProviderAssetFile  # noqa
+from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
 from osf.models.blacklisted_email_domain import BlacklistedEmailDomain  # noqa

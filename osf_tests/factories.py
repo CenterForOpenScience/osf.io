@@ -987,3 +987,50 @@ class ProviderAssetFileFactory(DjangoModelFactory):
         instance.providers = providers
         instance.save()
         return instance
+
+class ChronosJournalFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ChronosJournal
+
+    name = factory.Faker('text')
+    title = factory.Faker('text')
+    journal_id = factory.Faker('ean')
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        kwargs['raw_response'] = kwargs.get('raw_response', {
+            'TITLE': kwargs.get('title', factory.Faker('text').generate([])),
+            'JOURNAL_ID': kwargs.get('title', factory.Faker('ean').generate([])),
+            'NAME': kwargs.get('name', factory.Faker('text').generate([])),
+            'JOURNAL_URL': factory.Faker('url').generate([]),
+            'PUBLISHER_ID': factory.Faker('ean').generate([]),
+            'PUBLISHER_NAME': factory.Faker('name').generate([])
+            # Other stuff too probably
+        })
+        instance = super(ChronosJournalFactory, cls)._create(target_class, *args, **kwargs)
+        instance.save()
+        return instance
+
+
+class ChronosSubmissionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ChronosSubmission
+
+    publication_id = factory.Faker('ean')
+    journal = factory.SubFactory(ChronosJournalFactory)
+    preprint = factory.SubFactory(PreprintFactory)
+    submitter = factory.SubFactory(AuthUserFactory)
+    status = factory.Faker('random_int', min=1, max=5)
+    submission_url = factory.Faker('url')
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        kwargs['raw_response'] = kwargs.get('raw_response', {
+            'PUBLICATION_ID': kwargs.get('publication_id', factory.Faker('ean').generate([])),
+            'STATUS_CODE': kwargs.get('status', factory.Faker('random_int', min=1, max=5).generate([])),
+            'CHRONOS_SUBMISSION_URL': kwargs.get('submission_url', factory.Faker('url').generate([])),
+            # Other stuff too probably
+        })
+        instance = super(ChronosSubmissionFactory, cls)._create(target_class, *args, **kwargs)
+        instance.save()
+        return instance

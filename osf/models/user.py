@@ -369,6 +369,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # The time at which the user agreed to our updated ToS and Privacy Policy (GDPR, 25 May 2018)
     accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
 
+    chronos_user_id = models.TextField(null=True, blank=True, db_index=True)
+
     objects = OSFUserManager()
 
     is_active = models.BooleanField(default=False)
