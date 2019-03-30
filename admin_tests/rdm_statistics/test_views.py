@@ -381,15 +381,15 @@ class TestGatherView(AdminTestCase):
     def test_send_email(self):
         from osf.models import OSFUser
         to_list = [self.user.username]
-        cc_list = list(OSFUser.objects.filter(is_superuser = True).values_list('username', flat=True))
+        cc_list = list(OSFUser.objects.filter(is_superuser=True).values_list('username', flat=True))
         mail_data = {
-            'subject': 'statistic information at  Random date' ,
+            'subject': 'statistic information at  Random date',
             'content': 'statistic information of storage in ',
             'attach_file': 'XYZ',
             'attach_data': 'abc'
         }
         user = self.user
-        nt.assert_equal(views.send_email(to_list = to_list, cc_list = cc_list, data = mail_data, user = user)['is_success'], False)
+        nt.assert_equal(views.send_email(to_list=to_list, cc_list=cc_list, data=mail_data, user=user)['is_success'], False)
 
     @patch('admin.rdm_statistics.views.render_to_string', return_value='<h1>My First Heading</h1>', autospec=True)
     @patch('admin.rdm_statistics.views.pdfkit', return_value='41', autospec=True)
@@ -411,4 +411,3 @@ class TestGatherView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_equal(views.create_csv(self.request, **self.view.kwargs).status_code, 200)
-        
