@@ -324,7 +324,6 @@ class TestSendView(AdminTestCase):
         res = self.view.get(self.request, *args, **self.view.kwargs)
         nt.assert_equal(res.status_code, 200)
 
-
 class TestCreateCSV(AdminTestCase):
     """test ImageView"""
     def setUp(self):
@@ -366,10 +365,10 @@ class TestGatherView(AdminTestCase):
         self.user.delete()
         for institution in self.institutions:
             institution.delete()
-    
+
     def test_send_stat_mail(self, *args, **kwargs):
         nt.assert_equal(views.send_stat_mail(self.request).status_code, 200)
-    
+
     def test_send_error_mail(self, *args, **kwargs):
         ret = ''
         try:
@@ -377,7 +376,7 @@ class TestGatherView(AdminTestCase):
         except Exception as err:
             ret = views.send_error_mail(err)
         nt.assert_equal(ret.status_code, 200)
-    
+
     def test_send_email(self):
         from osf.models import OSFUser
         to_list = [self.user.username]
@@ -411,3 +410,4 @@ class TestGatherView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_equal(views.create_csv(self.request, **self.view.kwargs).status_code, 200)
+
