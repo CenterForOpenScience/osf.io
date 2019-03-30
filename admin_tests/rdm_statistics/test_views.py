@@ -340,7 +340,7 @@ class TestCreateCSV(AdminTestCase):
         super(TestCreateCSV, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
         self.user.delete()
-        self.institution1.delete()       
+        self.institution1.delete()
 
 def test_simple_auth():
     access_key_hexa = '2a85563b2b0f7d3168199f475365f57da1d56e4bb2ce2b7044eb058ae5e287637e7c636a772682d92c8d6b1830b9a97c5a5dc3de7016c60bde4baa7cc3b38aeb'
@@ -399,7 +399,7 @@ class TestGatherView(AdminTestCase):
     @patch('admin.rdm_statistics.views.pdfkit')
     def test_create_pdf(self, render_to_string, pdfkit):
         render_to_string.return_value = '<h1>My First Heading</h1>'
-        pdfkit.return_value = '41'        
+        pdfkit.return_value = '41'
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
@@ -410,3 +410,4 @@ class TestGatherView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_equal(views.create_csv(self.request, **self.view.kwargs).status_code, 200)
+
