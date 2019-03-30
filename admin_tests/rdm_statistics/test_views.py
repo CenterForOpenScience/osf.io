@@ -410,4 +410,3 @@ class TestGatherView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_equal(views.create_csv(self.request, **self.view.kwargs).status_code, 200)
-
