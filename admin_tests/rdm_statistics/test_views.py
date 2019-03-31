@@ -7,8 +7,7 @@ from tests.base import AdminTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
-    ProjectFactory,
-    NodeFactory
+    ProjectFactory
 )
 from admin_tests.utilities import setup_user_view
 from admin_tests.rdm_statistics import factories as rdm_statistics_factories
@@ -374,6 +373,17 @@ def create_test_file(node, user, filename='test_file', create_guid=True):
     }).save()
     return test_file
 
+def mocked_requests_get(*args, **kwargs):
+    class MockResponse:
+        def __init__(self, json_data, status_code):
+            self.json_data = json_data
+            self.status_code = status_code
+        def json(self):
+            return self.json_data
+
+    return MockResponse({"data": { "id":"1", "attributes":{ "materialized":"abc.xyz", "kind":"file", "size":0, "resource":"some_resource", "path":"some_path", "provider":"osfstorage" } }}, 200)
+
+
 class TestGatherView(AdminTestCase):
     def setUp(self):
         super(TestGatherView, self).setUp()
@@ -383,13 +393,9 @@ class TestGatherView(AdminTestCase):
         self.institution2 = InstitutionFactory()
         self.user.affiliated_institutions.add(self.institution1)
         self.project = ProjectFactory(creator=self.user, is_public=True)
-        #self.child = NodeFactory(parent=self.project, creator=self.user, is_public=True)
         self.project.affiliated_institutions.add(self.institution1)
         self.project.save()
-        #self.child.affiliated_institutions.add(self.institution1)
-        #self.child.save()
         self.file_node = create_test_file(node=self.project, user=self.user, filename='some_file.some_extension')
-        #self.file_node.save()
         import tempfile
         import os
         self.tmp_dir = tempfile.mkdtemp()
@@ -407,8 +413,6 @@ class TestGatherView(AdminTestCase):
     def tearDown(self):
         super(TestGatherView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
-        #self.child.affiliated_institutions.remove(self.institution1)
-        #self.child.delete()
         self.project.affiliated_institutions.remove(self.institution1)
         self.project.delete()
         self.user.delete()
@@ -416,21 +420,10 @@ class TestGatherView(AdminTestCase):
             institution.delete()
         import shutil
         shutil.rmtree(self.tmp_dir)
-        #self.project.affiliated_institutions.remove(self.institution1)
-        #self.project.delete()
 
-    
-
+    @patch('admin.rdm_statistics.views.requests.Session.get', side_effect=mocked_requests_get)
     def test_get(self, *args, **kwargs):
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(self.view.kwargs.get('access_token'))
-        logger.info(self.view.kwargs)
-        #logger.info(dir(self.view.args))
-        logger.info(self.view.get(self,self.request,self.view.args,self.view.kwargs))
-        logger.info(dir(self.view.get(self,self.request,self.view.args,self.view.kwargs)))
-
-        nt.assert_true(self.view.get(self,self.request,self.view.args,self.view.kwargs))
+        nt.assert_true(self.view.get(self, self.request, self.view.args, self.view.kwargs))
 
     def test_send_stat_mail(self, *args, **kwargs):
         nt.assert_equal(views.send_stat_mail(self.request).status_code, 200)
@@ -470,23 +463,6 @@ class TestGatherView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_equal(views.create_pdf(self.request, True, **self.view.kwargs).status_code, 200)
-    
-    # def test_get_provider_data_array(self):
-    #     import datetime
-    #     end_date = datetime.datetime.now()
-    #     start_day = end_date - datetime.timedelta(days=5000)
-    #     import logging
-    #     logger = logging.getLogger(__name__)
-    #     logger.info(end_date)
-    #     logger.info(start_day)
-    #     logger.info(views.get_provider_data_array(self.institution1, start_day, end_date))
-    #     current_date = views.get_current_date()
-    #     start_date = views.get_start_date(end_date=current_date)
-    #     logger.info(current_date)
-    #     logger.info(start_date)
-    #     logger.info(self.institution1)
-    #     logger.info(views.get_provider_data_array(self.institution1, start_date, current_date))
-    #     nt.assert_true(False)
     
     def test_create_csv(self, **kwargs):
         self.request.user.is_active = True
