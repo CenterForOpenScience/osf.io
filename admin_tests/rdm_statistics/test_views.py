@@ -7,6 +7,8 @@ from tests.base import AdminTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
+    ProjectFactory,
+    NodeFactory
 )
 from admin_tests.utilities import setup_user_view
 from admin_tests.rdm_statistics import factories as rdm_statistics_factories
@@ -351,7 +353,26 @@ def test_get_start_date():
     end_date = datetime.datetime.now()
     start_date = end_date - datetime.timedelta(weeks=(10))\
         + datetime.timedelta(days=(1))
-    nt.assert_equal(views.get_start_date(end_date),start_date)
+    nt.assert_equal(views.get_start_date(end_date), start_date)
+
+def create_test_file(node, user, filename='test_file', create_guid=True):
+    from addons.osfstorage import settings as osfstorage_settings
+    osfstorage = node.get_addon('osfstorage')
+    root_node = osfstorage.get_root()
+    test_file = root_node.append_file(filename)
+
+    if create_guid:
+        test_file.get_guid(create=True)
+
+    test_file.create_version(user, {
+        'object': '06d80e',
+        'service': 'cloud',
+        osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+    }, {
+        'size': 1337,
+        'contentType': 'img/png'
+    }).save()
+    return test_file
 
 class TestGatherView(AdminTestCase):
     def setUp(self):
@@ -361,17 +382,55 @@ class TestGatherView(AdminTestCase):
         self.institution1 = InstitutionFactory()
         self.institution2 = InstitutionFactory()
         self.user.affiliated_institutions.add(self.institution1)
-        self.request = RequestFactory().get('/admin/templates/')
-        self.view = views.InstitutionListViewStat()
+        self.project = ProjectFactory(creator=self.user, is_public=True)
+        #self.child = NodeFactory(parent=self.project, creator=self.user, is_public=True)
+        self.project.affiliated_institutions.add(self.institution1)
+        self.project.save()
+        #self.child.affiliated_institutions.add(self.institution1)
+        #self.child.save()
+        self.file_node = create_test_file(node=self.project, user=self.user, filename='some_file.some_extension')
+        #self.file_node.save()
+        import tempfile
+        import os
+        self.tmp_dir = tempfile.mkdtemp()
+        self.tmp_file = os.path.join(self.tmp_dir, self.file_node.name)
+        import logging
+        logging.info(self.tmp_file)
+        import uuid
+        with open(self.tmp_file, 'wb') as file:
+            file.write(str(uuid.uuid4()))
+        self.request = RequestFactory().get('/fake_path')
+        self.view = views.GatherView()
         self.view = setup_user_view(self.view, self.request, user=self.user)
-        self.view.kwargs = {'institution_id': self.institution1.id}
+        self.view.kwargs = {'institution_id': self.institution1.id, 'access_token':'2A85563B2B0F7D3168199F475365F57DA1D56E4BB2CE2B7044EB058AE5E287637E7C636A772682D92C8D6B1830B9A97C5A5DC3DE7016C60BDE4BAA7CC3B38AEB'.lower()}
 
     def tearDown(self):
         super(TestGatherView, self).tearDown()
         self.user.affiliated_institutions.remove(self.institution1)
+        #self.child.affiliated_institutions.remove(self.institution1)
+        #self.child.delete()
+        self.project.affiliated_institutions.remove(self.institution1)
+        self.project.delete()
         self.user.delete()
         for institution in self.institutions:
             institution.delete()
+        import shutil
+        shutil.rmtree(self.tmp_dir)
+        #self.project.affiliated_institutions.remove(self.institution1)
+        #self.project.delete()
+
+    
+
+    def test_get(self, *args, **kwargs):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(self.view.kwargs.get('access_token'))
+        logger.info(self.view.kwargs)
+        #logger.info(dir(self.view.args))
+        logger.info(self.view.get(self,self.request,self.view.args,self.view.kwargs))
+        logger.info(dir(self.view.get(self,self.request,self.view.args,self.view.kwargs)))
+
+        nt.assert_true(self.view.get(self,self.request,self.view.args,self.view.kwargs))
 
     def test_send_stat_mail(self, *args, **kwargs):
         nt.assert_equal(views.send_stat_mail(self.request).status_code, 200)
