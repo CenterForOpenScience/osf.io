@@ -2,7 +2,7 @@ import mock
 import furl
 import datetime
 import pytz
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE

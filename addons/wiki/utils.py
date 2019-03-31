@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import urllib
+from future.moves import urllib
 import uuid
 
 import ssl

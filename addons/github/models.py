@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 import markupsafe
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,

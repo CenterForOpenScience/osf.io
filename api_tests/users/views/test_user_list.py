@@ -3,7 +3,7 @@ import itsdangerous
 import mock
 import pytest
 import unittest
-import urlparse
+from future.moves.urllib.parse import urlparse
 from uuid import UUID
 
 from api.base.settings.defaults import API_BASE

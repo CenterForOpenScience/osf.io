@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import urllib
+from future.moves import urllib
 import furl
-import urlparse
+from future.moves.urllib.parse import urlparse
 from distutils.version import StrictVersion
 from hashids import Hashids
 

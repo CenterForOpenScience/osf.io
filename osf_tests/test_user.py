@@ -3,7 +3,7 @@
 import os
 import json
 import datetime as dt
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext

@@ -1,4 +1,4 @@
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 from django.urls import resolve, reverse
 

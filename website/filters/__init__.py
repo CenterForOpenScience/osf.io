@@ -1,5 +1,5 @@
 import hashlib
-import urllib
+from future.moves import urllib
 
 # Adapted from https://github.com/zzzsochi/Flask-Gravatar/blob/master/flaskext/gravatar.py
 def gravatar(user, use_ssl=False, d=None, r=None, size=None):

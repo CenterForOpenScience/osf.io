@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-import urlparse
+from future.moves.urllib.parse import urlparse
 import logging
 import re
 import pytz

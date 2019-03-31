@@ -1,5 +1,5 @@
 import logging
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 from dirtyfields import DirtyFieldsMixin
 

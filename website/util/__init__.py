@@ -2,7 +2,7 @@
 
 import logging
 import re
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 from django.utils.http import urlencode
 from flask import request, url_for

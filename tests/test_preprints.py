@@ -5,7 +5,7 @@ import jwt
 import mock
 import furl
 import time
-import urlparse
+from future.moves.urllib.parse import urlparse
 import datetime
 from django.utils import timezone
 import pytest

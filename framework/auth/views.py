@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import furl
 import httplib as http
-import urllib
+from future.moves import urllib
 
 import markupsafe
 from django.core.exceptions import ValidationError

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 from addons.base.tests import views
 from addons.base.tests.utils import MockFolder

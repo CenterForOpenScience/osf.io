@@ -2,7 +2,7 @@ import functools
 import itertools
 import logging
 import re
-import urlparse
+from future.moves.urllib.parse import urlparse
 import warnings
 import httplib
 

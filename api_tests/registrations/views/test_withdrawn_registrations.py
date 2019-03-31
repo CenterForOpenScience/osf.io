@@ -1,5 +1,5 @@
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 from api_tests.nodes.views.test_node_contributors_list import NodeCRUDTestCase
 from api.base.settings.defaults import API_BASE

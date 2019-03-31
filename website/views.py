@@ -6,7 +6,7 @@ import logging
 import math
 import os
 import requests
-import urllib
+from future.moves import urllib
 import waffle
 
 from django.apps import apps

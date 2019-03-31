@@ -1,5 +1,5 @@
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (

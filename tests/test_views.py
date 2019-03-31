@@ -9,7 +9,7 @@ import httplib as http
 import json
 import time
 import unittest
-import urllib
+from future.moves import urllib
 
 from flask import request
 import mock

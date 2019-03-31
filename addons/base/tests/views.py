@@ -1,5 +1,5 @@
 import httplib as http
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 import mock
 import responses

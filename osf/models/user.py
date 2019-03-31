@@ -1,8 +1,8 @@
 import datetime as dt
 import logging
 import re
-import urllib
-import urlparse
+from future.moves import urllib
+from future.moves.urllib.parse import urlparse
 import uuid
 from copy import deepcopy
 from os.path import splitext

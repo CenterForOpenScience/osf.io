@@ -6,7 +6,7 @@ import pkgutil
 import pytest
 from pytz import utc
 from datetime import datetime
-import urllib
+from future.moves import urllib
 
 from nose.tools import *  # noqa:
 import re

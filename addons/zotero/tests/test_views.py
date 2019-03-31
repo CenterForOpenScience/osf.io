@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-import urlparse
+from future.moves.urllib.parse import urlparse
 import responses
 
 from framework.auth import Auth

@@ -3,7 +3,7 @@ import httplib
 import os
 import uuid
 import markupsafe
-import urllib
+from future.moves import urllib
 from django.utils import timezone
 
 from flask import make_response

@@ -5,7 +5,7 @@ import mock
 import shutil
 import tempfile
 import xml
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 from scripts import generate_sitemap
 from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory, CollectionFactory,

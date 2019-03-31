@@ -1,6 +1,6 @@
 import hmac
 import uuid
-import urllib
+from future.moves import urllib
 import hashlib
 import httplib as http
 from github3.repos.branch import Branch

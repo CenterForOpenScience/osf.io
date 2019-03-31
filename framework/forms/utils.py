@@ -1,5 +1,5 @@
 import bleach
-import urllib
+from future.moves import urllib
 
 # TODO: Test me @jmcarp
 

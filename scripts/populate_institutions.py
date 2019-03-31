@@ -4,7 +4,7 @@
 
 import logging
 import sys
-import urllib
+from future.moves import urllib
 
 import django
 from django.db import transaction

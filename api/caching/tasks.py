@@ -1,4 +1,4 @@
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 import requests
 import logging

@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import os
 import httplib as http
 import requests
-import urlparse
+from future.moves.urllib.parse import urlparse
 import waffle
 import json
 

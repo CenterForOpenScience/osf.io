@@ -1,5 +1,5 @@
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 from django.utils import timezone
 from framework.auth.core import Auth
 

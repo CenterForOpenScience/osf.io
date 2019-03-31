@@ -1,4 +1,4 @@
-import urllib
+from future.moves import urllib
 import httplib as http
 
 from framework.exceptions import HTTPError

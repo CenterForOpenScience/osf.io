@@ -1,4 +1,4 @@
-import urllib
+from future.moves import urllib
 
 import github3
 import cachecontrol

@@ -4,8 +4,8 @@ import unittest
 from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 import mock
-import urllib
-import urlparse
+from future.moves import urllib
+from future.moves.urllib.parse import urlparse
 import httplib as http
 
 from flask import Flask

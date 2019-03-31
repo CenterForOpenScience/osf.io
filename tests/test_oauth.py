@@ -3,7 +3,7 @@ import httplib as http
 import logging
 import json
 import time
-import urlparse
+from future.moves.urllib.parse import urlparse
 
 import responses
 from nose.tools import *  # noqa

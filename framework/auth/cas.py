@@ -3,7 +3,7 @@
 import furl
 import httplib as http
 import json
-import urllib
+from future.moves import urllib
 
 from lxml import etree
 import requests

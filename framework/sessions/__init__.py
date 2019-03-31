@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
 import httplib as http
-import urllib
-import urlparse
+from future.moves import urllib
+from future.moves.urllib.parse import urlparse
 
 from django.apps import apps
 from django.utils import timezone

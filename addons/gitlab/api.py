@@ -1,4 +1,4 @@
-import urllib
+from future.moves import urllib
 import requests
 
 import gitlab

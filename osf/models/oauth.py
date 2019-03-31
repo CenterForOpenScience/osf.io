@@ -1,4 +1,4 @@
-import urlparse
+from future.moves.urllib.parse import urlparse
 import uuid
 
 from website.util import api_v2_url
