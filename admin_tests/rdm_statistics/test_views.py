@@ -346,6 +346,13 @@ def test_simple_auth():
     access_key_hexa = '2a85563b2b0f7d3168199f475365f57da1d56e4bb2ce2b7044eb058ae5e287637e7c636a772682d92c8d6b1830b9a97c5a5dc3de7016c60bde4baa7cc3b38aeb'
     nt.assert_true(views.simple_auth(access_key_hexa))
 
+def test_get_start_date():
+    import datetime
+    end_date = datetime.datetime.now()
+    start_date = end_date - datetime.timedelta(weeks=(10))\
+        + datetime.timedelta(days=(1))
+    nt.assert_equal(views.get_start_date(end_date),start_date)
+
 class TestGatherView(AdminTestCase):
     def setUp(self):
         super(TestGatherView, self).setUp()
@@ -404,7 +411,24 @@ class TestGatherView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_equal(views.create_pdf(self.request, True, **self.view.kwargs).status_code, 200)
-
+    
+    # def test_get_provider_data_array(self):
+    #     import datetime
+    #     end_date = datetime.datetime.now()
+    #     start_day = end_date - datetime.timedelta(days=5000)
+    #     import logging
+    #     logger = logging.getLogger(__name__)
+    #     logger.info(end_date)
+    #     logger.info(start_day)
+    #     logger.info(views.get_provider_data_array(self.institution1, start_day, end_date))
+    #     current_date = views.get_current_date()
+    #     start_date = views.get_start_date(end_date=current_date)
+    #     logger.info(current_date)
+    #     logger.info(start_date)
+    #     logger.info(self.institution1)
+    #     logger.info(views.get_provider_data_array(self.institution1, start_date, current_date))
+    #     nt.assert_true(False)
+    
     def test_create_csv(self, **kwargs):
         self.request.user.is_active = True
         self.request.user.is_registered = True
