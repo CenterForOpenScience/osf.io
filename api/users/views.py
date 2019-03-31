@@ -2,7 +2,6 @@ import pytz
 
 from django.apps import apps
 from django.db.models import F, Q
-from guardian.shortcuts import get_objects_for_user
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -320,13 +319,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         # Nodes the requested user has read_permissions on
         default_queryset = user.contributor_or_group_member_to
         if user != self.request.user:
-            if self.request.user.is_anonymous:
-                # Further restrict UserNodes to public nodes
-                return self.optimize_node_queryset(default_queryset.filter(Q(is_public=True)))
-            else:
-                # Further restrict UserNodes to nodes the *requesting* user can view
-                read_user_query = Q(id__in=self.request.user.contributor_or_group_member_to.values_list('id', flat=True))
-                return default_queryset.filter(read_user_query | Q(is_public=True))
+            # Further restrict UserNodes to nodes the *requesting* user can view
+            return Node.objects.get_nodes_for_user(self.request.user, base_queryset=default_queryset, include_public=True)
         return self.optimize_node_queryset(default_queryset)
 
     # overrides ListAPIView
@@ -504,7 +498,7 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
     def get_queryset(self):
         user = self.get_user()
-        node_qs = get_objects_for_user(user, permissions.ADMIN_NODE, Node, with_superuser=False).exclude(is_deleted=True)
+        node_qs = Node.objects.get_nodes_for_user(user, permissions.ADMIN_NODE)
         return DraftRegistration.objects.filter(
             Q(registered_node__isnull=True) |
             Q(registered_node__is_deleted=True),

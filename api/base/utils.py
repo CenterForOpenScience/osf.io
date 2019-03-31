@@ -149,9 +149,7 @@ def default_node_list_queryset(model_cls):
 
 def default_node_permission_queryset(user, model_cls):
     assert model_cls in {Node, Registration}
-    if user.is_anonymous:
-        return model_cls.objects.filter(is_public=True)
-    return model_cls.objects.get_objects_for_user(user, include_public=True)
+    return model_cls.objects.get_nodes_for_user(user, include_public=True)
 
 def default_node_list_permission_queryset(user, model_cls):
     # **DO NOT** change the order of the querysets below.

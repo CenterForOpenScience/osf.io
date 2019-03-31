@@ -2,7 +2,6 @@ from copy import deepcopy
 from distutils.version import StrictVersion
 
 from django.db.models import Q, Exists, OuterRef
-from guardian.shortcuts import get_objects_for_user
 
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
 from api.base.filters import ListFilterMixin
@@ -99,4 +98,4 @@ class UserNodesFilterMixin(NodesFilterMixin):
         return super(UserNodesFilterMixin, self).build_query_from_field(field_name, operation)
 
     def build_node_list(self, user, perm, with_superuser=False):
-        return get_objects_for_user(user, perm, Node, with_superuser=with_superuser).values_list('id', flat=True)
+        return Node.objects.get_nodes_for_user(user, permission=perm).values_list('id', flat=True)

@@ -175,13 +175,13 @@ class NodeFileCollector(object):
         Returns a generator of first descendant node(s) readable by <user>
         in each descendant branch.
         """
-        from guardian.shortcuts import get_objects_for_user
+        Node = apps.get_model('osf.node')
 
         new_branches = []
 
         linked_node_sqs = node.node_relations.filter(is_node_link=True, child=OuterRef('pk'))
         if self.auth and self.auth.user:
-            can_write = get_objects_for_user(self.auth.user, WRITE_NODE, node._nodes.all(), with_superuser=False)
+            can_write = Node.objects.get_nodes_for_user(self.auth.user, WRITE_NODE, node._nodes.all())
         else:
             can_write = node._nodes.none()
         descendants_qs = (

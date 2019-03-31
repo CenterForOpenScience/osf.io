@@ -76,6 +76,9 @@ def enforce_no_children(request):
 class NodeOptimizationMixin(object):
     """Mixin with convenience method for optimizing serialization of nodes.
     Annotates the node queryset with several properties to reduce number of queries.
+
+    ***Use with caution - while # of queries are reduced, at scale, this can
+    slow down the request significantly**
     """
     def optimize_node_queryset(self, queryset):
         OSFUserGroup = apps.get_model('osf', 'osfuser_groups')

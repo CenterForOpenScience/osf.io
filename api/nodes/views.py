@@ -8,7 +8,6 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
-from guardian.shortcuts import get_objects_for_user
 
 from addons.base.exceptions import InvalidAuthError
 from addons.osfstorage.models import OsfStorageFolder
@@ -233,7 +232,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                return get_objects_for_user(auth.user, WRITE_NODE, nodes, with_superuser=False)
+                return Node.objects.get_nodes_for_user(auth.user, WRITE_NODE, nodes)
 
             for node in nodes:
                 if not node.can_edit(auth):

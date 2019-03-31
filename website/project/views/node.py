@@ -11,7 +11,6 @@ from flask import request
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db.models import Q, OuterRef, Subquery
-from guardian.shortcuts import get_objects_for_user
 
 from framework import status
 from framework.utils import iso8601format
@@ -927,7 +926,7 @@ def _get_children(node, auth):
     children = (Node.objects.get_children(node)
                 .filter(is_deleted=False)
                 .annotate(parentnode_id=Subquery(parent_node_sqs[:1])))
-    admin_children = get_objects_for_user(auth.user, ADMIN_NODE, children, with_superuser=False)
+    admin_children = Node.objects.get_nodes_for_user(auth.user, ADMIN_NODE, children)
 
     nested = defaultdict(list)
     for child in admin_children:

@@ -1,6 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
-from guardian.shortcuts import get_objects_for_user
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Registration, OSFUser
@@ -132,7 +131,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                return get_objects_for_user(auth.user, WRITE_NODE, registrations, with_superuser=False)
+                return Registration.objects.get_nodes_for_user(auth.user, WRITE_NODE, registrations)
 
             for registration in registrations:
                 if not registration.can_edit(auth):

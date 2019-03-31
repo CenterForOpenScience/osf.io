@@ -553,7 +553,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         NodeUserObjectPermissions, just NodeGroupObjectPermissions.
         """
         from osf.models import AbstractNode
-        return AbstractNode.objects.get_objects_for_user(self)
+        return AbstractNode.objects.get_nodes_for_user(self)
 
     @property
     def contributor_or_group_member_to(self):
@@ -1427,7 +1427,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         from osf.models import AbstractNode
 
-        return AbstractNode.objects.get_objects_for_user(other_user, base_queryset=self.contributor_or_group_member_to)
+        return AbstractNode.objects.get_nodes_for_user(other_user, base_queryset=self.contributor_or_group_member_to).exclude(type='osf.collection')
 
     def get_projects_in_common(self, other_user):
         """Returns either a collection of "shared projects" (projects that both users are contributors or group members for)
