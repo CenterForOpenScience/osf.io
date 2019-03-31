@@ -1,7 +1,7 @@
+from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
-import settings
-from . import views
+from admin.base import views
 
 base_pattern = '^{}'.format(settings.ADMIN_BASE)
 
