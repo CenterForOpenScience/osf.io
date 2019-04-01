@@ -378,10 +378,13 @@ def mocked_requests_get(*args, **kwargs):
         def __init__(self, json_data, status_code):
             self.json_data = json_data
             self.status_code = status_code
+
         def json(self):
             return self.json_data
-
-    return MockResponse({"data": { "id":"1", "attributes":{ "materialized":"abc.xyz", "kind":"file", "size":0, "resource":"some_resource", "path":"some_path", "provider":"osfstorage" } }}, 200)
+    return MockResponse({"data": [{"type": "files", "links": {"delete": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85", "upload": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85?kind=file", "move": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85", "download": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85"}, "id": "osfstorage/5ca01e2d3618060086091b85", "attributes": {"path": "/5ca01e2d3618060086091b85", "size": 44167, "contentType": None, "created_utc": "2019-03-31T01:55:57.706150+00:00", "provider": "osfstorage", "sizeInt": 44167, "etag": "42811153669f5825fda6f810975bc44af5973bb7c3a1b163ae722358715673d0", "modified_utc": "2019-03-31T01:55:57.706150+00:00", "modified": "2019-03-31T01:55:57.70615+00:00", "extra": {"latestVersionSeen": None, "guid": None, "version": 1, "hashes": {"sha256": "93afecd63c60f0ff0ef6cf0e8b904c281f00f9e5251751b9fa292f16e6dc0d9b", "md5": "a89fa2dd3c6bbff0f5e58aa2b4e8f735"}, "checkout": None, "downloads": 0}, "resource": "jy73h", "name": "OSF contact.png", "materialized": "/OSF contact.png", "kind": "file"}}]}, 200)
+    #return MockResponse({"data": [{"type": "files", "links": {"delete": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85", "upload": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85?kind=file", "move": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85", "download": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85"}, "id": "osfstorage/5ca01e2d3618060086091b85", "attributes": {"path": "/5ca01e2d3618060086091b85", "size": 44167, "contentType": none, "created_utc": "2019-03-31T01:55:57.706150+00:00", "provider": "osfstorage", "sizeInt": 44167, "etag": "42811153669f5825fda6f810975bc44af5973bb7c3a1b163ae722358715673d0", "modified_utc": "2019-03-31T01:55:57.706150+00:00", "modified": "2019-03-31T01:55:57.70615+00:00", "extra": {"latestVersionSeen": none, "guid": none, "version": 1, "hashes": {"sha256": "93afecd63c60f0ff0ef6cf0e8b904c281f00f9e5251751b9fa292f16e6dc0d9b", "md5": "a89fa2dd3c6bbff0f5e58aa2b4e8f735"}, "checkout": none, "downloads": 0}, "resource": "jy73h", "name": "OSF contact.png", "materialized": "/OSF contact.png", "kind": "file"}}]},200)
+    #return MockResponse({"data": [{"type": "files", "links": {"delete": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85", "upload": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85?kind=file", "move": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85", "download": "http://localhost:7777/v1/resources/jy73h/providers/osfstorage/5ca01e2d3618060086091b85"}, "id": "osfstorage/5ca01e2d3618060086091b85", "attributes": {"path": "/5ca01e2d3618060086091b85", "size": 44167, "contentType": null, "created_utc": "2019-03-31T01:55:57.706150+00:00", "provider": "osfstorage", "sizeInt": 44167, "etag": "42811153669f5825fda6f810975bc44af5973bb7c3a1b163ae722358715673d0", "modified_utc": "2019-03-31T01:55:57.706150+00:00", "modified": "2019-03-31T01:55:57.70615+00:00", "extra": {"latestVersionSeen": null, "guid": null, "version": 1, "hashes": {"sha256": "93afecd63c60f0ff0ef6cf0e8b904c281f00f9e5251751b9fa292f16e6dc0d9b", "md5": "a89fa2dd3c6bbff0f5e58aa2b4e8f735"}, "checkout": null, "downloads": 0}, "resource": "jy73h", "name": "OSF contact.png", "materialized": "/OSF contact.png", "kind": "file"}}]},200)
+    #return MockResponse({"data": {"id": "1", "attributes": {"materialized": "abc.xyz", "kind": "file", "size": 0, "resource": "some_resource", "path": "some_path", "provider": "osfstorage"}}}, 200)
 
 
 class TestGatherView(AdminTestCase):
@@ -408,7 +411,7 @@ class TestGatherView(AdminTestCase):
         self.request = RequestFactory().get('/fake_path')
         self.view = views.GatherView()
         self.view = setup_user_view(self.view, self.request, user=self.user)
-        self.view.kwargs = {'institution_id': self.institution1.id, 'access_token':'2A85563B2B0F7D3168199F475365F57DA1D56E4BB2CE2B7044EB058AE5E287637E7C636A772682D92C8D6B1830B9A97C5A5DC3DE7016C60BDE4BAA7CC3B38AEB'.lower()}
+        self.view.kwargs = {'institution_id': self.institution1.id, 'access_token': '2A85563B2B0F7D3168199F475365F57DA1D56E4BB2CE2B7044EB058AE5E287637E7C636A772682D92C8D6B1830B9A97C5A5DC3DE7016C60BDE4BAA7CC3B38AEB'.lower()}
 
     def tearDown(self):
         super(TestGatherView, self).tearDown()
@@ -423,7 +426,9 @@ class TestGatherView(AdminTestCase):
 
     @patch('admin.rdm_statistics.views.requests.Session.get', side_effect=mocked_requests_get)
     def test_get(self, *args, **kwargs):
-        nt.assert_true(self.view.get(self, self.request, self.view.args, self.view.kwargs))
+        import json
+        resp = json.loads(self.view.get(self, self.request, self.view.args, self.view.kwargs).content)
+        nt.assert_equal(len(resp), 2)
 
     def test_send_stat_mail(self, *args, **kwargs):
         nt.assert_equal(views.send_stat_mail(self.request).status_code, 200)
@@ -463,7 +468,7 @@ class TestGatherView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         nt.assert_equal(views.create_pdf(self.request, True, **self.view.kwargs).status_code, 200)
-    
+
     def test_create_csv(self, **kwargs):
         self.request.user.is_active = True
         self.request.user.is_registered = True
