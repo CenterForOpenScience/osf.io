@@ -399,8 +399,8 @@ class TestGatherView(AdminTestCase):
         import os
         self.tmp_dir = tempfile.mkdtemp()
         self.tmp_file = os.path.join(self.tmp_dir, self.file_node.name)
-        import logging
-        logging.info(self.tmp_file)
+        #import logging
+        #logging.info(self.tmp_file)
         import uuid
         with open(self.tmp_file, 'wb') as file:
             file.write(str(uuid.uuid4()))
@@ -455,15 +455,16 @@ class TestGatherView(AdminTestCase):
     def test_get_pdf_data(self, render_to_string, pdfkit):
         nt.assert_not_equal(views.get_pdf_data(institution=self.institutions[0]).return_value, '41')
 
+    #@patch('admin.rdm_statistics.views.pdfkit')
     @patch('admin.rdm_statistics.views.render_to_string')
-    @patch('admin.rdm_statistics.views.pdfkit')
-    def test_create_pdf(self, render_to_string, pdfkit):
+    def test_create_pdf(self, render_to_string):
+        #pdfkit.return_value = '41'
         render_to_string.return_value = '<h1>My First Heading</h1>'
-        pdfkit.return_value = '41'
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        nt.assert_equal(views.create_pdf(self.request, True, **self.view.kwargs).status_code, 200)
+        #nt.assert_true(False)
+        nt.assert_false(views.create_pdf(self.request, True, **self.view.kwargs).status_code, 200)
 
     def test_create_csv(self, **kwargs):
         self.request.user.is_active = True
