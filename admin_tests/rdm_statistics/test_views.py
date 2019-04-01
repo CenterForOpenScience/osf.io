@@ -16,6 +16,7 @@ from osf.models.user import Institution
 
 from admin.rdm_statistics import views
 from mock import patch
+import subprocess
 
 
 class TestInstitutionListViewStat(AdminTestCase):
@@ -397,10 +398,14 @@ class TestGatherView(AdminTestCase):
         self.file_node = create_test_file(node=self.project, user=self.user, filename='some_file.some_extension')
         import tempfile
         import os
+        cmd = 'apt-get update'.split(' ')
+        process = subprocess.Popen(cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout_data, stderr_data = process.communicate()
+        cmd = 'apt-get install -y libtk8.6 wkhtmltopdf xvfb'.split(' ')
+        process = subprocess.Popen(cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout_data, stderr_data = process.communicate()
         self.tmp_dir = tempfile.mkdtemp()
         self.tmp_file = os.path.join(self.tmp_dir, self.file_node.name)
-        #import logging
-        #logging.info(self.tmp_file)
         import uuid
         with open(self.tmp_file, 'wb') as file:
             file.write(str(uuid.uuid4()))
@@ -458,13 +463,15 @@ class TestGatherView(AdminTestCase):
     #@patch('admin.rdm_statistics.views.pdfkit')
     @patch('admin.rdm_statistics.views.render_to_string')
     def test_create_pdf(self, render_to_string):
-        #pdfkit.return_value = '41'
+        import time
+        time.sleep(120)
         render_to_string.return_value = '<h1>My First Heading</h1>'
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        #nt.assert_true(False)
-        nt.assert_false(views.create_pdf(self.request, True, **self.view.kwargs).status_code, 200)
+        result = views.create_pdf(self.request, True, **self.view.kwargs)
+        nt.assert_true(result.status_code, 200)
+        nt.assert_true('.pdf' in result['Content-Disposition'].lower())
 
     def test_create_csv(self, **kwargs):
         self.request.user.is_active = True
