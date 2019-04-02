@@ -38,12 +38,13 @@ class RegistrationSerializer(NodeSerializer):
         'license',
         'license_type',
         'withdrawal_justification',
+        'category',
     ]
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
-    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
+    category = ser.ChoiceField(required=False, choices=category_choices, help_text='Choices: ' + category_choices_string)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
