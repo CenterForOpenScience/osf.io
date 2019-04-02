@@ -139,7 +139,7 @@
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
-<footBanners>
+<div class="footBanners">
     <div id="IEDepreciationBanner"  class="alert warningBanner">
         <div class="warningBannerText">
             OSF does not support the use of Internet Explorer. For optimal performance, please switch to another browser.
@@ -179,7 +179,7 @@
             </div>
         </div>
     </div>
-</footBanners>
+</div>
 % endif
 
 
