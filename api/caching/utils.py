@@ -1,5 +1,4 @@
-from functools import partial
-from django.core.cache import get_cache
+from django.core.cache import caches
 from api.caching import settings
 
-storage_usage_cache = partial(get_cache, settings.STORAGE_USAGE_CACHE_NAME)
+storage_usage_cache = caches[settings.STORAGE_USAGE_CACHE_NAME]
