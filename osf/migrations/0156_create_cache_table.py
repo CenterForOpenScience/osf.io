@@ -16,8 +16,8 @@ class Migration(migrations.Migration):
                 "value" text NOT NULL,
                 "expires" timestamp with time zone NOT NULL
             );
-            """.format(settings.CACHES['default']['LOCATION'])
+            """.format(settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
         ], [
-            """DROP TABLE "{}"; """.format(settings.CACHES['default']['LOCATION'])
+            """DROP TABLE "{}"; """.format(settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
         ])
     ]
