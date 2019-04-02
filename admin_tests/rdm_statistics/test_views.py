@@ -16,7 +16,6 @@ from osf.models.user import Institution
 
 from admin.rdm_statistics import views
 from mock import patch
-import subprocess
 
 
 class TestInstitutionListViewStat(AdminTestCase):
