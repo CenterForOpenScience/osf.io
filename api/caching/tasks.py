@@ -4,7 +4,7 @@ import requests
 import logging
 
 from django.apps import apps
-from django.core.cache import cache
+from api.caching.utils import storage_usage_cache
 from django.db import models
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 
@@ -111,7 +111,7 @@ def update_storage_usage_cache(target_id):
     ).files.aggregate(sum=models.Sum('versions__size'))['sum'] or 0
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_id)
-    cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
+    storage_usage_cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
 
 
 def update_storage_usage(target):
