@@ -398,12 +398,6 @@ class TestGatherView(AdminTestCase):
         self.file_node = create_test_file(node=self.project, user=self.user, filename='some_file.some_extension')
         import tempfile
         import os
-        cmd = 'apt-get update'.split(' ')
-        process = subprocess.Popen(cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_data, stderr_data = process.communicate()
-        cmd = 'apt-get install -y libtk8.6 wkhtmltopdf xvfb'.split(' ')
-        process = subprocess.Popen(cmd, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_data, stderr_data = process.communicate()
         self.tmp_dir = tempfile.mkdtemp()
         self.tmp_file = os.path.join(self.tmp_dir, self.file_node.name)
         import uuid
@@ -456,12 +450,12 @@ class TestGatherView(AdminTestCase):
     def test_get_pdf_data(self, render_to_string, pdfkit):
         nt.assert_not_equal(views.get_pdf_data(institution=self.institutions[0]).return_value, '41')
 
-    #@patch('admin.rdm_statistics.views.pdfkit')
+    @patch('admin.rdm_statistics.views.pdfkit')
     @patch('admin.rdm_statistics.views.render_to_string')
-    def test_create_pdf(self, render_to_string):
-        import time
-        time.sleep(120)
+    def test_create_pdf(self, render_to_string, mock_pdfkit):
         render_to_string.return_value = '<h1>My First Heading</h1>'
+        mock_pdfkit.from_string.return_value = '<h1>My First Heading</h1>'
+
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True

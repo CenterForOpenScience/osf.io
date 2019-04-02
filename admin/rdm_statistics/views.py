@@ -323,8 +323,6 @@ def create_pdf(request, is_pdf=True, **kwargs):
             return response
         except OSError as e:
             response = HttpResponse(str(e), content_type='text/html', status=501)
-        except Exception as e:
-            response = HttpResponse(str(e), content_type='text/html', status=501)
     else:
         response = HttpResponse(html_string, content_type='text/html')
     return response
@@ -341,7 +339,6 @@ def convert_to_pdf(html_string, file=False):
         'margin-left': '0.60in'
     }
     current_date = get_current_date()
-    # if file
     if file:
         pdf_file_name = 'statistics.' + current_date.strftime('%Y%m%d') + '.pdf'
         converted_pdf = pdf_file_name
