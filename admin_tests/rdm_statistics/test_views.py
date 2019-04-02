@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from nose import tools as nt
 from django.test import RequestFactory
 
@@ -473,3 +472,36 @@ class TestGatherView(AdminTestCase):
 
     def test_get_all_statistic_data_csv(self, **kwargs):
         nt.assert_is_instance(views.get_all_statistic_data_csv(self.institution1, **self.view.kwargs), type([]))
+
+    @patch('admin.rdm_statistics.views.requests.Session.get', side_effect=mocked_requests_get)
+    def test_get_graphs(self, mock_sessionget):
+        self.request.user.is_active = True
+        self.request.user.is_registered = True
+        self.request.user.is_superuser = True
+
+        # Runs the "cron" so the statistics data gets updated in the statistics view
+        self.view.get(self, self.request, self.view.args, self.view.kwargs)
+
+        result = views.ImageView.as_view()(
+            self.request,
+            institution_id=self.institution1.id,
+            graph_type='num',
+            provider='osfstorage'
+        )
+        nt.assert_equal(result['content-type'], 'image/png')
+
+        result = views.ImageView.as_view()(
+            self.request,
+            institution_id=self.institution1.id,
+            graph_type='size',
+            provider='osfstorage'
+        )
+        nt.assert_equal(result['content-type'], 'image/png')
+
+        result = views.ImageView.as_view()(
+            self.request,
+            institution_id=self.institution1.id,
+            graph_type='ext',
+            provider='osfstorage'
+        )
+        nt.assert_equal(result['content-type'], 'image/png')

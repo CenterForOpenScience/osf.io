@@ -404,10 +404,7 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
         graph_type = self.kwargs.get('graph_type')
         provider = self.kwargs.get('provider')
         institution_id = int(self.kwargs.get('institution_id'))
-        if Institution.objects.filter(pk=institution_id).exists():
-            institution = Institution.objects.get(pk=institution_id)
-        else:
-            institution = get_dummy_institution()
+        institution = Institution.objects.get(pk=institution_id)
 
         # create provider data
         provider_data = self.__get_data(provider=provider, institution=institution)
