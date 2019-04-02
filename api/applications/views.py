@@ -111,7 +111,7 @@ class ApplicationReset(DeprecatedView, generics.CreateAPIView, ApplicationMixin)
     Should not perform update or return information if the application belongs to a different user
     """
 
-    max_version = '2.12'
+    max_version = '2.14'
 
     permission_classes = (
         drf_permissions.IsAuthenticated,

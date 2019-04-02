@@ -29,7 +29,7 @@ class TestApplicationReset:
 
     @pytest.fixture()
     def application_detail_url(self, user_app):
-        return '/{}applications/{}/?version=2.13'.format(API_BASE, user_app.client_id)
+        return '/{}applications/{}/?version=2.15'.format(API_BASE, user_app.client_id)
 
     @pytest.fixture()
     def deprecated_payload(self, user_app):
@@ -80,12 +80,43 @@ class TestApplicationReset:
             self, mock_method, app, user, user_app, deprecated_user_reset_url, deprecated_payload):
         mock_method.return_value(True)
         old_secret = user_app.client_secret
+
         res = app.post_json_api(deprecated_user_reset_url, deprecated_payload, auth=user.auth)
         assert res.status_code == 201
         assert 'This route is deprecated' in res.json['meta']['warnings'][0]
         mock_method.assert_called_with(user_app.client_id, old_secret)
         user_app.reload()
         assert old_secret != user_app.client_secret
+
+    @mock.patch('osf.models.ApiOAuth2Application.reset_secret')
+    def test_deprecated_reset_fails(
+            self, mock_method, app, user_app, deprecated_user_reset_url, deprecated_payload):
+        mock_method.return_value(True)
+        old_secret = user_app.client_secret
+
+        # non owner reset fails
+        other_user = AuthUserFactory()
+        res = app.post_json_api(
+            deprecated_user_reset_url,
+            deprecated_payload,
+            auth=other_user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+        mock_method.assert_not_called()
+        user_app.reload()
+        assert old_secret == user_app.client_secret
+
+        # unauthorized user reset fails
+        res = app.post_json_api(
+            deprecated_user_reset_url,
+            deprecated_payload,
+            expect_errors=True
+        )
+        assert res.status_code == 401
+        mock_method.assert_not_called()
+        user_app.reload()
+        assert old_secret == user_app.client_secret
 
     @mock.patch('osf.models.ApiOAuth2Application.reset_secret')
     def test_reset_fails(
@@ -108,7 +139,7 @@ class TestApplicationReset:
         assert old_secret == user_app.client_secret
 
         # unauthorized user reset fails
-        res = app.post_json_api(
+        res = app.patch_json_api(
             application_detail_url,
             payload,
             expect_errors=True
@@ -156,7 +187,7 @@ class TestApplicationReset:
 
         # POST to old endpoint with newest version fails
         res = app.post_json_api(
-            deprecated_user_reset_url + '?version=2.13',
+            deprecated_user_reset_url + '?version=2.15',
             deprecated_payload,
             auth=user.auth,
             expect_errors=True

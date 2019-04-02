@@ -56,8 +56,8 @@ class TestApplicationDetail:
         assert res.status_code == 200
         assert res.json['data']['attributes']['client_id'] == user_app.client_id
 
-        # reset link absent for version 2.13 and later
-        res = app.get(user_app_url + '?version=2.13', auth=user.auth)
+        # reset link absent for version 2.15 and later
+        res = app.get(user_app_url + '?version=2.15', auth=user.auth)
         assert 'reset' not in res.json['data']['links'].keys()
 
     def test_non_owner_cant_view(self, app, user_app_url):

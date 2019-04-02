@@ -39,7 +39,7 @@ class ApiOAuthApplicationBaseSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     def reset_url(self, obj):
-        if StrictVersion(self.context['request'].version) < StrictVersion('2.13'):
+        if StrictVersion(self.context['request'].version) < StrictVersion('2.15'):
             return absolute_reverse(
                 'applications:application-reset', kwargs={
                     'client_id': obj.client_id,
