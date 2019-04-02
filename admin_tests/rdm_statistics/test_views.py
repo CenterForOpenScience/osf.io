@@ -435,11 +435,7 @@ class TestGatherView(AdminTestCase):
         nt.assert_equal(views.send_stat_mail(self.request).status_code, 200)
 
     def test_send_error_mail(self, *args, **kwargs):
-        ret = ''
-        try:
-            0 / 0
-        except Exception as err:
-            ret = views.send_error_mail(err)
+        ret = views.send_error_mail(Exception())
         nt.assert_equal(ret.status_code, 200)
 
     def test_send_email(self):
