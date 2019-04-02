@@ -329,12 +329,13 @@ API_TESTS1 = [
 API_TESTS2 = [
     'api_tests/actions',
     'api_tests/chronos',
+    'api_tests/metrics',
     'api_tests/nodes',
     'api_tests/requests',
     'api_tests/subscriptions',
+    'api_tests/wb',
     'api_tests/waffle',
-    'api_tests/metrics',
-    # 'api_tests/wb',
+    'api_tests/wb',
 ]
 API_TESTS3 = [
     'api_tests/addons_tests',

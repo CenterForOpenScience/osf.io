@@ -3,6 +3,12 @@ import urlparse
 import requests
 import logging
 
+from django.apps import apps
+from api.caching.utils import storage_usage_cache
+from django.db import models
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
+
+from api.caching import settings as cache_settings
 from framework.celery_tasks import app
 from website import settings
 
@@ -94,3 +100,22 @@ def ban_url(instance):
                     logger.info('Banning {} succeeded'.format(
                         url_to_ban,
                     ))
+
+
+@app.task(max_retries=5, default_retry_delay=10)
+def update_storage_usage_cache(target_id):
+    AbstractNode = apps.get_model('osf.AbstractNode')
+
+    storage_usage_total = AbstractNode.objects.get(
+        guids___id=target_id,
+    ).files.aggregate(sum=models.Sum('versions__size'))['sum'] or 0
+
+    key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_id)
+    storage_usage_cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
+
+
+def update_storage_usage(target):
+    Preprint = apps.get_model('osf.preprint')
+
+    if not isinstance(target, Preprint) and not target.is_quickfiles:
+        enqueue_postcommit_task(update_storage_usage_cache, (target._id,), {}, celery=True)
