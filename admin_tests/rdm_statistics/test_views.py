@@ -441,8 +441,7 @@ class TestGatherView(AdminTestCase):
             'attach_file': 'XYZ',
             'attach_data': 'abc'
         }
-        user = self.user
-        nt.assert_equal(views.send_email(to_list=to_list, cc_list=cc_list, data=mail_data, user=user)['is_success'], False)
+        nt.assert_equal(views.send_email(to_list=to_list, cc_list=cc_list, data=mail_data,)['is_success'], False)
 
     @patch('admin.rdm_statistics.views.render_to_string', return_value='<h1>My First Heading</h1>', autospec=True)
     @patch('admin.rdm_statistics.views.pdfkit', return_value='41', autospec=True)

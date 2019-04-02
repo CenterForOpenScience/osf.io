@@ -43,7 +43,6 @@ import pdfkit
 from admin.base import settings
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 from admin.rdm_addons import utils
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -618,12 +617,12 @@ def send_stat_mail(request, **kwargs):
         attachment_file_data = get_pdf_data(institution=institution)
         mail_data = {
             'subject': '[[GakuNin RDM]] [[' + institution.name + ']] statistic information at ' + current_date.strftime('%Y/%m/%d'),
-            'content': 'statistic information of storage in ' + institution.name + ' at ' + current_date.strftime('%Y/%m/%d') + '\r\n\r\n' +
-            'This mail is automatically delivered from GakuNin RDM.\r\n*Please do not reply to this email.\r\n',
+            'content': 'statistic information of storage in ' + institution.name + ' at ' + current_date.strftime('%Y/%m/%d') + '\r\n\r\n'
+            + 'This mail is automatically delivered from GakuNin RDM.\r\n*Please do not reply to this email.\r\n',
             'attach_file': attachment_file_name,
             'attach_data': attachment_file_data
         }
-        response_hash[institution.name] = send_email(to_list=to_list, cc_list=cc_list, data=mail_data, user=user)
+        response_hash[institution.name] = send_email(to_list=to_list, cc_list=cc_list, data=mail_data)
     response_json = json.dumps(response_hash)
     response = HttpResponse(response_json, content_type='application/json')
     return response
@@ -638,13 +637,13 @@ def send_error_mail(err):
         'subject': '[[GakuNin RDM]] ERROR in statistic information collection at ' + current_date.strftime('%Y/%m/%d'),
         'content': 'ERROR OCCURED at ' + current_date.strftime('%Y/%m/%d') + '.\r\nERROR: \r\n' + str(err),
     }
-    send_email(to_list=to_list, cc_list=None, user=None, data=mail_data)
+    send_email(to_list=to_list, cc_list=None, data=mail_data)
     response_hash = {'state': 'fail', 'error': str(err)}
     response_json = json.dumps(response_hash)
     response = HttpResponse(response_json, content_type='application/json')
     return response
 
-def send_email(to_list, cc_list, data, user, backend='smtp'):
+def send_email(to_list, cc_list, data, backend='smtp'):
     """send email to administrator"""
     ret = {'is_success': True, 'error': ''}
     try:
@@ -655,7 +654,7 @@ def send_email(to_list, cc_list, data, user, backend='smtp'):
         message = EmailMessage(
             data['subject'],
             data['content'],
-            from_email=SUPPORT_EMAIL or user.username,
+            from_email=SUPPORT_EMAIL,
             to=to_list,
             cc=cc_list
         )
@@ -733,7 +732,7 @@ class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
             'attach_file': attachment_file_name,
             'attach_data': attachment_file_data
         }
-        ret = send_email(to_list=to_list, cc_list=cc_list, data=mail_data, user=user)
+        ret = send_email(to_list=to_list, cc_list=cc_list, data=mail_data)
         data = {
             'ret': ret,
             'mail_data': mail_data
