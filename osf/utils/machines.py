@@ -143,6 +143,7 @@ class ReviewsMachine(BaseMachine):
         reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
                                            template='reviews_submission_status',
                                            action=self.action)
+
     def notify_edit_comment(self, ev):
         context = self.get_context()
         context['comment'] = self.action.comment
@@ -153,8 +154,9 @@ class ReviewsMachine(BaseMachine):
 
     def notify_withdraw(self, ev):
         context = self.get_context()
+        context['ever_public'] = self.machineable.ever_public
         try:
-            preprint_request_action = PreprintRequestAction.objects.get(target__id=self.machineable.id,
+            preprint_request_action = PreprintRequestAction.objects.get(target__target__id=self.machineable.id,
                                                                    from_state='pending',
                                                                    to_state='accepted',
                                                                    trigger='accept')

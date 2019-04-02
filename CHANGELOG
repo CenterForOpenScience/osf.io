@@ -2,6 +2,21 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.5.0 (2019-04-01)
+===================
+- Display OSF Storage Usage on project overview page
+- APIv2: turn on wb hook tests on travis
+- APIv2: display related counts on user relationship fields
+- Banner for IE users
+- Allow embedding quickfiles in a wiki
+- Migrate old forks whose last_logged date doesn't match the forked date
+
+19.4.0 (2019-03-28)
+===================
+- Chronos backend
+- APIv2: user_passwords type change
+- Preprint withdrawal email template changes
+
 19.3.0 (2019-03-04)
 ===================
 - Generate absolute url for confirmation url in claim user email

@@ -54,7 +54,7 @@ var mfrURL = window.contextVars.node.urls.mfr;
 var osfURL = window.contextVars.osfURL;
 
 var getMfrUrl = function (guid) {
-    var mfrLink = mfrURL + 'render?url='+ osfURL + guid + '/?action=download%26mode=render';
+    var mfrLink = mfrURL + 'render?url='+ osfURL + guid + '/download/?action=download%26mode=render';
     if ($osf.urlParams().view_only) {
         mfrLink += '%26view_only=' + $osf.urlParams().view_only;
     }

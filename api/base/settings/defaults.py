@@ -305,3 +305,15 @@ ELASTICSEARCH_DSL = {
 }
 # Store yearly indices for time-series metrics
 ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'osf_cache_table',
+    },
+    'waffle_cache': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+}
+
+WAFFLE_CACHE_NAME = 'waffle_cache'
