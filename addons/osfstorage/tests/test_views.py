@@ -24,7 +24,7 @@ from addons.osfstorage.tests.utils import make_payload
 from framework.auth import signing
 from website.util import rubeus, api_url_for
 from framework.auth import cas
-from django.core.cache import cache
+from api.caching.utils import storage_usage_cache
 
 from osf import features
 from osf.models import Tag, QuickFilesNode
@@ -440,23 +440,23 @@ class TestUploadFileHook(HookTestCase):
         name = 'ლ(ಠ益ಠლ).unicode'
         parent = self.node_settings.get_root()
         key = STORAGE_USAGE_KEY.format(target_id=self.node._id)
-        assert cache.get(key) is None
+        assert storage_usage_cache.get(key) is None
 
         with override_flag(features.STORAGE_USAGE, active=True):
             self.send_upload_hook(parent, payload=self.make_payload(name=name))
-        assert cache.get(key) == 123
+        assert storage_usage_cache.get(key) == 123
 
         # Don't update the cache for duplicate uploads
         with override_flag(features.STORAGE_USAGE, active=True):
             self.send_upload_hook(parent, payload=self.make_payload(name=name))
-        assert cache.get(key) == 123
+        assert storage_usage_cache.get(key) == 123
 
         # Do update the cache for new versions
         payload = self.make_payload(name=name)
         payload['metadata']['name'] = 'new hash'
         with override_flag(features.STORAGE_USAGE, active=True):
             self.send_upload_hook(parent, payload=payload)
-        assert cache.get(key) == 246
+        assert storage_usage_cache.get(key) == 246
 
 
 @pytest.mark.django_db
@@ -986,7 +986,7 @@ class TestDeleteHookProjectOnly(DeleteHook):
         assert_equal(resp.status_code, 200)
         assert_equal(resp.json, {'status': 'success'})
 
-        assert cache.get(key) == 0
+        assert storage_usage_cache.get(key) == 0
         assert_is(self.node.storage_usage, 0)
 
 
@@ -1285,7 +1285,7 @@ class TestMoveHookProjectsOnly(TestMoveHook):
 
         # Cache should stay untouched because net storage usage hasn't changed
         key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
-        assert cache.get(key) is None
+        assert storage_usage_cache.get(key) is None
 
         assert_equal(res.status_code, 200)
 
@@ -1322,10 +1322,10 @@ class TestMoveHookProjectsOnly(TestMoveHook):
 
         # both caches are updated
         source_key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
-        assert cache.get(source_key) == 0
+        assert storage_usage_cache.get(source_key) == 0
 
         destination = STORAGE_USAGE_KEY.format(target_id=other_target._id)
-        assert cache.get(destination) == 123
+        assert storage_usage_cache.get(destination) == 123
 
         assert_equal(res.status_code, 200)
 
@@ -1397,10 +1397,10 @@ class TestCopyHook(HookTestCase):
 
         # both caches are updated
         source_key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
-        assert cache.get(source_key) == 123
+        assert storage_usage_cache.get(source_key) == 123
 
         destination = STORAGE_USAGE_KEY.format(target_id=other_target._id)
-        assert cache.get(destination) == 123
+        assert storage_usage_cache.get(destination) == 123
 
         assert_equal(res.status_code, 201)
 
