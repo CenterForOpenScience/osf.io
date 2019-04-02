@@ -1,30 +1,33 @@
+# -*- coding: utf-8 -*-
 ## mAP core Group / Member syncronization
 
 
+from datetime import datetime as dt
+import logging
 import os
 import sys
-import json
-import time
-from datetime import datetime as dt
-import json
-from logging import getLogger
-
 import requests
 import urllib
 from operator import attrgetter
 
-from website.app import init_app
-from website import settings
-from osf.models.user import OSFUser
-from osf.models.node import Node
-from osf.models.map import MAPProfile
-from nii.api import MAPCore
-import framework.auth
 
 # global setting
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
+if __name__ == '__main__':
+    logger.addHandler(logging.StreamHandler()) # log to stdio
+else:
+    from osf.models.user import OSFUser
+    from osf.models.node import Node
+    from osf.models.map import MAPProfile
+    from nii.api import MAPCore
+    import invoke
+    from invoke import Collection
 
+    from website import settings
+    #from .utils import pip_install, bin_prefix
+    from website.app import init_app
 
+from website import settings
 map_hostname      = settings.MAPCORE_HOSTNAME
 map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
 map_token_path    = settings.MAPCORE_TOKEN_PATH
@@ -91,18 +94,19 @@ def mapcore_receive_authcode(user, params):
     map_user.oauth_access_token = access_token
     map_user.oauth_refresh_token = refresh_token
     map_user.oauth_refresh_time = dt.utcnow()
-    map_user.save()
     user.map_profile = map_user
+    map_user.save()
     logger.info('User [' + user.eppn + '] get access_token [' + access_token + '] -> saved')
     user.save()
 
-
+    # DEBUG: read record and print
     logger.info('In database:')
-    me = OSFUser.objects.get(eppn='nagahara@openidp.nii.ac.jp')
+    me = OSFUser.objects.get(eppn=user.eppn)
     logger.info('name: ' + me.fullname)
     logger.info('eppn: ' + me.eppn)
-    logger.info('access_token: ' + me.map_profile.oauth_access_token)
-    logger.info('refresh_token: ' + me.map_profile.oauth_refresh_token)
+    if hasattr(me, 'map_profile'):
+        logger.info('access_token: ' + me.map_profile.oauth_access_token)
+        logger.info('refresh_token: ' + me.map_profile.oauth_refresh_token)
 
 
     return my_home  # redirect to home -> will redirect to dashboard
@@ -176,15 +180,14 @@ def mapcore_refresh_accesstoken(user, force = False):
 ### sync functions
 ###
 
-
 def mapcore_get_users_groups(user):
     '''get nAP groups by a user'''
     ''':param user OSFUser'''
     # get user data from mAP
     return
 
+# OSFuser essential feild keeper for comparing member
 class RDMmember:
-    '''a RDM user'''
     def __init__(self, node, user):
         self.eppn = user.eppn        # ePPN
         self.user_id = user._id      # RDM internal user_id
@@ -194,14 +197,101 @@ class RDMmember:
             self.refresh_token = user.map_profile.oauth_refresh_time
         else:
             self.is_admin = False
+    def is_admin(self):
+        return self.is_admin == 2 or self.is_admin == 1
 
 
-def mapcore_group_sync(node, is_map2rdm = True):
-    '''sync group members RDM Project <--> mAP Group'''
-    ''':param node  RDM Node object '''
-    ''':param directin boolean True when mAP -> RDM'''
+# compare member lists and apply  actions
+def compare_members(rdm_members, map_members, to_map):
+    rdm_index = 0
+    map_index = 0
+    add = []
+    delete = []
+    upg = []
+    downg = []
+    count = max(len(rdm_members), len(map_members))
+    while rdm_index < count and map_index < count:
+        if map_members[map_index].eppn == rdm_members[rdm_index].eppn:
+            # exist in both -> check admin
+            if rdm_members[rdm_index].is_admin():
+                if map_members[map_index].is_admin():
+                    # admin @ both
+                    pass
+                else:
+                    # admin @ rdm only
+                    if to_map:
+                        upg.append(map_members[map_index])
+                    else:
+                        downg.append(rdm_members[rdm_index])
+            else:
+                if map_members[map_index].is_admin():
+                    # admin in map only
+                    if to_map:
+                        downg.append(map_members[map_index])
+                    else:
+                        upg.append(rdm_members[rdm_index])
+                else:
+                    # regular @ both
+                    pass
+            rdm_index += 1
+            map_index += 1
 
-    logger.info("mapcore_group_sync started for [" + node.group.name + ']')
+        elif map_members[map_index].eppn < rdm_members[rdm_index].eppn:
+            # exist in map only
+            if to_map:
+                delete.append(map_members[map_index])
+            else:
+                add.append(map_members[map_index])
+            map_index += 1
+
+        else:
+            # exist in rdm only
+            if to_map:
+                add.append(rdm_members[rdm_index])
+            else:
+                delete.append(rdm_members[rdm_index])
+            rdm_index += 1
+
+    return add, delete, upg, downg
+    ### to_map:
+    ###   add: RDMmember,  delete: map_member, upg: map_member, downg: map_member
+    ### not to_map: (to RDM)
+    ###   add: map_member, delete: RDMmember,  upg: RDMmember,  downg: RDMmember
+
+def mapcore_group_sync_to_rdm(map_group):
+    '''
+    sync group members mAP Group -> RDM Project
+    it will scan mAP grous which user belongs, and sync members to to GRDM
+    :param OSFUser
+    :param map_group : is a dictionary keeps group infomation
+    :return:
+    '''
+
+    logger.info("mapcore_group_sync_to_rdm started for" + map_group['group_name'])
+
+    # グループ管理者のOSFUserを得て、Projectのownerにセットする。RDMへのユーザ存在チェックも必要
+    adminu = map_group['group_admin'][0]
+    node = Node.objects.get_or_create(title=map_group['group_name'], crator=adminu, is_public=True, category='project')
+    if node.is_delete:
+        logger.info("RDM projet [" + node.title + "] is deleted.  sync aborted.")
+        return
+
+    # mapからグループのメンバー一覧を取り出して、同期する
+
+    # nodeをsaveする
+
+
+
+
+
+
+def mapcore_group_sync_to_map(node):
+    '''
+    sync group members RDM Project -> mAP Group
+    :param node  RDM Node object
+    '''
+
+    logger.info("mapcore_group_sync_to_map started for [" + node.group.name + ']')
 
     # check Node attribute
     if node.is_deleted:
@@ -209,58 +299,133 @@ def mapcore_group_sync(node, is_map2rdm = True):
         return
 
     # get the RDM contributor and make lists
+    rdm_owner = None  # FIX IT: it will keep an admin user, not the owner
     rdm_members = []
-    rdm_admins = []
     for member in node.contributors:
         rdmu = RDMmember(member)
         rdm_members.append(rdmu)
-        if rdmu.is_admin:
-            rdm_admins.append(rdmu)
+        if not rdm_owner and rdmu.is_admin:
+            rdm_owner = rdmu
     rdm_members.sort(key=attrgetter('eppn'))
-    rdm_admins.sort(key=attrgetter('eppn'))
 
     # get admin privilaged tokens
-    if len(rdm_admins) == 0:
+    if rdm_owner == None:
         logger.warning('Node (' + node.group.name + ') has no admin.')
         return
 
     # get the mAP group and make lists
-    map_members =[]
-    map_admins = []
-    logger.info('group [' + node.group.name + '] sync is done by [' + rdm_admins[0].eppn + ']')
-    mapcore = MAPCore(map_clientid, map_secret, rdm_admins[0].access_token, rdm_admins[0].refresh_token)
-    map_group = mapcore.get_group_by_name(node.group.name)  # 1 returns 1 group only
+    logger.info('group [' + node.group.name + '] sync is done by [' + rdm_owner.eppn + ']')
+    mapcore = MAPCore(map_clientid, map_secret, rdm_owner.access_token, rdm_owner.refresh_token)
+    map_group = mapcore.get_group_by_name(node.group.name)  # it returns 1 group only
     if map_group == False:
         return
     map_group = map_group['result']['groups'][0]
     map_member_list = mapcore.get_group_members(map_group['group_key'])
     if map_member_list == False:
         return
-    map_member_list = map_member_list['result']['accounts']
-    map_member_list.sort(key=lambda u:u['eppn'])
-    for map_member in map_member_list:
-        if map_member['admin'] == 2:
-            map_admins.append(map_member)
+    map_members = map_member_list['result']['accounts']
+    map_members.sort(key=lambda u:u['eppn'])
+    group_key = map_group['group_key']
 
-    # compare member lists and decide actions
+    add, delete, upgrade, downgrade = compare_members(rdm_members, map_members, True)
+    ###   add: RDMmember,  delete: map_member, upgrade: map_member, downgrade: map_member
 
-
-
-
-
-    contributors = node.contributors.objects.all()
-
+    # apply members to mAP group
+    for u in add:
+        if u.is_admin():
+            admin = MAPCore.MODE_ADMIN
+        else:
+            admin = MAPCore.MODE_MEMBER
+        result = mapcore.add_to_group(group_key, u.eppn, admin)
+        if result == False:
+            return # error reason is logged by API call
+        logger.info("mAP group [" + map_group['group_name'] + "] get new member [" + u.eppn + "]")
+    for u in delete:
+        result = mapcore.remove_from_group(group_key, u.eppn)
+        if result == False:
+            return  # error reason is logged by API call
+        logger.info("mAP group [" + map_group['group_name'] + "]s member [" + u.eppn + "] is now an admin")
+    for u in upgrade:
+        result = mapcore.edit_member(group_key, u.eppn, mapcore.MODE_ADMIN)
+        if result == False:
+            return # error reason is logged by API call
+        logger.info("mAP group [" + map_group['group_name'] + "]s admin [" + u.eppn + "] is now a member")
 
     return
 
+###
+### debugging utilities
+###
+
+# print variable type
+def startup():
+    print("loaded")
+    return
+
+def debug_init():
+    from osf.models.user import OSFUser
+    from osf.models.node import Node
+    from osf.models.map import MAPProfile
+    from nii.api import MAPCore
+    from website.app import init_app
+    import framework.auth
+    init_app(routes=False, set_backends=False)
+
+
+# add a contirbutor to a project
+def add_contributor_to_project(node_name, eppn):
+
+    # get node object
+    try:
+        node = Node.objects.get(title=node_name)
+    except Exception as e:
+        print(type(e))
+        print(e)
+        return
+
+    # get user object
+    try:
+        user = OSFUser.objects.get(eppn=eppn)
+    except Exception as e:
+        print(type(e))
+        print(e)
+        return
+
+    # add user as contributor
+    if node.is_contributor(user):
+        print("user is already joind")
+        return
+
+    ret = node.add_contributor(user, log=True, save=False)
+    print("add_contoributor retuns: " + ret)
+    return
 
 if __name__ == '__main__':
+    print("In Main")
+    p = sys.path
+    del p[0] # remove command path (nii)
+    sys.path = p
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
+    from website.app import init_app
     init_app(routes=False, set_backends=False)
-    me = OSFUser.objects.get(eppn='nagahra@openidp.nii.ac.jp')
-    print('name:', me.fullname)
-    print('eppn:', me.eppn)
-    print('access_token:', me.oauth_access_token)
-    print('refresh_token:', me.oauth_refresh_token)
+
+    from osf.models.user import OSFUser
+    from osf.models.node import Node
+    from osf.models.map import MAPProfile
+    from nii.api import MAPCore
+    import invoke
+    from invoke import Collection
+
+    from website import settings
+    #from .utils import pip_install, bin_prefix
+
+    if True:
+        me = OSFUser.objects.get(eppn='hnagahara@openidp.nii.ac.jp')
+        print('name:', me.fullname)
+        print('eppn:', me.eppn)
+        if hasattr(me, "map_profile"):
+            print('access_token:', me.map_profile.oauth_access_token)
+            print('refresh_token:', me.map_profile.oauth_refresh_token)
 
 
 
