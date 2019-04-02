@@ -17,6 +17,14 @@ from osf.models.user import Institution
 from admin.rdm_statistics import views
 from mock import patch
 
+import datetime
+import tempfile
+import os
+import uuid
+import shutil
+import json
+from osf.models import OSFUser
+
 
 class TestInstitutionListViewStat(AdminTestCase):
     """test InstitutionListViewStat"""
@@ -348,7 +356,6 @@ def test_simple_auth():
     nt.assert_true(views.simple_auth(access_key_hexa))
 
 def test_get_start_date():
-    import datetime
     end_date = datetime.datetime.now()
     start_date = end_date - datetime.timedelta(weeks=(10))\
         + datetime.timedelta(days=(1))
@@ -395,11 +402,8 @@ class TestGatherView(AdminTestCase):
         self.project.affiliated_institutions.add(self.institution1)
         self.project.save()
         self.file_node = create_test_file(node=self.project, user=self.user, filename='some_file.some_extension')
-        import tempfile
-        import os
         self.tmp_dir = tempfile.mkdtemp()
         self.tmp_file = os.path.join(self.tmp_dir, self.file_node.name)
-        import uuid
         with open(self.tmp_file, 'wb') as file:
             file.write(str(uuid.uuid4()))
         self.request = RequestFactory().get('/fake_path')
@@ -415,12 +419,10 @@ class TestGatherView(AdminTestCase):
         self.user.delete()
         for institution in self.institutions:
             institution.delete()
-        import shutil
         shutil.rmtree(self.tmp_dir)
 
     @patch('admin.rdm_statistics.views.requests.Session.get', side_effect=mocked_requests_get)
     def test_get(self, *args, **kwargs):
-        import json
         resp = json.loads(self.view.get(self, self.request, self.view.args, self.view.kwargs).content)
         nt.assert_equal(len(resp), 2)
 
@@ -432,7 +434,6 @@ class TestGatherView(AdminTestCase):
         nt.assert_equal(ret.status_code, 200)
 
     def test_send_email(self):
-        from osf.models import OSFUser
         to_list = [self.user.username]
         cc_list = list(OSFUser.objects.filter(is_superuser=True).values_list('username', flat=True))
         mail_data = {
@@ -466,7 +467,9 @@ class TestGatherView(AdminTestCase):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        nt.assert_equal(views.create_csv(self.request, **self.view.kwargs).status_code, 200)
+        result = views.create_csv(self.request, **self.view.kwargs)
+        nt.assert_equal(result.status_code, 200)
+        nt.assert_true('.csv' in result['Content-Disposition'].lower())
 
     def test_get_all_statistic_data_csv(self, **kwargs):
         nt.assert_is_instance(views.get_all_statistic_data_csv(self.institution1, **self.view.kwargs), type([]))
