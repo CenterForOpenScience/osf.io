@@ -71,8 +71,7 @@ a {
     align-items: center;
 }
 
-footBanners {
-    position:fixed;
+.footBanners {
     width: 100%;
     z-index: 10;
     bottom:0;
