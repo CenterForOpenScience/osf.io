@@ -311,6 +311,9 @@ STORAGE_USAGE_CACHE_NAME = 'storage_usage'
 
 
 CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
     STORAGE_USAGE_CACHE_NAME: {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'osf_cache_table',
