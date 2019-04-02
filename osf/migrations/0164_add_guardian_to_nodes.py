@@ -192,7 +192,7 @@ def migrate_nodes_to_guardian(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0160_migrate_preprints_to_direct_fks'),
+        ('osf', '0163_migrate_preprints_to_direct_fks'),
     ]
 
     operations = [

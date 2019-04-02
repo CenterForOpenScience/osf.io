@@ -12,7 +12,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0161_add_guardian_to_nodes'),
+        ('osf', '0164_add_guardian_to_nodes'),
     ]
 
     operations = [

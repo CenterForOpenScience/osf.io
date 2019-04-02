@@ -21,7 +21,7 @@ def reverse_func(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0158_guardian_direct_fks'),
+        ('osf', '0161_guardian_direct_fks'),
     ]
 
     operations = [

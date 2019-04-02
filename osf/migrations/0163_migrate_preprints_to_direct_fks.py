@@ -65,7 +65,7 @@ def migrate_preprints_to_direct_fks(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0159_post_migrate'),
+        ('osf', '0162_post_migrate'),
     ]
 
     operations = [
