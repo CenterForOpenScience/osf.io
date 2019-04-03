@@ -18,6 +18,7 @@ from addons.googledrive.tests.factories import GoogleDriveAccountFactory, Google
 from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNodeSettingsFactory
 from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from addons.figshare.tests.factories import FigshareAccountFactory, FigshareNodeSettingsFactory
+from addons.iqbrims.tests.factories import IQBRIMSAccountFactory, IQBRIMSNodeSettingsFactory
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory
 from tests.base import ApiAddonTestCase
@@ -1342,3 +1343,113 @@ class TestNodeForwardAddon(
         # This test doesn't apply forward, as it does not use ExternalAccounts.
         # Overridden because it's required by the superclass.
         pass
+
+
+class TestNodeIQBRIMSAddon(
+    NodeConfigurableAddonTestSuiteMixin,
+    ApiAddonTestCase):
+    short_name = 'iqbrims'
+    AccountFactory = IQBRIMSAccountFactory
+    NodeSettingsFactory = IQBRIMSNodeSettingsFactory
+
+    def _settings_kwargs(self, node, user_settings):
+        return {
+            'folder_id': '1234567890',
+            'folder_path': '/1234567890'
+        }
+
+    @property
+    def _mock_folder_info(self):
+        return {
+            'folder_id': '0987654321',
+            'folder_path': '/'
+        }
+
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': '/ (Full IQB-RIMS Drive)',
+            'path': '/',
+            'id': 'FAKEROOTID'
+        }
+
+    @mock.patch('addons.iqbrims.client.IQBRIMSClient.about')
+    def test_folder_list_GET_expected_behavior(self, mock_about):
+        mock_about.return_value = {'rootFolderId': 'FAKEROOTID'}
+        with mock.patch.object(self.node_settings.__class__, 'fetch_access_token', return_value='asdfghjkl') as mock_fetch:
+            super(
+                TestNodeIQBRIMSAddon, self
+            ).test_folder_list_GET_expected_behavior()
+
+    def test_settings_detail_PUT_PATCH_only_folder_id_raises_error(self):
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        data = {
+            'data': {
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'folder_id': self._mock_folder_info['folder_id']
+                }
+            }
+        }
+        res_put = self.app.put_json_api(
+            self.setting_detail_url, data,
+            auth=self.user.auth, expect_errors=True
+        )
+        res_patch = self.app.patch_json_api(
+            self.setting_detail_url, data,
+            auth=self.user.auth, expect_errors=True
+        )
+
+        assert res_put.status_code == res_patch.status_code == 400
+        assert ('Must specify both folder_id and folder_path for {}'.format(self.short_name) ==
+                res_put.json['errors'][0]['detail'] == res_patch.json['errors'][0]['detail'])
+
+    def test_settings_detail_PUT_PATCH_only_folder_path_raises_error(self):
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        data = {
+            'data': {
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'folder_path': self._mock_folder_info['folder_path']
+                }
+            }
+        }
+        res_put = self.app.put_json_api(
+            self.setting_detail_url, data,
+            auth=self.user.auth, expect_errors=True
+        )
+        res_patch = self.app.patch_json_api(
+            self.setting_detail_url, data,
+            auth=self.user.auth, expect_errors=True
+        )
+
+        assert res_put.status_code == res_patch.status_code == 400
+        assert ('Must specify both folder_id and folder_path for {}'.format(self.short_name) ==
+                res_put.json['errors'][0]['detail'] == res_patch.json['errors'][0]['detail'])
+
+    def test_settings_detail_incomplete_PUT_raises_error(self):
+        self.node_settings.deauthorize(auth=self.auth)
+        self.node_settings.save()
+        data = {
+            'data': {
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'external_account_id': self.account_id,
+                    'folder_id': self._mock_folder_info['folder_id']
+                }
+            }
+        }
+        res = self.app.put_json_api(
+            self.setting_detail_url, data,
+            auth=self.user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            'Must specify both folder_id and folder_path for {}'.format(
+                self.short_name),
+            res.json['errors'][0]['detail'])

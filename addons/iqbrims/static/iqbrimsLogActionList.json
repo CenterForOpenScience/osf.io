@@ -1,0 +1,10 @@
+{
+  "iqbrims_file_added" : "${user} added file ${iqbrims_path} to IQB-RIMS in ${node}",
+  "iqbrims_file_removed" : "${user} removed ${path_type} ${iqbrims_path} from IQB-RIMS in ${node}",
+  "iqbrims_file_updated" : "${user} updated file ${iqbrims_path} in IQB-RIMS in ${node}",
+  "iqbrims_folder_created" : "${user} created folder ${iqbrims_path} in IQB-RIMS in ${node}",
+  "iqbrims_folder_selected" : "${user} linked IQB-RIMS folder ${iqbrims_folder} to ${node}",
+  "iqbrims_node_authorized" : "${user} authorized the IQB-RIMS addon for ${node}",
+  "iqbrims_node_deauthorized" : "${user} deauthorized the IQB-RIMS addon for ${node}",
+  "iqbrims_node_deauthorized_no_user" : "IQB-RIMS addon for ${node} deauthorized"
+}

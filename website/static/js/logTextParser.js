@@ -778,6 +778,44 @@ var LogPieces = {
             return m('span', '');
         }
     },
+
+    iqbrims_path: {
+        controller: function(logObject){
+            var self = this;
+            self.returnLinkForPath = function(logObject) {
+                if (logObject) {
+                    var action = logObject.attributes.action;
+                    var acceptableLinkedItems = ['iqbrims_file_added', 'iqbrims_file_updated'];
+                    if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
+                        return logObject.attributes.params.urls.view;
+                    }
+                }
+                return null;
+            };
+        },
+        view: function (ctrl, logObject) {
+            var url = ctrl.returnLinkForPath(logObject);
+            var path = logObject.attributes.params.path;
+            if(paramIsReturned(path, logObject)){
+                path = stripBackslash(path);
+                if (url) {
+                    return m('a', {href: $osf.toRelativeUrl(url, window)}, path);
+                }
+                return m('span', path);
+            }
+            return m('span', '');
+        }
+    },
+
+    iqbrims_folder: {
+        view: function(ctrl, logObject){
+            var folder = logObject.attributes.params.folder;
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === '/' ? '(Full IQB-RIMS)' : folder);
+            }
+            return m('span', '');
+        }
+    },
 };
 
 module.exports = {

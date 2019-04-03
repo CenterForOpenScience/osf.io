@@ -559,6 +559,36 @@
                 "status": "partial",
                 "text": "Making an GakuNin RDM project public or private is independent of Nextcloud privacy. The GakuNin RDM does not alter the permissions of linked Nextcloud folders."
             }
+        },
+        "IQB-RIMS": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an GakuNin RDM project public or private is independent of Google Drive privacy. The GakuNin RDM does not alter the permissions of linked Google Drive folders."
+            },
+            "View / download file versions": {
+                "status": "full",
+                "text": "IQB-RIMS files and their versions can be viewed/downloaded via GakuNin RDM."
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Google Drive."
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "Files deleted via GakuNin RDM will be deleted in Google Drive."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "The GakuNin RDM keeps track of changes you make to your Google Drive content through the GakuNin RDM, but not for changes made using Google Drive directly."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy Google Drive authorization unless the user forking the project is the same user who authorized the IQB-RIMS add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "IQB-RIMS content will be registered, but version history will not be copied to the registration."
+            }
         }
     },
     "disclaimers": [

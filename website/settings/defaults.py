@@ -516,7 +516,8 @@ class CeleryConfig:
                 'kwargs': {'dry_run': False, 'addons': {
                     'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
                     'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
-                    'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+                    'mendeley': 14,     # http://dev.mendeley.com/reference/topics/authorization_overview.html
+                    'iqbrims': 14       # https://developers.google.com/identity/protocols/OAuth2#expiration
                 }},
             },
             'retract_registrations': {
