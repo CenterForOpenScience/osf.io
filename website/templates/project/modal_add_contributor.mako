@@ -352,7 +352,7 @@
 
                 <span data-bind="if: page() == 'which'">
                     <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
-                    <a class="btn btn-success" data-bind="click:submit">Add</a>
+                    <a class="btn btn-success" data-bind="click:submit, css: {disabled: !canSubmit()}">Add</a>
                 </span>
 
             </div><!-- end modal-footer -->
