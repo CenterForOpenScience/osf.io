@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import json
 
 from django.core import serializers
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse_lazy
@@ -13,8 +14,9 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm
-from osf.models import Institution, Node
-
+from api.base import settings as api_settings
+from osf.models import Institution, Node, OSFUser
+from website.util import quota
 
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -35,6 +37,26 @@ class InstitutionList(PermissionRequiredMixin, ListView):
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
         return super(InstitutionList, self).get_context_data(**kwargs)
+
+class InstitutionUserList(PermissionRequiredMixin, ListView):
+    paginate_by = 25
+    template_name = 'institutions/institution_list.html'
+    ordering = 'name'
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+    model = Institution
+
+    def get_queryset(self):
+        return Institution.objects.all().order_by(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        kwargs.setdefault('institutions', query_set)
+        kwargs.setdefault('page', page)
+        kwargs.setdefault('logohost', settings.OSF_URL)
+        return super(InstitutionUserList, self).get_context_data(**kwargs)
 
 
 class InstitutionDisplay(PermissionRequiredMixin, DetailView):
@@ -190,3 +212,44 @@ class CannotDeleteInstitution(TemplateView):
         context = super(CannotDeleteInstitution, self).get_context_data(**kwargs)
         context['institution'] = Institution.objects.get(id=self.kwargs['institution_id'])
         return context
+
+class UserListByInstitutionID(PermissionRequiredMixin, ListView):
+    template_name = 'institutions/list_institute.html'
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+    paginate_by = 10
+
+    def get_user_list_institute_id(self):
+        user_query_set = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
+        dict_of_list = []
+        for user in user_query_set:
+            try:
+                max_quota = user.userquota.max_quota
+            except ObjectDoesNotExist:
+                max_quota = api_settings.DEFAULT_MAX_QUOTA
+            used_quota = quota.used_quota(user.guids.first()._id)
+            used_quota_abbr = quota.abbreviate_size(used_quota)
+            if used_quota_abbr[1] == 'B':
+                used_quota_abbr = '{:.0f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
+            else:
+                used_quota_abbr = '{:.1f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
+            dict_of_list.append({
+                'id': user.guids.first()._id,
+                'name': user.fullname,
+                'username': user.username,
+                'ratio_to_quota': '{:.1f}%'.format(float(used_quota) / (max_quota * 1024 ** 3) * 100),
+                'usage': used_quota_abbr,
+                'limit_value': str(max_quota) + ' GB'
+            })
+        return dict_of_list
+
+    def get_queryset(self):
+        return self.get_user_list_institute_id()
+
+    def get_context_data(self, **kwargs):
+        self.users = self.get_queryset()
+        kwargs['users'] = self.users
+        self.page_size = self.get_paginate_by(self.users)
+        self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.users, self.page_size)
+        kwargs['page'] = self.page
+        return super(UserListByInstitutionID, self).get_context_data(**kwargs)

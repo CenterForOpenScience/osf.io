@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from django.core.exceptions import ObjectDoesNotExist
 from framework import auth
 
+from api.base import settings as api_settings
 from website import settings
 from osf.models import Contributor
 from addons.osfstorage.models import Region
@@ -10,6 +12,7 @@ from osf.utils.permissions import reduce_permissions
 
 from osf.utils import workflows
 from website.ember_osf_web.decorators import storage_i18n_flag_active
+from website.util import quota
 
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
@@ -90,6 +93,28 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
 
         default_region = user.get_addon('osfstorage').default_region
         available_regions = [region for region in Region.objects.all().values('_id', 'name')]
+
+        try:
+            max_quota = user.userquota.max_quota
+        except ObjectDoesNotExist:
+            max_quota = api_settings.DEFAULT_MAX_QUOTA
+
+        used_quota = quota.used_quota(user._id)
+        used_quota_abbr = quota.abbreviate_size(used_quota)
+        if used_quota_abbr[1] == 'B':
+            used_quota_abbr = '{:.0f}[{}]'.format(used_quota_abbr[0], used_quota_abbr[1])
+        else:
+            used_quota_abbr = '{:.1f}[{}]'.format(used_quota_abbr[0], used_quota_abbr[1])
+
+        used_rate = float(used_quota) / (max_quota * 1024 ** 3)
+        icon_name = None
+        if used_rate < api_settings.WARNING_THRESHOLD:
+            icon_name = 'storage_ok.png'
+        elif used_rate <= 1:
+            icon_name = 'storage_warning.png'
+        else:
+            icon_name = 'storage_error.png'
+
         ret.update({
             'activity_points': user.get_activity_points(),
             'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_LARGE),
@@ -98,6 +123,12 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             'storage_flag_is_active': storage_i18n_flag_active(),
             'default_region': {'name': default_region.name, '_id': default_region._id},
             'merged_by': merged_by,
+            'quota': {
+                'max': max_quota,
+                'used': used_quota_abbr,
+                'rate': '{:.1f}'.format(used_rate * 100),
+                'icon_url': '{}static/img/{}'.format(settings.DOMAIN, icon_name)
+            }
         })
         if include_node_counts:
             projects = user.nodes.exclude(is_deleted=True).filter(type='osf.node').get_roots()

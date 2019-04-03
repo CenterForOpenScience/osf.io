@@ -6,7 +6,7 @@ from furl import furl
 from datetime import datetime, timedelta
 from django.db.models import Q
 from django.views.defaults import page_not_found
-from django.views.generic import FormView, DeleteView, ListView, TemplateView
+from django.views.generic import FormView, DeleteView, ListView, TemplateView, View
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
@@ -17,6 +17,7 @@ from django.shortcuts import redirect
 from osf.models.user import OSFUser
 from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
+from osf.models import UserQuota
 from framework.auth import get_user
 from framework.auth.utils import impute_names
 from framework.auth.core import generate_verification_key
@@ -617,3 +618,25 @@ class UserReindexElastic(UserDeleteView):
             action_flag=REINDEX_ELASTIC
         )
         return redirect(reverse_user(self.kwargs.get('guid')))
+
+
+class UserQuotaView(View):
+    """
+    Changes the maximum quota for a user.
+    """
+    permission_required = 'osf.change_osfuser'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        uid = self.kwargs.get('guid')
+        user = OSFUser.load(uid)
+        user_quota = UserQuota.objects.filter(user=user).first()
+        max_quota = int(request.POST.get('maxQuota'))
+
+        if user_quota is None:
+            UserQuota.objects.create(user=user, max_quota=max_quota)
+        else:
+            user_quota.max_quota = max_quota
+            user_quota.save()
+
+        return redirect(reverse_user(uid))

@@ -940,7 +940,8 @@ function _fangornComplete(treebeard, file) {
  * @this Dropzone
  * @private
  */
-function _fangornDropzoneSuccess(treebeard, file, response) {
+
+function test_fangornDropzoneSuccess(treebeard, file, response) {
     treebeard.options.uploadInProgress = false;
     var parent = file.treebeardParent,
         item,
@@ -986,8 +987,83 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         item.parent().data.datasetDraftModified = true;
     }
 
+   treebeard.redraw();
+
+}
+
+
+function _fangornDropzoneSuccess(treebeard, file, response) {
+
+     var res_provider = response.data.attributes.provider;
+     console.log(res_provider);
+     treebeard.options.uploadInProgress = false;
+
+  if(res_provider === 'osfstorage'){
+
+        var usedgb = parseFloat(window.contextVars.used_quota/1073741824).toFixed( 2 );
+
+    if (usedgb > window.contextVars.max_quota) {
+
+        $osf.growl('Quota usage alert', 'You have surpassed the maximum quota allowed for your project.', 'danger');
+       }
+    else if (usedgb > window.contextVars.max_quota * window.contextVars.threshhold) {
+
+      $osf.growl('Quota usage alert', 'You have used more than '+window.contextVars.threshhold *100+' of the quota allowed for your project.', 'warning');
+      }
+  }
+
+    var parent = file.treebeardParent, item,revisedItem, child;
+
+    for (var i = 0; i < parent.children.length; i++) {
+
+        child = parent.children[i];
+
+        if (!child.data.tmpID){
+            continue;
+        }
+        if (child.data.tmpID === file.tmpID) {
+
+            item = child;
+        }
+    }
+    // RESPONSES
+    // OSF : Object with actionTake : "file_added"
+    // DROPBOX : Object; addon : 'dropbox'
+    // S3 : Nothing
+    // GITHUB : Object; addon : 'github'
+    // Dataverse : Object, actionTaken : file_uploaded
+    revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
+    if (!revisedItem && response) {
+        item.data = treebeard.options.lazyLoadPreprocess.call(this, response).data;
+        inheritFromParent(item, item.parent());
+    }
+    if (item.data.tmpID) {
+        item.data.tmpID = null;
+        item.data.uploadState('completed');
+    }
+    // Remove duplicates if file was updated
+    var status = file.xhr.status;
+    if (status === 200) {
+        parent.children.forEach(function(child) {
+            if (child.data.name === item.data.name && child.id !== item.id) {
+                child.removeSelf();
+            }
+        });
+    }
+    var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
+
+    addFileStatus(treebeard, file, true, '', url);
+
+    if (item.data.provider === 'dataverse') {
+
+        item.parent().data.datasetDraftModified = true;
+    }
+
     treebeard.redraw();
 }
+
+
+
 
 function _fangornDropzoneRemovedFile(treebeard, file, message, xhr) {
     addFileStatus(treebeard, file, false, 'Upload Canceled.', '');

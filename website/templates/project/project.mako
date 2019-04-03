@@ -400,6 +400,8 @@
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Files</h3>
+                <h3 class="panel-title">Files</h3>
+
                 <div class="pull-right">
                    <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
@@ -650,6 +652,10 @@ ${parent.javascript_bottom()}
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
         },
+        max_quota: ${node['max_quota']},
+        used_quota: ${node['used_quota']},
+        threshhold: ${node['threshhold']},
+
         storageRegions: ${ storage_regions | sjson, n },
         storageFlagIsActive: ${ storage_flag_is_active | sjson, n },
         nodeCategories: ${ node_categories | sjson, n },

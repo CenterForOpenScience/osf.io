@@ -1,18 +1,19 @@
 import json
 
 from nose import tools as nt
+import mock
 from django.test import RequestFactory
 from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
 
-
+from api.base import settings as api_settings
 from tests.base import AdminTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
     ProjectFactory
 )
-from osf.models import Institution, Node
+from osf.models import Institution, Node, UserQuota
 
 from admin_tests.utilities import setup_form_view, setup_user_view
 
@@ -31,6 +32,36 @@ class TestInstitutionList(AdminTestCase):
 
         self.request = RequestFactory().get('/fake_path')
         self.view = views.InstitutionList()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+    def test_get_list(self, *args, **kwargs):
+        res = self.view.get(self.request, *args, **kwargs)
+        nt.assert_equal(res.status_code, 200)
+
+    def test_get_queryset(self):
+        institutions_returned = list(self.view.get_queryset())
+        inst_list = [self.institution1, self.institution2]
+        nt.assert_items_equal(institutions_returned, inst_list)
+        nt.assert_is_instance(institutions_returned[0], Institution)
+
+    def test_context_data(self):
+        self.view.object_list = self.view.get_queryset()
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res, dict)
+        nt.assert_equal(len(res['institutions']), 2)
+        nt.assert_is_instance(res['institutions'][0], Institution)
+
+
+class TestInstitutionUserList(AdminTestCase):
+
+    def setUp(self):
+
+        super(TestInstitutionUserList, self).setUp()
+        self.institution1 = InstitutionFactory()
+        self.institution2 = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.request = RequestFactory().get('/institution_list')
+        self.view = views.InstitutionUserList()
         self.view = setup_user_view(self.view, self.request, user=self.user)
 
     def test_get_list(self, *args, **kwargs):
@@ -248,3 +279,55 @@ class TestAffiliatedNodeList(AdminTestCase):
         node_list = [self.node1, self.node2]
         nt.assert_items_equal(nodes_returned, node_list)
         nt.assert_is_instance(nodes_returned[0], Node)
+
+
+class TestGetUserListWithQuota(AdminTestCase):
+    def setUp(self):
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.save()
+        self.request = RequestFactory().get('/fake_path')
+        self.view = setup_user_view(
+            views.UserListByInstitutionID(),
+            self.request,
+            user=self.user,
+            institution_id=self.institution.id
+        )
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_default_quota(self, mock_usedquota):
+        mock_usedquota.return_value = 0
+
+        response = self.view.get(self.request)
+        user_quota = response.context_data['users'][0]
+        nt.assert_equal(user_quota['limit_value'], str(api_settings.DEFAULT_MAX_QUOTA) + ' GB')
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_custom_quota(self, mock_usedquota):
+        mock_usedquota.return_value = 0
+
+        UserQuota.objects.create(user=self.user, max_quota=200)
+        response = self.view.get(self.request)
+        user_quota = response.context_data['users'][0]
+        nt.assert_equal(user_quota['limit_value'], '200 GB')
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_used_quota_bytes(self, mock_usedquota):
+        mock_usedquota.return_value = 560
+
+        UserQuota.objects.create(user=self.user, max_quota=100)
+        response = self.view.get(self.request)
+        user_quota = response.context_data['users'][0]
+        nt.assert_equal(user_quota['usage'], '560 B')
+        nt.assert_equal(user_quota['ratio_to_quota'], '0.0%')
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_used_quota_giga(self, mock_usedquota):
+        mock_usedquota.return_value = 5.2 * 1024 ** 3
+
+        UserQuota.objects.create(user=self.user, max_quota=100)
+        response = self.view.get(self.request)
+        user_quota = response.context_data['users'][0]
+        nt.assert_equal(user_quota['usage'], '5.2 GB')
+        nt.assert_equal(user_quota['ratio_to_quota'], '5.2%')
