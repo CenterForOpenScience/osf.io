@@ -4,7 +4,7 @@ import jwe
 import jwt
 import waffle
 
-from django.utils import timezone
+#from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
