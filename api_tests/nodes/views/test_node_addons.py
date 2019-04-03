@@ -1368,7 +1368,7 @@ class TestNodeIQBRIMSAddon(
     @property
     def _mock_folder_result(self):
         return {
-            'name': '/ (Full IQB-RIMS Drive)',
+            'name': '/ (Full IQB-RIMS)',
             'path': '/',
             'id': 'FAKEROOTID'
         }
