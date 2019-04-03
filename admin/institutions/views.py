@@ -94,6 +94,26 @@ class InstitutionDetail(PermissionRequiredMixin, View):
         view = InstitutionChangeForm.as_view()
         return view(request, *args, **kwargs)
 
+class InstitutionDefaultStorageDisplay(PermissionRequiredMixin, TemplateView):
+    model = Institution
+    template_name = 'institutions/default_storage.html'
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+
+    def get_context_data(self, *args, **kwargs):
+        return kwargs
+
+class InstitutionDefaultStorageDetail(PermissionRequiredMixin, View):
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+    model = Institution
+    template_name = 'institutions/default_storage.html'
+
+    def get(self, request, *args, **kwargs):
+        from django.shortcuts import redirect
+
+        view = InstitutionDefaultStorageDisplay.as_view()
+        return view(request, *args, **kwargs)
 
 class ImportInstitution(PermissionRequiredMixin, View):
     permission_required = 'osf.change_institution'
