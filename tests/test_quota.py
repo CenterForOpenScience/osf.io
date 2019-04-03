@@ -7,7 +7,7 @@ import pytest
 from addons.osfstorage.models import OsfStorageFileNode
 from api.base import settings as api_settings
 from tests.base import OsfTestCase
-from osf.models import FileInfo, UserQuota
+from osf.models import FileLog, FileInfo, UserQuota
 from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 from website.util import web_url_for, quota
 
@@ -181,3 +181,105 @@ class TestUsedQuota(OsfTestCase):
         file_node.save()
         FileInfo.objects.create(file=file_node, file_size=500)
         assert_equal(quota.used_quota(self.user._id), 0)
+
+
+class TestSaveUsedQuota(OsfTestCase):
+    def setUp(self):
+        super(TestSaveUsedQuota, self).setUp()
+        self.user = UserFactory()
+        self.project_creator = UserFactory()
+        self.node = ProjectFactory(creator=self.project_creator)
+        self.file = OsfStorageFileNode.create(
+            target=self.node,
+            path='/testfile',
+            _id='testfile',
+            name='testfile',
+            materialized_path='/testfile'
+        )
+        self.file.save()
+
+    def test_add_first_file(self):
+        assert_false(UserQuota.objects.filter(user=self.project_creator).exists())
+
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_ADDED,
+            payload={
+                'provider': 'osfstorage',
+                'metadata': {
+                    'provider': 'osfstorage',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': '/' + self.file._id,
+                    'kind': 'file',
+                    'size': 1000,
+                    'created_utc': '',
+                    'modified_utc': '',
+                    'extra': {'version': '1'}
+                }
+            }
+        )
+
+        user_quota = UserQuota.objects.filter(user=self.project_creator).all()
+        assert_equal(len(user_quota), 1)
+        user_quota = user_quota[0]
+        assert_equal(user_quota.used, 1000)
+
+    def test_add_file(self):
+        UserQuota.objects.create(
+            user=self.project_creator,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=5500
+        )
+
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_ADDED,
+            payload={
+                'provider': 'osfstorage',
+                'metadata': {
+                    'provider': 'osfstorage',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': '/' + self.file._id,
+                    'kind': 'file',
+                    'size': 1000,
+                    'created_utc': '',
+                    'modified_utc': '',
+                    'extra': {'version': '1'}
+                }
+            }
+        )
+
+        user_quota = UserQuota.objects.filter(user=self.project_creator).all()
+        assert_equal(len(user_quota), 1)
+        user_quota = user_quota[0]
+        assert_equal(user_quota.used, 6500)
+
+    def test_add_file_negative_size(self):
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_ADDED,
+            payload={
+                'provider': 'osfstorage',
+                'metadata': {
+                    'provider': 'osfstorage',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': '/' + self.file._id,
+                    'kind': 'file',
+                    'size': -1000,
+                    'created_utc': '',
+                    'modified_utc': '',
+                    'extra': {'version': '1'}
+                }
+            }
+        )
+        assert_false(UserQuota.objects.filter(user=self.project_creator).exists())

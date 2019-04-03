@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+from addons.base import signals as file_signals
+from addons.osfstorage.models import OsfStorageFileNode
+from api.base import settings as api_settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
-from osf.models import Guid, OSFUser, AbstractNode, FileInfo
-from addons.osfstorage.models import OsfStorageFileNode
+from osf.models import AbstractNode, FileLog, FileInfo, Guid, OSFUser, UserQuota
 
 
 def used_quota(user_id):
@@ -36,3 +38,24 @@ def abbreviate_size(size):
         power += 1
 
     return (size, abbr_dict[power])
+
+@file_signals.file_updated.connect
+def update_used_quota(self, target, user, event_type, payload):
+    if event_type == FileLog.FILE_ADDED:
+        file_size = int(payload['metadata']['size'])
+        if file_size < 0:
+            return
+        try:
+            user_quota = UserQuota.objects.get(
+                user=target.creator,
+                storage_type=UserQuota.NII_STORAGE
+            )
+            user_quota.used += file_size
+            user_quota.save()
+        except UserQuota.DoesNotExist:
+            UserQuota.objects.create(
+                user=target.creator,
+                storage_type=UserQuota.NII_STORAGE,
+                max_quota=api_settings.DEFAULT_MAX_QUOTA,
+                used=file_size
+            )
