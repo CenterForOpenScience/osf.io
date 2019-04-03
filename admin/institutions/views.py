@@ -110,8 +110,6 @@ class InstitutionDefaultStorageDetail(PermissionRequiredMixin, View):
     template_name = 'institutions/default_storage.html'
 
     def get(self, request, *args, **kwargs):
-        from django.shortcuts import redirect
-
         view = InstitutionDefaultStorageDisplay.as_view()
         return view(request, *args, **kwargs)
 
