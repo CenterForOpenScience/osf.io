@@ -7,7 +7,7 @@ import pytest
 from addons.osfstorage.models import OsfStorageFileNode
 from api.base import settings as api_settings
 from tests.base import OsfTestCase
-from osf.models import FileLog, FileInfo, UserQuota
+from osf.models import FileLog, FileInfo, TrashedFileNode, TrashedFolder, UserQuota
 from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 from website.util import web_url_for, quota
 
@@ -448,3 +448,63 @@ class TestSaveUsedQuota(OsfTestCase):
         )
 
         assert_false(UserQuota.objects.filter(user=self.project_creator).exists())
+
+    def test_delete_folder(self):
+        UserQuota.objects.create(
+            user=self.project_creator,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=5500
+        )
+
+        folder = TrashedFolder(
+            target=self.node,
+            name='testfolder',
+            deleted_on=datetime.datetime.now(),
+            deleted_by=self.user
+        )
+        folder.save()
+        file1 = TrashedFileNode.create(
+            target=self.node,
+            name='testfile1',
+            parent_id=folder.id,
+            deleted_on=datetime.datetime.now(),
+            deleted_by=self.user
+        )
+        file1.provider = 'osfstorage'
+        file1.save()
+        file2 = TrashedFileNode.create(
+            target=self.node,
+            name='testfile2',
+            parent_id=folder.id,
+            deleted_on=datetime.datetime.now(),
+            deleted_by=self.user
+        )
+        file2.provider = 'osfstorage'
+        file2.save()
+
+        file1_info = FileInfo(file=file1, file_size=2000)
+        file1_info.save()
+        file2_info = FileInfo(file=file2, file_size=3000)
+        file2_info.save()
+
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_REMOVED,
+            payload={
+                'provider': 'osfstorage',
+                'metadata': {
+                    'provider': 'osfstorage',
+                    'name': 'testfolder',
+                    'materialized': '/testfolder',
+                    'path': '{}/'.format(folder._id),
+                    'kind': 'folder',
+                    'extra': {}
+                }
+            }
+        )
+
+        user_quota = UserQuota.objects.get(user=self.project_creator)
+        assert_equal(user_quota.used, 500)

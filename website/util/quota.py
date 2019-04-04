@@ -7,7 +7,7 @@ from api.base import settings as api_settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
-from osf.models import AbstractNode, TrashedFileNode, FileLog, FileInfo, Guid, OSFUser, UserQuota
+from osf.models import AbstractNode, BaseFileNode, FileLog, FileInfo, Guid, OSFUser, UserQuota
 
 
 def used_quota(user_id):
@@ -68,28 +68,52 @@ def file_added(target, payload):
         )
 
 def node_removed(target, user, payload):
-    try:
-        file_node = TrashedFileNode.objects.get(
-            _id=payload['metadata']['path'],
-            target_object_id=target.id,
-            target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-            deleted_by=user
-        )
-    except TrashedFileNode.DoesNotExist:
-        logging.error('FileNode not found, cannot update used quota!')
-        return
-
-    try:
-        file_info = FileInfo.objects.get(file=file_node)
-    except FileInfo.DoesNotExist:
-        logging.error('FileInfo not found, cannot update used quota!')
-        return
-
     user_quota = UserQuota.objects.filter(
         user=target.creator,
         storage_type=UserQuota.NII_STORAGE
     ).first()
     if user_quota is not None:
-        file_size = min(file_info.file_size, user_quota.used)
-        user_quota.used -= file_size
+        file_node_id = payload['metadata']['path'].strip('/')
+        try:
+            file_node = BaseFileNode.objects.get(
+                _id=file_node_id,
+                target_object_id=target.id,
+                target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+                deleted_by=user
+            )
+        except BaseFileNode.DoesNotExist:
+            logging.error('FileNode not found, cannot update used quota!')
+            return
+
+        if 'osf.trashed' not in file_node.type:
+            logging.error('FileNode is not trashed, cannot update used quota!')
+            return
+
+        for removed_file in get_node_file_list(file_node):
+            try:
+                file_info = FileInfo.objects.get(file=removed_file)
+            except FileInfo.DoesNotExist:
+                logging.error('FileInfo not found, cannot update used quota!')
+                continue
+
+            file_size = min(file_info.file_size, user_quota.used)
+            user_quota.used -= file_size
         user_quota.save()
+
+def get_node_file_list(file_node):
+    if 'file' in file_node.type:
+        return [file_node]
+
+    file_list = []
+    folder_list = [file_node]
+
+    while len(folder_list) > 0:
+        folder_id_list = list(map(lambda f: f.id, folder_list))
+        folder_list = []
+        for child_file_node in BaseFileNode.objects.filter(parent_id__in=folder_id_list):
+            if 'folder' in child_file_node.type:
+                folder_list.append(child_file_node)
+            else:  # file
+                file_list.append(child_file_node)
+
+    return file_list
