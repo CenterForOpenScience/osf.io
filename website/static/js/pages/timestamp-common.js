@@ -5,6 +5,7 @@ var List = require('list.js');
 var $osf = require('js/osfHelpers');
 var vkbeautify = require('vkbeautify');
 var taskStatusUpdaterIntervalId = null;
+var taskStatusUrl = null;
 
 var dateString = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric',
@@ -849,7 +850,7 @@ function initDatePickers() {
 
 function taskStatusUpdater () {
     $.ajax({
-        url: window.contextVars.node.urls.api + 'timestamp/task_status/',
+        url: taskStatusUrl,
         method: 'POST'
     }).done(function (taskStatus) {
         if (taskStatus.ready) {
@@ -871,7 +872,8 @@ function checkHasTaskRunning () {
     }
 }
 
-function init() {
+function init(url) {
+    taskStatusUrl = url;
     initList();
     initDatePickers();
     checkHasTaskRunning();
