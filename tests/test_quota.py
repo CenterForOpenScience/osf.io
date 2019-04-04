@@ -421,6 +421,42 @@ class TestSaveUsedQuota(OsfTestCase):
         assert_equal(user_quota.used, 5500)
         mock_logging.error.assert_called_with('FileInfo not found, cannot update used quota!')
 
+    @mock.patch('website.util.quota.logging')
+    def test_delete_file_not_trashed(self, mock_logging):
+        UserQuota.objects.create(
+            user=self.project_creator,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=5500
+        )
+        FileInfo.objects.create(file=self.file, file_size=1000)
+
+        self.file.deleted_on = datetime.datetime.now()
+        self.file.deleted_by = self.user
+        self.file.save()
+
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_REMOVED,
+            payload={
+                'provider': 'osfstorage',
+                'metadata': {
+                    'provider': 'osfstorage',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': self.file._id,
+                    'kind': 'file',
+                    'extra': {}
+                }
+            }
+        )
+
+        user_quota = UserQuota.objects.get(user=self.project_creator)
+        assert_equal(user_quota.used, 5500)
+        mock_logging.error.assert_called_with('FileNode is not trashed, cannot update used quota!')
+
     def test_delete_file_without_userquota(self):
         FileInfo.objects.create(file=self.file, file_size=1000)
 
