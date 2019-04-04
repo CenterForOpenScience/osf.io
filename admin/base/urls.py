@@ -1,9 +1,9 @@
-from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
+from admin.base.settings import ADMIN_BASE, DEBUG
 from admin.base import views
 
-base_pattern = '^{}'.format(settings.ADMIN_BASE)
+base_pattern = '^{}'.format(ADMIN_BASE)
 
 urlpatterns = [
     ### ADMIN ###
@@ -37,7 +37,7 @@ urlpatterns = [
     ),
 ]
 
-if settings.DEBUG:
+if DEBUG:
     import debug_toolbar
 
     urlpatterns += [
