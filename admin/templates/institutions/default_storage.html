@@ -2,6 +2,10 @@
 {% load static %}
 {% block top_includes %}
   <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+  <style>
+
+ </style>
+  
 {% endblock %}
 {% load user_extras %}
 {% load spam_extras %}
@@ -9,69 +13,80 @@
     <title>Institution</title>
 {% endblock title %}
 {% block content %}
-<h1>Add region</h1>
+<h1>Region</h1>
 <div id="content-main">
     <form enctype="multipart/form-data" action="" method="post" id="region_form" novalidate="">
-        <input type="hidden" name="csrfmiddlewaretoken" value="35kvEUtWOcPXx0RVhMGDB39AgEMWix4Fs0E7srZAlVksHFC8ggJ616lHiFGcET62">
-        <div>
-            <fieldset class="module aligned ">
-                <div class="form-row field-_id">
-                    <div>
-                        {% comment %} <label class="required" for="id__id"> id:</label> {% endcomment %}
-                        <input type="hidden" name="_id" id="id__id" required="" class="vTextField" maxlength="255" value="{{institution}}">
-                    </div>
-                </div>
-                <div class="form-row field-name">
-                    <div>
-                        <label class="required" for="id_name">Name:</label>
-                        <input type="text" name="name" id="id_name" required="" class="vTextField" maxlength="200" value="{{region.name}}">
-                    </div>
-                </div>
-                <div class="form-row field-waterbutler_credentials">
-                    <div>
-                        <label class="required" for="id_waterbutler_credentials">Waterbutler credentials:</label>
-                        <textarea name="waterbutler_credentials" id="id_waterbutler_credentials" rows="10" cols="40" required="">{{region.waterbutler_credentials}}</textarea>
-                        <input type="hidden" name="initial-waterbutler_credentials" value="{{region.waterbutler_credentials}}" id="initial-id_waterbutler_credentials">
-                    </div>
-                </div>
-                <div class="form-row field-waterbutler_url">
-                    <div>
-                        <label class="required" for="id_waterbutler_url">Waterbutler url:</label>
-                        <p class="url">Currently: <a href="{{region.waterbutler_url}}">{{region.waterbutler_url}}</a>
-                            <br>Change:
-                            <input type="url" name="waterbutler_url" value="{{region.waterbutler_url}}" id="id_waterbutler_url" required="" class="vURLField" maxlength="200">
-                        </p>
-                    </div>
-                </div>
-                <div class="form-row field-mfr_url">
-                    <div>
-                        <label class="required" for="id_mfr_url">Mfr url:</label>
-                        <p class="url">Currently: <a href="{{region.mfr_url}}">{{region.mfr_url}}</a>
-                            <br>Change:
-                            <input type="url" name="mfr_url" value="{{region.mfr_url}}" id="id_mfr_url" required="" class="vURLField" maxlength="200">
-                        </p>
-                    </div>
-                </div>
-                <div class="form-row field-waterbutler_settings">
+    <input type="hidden" name="csrfmiddlewaretoken" value="35kvEUtWOcPXx0RVhMGDB39AgEMWix4Fs0E7srZAlVksHFC8ggJ616lHiFGcET62">
 
-                    <div>
-                        <label class="required" for="id_waterbutler_settings">Waterbutler settings:</label>
-                        <textarea name="waterbutler_settings" id="id_waterbutler_settings" rows="10" cols="40" required="">{{region.waterbutler_settings}}</textarea>
-                        <input type="hidden" name="initial-waterbutler_settings" value="{{region.waterbutler_settings}}" id="initial-id_waterbutler_settings">
+<div class="row" style="margin-bottom: 15px;">
+    <div class="col-md-3">
+        <label class="required" for="id_name">Name:</label>
+    </div>
+    <div class="col-md-9">
+        <input type="text" name="name" id="id_name" required="" class="vTextField" maxlength="200" value="{{region.name}}">
+        <input type="hidden" name="_id" id="id__id" required="" class="vTextField" maxlength="255" value="{{institution}}">
+    </div>
+</div>
+<div class="row" style="margin-bottom: 15px;">
+    <div class="col-md-3">
+        <label class="required" for="id_waterbutler_credentials">Waterbutler credentials:</label>
+    </div>
+    <div class="col-md-9">
+        <textarea name="waterbutler_credentials" id="id_waterbutler_credentials" rows="10" cols="40" required="">{{region.waterbutler_credentials}}</textarea>
+        <input type="hidden" name="initial-waterbutler_credentials" value="{{region.waterbutler_credentials}}" id="initial-id_waterbutler_credentials">
+    </div>
+</div>
+<div class="row" style="margin-bottom: 15px;">
+    <div class="col-md-3">
+        <label class="required" for="id_waterbutler_url">Waterbutler url:</label>
+    </div>
+    <div class="col-md-9">
+        <p class="url">Currently: <a href="{{region.waterbutler_url}}">{{region.waterbutler_url}}</a>
+            <br>Change:
+            <input type="url" name="waterbutler_url" value="{{region.waterbutler_url}}" id="id_waterbutler_url" required="" class="vURLField" maxlength="200">
+        </p>
+    </div>
+</div>
+<div class="row" style="margin-bottom: 15px;">
+    <div class="col-md-3">
+        <label class="required" for="id_mfr_url">Mfr url:</label>
+    </div>
+    <div class="col-md-9">
+        <p class="url">Currently: <a href="{{region.mfr_url}}">{{region.mfr_url}}</a>
+            <br>Change:
+            <input type="url" name="mfr_url" value="{{region.mfr_url}}" id="id_mfr_url" required="" class="vURLField" maxlength="200">
+        </p>
+    </div>
+</div>
+<div class="row" style="margin-bottom: 15px;">
+    <div class="col-md-3">
+        <label class="required" for="id_waterbutler_settings">Waterbutler settings:</label>
+    </div>
+    <div class="col-md-9">
+        <textarea name="waterbutler_settings" id="id_waterbutler_settings" rows="10" cols="40" required="">{{region.waterbutler_settings}}</textarea>
+        <input type="hidden" name="initial-waterbutler_settings" value="{{region.waterbutler_settings}}" id="initial-id_waterbutler_settings">
+    </div>
+</div>
+<div>
+    
+</div>
+<div class="row">
+<div class="col-md-8">
+</div>
+<div class="col-md-2">
+<div class="text-right">
+<input type="submit" value="Save" class="btn btn-primary" name="_save" />
+</div>
+</div>
 
-                    </div>
+</div>
 
-                </div>
 
-            </fieldset>
-            <div class="submit-row">
-            <input type="submit" value="Save" class="default" name="_save" />
-        </div>
 
     </form>
 </div>
 
-<br class="clear">
 
+<br class="clear">
 
 {% endblock content %}
