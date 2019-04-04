@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import furl
 import httplib as http
-from future.moves import urllib
+from future.moves.urllib.parse import urlencode
 
 import markupsafe
 from django.core.exceptions import ValidationError
@@ -556,7 +556,7 @@ def external_login_confirm_email_get(auth, uid, token):
             osf_support_email=settings.OSF_SUPPORT_EMAIL,
             storage_flag_is_active=storage_i18n_flag_active(),
         )
-        service_url += '&{}'.format(urllib.urlencode({'new': 'true'}))
+        service_url += '&{}'.format(urlencode({'new': 'true'}))
     elif external_status == 'LINK':
         mails.send_mail(
             user=user,

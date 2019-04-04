@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import os
 import httplib as http
 import requests
-from future.moves.urllib.parse import urlparse
+from future.moves.urllib.parse import urljoin
 import waffle
 import json
 
@@ -241,7 +241,7 @@ def ember_app(path=None):
 
     if settings.PROXY_EMBER_APPS:
         path = request.path[len(ember_app['path']):]
-        url = urlparse.urljoin(ember_app['server'], path)
+        url = urljoin(ember_app['server'], path)
         resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
         headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]

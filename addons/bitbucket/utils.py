@@ -1,4 +1,4 @@
-from future.moves import urllib
+from future.moves.urllib.parse import unquote_plus
 import httplib as http
 
 from framework.exceptions import HTTPError
@@ -9,7 +9,7 @@ from addons.bitbucket.api import BitbucketClient
 def get_path(kwargs, required=True):
     path = kwargs.get('path')
     if path:
-        return urllib.unquote_plus(path)
+        return unquote_plus(path)
     elif required:
         raise HTTPError(http.BAD_REQUEST)
 

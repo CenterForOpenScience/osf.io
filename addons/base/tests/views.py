@@ -1,5 +1,5 @@
 import httplib as http
-from future.moves.urllib.parse import urlparse
+from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
 import mock
 import responses
@@ -26,10 +26,10 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         )
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http.FOUND
-        redirect_url = urlparse.urlparse(res.location)
-        redirect_params = urlparse.parse_qs(redirect_url.query)
-        provider_url = urlparse.urlparse(self.Provider().auth_url)
-        provider_params = urlparse.parse_qs(provider_url.query)
+        redirect_url = urlparse(res.location)
+        redirect_params = parse_qs(redirect_url.query)
+        provider_url = urlparse(self.Provider().auth_url)
+        provider_params = parse_qs(provider_url.query)
         for param, value in redirect_params.items():
             if param == 'state':  # state may change between calls
                 continue

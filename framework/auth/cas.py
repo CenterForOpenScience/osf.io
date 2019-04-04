@@ -3,7 +3,7 @@
 import furl
 import httplib as http
 import json
-from future.moves import urllib
+from future.moves.urllib.parse import quote
 
 from lxml import etree
 import requests
@@ -224,7 +224,7 @@ def get_login_url(*args, **kwargs):
 
 
 def get_institution_target(redirect_url):
-    return '/login?service={}&auto=true'.format(urllib.quote(redirect_url, safe='~()*!.\''))
+    return '/login?service={}&auto=true'.format(quote(redirect_url, safe='~()*!.\''))
 
 
 def get_logout_url(*args, **kwargs):

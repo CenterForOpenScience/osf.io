@@ -4,7 +4,7 @@
 
 import logging
 import sys
-from future.moves import urllib
+from future.moves.urllib.parse import quote
 
 import django
 from django.db import transaction
@@ -24,7 +24,7 @@ SHIBBOLETH_SP_LOGOUT = '{}/Shibboleth.sso/Logout?return={{}}'.format(settings.CA
 
 
 def encode_uri_component(val):
-    return urllib.quote(val, safe='~()*!.\'')
+    return quote(val, safe='~()*!.\'')
 
 
 def update_or_create(inst_data):

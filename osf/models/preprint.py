@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-from future.moves.urllib.parse import urlparse
+from future.moves.urllib.parse import urljoin
 import logging
 import re
 import pytz
@@ -325,7 +325,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(
+        return urljoin(
             self.provider.domain if self.provider.domain_redirect_enabled else settings.DOMAIN,
             self.url
         )

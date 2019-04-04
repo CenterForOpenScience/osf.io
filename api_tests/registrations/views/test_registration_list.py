@@ -3,7 +3,6 @@ from django.utils import timezone
 import mock
 from nose.tools import *  # noqa:
 import pytest
-from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase

@@ -6,7 +6,7 @@ import logging
 import math
 import os
 import requests
-from future.moves import urllib
+from future.moves.urllib.parse import unquote
 import waffle
 
 from django.apps import apps
@@ -273,7 +273,7 @@ def resolve_guid(guid, suffix=None):
                 request.args = request.args.copy()
                 request.args.update({'action': 'download'})
                 # Do not include the `download` suffix in the url rebuild.
-                url = _build_guid_url(urllib.unquote(file_referent.deep_url))
+                url = _build_guid_url(unquote(file_referent.deep_url))
                 return proxy_url(url)
 
         # Handle Ember Applications
@@ -309,7 +309,7 @@ def resolve_guid(guid, suffix=None):
 
                 return send_from_directory(registries_dir, 'index.html')
 
-        url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
+        url = _build_guid_url(unquote(referent.deep_url), suffix)
         return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists

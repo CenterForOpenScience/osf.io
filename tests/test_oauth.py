@@ -3,7 +3,7 @@ import httplib as http
 import logging
 import json
 import time
-from future.moves.urllib.parse import urlparse
+from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
 import responses
 from nose.tools import *  # noqa
@@ -357,8 +357,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
             assert_in('state', creds)
 
             # The URL to which the user would be redirected
-            parsed = urlparse.urlparse(url)
-            params = urlparse.parse_qs(parsed.query)
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
 
             # check parameters
             assert_equal(

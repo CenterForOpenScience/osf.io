@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
 import httplib as http
-from future.moves import urllib
-from future.moves.urllib.parse import urlparse
+from future.moves.urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 from django.apps import apps
 from django.utils import timezone
@@ -24,12 +23,12 @@ def add_key_to_url(url, scheme, key):
 
     query = request.args.to_dict()
     query['view_only'] = key
-    replacements = {'query': urllib.urlencode(query)}
+    replacements = {'query': urlencode(query)}
 
     if scheme:
         replacements['scheme'] = scheme
 
-    parsed_url = urlparse.urlparse(url)
+    parsed_url = urlparse(url)
 
     if parsed_url.fragment:
         # Fragments should exists server side so this mean some one set up a # in the url
@@ -38,7 +37,7 @@ def add_key_to_url(url, scheme, key):
         replacements['fragment'] = ''
 
     parsed_redirect_url = parsed_url._replace(**replacements)
-    return urlparse.urlunparse(parsed_redirect_url)
+    return urlunparse(parsed_redirect_url)
 
 
 def prepare_private_key():
@@ -60,9 +59,9 @@ def prepare_private_key():
 
     # Grab query key from previous request for not logged-in users
     if request.referrer:
-        referrer_parsed = urlparse.urlparse(request.referrer)
+        referrer_parsed = urlparse(request.referrer)
         scheme = referrer_parsed.scheme
-        key = urlparse.parse_qs(urlparse.urlparse(request.referrer).query).get('view_only')
+        key = parse_qs(urlparse(request.referrer).query).get('view_only')
         if key:
             key = key[0]
     else:

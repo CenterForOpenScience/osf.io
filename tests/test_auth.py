@@ -4,8 +4,7 @@ import unittest
 from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 import mock
-from future.moves import urllib
-from future.moves.urllib.parse import urlparse
+from future.moves.urllib.parse import urlparse, urljoin, quote
 import httplib as http
 
 from flask import Flask
@@ -105,7 +104,7 @@ class TestAuthUtils(OsfTestCase):
         res = res.follow()
 
         assert_equal(res.status_code, 302)
-        assert_equal('/', urlparse.urlparse(res.location).path)
+        assert_equal('/', urlparse(res.location).path)
         assert_equal(len(mock_mail.call_args_list), 1)
         session = Session.objects.filter(data__auth_user_id=user._id).order_by('-modified').first()
         assert_equal(len(session.data['status']), 1)
@@ -144,7 +143,7 @@ class TestAuthUtils(OsfTestCase):
         assert_in('/login?service=', resp.location)
 
         # the valid username will be double quoted as it is furl quoted in both get_login_url and get_logout_url in order
-        username_quoted = urllib.quote(urllib.quote(user.username, safe='@'), safe='@')
+        username_quoted = quote(quote(user.username, safe='@'), safe='@')
         assert_in('username={}'.format(username_quoted), resp.location)
         assert_in('verification_key={}'.format(user.verification_key), resp.location)
 

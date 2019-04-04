@@ -1,6 +1,6 @@
 import hmac
 import uuid
-from future.moves import urllib
+from future.moves.urllib.parse import unquote_plus
 import hashlib
 import httplib as http
 from github3.repos.branch import Branch
@@ -47,7 +47,7 @@ def verify_hook_signature(node_settings, data, headers):
 def get_path(kwargs, required=True):
     path = kwargs.get('path')
     if path:
-        return urllib.unquote_plus(path)
+        return unquote_plus(path)
     elif required:
         raise HTTPError(http.BAD_REQUEST)
 

@@ -1,4 +1,4 @@
-from future.moves import urllib
+from future.moves.urllib.parse import urlencode
 
 from framework.exceptions import HTTPError
 
@@ -164,7 +164,7 @@ class BitbucketClient(BaseClient):
 
 def ref_to_params(branch=None, sha=None):
 
-    params = urllib.urlencode({
+    params = urlencode({
         key: value
         for key, value in {'branch': branch, 'sha': sha}.items()
         if value

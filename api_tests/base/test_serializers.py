@@ -6,7 +6,7 @@ import pkgutil
 import pytest
 from pytz import utc
 from datetime import datetime
-from future.moves import urllib
+from future.moves.urllib.parse import quote
 
 from nose.tools import *  # noqa:
 import re
@@ -489,11 +489,11 @@ class TestRelationshipField:
         ).data['data']
         field = data['relationships']['field_with_filters']['links']
         assert_in(
-            urllib.quote('filter[target]=hello', safe='?='),
+            quote('filter[target]=hello', safe='?='),
             field['related']['href']
         )
         assert_in(
-            urllib.quote('filter[woop]=yea', safe='?='),
+            quote('filter[woop]=yea', safe='?='),
             field['related']['href']
         )
 

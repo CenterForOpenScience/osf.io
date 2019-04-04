@@ -3,7 +3,7 @@ import httplib
 import os
 import uuid
 import markupsafe
-from future.moves import urllib
+from future.moves.urllib.parse import quote
 from django.utils import timezone
 
 from flask import make_response
@@ -761,7 +761,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
         if format and '.{}'.format(format.lower()) != extension.lower():
-            return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, urllib.quote(file_node.generate_waterbutler_url(
+            return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
