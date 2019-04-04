@@ -4,7 +4,7 @@ import jwe
 import jwt
 import waffle
 
-from django.utils import timezone
+#from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -128,8 +128,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.suffix = suffix
             user.update_date_last_login()
 
-            # Relying on front-end validation until `accepted_tos` is added to the JWT payload
-            user.accepted_terms_of_service = timezone.now()
+            ## Relying on front-end validation until `accepted_tos` is added to the JWT payload
+            #user.accepted_terms_of_service = timezone.now()
             if settings.USER_TIMEZONE:
                 user.timezone = settings.USER_TIMEZONE
 
