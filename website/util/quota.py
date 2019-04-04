@@ -44,46 +44,52 @@ def abbreviate_size(size):
 @file_signals.file_updated.connect
 def update_used_quota(self, target, user, event_type, payload):
     if event_type == FileLog.FILE_ADDED:
-        file_size = int(payload['metadata']['size'])
-        if file_size < 0:
-            return
-        try:
-            user_quota = UserQuota.objects.get(
-                user=target.creator,
-                storage_type=UserQuota.NII_STORAGE
-            )
-            user_quota.used += file_size
-            user_quota.save()
-        except UserQuota.DoesNotExist:
-            UserQuota.objects.create(
-                user=target.creator,
-                storage_type=UserQuota.NII_STORAGE,
-                max_quota=api_settings.DEFAULT_MAX_QUOTA,
-                used=file_size
-            )
+        file_added(target, payload)
     elif event_type == FileLog.FILE_REMOVED:
-        try:
-            file_node = TrashedFileNode.objects.get(
-                _id=payload['metadata']['path'],
-                target_object_id=target.id,
-                target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-                deleted_by=user
-            )
-        except TrashedFileNode.DoesNotExist:
-            logging.error('FileNode not found, cannot update used quota!')
-            return
+        node_removed(target, user, payload)
 
-        try:
-            file_info = FileInfo.objects.get(file=file_node)
-        except FileInfo.DoesNotExist:
-            logging.error('FileInfo not found, cannot update used quota!')
-            return
-
-        user_quota = UserQuota.objects.filter(
+def file_added(target, payload):
+    file_size = int(payload['metadata']['size'])
+    if file_size < 0:
+        return
+    try:
+        user_quota = UserQuota.objects.get(
             user=target.creator,
             storage_type=UserQuota.NII_STORAGE
-        ).first()
-        if user_quota is not None:
-            file_size = min(file_info.file_size, user_quota.used)
-            user_quota.used -= file_size
-            user_quota.save()
+        )
+        user_quota.used += file_size
+        user_quota.save()
+    except UserQuota.DoesNotExist:
+        UserQuota.objects.create(
+            user=target.creator,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=file_size
+        )
+
+def node_removed(target, user, payload):
+    try:
+        file_node = TrashedFileNode.objects.get(
+            _id=payload['metadata']['path'],
+            target_object_id=target.id,
+            target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+            deleted_by=user
+        )
+    except TrashedFileNode.DoesNotExist:
+        logging.error('FileNode not found, cannot update used quota!')
+        return
+
+    try:
+        file_info = FileInfo.objects.get(file=file_node)
+    except FileInfo.DoesNotExist:
+        logging.error('FileInfo not found, cannot update used quota!')
+        return
+
+    user_quota = UserQuota.objects.filter(
+        user=target.creator,
+        storage_type=UserQuota.NII_STORAGE
+    ).first()
+    if user_quota is not None:
+        file_size = min(file_info.file_size, user_quota.used)
+        user_quota.used -= file_size
+        user_quota.save()
