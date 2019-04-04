@@ -88,7 +88,7 @@ class PreprintMetricMixin(JSONAPIBaseView):
         search = self.metric.search(after=start_datetime)
         search = search.filter('range', timestamp={'gte': start_datetime, 'lt': end_datetime})
         search.aggs.bucket('preprints_per_day', 'date_histogram', field='timestamp', interval=interval)
-        search.aggs['preprints_per_day'].metric('per_preprint', 'terms', field='preprint_id.keyword')
+        search.aggs['preprints_per_day'].metric('per_preprint', 'terms', field='preprint_id')
         search = self.add_search(search, query_params, **kwargs)
         response = self.execute_search(search)
         resp_dict = self.format_response(response, query_params)
