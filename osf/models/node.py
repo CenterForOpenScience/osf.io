@@ -4,7 +4,7 @@ import logging
 import re
 from future.moves.urllib.parse import urljoin
 import warnings
-import httplib
+from rest_framework import status as http_status
 
 import bson
 from django.db.models import Q, OuterRef, Exists
@@ -2173,10 +2173,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             metadata = payload['metadata']
             node_addon = self.get_addon(payload['provider'])
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         if node_addon is None:
-            raise HTTPError(httplib.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         metadata['path'] = metadata['path'].lstrip('/')
 

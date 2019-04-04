@@ -1,5 +1,5 @@
 import jwt
-import httplib as http
+from rest_framework import status as http_status
 
 import mock
 from django.db.models import Q
@@ -105,7 +105,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
             try:
                 handler.to_response()
             except HTTPError as e:
-                assert_equal(e.code, http.BAD_REQUEST)
+                assert_equal(e.code, http_status.HTTP_400_BAD_REQUEST)
                 assert_equal(e.data['message_long'], NO_SANCTION_MSG.format(self.Model.DISPLAY_NAME))
 
     def test_sanction_handler_sanction_approved(self):
@@ -119,7 +119,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
             try:
                 handler.to_response()
             except HTTPError as e:
-                assert_equal(e.code, http.BAD_REQUEST if self.kind in ['embargo', 'registration_approval'] else http.GONE)
+                assert_equal(e.code, http_status.HTTP_400_BAD_REQUEST if self.kind in ['embargo', 'registration_approval'] else http_status.HTTP_410_GONE)
                 assert_equal(e.data['message_long'], APPROVED_MSG.format(self.sanction.DISPLAY_NAME))
 
     def test_sanction_handler_sanction_rejected(self):
@@ -133,7 +133,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
             try:
                 handler.to_response()
             except HTTPError as e:
-                assert_equal(e.code, http.GONE if self.kind in ['embargo', 'registration_approval'] else http.BAD_REQUEST)
+                assert_equal(e.code, http_status.HTTP_410_GONE if self.kind in ['embargo', 'registration_approval'] else http_status.HTTP_400_BAD_REQUEST)
                 assert_equal(e.data['message_long'], REJECTED_MSG.format(self.sanction.DISPLAY_NAME))
 
 class TestEmbargoTokenHandler(SanctionTokenHandlerBase):

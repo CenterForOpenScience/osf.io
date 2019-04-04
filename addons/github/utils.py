@@ -2,7 +2,7 @@ import hmac
 import uuid
 from future.moves.urllib.parse import unquote_plus
 import hashlib
-import httplib as http
+from rest_framework import status as http_status
 from github3.repos.branch import Branch
 
 from framework.exceptions import HTTPError
@@ -49,7 +49,7 @@ def get_path(kwargs, required=True):
     if path:
         return unquote_plus(path)
     elif required:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
 def get_refs(addon, branch=None, sha=None, connection=None):
@@ -64,7 +64,7 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     connection = connection or GitHubClient(external_account=addon.external_account)
 
     if sha and not branch:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Get default branch if not provided
     if not branch:
@@ -85,7 +85,7 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     ]
     # Fail if registered and branch not in registration data
     if registered_branches and branch not in registered_branch_names:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Get data from GitHub API if not registered
     branches = registered_branches or connection.branches(addon.user, addon.repo)

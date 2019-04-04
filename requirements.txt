@@ -21,7 +21,6 @@ git+https://github.com/cos-forks/celery@v4.1.1+cos0
 kombu==4.2.0
 amqp==2.2.2
 vine==1.1.4
-httplib2==0.10.3
 itsdangerous==0.24
 lxml==3.4.1
 mailchimp==2.0.9

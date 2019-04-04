@@ -1,5 +1,5 @@
 from datetime import datetime
-import httplib as http
+from rest_framework import status as http_status
 import logging
 import json
 import time
@@ -126,7 +126,7 @@ class TestExternalAccount(OsfTestCase):
         # Request succeeded
         assert_equal(
             response.status_code,
-            http.OK,
+            http_status.HTTP_200_OK,
         )
 
         self.user.reload()
@@ -164,7 +164,7 @@ class TestExternalAccount(OsfTestCase):
         # Request succeeded
         assert_equal(
             response.status_code,
-            http.OK,
+            http_status.HTTP_200_OK,
         )
 
         self.user.reload()

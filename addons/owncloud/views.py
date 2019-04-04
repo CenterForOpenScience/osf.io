@@ -1,6 +1,6 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 from django.core.exceptions import ValidationError
 from furl import furl
@@ -62,11 +62,11 @@ def owncloud_add_user_account(auth, **kwargs):
     except requests.exceptions.ConnectionError:
         return {
             'message': 'Invalid ownCloud server.'
-        }, http.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
     except owncloud.owncloud.HTTPResponseError:
         return {
             'message': 'ownCloud Login failed.'
-        }, http.UNAUTHORIZED
+        }, http_status.HTTP_401_UNAUTHORIZED
 
     provider = OwnCloudProvider(account=None, host=host.url,
                             username=username, password=password)

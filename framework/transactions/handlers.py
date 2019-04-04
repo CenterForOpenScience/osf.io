@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib
+from rest_framework import status as http_status
 import logging
 from framework.exceptions import HTTPError
 
@@ -9,7 +9,7 @@ from flask import request, current_app, has_request_context, _request_ctx_stack
 from werkzeug.local import LocalProxy
 
 
-LOCK_ERROR_CODE = httplib.BAD_REQUEST
+LOCK_ERROR_CODE = http_status.HTTP_400_BAD_REQUEST
 NO_AUTO_TRANSACTION_ATTR = '_no_auto_transaction'
 
 logger = logging.getLogger(__name__)

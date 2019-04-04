@@ -1,6 +1,6 @@
 """Tests related to embargoes of registrations"""
 import datetime
-import httplib as http
+from rest_framework import status as http_status
 import json
 
 import pytz
@@ -1100,7 +1100,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
         self.registration.reload()
-        assert_equal(http.UNAUTHORIZED, res.status_code)
+        assert_equal(http_status.HTTP_401_UNAUTHORIZED, res.status_code)
         assert_true(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.UNAPPROVED)
 
@@ -1117,6 +1117,6 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         approval_url = self.registration.web_url_for('view_project', token=rejection_token)
 
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
-        assert_equal(http.UNAUTHORIZED, res.status_code)
+        assert_equal(http_status.HTTP_401_UNAUTHORIZED, res.status_code)
         assert_true(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.UNAPPROVED)

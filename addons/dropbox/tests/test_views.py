@@ -1,5 +1,5 @@
 """Views tests for the Dropbox addon."""
-import httplib as http
+from rest_framework import status as http_status
 import unittest
 
 from dropbox.exceptions import ApiError
@@ -160,7 +160,7 @@ class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('dropbox_folder_list', folder_id='/fake_path')
         with mock.patch.object(type(self.node_settings), 'has_auth', True):
             res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == http.BAD_REQUEST
+        assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
 
 class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
@@ -186,13 +186,13 @@ class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('dropbox_folder_list',
             path='foo bar')
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_restricted_config_contrib_no_addon(self):
         url = self.project.api_url_for('dropbox_set_config')
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_restricted_config_contrib_not_owner(self):
         # Contributor has dropbox auth, but is not the node authorizer
@@ -202,4 +202,4 @@ class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('dropbox_set_config')
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)

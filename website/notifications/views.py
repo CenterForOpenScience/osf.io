@@ -1,4 +1,4 @@
-import httplib as http
+from rest_framework import status as http_status
 
 from flask import request
 
@@ -43,7 +43,7 @@ def configure_subscription(auth):
     provider = json_data.get('provider')
 
     if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'):
-        raise HTTPError(http.BAD_REQUEST, data=dict(
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_long='Must provide an event and notification type for subscription.')
         )
 
@@ -60,18 +60,18 @@ def configure_subscription(auth):
                 '{!r} attempted to subscribe to either a bad '
                 'id or non-node non-self id, {}'.format(user, target_id)
             )
-            raise HTTPError(http.NOT_FOUND)
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
         if notification_type == 'adopt_parent':
             sentry.log_message(
                 '{!r} attempted to adopt_parent of a none node id, {}'.format(user, target_id)
             )
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         owner = user
     else:
         if not node.has_permission(user, 'read'):
             sentry.log_message('{!r} attempted to subscribe to private node, {}'.format(user, target_id))
-            raise HTTPError(http.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         if notification_type != 'adopt_parent':
             owner = node
@@ -85,7 +85,7 @@ def configure_subscription(auth):
                         '{!r} attempted to adopt_parent of '
                         'the parentless project, {!r}'.format(user, node)
                     )
-                    raise HTTPError(http.BAD_REQUEST)
+                    raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
             # If adopt_parent make sure that this subscription is None for the current User
             subscription = NotificationSubscription.load(event_id)

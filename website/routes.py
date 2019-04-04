@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import os
-import httplib as http
+from rest_framework import status as http_status
 import requests
 from future.moves.urllib.parse import urljoin
 import waffle
@@ -217,7 +217,7 @@ def sitemap_file(path):
     elif path.endswith('.xml'):
         mime = 'text/xml'
     else:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     return send_from_directory(
         settings.STATIC_FOLDER + '/sitemaps/',
         path,
@@ -237,7 +237,7 @@ def ember_app(path=None):
             break
 
     if not ember_app:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if settings.PROXY_EMBER_APPS:
         path = request.path[len(ember_app['path']):]
@@ -250,11 +250,11 @@ def ember_app(path=None):
     ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), ember_app['path']))
 
     if not ember_app_folder:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if not os.path.abspath(os.path.join(ember_app_folder, fp)).startswith(ember_app_folder):
         # Prevent accessing files outside of the ember build dir
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if not os.path.isfile(os.path.join(ember_app_folder, fp)):
         fp = 'index.html'
@@ -280,13 +280,13 @@ def make_url_map(app):
         Rule(
             '/<path:_>',
             ['get', 'post'],
-            HTTPError(http.NOT_FOUND),
+            HTTPError(http_status.HTTP_404_NOT_FOUND),
             OsfWebRenderer('', render_mako_string, trust=False)
         ),
         Rule(
             '/api/v1/<path:_>',
             ['get', 'post'],
-            HTTPError(http.NOT_FOUND),
+            HTTPError(http_status.HTTP_404_NOT_FOUND),
             json_renderer
         ),
     ])

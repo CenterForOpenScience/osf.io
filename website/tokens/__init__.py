@@ -1,4 +1,4 @@
-import httplib as http
+from rest_framework import status as http_status
 import functools
 import jwt
 from flask import request
@@ -33,7 +33,7 @@ class TokenHandler(object):
             payload = decode(encoded_token)
         except jwt.DecodeError as e:
             raise HTTPError(
-                http.BAD_REQUEST,
+                http_status.HTTP_400_BAD_REQUEST,
                 data={
                     'message_short': 'Bad request',
                     'message_long': e.message
@@ -73,7 +73,7 @@ def process_token_or_pass(func):
                 res = handler.to_response()
             except TokenHandlerNotFound as e:
                 raise HTTPError(
-                    http.BAD_REQUEST,
+                    http_status.HTTP_400_BAD_REQUEST,
                     data={
                         'message_short': 'Invalid Token',
                         'message_long': 'No token handler for action: {} found'.format(e.action)

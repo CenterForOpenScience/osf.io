@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import furl
-import httplib as http
+from rest_framework import status as http_status
 import json
 from future.moves.urllib.parse import quote
 
@@ -40,7 +40,7 @@ class CasTokenError(CasError):
     """Raised if an invalid token is passed by the client."""
 
     def __init__(self, message):
-        super(CasTokenError, self).__init__(http.BAD_REQUEST, message)
+        super(CasTokenError, self).__init__(http_status.HTTP_400_BAD_REQUEST, message)
 
 
 class CasResponse(object):

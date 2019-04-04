@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
-import httplib as http
+from rest_framework import status as http_status
 from future.moves.urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 from django.apps import apps
@@ -71,7 +71,7 @@ def prepare_private_key():
     # Update URL and redirect
     if key and not session.is_authenticated:
         new_url = add_key_to_url(request.url, scheme, key)
-        return redirect(new_url, code=http.TEMPORARY_REDIRECT)
+        return redirect(new_url, code=http_status.HTTP_307_TEMPORARY_REDIRECT)
 
 
 def get_session():
@@ -143,7 +143,7 @@ def before_request():
                 otp = request.headers.get('X-OSF-OTP')
                 if otp is None or not user_addon.verify_code(otp):
                     # Must specify two-factor authentication OTP code or invalid two-factor authentication OTP code.
-                    user_session.data['auth_error_code'] = http.UNAUTHORIZED
+                    user_session.data['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
                     return
             user_session.data['auth_user_username'] = user.username
             user_session.data['auth_user_fullname'] = user.fullname
@@ -152,7 +152,7 @@ def before_request():
                 user_session.save()
         else:
             # Invalid key: Not found in database
-            user_session.data['auth_error_code'] = http.UNAUTHORIZED
+            user_session.data['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
         return
 
     cookie = request.cookies.get(settings.COOKIE_NAME)

@@ -5,7 +5,7 @@ from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 import mock
 from future.moves.urllib.parse import urlparse, urljoin, quote
-import httplib as http
+from rest_framework import status as http_status
 
 from flask import Flask
 from werkzeug.wrappers import BaseResponse
@@ -193,7 +193,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_success(self, req_post):
         resp = mock.Mock()
-        resp.status_code = http.OK
+        resp.status_code = http_status.HTTP_200_OK
         resp.json = mock.Mock(return_value={'success': True})
         req_post.return_value = resp
         assert_true(validate_recaptcha('a valid captcha'))
@@ -201,7 +201,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_valid_req_failure(self, req_post):
         resp = mock.Mock()
-        resp.status_code = http.OK
+        resp.status_code = http_status.HTTP_200_OK
         resp.json = mock.Mock(return_value={'success': False})
         req_post.return_value = resp
         assert_false(validate_recaptcha(None))
@@ -209,7 +209,7 @@ class TestAuthUtils(OsfTestCase):
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_invalid_req_failure(self, req_post):
         resp = mock.Mock()
-        resp.status_code = http.BAD_REQUEST
+        resp.status_code = http_status.HTTP_400_BAD_REQUEST
         resp.json = mock.Mock(return_value={'success': True})
         req_post.return_value = resp
         assert_false(validate_recaptcha(None))
@@ -738,7 +738,7 @@ class TestPermissionDecorators(AuthAppTestCase):
         mock_to_nodes.return_value = (None, project)
         with assert_raises(HTTPError) as ctx:
             thriller(node=project)
-        assert_equal(ctx.exception.code, http.FORBIDDEN)
+        assert_equal(ctx.exception.code, http_status.HTTP_403_FORBIDDEN)
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
@@ -748,7 +748,7 @@ class TestPermissionDecorators(AuthAppTestCase):
         mock_to_nodes.return_value = (None, project)
         with assert_raises(HTTPError) as ctx:
             thriller(node=project)
-        assert_equal(ctx.exception.code, http.UNAUTHORIZED)
+        assert_equal(ctx.exception.code, http_status.HTTP_401_UNAUTHORIZED)
 
 
 def needs_addon_view(**kwargs):
