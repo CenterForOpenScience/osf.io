@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
+import logging
+
 from addons.base import signals as file_signals
 from addons.osfstorage.models import OsfStorageFileNode
 from api.base import settings as api_settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
-from osf.models import AbstractNode, FileLog, FileInfo, Guid, OSFUser, UserQuota
+from osf.models import AbstractNode, TrashedFileNode, FileLog, FileInfo, Guid, OSFUser, UserQuota
 
 
 def used_quota(user_id):
@@ -59,3 +61,29 @@ def update_used_quota(self, target, user, event_type, payload):
                 max_quota=api_settings.DEFAULT_MAX_QUOTA,
                 used=file_size
             )
+    elif event_type == FileLog.FILE_REMOVED:
+        try:
+            file_node = TrashedFileNode.objects.get(
+                _id=payload['metadata']['path'],
+                target_object_id=target.id,
+                target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+                deleted_by=user
+            )
+        except TrashedFileNode.DoesNotExist:
+            logging.error('FileNode not found, cannot update used quota!')
+            return
+
+        try:
+            file_info = FileInfo.objects.get(file=file_node)
+        except FileInfo.DoesNotExist:
+            logging.error('FileInfo not found, cannot update used quota!')
+            return
+
+        user_quota = UserQuota.objects.filter(
+            user=target.creator,
+            storage_type=UserQuota.NII_STORAGE
+        ).first()
+        if user_quota is not None:
+            file_size = min(file_info.file_size, user_quota.used)
+            user_quota.used -= file_size
+            user_quota.save()
