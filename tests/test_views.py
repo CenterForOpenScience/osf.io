@@ -4630,7 +4630,7 @@ class TestStaticFileViews(OsfTestCase):
     def test_getting_started_page(self):
         res = self.app.get('/getting-started/')
         assert_equal(res.status_code, 302)
-        assert_equal(res.location, 'http://help.osf.io/')
+        assert_equal(res.location, 'https://openscience.zendesk.com/hc/en-us')
     def test_help_redirect(self):
         res = self.app.get('/help/')
         assert_equal(res.status_code,302)
