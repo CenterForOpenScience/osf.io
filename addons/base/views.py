@@ -333,7 +333,6 @@ def get_auth(auth, **kwargs):
                     elif action == 'download' and not from_mfr:
                         update_analytics(node, file_id, version_index, 'download')
                     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-                        user = auth.user
                         if isinstance(node, Preprint):
                             metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
                             if metric_class:
@@ -341,7 +340,7 @@ def get_auth(auth, **kwargs):
                                 try:
                                     metric_class.record_for_preprint(
                                         preprint=node,
-                                        user=user,
+                                        user=auth.user,
                                         version=fileversion.identifier if fileversion else None,
                                         path=path,
                                         referrer=metrics.get('referrer'),
