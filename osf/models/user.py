@@ -1100,6 +1100,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             # User needs to be saved before adding system tags (due to m2m relationship)
             user.save()
             user.add_system_tag(system_tag_for_campaign(campaign))
+        else:
+            user.save()
+            user.add_system_tag('source:provider|osf')
         return user
 
     @classmethod

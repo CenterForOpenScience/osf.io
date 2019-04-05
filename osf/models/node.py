@@ -2368,6 +2368,40 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             update_storage_usage(self)  # sets cache
             return storage_usage_cache.get(key)
 
+    def add_contributor(self, *args, **kwargs):
+        contributor = super(AbstractNode, self).add_contributor(*args, **kwargs)
+        if not contributor.is_registered:
+            prereg_system_tag = self.all_tags.filter(name='source:campaign|prereg', system=True).first()
+            registered_report_system_tag = self.all_tags.filter(name='source:campaign|osf_registered_reports', system=True).first()
+            osf4m_system_tag = self.all_tags.filter(name='source:campaign|osf4m', system=True).first()
+            if prereg_system_tag:
+                contributor.add_system_tag(prereg_system_tag)
+            elif registered_report_system_tag:
+                contributor.add_system_tag(registered_report_system_tag)
+            elif osf4m_system_tag:
+                contributor.add_system_tag(osf4m_system_tag)
+            else:
+                osf_provider_tag, created = Tag.all_tags.get_or_create(name='source:provider|osf', system=True)
+                contributor.add_system_tag(osf_provider_tag)
+        return contributor
+
+    def add_unregistered_contributor(self, *args, **kwarg):
+        prereg_system_tag = self.all_tags.filter(name='source:campaign|prereg', system=True).first()
+        registered_report_system_tag = self.all_tags.filter(name='source:campaign|osf_registered_reports', system=True).first()
+        osf4m_system_tag = self.all_tags.filter(name='source:campaign|osf4m', system=True).first()
+        unreg_contrib = super(AbstractNode, self).add_unregistered_contributor(*args, **kwarg)
+        if prereg_system_tag:
+            unreg_contrib.add_system_tag(prereg_system_tag)
+        elif registered_report_system_tag:
+            unreg_contrib.add_system_tag(registered_report_system_tag)
+        elif osf4m_system_tag:
+            unreg_contrib.add_system_tag(osf4m_system_tag)
+        else:
+            osf_provider_tag, created = Tag.all_tags.get_or_create(name='source:provider|osf', system=True)
+            unreg_contrib.add_system_tag(osf_provider_tag)
+
+        return unreg_contrib
+
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
     """

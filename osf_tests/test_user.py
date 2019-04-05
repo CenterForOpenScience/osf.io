@@ -2055,7 +2055,7 @@ class TestUserMerging(OsfTestCase):
         # TODO: test security_messages
         # TODO: test mailing_lists
 
-        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed'])
+        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed', 'source:provider|osf'])
 
         # TODO: test emails
         # TODO: test external_accounts
