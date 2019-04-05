@@ -16,4 +16,4 @@ class UserQuota(BaseModel):
     user = models.OneToOneField('OSFUser', on_delete=models.CASCADE)
     storage_type = models.IntegerField(choices=STORAGE_TYPE_CHOICES, default=NII_STORAGE)
     max_quota = models.IntegerField(default=100)
-    used = models.IntegerField(default=0)
+    used = models.BigIntegerField(default=0)
