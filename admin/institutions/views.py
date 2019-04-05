@@ -17,6 +17,8 @@ from admin.institutions.forms import InstitutionForm
 from api.base import settings as api_settings
 from osf.models import Institution, Node, OSFUser
 from website.util import quota
+from addons.osfstorage.models import Region
+from django.http import HttpResponseRedirect
 
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -94,6 +96,35 @@ class InstitutionDetail(PermissionRequiredMixin, View):
         view = InstitutionChangeForm.as_view()
         return view(request, *args, **kwargs)
 
+class InstitutionDefaultStorageDisplay(PermissionRequiredMixin, TemplateView):
+    model = Institution
+    template_name = 'institutions/default_storage.html'
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['institution'] = self.request.user.affiliated_institutions.first()._id
+        if Region.objects.filter(_id=kwargs['institution']).exists():
+            kwargs['region'] = Region.objects.get(_id=kwargs['institution'])
+        else:
+            kwargs['region'] = Region.objects.first()
+        return kwargs
+
+class InstitutionDefaultStorageDetail(PermissionRequiredMixin, View):
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+    model = Institution
+    template_name = 'institutions/default_storage.html'
+
+    def get(self, request, *args, **kwargs):
+        view = InstitutionDefaultStorageDisplay.as_view()
+        return view(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        post_data = request.POST
+        values_to_update = {'_id': post_data['_id'], 'name': post_data['name'], 'waterbutler_credentials': post_data['waterbutler_credentials'], 'waterbutler_url': post_data['waterbutler_url'], 'mfr_url': post_data['mfr_url'], 'waterbutler_settings': post_data['waterbutler_settings']}
+        obj_store, created = Region.objects.update_or_create(_id=post_data['_id'], defaults=values_to_update)
+        return HttpResponseRedirect(self.request.path_info)
 
 class ImportInstitution(PermissionRequiredMixin, View):
     permission_required = 'osf.change_institution'

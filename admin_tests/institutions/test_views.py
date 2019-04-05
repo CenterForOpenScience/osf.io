@@ -11,7 +11,8 @@ from tests.base import AdminTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
-    ProjectFactory
+    ProjectFactory,
+    RegionFactory
 )
 from osf.models import Institution, Node, UserQuota
 
@@ -20,6 +21,7 @@ from admin_tests.utilities import setup_form_view, setup_user_view
 from admin.institutions import views
 from admin.institutions.forms import InstitutionForm
 from admin.base.forms import ImportFileForm
+from addons.osfstorage.models import Region
 
 
 class TestInstitutionList(AdminTestCase):
@@ -322,3 +324,48 @@ class TestGetUserListWithQuota(AdminTestCase):
         user_quota = response.context_data['users'][0]
         nt.assert_equal(user_quota['usage'], '5.2 GB')
         nt.assert_equal(user_quota['ratio_to_quota'], '5.2%')
+
+class InstitutionDefaultStorageDisplay(AdminTestCase):
+    def setUp(self):
+        super(InstitutionDefaultStorageDisplay, self).setUp()
+        import logging
+        self.logger = logging.getLogger(__name__)
+        self.user = AuthUserFactory()
+        self.institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.us = RegionFactory()
+        self.request = RequestFactory().get('/fake_path')
+        self.view = views.InstitutionDefaultStorageDisplay()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+        self.view.kwargs = {'institution_id': self.institution.id}
+
+    def tearDown(self):
+        super(InstitutionDefaultStorageDisplay, self).tearDown()
+        self.user.affiliated_institutions.remove(self.institution)
+        self.institution.delete()
+        self.us.delete()
+        self.user.delete()
+
+    def test_default_context_data(self):
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res, dict)
+        nt.assert_is_instance(res['region'], Region)
+        nt.assert_equal(res['institution'], self.institution._id)
+        nt.assert_equal((res['region']).name, 'United States')
+
+    def test_with_id_context_data(self):
+        self.us = RegionFactory()
+        self.us._id = self.institution._id
+        self.us.save()
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res, dict)
+        nt.assert_is_instance(res['region'], Region)
+        nt.assert_equal(res['institution'], self.institution._id)
+        nt.assert_equal((res['region']).name, self.us.name)
+        nt.assert_equal((res['region'])._id, self.us._id)
+
+    def test_get(self, *args, **kwargs):
+        res = self.view.get(self.request, *args, **kwargs)
+        self.logger.info(res.status_code)
+        nt.assert_equal(res.status_code, 200)
