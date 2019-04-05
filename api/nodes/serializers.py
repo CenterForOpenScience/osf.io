@@ -475,9 +475,10 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     def get_quota_rate(self, obj):
         try:
             max_quota = obj.creator.userquota.max_quota
+            used_quota = obj.creator.userquota.used
         except ObjectDoesNotExist:
             max_quota = DEFAULT_MAX_QUOTA
-        used_quota = quota.used_quota(obj.creator._id)
+            used_quota = quota.used_quota(obj.creator._id)
         if max_quota <= 0:
             return 2
         return float(used_quota) / (max_quota * 1024 ** 3) * 100
