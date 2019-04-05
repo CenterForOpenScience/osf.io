@@ -288,7 +288,16 @@ class PreprintRequestMachine(BaseMachine):
             reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
-        pass
+        if ev.event.name == DefaultTriggers.REJECT.value:
+            context = self.get_context()
+            mails.send_mail(
+                self.machineable.creator.username,
+                mails.PREPRINT_WITHDRAWAL_REQUEST_DECLINED,
+                mimetype='html',
+                **context
+            )
+        else:
+            pass
 
     def notify_edit_comment(self, ev):
         """ Not presently required to notify for this event
