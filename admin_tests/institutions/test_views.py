@@ -346,7 +346,6 @@ class InstitutionDefaultStorageDisplay(AdminTestCase):
         self.request = RequestFactory().get('/fake_path')
         self.view = views.InstitutionDefaultStorageDisplay()
         self.view = setup_user_view(self.view, self.request, user=self.user)
-
         self.view.kwargs = {'institution_id': self.institution.id}
 
     def tearDown(self):
@@ -373,6 +372,47 @@ class InstitutionDefaultStorageDisplay(AdminTestCase):
         nt.assert_equal(res['institution'], self.institution._id)
         nt.assert_equal((res['region']).name, self.us.name)
         nt.assert_equal((res['region'])._id, self.us._id)
+
+    def test_post(self, *args, **kwargs):
+        new_region = RegionFactory()
+        new_region._id = self.institution._id
+        new_region.name = 'China'
+        new_region.mfr_url = 'http://ec2-13-114-64-85.ap-northeast-1.compute.amazonaws.com:7778'
+        form_data = {
+            'name': new_region.name,
+            'waterbutler_credentials': new_region.waterbutler_credentials,
+            'waterbutler_settings': new_region.waterbutler_settings,
+            'waterbutler_url': new_region.waterbutler_url,
+            '_id': new_region._id,
+            'institution': self.institution._id,
+            'mfr_url': 'http://ec2-13-114-64-85.ap-northeast-1.compute.amazonaws.com:7778',
+        }
+        self.request_post = RequestFactory().post('/fake_path', form_data)
+        self.view_post = views.InstitutionDefaultStorageDetail()
+        self.view_post = setup_user_view(self.view_post, self.request_post, user=self.user)
+        self.view_post.kwargs = form_data
+        response_for_insert = self.view_post.post(self.request_post, *args, **self.view_post.kwargs)
+        nt.assert_equal(response_for_insert.status_code, 302)
+        nt.assert_equal(Region.objects.get(_id=self.institution._id).name, new_region.name)
+        new_region.name = 'Taipe'
+        count = Region.objects.count()
+        form_data = {
+            'name': new_region.name,
+            'waterbutler_credentials': new_region.waterbutler_credentials,
+            'waterbutler_settings': new_region.waterbutler_settings,
+            'waterbutler_url': new_region.waterbutler_url,
+            '_id': new_region._id,
+            'institution': self.institution._id,
+            'mfr_url': 'http://ec2-13-114-64-85.ap-northeast-1.compute.amazonaws.com:7778',
+        }
+        self.request_post = RequestFactory().post('/fake_path', form_data)
+        self.view_post = views.InstitutionDefaultStorageDetail()
+        self.view_post = setup_user_view(self.view_post, self.request_post, user=self.user)
+        self.view_post.kwargs = form_data
+        response_for_update = self.view_post.post(self.request_post, *args, **self.view_post.kwargs)
+        nt.assert_equal(response_for_update.status_code, 302)
+        nt.assert_equal(Region.objects.get(_id=self.institution._id).name, new_region.name)
+        nt.assert_equal(Region.objects.count(), count)
 
     def test_get(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **kwargs)
