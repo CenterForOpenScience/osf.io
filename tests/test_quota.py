@@ -567,17 +567,25 @@ class TestSaveUsedQuota(OsfTestCase):
             used=5500
         )
 
-        folder = TrashedFolder(
+        folder1 = TrashedFolder(
             target=self.node,
             name='testfolder',
             deleted_on=datetime.datetime.now(),
             deleted_by=self.user
         )
-        folder.save()
+        folder1.save()
+        folder2 = TrashedFolder(
+            target=self.node,
+            name='testfolder',
+            parent_id=folder1.id,
+            deleted_on=datetime.datetime.now(),
+            deleted_by=self.user
+        )
+        folder2.save()
         file1 = TrashedFileNode.create(
             target=self.node,
             name='testfile1',
-            parent_id=folder.id,
+            parent_id=folder1.id,
             deleted_on=datetime.datetime.now(),
             deleted_by=self.user
         )
@@ -586,7 +594,7 @@ class TestSaveUsedQuota(OsfTestCase):
         file2 = TrashedFileNode.create(
             target=self.node,
             name='testfile2',
-            parent_id=folder.id,
+            parent_id=folder2.id,
             deleted_on=datetime.datetime.now(),
             deleted_by=self.user
         )
@@ -609,7 +617,7 @@ class TestSaveUsedQuota(OsfTestCase):
                     'provider': 'osfstorage',
                     'name': 'testfolder',
                     'materialized': '/testfolder',
-                    'path': '{}/'.format(folder._id),
+                    'path': '{}/'.format(folder1._id),
                     'kind': 'folder',
                     'extra': {}
                 }
