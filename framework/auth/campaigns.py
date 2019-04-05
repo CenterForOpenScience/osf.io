@@ -24,14 +24,14 @@ def get_campaigns():
             # Native campaigns: PREREG and ERPC
             newest_campaigns = {
                 'prereg': {
-                    'system_tag': 'prereg_challenge_campaign',
+                    'system_tag': 'source:campaign|prereg',
                     'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
                     'login_type': 'native',
                     'logo': settings.OSF_PREREG_LOGO
                 },
                 'erpc': {
-                    'system_tag': 'erp_challenge_campaign',
+                    'system_tag': 'source:campaign|erp',
                     'redirect_url': furl.furl(DOMAIN).add(path='erpc/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
                     'login_type': 'native',
@@ -61,7 +61,7 @@ def get_campaigns():
                     url_path = 'preprints/{}'.format(provider._id)
                     external_url = provider.domain
                 campaign = '{}-preprints'.format(provider._id)
-                system_tag = '{}_preprints'.format(provider._id)
+                system_tag = 'source:provider|preprint|{}'.format(provider._id)
                 newest_campaigns.update({
                     campaign: {
                         'system_tag': system_tag,
@@ -78,7 +78,7 @@ def get_campaigns():
             # TODO: refactor for futher branded registries when there is a model for registries providers
             newest_campaigns.update({
                 'osf-registries': {
-                    'system_tag': 'osf_registries',
+                    'system_tag': 'source:provider|registry|osf',
                     'redirect_url': furl.furl(DOMAIN).add(path='registries/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
@@ -89,7 +89,7 @@ def get_campaigns():
 
             newest_campaigns.update({
                 'osf-registered-reports': {
-                    'system_tag': 'osf_registered_reports',
+                    'system_tag': 'source:campaign|osf_registered_reports',
                     'redirect_url': furl.furl(DOMAIN).add(path='rr/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
@@ -201,3 +201,13 @@ def get_external_domains():
         if external_url:
             external_domains.append(external_url)
     return external_domains
+
+
+NODE_SOURCE_TAG_CLAIMED_TAG_RELATION = {
+    'source:campaign|erp': 'claimed:campaign|erp',
+    'source:campaign|prereg_challenge': 'claimed:campaign|prereg_challenge',
+    'source:campaign|prereg': 'claimed:campaign|prereg',
+    'source:campaign|osf_registered_reports': 'claimed:campaign|osf_registered_reports',
+    'source:campaign|osf4m': 'claimed:campaign|osf4m',
+    'source:provider|osf': 'claimed:provider|osf'
+}

@@ -9,7 +9,7 @@ from osf.exceptions import NodeStateError
 from osf.utils.sanitize import strip_html
 
 # TODO: This should be a class method of Node
-def new_node(category, title, user, description='', parent=None):
+def new_node(category, title, user, description='', parent=None, campaign=None):
     """Create a new project or component.
 
     :param str category: Node category
@@ -37,6 +37,10 @@ def new_node(category, title, user, description='', parent=None):
     )
 
     node.save()
+
+    if campaign:
+        from framework.auth.campaigns import system_tag_for_campaign
+        node.add_system_tag(system_tag_for_campaign(campaign))
 
     return node
 

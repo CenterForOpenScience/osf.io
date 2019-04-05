@@ -111,13 +111,13 @@ def project_new(**kwargs):
 @must_be_logged_in
 def project_new_post(auth, **kwargs):
     user = auth.user
-
     data = request.get_json()
     title = strip_html(data.get('title'))
     title = title.strip()
     category = data.get('category', 'project')
     template = data.get('template')
     description = strip_html(data.get('description'))
+    campaign = data.get('campaign', None)
     new_project = {}
 
     if template:
@@ -140,7 +140,7 @@ def project_new_post(auth, **kwargs):
 
     else:
         try:
-            project = new_node(category, title, user, description)
+            project = new_node(category, title, user, description, campaign=campaign)
         except ValidationError as e:
             raise HTTPError(
                 http.BAD_REQUEST,

@@ -82,7 +82,7 @@ def add_poster_by_email(conference, message):
                 user.fullname = user._id  # Users cannot use an email as their full name
 
             user.save()  # need to save in order to access m2m fields (e.g. tags)
-            user.add_system_tag('osf4m')
+            user.add_system_tag('source:campaign|osf4m')
             user.update_date_last_login()
             user.save()
 
@@ -101,7 +101,7 @@ def add_poster_by_email(conference, message):
             title=message.subject,
             creator=user
         )
-        node.add_system_tag('osf4m')
+        node.add_system_tag('source:campaign|osf4m')
         node.save()
 
         utils.provision_node(conference, message, node, user)

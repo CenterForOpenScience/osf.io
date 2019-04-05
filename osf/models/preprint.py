@@ -1054,6 +1054,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params=params
         )
 
+    def add_unregistered_contributor(self, *args, **kwargs):
+        system_tag_to_add, created = Tag.all_tags.get_or_create(name='source:provider|preprint|{}'.format(self.provider._id), system=True)
+        unreg_contrib = super(Preprint, self).add_unregistered_contributor(*args, **kwargs)
+        unreg_contrib.add_system_tag(system_tag_to_add)
+        return unreg_contrib
+
 
 @receiver(post_save, sender=Preprint)
 def create_file_node(sender, instance, **kwargs):

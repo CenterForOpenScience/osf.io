@@ -18,7 +18,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import AbstractNode, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
+from osf.models import AbstractNode, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor, Tag
 from osf.utils import sanitize
 from osf.utils.permissions import expand_permissions, ADMIN
 from osf.exceptions import NodeStateError
@@ -31,6 +31,7 @@ from website.project.views.node import serialize_preprints
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import web_url_for, is_json_request
+from framework.auth.campaigns import NODE_SOURCE_TAG_CLAIMED_TAG_RELATION
 
 
 @collect_auth
@@ -822,6 +823,18 @@ def claim_user_form(auth, **kwargs):
             if provider:
                 redirect_url = web_url_for('auth_login', next=provider.landing_url, _absolute=True)
             else:
+                node = AbstractNode.load(pid)
+                preprint = Preprint.load(pid)
+                if node:
+                    node_source_tags = node.all_tags.filter(name__icontains='source:', system=True)
+                    if node_source_tags.exists():
+                        for tag in node_source_tags:
+                            claimed_tag, created = Tag.all_tags.get_or_create(name=NODE_SOURCE_TAG_CLAIMED_TAG_RELATION[tag.name], system=True)
+                            user.add_system_tag(claimed_tag)
+                elif preprint:
+                    provider_id = preprint.provider._id
+                    preprint_source_tag, created = Tag.all_tags.get_or_create(name='claimed:provider|preprint|{}'.format(provider_id), system=True)
+                    user.add_system_tag(preprint_source_tag)
                 redirect_url = web_url_for('resolve_guid', guid=pid, _absolute=True)
 
             return redirect(cas.get_login_url(
