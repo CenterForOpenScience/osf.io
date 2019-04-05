@@ -761,8 +761,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             else:
                 node.contributor_set.filter(user=user).update(user=self)
                 node.add_permission(self, user_perms)
-                node.remove_permission(user, user_perms)
 
+            node.remove_permission(user, user_perms)
             node.save()
 
         # Skip bookmark collections

@@ -246,6 +246,77 @@ class TestOSFUser:
         assert group.is_member(user) is True
         assert group.is_member(user2) is False
 
+    def test_merge_projects(self):
+        user = AuthUserFactory()
+        user2 = AuthUserFactory()
+
+        project_one = ProjectFactory(creator=user, title='project_one')
+
+        project_two = ProjectFactory(title='project_two')
+        project_two.add_contributor(user2)
+
+        project_three = ProjectFactory(title='project_three', creator=user2)
+        project_three.add_contributor(user, visible=False)
+
+        project_four = ProjectFactory(title='project_four')
+        project_four.add_contributor(user2, permissions='read', visible=False)
+
+        project_five = ProjectFactory(title='project_five')
+        project_five.add_contributor(user2, permissions='read', visible=False)
+        project_five.add_contributor(user, permissions='write', visible=True)
+
+        # two projects shared b/t user and user2
+        assert user.nodes.filter(type='osf.node').count() == 3
+        assert user2.nodes.filter(type='osf.node').count() == 4
+
+        user.merge_user(user2)
+        project_one.reload()
+        project_two.reload()
+        project_three.reload()
+        project_four.reload()
+        project_five.reload()
+
+        assert user.nodes.filter(type='osf.node').count() == 5
+        # one group for each node
+        assert user.groups.count() == 6  # (including quickfiles node)
+        assert user2.nodes.filter(type='osf.node').count() == 0
+        assert user2.groups.count() == 1  # (quickfilesnode)
+
+        contrib_obj = Contributor.objects.get(user=user, node=project_one)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'admin'
+        assert project_one.creator == user
+        assert not project_one.has_permission(user2, 'read')
+        assert not project_one.is_contributor(user2)
+
+        contrib_obj = Contributor.objects.get(user=user, node=project_two)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'write'
+        assert project_two.creator != user
+        assert not project_two.has_permission(user2, 'read')
+        assert not project_two.is_contributor(user2)
+
+        contrib_obj = Contributor.objects.get(user=user, node=project_three)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'admin'  # of the two users the highest perm wins out.
+        assert project_three.creator == user
+        assert not project_three.has_permission(user2, 'read')
+        assert not project_three.is_contributor(user2)
+
+        contrib_obj = Contributor.objects.get(user=user, node=project_four)
+        assert contrib_obj.visible is False
+        assert contrib_obj.permission == 'read'
+        assert project_four.creator != user
+        assert not project_four.has_permission(user2, 'read')
+        assert not project_four.is_contributor(user2)
+
+        contrib_obj = Contributor.objects.get(user=user, node=project_five)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'write'
+        assert project_five.creator != user
+        assert not project_five.has_permission(user2, 'read')
+        assert not project_five.is_contributor(user2)
+
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given
         with pytest.raises(ValidationError):
