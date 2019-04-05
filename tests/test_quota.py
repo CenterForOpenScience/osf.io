@@ -256,6 +256,33 @@ class TestSaveFileInfo(OsfTestCase):
         file_info = FileInfo.objects.get(file=self.file)
         assert_equal(file_info.file_size, 2500)
 
+    def test_file_info_when_not_osfstorage(self):
+        file_info_query = FileInfo.objects.filter(file=self.file)
+        assert_false(file_info_query.exists())
+
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_ADDED,
+            payload={
+                'provider': 'github',
+                'metadata': {
+                    'provider': 'github',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': '/' + self.file._id,
+                    'kind': 'file',
+                    'size': 1000,
+                    'created_utc': '',
+                    'modified_utc': '',
+                    'extra': {'version': '1'}
+                }
+            }
+        )
+
+        assert_false(file_info_query.exists())
+
 
 class TestSaveUsedQuota(OsfTestCase):
     def setUp(self):
@@ -659,3 +686,35 @@ class TestSaveUsedQuota(OsfTestCase):
 
         user_quota = UserQuota.objects.get(user=self.project_creator)
         assert_equal(user_quota.used, 6000)
+
+    def test_add_file_when_not_osfstorage(self):
+        UserQuota.objects.create(
+            user=self.project_creator,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=5500
+        )
+
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_ADDED,
+            payload={
+                'provider': 'github',
+                'metadata': {
+                    'provider': 'github',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': self.file._id,
+                    'kind': 'file',
+                    'size': 1000,
+                    'created_utc': '',
+                    'modified_utc': '',
+                    'extra': {'version': '1'}
+                }
+            }
+        )
+
+        user_quota = UserQuota.objects.get(user=self.project_creator)
+        assert_equal(user_quota.used, 5500)
