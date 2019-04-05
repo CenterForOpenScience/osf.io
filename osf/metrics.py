@@ -123,11 +123,11 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
     user_id = metrics.Keyword(index=True, doc_values=True, required=False)
     preprint_id = metrics.Keyword(index=True, doc_values=True, required=True)
     version = metrics.Keyword(index=True, doc_values=True)
-    path = metrics.Keyword(index=True)
-    referrer = metrics.Keyword(index=True)
-    user_agent = metrics.Keyword(index=True)
-    origin = metrics.Keyword(index=True)
-    uri = metrics.Keyword(index=True)
+    path = metrics.Text(index=True)
+    referrer = metrics.Text(index=True)
+    user_agent = metrics.Text(index=True)
+    origin = metrics.Text(index=True)
+    uri = metrics.Text(index=True)
     # TODO: locale
 
     class Index:
