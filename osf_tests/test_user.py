@@ -222,44 +222,72 @@ class TestOSFUser:
     def test_merge_preprints(self, user):
         user2 = AuthUserFactory()
 
-        user_is_creator = PreprintFactory(creator=user)
+        preprint_one = PreprintFactory(creator=user, title='preprint_one')
 
-        contrib_not_creator = PreprintFactory()
-        contrib_not_creator.add_contributor(user2)
+        preprint_two = PreprintFactory(title='preprint_two')
+        preprint_two.add_contributor(user2)
 
-        # if not handled well this can throw an IntegrityError
-        both_users_are_contribs = PreprintFactory()
-        both_users_are_contribs.add_contributor(user, visible=False)
-        both_users_are_contribs.add_contributor(user2)
-        both_users_are_contribs.add_permission(user2, 'admin')
+        preprint_three = PreprintFactory(title='preprint_three', creator=user2)
+        preprint_three.add_contributor(user, visible=False)
+
+        preprint_four = PreprintFactory(title='preprint_four')
+        preprint_four.add_contributor(user2, permissions='read', visible=False)
+
+        preprint_five = PreprintFactory(title='preprint_five')
+        preprint_five.add_contributor(user2, permissions='read', visible=False)
+        preprint_five.add_contributor(user, permissions='write', visible=True)
+
+        # two preprints shared b/t user and user2
+        assert user.preprints.count() == 3
+        assert user2.preprints.count() == 4
+
         user.merge_user(user2)
+        preprint_one.reload()
+        preprint_two.reload()
+        preprint_three.reload()
+        preprint_four.reload()
+        preprint_five.reload()
 
-        qs = user2.preprints.all()
-        assert qs.count() == 0
-
-        qs = user.preprints.all()
-        assert qs.count() == 3
-
-        qs = user.preprints.filter(creator=user)
-        assert qs.count() == 1
-
-        user_creator_preprint = qs.last()
-        user_is_creator.reload()
-
-        assert user_creator_preprint._id == user_is_creator._id
-        assert user == user_is_creator.creator
-        assert user_creator_preprint.creator == user_is_creator.creator
-
+        assert user.preprints.count() == 5
+        # one group for each preprint
+        assert user.groups.count() == 5
+        assert user2.preprints.count() == 0
         assert not user2.groups.all()
-        assert both_users_are_contribs in user.preprints.all()
 
-        contrib_obj = PreprintContributor.objects.get(user=user, preprint=user_creator_preprint)
-        assert contrib_obj.visible
-        assert user_creator_preprint.has_permission(user, 'write')
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_one)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'admin'
+        assert preprint_one.creator == user
+        assert not preprint_one.has_permission(user2, 'read')
+        assert not preprint_one.is_contributor(user2)
 
-        contrib_obj = PreprintContributor.objects.get(user=user, preprint=both_users_are_contribs)
-        assert not contrib_obj.visible
-        assert both_users_are_contribs.has_permission(user, 'admin')  # of the two users the highest perm wins out.
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_two)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'write'
+        assert preprint_two.creator != user
+        assert not preprint_two.has_permission(user2, 'read')
+        assert not preprint_two.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_three)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'admin'  # of the two users the highest perm wins out.
+        assert preprint_three.creator == user
+        assert not preprint_three.has_permission(user2, 'read')
+        assert not preprint_three.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_four)
+        assert contrib_obj.visible is False
+        assert contrib_obj.permission == 'read'
+        assert preprint_four.creator != user
+        assert not preprint_four.has_permission(user2, 'read')
+        assert not preprint_four.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_five)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'write'
+        assert preprint_five.creator != user
+        assert not preprint_five.has_permission(user2, 'read')
+        assert not preprint_five.is_contributor(user2)
 
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given
