@@ -493,15 +493,6 @@ def create_waterbutler_log(payload, **kwargs):
             if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
                 metadata = payload.get('metadata') or payload.get('destination')
 
-                if payload['provider'] == 'osfstorage':
-                    file_node = BaseFileNode.objects.get(_id=metadata['path'])
-                    fileinfo = FileInfo.objects.filter(file=file_node).first()
-                    if not fileinfo:
-                        fileinfo = FileInfo()
-                        fileinfo.file = file_node
-                    fileinfo.file_size = metadata['size']
-                    fileinfo.save()
-
                 if metadata['kind'] == 'file':
                     created_flag = action == NodeLog.FILE_ADDED
                     timestamp.file_created_or_updated(node, metadata, user.id, created_flag)

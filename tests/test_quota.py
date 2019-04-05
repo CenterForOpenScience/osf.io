@@ -183,6 +183,80 @@ class TestUsedQuota(OsfTestCase):
         assert_equal(quota.used_quota(self.user._id), 0)
 
 
+class TestSaveFileInfo(OsfTestCase):
+    def setUp(self):
+        super(TestSaveFileInfo, self).setUp()
+        self.user = UserFactory()
+        self.project_creator = UserFactory()
+        self.node = ProjectFactory(creator=self.project_creator)
+        self.file = OsfStorageFileNode.create(
+            target=self.node,
+            path='/testfile',
+            _id='testfile',
+            name='testfile',
+            materialized_path='/testfile'
+        )
+        self.file.save()
+
+    def test_add_file_info(self):
+        file_info_query = FileInfo.objects.filter(file=self.file)
+        assert_false(file_info_query.exists())
+
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_ADDED,
+            payload={
+                'provider': 'osfstorage',
+                'metadata': {
+                    'provider': 'osfstorage',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': '/' + self.file._id,
+                    'kind': 'file',
+                    'size': 1000,
+                    'created_utc': '',
+                    'modified_utc': '',
+                    'extra': {'version': '1'}
+                }
+            }
+        )
+
+        file_info_list = FileInfo.objects.filter(file=self.file).all()
+        assert_equal(file_info_list.count(), 1)
+        file_info = file_info_list.first()
+        assert_equal(file_info.file_size, 1000)
+
+    def test_update_file_info(self):
+        file_info = FileInfo(file=self.file, file_size=1000)
+        file_info.save()
+
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_UPDATED,
+            payload={
+                'provider': 'osfstorage',
+                'metadata': {
+                    'provider': 'osfstorage',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': self.file._id,
+                    'kind': 'file',
+                    'size': 2500,
+                    'created_utc': '',
+                    'modified_utc': '',
+                    'extra': {'version': '2'}
+                }
+            }
+        )
+
+        file_info = FileInfo.objects.get(file=self.file)
+        assert_equal(file_info.file_size, 2500)
+
+
 class TestSaveUsedQuota(OsfTestCase):
     def setUp(self):
         super(TestSaveUsedQuota, self).setUp()
@@ -246,7 +320,7 @@ class TestSaveUsedQuota(OsfTestCase):
                     'provider': 'osfstorage',
                     'name': 'testfile',
                     'materialized': '/filename',
-                    'path': '/' + self.file._id,
+                    'path': self.file._id,
                     'kind': 'file',
                     'size': 1000,
                     'created_utc': '',
@@ -273,7 +347,7 @@ class TestSaveUsedQuota(OsfTestCase):
                     'provider': 'osfstorage',
                     'name': 'testfile',
                     'materialized': '/filename',
-                    'path': '/' + self.file._id,
+                    'path': self.file._id,
                     'kind': 'file',
                     'size': -1000,
                     'created_utc': '',
@@ -544,3 +618,36 @@ class TestSaveUsedQuota(OsfTestCase):
 
         user_quota = UserQuota.objects.get(user=self.project_creator)
         assert_equal(user_quota.used, 500)
+
+    def test_edit_file(self):
+        UserQuota.objects.create(
+            user=self.project_creator,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=5500
+        )
+        FileInfo.objects.create(file=self.file, file_size=1000)
+
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_UPDATED,
+            payload={
+                'provider': 'osfstorage',
+                'metadata': {
+                    'provider': 'osfstorage',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': self.file._id,
+                    'kind': 'file',
+                    'size': 1500,
+                    'created_utc': '',
+                    'modified_utc': '',
+                    'extra': {'version': '2'}
+                }
+            }
+        )
+
+        user_quota = UserQuota.objects.get(user=self.project_creator)
+        assert_equal(user_quota.used, 6000)

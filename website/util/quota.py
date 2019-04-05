@@ -43,12 +43,24 @@ def abbreviate_size(size):
 
 @file_signals.file_updated.connect
 def update_used_quota(self, target, user, event_type, payload):
-    if event_type == FileLog.FILE_ADDED:
-        file_added(target, payload)
-    elif event_type == FileLog.FILE_REMOVED:
-        node_removed(target, user, payload)
+    try:
+        file_node = BaseFileNode.objects.get(
+            _id=payload['metadata']['path'].strip('/'),
+            target_object_id=target.id,
+            target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+        )
+    except BaseFileNode.DoesNotExist:
+        logging.error('FileNode not found, cannot update used quota!')
+        return
 
-def file_added(target, payload):
+    if event_type == FileLog.FILE_ADDED:
+        file_added(target, payload, file_node)
+    elif event_type == FileLog.FILE_REMOVED:
+        node_removed(target, user, payload, file_node)
+    elif event_type == FileLog.FILE_UPDATED:
+        file_modified(target, user, payload, file_node)
+
+def file_added(target, payload, file_node):
     file_size = int(payload['metadata']['size'])
     if file_size < 0:
         return
@@ -67,24 +79,14 @@ def file_added(target, payload):
             used=file_size
         )
 
-def node_removed(target, user, payload):
+    FileInfo.objects.create(file=file_node, file_size=file_size)
+
+def node_removed(target, user, payload, file_node):
     user_quota = UserQuota.objects.filter(
         user=target.creator,
         storage_type=UserQuota.NII_STORAGE
     ).first()
     if user_quota is not None:
-        file_node_id = payload['metadata']['path'].strip('/')
-        try:
-            file_node = BaseFileNode.objects.get(
-                _id=file_node_id,
-                target_object_id=target.id,
-                target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-                deleted_by=user
-            )
-        except BaseFileNode.DoesNotExist:
-            logging.error('FileNode not found, cannot update used quota!')
-            return
-
         if 'osf.trashed' not in file_node.type:
             logging.error('FileNode is not trashed, cannot update used quota!')
             return
@@ -99,6 +101,30 @@ def node_removed(target, user, payload):
             file_size = min(file_info.file_size, user_quota.used)
             user_quota.used -= file_size
         user_quota.save()
+
+def file_modified(target, user, payload, file_node):
+    file_size = int(payload['metadata']['size'])
+    if file_size < 0:
+        return
+
+    user_quota, _ = UserQuota.objects.get_or_create(
+        user=target.creator,
+        storage_type=UserQuota.NII_STORAGE,
+        defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
+    )
+
+    try:
+        file_info = FileInfo.objects.get(file=file_node)
+    except FileInfo.DoesNotExist:
+        file_info = FileInfo(file=file_node, file_size=0)
+
+    user_quota.used += file_size - file_info.file_size
+    if user_quota.used < 0:
+        user_quota.used = 0
+    user_quota.save()
+
+    file_info.file_size = file_size
+    file_info.save()
 
 def get_node_file_list(file_node):
     if 'file' in file_node.type:
