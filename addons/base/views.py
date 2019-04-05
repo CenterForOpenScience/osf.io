@@ -405,6 +405,7 @@ def create_waterbutler_log(payload, **kwargs):
         try:
             auth = payload['auth']
             if payload['action'] in DOWNLOAD_ACTIONS:
+                # Don't log download actions
                 return {'status': 'success'}
 
             user = OSFUser.load(auth['id'])
