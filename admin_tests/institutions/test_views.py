@@ -303,30 +303,21 @@ class TestGetUserListWithQuota(AdminTestCase):
         user_quota = response.context_data['users'][0]
         nt.assert_equal(user_quota['limit_value'], str(api_settings.DEFAULT_MAX_QUOTA) + ' GB')
 
-    @mock.patch('website.util.quota.used_quota')
-    def test_custom_quota(self, mock_usedquota):
-        mock_usedquota.return_value = 0
-
+    def test_custom_quota(self):
         UserQuota.objects.create(user=self.user, max_quota=200)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
         nt.assert_equal(user_quota['limit_value'], '200 GB')
 
-    @mock.patch('website.util.quota.used_quota')
-    def test_used_quota_bytes(self, mock_usedquota):
-        mock_usedquota.return_value = 560
-
-        UserQuota.objects.create(user=self.user, max_quota=100)
+    def test_used_quota_bytes(self):
+        UserQuota.objects.create(user=self.user, max_quota=100, used=560)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
         nt.assert_equal(user_quota['usage'], '560 B')
         nt.assert_equal(user_quota['ratio_to_quota'], '0.0%')
 
-    @mock.patch('website.util.quota.used_quota')
-    def test_used_quota_giga(self, mock_usedquota):
-        mock_usedquota.return_value = 5.2 * 1024 ** 3
-
-        UserQuota.objects.create(user=self.user, max_quota=100)
+    def test_used_quota_giga(self):
+        UserQuota.objects.create(user=self.user, max_quota=100, used=5.2 * 1024 ** 3)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
         nt.assert_equal(user_quota['usage'], '5.2 GB')

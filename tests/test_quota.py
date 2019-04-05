@@ -34,66 +34,48 @@ class TestQuotaProfileView(OsfTestCase):
         expected = self.quota_text.format(0.0, 0, 'B', api_settings.DEFAULT_MAX_QUOTA)
         assert_in(expected, response.body)
 
-    @mock.patch('website.util.quota.used_quota')
-    def test_custom_quota(self, mock_usedquota):
-        mock_usedquota.return_value = 0
-
-        UserQuota.objects.create(user=self.user, max_quota=200)
+    def test_custom_quota(self):
+        UserQuota.objects.create(user=self.user, max_quota=200, used=0)
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
         )
         assert_in(self.quota_text.format(0.0, 0, 'B', 200), response.body)
 
-    @mock.patch('website.util.quota.used_quota')
-    def test_used_quota_bytes(self, mock_usedquota):
-        mock_usedquota.return_value = 560
-
-        UserQuota.objects.create(user=self.user, max_quota=100)
+    def test_used_quota_bytes(self):
+        UserQuota.objects.create(user=self.user, max_quota=100, used=560)
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
         )
         assert_in(self.quota_text.format(0.0, 560, 'B', 100), response.body)
 
-    @mock.patch('website.util.quota.used_quota')
-    def test_used_quota_giga(self, mock_usedquota):
-        mock_usedquota.return_value = 5.2 * 1024 ** 3
-
-        UserQuota.objects.create(user=self.user, max_quota=100)
+    def test_used_quota_giga(self):
+        UserQuota.objects.create(user=self.user, max_quota=100, used=5.2 * 1024 ** 3)
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
         )
         assert_in(self.quota_text.format(5.2, 5.2, 'GB', 100), response.body)
 
-    @mock.patch('website.util.quota.used_quota')
-    def test_used_quota_storage_icon_ok(self, mock_usedquota):
-        mock_usedquota.return_value = 0
-
-        UserQuota.objects.create(user=self.user, max_quota=100)
+    def test_used_quota_storage_icon_ok(self):
+        UserQuota.objects.create(user=self.user, max_quota=100, used=0)
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
         )
         assert_in('storage_ok.png', response.body)
 
-    @mock.patch('website.util.quota.used_quota')
-    def test_used_quota_storage_icon_warning(self, mock_usedquota):
-        mock_usedquota.return_value = 95 * 1024 ** 3
-
-        UserQuota.objects.create(user=self.user, max_quota=100)
+    def test_used_quota_storage_icon_warning(self):
+        UserQuota.objects.create(user=self.user, max_quota=100, used=95 * 1024 ** 3)
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
         )
         assert_in('storage_warning.png', response.body)
 
-    @mock.patch('website.util.quota.used_quota')
-    def test_used_quota_storage_icon_error(self, mock_usedquota):
-        mock_usedquota.return_value = 105 * 1024 ** 3
-
-        UserQuota.objects.create(user=self.user, max_quota=100)
+    def test_used_quota_storage_icon_error(self):
+        UserQuota.objects.create(user=self.user, max_quota=100, used=105 * 1024 ** 3)
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
