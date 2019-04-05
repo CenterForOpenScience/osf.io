@@ -43,7 +43,7 @@ def abbreviate_size(size):
 
 @file_signals.file_updated.connect
 def update_used_quota(self, target, user, event_type, payload):
-    if payload['provider'] != 'osfstorage':
+    if payload.get('provider') != 'osfstorage':
         return
     try:
         file_node = BaseFileNode.objects.get(

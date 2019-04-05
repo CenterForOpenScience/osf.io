@@ -718,3 +718,31 @@ class TestSaveUsedQuota(OsfTestCase):
 
         user_quota = UserQuota.objects.get(user=self.project_creator)
         assert_equal(user_quota.used, 5500)
+
+    def test_move_file(self):
+        quota.update_used_quota(
+            self=None,
+            target=self.node,
+            user=self.user,
+            event_type=FileLog.FILE_ADDED,
+            payload={
+                'source': {
+                    'provider': 'osfstorage',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': self.file._id,
+                    'kind': 'file',
+                    'size': 1000,
+                    'extra': {'version': '1'}
+                },
+                'destination': {
+                    'provider': 'osfstorage',
+                    'name': 'testfile',
+                    'materialized': '/filename',
+                    'path': self.file._id,
+                    'kind': 'file',
+                    'size': 1000,
+                    'extra': {'version': '1'}
+                }
+            }
+        )
