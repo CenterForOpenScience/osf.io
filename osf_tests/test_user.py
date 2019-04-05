@@ -25,7 +25,7 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session, BlacklistedEmailDomain
+from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session, BlacklistedEmailDomain, PreprintContributor
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
@@ -218,6 +218,48 @@ class TestOSFUser:
         assert project.has_permission(user, 'admin') is True
         assert project.get_visible(user) is True
         assert project.is_contributor(user2) is False
+
+    def test_merge_preprints(self, user):
+        user2 = AuthUserFactory()
+
+        user_is_creator = PreprintFactory(creator=user)
+
+        contrib_not_creator = PreprintFactory()
+        contrib_not_creator.add_contributor(user2)
+
+        # if not handled well this can throw an IntegrityError
+        both_users_are_contribs = PreprintFactory()
+        both_users_are_contribs.add_contributor(user, visible=False)
+        both_users_are_contribs.add_contributor(user2)
+        both_users_are_contribs.add_permission(user2, 'admin')
+        user.merge_user(user2)
+
+        qs = user2.preprints.all()
+        assert qs.count() == 0
+
+        qs = user.preprints.all()
+        assert qs.count() == 3
+
+        qs = user.preprints.filter(creator=user)
+        assert qs.count() == 1
+
+        user_creator_preprint = qs.last()
+        user_is_creator.reload()
+
+        assert user_creator_preprint._id == user_is_creator._id
+        assert user == user_is_creator.creator
+        assert user_creator_preprint.creator == user_is_creator.creator
+
+        assert not user2.groups.all()
+        assert both_users_are_contribs in user.preprints.all()
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=user_creator_preprint)
+        assert contrib_obj.visible
+        assert user_creator_preprint.has_permission(user, 'write')
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=both_users_are_contribs)
+        assert not contrib_obj.visible
+        assert both_users_are_contribs.has_permission(user, 'admin')  # of the two users the highest perm wins out.
 
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given

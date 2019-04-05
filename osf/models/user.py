@@ -763,6 +763,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             merging_user_file.move_under(primary_quickfiles_root)
             merging_user_file.save()
 
+        self._merge_users_preprints(user)
+
         # finalize the merge
 
         remove_sessions_for_user(user)
@@ -776,6 +778,32 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.merged_by = self
 
         user.save()
+
+    def _merge_users_preprints(self, user):
+        from osf.models.preprint import Preprint, PreprintContributor
+        users_preprint_groups = user.groups.filter(groupobjectpermission__content_type__model=Preprint._meta.verbose_name)
+
+        # If both users are already contribs we will violate unique constraint so take the highest permission group and
+        # just remove old contrib from group and contrib table
+        for preprint_contributor in PreprintContributor.objects.filter(preprint__in=self.preprints.all()):
+            preprint_groups = set(preprint_contributor.preprint.group_objects)
+            shared_groups = preprint_groups.intersection(set(users_preprint_groups))
+            if shared_groups:
+                highest_group = max(shared_groups)
+                self.groups.add(highest_group)
+
+            if preprint_contributor.user == user:
+                preprint_contributor.delete()
+
+        # Transfer remaining permissions
+        self.groups.add(*users_preprint_groups)
+        user.groups.remove(*users_preprint_groups)
+
+        # Update contributor table
+        PreprintContributor.objects.filter(user=user).update(user=self)
+
+        # Update creator status
+        Preprint.objects.filter(creator=user).update(creator=self)
 
     def disable_account(self):
         """
