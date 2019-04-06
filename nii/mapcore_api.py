@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #
-# @COPYRIGHT#
+# MAPCore class: mAP Core API handling
+#
+# @COPYRIGHT@
 #
 
 import os
@@ -19,7 +21,7 @@ from datetime import datetime as dt
 from website import settings
 
 #
-# Global setting.
+# Global settings.
 #
 logger = logging.getLogger(__name__)
 logger.setLevel(10)
@@ -37,6 +39,7 @@ map_redirect      = settings.MAPCORE_REDIRECT
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 
 class MAPCore:
+
     MODE_MEMBER = 0     # Ordinary member
     MODE_ADMIN = 2      # Administrator member
 
@@ -53,18 +56,14 @@ class MAPCore:
         self.client_secret = settings.MAPCORE_SECRET
 
     #
-    # Refresh token.
+    # Refresh access token.
     #
     def refresh_token(self):
-        logger.info("* refresh_token")
+
+        logger.debug("MAPCore::refresh_token:")
 
         url = map_hostname + map_refresh_path
-        logger.info("url=" + url)
-
         basic_auth = ( self.client_id, self.client_secret )
-        logger.info("client_id=" + self.client_id)
-        logger.info("client_secret=" + self.client_secret)
-
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
         }
@@ -73,28 +72,20 @@ class MAPCore:
             "refresh_token": self.user.map_profile.oauth_refresh_token
         }
         params = urllib.urlencode(params)
-        logger.info("refresh_token=" + self.user.map_profile.oauth_refresh_token)
-        logger.info("params=" + params)
+        logger.debug("  params=" + params)
 
         r = requests.post(url, auth = basic_auth, headers = headers, data = params)
         if r.status_code != requests.codes.ok:
-            logger.info("  Refreshing token failed: " + str(r.status_code))
+            logger.info("MAPCore::refresh_token: Refreshing token failed: status_code=" + str(r.status_code))
 
-        logger.info("RESULT=" + r.text)
-        #[nii.mapcore_api]  INFO: RESULT=
-        #{
-        #   "access_token":"2423856290c011307ed69edd69bb243e515e06b3",
-        #   "expires_in":3600,
-        #   "token_type":"Bearer",
-        #   "scope":null,
-        #   "refresh_token":"179dfd1c6398bcd9c847d37021e43109f6ae46a0"
-        #}
         j = r.json();
         if "error" in j:
-            logger.info("  Refreshing token failed: " + j["error"])
+            logger.info("MAPCore::refresh_token: Refreshing token failed: " + j["error"])
             if "error_description" in j:
-                logger.info("  Refreshing token failed: " + j["error_description"])
+                logger.info("MAPCore::refresh_token: Refreshing token failed: " + j["error_description"])
             return False
+        logger.debug("  New access_token: " + j["access_token"])
+        logger.debug("  New refresh_token: " + j["refresh_token"])
 
         self.user.map_profile.oauth_access_token = j["access_token"]
         self.user.map_profile.oauth_refresh_token = j["refresh_token"]
@@ -112,7 +103,8 @@ class MAPCore:
     # Get API version.
     #
     def get_api_version(self):
-        logger.info("* get_api_version")
+
+        logger.debug("MAPCore::get_api_version:")
 
         count = 0
         while count < 2:
@@ -140,7 +132,8 @@ class MAPCore:
     # Get group information by group name.
     #
     def get_group_by_name(self, group_name):
-        logger.info("* get_group_by_name (group_name=" + group_name + ")")
+
+        logger.debug("MAPCore::get_group_by_name (group_name=" + group_name + ")")
 
         count = 0
         while count < 2:
@@ -158,7 +151,7 @@ class MAPCore:
             j = self.check_result(r)
             if j != False:
                 if len(j["result"]["groups"]) != 1:
-                    logger.info("  No or multiple group(s) matched")
+                    logger.debug("  No or multiple group(s) matched")
                     return False
                 return j
 
@@ -175,7 +168,8 @@ class MAPCore:
     # Get group information by group key.
     #
     def get_group_by_key(self, group_key):
-        logger.info("* get_group_by_key (group_key=" + group_key + ")")
+
+        logger.debug("MAPCore::get_group_by_key (group_key=" + group_key + ")")
 
         count = 0
         while count < 2:
@@ -189,7 +183,7 @@ class MAPCore:
             j = self.check_result(r)
             if j != False:
                 if len(j["result"]["groups"]) != 1:
-                    logger.info("  No or multiple group(s) matched")
+                    logger.debug("  No or multiple group(s) matched")
                     return False
                 return j
 
@@ -206,7 +200,8 @@ class MAPCore:
     # Create new group, and make it public, active and open_member.
     #
     def create_group(self, group_name):
-        logger.info("* create_group (group_name=" + group_name + ")")
+
+        logger.debug("MAPCore::create_group (group_name=" + group_name + ")")
 
         #
         # Create new group named "group_name".
@@ -237,12 +232,12 @@ class MAPCore:
             j = self.check_result(r)
             if j != False:
                 group_key = j["result"]["groups"][0]["group_key"]
-                logger.info("  New geoup has been created (group_key=" + group_key + ")")
+                logger.debug("  New geoup has been created (group_key=" + group_key + ")")
 
                 #
                 # Change mode of group last created.
                 #
-                j = self.edit_group(group_key, group_name, "")
+                j = self.edit_group(group_key, group_name, group_name)
                 return j
 
             if self.is_token_expired(r):
@@ -258,7 +253,8 @@ class MAPCore:
     # Change group properties.
     #
     def edit_group(self, group_key, group_name, introduction):
-        logger.info("* edit_group (group_name=" + group_name + ", introduction=" + introduction + ")")
+
+        logger.debug("MAPCore::edit_group (group_name=" + group_name + ", introduction=" + introduction + ")")
 
         count = 0
         while count < 2:
@@ -305,7 +301,8 @@ class MAPCore:
     # Get member of group.
     #
     def get_group_members(self, group_key):
-        logger.info("* get_group_members (group_key=" + group_key + ")")
+
+        logger.debug("MAPCore::get_group_members (group_key=" + group_key + ")")
 
         count = 0
         while count < 2:
@@ -333,7 +330,8 @@ class MAPCore:
     # Get joined group list.
     #
     def get_my_groups(self):
-        logger.info("* get_my_groups")
+
+        logger.debug("MAPCore::get_my_groups:")
 
         count = 0
         while count < 2:
@@ -361,7 +359,8 @@ class MAPCore:
     # Add to group.
     #
     def add_to_group(self, group_key, eppn, admin):
-        logger.info("* add_to_group (group_key=" + group_key + ", eppn=" + eppn + ", admin=" + str(admin) + ")")
+
+        logger.debug("MAPCore::add_to_group (group_key=" + group_key + ", eppn=" + eppn + ", admin=" + str(admin) + ")")
 
         count = 0
         while count < 2:
@@ -402,7 +401,8 @@ class MAPCore:
     # Remove from group.
     #
     def remove_from_group(self, group_key, eppn):
-        logger.info("* remove_from_group (group_key=" + group_key + ", eppn=" + eppn + ")")
+
+        logger.debug("MAPCore::remove_from_group (group_key=" + group_key + ", eppn=" + eppn + ")")
 
         count = 0
         while count < 2:
@@ -430,7 +430,8 @@ class MAPCore:
     # Edit member.
     #
     def edit_member(self, group_key, eppn, admin):
-        logger.info("* edit_member (group_key=" + group_key + ", eppn=" + eppn + ", admin=" + str(admin) + ")")
+
+        logger.debug("MAPCore::edit_member (group_key=" + group_key + ", eppn=" + eppn + ", admin=" + str(admin) + ")")
 
         j = self.remove_from_group(group_key, eppn)
         if j == False:
@@ -444,6 +445,7 @@ class MAPCore:
     # Calculate API signature.
     #
     def calc_signature(self):
+
         time_stamp = str(int(time.time()))
         s = self.client_secret + self.user.map_profile.oauth_access_token + time_stamp
 
@@ -455,22 +457,24 @@ class MAPCore:
     # If any error occurs, a False will be returned.
     #
     def check_result(self, result):
+
         if result.status_code != requests.codes.ok:
             s = result.headers["WWW-Authenticate"]
-            logger.info("Result status: " + str(result.status_code))
-            logger.info("WWW-Authenticate: " + s)
+            logger.info("MAPCore::check_result: status_code=" + str(result.status_code))
+            logger.info("MAPCore::check_result: WWW-Authenticate=" + s)
 
             return False
 
         j = result.json()
         if j["status"]["error_code"] != 0:
-            logger.info("Error status: " + str(j["status"]["error_code"]))
-            logger.info("Error message: " + j["status"]["error_msg"])
+            logger.info("MAPCore::check_result: error_code=" + str(j["status"]["error_code"]))
+            logger.info("MAPCore::check_result: error_msg=" + j["status"]["error_msg"])
             return False
 
         return j
 
     def is_token_expired(self, result):
+
         if result.status_code != requests.codes.ok:
             s = result.headers["WWW-Authenticate"]
             if s.find("Access token expired") != -1:
