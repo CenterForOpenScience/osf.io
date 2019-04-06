@@ -9,17 +9,18 @@ import json
 import time
 import datetime
 import json
-#from logging import getLogger
+import re
 import logging
-
 import hashlib
 import requests
 import urllib
-from website import settings
-#from website.app import init_app
-#from osf.models.user import OSFUser
 
-# global setting
+from datetime import datetime as dt
+from website import settings
+
+#
+# Global setting.
+#
 logger = logging.getLogger(__name__)
 logger.setLevel(10)
 stdout = logging.StreamHandler()
@@ -35,34 +36,27 @@ map_secret        = settings.MAPCORE_SECRET
 map_redirect      = settings.MAPCORE_REDIRECT
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 
-#
-#vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-#
-
 class MAPCore:
     MODE_MEMBER = 0     # Ordinary member
     MODE_ADMIN = 2      # Administrator member
 
+    user = False
     client_id = False
     client_secret = False
-    access_token = False
-    refresh_token = False
 
     #
     # Constructor.
     #
-    def __init__(self, client_id, client_secret,
-            access_token, refresh_token):
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.access_token = access_token
-        self.refresh_token = refresh_token
+    def __init__(self, user):
+        self.user = user
+        self.client_id = settings.MAPCORE_CLIENTID
+        self.client_secret = settings.MAPCORE_SECRET
 
     #
     # Refresh token.
     #
-    def refresh(self):
-        logger.info("* refresh")
+    def refresh_token(self):
+        logger.info("* refresh_token")
 
         url = map_hostname + map_refresh_path
         logger.info("url=" + url)
@@ -76,16 +70,43 @@ class MAPCore:
         }
         params = {
             "grant_type": "refresh_token",
-            "refresh_token": self.refresh_token
+            "refresh_token": self.user.map_profile.oauth_refresh_token
         }
         params = urllib.urlencode(params)
-        logger.info("refresh_token=" + self.refresh_token)
+        logger.info("refresh_token=" + self.user.map_profile.oauth_refresh_token)
         logger.info("params=" + params)
 
         r = requests.post(url, auth = basic_auth, headers = headers, data = params)
-        logger.info("RESULT=" + r.text)
+        if r.status_code != requests.codes.ok:
+            logger.info("  Refreshing token failed: " + str(r.status_code))
 
-        return False
+        logger.info("RESULT=" + r.text)
+        #[nii.mapcore_api]  INFO: RESULT=
+        #{
+        #   "access_token":"2423856290c011307ed69edd69bb243e515e06b3",
+        #   "expires_in":3600,
+        #   "token_type":"Bearer",
+        #   "scope":null,
+        #   "refresh_token":"179dfd1c6398bcd9c847d37021e43109f6ae46a0"
+        #}
+        j = r.json();
+        if "error" in j:
+            logger.info("  Refreshing token failed: " + j["error"])
+            if "error_description" in j:
+                logger.info("  Refreshing token failed: " + j["error_description"])
+            return False
+
+        self.user.map_profile.oauth_access_token = j["access_token"]
+        self.user.map_profile.oauth_refresh_token = j["refresh_token"]
+
+        #
+        # Update database.
+        #
+        self.user.map_profile.oauth_refresh_time = dt.utcnow()
+        self.user.map_profile.save()
+        self.user.save()
+
+        return True
 
     #
     # Get API version.
@@ -93,16 +114,27 @@ class MAPCore:
     def get_api_version(self):
         logger.info("* get_api_version")
 
-        time_stamp, signature = self.calc_signature()
+        count = 0
+        while count < 2:
+            time_stamp, signature = self.calc_signature()
 
-        url = map_hostname + map_api_path + "/version"
-        payload = { 'time_stamp': time_stamp, 'signature': signature }
-        headers = { "Authorization": "Bearer " + self.access_token }
+            url = map_hostname + map_api_path + "/version"
+            payload = { 'time_stamp': time_stamp, 'signature': signature }
+            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
 
-        r = requests.get(url, headers = headers, params = payload)
-        j = self.check_result(r)
+            r = requests.get(url, headers = headers, params = payload)
+            j = self.check_result(r)
+            if j != False:
+                return j
 
-        return j
+            if self.is_token_expired(r):
+                if self.refresh_token() == False:
+                    return False
+                count += 1
+            else:
+                return False
+
+        return False
 
     #
     # Get group information by group name.
@@ -110,26 +142,34 @@ class MAPCore:
     def get_group_by_name(self, group_name):
         logger.info("* get_group_by_name (group_name=" + group_name + ")")
 
-        time_stamp, signature = self.calc_signature()
+        count = 0
+        while count < 2:
+            time_stamp, signature = self.calc_signature()
 
-        url = map_hostname + map_api_path + "/mygroup"
-        payload = {
-            'time_stamp': time_stamp,
-            'signature': signature,
-            'searchWord': group_name.encode('utf-8')
-        }
-        headers = { "Authorization": "Bearer " + self.access_token }
+            url = map_hostname + map_api_path + "/mygroup"
+            payload = {
+                'time_stamp': time_stamp,
+                'signature': signature,
+                'searchWord': group_name.encode('utf-8')
+            }
+            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
 
-        r = requests.get(url, headers = headers, params = payload)
-        j = self.check_result(r)
-        if j == False:
-            return False
+            r = requests.get(url, headers = headers, params = payload)
+            j = self.check_result(r)
+            if j != False:
+                if len(j["result"]["groups"]) != 1:
+                    logger.info("  No or multiple group(s) matched")
+                    return False
+                return j
 
-        if len(j["result"]["groups"]) != 1:
-            logger.info("  No or multiple group(s) matched")
-            return False
+            if self.is_token_expired(r):
+                if self.refresh_token() == False:
+                    return False
+                count += 1
+            else:
+                return False
 
-        return j
+        return False
 
     #
     # Get group information by group key.
@@ -137,22 +177,30 @@ class MAPCore:
     def get_group_by_key(self, group_key):
         logger.info("* get_group_by_key (group_key=" + group_key + ")")
 
-        time_stamp, signature = self.calc_signature()
+        count = 0
+        while count < 2:
+            time_stamp, signature = self.calc_signature()
 
-        url = map_hostname + map_api_path + "/group/" + group_key
-        payload = { 'time_stamp': time_stamp, 'signature': signature }
-        headers = { "Authorization": "Bearer " + self.access_token }
+            url = map_hostname + map_api_path + "/group/" + group_key
+            payload = { 'time_stamp': time_stamp, 'signature': signature }
+            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
 
-        r = requests.get(url, headers = headers, params = payload)
-        j = self.check_result(r)
-        if j == False:
-            return False
+            r = requests.get(url, headers = headers, params = payload)
+            j = self.check_result(r)
+            if j != False:
+                if len(j["result"]["groups"]) != 1:
+                    logger.info("  No or multiple group(s) matched")
+                    return False
+                return j
 
-        if len(j["result"]["groups"]) != 1:
-            logger.info("  No or multiple group(s) matched")
-            return False
+            if self.is_token_expired(r):
+                if self.refresh_token() == False:
+                    return False
+                count += 1
+            else:
+                return False
 
-        return j
+        return False
 
     #
     # Create new group, and make it public, active and open_member.
@@ -163,39 +211,48 @@ class MAPCore:
         #
         # Create new group named "group_name".
         #
-        time_stamp, signature = self.calc_signature()
+        count = 0
+        while count < 2:
+            time_stamp, signature = self.calc_signature()
 
-        params = { }
-        params["request"] = {
-            "time_stamp": time_stamp,
-            "signature": signature
-        }
-        params["parameter"] = {
-            "group_name": group_name,
-            "group_name_en": group_name
-        }
-        params = json.dumps(params).encode('utf-8')
+            params = { }
+            params["request"] = {
+                "time_stamp": time_stamp,
+                "signature": signature
+            }
+            params["parameter"] = {
+                "group_name": group_name,
+                "group_name_en": group_name
+            }
+            params = json.dumps(params).encode('utf-8')
 
-        url = map_hostname + map_api_path + "/group"
-        headers = {
-            "Authorization": "Bearer " + self.access_token,
-            "Content-Type": "application/json; charset=utf-8",
-            "Content-Length": str(len(params))
-        }
+            url = map_hostname + map_api_path + "/group"
+            headers = {
+                "Authorization": "Bearer " + self.user.map_profile.oauth_access_token,
+                "Content-Type": "application/json; charset=utf-8",
+                "Content-Length": str(len(params))
+            }
 
-        r = requests.post(url, headers = headers, data = params)
-        j = self.check_result(r)
-        if (j == False):
-            return False
-        group_key = j["result"]["groups"][0]["group_key"]
-        logger.info("  New geoup has been created (group_key=" + group_key + ")")
+            r = requests.post(url, headers = headers, data = params)
+            j = self.check_result(r)
+            if j != False:
+                group_key = j["result"]["groups"][0]["group_key"]
+                logger.info("  New geoup has been created (group_key=" + group_key + ")")
 
-        #
-        # Change mode of group last created.
-        #
-        j = self.edit_group(group_key, group_name, "")
+                #
+                # Change mode of group last created.
+                #
+                j = self.edit_group(group_key, group_name, "")
+                return j
 
-        return j
+            if self.is_token_expired(r):
+                if self.refresh_token() == False:
+                    return False
+                count += 1
+            else:
+                return False
+
+        return False
 
     #
     # Change group properties.
@@ -203,35 +260,46 @@ class MAPCore:
     def edit_group(self, group_key, group_name, introduction):
         logger.info("* edit_group (group_name=" + group_name + ", introduction=" + introduction + ")")
 
-        time_stamp, signature = self.calc_signature()
+        count = 0
+        while count < 2:
+            time_stamp, signature = self.calc_signature()
 
-        params = { }
-        params["request"] = {
-            "time_stamp": time_stamp,
-            "signature": signature
-        }
-        params["parameter"] = {
-            "group_name": group_name,
-            "group_name_en": group_name,
-            "introduction": introduction,
-            "introduction_en": introduction,
-            "public": 1,
-            "active": 1,
-            "open_member": 1
-        }
-        params = json.dumps(params).encode('utf-8')
+            params = { }
+            params["request"] = {
+                "time_stamp": time_stamp,
+                "signature": signature
+            }
+            params["parameter"] = {
+                "group_name": group_name,
+                "group_name_en": group_name,
+                "introduction": introduction,
+                "introduction_en": introduction,
+                "public": 1,
+                "active": 1,
+                "open_member": 1
+            }
+            params = json.dumps(params).encode('utf-8')
 
-        url = map_hostname + map_api_path + "/group/" + group_key
-        headers = {
-            "Authorization": "Bearer " + self.access_token,
-            "Content-Type": "application/json; charset=utf-8",
-            "Content-Length": str(len(params))
-        }
+            url = map_hostname + map_api_path + "/group/" + group_key
+            headers = {
+                "Authorization": "Bearer " + self.user.map_profile.oauth_access_token,
+                "Content-Type": "application/json; charset=utf-8",
+                "Content-Length": str(len(params))
+            }
 
-        r = requests.post(url, headers = headers, data = params)
-        j = self.check_result(r)
+            r = requests.post(url, headers = headers, data = params)
+            j = self.check_result(r)
+            if j != False:
+                return j
 
-        return j
+            if self.is_token_expired(r):
+                if self.refresh_token() == False:
+                    return False
+                count += 1
+            else:
+                return False
+
+        return False
 
     #
     # Get member of group.
@@ -239,16 +307,27 @@ class MAPCore:
     def get_group_members(self, group_key):
         logger.info("* get_group_members (group_key=" + group_key + ")")
 
-        time_stamp, signature = self.calc_signature()
+        count = 0
+        while count < 2:
+            time_stamp, signature = self.calc_signature()
 
-        url = map_hostname + map_api_path + "/member/" + group_key
-        payload = { 'time_stamp': time_stamp, 'signature': signature }
-        headers = { "Authorization": "Bearer " + self.access_token }
+            url = map_hostname + map_api_path + "/member/" + group_key
+            payload = { 'time_stamp': time_stamp, 'signature': signature }
+            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
 
-        r = requests.get(url, headers = headers, params = payload)
-        j = self.check_result(r)
+            r = requests.get(url, headers = headers, params = payload)
+            j = self.check_result(r)
+            if j != False:
+                return j
 
-        return j
+            if self.is_token_expired(r):
+                if self.refresh_token() == False:
+                    return False
+                count += 1
+            else:
+                return False
+
+        return False
 
     #
     # Get joined group list.
@@ -256,16 +335,27 @@ class MAPCore:
     def get_my_groups(self):
         logger.info("* get_my_groups")
 
-        time_stamp, signature = self.calc_signature()
+        count = 0
+        while count < 2:
+            time_stamp, signature = self.calc_signature()
 
-        url = map_hostname + map_api_path + "/mygroup"
-        payload = { 'time_stamp': time_stamp, 'signature': signature }
-        headers = { "Authorization": "Bearer " + self.access_token }
+            url = map_hostname + map_api_path + "/mygroup"
+            payload = { 'time_stamp': time_stamp, 'signature': signature }
+            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
 
-        r = requests.get(url, headers = headers, params = payload)
-        j = self.check_result(r)
+            r = requests.get(url, headers = headers, params = payload)
+            j = self.check_result(r)
+            if j != False:
+                return j
 
-        return j
+            if self.is_token_expired(r):
+                if self.refresh_token() == False:
+                    return False
+                count += 1
+            else:
+                return False
+
+        return False
 
     #
     # Add to group.
@@ -273,29 +363,40 @@ class MAPCore:
     def add_to_group(self, group_key, eppn, admin):
         logger.info("* add_to_group (group_key=" + group_key + ", eppn=" + eppn + ", admin=" + str(admin) + ")")
 
-        time_stamp, signature = self.calc_signature()
+        count = 0
+        while count < 2:
+            time_stamp, signature = self.calc_signature()
 
-        params = { }
-        params["request"] = {
-            "time_stamp": time_stamp,
-            "signature": signature
-        }
-        params["parameter"] = {
-            "admin": admin
-        }
-        params = json.dumps(params).encode('utf-8')
+            params = { }
+            params["request"] = {
+                "time_stamp": time_stamp,
+                "signature": signature
+            }
+            params["parameter"] = {
+                "admin": admin
+            }
+            params = json.dumps(params).encode('utf-8')
 
-        url = map_hostname + map_api_path + "/member/" + group_key + "/" + eppn
-        headers = {
-            "Authorization": "Bearer " + self.access_token,
-            "Content-Type": "application/json; charset=utf-8",
-            "Content-Length": str(len(params))
-        }
+            url = map_hostname + map_api_path + "/member/" + group_key + "/" + eppn
+            headers = {
+                "Authorization": "Bearer " + self.user.map_profile.oauth_access_token,
+                "Content-Type": "application/json; charset=utf-8",
+                "Content-Length": str(len(params))
+            }
 
-        r = requests.post(url, headers = headers, data = params)
-        j = self.check_result(r)
+            r = requests.post(url, headers = headers, data = params)
+            j = self.check_result(r)
+            if j != False:
+                return j
 
-        return j
+            if self.is_token_expired(r):
+                if self.refresh_token() == False:
+                    return False
+                count += 1
+            else:
+                return False
+
+        return False
 
     #
     # Remove from group.
@@ -303,16 +404,27 @@ class MAPCore:
     def remove_from_group(self, group_key, eppn):
         logger.info("* remove_from_group (group_key=" + group_key + ", eppn=" + eppn + ")")
 
-        time_stamp, signature = self.calc_signature()
+        count = 0
+        while count < 2:
+            time_stamp, signature = self.calc_signature()
 
-        url = map_hostname + map_api_path + "/member/" + group_key + "/" + eppn
-        payload = { 'time_stamp': time_stamp, 'signature': signature }
-        headers = { "Authorization": "Bearer " + self.access_token }
+            url = map_hostname + map_api_path + "/member/" + group_key + "/" + eppn
+            payload = { 'time_stamp': time_stamp, 'signature': signature }
+            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
 
-        r = requests.delete(url, headers = headers, params = payload)
-        j = self.check_result(r)
+            r = requests.delete(url, headers = headers, params = payload)
+            j = self.check_result(r)
+            if j != False:
+                return j
 
-        return j
+            if self.is_token_expired(r):
+                if self.refresh_token() == False:
+                    return False
+                count += 1
+            else:
+                return False
+
+        return False
 
     #
     # Edit member.
@@ -333,7 +445,7 @@ class MAPCore:
     #
     def calc_signature(self):
         time_stamp = str(int(time.time()))
-        s = self.client_secret + self.access_token + time_stamp
+        s = self.client_secret + self.user.map_profile.oauth_access_token + time_stamp
 
         digest = hashlib.sha256(s.encode('utf-8')).hexdigest()
         return time_stamp, digest
@@ -344,8 +456,10 @@ class MAPCore:
     #
     def check_result(self, result):
         if result.status_code != requests.codes.ok:
+            s = result.headers["WWW-Authenticate"]
             logger.info("Result status: " + str(result.status_code))
-            logger.info("WWW-Authenticate: " + result.headers["WWW-Authenticate"])
+            logger.info("WWW-Authenticate: " + s)
+
             return False
 
         j = result.json()
@@ -356,130 +470,11 @@ class MAPCore:
 
         return j
 
-#
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#
-def aaaaa():
-
-    #
-    # テスト用メインプログラム
-    #
-    map_api_path        = os.getenv('MAPCORE_API_PATH', '/api2/v1')
-    map_clientid        = "2b336baae74ebc0e"
-    map_secret          = "80df3572a1d0fbb17db24b22d5637e1c"
-    map_access_token    = "185a6e99d498ebd85f43c43948452da9709526dd"
-    map_refresh_token   = "37164dc3f35735a0b2d7f7b6bcc191f0f7069165"
-
-    group_name = u"mAP連携テスト用01"
-    introduction = u"GRDM - mAP連携テスト用01"
-    user_eppn = "toshi-f@openidp.nii.ac.jp"
-
-    mapcore = MAPCore(map_clientid, map_secret,
-        map_access_token, map_refresh_token)
-
-    j = mapcore.get_api_version()
-    if j == False:
-        logger.debug("Error")
-        k = mapcore.refresh()
-        logger.info(json.dumps(k))
-        sys.exit()
-    else:
-        logger.info("  version=" + str(j["result"]["version"]))
-        logger.info("  revision=" + j["result"]["revision"])
-        logger.info("  author=" + j["result"]["author"])
-
-    #
-    # 新規グループ作成 (group_name をグループ名として)
-    #
-    '''
-    j = mapcore.create_group(group_name)
-    if j == False:
-        logger.debug("    Error")
-        sys.exit()
-    else:
-        logger.info(json.dumps(j, indent = 2))
-    '''
-
-    #
-    # group_name を名前に持つグループを検索
-    #
-    j = mapcore.get_group_by_name(group_name)
-    if j == False:
-        logger.info("    Error")
-        sys.exit()
-    else:
-        group_key = j["result"]["groups"][0]["group_key"]
-        logger.info("    Group key for " + group_name + " found, " + group_key)
-        logger.info(json.dumps(j, indent = 2))
-
-    #
-    # group_key で指定したグループの名前、紹介文を変更
-    #
-    j = mapcore.edit_group(group_key, group_name, introduction)
-    if j == False:
-        logger.info("    Error")
-        sys.exit()
-    else:
-        logger.info(json.dumps(j, indent = 2))
-
-    #
-    # group_key で指定したグループの情報を取得
-    #
-    j = mapcore.get_group_by_key(group_key)
-    if j == False:
-        logger.info("    Error")
-        sys.exit()
-    else:
-        logger.info(json.dumps(j, indent = 2))
-
-    #
-    # user_eppn を一般会員としてメンバーに追加
-    #
-    j = mapcore.add_to_group(group_key, user_eppn, MAPCore.MODE_MEMBER)
-    if j == False:
-        logger.info("    Error")
-        sys.exit()
-    else:
-        logger.info("    Completed")
-
-    #
-    # user_eppn をグループ管理者に変更
-    #
-    j = mapcore.edit_member(group_key, user_eppn, MAPCore.MODE_ADMIN)
-    if j == False:
-        logger.info("    Error")
-        sys.exit()
-    else:
-        logger.info("    Completed")
-
-    #
-    # 上記グループのメンバーリストを取得
-    #
-    j = mapcore.get_group_members(group_key)
-    if j == False:
-        logger.info("    Error")
-        sys.exit()
-    else:
-        for i in range(len(j["result"]["accounts"])):
-            logger.info("    eppn=" + j["result"]["accounts"][i]["eppn"] + ", mail=" + j["result"]["accounts"][i]["mail"] + ", admin=" + str(j["result"]["accounts"][i]["admin"]))
-
-    #
-    # user_eppn をメンバーから追加
-    #
-    j = mapcore.remove_from_group(group_key, user_eppn)
-    if j == False:
-        logger.info("    Error")
-        sys.exit()
-    else:
-        logger.info("    Completed")
-
-    #
-    # 自身が所属しいているグループのリストを取得
-    #
-    j = mapcore.get_my_groups()
-    if j == False:
-        logger.debug("Error")
-        sys.exit()
-    else:
-        for i in range(len(j["result"]["groups"])):
-            logger.info("    " + j["result"]["groups"][i]["group_name"] + " (key=" + j["result"]["groups"][i]["group_key"] + ")")
+    def is_token_expired(self, result):
+        if result.status_code != requests.codes.ok:
+            s = result.headers["WWW-Authenticate"]
+            if s.find("Access token expired") != -1:
+                return True
+            else:
+                return False
+        return False
