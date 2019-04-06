@@ -14,9 +14,6 @@ def post_migrate_signal(state, schema):
     emit_post_migrate_signal(3, False, 'default')
     logger.info('Starting guardian/groups migration [SQL]:')
 
-def reverse_func(state, schema):
-    return
-
 
 class Migration(migrations.Migration):
 
@@ -25,5 +22,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(post_migrate_signal, reverse_func),
+        migrations.RunPython(post_migrate_signal, migrations.RunPython.noop),
     ]

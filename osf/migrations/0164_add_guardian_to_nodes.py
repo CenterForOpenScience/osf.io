@@ -43,11 +43,9 @@ def reverse_guardian_migration(state, schema):
 # Forward migration - for each node, create a read, write, and admin Django group
 add_node_read_write_admin_auth_groups = """
     INSERT INTO auth_group (name)
-    (SELECT 'node_' || N.id || '_read' FROM osf_abstractnode AS N WHERE N.id > {start} AND N.id <= {end}
-    UNION
-    SELECT 'node_' || N.id || '_write' FROM osf_abstractnode AS N WHERE N.id > {start} AND N.id <= {end}
-    UNION
-    SELECT 'node_' || N.id || '_admin' FROM osf_abstractnode AS N WHERE N.id > {start} AND N.id <= {end});
+    SELECT regexp_split_to_table('node_' || N.id || '_read,node_' || N.id || '_write,node_' || N.id || '_admin', ',')
+    FROM osf_abstractnode N
+    WHERE N.id > {start} AND N.id <= {end};
     """
 
 # Forward migration - add read permissions to all node django read groups, add read/write perms
@@ -67,15 +65,7 @@ add_permissions_to_node_groups = """
     SELECT N.id as object_pk, G.id as group_id, PERM.id AS permission_id
     FROM osf_abstractnode AS N, auth_group G, auth_permission AS PERM
     WHERE G.name = 'node_' || N.id || '_write'
-    AND PERM.codename = 'read_node'
-    AND N.id > {start}
-    AND N.id <= {end};
-
-    INSERT INTO osf_nodegroupobjectpermission (content_object_id, group_id, permission_id)
-    SELECT N.id as object_pk, G.id as group_id, PERM.id AS permission_id
-    FROM osf_abstractnode AS N, auth_group G, auth_permission AS PERM
-    WHERE G.name = 'node_' || N.id || '_write'
-    AND PERM.codename = 'write_node'
+    AND (PERM.codename = 'read_node' OR PERM.codename = 'write_node')
     AND N.id > {start}
     AND N.id <= {end};
 
@@ -84,23 +74,7 @@ add_permissions_to_node_groups = """
     SELECT N.id as object_pk, G.id as group_id, PERM.id AS permission_id
     FROM osf_abstractnode AS N, auth_group G, auth_permission AS PERM
     WHERE G.name = 'node_' || N.id || '_admin'
-    AND PERM.codename = 'read_node'
-    AND N.id > {start}
-    AND N.id <= {end};
-
-    INSERT INTO osf_nodegroupobjectpermission (content_object_id, group_id, permission_id)
-    SELECT N.id as object_pk, G.id as group_id, PERM.id AS permission_id
-    FROM osf_abstractnode AS N, auth_group G, auth_permission AS PERM
-    WHERE G.name = 'node_' || N.id || '_admin'
-    AND PERM.codename = 'write_node'
-    AND N.id > {start}
-    AND N.id <= {end};
-
-    INSERT INTO osf_nodegroupobjectpermission (content_object_id, group_id, permission_id)
-    SELECT N.id as object_pk, G.id as group_id, PERM.id AS permission_id
-    FROM osf_abstractnode AS N, auth_group G, auth_permission AS PERM
-    WHERE G.name = 'node_' || N.id || '_admin'
-    AND PERM.codename = 'admin_node'
+    AND (PERM.codename = 'read_node' OR PERM.codename = 'write_node' OR PERM.codename = 'admin_node')
     AND N.id > {start}
     AND N.id <= {end};
     """
