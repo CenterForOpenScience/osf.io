@@ -18,27 +18,51 @@ NODE MIGRATION
  - Populates OSFUserGroups table with group id/user id pair
 """
 
+increment = 100000
+
+# Reverse migration - Drop NodeGroupObjectPermission table - table gives node django groups
+# permissions to node
+drop_node_group_object_permission_table = """
+    DELETE FROM osf_nodegroupobjectpermission NGOP
+    WHERE NGOP.content_object_id > {start} AND NGOP.content_object_id <= {end};
+    """
+
+# Reverse migration - Remove user membership in Node read/write/admin Django groups
+remove_users_from_node_django_groups = """
+    DELETE FROM osf_osfuser_groups
+    WHERE group_id IN (
+      SELECT id
+      FROM auth_group
+      WHERE name IN (
+        SELECT regexp_split_to_table('node_' || N.id || '_read,node_' || N.id || '_write,node_' || N.id || '_admin', ',')
+        FROM osf_abstractnode N
+        WHERE N.id > {start}
+        AND N.id <= {end}
+      )
+    );
+    """
+
+# Reverse migration - Remove admin/write/read node django groups
+remove_node_django_groups = """
+    DELETE FROM auth_group
+    WHERE name IN (
+        SELECT regexp_split_to_table('node_' || N.id || '_read,node_' || N.id || '_write,node_' || N.id || '_admin', ',')
+        FROM osf_abstractnode N
+        WHERE N.id > {start}
+        AND N.id <= {end}
+    );
+    """
+
 def reverse_guardian_migration(state, schema):
-    sql = """
-        -- Drop NodeGroupObjectPermission table - table gives node django groups
-        -- permissions to node
-        DELETE FROM osf_nodegroupobjectpermission;
+    migrations = [
+        {'sql': drop_node_group_object_permission_table, 'description': 'Deleting all records in NodeGroupObjectPermission table.'},
+        {'sql': remove_users_from_node_django_groups, 'description': 'Removing users from Node Django Groups.'},
+        {'sql': remove_node_django_groups, 'description': 'Deleting Node Django Groups.'}
+    ]
 
-        -- Remove user membership in Node read/write/admin Django groups
-        DELETE FROM osf_osfuser_groups
-        WHERE group_id IN (
-          SELECT id
-          FROM auth_group
-          WHERE name LIKE '%' || 'node_' || '%'
-        );
-
-        -- Remove admin/write/read node django groups
-        DELETE FROM auth_group
-        WHERE name LIKE '%' || 'node_' || '%';
-        """
-
-    with connection.cursor() as cursor:
-        cursor.execute(sql)
+    batch_node_migrations(state, migrations)
+    logger.info('Finished reversing guardian migration.')
+    return
 
 # Forward migration - for each node, create a read, write, and admin Django group
 add_node_read_write_admin_auth_groups = """
@@ -131,10 +155,6 @@ add_admin_contribs_to_admin_groups = """
     """
 
 def migrate_nodes_to_guardian(state, schema):
-    AbstractNode = state.get_model('osf', 'abstractnode')
-    max_nid = getattr(AbstractNode.objects.last(), 'id', 0)
-    increment = 100000
-
     migrations = [
         {'sql': add_node_read_write_admin_auth_groups, 'description': 'Creating node admin/write/read django groups:'},
         {'sql': add_permissions_to_node_groups, 'description': 'Adding permissions to node django groups:'},
@@ -142,6 +162,14 @@ def migrate_nodes_to_guardian(state, schema):
         {'sql': add_write_contribs_to_write_groups, 'description': 'Adding node write contribs to write django groups:'},
         {'sql': add_admin_contribs_to_admin_groups, 'description': 'Adding node admin contribs to admin django groups:'}
     ]
+
+    batch_node_migrations(state, migrations)
+    logger.info('Finished adding guardian to nodes.')
+    return
+
+def batch_node_migrations(state, migrations):
+    AbstractNode = state.get_model('osf', 'abstractnode')
+    max_nid = getattr(AbstractNode.objects.last(), 'id', 0)
 
     for migration in migrations:
         total_pages = int(ceil(max_nid / float(increment)))
@@ -160,8 +188,6 @@ def migrate_nodes_to_guardian(state, schema):
                     end=page_end
                 ))
             page_start = page_end
-    logger.info('Finished adding guardian to nodes.')
-    return
 
 class Migration(migrations.Migration):
 

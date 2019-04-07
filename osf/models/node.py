@@ -196,7 +196,7 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
 
     def get_nodes_for_user(self, user, permission=READ_NODE, base_queryset=None, include_public=False):
         """
-        Return all AbstractNodes that the user has explicit permissions to - either through contributorship or group membership
+        Return all AbstractNodes that the user has permissions to - either through contributorship or group membership.
         - similar to guardian.get_objects_for_user(self, READ_NODE, AbstractNode, with_superuser=False).  If include_public is True,
         queryset is expanded to include public nodes.
 
