@@ -43,6 +43,8 @@ class MAPCore:
     MODE_MEMBER = 0     # Ordinary member
     MODE_ADMIN = 2      # Administrator member
 
+    REFRESH_LOCK = "/var/run/lock/refresh.lck"
+
     user = False
     client_id = False
     client_secret = False
@@ -63,6 +65,8 @@ class MAPCore:
 
         logger.debug("MAPCore::refresh_token:")
 
+        self.lock_refresh()
+
         url = map_hostname + map_refresh_path
         basic_auth = ( self.client_id, self.client_secret )
         headers = {
@@ -78,13 +82,17 @@ class MAPCore:
         r = requests.post(url, auth = basic_auth, headers = headers, data = params)
         if r.status_code != requests.codes.ok:
             logger.info("MAPCore::refresh_token: Refreshing token failed: status_code=" + str(r.status_code))
+            self.unlock_refresh()
+            return False
 
         j = r.json();
         if "error" in j:
             logger.info("MAPCore::refresh_token: Refreshing token failed: " + j["error"])
             if "error_description" in j:
                 logger.info("MAPCore::refresh_token: Refreshing token failed: " + j["error_description"])
+            self.unlock_refresh()
             return False
+
         logger.debug("  New access_token: " + j["access_token"])
         logger.debug("  New refresh_token: " + j["refresh_token"])
 
@@ -98,7 +106,28 @@ class MAPCore:
         self.user.map_profile.save()
         self.user.save()
 
+        self.unlock_refresh()
+
         return True
+
+    #
+    # Lock refresh process.
+    #
+    def lock_refresh(self):
+
+        while True:
+            fd = os.open(self.REFRESH_LOCK, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0666)
+            if fd >= 0:
+                os.close(fd)
+                return
+            time.sleep(1)
+
+    #
+    # Unlock refresh process.
+    #
+    def unlock_refresh(self):
+
+        os.unlink(self.REFRESH_LOCK)
 
     #
     # Get API version.
