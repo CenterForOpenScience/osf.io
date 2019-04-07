@@ -86,12 +86,12 @@ if __name__ == '__main__':
     #
     j = mapcore.get_api_version()
     if j == False:
-        logger.debug("Error")
+        logger.info("Error: " + mapcore.get_last_error())
         sys.exit()
     else:
-        logger.info("  version=" + str(j["result"]["version"]))
-        logger.info("  revision=" + j["result"]["revision"])
-        logger.info("  author=" + j["result"]["author"])
+        logger.info("version=" + str(j["result"]["version"]))
+        logger.info("revision=" + j["result"]["revision"])
+        logger.info("author=" + j["result"]["author"])
 
     #
     # 新規グループ作成 (group_name をグループ名として)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     '''
     j = mapcore.create_group(group_name)
     if j == False:
-        logger.debug("    Error")
+        logger.info("Error: " + mapcore.get_last_error())
         sys.exit()
     else:
         logger.info(json.dumps(j, indent = 2))
@@ -110,11 +110,11 @@ if __name__ == '__main__':
     #
     j = mapcore.get_group_by_name(group_name)
     if j == False:
-        logger.info("    Error")
+        logger.info("Error: " + mapcore.get_last_error())
         sys.exit()
     else:
         group_key = j["result"]["groups"][0]["group_key"]
-        logger.info("    Group key for " + group_name + " found, " + group_key)
+        logger.info("Group key for " + group_name + " found, " + group_key)
         logger.info(json.dumps(j, indent = 2))
 
     #
@@ -122,7 +122,7 @@ if __name__ == '__main__':
     #
     j = mapcore.edit_group(group_key, group_name, introduction)
     if j == False:
-        logger.info("    Error")
+        logger.info("Error: " + mapcore.get_last_error())
         sys.exit()
     else:
         logger.info(json.dumps(j, indent = 2))
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     #
     j = mapcore.get_group_by_key(group_key)
     if j == False:
-        logger.info("    Error")
+        logger.info("Error: " + mapcore.get_last_error())
         sys.exit()
     else:
         logger.info(json.dumps(j, indent = 2))
@@ -142,27 +142,27 @@ if __name__ == '__main__':
     #
     j = mapcore.add_to_group(group_key, user_eppn, MAPCore.MODE_MEMBER)
     if j == False:
-        logger.info("    Error")
+        logger.info("Error: " + mapcore.get_last_error())
         sys.exit()
     else:
-        logger.info("    Completed")
+        logger.info("Completed")
 
     #
     # user_eppn をグループ管理者に変更
     #
     j = mapcore.edit_member(group_key, user_eppn, MAPCore.MODE_ADMIN)
     if j == False:
-        logger.info("    Error")
+        logger.info("Error: " + mapcore.get_last_error())
         sys.exit()
     else:
-        logger.info("    Completed")
+        logger.info("Completed")
 
     #
     # 上記グループのメンバーリストを取得
     #
     j = mapcore.get_group_members(group_key)
     if j == False:
-        logger.info("    Error")
+        logger.info("Error: " + mapcore.get_last_error())
         sys.exit()
     else:
         # logger.info(json.dumps(j).encode('utf-8'))
@@ -174,24 +174,24 @@ if __name__ == '__main__':
                 else:
                     mail = eppn
                 admin = str(j["result"]["accounts"][i]["admin"])
-                logger.info("    eppn=" + eppn + ", mail=" + mail + ", admin=" + admin)
+                logger.info("eppn=" + eppn + ", mail=" + mail + ", admin=" + admin)
 
     #
     # user_eppn をメンバーから追加
     #
     j = mapcore.remove_from_group(group_key, user_eppn)
     if j == False:
-        logger.info("    Error")
+        logger.info("Error: " + mapcore.get_last_error())
         sys.exit()
     else:
-        logger.info("    Completed")
+        logger.info("Completed")
 
     #
     # 自身が所属しいているグループのリストを取得
     #
     j = mapcore.get_my_groups()
     if j == False:
-        logger.debug("Error")
+        logger.info("Error: " + mapcore.get_last_error())
         sys.exit()
     else:
         for i in range(len(j["result"]["groups"])):
@@ -200,5 +200,5 @@ if __name__ == '__main__':
     #
     # 終了
     #
-    logger.info("** Function completed")
+    logger.info("Function completed")
     sys.exit()
