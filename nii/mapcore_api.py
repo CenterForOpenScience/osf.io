@@ -46,6 +46,7 @@ class MAPCore:
     user = False
     client_id = False
     client_secret = False
+    last_error = False
 
     #
     # Constructor.
@@ -150,8 +151,9 @@ class MAPCore:
             r = requests.get(url, headers = headers, params = payload)
             j = self.check_result(r)
             if j != False:
-                if len(j["result"]["groups"]) != 1:
-                    logger.debug("  No or multiple group(s) matched")
+                if len(j["result"]["groups"]) == 0:
+                    self.last_error = "Group not found"
+                    logger.debug("  Group not found")
                     return False
                 return j
 
@@ -182,8 +184,9 @@ class MAPCore:
             r = requests.get(url, headers = headers, params = payload)
             j = self.check_result(r)
             if j != False:
-                if len(j["result"]["groups"]) != 1:
-                    logger.debug("  No or multiple group(s) matched")
+                if len(j["result"]["groups"]) == 0:
+                    self.last_error = "Group not found"
+                    logger.debug("  Group not found")
                     return False
                 return j
 
@@ -442,6 +445,13 @@ class MAPCore:
         return j
 
     #
+    # Get last error.
+    #
+    def get_last_error(self):
+
+        return self.last_error
+
+    #
     # Calculate API signature.
     #
     def calc_signature(self):
@@ -458,17 +468,28 @@ class MAPCore:
     #
     def check_result(self, result):
 
+        self.last_error = ""
+
         if result.status_code != requests.codes.ok:
             s = result.headers["WWW-Authenticate"]
             logger.info("MAPCore::check_result: status_code=" + str(result.status_code))
             logger.info("MAPCore::check_result: WWW-Authenticate=" + s)
 
+            if s.find("Access token expired") != -1:
+                self.last_error = "Access token expired"
+            else:
+                self.last_error = s
+
             return False
 
         j = result.json()
         if j["status"]["error_code"] != 0:
+            s = j["status"]["error_msg"]
             logger.info("MAPCore::check_result: error_code=" + str(j["status"]["error_code"]))
-            logger.info("MAPCore::check_result: error_msg=" + j["status"]["error_msg"])
+            logger.info("MAPCore::check_result: error_msg=" + s)
+
+            self.last_error = s
+
             return False
 
         return j
@@ -481,4 +502,5 @@ class MAPCore:
                 return True
             else:
                 return False
+
         return False
