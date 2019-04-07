@@ -46,6 +46,7 @@ from osf.models.validators import validate_email, validate_social, validate_hist
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
+from osf.utils.permissions import PERMISSIONS
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import filters, mails
@@ -780,30 +781,44 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.save()
 
     def _merge_users_preprints(self, user):
-        from osf.models.preprint import Preprint, PreprintContributor
-        users_preprint_groups = user.groups.filter(groupobjectpermission__content_type__model=Preprint._meta.verbose_name)
+        """
+        Preprints use guardian.  The PreprintContributor table stores order and bibliographic information.
+        Permissions are stored on guardian tables.  PreprintContributor information needs to be transferred
+        from user -> self, and preprint permissions need to be transferred from user -> self.
+        """
+        from osf.models.preprint import PreprintContributor
 
-        # If both users are already contribs we will violate unique constraint so take the highest permission group and
-        # just remove old contrib from group and contrib table
-        for preprint_contributor in PreprintContributor.objects.filter(preprint__in=self.preprints.all()):
-            preprint_groups = set(preprint_contributor.preprint.group_objects)
-            shared_groups = preprint_groups.intersection(set(users_preprint_groups))
-            if shared_groups:
-                highest_group = max(shared_groups)
-                self.groups.add(highest_group)
+        # Loop through `user`'s preprints
+        for preprint in user.preprints.all():
+            user_contributor = PreprintContributor.objects.get(preprint=preprint, user=user)
+            user_perms = user_contributor.permission
 
-            if preprint_contributor.user == user:
-                preprint_contributor.delete()
+            # Both `self` and `user` are contributors on the preprint
+            if preprint.is_contributor(self) and preprint.is_contributor(user):
+                self_contributor = PreprintContributor.objects.get(preprint=preprint, user=self)
+                self_perms = self_contributor.permission
 
-        # Transfer remaining permissions
-        self.groups.add(*users_preprint_groups)
-        user.groups.remove(*users_preprint_groups)
+                max_perms_index = max(PERMISSIONS.index(self_perms), PERMISSIONS.index(user_perms))
+                # Add the highest of `self` perms or `user` perms to `self`
+                preprint.set_permissions(user=self, permissions=PERMISSIONS[max_perms_index])
 
-        # Update contributor table
-        PreprintContributor.objects.filter(user=user).update(user=self)
+                if not self_contributor.visible and user_contributor.visible:
+                    # if `self` is not visible, but `user` is visible, make `self` visible.
+                    preprint.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+                # Now that perms and bibliographic info have been transferred to `self` contributor,
+                # delete `user` contributor
+                user_contributor.delete()
+            else:
+                # `self` is not a contributor, but `user` is.  Transfer `user` permissions and
+                # contributor information to `self`.  Remove permissions from `user`.
+                preprint.contributor_set.filter(user=user).update(user=self)
+                preprint.add_permission(self, user_perms)
 
-        # Update creator status
-        Preprint.objects.filter(creator=user).update(creator=self)
+            if preprint.creator == user:
+                preprint.creator = self
+
+            preprint.remove_permission(user, user_perms)
+            preprint.save()
 
     def disable_account(self):
         """

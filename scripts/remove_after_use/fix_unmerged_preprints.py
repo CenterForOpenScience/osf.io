@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 def main():
 
     # retrieving users that are merged into oblivion
-    merged_users = OSFUser.objects.filter(merged_by__isnull=False)
+    merged_users = OSFUser.objects.filter(merged_by__isnull=False, preprints__isnull=False)
 
     for user in merged_users:
         merged_by = user.merged_by
