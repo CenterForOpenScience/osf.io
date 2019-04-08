@@ -112,10 +112,10 @@ class Email(BaseModel):
         return self.address
 
 class CGGroup(BaseModel):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, unique=False)
     # Group identifier for mAP Core API
-    geoup_key = models.CharField(max_length=255,
-        unique=True, blank=True, null=True, db_index=False)
+    group_key = models.CharField(max_length=255,
+                                 unique=True, blank=True, null=True, db_index=False)
     def __unicode__(self):
         return self.name
 
