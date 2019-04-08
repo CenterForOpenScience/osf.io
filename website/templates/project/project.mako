@@ -35,6 +35,11 @@
             <div class="clearfix visible-md-block"></div>
             <div class="col-lg-4">
                 <div class="btn-toolbar node-control pull-right">
+                    % if node.get('storage_usage'):
+                    <div class="btn-group">
+                        <button style="pointer-events: auto;" class="btn disabled" data-toggle="tooltip" data-placement="bottom" title="This is the amount of OSF Storage used for this project.">${node['storage_usage']}</button>
+                    </div>
+                    % endif
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>

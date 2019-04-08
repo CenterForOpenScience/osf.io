@@ -25,8 +25,12 @@ class AbstractRequest(BaseModel, ObjectIDMixin):
 
 
 class NodeRequest(AbstractRequest, NodeRequestableMixin):
+    """ Request for Node Access
+    """
     target = models.ForeignKey('AbstractNode', related_name='requests')
 
 
 class PreprintRequest(AbstractRequest, PreprintRequestableMixin):
+    """ Request for Preprint Withdrawal
+    """
     target = models.ForeignKey('Preprint', related_name='requests')

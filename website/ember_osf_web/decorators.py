@@ -34,3 +34,8 @@ def ember_flag_is_active(flag_name):
 def storage_i18n_flag_active():
     request.user = _get_current_user() or MockUser()
     return waffle.flag_is_active(request, features.STORAGE_I18N)
+
+
+def storage_usage_flag_active():
+    request.user = _get_current_user() or MockUser()
+    return waffle.flag_is_active(request, features.STORAGE_USAGE)
