@@ -747,11 +747,12 @@ def _view_project(node, auth, primary=False,
     except Contributor.DoesNotExist:
         contributor = None
 
-    if node.group is not None and user.groups_sync is not None and not user.groups_sync.filter(name=node.group.name).exists():
-        from nii import project_sync
-        project_sync.project_sync_one(node, None)
-        user.groups_sync.add(node.group)  # checked
-        user.save()
+    ## sync with v1 API may be race with mAP core API --> disabled by HN
+    ##if node.group is not None and user.groups_sync is not None and not user.groups_sync.filter(name=node.group.name).exists():
+    ##    from nii import project_sync
+    ##    project_sync.project_sync_one(node, None)
+    ##    user.groups_sync.add(node.group)  # checked
+    ##    user.save()
 
     in_bookmark_collection = False
     bookmark_collection_id = ''

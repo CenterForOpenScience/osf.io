@@ -203,11 +203,10 @@ def compare_members(rdm_members, map_members, to_map):
     delete = []
     upg = []
     downg = []
-    count = max(len(rdm_members), len(map_members))
-    while rdm_index < count and map_index < count:
-        if map_members[map_index].eppn == rdm_members[rdm_index].eppn:
+    while rdm_index < len(rdm_members) and map_index < len(map_members):
+        if map_members[map_index]['eppn'] == rdm_members[rdm_index].eppn:
             # exist in both -> check admin
-            if rdm_members[rdm_index].is_admin():
+            if rdm_members[rdm_index].is_admin:
                 if map_members[map_index]['admin'] == 1 or map_members[map_index]['admin'] == 2:
                     # admin @ both
                     pass
@@ -230,7 +229,7 @@ def compare_members(rdm_members, map_members, to_map):
             rdm_index += 1
             map_index += 1
 
-        elif map_members[map_index].eppn < rdm_members[rdm_index].eppn:
+        elif map_members[map_index]['eppn'] < rdm_members[rdm_index].eppn:
             # exist in map only
             if to_map:
                 delete.append(map_members[map_index])
@@ -245,6 +244,12 @@ def compare_members(rdm_members, map_members, to_map):
             else:
                 delete.append(rdm_members[rdm_index])
             rdm_index += 1
+    while to_map and rdm_index < len(rdm_members):
+        add.append(rdm_members[rdm_index])
+        rdm_index += 1
+    while not to_map and map_index < len(map_members):
+        add.append(map_members[map_index])
+        map_index += 1
 
     return add, delete, upg, downg
     ### to_map:
@@ -363,6 +368,7 @@ def is_node_admin(node, user):
 
 # sync mAP group to GRDM
 def mapcore_group_sync_to_rdm(map_group):
+    ## TODO: mAPから削除されたことは検出できない。グループ同士の比較を行うのには、ユーザが所属するグループの抽出と総なめが必要
     '''
     sync group members mAP Group -> RDM Project
     it will scan mAP groups which user belongs, and sync members to to GRDM
@@ -372,7 +378,7 @@ def mapcore_group_sync_to_rdm(map_group):
     from framework.auth import Auth
     from osf.utils.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-    logger.info("mapcore_group_sync_to_rdm started.")
+    logger.info("mapcore_group_sync_to_rdm('" + map_group['group_name'] + "') is started.")
 
     # check conditions to sync
     if not map_group['active']:
@@ -385,43 +391,67 @@ def mapcore_group_sync_to_rdm(map_group):
         logger.info("mAP group [" + map_group['group_name'] + "] member list is not public  no sync")
         return
 
-    # search owner accounts
-    owner = None
-    for admin_eppn in map_group['group_admin_eppn']:
-        try:
-            adminu = OSFUser.objects.get(eppn=admin_eppn)
-        except Exception as e:
-            logger.info("mAP group admin [" + admin_eppn + "] dosn't have account in GRDM.")
-            continue
-        owner = adminu
-        break
-    if owner == None:
-        logger.warn("all of mAP group [" + map_group['group_name'] + "] admins don't have account in GRDM")
-        return
-    logger.info("mAP group [" + map_group['group_name'] + "] admin [" + owner.eppn + "] is select to owner")
+    # search existing GRDM project
+    node = None
+    node_candidate = None
+    rdm_candidates = Node.objects.filter(title=map_group['group_name'])
+    if rdm_candidates.count() > 0:
+        for rdm_proj in rdm_candidates:
+            logger.debug("RDM proj [" + rdm_proj.title + "] is a candidate to sync")
+            if rdm_proj.is_deleted:
+                logger.info("RDM projet [" + rdm_proj.title + "] is deleted.")
+                continue
+            if hasattr(rdm_proj, "group") and hasattr(rdm_proj.group, "group_key"):
+                logger.debug("RDM proj [" + rdm_proj.title + "] has key [" + rdm_proj.group.group_key,
+                             "] and mAP group has [" + map_group['group_key'] + ".")
+                if rdm_proj.group.group_key == map_group['group_key']:
+                    node = rdm_proj  # exactly match
+                    break
+            else:
+                logger.info("Node [" + rdm_proj.title + "] doesn't have mAP group link.")
+                if node_candidate == None:
+                    node_candidate = rdm_proj  # title match but has no key
+        if node == None:
+            node = node_candidate
 
-    # create or get GRDM Project
-    node = Node(title=map_group['group_name'], creator=owner, is_public=True, category='project')
-    if node.is_deleted:
-        logger.info("RDM projet [" + node.title + "] is deleted.  sync aborted.")
-        return
-    # set mAP group info
-    map_info, created = CGGroup.objects.get_or_create(group_key=map_group['group_key'])
-    map_info.name = map_group['group_name']
-    #map_info.save()
-    node.group = map_info
-    node.description = map_group['introduction']
-    node.save()  # it would assing _id
+    # create new Node
+    if node == None:
+        # search candidate of creator accounts
+        owner = None
+        for admin_eppn in map_group['group_admin_eppn']:
+            try:
+                adminu = OSFUser.objects.get(eppn=admin_eppn)
+            except Exception as e:
+                logger.info("mAP group admin [" + admin_eppn + "] dosn't have account in GRDM.")
+                continue
+            owner = adminu
+            break
+        if owner == None:
+            logger.warn("all of mAP group [" + map_group['group_name'] + "] admins don't have account in GRDM")
+            return
+        logger.info("mAP group [" + map_group['group_name'] + "] admin [" + owner.eppn + "] is select to owner")
+
+        # create new GRDM Project
+        node = Node(title=map_group['group_name'], creator=owner, is_public=True, category='project')
+        node.save()
+
+        # set mAP group info
+        map_info, created = CGGroup.objects.update_or_create(group_key=map_group['group_key'])
+        map_info.name = map_group['group_name']
+        #map_info.save()  # it would assing _id
+        node.group = map_info
+        node.description = map_group['introduction']
 
     # make contirbutor list
     rdm_member_list = []
-    for rdm_user in node.contoributors.all():
-        rdm_member_list.append(RDMmember(node, rdm_user))
+    if hasattr(node, "contributors"):
+        for rdm_user in node.contributors.all():
+            rdm_member_list.append(RDMmember(node, rdm_user))
 
-    # compare
-    rdm_member_list.sort(key=attrgetter('eppn'))
+    # compare members
+    rdm_member_list_s = sorted(rdm_member_list, key=attrgetter('eppn'))
     map_member_list = sorted(map_group['group_member_list'], key=lambda x:x['eppn'])
-    add, delete, upg, downg = compare_members(rdm_member_list, map_member_list, False)
+    add, delete, upg, downg = compare_members(rdm_member_list_s, map_member_list, False)
     ###   add: map_member, delete: RDMmember,  upg: RDMmember,  downg: RDMmember
 
     # apply members to RDM
@@ -436,7 +466,7 @@ def mapcore_group_sync_to_rdm(map_group):
             node.add_contributor(rdmu, log=True, save=False, permissions=CREATOR_PERMISSIONS)
         else:
             logger.info("mAP member [" + mapu['eppn'] + "] is registed as contributor MEMBER.")
-            node.add_contributor(rdmu, log=True, save=False)
+            node.add_contributor(rdmu, log=True, save=False, permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS)
     for rdmu in delete:
         auth = Auth(user=rdmu)
         node.remove_contributor(rdmu, auth, log=True)
