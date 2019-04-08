@@ -123,13 +123,6 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
-    #   test_cannot_access_withdrawn_affiliated_institutions
-        registration.save()
-        url = '/{}registrations/{}/institutions/'.format(
-            API_BASE, registration._id)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
-
     def test_cannot_access_withdrawn_comments(
             self, app, user, project_public, pointer_public,
             registration, withdrawn_registration):
