@@ -191,7 +191,7 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'kind', 'file'
                         , 'size', LATEST_VERSION.size
                         , 'downloads',  COALESCE(DOWNLOAD_COUNT, 0)
-                        , 'version', (SELECT COUNT(*) FROM osf_basefilenode_versions WHERE osf_basefilenode_versions.basefilenode_id = F.id)
+                        , 'version', (SELECT COUNT(*) FROM osf_basefileversionsthrough WHERE osf_basefileversionsthrough.basefilenode_id = F.id)
                         , 'contentType', LATEST_VERSION.content_type
                         , 'modified', LATEST_VERSION.created
                         , 'created', EARLIEST_VERSION.created
@@ -212,15 +212,15 @@ def osfstorage_get_children(file_node, **kwargs):
             FROM osf_basefilenode AS F
             LEFT JOIN LATERAL (
                 SELECT * FROM osf_fileversion
-                JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
-                WHERE osf_basefilenode_versions.basefilenode_id = F.id
+                JOIN osf_basefileversionsthrough ON osf_fileversion.id = osf_basefileversionsthrough.fileversion_id
+                WHERE osf_basefileversionsthrough.basefilenode_id = F.id
                 ORDER BY created DESC
                 LIMIT 1
             ) LATEST_VERSION ON TRUE
             LEFT JOIN LATERAL (
                 SELECT * FROM osf_fileversion
-                JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
-                WHERE osf_basefilenode_versions.basefilenode_id = F.id
+                JOIN osf_basefileversionsthrough ON osf_fileversion.id = osf_basefileversionsthrough.fileversion_id
+                WHERE osf_basefileversionsthrough.basefilenode_id = F.id
                 ORDER BY created ASC
                 LIMIT 1
             ) EARLIEST_VERSION ON TRUE
@@ -239,9 +239,9 @@ def osfstorage_get_children(file_node, **kwargs):
               SELECT EXISTS(
                 SELECT (1) FROM osf_fileversionusermetadata
                   INNER JOIN osf_fileversion ON osf_fileversionusermetadata.file_version_id = osf_fileversion.id
-                  INNER JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
+                  INNER JOIN osf_basefileversionsthrough ON osf_fileversion.id = osf_basefileversionsthrough.fileversion_id
                   WHERE osf_fileversionusermetadata.user_id = %s
-                  AND osf_basefilenode_versions.basefilenode_id = F.id
+                  AND osf_basefileversionsthrough.basefilenode_id = F.id
                 LIMIT 1
               )
             ) SEEN_FILE ON TRUE

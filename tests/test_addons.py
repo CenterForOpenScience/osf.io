@@ -170,7 +170,7 @@ class TestAddonAuth(OsfTestCase):
 
         # Add a new version, make sure that does not have a record
         version = FileVersionFactory()
-        test_file.versions.add(version)
+        test_file.add_version(version)
         test_file.save()
 
         versions = test_file.versions.order_by('created')
@@ -737,7 +737,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_second_test_file(self):
@@ -750,7 +750,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test2',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_uppercased_ext_test_file(self):
@@ -763,7 +763,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test2',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_ext_test_file(self):
@@ -776,7 +776,7 @@ class TestAddonFileViews(OsfTestCase):
             materialized_path='/test/Test2',
         )
         ret.save()
-        ret.versions.add(version)
+        ret.add_version(version)
         return ret
 
     def get_mako_return(self):
