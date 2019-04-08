@@ -1650,3 +1650,10 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         if type(addon) == bool:
             addon = None
         return addon
+
+class NodeCreatorQuotaSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    title = ser.CharField(required=True)
+
+    class Meta:
+        type_ = 'creator_quota'
