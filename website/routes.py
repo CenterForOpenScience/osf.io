@@ -1828,6 +1828,17 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        # Quota management
+        Rule(
+            [
+                '/project/<pid>/creator_quota/',
+                '/project/<pid>/node/<nid>/creator_quota/',
+            ],
+            ['get'],
+            project_views.quota.creator_quota,
+            json_renderer,
+        ),
+
     ], prefix='/api/v1')
 
     # Set up static routing for addons and providers
