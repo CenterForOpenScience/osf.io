@@ -826,3 +826,47 @@ class TestSaveUsedQuota(OsfTestCase):
                 }
             }
         )
+
+class TestQuotaApi(OsfTestCase):
+    def setUp(self):
+        super(TestQuotaApi, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+    def test_private_project_authenticated(self):
+        response = self.app.get(
+            self.node.api_url_for('creator_quota'),
+            auth=self.user.auth
+        )
+        assert_equal(response.status_code, 200)
+        assert_equal(response.json['max'], api_settings.DEFAULT_MAX_QUOTA * 1024 ** 3)
+        assert_equal(response.json['used'], 0)
+
+    def test_private_project_unauthenticated(self):
+        response = self.app.get(
+            self.node.api_url_for('creator_quota'),
+            expect_errors=True
+        )
+        assert_equal(response.status_code, 302)
+
+    def test_public_project(self):
+        self.node.is_public = True
+        self.node.save()
+
+        response = self.app.get(
+            self.node.api_url_for('creator_quota')
+        )
+        assert_equal(response.status_code, 200)
+        assert_equal(response.json['max'], api_settings.DEFAULT_MAX_QUOTA * 1024 ** 3)
+        assert_equal(response.json['used'], 0)
+
+    def test_used_half_custom_quota(self):
+        UserQuota.objects.create(user=self.user, max_quota=200, used=100 * 1024 ** 3)
+
+        response = self.app.get(
+            self.node.api_url_for('creator_quota'),
+            auth=self.user.auth
+        )
+        assert_equal(response.status_code, 200)
+        assert_equal(response.json['max'], 200 * 1024 ** 3)
+        assert_equal(response.json['used'], 100 * 1024 ** 3)
