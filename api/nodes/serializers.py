@@ -1653,7 +1653,22 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
 
 class NodeCreatorQuotaSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
-    title = ser.CharField(required=True)
+    max = ser.SerializerMethodField()
+    used = ser.SerializerMethodField()
+
+    def get_max(self, obj):
+        try:
+            max_quota = obj.creator.userquota.max_quota
+        except ObjectDoesNotExist:
+            max_quota = DEFAULT_MAX_QUOTA
+        return max_quota * 1024 ** 3
+
+    def get_used(self, obj):
+        try:
+            used_quota = obj.creator.userquota.used
+        except ObjectDoesNotExist:
+            used_quota = quota.used_quota(obj.creator._id)
+        return used_quota
 
     class Meta:
         type_ = 'creator_quota'
