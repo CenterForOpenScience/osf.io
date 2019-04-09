@@ -39,6 +39,20 @@ class TestPreprintMetrics:
         return AuthUserFactory()
 
     @pytest.fixture
+    def other_admin_user(self):
+        user = AuthUserFactory()
+        user.is_staff = True
+        user.save()
+        return user
+
+    @pytest.fixture
+    def other_non_admin_user(self):
+        user = AuthUserFactory()
+        user.add_system_tag('preprint_metrics')
+        user.save()
+        return user
+
+    @pytest.fixture
     def preprint(self, user):
         preprint = PreprintFactory(creator=user)
         return preprint
@@ -123,7 +137,8 @@ class TestPreprintMetrics:
     @pytest.mark.parametrize('metric_name', ['downloads', 'views'])
     @mock.patch('api.metrics.utils.timezone.now')
     def test_preprint_list_with_metrics_fails(self, mock_timezone, app, user, base_url, preprint, preprint_two,
-                                                preprint_three, metric_name, other_user, project, project_two):
+                                              preprint_three, metric_name, other_user, project, project_two,
+                                              other_admin_user, other_non_admin_user):
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         url = '{}{}/'.format(base_url, metric_name)
 
@@ -132,8 +147,16 @@ class TestPreprintMetrics:
         res = app.get(one_preprint_url, expect_errors=True)
         assert res.status_code == 401
 
-        # test logged in non-metrics user cannot access
+        # test logged in non-metrics, non-admin user cannot access
         res = app.get(one_preprint_url, auth=other_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test logged in, non-metrics, admin user cannot access
+        res = app.get(one_preprint_url, auth=other_admin_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test logged in, metrics, non-admin user cannot access
+        res = app.get(one_preprint_url, auth=other_non_admin_user.auth, expect_errors=True)
         assert res.status_code == 403
 
     @pytest.mark.skip('Return results will be entirely mocked so does not make a lot of sense to run on travis.')

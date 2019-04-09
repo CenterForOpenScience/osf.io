@@ -41,7 +41,9 @@ class PreprintMetricMixin(JSONAPIBaseView):
         """
         preprint_guid_string = query_params.get('guids')
         if not preprint_guid_string:
-            raise ValidationError('You must provide one or more preprint guids to gather metrics for')
+            raise ValidationError(
+                'To gather metrics for preprints, you must provide one or more preprint ' +
+                'guids in the `guids` query parameter.')
         preprint_guids = preprint_guid_string.split(',')
 
         return search.filter('terms', preprint_id=preprint_guids)

@@ -7,3 +7,4 @@ class IsPreprintMetricsUser(permissions.BasePermission):
         user = request.user
         if user.system_tags.filter(name='preprint_metrics').exists():
             return True
+        return False
