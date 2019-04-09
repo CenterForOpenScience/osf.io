@@ -1652,6 +1652,10 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         return addon
 
 class NodeCreatorQuotaSerializer(JSONAPISerializer):
+    """
+    Serializes the quota information of a project creator,
+    sending the maxiumum quota and the currently used quota.
+    """
     id = IDField(source='_id', read_only=True)
     max = ser.SerializerMethodField()
     used = ser.SerializerMethodField()

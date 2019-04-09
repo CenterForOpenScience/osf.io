@@ -2023,6 +2023,9 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
 
 
 class NodeCreatorQuota(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """
+    View for getting the quota information of a project creator.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
