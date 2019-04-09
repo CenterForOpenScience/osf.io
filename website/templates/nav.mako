@@ -97,10 +97,10 @@
                 %else :
                 <li class="dropdown sign-in">
                     <div class="col-sm-12">
+		        %if not embedded_ds:
                         %if nav_signup:
                         <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${web_url_for('auth_register')}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
                         % endif:
-		        %if not embedded_ds:
                         <a data-bind="click: trackClick.bind($data, 'SignIn')" href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign In</a>
 		        %else :
 <!-- embedded DS -->
