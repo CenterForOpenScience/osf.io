@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.6.0 (2019-04-09)
+===================
+- Add support for sending withdrawal request denied emails
+- Bump libreoffice version in unoconv docker service
+
 19.5.0 (2019-04-01)
 ===================
 - Display OSF Storage Usage on project overview page
