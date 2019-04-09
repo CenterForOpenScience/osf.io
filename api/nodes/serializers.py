@@ -1670,5 +1670,8 @@ class NodeCreatorQuotaSerializer(JSONAPISerializer):
             used_quota = quota.used_quota(obj.creator._id)
         return used_quota
 
+    def get_absolute_url(self, obj):
+        return obj['URL']
+
     class Meta:
         type_ = 'creator_quota'
