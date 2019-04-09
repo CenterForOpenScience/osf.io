@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+import ast
 
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
@@ -110,6 +111,8 @@ class InstitutionDefaultStorageDisplay(RdmPermissionMixin, TemplateView):
             kwargs['region'] = Region.objects.get(_id=kwargs['institution'])
         else:
             kwargs['region'] = Region.objects.first()
+        kwargs['region'].waterbutler_credentials = ast.literal_eval(json.dumps(kwargs['region'].waterbutler_credentials))
+        kwargs['region'].waterbutler_settings = ast.literal_eval(json.dumps(kwargs['region'].waterbutler_settings))
         return kwargs
 
 #from django.contrib.admin.views.decorators import staff_member_required
@@ -135,7 +138,9 @@ class InstitutionDefaultStorageDetail(RdmPermissionMixin, View):
 
     def post(self, request, *args, **kwargs):
         post_data = request.POST
-        values_to_update = {'_id': post_data['_id'], 'name': post_data['name'], 'waterbutler_credentials': post_data['waterbutler_credentials'], 'waterbutler_url': post_data['waterbutler_url'], 'mfr_url': post_data['mfr_url'], 'waterbutler_settings': post_data['waterbutler_settings']}
+                waterbutler_settings = eval(post_data['waterbutler_settings'])
+        waterbutler_credentials = eval(post_data['waterbutler_credentials'])
+        values_to_update = {'_id': post_data['_id'], 'name': post_data['name'], 'waterbutler_credentials': waterbutler_credentials, 'waterbutler_url': post_data['waterbutler_url'], 'mfr_url': post_data['mfr_url'], 'waterbutler_settings': waterbutler_settings}
         obj_store, created = Region.objects.update_or_create(_id=post_data['_id'], defaults=values_to_update)
         return HttpResponseRedirect(self.request.path_info)
 
