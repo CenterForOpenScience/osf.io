@@ -1650,32 +1650,3 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         if type(addon) == bool:
             addon = None
         return addon
-
-class NodeCreatorQuotaSerializer(JSONAPISerializer):
-    """
-    Serializes the quota information of a project creator,
-    sending the maxiumum quota and the currently used quota.
-    """
-    id = IDField(source='_id', read_only=True)
-    max = ser.SerializerMethodField()
-    used = ser.SerializerMethodField()
-
-    def get_max(self, obj):
-        try:
-            max_quota = obj.creator.userquota.max_quota
-        except ObjectDoesNotExist:
-            max_quota = DEFAULT_MAX_QUOTA
-        return max_quota * 1024 ** 3
-
-    def get_used(self, obj):
-        try:
-            used_quota = obj.creator.userquota.used
-        except ObjectDoesNotExist:
-            used_quota = quota.used_quota(obj.creator._id)
-        return used_quota
-
-    def get_absolute_url(self, obj):
-        return obj['URL']
-
-    class Meta:
-        type_ = 'creator_quota'

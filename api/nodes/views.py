@@ -98,7 +98,6 @@ from api.nodes.serializers import (
     NodeSettingsUpdateSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer,
-    NodeCreatorQuotaSerializer,
 )
 from api.nodes.utils import NodeOptimizationMixin
 from api.preprints.serializers import PreprintSerializer
@@ -2020,25 +2019,3 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
         context['wiki_addon'] = node.get_addon('wiki')
         context['forward_addon'] = node.get_addon('forward')
         return context
-
-
-class NodeCreatorQuota(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """
-    View for getting the quota information of a project creator.
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        AdminOrPublic,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = NodeCreatorQuotaSerializer
-
-    view_category = 'nodes'
-    view_name = 'creator-quota'
-
-    def get_object(self):
-        return self.get_node()
