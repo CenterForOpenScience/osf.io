@@ -45,19 +45,23 @@
         <ul class="nav navbar-nav">
             % if service_name == 'HOME':
                 % if user_name:
-<!--
+                    % if nav_quickfiles:
                     <li><a data-bind="click: trackClick.bind($data, 'MyQuickFiles')" href="${domain}${user_id}/quickfiles/">My Quick Files</a></li>
--->
+                    % endif
                     <li><a data-bind="click: trackClick.bind($data, 'MyProjects')" href="${domain}myprojects/">My Projects</a></li>
                 % endif
+                    % if nav_search:
                     <li><a id="navbar-search" data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">Search</a></li>
+                    % endif
             % endif
             % if nav_support:
             <li class="dropdown">
             <a id="navbar-support" data-bind="click: trackClick.bind($data, '${service_name} Support')" href="${service_support_url}">Support</a>
             </li>
+            % endif
+            % if nav_donate:
             <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://nii.ac.jp/donate">Donate</a></li>
-            % endif:
+            % endif
             % if user_name and display_name:
             <li class="dropdown secondary-nav-dropdown">
                 <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
@@ -91,16 +95,14 @@
                     </div>
                     </li>
                 %else :
-		%if not embedded_ds:
                 <li class="dropdown sign-in">
                     <div class="col-sm-12">
-<!--
+                        %if nav_signup:
                         <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${web_url_for('auth_register')}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
--->
+                        % endif:
+		        %if not embedded_ds:
                         <a data-bind="click: trackClick.bind($data, 'SignIn')" href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign In</a>
-                    </div>
-                </li>
-		%else :
+		        %else :
 <!-- embedded DS -->
 <script type="text/javascript" charset="UTF-8"><!--
   var li = document.createElement('li');
@@ -115,9 +117,11 @@
   document.write('<script type="text/javascript" src="https://test-ds.gakunin.nii.ac.jp/WAYF/embedded-wayf.js?' + (new Date().getTime()) + '"></scr'+'ipt>');
     //-->
 </script>
-<!-- embbeded DS -->
 </div>
-                %endif
+<!-- embbeded DS -->
+                        %endif
+                    </div>
+                </li>
                 %endif
             % endif
 
