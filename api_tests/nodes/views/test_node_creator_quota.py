@@ -1,8 +1,6 @@
-import logging
 import pytest
 
 from api.base import settings
-from framework.auth.core import Auth
 from osf_tests.factories import ProjectFactory, AuthUserFactory
 from tests.base import ApiTestCase
 
