@@ -840,13 +840,13 @@ def persistent_file_download(auth, **kwargs):
 
 def addon_view_or_download_quickfile(**kwargs):
     fid = kwargs.get('fid', 'NOT_AN_FID')
-    file_node = OsfStorageFile.load(fid)
-    if not file_node:
+    file_ = OsfStorageFile.load(fid)
+    if not file_:
         raise HTTPError(httplib.NOT_FOUND, data={
             'message_short': 'File Not Found',
             'message_long': 'The requested file could not be found.'
         })
-    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_node.target._id, fid))
+    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.target._id, fid))
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue
