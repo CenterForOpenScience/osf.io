@@ -1832,7 +1832,6 @@ def make_url_map(app):
         Rule(
             [
                 '/project/<pid>/creator_quota/',
-                '/project/<pid>/node/<nid>/creator_quota/',
             ],
             ['get'],
             project_views.quota.creator_quota,

@@ -6,6 +6,7 @@ import pytest
 
 from addons.osfstorage.models import OsfStorageFileNode
 from api.base import settings as api_settings
+from framework.auth import signing
 from tests.base import OsfTestCase
 from osf.models import FileLog, FileInfo, TrashedFileNode, TrashedFolder, UserQuota
 from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
@@ -833,28 +834,12 @@ class TestQuotaApi(OsfTestCase):
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
 
-    def test_private_project_authenticated(self):
+    def test_default_values(self):
         response = self.app.get(
-            self.node.api_url_for('creator_quota'),
-            auth=self.user.auth
-        )
-        assert_equal(response.status_code, 200)
-        assert_equal(response.json['max'], api_settings.DEFAULT_MAX_QUOTA * 1024 ** 3)
-        assert_equal(response.json['used'], 0)
-
-    def test_private_project_unauthenticated(self):
-        response = self.app.get(
-            self.node.api_url_for('creator_quota'),
-            expect_errors=True
-        )
-        assert_equal(response.status_code, 302)
-
-    def test_public_project(self):
-        self.node.is_public = True
-        self.node.save()
-
-        response = self.app.get(
-            self.node.api_url_for('creator_quota')
+            '{}?payload={payload}&signature={signature}'.format(
+                self.node.api_url_for('creator_quota'),
+                **signing.sign_data(signing.default_signer, {})
+            )
         )
         assert_equal(response.status_code, 200)
         assert_equal(response.json['max'], api_settings.DEFAULT_MAX_QUOTA * 1024 ** 3)
@@ -864,8 +849,10 @@ class TestQuotaApi(OsfTestCase):
         UserQuota.objects.create(user=self.user, max_quota=200, used=100 * 1024 ** 3)
 
         response = self.app.get(
-            self.node.api_url_for('creator_quota'),
-            auth=self.user.auth
+            '{}?payload={payload}&signature={signature}'.format(
+                self.node.api_url_for('creator_quota'),
+                **signing.sign_data(signing.default_signer, {})
+            )
         )
         assert_equal(response.status_code, 200)
         assert_equal(response.json['max'], 200 * 1024 ** 3)

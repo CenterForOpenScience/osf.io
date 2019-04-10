@@ -1,12 +1,14 @@
 from django.core.exceptions import ObjectDoesNotExist
 
 from api.base import settings as api_settings
-from website.project.decorators import must_be_contributor_or_public
+from framework.auth.decorators import must_be_signed
+from osf.models import AbstractNode
 from website.util import quota
 
 
-@must_be_contributor_or_public
-def creator_quota(auth, node, **kwargs):
+@must_be_signed
+def creator_quota(pid, **kwargs):
+    node = AbstractNode.load(pid)
     try:
         max_quota = node.creator.userquota.max_quota
         used_quota = node.creator.userquota.used
