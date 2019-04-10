@@ -25,7 +25,6 @@ from osf.models import AbstractNode
 from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
-from osf.models import QuickFilesNode
 from osf.models import Preprint
 from osf.models import SpamStatus
 from addons.wiki.models import WikiPage
@@ -598,8 +597,7 @@ def update_user(user, index=None):
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
             # update files in their quickfiles node if the user has been marked as spam
             if 'spam_confirmed' in user.system_tags:
-                quickfiles = QuickFilesNode.objects.get_for_user(user)
-                for quickfile_id in quickfiles.files.values_list('_id', flat=True):
+                for quickfile_id in user.quickfiles.values_list('_id', flat=True):
                     client().delete(
                         index=index,
                         doc_type='file',
@@ -653,13 +651,25 @@ def update_file(file_, index=None, delete=False):
     target = file_.target
 
     # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
-    file_node_is_qa = bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.tags.all().values_list('name', flat=True))
-    ) or bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True))
-    ) or any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or (
-            target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
+
+    tags_not_to_index = set(settings.DO_NOT_INDEX_LIST['tags'])
+    file_tags = file_.tags.all().values_list('name', flat=True)
+    target_tags = file_.tags.all().values_list('name', flat=True)
+
+    file_tag_in_do_not_index = bool(tags_not_to_index.intersection(file_tags))
+    target_tag_in_do_not_index = bool(tags_not_to_index.intersection(target_tags))
+
+    if hasattr(target, 'title'):
+        part_of_tag_in_target_title = any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    else:
+        part_of_tag_in_target_title = False
+
+    is_public = getattr(target, 'is_public', False) or file_.is_quickfile
+
+    file_node_is_qa = file_tag_in_do_not_index or target_tag_in_do_not_index or part_of_tag_in_target_title
+    flagged = getattr(target, 'spam_status', None) == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH
+
+    if not file_.name or not is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or flagged:
         client().delete(
             index=index,
             doc_type='file',
@@ -688,8 +698,8 @@ def update_file(file_, index=None, delete=False):
         provider=file_.provider,
         path=file_.path,
     )
-    if getattr(target, 'is_quickfiles', None):
-        node_url = '/{user_id}/quickfiles/'.format(user_id=target.creator._id)
+    if file_.is_quickfile:
+        node_url = '/{user_id}/quickfiles/'.format(user_id=target._id)
     else:
         node_url = '/{target_id}/'.format(target_id=target._id)
 

@@ -1,4 +1,3 @@
-import pytest
 from nose.tools import *  # noqa:
 
 from tests.base import ApiTestCase
@@ -84,7 +83,6 @@ class TestInstitutionRegistrationList(ApiTestCase):
 
         assert_not_in(self.registration2._id, ids)
 
-    @pytest.mark.enable_quickfiles_creation
     def test_total_biographic_contributor_in_institution_registration(self):
         user3 = AuthUserFactory()
         registration3 = RegistrationFactory(is_public=True, creator=self.user1)

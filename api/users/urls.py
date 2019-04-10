@@ -1,6 +1,8 @@
 from django.conf.urls import url
 from . import views
 
+from osf.quickfiles.views import UserQuickFiles
+
 app_name = 'osf'
 
 urlpatterns = [
@@ -17,7 +19,7 @@ urlpatterns = [
     url(r'^(?P<user_id>\w+)/preprints/$', views.UserPreprints.as_view(), name=views.UserPreprints.view_name),
     url(r'^(?P<user_id>\w+)/registrations/$', views.UserRegistrations.as_view(), name=views.UserRegistrations.view_name),
     url(r'^(?P<user_id>\w+)/settings/$', views.UserSettings.as_view(), name=views.UserSettings.view_name),
-    url(r'^(?P<user_id>\w+)/quickfiles/$', views.UserQuickFiles.as_view(), name=views.UserQuickFiles.view_name),
+    url(r'^(?P<user_id>\w+)/quickfiles/$', UserQuickFiles.as_view(), name=UserQuickFiles.view_name),
     url(r'^(?P<user_id>\w+)/relationships/institutions/$', views.UserInstitutionsRelationship.as_view(), name=views.UserInstitutionsRelationship.view_name),
     url(r'^(?P<user_id>\w+)/settings/emails/$', views.UserEmailsList.as_view(), name=views.UserEmailsList.view_name),
     url(r'^(?P<user_id>\w+)/settings/emails/(?P<email_id>\w+)/$', views.UserEmailsDetail.as_view(), name=views.UserEmailsDetail.view_name),

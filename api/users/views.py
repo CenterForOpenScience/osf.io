@@ -20,8 +20,9 @@ from api.base.utils import (
     hashids,
     is_truthy,
 )
-from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
+from api.base.throttling import SendEmailDeactivationThrottle
+from api.base.views import JSONAPIBaseView
+from api.base.throttling import SendEmailThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationSerializer
@@ -45,7 +46,6 @@ from api.users.serializers import (
     UserNodeSerializer,
     UserSettingsSerializer,
     UserSettingsUpdateSerializer,
-    UserQuickFilesSerializer,
     UserAccountExportSerializer,
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
@@ -70,7 +70,6 @@ from osf.models import (
     DraftRegistration,
     ExternalAccount,
     Guid,
-    QuickFilesNode,
     AbstractNode,
     Preprint,
     Node,
@@ -324,38 +323,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
             .select_related('node_license')
             .include('contributor__user__guids', 'root__guids', limit_includes=10)
         )
-
-
-class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, UserMixin, ListFilterMixin):
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
-    ordering = ('-last_touched')
-
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
-
-    serializer_class = UserQuickFilesSerializer
-    view_category = 'users'
-    view_name = 'user-quickfiles'
-
-    def get_node(self, check_object_permissions):
-        return QuickFilesNode.objects.get_for_user(self.get_user(check_permissions=False))
-
-    def get_default_queryset(self):
-        self.kwargs[self.path_lookup_url_kwarg] = '/'
-        self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
-        files_list = self.fetch_from_waterbutler()
-
-        return files_list.children.prefetch_related('versions', 'tags').include('guids')
-
-    # overrides ListAPIView
-    def get_queryset(self):
-        return self.get_queryset_from_request()
-
 
 class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_preprints_list).

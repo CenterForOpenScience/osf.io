@@ -49,6 +49,11 @@ class BaseFileNodeManager(TypedModelManager, IncludeManager):
             return qs.filter(provider=self.model._provider)
         return qs
 
+    def get_root(self, target):
+        # Get the root folder that the target file belongs to
+        content_type = ContentType.objects.get_for_model(target)
+        return self.get(target_object_id=target.id, target_content_type=content_type, is_root=True)
+
 class ActiveFileNodeManager(Manager):
     """Manager that filters out TrashedFileNodes.
     Note: We do not use this as the default manager for BaseFileNode because
@@ -131,6 +136,17 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return isinstance(self, (File, TrashedFile))
 
     @property
+    def is_quickfile(self):
+        # TODO: delete old school quickfile after migration
+        if getattr(self.target, 'type', None) == 'osf.quickfilenode':
+            return True
+
+        # new school quickfile
+        if self.type == 'osf.quickfolder' or getattr(self, 'parent') and self.parent.type == 'osf.quickfolder':
+            return True
+        return False
+
+    @property
     def path(self):
         return self._path
 
@@ -186,6 +202,12 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def create(cls, **kwargs):
         kwargs.update(provider=cls._provider)
         return cls(**kwargs)
+
+    @classmethod
+    def get_from_target(cls, _id, target):
+        return cls.active.get(_id=_id,
+                              target_object_id=target.id,
+                              target_content_type=ContentType.objects.get_for_model(target))
 
     @classmethod
     def get_or_create(cls, target, path):
@@ -310,7 +332,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :param str or None auth_header: If truthy it will set as the Authorization header
         :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
         """
-        # Resvolve primary key on first touch
+        # Resolve primary key on first touch
         self.save()
         # For backwards compatibility
         revision = revision or kwargs.get(self.version_identifier)
@@ -323,7 +345,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         headers = {}
         if auth_header:
             headers['Authorization'] = auth_header
-
         resp = requests.get(
             self.generate_waterbutler_url(revision=revision, meta=True, _internal=True, **kwargs),
             headers=headers,
@@ -545,6 +566,11 @@ class File(models.Model):
         """
         return None
 
+    @property
+    def is_root(self):
+        return False
+
+
 class Folder(models.Model):
 
     class Meta:
@@ -617,8 +643,7 @@ class TrashedFileNode(BaseFileNode):
     _provider = None
 
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
-        if isinstance(self, TrashedFileNode):  # TODO Why is this needed
-            raise UnableToDelete('You cannot delete things that are deleted.')
+        raise UnableToDelete('You cannot delete things that are deleted.')
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         """

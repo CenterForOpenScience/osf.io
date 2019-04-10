@@ -80,7 +80,6 @@ class TestAnUnregisteredUser(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 class TestAUser(OsfTestCase):
 
     def setUp(self):
@@ -88,6 +87,7 @@ class TestAUser(OsfTestCase):
         self.user = AuthUserFactory()
         self.auth = self.user.auth
 
+    @pytest.mark.enable_quickfiles_creation
     def test_can_see_profile_url(self):
         res = self.app.get(self.user.url).maybe_follow()
         assert_in(self.user.url, res)
@@ -245,12 +245,14 @@ class TestAUser(OsfTestCase):
         ), auth=self.auth, expect_errors=True)
         assert_in('Add important information, links, or images here to describe your project.', res)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
         td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, self.user.display_absolute_url)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_sees_another_profile(self):
         user2 = UserFactory()
         res = self.app.get(user2.url, auth=self.auth)
@@ -395,7 +397,6 @@ class TestPrivateLinkView(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
@@ -408,6 +409,7 @@ class TestMergingAccounts(OsfTestCase):
         self.dupe.set_password('example')
         self.dupe.save()
 
+    @pytest.mark.enable_quickfiles_creation
     def test_merged_user_is_not_shown_as_a_contributor(self):
         project = ProjectFactory(is_public=True)
         # Both the master and dupe are contributors
@@ -427,6 +429,7 @@ class TestMergingAccounts(OsfTestCase):
         assert_true(self.dupe.is_merged)
         assert_not_in(self.dupe.fullname, res)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_merged_user_has_alert_message_on_profile(self):
         # Master merges dupe
         self.user.merge_user(self.dupe)

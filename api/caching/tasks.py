@@ -116,6 +116,7 @@ def update_storage_usage_cache(target_id):
 
 def update_storage_usage(target):
     Preprint = apps.get_model('osf.preprint')
+    OSFUser = apps.get_model('osf.OSFUser')
 
-    if not isinstance(target, Preprint) and not target.is_quickfiles:
+    if not isinstance(target, (Preprint, OSFUser)):
         enqueue_postcommit_task(update_storage_usage_cache, (target._id,), {}, celery=True)

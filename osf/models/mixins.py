@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 import pytz
 import markupsafe
 import logging
@@ -90,10 +92,18 @@ class Loggable(models.Model):
         params['node'] = params.get('node') or params.get('project') or self._id
         original_node = self if self._id == params['node'] else AbstractNode.load(params.get('node'))
 
-        log = NodeLog(
-            action=action, user=user, foreign_user=foreign_user,
-            params=params, node=self, original_node=original_node
-        )
+        log_params = {
+            'action': action,
+            'user': user,
+            'foreign_user': foreign_user,
+            'params': params,
+        }
+
+        if isinstance(self, AbstractNode):
+            log_params['node'] = self
+            log_params['original_node'] = original_node
+
+        log = NodeLog(**log_params)
 
         if log_date:
             log.date = log_date
@@ -106,7 +116,7 @@ class Loggable(models.Model):
 
         if save:
             self.save()
-        if user and not self.is_collection:
+        if user and not getattr(self, 'is_collection', False):
             increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
 
         return log
@@ -1605,3 +1615,124 @@ class SpamOverrideMixin(SpamMixin):
             )
             log.should_hide = True
             log.save()
+
+
+class FileTargetMixin(Loggable):
+    '''
+    The purpose of this mixin to ensure models that are file `targets` (meaning a group of files are assocciated with
+    them.) Have all the methods they need to interact with BaseFileNode objects without errors or gaps in functionality
+
+    File targets must have four basic things:
+
+    1. Logs
+    2. Permissions
+    3. Resolvable urls
+    4. Spam status
+
+    Since each model is going to have different criteria for these things, so this a very abstract class, but since everything
+    that's a target needs all these things it's good to require these methods as part of a class to avoid missing any
+    aspects of targethood.
+    '''
+    class Meta:
+        abstract = True
+
+    @staticmethod
+    def has_node_addon(target):
+        addon = getattr(target, 'get_addon', None)
+        if addon:
+            from addons.base.models import BaseNodeSettings
+            return isinstance(addon('osfstorage'), BaseNodeSettings)
+        return False
+
+    @classmethod
+    def load_target_from_guid(cls, _id):
+        for target_class in cls.__subclasses__():
+            try:
+                target = target_class.objects.get(guids___id=_id)
+            except target_class.DoesNotExist:
+                continue
+            if target is not None:
+                return target
+
+    @abstractmethod
+    def get_root_folder(self, provider='osfstorage'):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def has_permission(self, user, perm):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def serialize_waterbutler_settings(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def serialize_waterbutler_credentials(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def create_waterbutler_log(self, auth, action, metadata):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def counts_towards_analytics(self, user):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def is_spam(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def can_view_files(self, auth=None):
+        return self.can_view(auth)
+
+class CleanMixin(models.Model):
+    """
+    This is a simple helper mixin that prevents a model from saving until validation methods have been run.
+     So for example to prevent users from saving field `numbers_that_are_not_4` to 4, you can do the following:
+
+    ```python
+    @CleanMixin.cleans_field('numbers_that_are_not_4')
+    def my_numbers_cleaner(self, value):
+        if value == 4:
+            raise ValidationError('This field is for all numbers other then 4')
+    ```
+
+    This will produce a ValidationError is the user attempts to save field `numbers_that_are_not_4` as 4. This mixin is
+    a helper and failsafe and shouldn't be hit in production if possible.
+    """
+
+    class Meta:
+        abstract = True
+
+    _CLEANERS = []
+
+    def cleans_field(field_name):
+        def wrapper(func):
+            CleanMixin._CLEANERS.append((field_name, func))
+        return wrapper
+
+    cleans_field = staticmethod(cleans_field)
+
+    def clean(self, *args, **kwargs):
+        super(CleanMixin, self).clean(*args, **kwargs)
+
+        errors = []
+
+        for field_name, cleaner_func in self._CLEANERS:
+            value = getattr(self, field_name)
+            try:
+                cleaner_func(self, value)
+            except ValidationError as exc:
+                errors.append(exc)
+
+        if errors:
+            raise ValidationError(errors)

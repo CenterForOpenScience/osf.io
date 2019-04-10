@@ -13,7 +13,6 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestSearchSerializer:
 
     def test_search_serializer_mixed_model(self):

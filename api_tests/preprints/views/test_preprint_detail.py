@@ -153,7 +153,6 @@ class TestPreprintDetail:
         assert 'assumptions no longer apply' == data['attributes']['withdrawal_justification']
         assert 'date_withdrawn' in data['attributes']
 
-    @pytest.mark.enable_quickfiles_creation
     def test_embed_contributors(self, app, user, preprint):
         url = '/{}preprints/{}/?embed=contributors'.format(
             API_BASE, preprint._id)
@@ -641,7 +640,6 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.tags.count() == 0
 
-    @pytest.mark.enable_quickfiles_creation
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_update_contributors(
             self, mock_update_doi_metadata, app, user, preprint, url):

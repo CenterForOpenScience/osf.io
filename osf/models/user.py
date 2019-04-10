@@ -37,6 +37,7 @@ from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
+from osf.models.mixins import FileTargetMixin
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
@@ -51,6 +52,7 @@ from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
+from website.util import web_url_for, api_url_for
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +115,7 @@ class Email(BaseModel):
         return self.address
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin, FileTargetMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
         'system_tags': 'tags',
@@ -384,6 +386,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def deep_url(self):
         """Used for GUID resolution."""
         return '/profile/{}/'.format(self._primary_key)
+
+    @property
+    def quickfolder(self):
+        """Helper to get user's quickfolder"""
+        from osf.models.files import BaseFileNode
+        return BaseFileNode.objects.get(target_object_id=self.id, type='osf.quickfolder')
+
+    @property
+    def quickfiles(self):
+        """Helper to get user's quickfiles"""
+        from osf.models.files import TrashedFileNode
+        return self.quickfolder._children.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
 
     @property
     def url(self):
@@ -693,9 +707,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # - projects where the user was a contributor
         for node in user.contributed:
-            # Skip quickfiles
-            if node.is_quickfiles:
-                continue
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
                 user_permissions = node.get_permissions(user)
@@ -717,9 +728,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Skip bookmark collections
         user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
 
-        from osf.models import QuickFilesNode
         from osf.models import BaseFileNode
-        from addons.osfstorage.models import OsfStorageFolder
+        from osf.quickfiles.legacy_quickfiles import QuickFilesNode
 
         # - projects where the user was the creator
         user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
@@ -730,13 +740,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             file_node.save()
 
         # - move files in the merged user's quickfiles node, checking for name conflicts
-        primary_quickfiles = QuickFilesNode.objects.get(creator=self)
-        primary_quickfiles_root = OsfStorageFolder.objects.get_root(target=primary_quickfiles)
-        merging_user_quickfiles = QuickFilesNode.objects.get(creator=user)
-
-        files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
-        for merging_user_file in files_in_merging_user_quickfiles:
-            if primary_quickfiles.files.filter(name=merging_user_file.name).exists():
+        for merging_user_file in user.quickfiles.all():
+            if self.quickfiles.filter(name=merging_user_file.name).exists():
                 digit = 1
                 split_filename = splitext(merging_user_file.name)
                 name_without_extension = split_filename[0]
@@ -751,7 +756,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
                 # check if new name conflicts, update til it does not (try up to 1000 times)
                 rename_count = 0
-                while primary_quickfiles.files.filter(name=new_name).exists():
+
+                while self.quickfiles.filter(name=new_name).exists():
                     digit += 1
                     new_name = new_name_format.format(name_without_extension, digit, extension)
                     rename_count += 1
@@ -761,7 +767,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 merging_user_file.name = new_name
                 merging_user_file.save()
 
-            merging_user_file.move_under(primary_quickfiles_root)
+            merging_user_file.move_under(self.quickfolder)
+
             merging_user_file.save()
 
         self._merge_users_preprints(user)
@@ -882,13 +889,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
-        if 'fullname' in dirty_fields:
-            from osf.models.quickfiles import get_quickfiles_project_title, QuickFilesNode
-
-            quickfiles = QuickFilesNode.objects.filter(creator=self).first()
-            if quickfiles:
-                quickfiles.title = get_quickfiles_project_title(self)
-                quickfiles.save()
         return ret
 
     # Legacy methods
@@ -1608,7 +1608,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
-        for node in shared_nodes.exclude(type='osf.quickfilesnode'):
+        for node in shared_nodes:
             alternate_admins = Contributor.objects.select_related('user').filter(
                 node=node,
                 user__is_active=True,
@@ -1672,11 +1672,74 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.external_identity = {}
         self.deleted = timezone.now()
 
+    # Overrides FileTargetMixin
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
+        return web_url_for(view_name, pid=self._primary_key,
+                           _absolute=_absolute, _guid=_guid, *args, **kwargs)
+
+    # Overrides FileTargetMixin
+    def create_waterbutler_log(self, auth, action, metadata):
+        params = {
+            'target': self._id,
+            'id': self._id,
+            'path': metadata['metadata']['materialized'],
+        }
+
+        self.add_log(
+            'quickfiles_{0}'.format(action),
+            auth=auth,
+            params=params
+        )
+
+    # Overrides FileTargetMixin
+    def can_edit(self, auth):
+        ''' can edit Quickfiles '''
+        return self == auth.user
+
+    # Overrides FileTargetMixin
+    def can_view(self, *args, **kwargs):
+        ''' can view Quickfiles '''
+        return True
+
+    # Overrides FileTargetMixin
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+
+    # Overrides FileTargetMixin
+    def serialize_waterbutler_settings(self, *args, **kwargs):
+        return dict(self.osfstorage_region.waterbutler_settings, **{
+            'nid': self._id,
+            'rootId': self.quickfolder._id,
+            'baseUrl': api_url_for(
+                'osfstorage_get_metadata',
+                guid=self._id,
+                _absolute=True,
+                _internal=True
+            ),
+        })
+
+    # Overrides FileTargetMixin
+    def serialize_waterbutler_credentials(self, *args, **kwargs):
+        return self.osfstorage_region.waterbutler_credentials
+
+    # Overrides FileTargetMixin
+    def counts_towards_analytics(self, user):
+        return self != user
+
+    # Overrides FileTargetMixin
+    @property
+    def is_spam(self):
+        return 'spam_confirmed' in self.system_tags
+
+    def get_root_folder(self, provider='osfstorage'):
+        return self.quickfolder
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
             ('view_osfuser', 'Can view user details'),
         )
+
 
 @receiver(post_save, sender=OSFUser)
 def add_default_user_addons(sender, instance, created, **kwargs):
@@ -1685,20 +1748,8 @@ def add_default_user_addons(sender, instance, created, **kwargs):
             if 'user' in addon.added_default:
                 instance.add_addon(addon.short_name)
 
+
 @receiver(post_save, sender=OSFUser)
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
-
-
-# Allows this hook to be easily mock.patched
-def _create_quickfiles_project(instance):
-    from osf.models.quickfiles import QuickFilesNode
-
-    QuickFilesNode.objects.create_for_user(instance)
-
-
-@receiver(post_save, sender=OSFUser)
-def create_quickfiles_project(sender, instance, created, **kwargs):
-    if created:
-        _create_quickfiles_project(instance)

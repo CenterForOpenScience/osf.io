@@ -8,15 +8,15 @@ from django.db import migrations, models
 from django.core.paginator import Paginator
 
 from addons.osfstorage.models import NodeSettings as OSFSNodeSettings, OsfStorageFolder
-from osf.models import OSFUser, QuickFilesNode, Contributor
+from osf.models import OSFUser, Contributor
 from osf.models.base import ensure_guid
-from osf.models.quickfiles import get_quickfiles_project_title
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
 def add_quickfiles(*args, **kwargs):
+    from osf.quickfiles.legacy_quickfiles import QuickFilesNode, get_quickfiles_project_title
     ids_without_quickfiles = list(OSFUser.objects.exclude(nodes_created__type=QuickFilesNode._typedmodels_type).values_list('id', flat=True))
 
     users_without_quickfiles = OSFUser.objects.filter(id__in=ids_without_quickfiles).order_by('id')
@@ -76,6 +76,7 @@ def add_quickfiles(*args, **kwargs):
         OSFSNodeSettings.objects.bulk_create(osfs_to_create)
 
 def remove_quickfiles(*args, **kwargs):
+    from osf.quickfiles.legacy_quickfiles import QuickFilesNode
     QuickFilesNode.objects.all().delete()
 
 

@@ -309,6 +309,7 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
 
 OSF_TESTS = [
     'osf_tests',
+    'osf/quickfiles/tests/',
 ]
 
 WEBSITE_TESTS = [

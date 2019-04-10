@@ -73,7 +73,6 @@ class TestNodeEmbargoTerminations:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestDraftRegistrationApprovals:
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
@@ -102,6 +101,7 @@ class TestDraftRegistrationApprovals:
         assert registered_node.registered_user == draft.initiator
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-8280
+    @pytest.mark.enable_quickfiles_creation
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_approval_after_initiator_is_merged_into_another_user(self, mock_enqueue):
         approver = factories.UserFactory()

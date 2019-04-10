@@ -387,18 +387,6 @@ class FileDetailSerializer(FileSerializer):
     id = IDField(source='_id', required=True)
 
 
-class QuickFilesSerializer(BaseFileSerializer):
-    user = RelationshipField(
-        related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<target.creator._id>'},
-        help_text='The user who uploaded this file',
-    )
-
-
-class QuickFilesDetailSerializer(QuickFilesSerializer):
-    id = IDField(source='_id', required=True)
-
-
 class FileVersionSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',

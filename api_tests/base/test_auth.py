@@ -230,7 +230,6 @@ class TestOAuthValidation(ApiTestCase):
         assert_equal(res.status_code, 403, msg=res.json)
 
 
-@pytest.mark.enable_quickfiles_creation
 class TestOAuthScopedAccess(ApiTestCase):
     """Verify that OAuth2 scopes restrict APIv2 access for a few sample views. These tests cover basic mechanics,
         but are not intended to be an exhaustive list of how all views respond to all scopes."""

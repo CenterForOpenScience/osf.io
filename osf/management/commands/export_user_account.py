@@ -24,7 +24,7 @@ from osf.models import (
     OSFUser,
     Preprint,
     Registration,
-    QuickFilesNode
+    QuickFolder
 )
 from osf.utils.workflows import DefaultStates
 from scripts.utils import Progress
@@ -255,7 +255,7 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
     )
 
     quickfiles_to_export = (
-        QuickFilesNode.objects.filter(creator=user)
+        QuickFolder.objects.filter(target=user)
     )
 
     export_resources(projects_to_export, user, projects_dir, 'projects')

@@ -829,7 +829,6 @@ class TestOsfStorageFileVersion(StorageTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOsfStorageCheckout(StorageTestCase):
     def setUp(self):
         super(TestOsfStorageCheckout, self).setUp()
@@ -894,6 +893,7 @@ class TestOsfStorageCheckout(StorageTestCase):
         with assert_raises(FileNodeCheckedOutError):
             self.file.move_under(folder)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_checked_out_merge(self):
         user = factories.AuthUserFactory()
         node = ProjectFactory(creator=user)

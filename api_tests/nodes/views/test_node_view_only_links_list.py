@@ -49,7 +49,6 @@ def view_only_link(public_project):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestViewOnlyLinksList:
 
     @pytest.fixture()
@@ -103,7 +102,6 @@ class TestViewOnlyLinksList:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestViewOnlyLinksCreate:
 
     @pytest.fixture()

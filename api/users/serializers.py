@@ -9,16 +9,16 @@ from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
-    Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
-    WaterbutlerLink, ShowIfCurrentUser,
+    LinksField, TypeField, RelationshipField, JSONAPIListField,
+    ShowIfCurrentUser,
 )
 from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
 from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
-from api.files.serializers import QuickFilesSerializer
+
 from osf.models import Email
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
-from osf.models import OSFUser, QuickFilesNode, Preprint
+from osf.models import OSFUser, Preprint
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL, OSF_SUPPORT_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website import mails
@@ -32,8 +32,7 @@ class QuickFilesRelationshipField(RelationshipField):
 
     def to_representation(self, value):
         relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
-        quickfiles_guid = value.nodes_created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
-        upload_url = waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
+        upload_url = waterbutler_api_url_for(value._id, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,
             'meta': {},
@@ -184,7 +183,7 @@ class UserSerializer(JSONAPISerializer):
         return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=obj.id).count()
 
     def get_quickfiles_count(self, obj):
-        return QuickFilesNode.objects.get(contributor__user__id=obj.id).files.filter(type='osf.osfstoragefile').count()
+        return obj.quickfiles.count()
 
     def get_registration_count(self, obj):
         auth = get_user_auth(self.context['request'])
@@ -305,16 +304,6 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
-
-
-class UserQuickFilesSerializer(QuickFilesSerializer):
-    links = LinksField({
-        'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
-        'upload': WaterbutlerLink(),
-        'delete': WaterbutlerLink(),
-        'move': WaterbutlerLink(),
-        'download': WaterbutlerLink(must_be_file=True),
-    })
 
 
 class ReadEmailUserDetailSerializer(UserDetailSerializer):

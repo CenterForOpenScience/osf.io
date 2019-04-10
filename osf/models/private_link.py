@@ -50,4 +50,4 @@ def check_if_private_link_is_to_quickfiles(sender, instance, action, reverse, mo
 
     if action == 'pre_add' and pk_set:
         if model == AbstractNode and model.objects.get(id=list(pk_set)[0]).is_quickfiles:
-            raise ValidationError('A private link cannot be added to a QuickFilesNode')
+            raise ValidationError('A private link cannot be added to a QuickFolder')

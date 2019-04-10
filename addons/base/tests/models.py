@@ -34,7 +34,6 @@ class OAuthAddonModelTestSuiteMixinBase(object):
         pass
 
 
-@pytest.mark.enable_quickfiles_creation
 class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
     def setUp(self):
@@ -51,6 +50,7 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
     def test_mergability(self):
         assert self.user_settings.can_be_merged
 
+    @pytest.mark.enable_quickfiles_creation
     def test_merge_user_settings(self):
         other_node = ProjectFactory()
         other_user = other_node.creator

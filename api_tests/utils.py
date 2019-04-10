@@ -23,6 +23,29 @@ def create_test_file(target, user, filename='test_file', create_guid=True):
     return test_file
 
 
+def create_test_folder(target, filename='test_file'):
+    osfstorage = target.get_addon('osfstorage')
+    root_node = osfstorage.get_root()
+    return root_node.append_folder(filename)
+
+
+def create_test_quickfile(user, filename='test_file', create_guid=True):
+    test_file = user.quickfolder.append_file(filename)
+
+    if create_guid:
+        test_file.get_guid(create=True)
+
+    test_file.create_version(user, {
+        'object': '06d80e',
+        'service': 'cloud',
+        osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+    }, {
+        'size': 1337,
+        'contentType': 'img/png'
+    }).save()
+    return test_file
+
+
 def create_test_preprint_file(target, user, filename='test_file', create_guid=True):
     root_folder = target.root_folder
     test_file = root_folder.append_file(filename)

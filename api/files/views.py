@@ -11,7 +11,6 @@ from osf.models import (
     Guid,
     BaseFileNode,
     FileVersion,
-    QuickFilesNode,
 )
 
 from api.base.exceptions import Gone
@@ -25,11 +24,10 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.permissions import FileMetadataRecordPermission
-from api.files.serializers import FileSerializer
-from api.files.serializers import FileDetailSerializer, QuickFilesDetailSerializer
-from api.files.serializers import FileVersionSerializer
-from api.files.serializers import FileMetadataRecordSerializer
+from api.files.serializers import FileSerializer, FileMetadataRecordSerializer
 
+from api.files.serializers import FileDetailSerializer, FileVersionSerializer
+from osf.quickfiles.serializers import QuickFilesDetailSerializer
 
 class FileMixin(object):
     """Mixin with convenience methods for retrieving the current file based on the
@@ -52,9 +50,8 @@ class FileMixin(object):
         if getattr(obj.target, 'deleted', None):
             raise Gone(detail='The requested file is no longer available')
 
-        if getattr(obj.target, 'is_quickfiles', False) and getattr(obj.target, 'creator'):
-            if obj.target.creator.is_disabled:
-                raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
+        if obj.is_quickfile and obj.target.is_disabled:
+            raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
 
         if check_permissions:
             # May raise a permission denied
@@ -84,12 +81,13 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     def get_serializer_class(self):
         try:
-            target = self.get_target()
+            file_node = self.get_file()
         except (NotFound, Gone, PermissionDenied):
             return FileDetailSerializer
+
+        if file_node.is_quickfile:
+            return QuickFilesDetailSerializer
         else:
-            if isinstance(target, QuickFilesNode):
-                return QuickFilesDetailSerializer
             return FileDetailSerializer
 
     def get_target(self):
@@ -102,7 +100,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
         if self.request.GET.get('create_guid', False):
             # allows quickfiles to be given guids when another user wants a permanent link to it
-            if (self.get_target().has_permission(user, 'admin') and utils.has_admin_scope(self.request)) or getattr(file.target, 'is_quickfiles', False):
+            if file.is_quickfile or (self.get_target().has_permission(user, 'admin') and utils.has_admin_scope(self.request)):
                 file.get_guid(create=True)
         return file
 

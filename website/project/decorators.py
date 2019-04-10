@@ -12,7 +12,9 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
-from osf.models import AbstractNode, Guid, Preprint
+from osf.models import AbstractNode, Guid, Preprint, OSFUser
+
+from addons.osfstorage.models import OsfStorageFile
 from website import settings, language
 from website.util import web_url_for
 
@@ -26,22 +28,22 @@ def _kwargs_to_nodes(kwargs):
     :return: Tuple of parent and node
 
     """
-    node = kwargs.get('node') or kwargs.get('project')
+    target = kwargs.get('node') or kwargs.get('project') or OSFUser.load(kwargs.get('pid'))
     parent = kwargs.get('parent')
-    if node:
-        return parent, node
+    if target:
+        return parent, target
 
     pid = kwargs.get('pid')
     nid = kwargs.get('nid')
     if pid and nid:
-        node = _load_node_or_fail(nid)
+        target = _load_node_or_fail(nid)
         parent = _load_node_or_fail(pid)
     elif pid and not nid:
-        node = Preprint.load(pid)
-        if not node:
-            node = _load_node_or_fail(pid)
+        target = Preprint.load(pid)
+        if not target:
+            target = _load_node_or_fail(pid)
     elif nid and not pid:
-        node = _load_node_or_fail(nid)
+        target = _load_node_or_fail(nid)
     elif not pid and not nid:
         raise HTTPError(
             http.NOT_FOUND,
@@ -50,7 +52,7 @@ def _kwargs_to_nodes(kwargs):
                 'message_long': 'No Node with that primary key could be found',
             }
         )
-    return parent, node
+    return parent, target
 
 
 def _inject_nodes(kwargs):
@@ -84,6 +86,11 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             if preprints_valid and Preprint.load(kwargs.get('pid')):
+                _inject_nodes(kwargs)
+
+                return func(*args, **kwargs)
+
+            if quickfiles_valid and OSFUser.load(kwargs.get('pid')):
                 _inject_nodes(kwargs)
 
                 return func(*args, **kwargs)
@@ -270,7 +277,10 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            response = None
+            if OsfStorageFile.objects.filter(_id=kwargs.get('path')).exists():
+                file_node = OsfStorageFile.objects.get(_id=kwargs.get('path'))
+                kwargs['parent'] = file_node.parent
+
             target = None
             guid = Guid.load(kwargs.get('guid'))
             if guid:
@@ -447,7 +457,7 @@ def http_error_if_disk_saving_mode(func):
         return func(*args, **kwargs)
     return wrapper
 
-def check_contributor_auth(node, auth, include_public, include_view_only_anon):
+def check_contributor_auth(target, auth, include_public, include_view_only_anon):
     response = None
 
     user = auth.user
@@ -461,13 +471,13 @@ def check_contributor_auth(node, auth, include_public, include_view_only_anon):
         except PrivateLink.DoesNotExist:
             link_anon = None
 
-    if not node.is_public or not include_public:
+    if not getattr(target, 'is_public', True) or not include_public:
         if not include_view_only_anon and link_anon:
-            if not check_can_access(node=node, user=user):
+            if not check_can_access(node=target, user=user):
                 raise HTTPError(http.UNAUTHORIZED)
-        elif not getattr(node, 'private_link_keys_active', False) or auth.private_key not in node.private_link_keys_active:
-            if not check_can_access(node=node, user=user, key=auth.private_key):
-                redirect_url = check_key_expired(key=auth.private_key, node=node, url=request.url)
+        elif not getattr(target, 'private_link_keys_active', False) or auth.private_key not in target.private_link_keys_active:
+            if not check_can_access(node=target, user=user, key=auth.private_key):
+                redirect_url = check_key_expired(key=auth.private_key, node=target, url=request.url)
                 if request.headers.get('Content-Type') == 'application/json':
                     raise HTTPError(http.UNAUTHORIZED)
                 else:

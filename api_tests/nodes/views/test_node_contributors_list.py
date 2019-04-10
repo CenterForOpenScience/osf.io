@@ -29,7 +29,6 @@ def user():
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class NodeCRUDTestCase:
 
@@ -105,7 +104,6 @@ class NodeCRUDTestCase:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestNodeContributorList(NodeCRUDTestCase):
 
@@ -322,7 +320,6 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestNodeContributorAdd(NodeCRUDTestCase):
 
@@ -1262,7 +1259,6 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
@@ -2872,7 +2868,6 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestNodeContributorFiltering:
 

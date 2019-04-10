@@ -20,7 +20,6 @@ from website import settings
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestUsers:
 
     @pytest.fixture()
@@ -55,6 +54,7 @@ class TestUsers:
         assert user_one._id in ids
         assert user_two._id in ids
 
+    @pytest.mark.enable_quickfiles_creation
     def test_merged_user_is_not_in_user_list_after_2point3(
             self, app, user_one, user_two):
         user_two.merge_user(user_one)
@@ -66,6 +66,7 @@ class TestUsers:
         assert user_two._id in ids
         assert user_one._id not in ids
 
+    @pytest.mark.enable_quickfiles_creation
     def test_merged_user_is_returned_before_2point3(
             self, app, user_one, user_two):
         user_two.merge_user(user_one)

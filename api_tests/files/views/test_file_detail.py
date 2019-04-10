@@ -12,7 +12,7 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-from osf.models import NodeLog, Session, QuickFilesNode
+from osf.models import NodeLog, Session
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
     AuthUserFactory,
@@ -42,16 +42,11 @@ def user():
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestFileView:
 
     @pytest.fixture()
     def node(self, user):
         return ProjectFactory(creator=user, comment_level='public')
-
-    @pytest.fixture()
-    def quickfiles_node(self, user):
-        return QuickFilesNode.objects.get(creator=user)
 
     @pytest.fixture()
     def file(self, user, node):
@@ -90,32 +85,6 @@ class TestFileView:
         assert res.status_code == 410
 
         res = app.get(url_with_id, auth=user.auth, expect_errors=True)
-        assert res.status_code == 410
-
-    def test_disabled_users_quickfiles_file_detail_gets_410(self, app, quickfiles_node, user):
-        file_node = api_utils.create_test_file(quickfiles_node, user, create_guid=True)
-        url_with_guid = '/{}files/{}/'.format(
-            API_BASE, file_node.get_guid()._id
-        )
-        url_with_id = '/{}files/{}/'.format(API_BASE, file_node._id)
-
-        res = app.get(url_with_id)
-        assert res.status_code == 200
-
-        res = app.get(url_with_guid, auth=user.auth)
-        assert res.status_code == 200
-
-        user.is_disabled = True
-        user.save()
-
-        res = app.get(url_with_id, expect_errors=True)
-        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
-                                                  ' quickfiles are no longer available.'
-        assert res.status_code == 410
-
-        res = app.get(url_with_guid, expect_errors=True)
-        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
-                                                  ' quickfiles are no longer available.'
         assert res.status_code == 410
 
     def test_file_guid_guid_status(self, app, user, file, file_url):
@@ -614,20 +583,6 @@ class TestFileView:
             '/')
         assert node._id in split_href
         assert node.id not in split_href
-
-    def test_embed_user_on_quickfiles_detail(self, app, user):
-        quickfiles = QuickFilesNode.objects.get(creator=user)
-        osfstorage = quickfiles.get_addon('osfstorage')
-        root = osfstorage.get_root()
-        test_file = root.append_file('speedyfile.txt')
-
-        url = '/{}files/{}/?embed=user'.format(API_BASE, test_file._id)
-        res = app.get(url, auth=user.auth)
-
-        assert res.json['data'].get('embeds', None)
-        assert res.json['data']['embeds'].get('user')
-        assert res.json['data']['embeds']['user']['data']['id'] == user._id
-
 
 @pytest.mark.django_db
 class TestFileVersionView:

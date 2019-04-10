@@ -30,7 +30,6 @@ def component(admin_contributor, parent):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestNodeImplicitContributors:
     def test_list_and_filter_implicit_contributors(self, app, component, admin_contributor, implicit_contributor):
         url = '/{}nodes/{}/implicit_contributors/'.format(API_BASE, component._id)

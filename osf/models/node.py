@@ -37,7 +37,7 @@ from osf.models.contributor import (Contributor, get_contributor_permissions)
 from osf.models.collection import CollectionSubmission
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
-from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, ContributorMixin,
+from osf.models.mixins import (AddonModelMixin, CommentableMixin, FileTargetMixin, ContributorMixin,
                                NodeLinkMixin, Taggable, TaxonomizableMixin, SpamOverrideMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
@@ -185,7 +185,7 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
                    NodeLinkMixin, CommentableMixin, SpamOverrideMixin, TaxonomizableMixin,
-                   ContributorMixin, Taggable, Loggable, GuidMixin, BaseModel):
+                   ContributorMixin, Taggable, FileTargetMixin, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
@@ -1233,6 +1233,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
+    def get_root_folder(self, provider='osfstorage'):
+        return self.get_addon(provider).get_root()
+
     def get_root(self):
         sql = """
             WITH RECURSIVE ascendants AS (
@@ -1968,10 +1971,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
             # Title and description have special methods for logging purposes
             if key == 'title':
-                if not self.is_bookmark_collection or not self.is_quickfiles:
+                if not self.is_bookmark_collection:
                     self.set_title(title=value, auth=auth, save=False)
                 else:
-                    raise NodeUpdateError(reason='Bookmark collections or QuickFilesNodes cannot be renamed.', key=key)
+                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
@@ -2234,6 +2237,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             update_storage_usage(self)  # sets cache
             return storage_usage_cache.get(key)
 
+    def counts_towards_analytics(self, user):
+        return not self.is_contributor(user)
+
 
 class Node(AbstractNode):
     """
@@ -2274,7 +2280,6 @@ def remove_addons(auth, resource_object_list):
 
 ##### Signal listeners #####
 @receiver(post_save, sender=Node)
-@receiver(post_save, sender='osf.QuickFilesNode')
 def add_creator_as_contributor(sender, instance, created, **kwargs):
     if created:
         Contributor.objects.get_or_create(
@@ -2324,7 +2329,6 @@ def add_default_node_addons(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
-@receiver(post_save, sender='osf.QuickFilesNode')
 def set_parent_and_root(sender, instance, created, *args, **kwargs):
     if getattr(instance, '_parent', None):
         NodeRelation.objects.get_or_create(

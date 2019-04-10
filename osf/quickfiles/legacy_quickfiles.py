@@ -1,12 +1,7 @@
 from __future__ import unicode_literals
 
-import logging
-
 from osf.models.node import AbstractNode, AbstractNodeManager
 from osf.exceptions import NodeStateError
-
-
-logger = logging.getLogger(__name__)
 
 
 class QuickFilesNodeManager(AbstractNodeManager):
@@ -74,6 +69,10 @@ class QuickFilesNode(AbstractNode):
     @property
     def is_quickfiles(self):
         return True
+
+    @property
+    def is_disabled(self):
+        return self.creator.is_disabled
 
 
 def get_quickfiles_project_title(user):

@@ -9,9 +9,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils.timezone import now
 
 from osf.utils.sanitize import strip_html
-from osf.models import QuickFilesNode
 from api.base.settings.defaults import API_BASE
-from api.base.utils import waterbutler_api_url_for
 from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
@@ -21,7 +19,6 @@ from website.views import find_bookmark_collection
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestUserDetail:
 
     @pytest.fixture()
@@ -94,17 +91,6 @@ class TestUserDetail:
         user_json = res.json['data']
         assert 'profile_image' in user_json['links']
 
-    def test_files_relationship_upload(self, app, user_one):
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
-        res = app.get(url, auth=user_one)
-        quickfiles = QuickFilesNode.objects.get(creator=user_one)
-        user_json = res.json['data']
-        upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
-        waterbutler_upload = waterbutler_api_url_for(
-            quickfiles._id, 'osfstorage')
-
-        assert upload_url == waterbutler_upload
-
     def test_preprint_relationship(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         preprint_url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
@@ -174,7 +160,6 @@ class TestUserDetail:
         assert 'linkedIn' not in user_social_json.keys()
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_bookmark_creation
 class TestUserRoutesNodeRoutes:
 
@@ -419,7 +404,6 @@ class TestUserRoutesNodeRoutes:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestUserUpdate:
 
     @pytest.fixture()
@@ -1052,7 +1036,6 @@ class TestUserUpdate:
         assert user_one.accepted_terms_of_service is None
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestDeactivatedUser:
 
     @pytest.fixture()
@@ -1106,7 +1089,6 @@ class TestDeactivatedUser:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class UserProfileMixin(object):
 
     @pytest.fixture()

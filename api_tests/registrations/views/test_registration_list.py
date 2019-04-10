@@ -25,7 +25,6 @@ from website.views import find_bookmark_collection
 from osf.utils import permissions
 
 
-@pytest.mark.enable_quickfiles_creation
 class TestRegistrationList(ApiTestCase):
 
     def setUp(self):

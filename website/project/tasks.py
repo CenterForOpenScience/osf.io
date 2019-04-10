@@ -20,7 +20,7 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
     AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
 
-    if node.is_collection or node.archiving or node.is_quickfiles:
+    if node.is_collection or node.archiving:
         return
 
     need_update = bool(node.SEARCH_UPDATE_FIELDS.intersection(saved_fields))

@@ -25,8 +25,9 @@ from website import filters, settings
 pytestmark = pytest.mark.django_db
 
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 class TestUserSerializers(OsfTestCase):
+
+    @pytest.mark.enable_quickfiles_creation
     def test_serialize_user(self):
         master = UserFactory()
         user = UserFactory()
@@ -41,6 +42,7 @@ class TestUserSerializers(OsfTestCase):
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
         assert_equal(d['active'], user.is_active)
 
+    @pytest.mark.enable_quickfiles_creation
     def test_serialize_user_merged(self):
         master = UserFactory()
         user = UserFactory()

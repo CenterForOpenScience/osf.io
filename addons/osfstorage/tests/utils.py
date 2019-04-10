@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # encoding: utf-8
+import time
 
 from tests.base import OsfTestCase
 from osf_tests.factories import ProjectFactory
 from addons.osfstorage import settings as storage_settings
 
-import collections
-
-from framework.auth import Auth
+from framework.auth import Auth, signing
 
 
 identity = lambda value: value
@@ -66,7 +65,8 @@ def recursively_create_folder(settings, path):
     return current.append_file(final)
 
 
-def make_payload(user, name, **kwargs):
+def make_payload(user, **kwargs):
+    name = kwargs.get('name', 'testname')
     payload = {
         'user': user._id,
         'name': name,
@@ -87,3 +87,23 @@ def make_payload(user, name, **kwargs):
     }
     payload.update(kwargs)
     return payload
+
+def build_payload_v1_logs(user, metadata, **kwargs):
+    options = dict(
+        auth={'id': user._id},
+        action='create',
+        provider='osfstorage',
+        metadata=metadata,
+        time=time.time() + 1000,
+    )
+    options.update(kwargs)
+    options = {
+        key: value
+        for key, value in options.items()
+        if value is not None
+    }
+    message, signature = signing.default_signer.sign_payload(options)
+    return {
+        'payload': message,
+        'signature': signature,
+    }

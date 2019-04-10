@@ -9,7 +9,6 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestLogEmbeds:
 
     @pytest.fixture()

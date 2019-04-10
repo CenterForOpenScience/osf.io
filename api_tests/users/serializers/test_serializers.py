@@ -1,7 +1,7 @@
 import pytest
 
 from api.users.serializers import UserSerializer
-from api_tests.utils import create_test_file
+from api_tests.utils import create_test_quickfile
 
 from osf_tests.factories import (
     UserFactory,
@@ -15,13 +15,11 @@ from tests.utils import make_drf_request_with_version
 from django.utils import timezone
 from django.urls import resolve, reverse
 
-from osf.models import QuickFilesNode
 
 @pytest.fixture()
 def user():
     user = UserFactory()
-    quickfiles_node = QuickFilesNode.objects.get_for_user(user)
-    create_test_file(quickfiles_node, user)
+    create_test_quickfile(user)
     inst = InstitutionFactory()
     user.affiliated_institutions.add(inst)
     return user
@@ -104,6 +102,7 @@ def pytest_generate_tests(metafunc):
     argnames = sorted(funcarglist[0])
     metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
             for funcargs in funcarglist])
+
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation

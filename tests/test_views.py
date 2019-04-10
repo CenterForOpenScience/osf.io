@@ -4,11 +4,11 @@
 
 from __future__ import absolute_import
 
+import unittest
 import datetime as dt
 import httplib as http
 import json
 import time
-import unittest
 import urllib
 
 from flask import request
@@ -16,10 +16,8 @@ import mock
 import pytest
 from nose.tools import *  # noqa PEP8 asserts
 from django.utils import timezone
-from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
-from django.test import TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 
 from addons.github.tests.factories import GitHubAccountFactory
@@ -39,7 +37,7 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.transactions.handlers import no_auto_transaction
 from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
-from osf.models import AbstractNode, NodeLog, QuickFilesNode
+from osf.models import AbstractNode, NodeLog
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
@@ -51,13 +49,12 @@ from website.project.views.contributor import (
     send_claim_email,
     send_claim_registered_email,
 )
-from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
+from website.project.views.node import _should_show_wiki_widget, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
-from osf.models import Email
 from tests.base import (
     assert_is_redirect,
     capture_signals,
@@ -67,12 +64,12 @@ from tests.base import (
     assert_datetime_equal,
 )
 from tests.base import test_app as mock_app
-from tests.test_cas_authentication import generate_external_user_with_resp, make_external_response
+from tests.test_cas_authentication import generate_external_user_with_resp
 from api_tests.utils import create_test_file
 
 pytestmark = pytest.mark.django_db
 
-from osf.models import NodeRelation, QuickFilesNode, BlacklistedEmailDomain
+from osf.models import NodeRelation, BlacklistedEmailDomain
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -918,7 +915,7 @@ class TestProjectViews(OsfTestCase):
         project = ProjectFactory(creator=self.user1, is_public=True)
 
         registration = RegistrationFactory(project=project, is_public=True)
-        reg_file = create_test_file(registration, user=registration.creator, create_guid=True)
+        reg_file = create_test_file(registration, registration.creator, create_guid=True)
         registration.retract_registration(self.user1)
 
         approval_token = registration.retraction.approval_state[self.user1._id]['approval_token']
@@ -1467,23 +1464,6 @@ class TestUserProfile(OsfTestCase):
         assert_equal(mock_client.lists.unsubscribe.call_count, 0)
         assert_equal(mock_client.lists.subscribe.call_count, 0)
         handlers.celery_teardown_request()
-
-    def test_user_with_quickfiles(self):
-        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        create_test_file(quickfiles_node, self.user, filename='skrr_skrrrrrrr.pdf')
-
-        url = web_url_for('profile_view_id', uid=self.user._id)
-        res = self.app.get(url, auth=self.user.auth)
-
-        assert_in('Quick files', res.body)
-
-    def test_user_with_no_quickfiles(self):
-        assert(not QuickFilesNode.objects.first().files.filter(type='osf.osfstoragefile').exists())
-
-        url = web_url_for('profile_view_id', uid=self.user._primary_key)
-        res = self.app.get(url, auth=self.user.auth)
-
-        assert_not_in('Quick files', res.body)
 
     def test_user_update_region(self):
         user_settings = self.user.get_addon('osfstorage')
@@ -2351,7 +2331,6 @@ class TestUserInviteViews(OsfTestCase):
 
 
 @pytest.mark.enable_implicit_clean
-@pytest.mark.enable_quickfiles_creation
 class TestClaimViews(OsfTestCase):
 
     def setUp(self):
@@ -3410,6 +3389,7 @@ class TestAuthViews(OsfTestCase):
         assert_true(mock_send_confirm_email.called)
 
     @mock.patch('framework.auth.views.mails.send_mail')
+    @pytest.mark.enable_quickfiles_creation
     def test_resend_confirmation(self, send_mail):
         email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
@@ -3591,6 +3571,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(res.json['message_long'], 'Cannnot resend confirmation for confirmed emails')
 
     @mock.patch('framework.auth.views.mails.send_mail')
+    @pytest.mark.enable_quickfiles_creation
     def test_resend_confirmation_does_not_send_before_throttle_expires(self, send_mail):
         email = 'test@mail.com'
         self.user.save()
@@ -4856,7 +4837,6 @@ class TestResetPassword(OsfTestCase):
         assert_in('resetpassword', location)
 
 
-@pytest.mark.enable_quickfiles_creation
 @mock.patch('website.views.PROXY_EMBER_APPS', False)
 class TestResolveGuid(OsfTestCase):
     def setUp(self):
@@ -4916,21 +4896,6 @@ class TestResolveGuid(OsfTestCase):
             res.request.path,
             '/{}/'.format(preprint._id)
         )
-
-    def test_deleted_quick_file_gone(self):
-        user = AuthUserFactory()
-        quickfiles = QuickFilesNode.objects.get(creator=user)
-        osfstorage = quickfiles.get_addon('osfstorage')
-        root = osfstorage.get_root()
-        test_file = root.append_file('soon_to_be_deleted.txt')
-        guid = test_file.get_guid(create=True)._id
-        test_file.delete()
-
-        url = web_url_for('resolve_guid', _guid=True, guid=guid)
-        res = self.app.get(url, expect_errors=True)
-
-        assert_equal(res.status_code, http.GONE)
-        assert_equal(res.request.path, '/{}/'.format(guid))
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 
@@ -5117,7 +5082,3 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
             }
         )
         assert_equal(res.status_code, 403)
-
-
-if __name__ == '__main__':
-    unittest.main()

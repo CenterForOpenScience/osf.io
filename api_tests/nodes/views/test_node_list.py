@@ -150,8 +150,6 @@ class TestNodeList:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
-@pytest.mark.enable_bookmark_creation
 class TestNodeFiltering:
 
     @pytest.fixture()
@@ -577,6 +575,7 @@ class TestNodeFiltering:
         )
         assert len(res.json.get('data')) == 0
 
+    @pytest.mark.enable_bookmark_creation
     def test_get_projects(
             self, app, user_one, public_project_one,
             public_project_two, public_project_three,
@@ -1241,7 +1240,6 @@ class TestNodeFiltering:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestNodeCreate:
 
@@ -3668,7 +3666,6 @@ class TestNodeBulkDeleteSkipUneditable:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestNodeListPagination:
 
     @pytest.fixture()
