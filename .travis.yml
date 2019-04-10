@@ -44,6 +44,7 @@ before_install:
       mkdir -p $HOME/.cache/downloads
       mkdir -p $HOME/.cache/pip
       mkdir -p $HOME/.cache/wheelhouse
+      mkdir -p $HOME/.cache/testmon
       rm -rf node_modules  ## TODO remove this later
     # postgres
     - |
@@ -122,7 +123,8 @@ install:
 # Run Python tests (core and addon) and JS tests
 script:
     - export COVERAGE=`if [ "$TRAVIS_BRANCH" == "master-w-coverage" ]; then echo "--coverage"; else echo ""; fi`
-    - invoke test_travis_$TEST_BUILD -n 4 $COVERAGE
+    - export TESTMON_DATAFILE=$HOME/.cache/testmon/.testmondata_$TEST_BUILD
+    - invoke test_travis_$TEST_BUILD -n 1 $COVERAGE --testmon
 
 after_success:
     - if [[ "$TRAVIS_BRANCH" == "master-w-coverage" ]]; then coveralls; fi
