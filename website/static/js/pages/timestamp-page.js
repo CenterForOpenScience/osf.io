@@ -7,7 +7,7 @@ timestampCommon.setWebOrAdmin('web');
 
 
 $(document).ready(function () {
-    timestampCommon.init(window.contextVars.node.urls.api + 'timestamp/task_status/');
+    timestampCommon.init();
 });
 
 $(function () {

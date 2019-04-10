@@ -169,17 +169,3 @@ class CancelTask(RdmPermissionMixin, View):
             json.dumps(result),
             content_type='application/json'
         )
-
-class TaskStatus(RdmPermissionMixin, View):
-
-    def test_func(self):
-        """validate user permissions"""
-        institution_id = int(self.kwargs.get('institution_id'))
-        return self.has_auth(institution_id)
-
-    def post(self, request, *args, **kwargs):
-        result = timestamp.get_celery_task_progress(AbstractNode.objects.get(id=self.kwargs['guid']))
-        return HttpResponse(
-            json.dumps(result),
-            content_type='application/json'
-        )
