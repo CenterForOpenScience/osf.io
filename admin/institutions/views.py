@@ -104,13 +104,16 @@ class InstitutionDefaultStorageDisplay(PermissionRequiredMixin, TemplateView):
     raise_exception = True
 
     def get_context_data(self, *args, **kwargs):
+        import logging
         kwargs['institution'] = self.request.user.affiliated_institutions.first()._id
         if Region.objects.filter(_id=kwargs['institution']).exists():
             kwargs['region'] = Region.objects.get(_id=kwargs['institution'])
         else:
             kwargs['region'] = Region.objects.first()
-        kwargs['region'].waterbutler_credentials = ast.literal_eval(json.dumps(kwargs['region'].waterbutler_credentials))
-        kwargs['region'].waterbutler_settings = ast.literal_eval(json.dumps(kwargs['region'].waterbutler_settings))
+        kwargs['region'].waterbutler_credentials = json.dumps(kwargs['region'].waterbutler_credentials)
+        kwargs['region'].waterbutler_settings = json.dumps(kwargs['region'].waterbutler_settings)
+        #kwargs['region'].waterbutler_credentials = ast.literal_eval(json.dumps(kwargs['region'].waterbutler_credentials))
+        #kwargs['region'].waterbutler_settings = ast.literal_eval(json.dumps(kwargs['region'].waterbutler_settings))
         return kwargs
 
 class InstitutionDefaultStorageDetail(PermissionRequiredMixin, View):

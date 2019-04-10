@@ -337,7 +337,6 @@ class InstitutionDefaultStorageDisplay(AdminTestCase):
         self.request = RequestFactory().get('/fake_path')
         self.view = views.InstitutionDefaultStorageDisplay()
         self.view = setup_user_view(self.view, self.request, user=self.user)
-
         self.view.kwargs = {'institution_id': self.institution.id}
 
     def tearDown(self):
@@ -366,6 +365,12 @@ class InstitutionDefaultStorageDisplay(AdminTestCase):
         nt.assert_equal((res['region'])._id, self.us._id)
 
     def test_get(self, *args, **kwargs):
+        self.us = RegionFactory()
+        self.us._id = self.institution._id
+        self.us.save()
         res = self.view.get(self.request, *args, **kwargs)
-        self.logger.info(res.status_code)
+        nt.assert_is_instance(res.context_data['region'], Region)
+        nt.assert_equal(res.context_data['institution'], self.institution._id)
+        nt.assert_equal((res.context_data['region']).name, self.us.name)
+        nt.assert_equal((res.context_data['region'])._id, self.us._id)
         nt.assert_equal(res.status_code, 200)
