@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import json
-import ast
 
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
@@ -104,7 +103,6 @@ class InstitutionDefaultStorageDisplay(PermissionRequiredMixin, TemplateView):
     raise_exception = True
 
     def get_context_data(self, *args, **kwargs):
-        import logging
         kwargs['institution'] = self.request.user.affiliated_institutions.first()._id
         if Region.objects.filter(_id=kwargs['institution']).exists():
             kwargs['region'] = Region.objects.get(_id=kwargs['institution'])
