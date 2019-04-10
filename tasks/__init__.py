@@ -438,13 +438,13 @@ def test(ctx, all=False, lint=False):
         # TODO: Enable admin tests
         test_admin(ctx)
         karma(ctx)
+
 @task
-def remove_failures_from_testmon(ctx):
-    test_branches = ['addons', 'website', 'api1_and_js', 'api2', 'api3_and_osf']
-    for branch_name in test_branches:
-        conn = sqlite3.connect('.cache/testmon/.testmondata_{}'.format(branch_name))
-        tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
-        ctx.run('echo {} failures purged from travis cache'.format(tests_decached))
+def remove_failures_from_testmon(ctx, branch=None):
+
+    conn = sqlite3.connect('.cache/testmon/.testmondata_{}'.format(branch))
+    tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
+    ctx.run('echo {} failures purged from travis cache'.format(tests_decached))
 
 @task
 def travis_setup(ctx):
