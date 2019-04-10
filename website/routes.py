@@ -1426,8 +1426,8 @@ def make_url_map(app):
                 '/project/<pid>/timestamp/json/',
                 '/project/<pid>/node/<nid>/timestamp/json/',
             ],
-            ['post'],
-            project_views.timestamp.verify_timestamp_token,
+            ['get', 'post'],
+            project_views.timestamp.collect_timestamp_trees_to_json,
             json_renderer,
         )
     ])
@@ -1806,29 +1806,20 @@ def make_url_map(app):
         # Security
         Rule(
             [
+                '/project/<pid>/timestamp/timestamp_error_data/',
+                '/project/<pid>/node/<nid>/timestamp/timestamp_error_data/',
+            ],
+            ['get', 'post'],
+            project_views.timestamp.get_timestamp_error_data,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/timestamp/add_timestamp/',
                 '/project/<pid>/node/<nid>/timestamp/add_timestamp/',
             ],
-            ['post'],
+            ['get', 'post'],
             project_views.timestamp.add_timestamp_token,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/timestamp/cancel_task/',
-                '/project/<pid>/node/<nid>/timestamp/cancel_task/',
-            ],
-            ['post'],
-            project_views.timestamp.cancel_task,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/timestamp/task_status/',
-                '/project/<pid>/node/<nid>/timestamp/task_status/',
-            ],
-            ['post'],
-            project_views.timestamp.task_status,
             json_renderer,
         ),
 

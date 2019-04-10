@@ -28,15 +28,8 @@ $(function () {
         }
         timestampCommon.add({
             url: nodeApiUrl + 'timestamp/add_timestamp/',
-            method: 'POST'
+            method: 'GET'
         });
-    });
-
-    $('#btn-cancel').on('click', function () {
-        if ($('#btn-cancel').attr('disabled') !== undefined) {
-            return false;
-        }
-        timestampCommon.cancel(nodeApiUrl + 'timestamp/cancel_task/');
     });
 
     $('#btn-download').on('click', function () {

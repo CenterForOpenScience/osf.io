@@ -66,24 +66,15 @@
                     <div class="row">
                         <div class="col-sm-7">
                             <span>
-                                <button type="button" class="btn btn-success" id="btn-verify" ${ 'disabled=disabled' if not async_task['ready'] else '' }>Verify</button>
-                                <button type="button" class="btn btn-success" id="btn-addtimestamp" ${ 'disabled=disabled' if not async_task['ready'] else '' }>Request Trusted Timestamp</button>
-                                <button type="button" class="btn btn-default" id="btn-cancel" ${ 'disabled=disabled' if async_task['ready'] else '' }>Cancel</button>
+                                <button type="button" class="btn btn-success" id="btn-verify">Verify</button>
+                                <button type="button" class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</button>
                             </span>
                         </div>
                         <div class="col-sm-5"></div>
                     </div>
                 </div>
             </div>
-            <div class="row" id="loading-row" style="${ 'display: none;' if async_task['ready'] else '' }">
-                <div class="col-xs-12">
-                    <div class="spinner-loading-wrapper">
-                        <p class="m-t-sm fg-load-message" id="loading-message">Processing, please wait...</p>
-                        <div class="logo-spin logo-lg"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="row" id="pagination-row" style="${ 'display: none;' if not async_task['ready'] else '' }">
+            <div class="row">
                 <div class="col-sm-8">
                     <ul class="pagination-wrap" style="display: none;">
                         <li class="pagination-prev">
@@ -106,7 +97,8 @@
                     </select>
                 </div>
             </div>
-            <div class="row" id="timestamp-table-row" style="${ 'display: none;' if not async_task['ready'] else '' }">
+            <span id="configureNodeAnchor" class="anchor"></span>
+            <div class="row">
                 <div class="col-xs-12">
                     <table class="table table-bordered table-addon-terms">
                         <thead class="block-head">
@@ -151,6 +143,12 @@
                                 </th>
                             </tr>
                         </thead>
+                        <font color="red">
+                            <div id="timestamp_errors_spinner" class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading timestamp error list ...  </p>
+                            </div>
+                        </font>
                         <tbody class="list" id="timestamp_error_list">
                             % for provider_error_info in provider_list:
                                 % for error_info in provider_error_info['error_list']:
@@ -191,7 +189,7 @@
                     </table>
                 </div>
             </div>
-            <div class="row" id="download-row" style="${ 'display: none;' if not async_task['ready'] else '' }">
+            <div class="row">
                 <div class="col-sm-3">
                     <span>
                         <select id="fileFormat" class="form-control">

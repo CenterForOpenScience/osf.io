@@ -292,9 +292,6 @@ ANONYMOUS_USER_NAME = None
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
 
-# Timestamp - number of requests to send to cloud storages per minute
-TS_REQUESTS_PER_MIN = 30
-
 # salt used for generating hashids
 HASHIDS_SALT = 'pinkhimalayan'
 
