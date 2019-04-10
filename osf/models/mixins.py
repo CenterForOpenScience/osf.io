@@ -25,6 +25,7 @@ from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
 from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
+from osf.models import Guid
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
@@ -1646,13 +1647,9 @@ class FileTargetMixin(Loggable):
 
     @classmethod
     def load_target_from_guid(cls, _id):
-        for target_class in cls.__subclasses__():
-            try:
-                target = target_class.objects.get(guids___id=_id)
-            except target_class.DoesNotExist:
-                continue
-            if target is not None:
-                return target
+        valid_model_content_types = [subclass._meta.model_name for subclass in cls.__subclasses__()]
+
+        return Guid.objects.get(_id=_id, content_type__model__in=valid_model_content_types).referent
 
     @abstractmethod
     def get_root_folder(self, provider='osfstorage'):
