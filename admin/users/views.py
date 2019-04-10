@@ -40,7 +40,7 @@ from osf.models.admin_log_entry import (
 )
 
 from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm
+from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 
@@ -302,6 +302,32 @@ class User2FactorDeleteView(UserDeleteView):
             action_flag=USER_2_FACTOR
         )
         return redirect(reverse_user(self.kwargs.get('guid')))
+
+
+class UserAddSystemTag(PermissionRequiredMixin, FormView):
+
+    template_name = 'users/add_system_tag.html'
+    object_type = 'osfuser'
+    permission_required = 'osf.change_osfuser'
+    raise_exception = True
+    form_class = AddSystemTagForm
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('users:user', kwargs={'guid': self.kwargs.get('guid')})
+
+    def get_object(self, queryset=None):
+        return OSFUser.load(self.kwargs.get('guid'))
+
+    def get_context_data(self, **kwargs):
+        return {'guid': self.get_object()._id}
+
+    def form_valid(self, form):
+        user = self.get_object()
+        system_tag_to_add = form.cleaned_data['system_tag_to_add']
+        user.add_system_tag(system_tag_to_add)
+        user.save()
+
+        return super(UserAddSystemTag, self).form_valid(form)
 
 
 class UserFormView(PermissionRequiredMixin, FormView):
