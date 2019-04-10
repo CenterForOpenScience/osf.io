@@ -6,12 +6,8 @@
 #
 
 import os
-import sys
-import json
 import time
-import datetime
 import json
-import re
 import logging
 import hashlib
 import requests
@@ -28,15 +24,16 @@ logger.setLevel(10)
 stdout = logging.StreamHandler()
 logger.addHandler(stdout)
 
-map_hostname      = settings.MAPCORE_HOSTNAME
+map_hostname = settings.MAPCORE_HOSTNAME
 map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
-map_token_path    = settings.MAPCORE_TOKEN_PATH
-map_refresh_path  = settings.MAPCORE_REFRESH_PATH
-map_api_path      = settings.MAPCORE_API_PATH
-map_clientid      = settings.MAPCORE_CLIENTID
-map_secret        = settings.MAPCORE_SECRET
-map_redirect      = settings.MAPCORE_REDIRECT
+map_token_path = settings.MAPCORE_TOKEN_PATH
+map_refresh_path = settings.MAPCORE_REFRESH_PATH
+map_api_path = settings.MAPCORE_API_PATH
+map_clientid = settings.MAPCORE_CLIENTID
+map_secret = settings.MAPCORE_SECRET
+map_redirect = settings.MAPCORE_REDIRECT
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
+
 
 class MAPCore:
 
@@ -68,7 +65,7 @@ class MAPCore:
         self.lock_refresh()
 
         url = map_hostname + map_refresh_path
-        basic_auth = ( self.client_id, self.client_secret )
+        basic_auth = (self.client_id, self.client_secret)
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
         }
@@ -79,7 +76,7 @@ class MAPCore:
         params = urllib.urlencode(params)
         logger.debug("  params=" + params)
 
-        r = requests.post(url, auth = basic_auth, headers = headers, data = params)
+        r = requests.post(url, auth=basic_auth, headers=headers, data=params)
         if r.status_code != requests.codes.ok:
             logger.info("MAPCore::refresh_token: Refreshing token failed: status_code=" + str(r.status_code))
             self.unlock_refresh()
@@ -116,7 +113,7 @@ class MAPCore:
     def lock_refresh(self):
 
         while True:
-            fd = os.open(self.REFRESH_LOCK, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0666)
+            fd = os.open(self.REFRESH_LOCK, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0666)
             if fd >= 0:
                 os.close(fd)
                 return
@@ -141,16 +138,16 @@ class MAPCore:
             time_stamp, signature = self.calc_signature()
 
             url = map_hostname + map_api_path + "/version"
-            payload = { 'time_stamp': time_stamp, 'signature': signature }
-            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
+            payload = {'time_stamp': time_stamp, 'signature': signature}
+            headers = {"Authorization": "Bearer " + self.user.map_profile.oauth_access_token}
 
-            r = requests.get(url, headers = headers, params = payload)
+            r = requests.get(url, headers=headers, params=payload)
             j = self.check_result(r)
-            if j != False:
+            if j is not False:
                 return j
 
             if self.is_token_expired(r):
-                if self.refresh_token() == False:
+                if self.refresh_token() is False:
                     return False
                 count += 1
             else:
@@ -175,11 +172,11 @@ class MAPCore:
                 'signature': signature,
                 'searchWord': group_name.encode('utf-8')
             }
-            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
+            headers = {"Authorization": "Bearer " + self.user.map_profile.oauth_access_token}
 
-            r = requests.get(url, headers = headers, params = payload)
+            r = requests.get(url, headers=headers, params=payload)
             j = self.check_result(r)
-            if j != False:
+            if j is not False:
                 if len(j["result"]["groups"]) == 0:
                     self.last_error = "Group not found"
                     logger.debug("  Group not found")
@@ -187,7 +184,7 @@ class MAPCore:
                 return j
 
             if self.is_token_expired(r):
-                if self.refresh_token() == False:
+                if self.refresh_token() is False:
                     return False
                 count += 1
             else:
@@ -207,12 +204,12 @@ class MAPCore:
             time_stamp, signature = self.calc_signature()
 
             url = map_hostname + map_api_path + "/group/" + group_key
-            payload = { 'time_stamp': time_stamp, 'signature': signature }
-            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
+            payload = {'time_stamp': time_stamp, 'signature': signature}
+            headers = {"Authorization": "Bearer " + self.user.map_profile.oauth_access_token}
 
-            r = requests.get(url, headers = headers, params = payload)
+            r = requests.get(url, headers=headers, params=payload)
             j = self.check_result(r)
-            if j != False:
+            if j is not False:
                 if len(j["result"]["groups"]) == 0:
                     self.last_error = "Group not found"
                     logger.debug("  Group not found")
@@ -220,7 +217,7 @@ class MAPCore:
                 return j
 
             if self.is_token_expired(r):
-                if self.refresh_token() == False:
+                if self.refresh_token() is False:
                     return False
                 count += 1
             else:
@@ -242,7 +239,7 @@ class MAPCore:
         while count < 2:
             time_stamp, signature = self.calc_signature()
 
-            params = { }
+            params = {}
             params["request"] = {
                 "time_stamp": time_stamp,
                 "signature": signature
@@ -260,9 +257,9 @@ class MAPCore:
                 "Content-Length": str(len(params))
             }
 
-            r = requests.post(url, headers = headers, data = params)
+            r = requests.post(url, headers=headers, data=params)
             j = self.check_result(r)
-            if j != False:
+            if j is not False:
                 group_key = j["result"]["groups"][0]["group_key"]
                 logger.debug("  New geoup has been created (group_key=" + group_key + ")")
 
@@ -273,7 +270,7 @@ class MAPCore:
                 return j
 
             if self.is_token_expired(r):
-                if self.refresh_token() == False:
+                if self.refresh_token() is False:
                     return False
                 count += 1
             else:
@@ -292,7 +289,7 @@ class MAPCore:
         while count < 2:
             time_stamp, signature = self.calc_signature()
 
-            params = { }
+            params = {}
             params["request"] = {
                 "time_stamp": time_stamp,
                 "signature": signature
@@ -315,13 +312,13 @@ class MAPCore:
                 "Content-Length": str(len(params))
             }
 
-            r = requests.post(url, headers = headers, data = params)
+            r = requests.post(url, headers=headers, data=params)
             j = self.check_result(r)
-            if j != False:
+            if j is not False:
                 return j
 
             if self.is_token_expired(r):
-                if self.refresh_token() == False:
+                if self.refresh_token() is False:
                     return False
                 count += 1
             else:
@@ -341,16 +338,16 @@ class MAPCore:
             time_stamp, signature = self.calc_signature()
 
             url = map_hostname + map_api_path + "/member/" + group_key
-            payload = { 'time_stamp': time_stamp, 'signature': signature }
-            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
+            payload = {'time_stamp': time_stamp, 'signature': signature}
+            headers = {"Authorization": "Bearer " + self.user.map_profile.oauth_access_token}
 
-            r = requests.get(url, headers = headers, params = payload)
+            r = requests.get(url, headers=headers, params=payload)
             j = self.check_result(r)
-            if j != False:
+            if j is not False:
                 return j
 
             if self.is_token_expired(r):
-                if self.refresh_token() == False:
+                if self.refresh_token() is False:
                     return False
                 count += 1
             else:
@@ -370,16 +367,16 @@ class MAPCore:
             time_stamp, signature = self.calc_signature()
 
             url = map_hostname + map_api_path + "/mygroup"
-            payload = { 'time_stamp': time_stamp, 'signature': signature }
-            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
+            payload = {'time_stamp': time_stamp, 'signature': signature}
+            headers = {"Authorization": "Bearer " + self.user.map_profile.oauth_access_token}
 
-            r = requests.get(url, headers = headers, params = payload)
+            r = requests.get(url, headers=headers, params=payload)
             j = self.check_result(r)
-            if j != False:
+            if j is not False:
                 return j
 
             if self.is_token_expired(r):
-                if self.refresh_token() == False:
+                if self.refresh_token() is False:
                     return False
                 count += 1
             else:
@@ -398,7 +395,7 @@ class MAPCore:
         while count < 2:
             time_stamp, signature = self.calc_signature()
 
-            params = { }
+            params = {}
             params["request"] = {
                 "time_stamp": time_stamp,
                 "signature": signature
@@ -415,13 +412,13 @@ class MAPCore:
                 "Content-Length": str(len(params))
             }
 
-            r = requests.post(url, headers = headers, data = params)
+            r = requests.post(url, headers=headers, data=params)
             j = self.check_result(r)
-            if j != False:
+            if j is not False:
                 return j
 
             if self.is_token_expired(r):
-                if self.refresh_token() == False:
+                if self.refresh_token() is False:
                     return False
                 count += 1
             else:
@@ -441,16 +438,16 @@ class MAPCore:
             time_stamp, signature = self.calc_signature()
 
             url = map_hostname + map_api_path + "/member/" + group_key + "/" + eppn
-            payload = { 'time_stamp': time_stamp, 'signature': signature }
-            headers = { "Authorization": "Bearer " + self.user.map_profile.oauth_access_token }
+            payload = {'time_stamp': time_stamp, 'signature': signature}
+            headers = {"Authorization": "Bearer " + self.user.map_profile.oauth_access_token}
 
-            r = requests.delete(url, headers = headers, params = payload)
+            r = requests.delete(url, headers=headers, params=payload)
             j = self.check_result(r)
-            if j != False:
+            if j is not False:
                 return j
 
             if self.is_token_expired(r):
-                if self.refresh_token() == False:
+                if self.refresh_token() is False:
                     return False
                 count += 1
             else:
@@ -466,7 +463,7 @@ class MAPCore:
         logger.debug("MAPCore::edit_member (group_key=" + group_key + ", eppn=" + eppn + ", admin=" + str(admin) + ")")
 
         j = self.remove_from_group(group_key, eppn)
-        if j == False:
+        if j is False:
             return False
 
         j = self.add_to_group(group_key, eppn, admin)
