@@ -427,6 +427,7 @@ def configure_requests(node, **kwargs):
 # View Project
 ##############################################################################
 
+@process_token_or_pass
 @must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
 @ember_flag_is_active(features.EMBER_PROJECT_DETAIL)
