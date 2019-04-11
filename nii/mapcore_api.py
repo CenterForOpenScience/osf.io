@@ -34,6 +34,13 @@ map_secret = settings.MAPCORE_SECRET
 map_redirect = settings.MAPCORE_REDIRECT
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 
+class MAPCoreException(Exception):
+
+    pass
+
+class MAPCoreTokenExpired(MAPCoreException):
+
+    pass
 
 class MAPCore:
 
@@ -144,16 +151,20 @@ class MAPCore:
             r = requests.get(url, headers=headers, params=payload)
             j = self.check_result(r)
             if j is not False:
+                # Function succeeded.
                 return j
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
-                    return False
+                    # Automatic refreshing token failed.
+                    raise MAPCoreTokenExpired
                 count += 1
             else:
-                return False
+                # Any other API error.
+                raise MAPCoreException(self.get_last_error())
 
-        return False
+        # Could not refresh token after retries (may not occur).
+        raise MAPCoreTokenExpired
 
     #
     # Get group information by group name.
@@ -180,17 +191,22 @@ class MAPCore:
                 if len(j["result"]["groups"]) == 0:
                     self.last_error = "Group not found"
                     logger.debug("  Group not found")
-                    return False
+                    # Group not found.
+                    raise MAPCoreException(self.get_last_error())
+                # Function succeeded.
                 return j
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
-                    return False
+                    # Automatic refreshing token failed.
+                    raise MAPCoreTokenExpired
                 count += 1
             else:
-                return False
+                # Any other API error.
+                raise MAPCoreException(self.get_last_error())
 
-        return False
+        # Could not refresh token after retries (may not occur).
+        raise MAPCoreTokenExpired
 
     #
     # Get group information by group key.
@@ -213,17 +229,22 @@ class MAPCore:
                 if len(j["result"]["groups"]) == 0:
                     self.last_error = "Group not found"
                     logger.debug("  Group not found")
-                    return False
+                    # Group not found.
+                    raise MAPCoreException(self.get_last_error())
+                # Function succeeded.
                 return j
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
-                    return False
+                    # Automatic refreshing token failed.
+                    raise MAPCoreTokenExpired
                 count += 1
             else:
-                return False
+                # Any other API error.
+                raise MAPCoreException(self.get_last_error())
 
-        return False
+        # Could not refresh token after retries (may not occur).
+        raise MAPCoreTokenExpired
 
     #
     # Create new group, and make it public, active and open_member.
@@ -271,12 +292,15 @@ class MAPCore:
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
-                    return False
+                    # Automatic refreshing token failed.
+                    raise MAPCoreTokenExpired
                 count += 1
             else:
-                return False
+                # Any other API error.
+                raise MAPCoreException(self.get_last_error())
 
-        return False
+        # Could not refresh token after retries (may not occur).
+        raise MAPCoreTokenExpired
 
     #
     # Change group properties.
@@ -315,16 +339,20 @@ class MAPCore:
             r = requests.post(url, headers=headers, data=params)
             j = self.check_result(r)
             if j is not False:
+                # Function succeeded.
                 return j
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
-                    return False
+                    # Automatic refreshing token failed.
+                    raise MAPCoreTokenExpired
                 count += 1
             else:
-                return False
+                # Any other API error.
+                raise MAPCoreException(self.get_last_error())
 
-        return False
+        # Could not refresh token after retries (may not occur).
+        raise MAPCoreTokenExpired
 
     #
     # Get member of group.
@@ -344,16 +372,20 @@ class MAPCore:
             r = requests.get(url, headers=headers, params=payload)
             j = self.check_result(r)
             if j is not False:
+                # Function succeeded.
                 return j
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
-                    return False
+                    # Automatic refreshing token failed.
+                    raise MAPCoreTokenExpired
                 count += 1
             else:
-                return False
+                # Any other API error.
+                raise MAPCoreException(self.get_last_error())
 
-        return False
+        # Could not refresh token after retries (may not occur).
+        raise MAPCoreTokenExpired
 
     #
     # Get joined group list.
@@ -373,16 +405,20 @@ class MAPCore:
             r = requests.get(url, headers=headers, params=payload)
             j = self.check_result(r)
             if j is not False:
+                # Function succeeded.
                 return j
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
-                    return False
+                    # Automatic refreshing token failed.
+                    raise MAPCoreTokenExpired
                 count += 1
             else:
-                return False
+                # Any other API error.
+                raise MAPCoreException(self.get_last_error())
 
-        return False
+        # Could not refresh token after retries (may not occur).
+        raise MAPCoreTokenExpired
 
     #
     # Add to group.
@@ -415,16 +451,20 @@ class MAPCore:
             r = requests.post(url, headers=headers, data=params)
             j = self.check_result(r)
             if j is not False:
+                # Function succeeded.
                 return j
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
-                    return False
+                    # Automatic refreshing token failed.
+                    raise MAPCoreTokenExpired
                 count += 1
             else:
-                return False
+                # Any other API error.
+                raise MAPCoreException(self.get_last_error())
 
-        return False
+        # Could not refresh token after retries (may not occur).
+        raise MAPCoreTokenExpired
 
     #
     # Remove from group.
@@ -444,16 +484,20 @@ class MAPCore:
             r = requests.delete(url, headers=headers, params=payload)
             j = self.check_result(r)
             if j is not False:
+                # Function succeeded.
                 return j
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
-                    return False
+                    # Automatic refreshing token failed.
+                    raise MAPCoreTokenExpired
                 count += 1
             else:
-                return False
+                # Any other API error.
+                raise MAPCoreException(self.get_last_error())
 
-        return False
+        # Could not refresh token after retries (may not occur).
+        raise MAPCoreTokenExpired
 
     #
     # Edit member.
@@ -462,10 +506,8 @@ class MAPCore:
 
         logger.debug("MAPCore::edit_member (group_key=" + group_key + ", eppn=" + eppn + ", admin=" + str(admin) + ")")
 
+        # NOTE: If error occurs, an exception will be thrown.
         j = self.remove_from_group(group_key, eppn)
-        if j is False:
-            return False
-
         j = self.add_to_group(group_key, eppn, admin)
 
         return j
