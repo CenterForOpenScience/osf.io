@@ -341,6 +341,12 @@ div[data-growl="container"] {
 
 
 @media only screen and (max-width : 767px) {
+    #fileBrowser .db-sidebar {
+        height: 605px !important;
+    }
+    #fileBrowser .db-main {
+        height: 605px !important;
+    }
     .db-sidebar, .db-infobar {
         position: absolute;
         width: 100%;
