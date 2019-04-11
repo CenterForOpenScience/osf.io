@@ -24,7 +24,7 @@ else:
     from osf.models.user import OSFUser, CGGroup
     from osf.models.node import Node
     from osf.models.map import MAPProfile
-    from nii.mapcore_api import MAPCore
+    from nii.mapcore_api import MAPCore, MAPCoreException, MAPCoreTokenExpired
 
 from website.app import init_app
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     from osf.models.user import OSFUser
     from osf.models.node import Node
     from osf.models.map import MAPProfile
-    from nii.mapcore_api import MAPCore
+    from nii.mapcore_api import MAPCore, MAPCoreException, MAPCoreTokenExpired
 
     from website import settings
 
@@ -84,118 +84,158 @@ if __name__ == '__main__':
     #
     # API バージョン
     #
-    j = mapcore.get_api_version()
-    if j == False:
-        logger.info("Error: " + mapcore.get_last_error())
+    try:
+        j = mapcore.get_api_version()
+    except MAPCoreTokenExpired:
+        logger.info("FATAL ERROR: TOKEN EXPIRED")
         sys.exit()
-    else:
-        logger.info("version=" + str(j["result"]["version"]))
-        logger.info("revision=" + j["result"]["revision"])
-        logger.info("author=" + j["result"]["author"])
+    except MAPCoreException as e:
+        logger.info("ERROR: " + str(e))
+        sys.exit()
+
+    logger.info("version=" + str(j["result"]["version"]))
+    logger.info("revision=" + j["result"]["revision"])
+    logger.info("author=" + j["result"]["author"])
 
     #
     # 新規グループ作成 (group_name をグループ名として)
     #
     '''
-    j = mapcore.create_group(group_name)
-    if j == False:
-        logger.info("Error: " + mapcore.get_last_error())
+    try:
+        j = mapcore.create_group('BBBBB')
+    except MAPCoreTokenExpired:
+        logger.info("FATAL ERROR: TOKEN EXPIRED")
         sys.exit()
-    else:
-        logger.info(json.dumps(j, indent = 2))
+    except MAPCoreException as e:
+        logger.info("ERROR: " + str(e))
+        sys.exit()
+
+    logger.info(json.dumps(j, indent = 2))
     '''
 
     #
     # group_name を名前に持つグループを検索
     #
-    j = mapcore.get_group_by_name(group_name)
-    if j == False:
-        logger.info("Error: " + mapcore.get_last_error())
+    try:
+        j = mapcore.get_group_by_name(group_name)
+    except MAPCoreTokenExpired:
+        logger.info("FATAL ERROR: TOKEN EXPIRED")
         sys.exit()
-    else:
-        group_key = j["result"]["groups"][0]["group_key"]
-        logger.info("Group key for " + group_name + " found, " + group_key)
-        logger.info(json.dumps(j, indent = 2))
+    except MAPCoreException as e:
+        logger.info("ERROR: " + str(e))
+        sys.exit()
+
+    group_key = j["result"]["groups"][0]["group_key"]
+    logger.info("Group key for " + group_name + " found, " + group_key)
+    logger.info(json.dumps(j, indent = 2))
 
     #
     # group_key で指定したグループの名前、紹介文を変更
     #
-    j = mapcore.edit_group(group_key, group_name, introduction)
-    if j == False:
-        logger.info("Error: " + mapcore.get_last_error())
+    try:
+        j = mapcore.edit_group(group_key, group_name, introduction)
+    except MAPCoreTokenExpired:
+        logger.info("FATAL ERROR: TOKEN EXPIRED")
         sys.exit()
-    else:
-        logger.info(json.dumps(j, indent = 2))
+    except MAPCoreException as e:
+        logger.info("ERROR: " + str(e))
+        sys.exit()
+
+    logger.info(json.dumps(j, indent = 2))
 
     #
     # group_key で指定したグループの情報を取得
     #
-    j = mapcore.get_group_by_key(group_key)
-    if j == False:
-        logger.info("Error: " + mapcore.get_last_error())
+    try:
+        j = mapcore.get_group_by_key(group_key)
+    except MAPCoreTokenExpired:
+        logger.info("FATAL ERROR: TOKEN EXPIRED")
         sys.exit()
-    else:
-        logger.info(json.dumps(j, indent = 2))
+    except MAPCoreException as e:
+        logger.info("ERROR: " + str(e))
+        sys.exit()
+
+    logger.info(json.dumps(j, indent = 2))
 
     #
     # user_eppn を一般会員としてメンバーに追加
     #
-    j = mapcore.add_to_group(group_key, user_eppn, MAPCore.MODE_MEMBER)
-    if j == False:
-        logger.info("Error: " + mapcore.get_last_error())
+    try:
+        j = mapcore.add_to_group(group_key, user_eppn, MAPCore.MODE_MEMBER)
+    except MAPCoreTokenExpired:
+        logger.info("FATAL ERROR: TOKEN EXPIRED")
         sys.exit()
-    else:
-        logger.info("Completed")
+    except MAPCoreException as e:
+        logger.info("ERROR: " + str(e))
+        sys.exit()
+
+    logger.info("Completed")
 
     #
     # user_eppn をグループ管理者に変更
     #
-    j = mapcore.edit_member(group_key, user_eppn, MAPCore.MODE_ADMIN)
-    if j == False:
-        logger.info("Error: " + mapcore.get_last_error())
+    try:
+        j = mapcore.edit_member(group_key, user_eppn, MAPCore.MODE_ADMIN)
+    except MAPCoreTokenExpired:
+        logger.info("FATAL ERROR: TOKEN EXPIRED")
         sys.exit()
-    else:
-        logger.info("Completed")
+    except MAPCoreException as e:
+        logger.info("ERROR: " + str(e))
+        sys.exit()
+
+    logger.info("Completed")
 
     #
     # 上記グループのメンバーリストを取得
     #
-    j = mapcore.get_group_members(group_key)
-    if j == False:
-        logger.info("Error: " + mapcore.get_last_error())
+    try:
+        j = mapcore.get_group_members(group_key)
+    except MAPCoreTokenExpired:
+        logger.info("FATAL ERROR: TOKEN EXPIRED")
         sys.exit()
-    else:
-        # logger.info(json.dumps(j).encode('utf-8'))
-        for i in range(len(j["result"]["accounts"])):
-            if "eppn" in j["result"]["accounts"][i]:
-                eppn = j["result"]["accounts"][i]["eppn"].encode('utf-8')
-                if "mail" in j["result"]["accounts"][i]:
-                    mail = str(j["result"]["accounts"][i]["mail"])
-                else:
-                    mail = eppn
-                admin = str(j["result"]["accounts"][i]["admin"])
-                logger.info("eppn=" + eppn + ", mail=" + mail + ", admin=" + admin)
+    except MAPCoreException as e:
+        logger.info("ERROR: " + str(e))
+        sys.exit()
+
+    # logger.info(json.dumps(j).encode('utf-8'))
+    for i in range(len(j["result"]["accounts"])):
+        if "eppn" in j["result"]["accounts"][i]:
+            eppn = j["result"]["accounts"][i]["eppn"].encode('utf-8')
+            if "mail" in j["result"]["accounts"][i]:
+                mail = str(j["result"]["accounts"][i]["mail"])
+            else:
+                mail = eppn
+            admin = str(j["result"]["accounts"][i]["admin"])
+            logger.info("eppn=" + eppn + ", mail=" + mail + ", admin=" + admin)
 
     #
     # user_eppn をメンバーから追加
     #
-    j = mapcore.remove_from_group(group_key, user_eppn)
-    if j == False:
-        logger.info("Error: " + mapcore.get_last_error())
+    try:
+        j = mapcore.remove_from_group(group_key, user_eppn)
+    except MAPCoreTokenExpired:
+        logger.info("FATAL ERROR: TOKEN EXPIRED")
         sys.exit()
-    else:
-        logger.info("Completed")
+    except MAPCoreException as e:
+        logger.info("ERROR: " + str(e))
+        sys.exit()
+
+    logger.info("Completed")
 
     #
     # 自身が所属しいているグループのリストを取得
     #
-    j = mapcore.get_my_groups()
-    if j == False:
-        logger.info("Error: " + mapcore.get_last_error())
+    try:
+        j = mapcore.get_my_groups()
+    except MAPCoreTokenExpired:
+        logger.info("FATAL ERROR: TOKEN EXPIRED")
         sys.exit()
-    else:
-        for i in range(len(j["result"]["groups"])):
-            logger.info("    " + j["result"]["groups"][i]["group_name"] + " (key=" + j["result"]["groups"][i]["group_key"] + ")")
+    except MAPCoreException as e:
+        logger.info("ERROR: " + str(e))
+        sys.exit()
+
+    for i in range(len(j["result"]["groups"])):
+        logger.info("    " + j["result"]["groups"][i]["group_name"] + " (key=" + j["result"]["groups"][i]["group_key"] + ")")
 
     #
     # 終了
