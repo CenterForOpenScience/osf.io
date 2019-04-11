@@ -371,8 +371,8 @@ class InstitutionDefaultStorageDisplay(AdminTestCase):
         new_region.mfr_url = 'http://ec2-13-114-64-85.ap-northeast-1.compute.amazonaws.com:7778'
         form_data = {
             'name': new_region.name,
-            'waterbutler_credentials': new_region.waterbutler_credentials,
-            'waterbutler_settings': new_region.waterbutler_settings,
+            'waterbutler_credentials': json.dumps(new_region.waterbutler_credentials).replace('true', 'True'),
+            'waterbutler_settings': json.dumps(new_region.waterbutler_settings).replace('true', 'True'),
             'waterbutler_url': new_region.waterbutler_url,
             '_id': new_region._id,
             'institution': self.institution._id,
@@ -389,8 +389,8 @@ class InstitutionDefaultStorageDisplay(AdminTestCase):
         count = Region.objects.count()
         form_data = {
             'name': new_region.name,
-            'waterbutler_credentials': new_region.waterbutler_credentials,
-            'waterbutler_settings': new_region.waterbutler_settings,
+            'waterbutler_credentials': str(new_region.waterbutler_credentials).replace("true", "True"),
+            'waterbutler_settings': str(new_region.waterbutler_settings).replace("true", "True"),
             'waterbutler_url': new_region.waterbutler_url,
             '_id': new_region._id,
             'institution': self.institution._id,
