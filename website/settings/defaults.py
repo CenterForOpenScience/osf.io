@@ -1924,7 +1924,7 @@ FOOTER_LINKS = {
     'terms': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419',
     'privacyPolicy': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
     'cookies': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
-    'cos': 'https://cos.io',
+    'cos': 'https://www.nii.ac.jp/',
     'statusPage': 'https://status.cos.io/',
     'apiDocs': 'https://developer.osf.io/',
     'topGuidelines': 'http://cos.io/top/',
@@ -1933,7 +1933,7 @@ FOOTER_LINKS = {
     'twitter': 'http://twitter.com/OSFramework',
     'facebook': 'https://www.facebook.com/CenterForOpenScience/',
     'googleGroup': 'https://groups.google.com/forum/#!forum/openscienceframework',
-    'github': 'https://www.github.com/centerforopenscience',
+    'github': 'https://github.com/RCOSDP',
 }
 
 
