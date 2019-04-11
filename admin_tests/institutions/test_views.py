@@ -389,8 +389,8 @@ class InstitutionDefaultStorageDisplay(AdminTestCase):
         count = Region.objects.count()
         form_data = {
             'name': new_region.name,
-            'waterbutler_credentials': str(new_region.waterbutler_credentials).replace("true", "True"),
-            'waterbutler_settings': str(new_region.waterbutler_settings).replace("true", "True"),
+            'waterbutler_credentials': str(new_region.waterbutler_credentials).replace('true', 'True'),
+            'waterbutler_settings': str(new_region.waterbutler_settings).replace('true', 'True'),
             'waterbutler_url': new_region.waterbutler_url,
             '_id': new_region._id,
             'institution': self.institution._id,
