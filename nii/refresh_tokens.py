@@ -60,10 +60,11 @@ if __name__ == '__main__':
     #
     for user in OSFUser.objects.all():
         if hasattr(user, "map_profile"):
-            print("Refreshing: " + user.username + " (" + user.map_profile.oauth_access_token + ")")
+            if hasattr(user.map_profile, "oauth_access_token"):
+                print("Refreshing: " + user.username + " (" + user.map_profile.oauth_access_token + ")")
 
-            mapcore = MAPCore(user)
-            mapcore.refresh_token()
+                mapcore = MAPCore(user)
+                mapcore.refresh_token()
 
     #
     # 終了
