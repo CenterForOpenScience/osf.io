@@ -444,6 +444,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     group = models.OneToOneField(CGGroup,
                                  on_delete=models.SET_NULL,
                                  null=True, blank=True)
+    map_group_key = models.CharField(max_length=255, unique=True,
+                                     db_index=True, null=True, blank=True)
 
     def title_with_group(self, title):
         value = title

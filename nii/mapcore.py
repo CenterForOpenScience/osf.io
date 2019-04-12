@@ -31,7 +31,7 @@ if __name__ == '__main__':
     # logger.addHandler(stdout)
     logger.setLevel(level=logging.DEBUG)
 else:
-    from osf.models.user import OSFUser, CGGroup
+    from osf.models.user import OSFUser
     from osf.models.node import Node
     from osf.models.map import MAPProfile
     from nii.mapcore_api import MAPCore
@@ -406,10 +406,10 @@ def mapcore_group_sync_to_rdm(map_group):
             if rdm_proj.is_deleted:
                 logger.info('RDM projet [' + rdm_proj.title + '] is deleted.')
                 continue
-            if hasattr(rdm_proj, 'group') and hasattr(rdm_proj.group, 'group_key'):
-                logger.debug('RDM proj [' + rdm_proj.title + '] has key [' + rdm_proj.group.group_key,
+            if rdm_proj.map_group_key is not None:
+                logger.debug('RDM proj [' + rdm_proj.title + '] has key [' + rdm_proj.map_group_key,
                              '] and mAP group has [' + map_group['group_key'] + '.')
-                if rdm_proj.group.group_key == map_group['group_key']:
+                if rdm_proj.map_group_key == map_group['group_key']:
                     node = rdm_proj  # exactly match
                     break
             else:
@@ -437,15 +437,11 @@ def mapcore_group_sync_to_rdm(map_group):
         logger.info('mAP group [' + map_group['group_name'] + '] admin [' + owner.eppn + '] is select to owner')
 
         # create new GRDM Project
-        node = Node(title=map_group['group_name'], creator=owner, is_public=True, category='project')
+        node = Node(title=map_group['group_name'], creator=owner,
+                    is_public=True, category='project',
+                    map_group_key=map_group['group_key'],
+                    description=map_group['introduction'])
         node.save()
-
-        # set mAP group info
-        map_info, created = CGGroup.objects.update_or_create(group_key=map_group['group_key'])
-        map_info.name = map_group['group_name']
-        # map_info.save()  # it would assing _id
-        node.group = map_info
-        node.description = map_group['introduction']
 
     # make contirbutor list
     rdm_member_list = []
@@ -527,9 +523,9 @@ def mapcore_group_sync_to_map(node):
     logger.info('group [' + node.title + '] sync with [' + priv_user.eppn + ']\'s AccessToken')
 
     # already combined to mAP group or search by name
-    if hasattr(node, 'group') and node.group is Node:
-        logger.info('RDM group [' + node.title + '] is linked to mAP [' + node.grouup.group_key + '].')
-        map_group = mapcore_get_extended_group_info(mapcore, node.group.group_key)
+    if node.map_group_key is not None:
+        logger.info('RDM group [' + node.title + '] is linked to mAP [' + node.map_group_key + '].')
+        map_group = mapcore_get_extended_group_info(mapcore, node.map_group_key)
         if map_group is False:
             return
     else:
@@ -555,11 +551,8 @@ def mapcore_group_sync_to_map(node):
             map_group['group_admin_eppn'] = [priv_user.eppn]
             map_group['group_member_list'] = []
 
-        # make CGGroup record
-        map, created = CGGroup.objects.update_or_create(group_key=group_key)
-        map.name = map_group['group_name']
-        node.group = map
-        node.group.save()
+        node.map_group_key = map_group['group_name']
+        node.save()
 
     logger.debug('mAP group info:\n' + pp(map_group))
     map_members = map_group['group_member_list']
@@ -641,7 +634,7 @@ if __name__ == '__main__':
     from website.app import init_app
     init_app(routes=False, set_backends=False)
 
-    from osf.models.user import OSFUser, CGGroup
+    from osf.models.user import OSFUser
     from osf.models.node import Node
     from osf.models.map import MAPProfile
     from nii.mapcore_api import MAPCore
