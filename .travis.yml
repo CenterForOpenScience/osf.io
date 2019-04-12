@@ -130,7 +130,7 @@ after_success:
     - if [[ "$TRAVIS_BRANCH" == "master-w-coverage" ]]; then coveralls; fi
 
 after_script:
-    - inv remove_failures_from_testmon --build=$TEST_BUILD
+    - inv remove_failures_from_testmon --db-path=$HOME/.cache/testmon/.testmondata_$TEST_BUILD
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http

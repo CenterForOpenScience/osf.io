@@ -440,9 +440,9 @@ def test(ctx, all=False, lint=False):
         karma(ctx)
 
 @task
-def remove_failures_from_testmon(ctx, branch=None):
+def remove_failures_from_testmon(ctx, db_path=None):
 
-    conn = sqlite3.connect('.cache/testmon/.testmondata_{}'.format(branch))
+    conn = sqlite3.connect(db_path)
     tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
     ctx.run('echo {} failures purged from travis cache'.format(tests_decached))
 
