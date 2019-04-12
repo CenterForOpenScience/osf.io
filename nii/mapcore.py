@@ -13,6 +13,16 @@ from pprint import pformat as pp
 from website import settings
 
 
+map_hostname = settings.MAPCORE_HOSTNAME
+map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
+map_token_path = settings.MAPCORE_TOKEN_PATH
+map_refresh_path = settings.MAPCORE_REFRESH_PATH
+map_clientid = settings.MAPCORE_CLIENTID
+map_secret = settings.MAPCORE_SECRET
+map_redirect = settings.MAPCORE_REDIRECT
+map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
+my_home = settings.DOMAIN
+
 # global setting
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
@@ -25,17 +35,6 @@ else:
     from osf.models.node import Node
     from osf.models.map import MAPProfile
     from nii.mapcore_api import MAPCore
-
-map_hostname = settings.MAPCORE_HOSTNAME
-map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
-map_token_path = settings.MAPCORE_TOKEN_PATH
-map_refresh_path = settings.MAPCORE_REFRESH_PATH
-map_clientid = settings.MAPCORE_CLIENTID
-map_secret = settings.MAPCORE_SECRET
-map_redirect = settings.MAPCORE_REDIRECT
-map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
-my_home = settings.DOMAIN
-
 
 def mapcore_request_authcode():
     '''
@@ -52,12 +51,12 @@ def mapcore_request_authcode():
 
     # make call
     url = map_hostname + map_authcode_path
-    params = {"response_type": "code",
-              "redirect_uri": map_redirect,
-              "client_id": map_clientid,
-              "state": 'GRDM_mAP_AuthCode'}
+    params = {'response_type': 'code',
+              'redirect_uri': map_redirect,
+              'client_id': map_clientid,
+              'state': 'GRDM_mAP_AuthCode'}
     query = url + '?' + urllib.urlencode(params)
-    logger.info("redirect to AuthCode request: " + query)
+    logger.info('redirect to AuthCode request: ' + query)
     return query
 
 
@@ -68,15 +67,15 @@ def mapcore_receive_authcode(user, params):
     :param params   dict of url parameters in request
     '''
     if isinstance(user, OSFUser):
-        logger.info("in mapcore_receive_authcode, user is instance of OSFUser")
+        logger.info('in mapcore_receive_authcode, user is instance of OSFUser')
     else:
-        logger.info("in mapcore_receive_authcode, user is NOT instance of OSFUser")
+        logger.info('in mapcore_receive_authcode, user is NOT instance of OSFUser')
 
-    logger.info("get an oatuh response:")
+    logger.info('get an oatuh response:')
     s = ''
     for k, v in params.items():
-        s += "(" + k + ',' + v + ") "
-    logger.info("oauth returned parameters: " + s)
+        s += '(' + k + ',' + v + ') '
+    logger.info('oauth returned parameters: ' + s)
 
     # authorization code check
     if 'code' not in params or 'state' not in params or params['state'] != map_authcode_magic:
@@ -91,7 +90,7 @@ def mapcore_receive_authcode(user, params):
     # set mAP attribute into current user
     map_user, created = MAPProfile.objects.get_or_create(eppn=user.eppn)
     if created:
-        logger.info("MAPprofile new record created for " + user.eppn)
+        logger.info('MAPprofile new record created for ' + user.eppn)
     map_user.oauth_access_token = access_token
     map_user.oauth_refresh_token = refresh_token
     map_user.oauth_refresh_time = dt.utcnow()
@@ -118,21 +117,21 @@ def mapcore_get_accesstoken(authcode, clientid=map_clientid, secret=map_secret, 
     API call returns the JSON response from mAP authorization code service
     '''
 
-    logger.info("mapcore_get_accesstoken started.")
+    logger.info('mapcore_get_accesstoken started.')
     url = map_hostname + map_token_path
     basic_auth = (map_clientid, map_secret)
     param = {
-        "grant_type": "authorization_code",
-        "redirect_uri": map_redirect,
-        "code": authcode
+        'grant_type': 'authorization_code',
+        'redirect_uri': map_redirect,
+        'code': authcode
     }
     param = urllib.urlencode(param)
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
     }
-    res = requests.post(url, data = param, headers = headers, auth = basic_auth)
+    res = requests.post(url, data=param, headers=headers, auth = basic_auth)
     res.raise_for_status()  # error check
-    logger.info("mapcore_get_accesstoken response: " + res.text)
+    logger.info('mapcore_get_accesstoken response: ' + res.text)
     json = res.json()
     return (json['access_token'], json['refresh_token'])
 
@@ -159,8 +158,8 @@ def mapcore_refresh_accesstoken(user, force=False):
     # do refresh
     basic_auth = (map_clientid, map_secret)
     param = {
-        "grant_type": "refresh_token",
-        "refresh_token": user.map_profile.oauth_refresh_token
+        'grant_type': 'refresh_token',
+        'refresh_token': user.map_profile.oauth_refresh_token
     }
     param = urllib.urlencode(param)
     headers = {
@@ -310,9 +309,9 @@ def mapcore_get_extended_group_info(mapcore, group_key):
     if result is False:
         return False
     group_ext = result['result']['groups'][0]
-    logger.debug("Group info:\n" + pp(group_ext))
+    logger.debug('Group info:\n' + pp(group_ext))
     if group_ext['open_member'] == 0:
-        logger.info("mAP group [" + group_ext['group_name'] + "] has CLOSED_MEMBER setting.  ignore.")
+        logger.info('mAP group [' + group_ext['group_name'] + '] has CLOSED_MEMBER setting.  ignore.')
         return False
 
     # get member list
@@ -324,7 +323,7 @@ def mapcore_get_extended_group_info(mapcore, group_key):
     members = []
     for usr in member_list:
         if 'eppn' not in usr:
-            logging.info("mAP user [" + usr['account_name'] + "] has no ePPN!  ignore")
+            logger.info('mAP user [' + usr['account_name'] + '] has no ePPN!  ignore')
             continue
         if usr['admin'] == 2 or usr['admin'] == 1:
             usr['is_admin'] = True
@@ -335,7 +334,7 @@ def mapcore_get_extended_group_info(mapcore, group_key):
 
     group_ext['group_admin_eppn'] = admins
     group_ext['group_member_list'] = members
-    logger.debug("Member info:\n" + pp(members))
+    logger.debug('Member info:\n' + pp(members))
 
     return group_ext
 
@@ -364,7 +363,7 @@ def mapcore_users_map_groups(user):
         if result is False:
             return False
         group_info_list.append(result)
-    logger.debug("user [" + user.eppn + "] belongs group:\n" + pp(group_info_list))
+    logger.debug('user [' + user.eppn + '] belongs group:\n' + pp(group_info_list))
     return group_info_list
 
 
@@ -384,17 +383,17 @@ def mapcore_group_sync_to_rdm(map_group):
     from framework.auth import Auth
     from osf.utils.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-    logger.info("mapcore_group_sync_to_rdm('" + map_group['group_name'] + "') is started.")
+    logger.info('mapcore_group_sync_to_rdm(\'' + map_group['group_name'] + '\') is started.')
 
     # check conditions to sync
     if not map_group['active']:
-        logger.info("mAP group [" + map_group['group_name'] + "] is not active  no sync")
+        logger.info('mAP group [' + map_group['group_name'] + '] is not active  no sync')
         return
     if not map_group['public']:
-        logger.info("mAP group [" + map_group['group_name'] + "] is not public  no sync")
+        logger.info('mAP group [' + map_group['group_name'] + '] is not public  no sync')
         return
     if map_group['open_member'] == 0:  # private
-        logger.info("mAP group [" + map_group['group_name'] + "] member list is not public  no sync")
+        logger.info('mAP group [' + map_group['group_name'] + '] member list is not public  no sync')
         return
 
     # search existing GRDM project
@@ -403,19 +402,19 @@ def mapcore_group_sync_to_rdm(map_group):
     rdm_candidates = Node.objects.filter(title=map_group['group_name'])
     if rdm_candidates.count() > 0:
         for rdm_proj in rdm_candidates:
-            logger.debug("RDM proj [" + rdm_proj.title + "] is a candidate to sync")
+            logger.debug('RDM proj [' + rdm_proj.title + '] is a candidate to sync')
             if rdm_proj.is_deleted:
-                logger.info("RDM projet [" + rdm_proj.title + "] is deleted.")
+                logger.info('RDM projet [' + rdm_proj.title + '] is deleted.')
                 continue
-            if hasattr(rdm_proj, "group") and hasattr(rdm_proj.group, "group_key"):
-                logger.debug("RDM proj [" + rdm_proj.title + "] has key [" + rdm_proj.group.group_key,
-                             "] and mAP group has [" + map_group['group_key'] + ".")
+            if hasattr(rdm_proj, 'group') and hasattr(rdm_proj.group, 'group_key'):
+                logger.debug('RDM proj [' + rdm_proj.title + '] has key [' + rdm_proj.group.group_key,
+                             '] and mAP group has [' + map_group['group_key'] + '.')
                 if rdm_proj.group.group_key == map_group['group_key']:
                     node = rdm_proj  # exactly match
                     break
             else:
-                logger.info("Node [" + rdm_proj.title + "] doesn't have mAP group link.")
-                if node_candidate == None:
+                logger.info('Node [' + rdm_proj.title + '] doesn\'t have mAP group link.')
+                if node_candidate is None:
                     node_candidate = rdm_proj  # title match but has no key
         if node is None:
             node = node_candidate
@@ -428,14 +427,14 @@ def mapcore_group_sync_to_rdm(map_group):
             try:
                 adminu = OSFUser.objects.get(eppn=admin_eppn)
             except Exception as e:
-                logger.info("mAP group admin [" + admin_eppn + "] dosn't have account in GRDM.")
+                logger.info('mAP group admin [' + admin_eppn + '] doesn\'t have account in GRDM.')
                 continue
             owner = adminu
             break
         if owner is None:
-            logger.warn("all of mAP group [" + map_group['group_name'] + "] admins don't have account in GRDM")
+            logger.warn('all of mAP group [' + map_group['group_name'] + '] admins doen\'t have account in GRDM')
             return
-        logger.info("mAP group [" + map_group['group_name'] + "] admin [" + owner.eppn + "] is select to owner")
+        logger.info('mAP group [' + map_group['group_name'] + '] admin [' + owner.eppn + '] is select to owner')
 
         # create new GRDM Project
         node = Node(title=map_group['group_name'], creator=owner, is_public=True, category='project')
@@ -450,7 +449,7 @@ def mapcore_group_sync_to_rdm(map_group):
 
     # make contirbutor list
     rdm_member_list = []
-    if hasattr(node, "contributors"):
+    if hasattr(node, 'contributors'):
         for rdm_user in node.contributors.all():
             rdm_member_list.append(RDMmember(node, rdm_user))
 
@@ -464,27 +463,27 @@ def mapcore_group_sync_to_rdm(map_group):
     for mapu in add:
         try:
             rdmu = OSFUser.objects.get(eppn=mapu['eppn'])
-        except Exception as e:
-            logger.info("mAP member [" + mapu['eppn'] + "] is not registed in RDM.  Ignore")
+        except Exception:
+            logger.info('mAP member [' + mapu['eppn'] + '] is not registed in RDM.  Ignore')
             continue
         if mapu['is_admin']:
-            logger.info("mAP member [" + mapu['eppn'] + "] is registed as contributor ADMIN.")
+            logger.info('mAP member [' + mapu['eppn'] + '] is registed as contributor ADMIN.')
             node.add_contributor(rdmu, log=True, save=False, permissions=CREATOR_PERMISSIONS)
         else:
-            logger.info("mAP member [" + mapu['eppn'] + "] is registed as contributor MEMBER.")
+            logger.info('mAP member [' + mapu['eppn'] + '] is registed as contributor MEMBER.')
             node.add_contributor(rdmu, log=True, save=False, permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS)
     for rdmu in delete:
         auth = Auth(user=rdmu)
         node.remove_contributor(rdmu, auth, log=True)
-        logger.info("mAP member [" + mapu['eppn'] + "] is remove from contributor")
+        logger.info('mAP member [' + mapu['eppn'] + '] is remove from contributor')
     for rdmu in upg:
         if not is_node_admin(node, rdmu):
             node.set_permission(rdmu, CREATOR_PERMISSIONS, safe=False)
-            logger.info("mAP member [" + mapu['eppn'] + "] is upgrade to admin")
+            logger.info('mAP member [' + mapu['eppn'] + '] is upgrade to admin')
     for rdmu in downg:
         if is_node_admin(node, rdmu):
             node.set_permission(rdmu, DEFAULT_CONTRIBUTOR_PERMISSIONS, safe=False)
-            logger.info("mAP member [" + mapu['eppn'] + "] is downgrade to contributor membe")
+            logger.info('mAP member [' + mapu['eppn'] + '] is downgrade to contributor membe')
 
     # nodeをsaveする
     node.save()
@@ -498,11 +497,11 @@ def mapcore_group_sync_to_map(node):
     :param node  RDM Node object
     '''
 
-    logger.info("mapcore_group_sync_to_map started for [" + node.group.name + ']')
+    logger.info('mapcore_group_sync_to_map started for [' + node.title + ']')
 
     # check Node attribute
     if node.is_deleted:
-        logger.info("Node is deleted.  nothing to do.")
+        logger.info('Node is deleted.  nothing to do.')
         return
 
     # get the RDM contributor and make lists
@@ -511,46 +510,58 @@ def mapcore_group_sync_to_map(node):
     for member in node.contributors:
         rdmu = RDMmember(node, member)
         rdm_members.append(rdmu)
-        if rdmu.is_admin():
+        if rdmu.is_admin:
             rdm_admin.append(rdmu)
+        logger.debug('RDM contributor:\n' + pp(vars(rdmu)))
     rdm_members.sort(key=attrgetter('eppn'))
-    logging.debug("RDM contributors:\n" + pp(RDMmember))
 
     # get admin privilaged tokens
     if node.creator:
         priv_user = node.creator
     else:
         if len(rdm_admin) == 0:
-            logger.warning('Node (' + node.group.name + ') has no admin.  cannot sync')
+            logger.warning('Node (' + node.title + ') has no admin.  cannot sync')
             return
         priv_user = rdm_admin[0]
     mapcore = MAPCore(priv_user)
-    logger.info('group [' + node.group.name + '] sync with [' + priv_user.eppn + "]'s AccessToken")
+    logger.info('group [' + node.title + '] sync with [' + priv_user.eppn + ']\'s AccessToken')
 
     # already combined to mAP group or search by name
-    if hasattr(node, "group") and node.group.group_key:
-        logging.info("RDM group [" + node.group.name + "] is linked to mAP [" + node.grouup.group_key + "].")
-        map_group = mapcore_get_extended_group_info(priv_user, node.group.group_key)
+    if hasattr(node, 'group') and node.group is Node:
+        logger.info('RDM group [' + node.title + '] is linked to mAP [' + node.grouup.group_key + '].')
+        map_group = mapcore_get_extended_group_info(mapcore, node.group.group_key)
         if map_group is False:
             return
     else:
+        # create new group on mAP
         # TODO: RDM may have multiple Project having same name
         #  --> fix get_group_by_name to return multiple groups and select by CGGroup's group_key (may be)
-        result = mapcore.get_group_by_name(node.group.name)  # it returns 1 group only
+        result = mapcore.get_group_by_name(node.title)  # it returns 1 group only
         if result is not False:
-            group_key = result['result']['groups']['group_key']
-            map_group = mapcore_get_extended_group_info(priv_user, group_key)
+            group_key = result['result']['groups'][0]['group_key']
+            map_group = mapcore_get_extended_group_info(mapcore, group_key)
         else:
             # create new mAP group
             result = mapcore.create_group(node.title)
             if result is False:
-                logging.error("create_gropu('" + node.title + "') filed")
+                logger.error('create_group('' + node.title + '') fail')
                 return
-            map_group = result['result']['groups']
+            map_group = result['result']['groups'][0]
+            group_key = map_group['group_key']
+            result = mapcore.edit_group(group_key, node.title, node.description)
+            if result is False:
+                logger.error('edt_group(' + group_key + ', ' + node.title + ', ' + node.description + ') fail')
+                return
             map_group['group_admin_eppn'] = [priv_user.eppn]
             map_group['group_member_list'] = []
 
-    logging.debug("mAP group info:\n" + pp(map_group))
+        # make CGGroup record
+        map, created = CGGroup.objects.update_or_create(group_key=group_key)
+        map.name = map_group['group_name']
+        node.group = map
+        node.group.save()
+
+    logger.debug('mAP group info:\n' + pp(map_group))
     map_members = map_group['group_member_list']
     map_members.sort(key=lambda u: u['eppn'])
 
@@ -559,29 +570,29 @@ def mapcore_group_sync_to_map(node):
 
     # apply members to mAP group
     for u in add:
-        if u.is_admin():
+        if u.is_admin:
             admin = MAPCore.MODE_ADMIN
         else:
             admin = MAPCore.MODE_MEMBER
         result = mapcore.add_to_group(group_key, u.eppn, admin)
         if result is False:
             return  # error reason is logged by API call
-        logger.info("mAP group [" + map_group['group_name'] + "] get new member [" + u.eppn + "]")
+        logger.info('mAP group [' + map_group['group_name'] + '] get new member [' + u.eppn + ']')
     for u in delete:
         result = mapcore.remove_from_group(group_key, u.eppn)
         if result is False:
             return  # error reason is logged by API call
-        logger.info("mAP group [" + map_group['group_name'] + "]s member [" + u.eppn + "] is removed")
+        logger.info('mAP group [' + map_group['group_name'] + ']s member [' + u.eppn + '] is removed')
     for u in upgrade:
         result = mapcore.edit_member(group_key, u.eppn, mapcore.MODE_ADMIN)
         if result is False:
             return  # error reason is logged by API call
-        logger.info("mAP group [" + map_group['group_name'] + "]s admin [" + u.eppn + "] is now a member")
+        logger.info('mAP group [' + map_group['group_name'] + ']s admin [' + u.eppn + '] is now a member')
     for u in downgrade:
         result = mapcore.edit_member(group_key, u.eppn, mapcore.MODE_MEMBER)
         if result is False:
             return  # error reason is logged by API call
-        logger.info("mAP group [" + map_group['group_name'] + "]s member [" + u.eppn + "] is now an admin")
+        logger.info('mAP group [' + map_group['group_name'] + ']s member [' + u.eppn + '] is now an admin')
 
     return
 
@@ -592,7 +603,7 @@ def mapcore_group_sync_to_map(node):
 
 # print variable type
 def startup():
-    print("loaded")
+    print('loaded')
     return
 
 
@@ -616,16 +627,16 @@ def add_contributor_to_project(node_name, eppn):
 
     # add user as contributor
     if node.is_contributor(user):
-        print("user is already joind")
+        print('user is already joind')
         return
 
     ret = node.add_contributor(user, log=True, save=False)
-    print("add_contoributor retuns: " + ret)
+    print('add_contoributor retuns: ' + ret)
     return
 
 
 if __name__ == '__main__':
-    print("In Main")
+    print('In Main')
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     from website.app import init_app
     init_app(routes=False, set_backends=False)
@@ -637,17 +648,23 @@ if __name__ == '__main__':
 
     from website import settings
 
-    if True:  # get mAP group and members ->
-        me = OSFUser.objects.get(eppn=sys.argv[1])
-        mapcore_refresh_accesstoken(me)  # token refresh
-        print('name:', me.fullname)
-        print('eppn:', me.eppn)
-        if hasattr(me, "map_profile"):
-            print('access_token:', me.map_profile.oauth_access_token)
-            print('refresh_token:', me.map_profile.oauth_refresh_token)
+    if False:  # get mAP group and members -> RDM
+        # me = OSFUser.objects.get(eppn=sys.argv[1])
+        # mapcore_refresh_accesstoken(me)  # token refresh
+        # print('name:', me.fullname)
+        # print('eppn:', me.eppn)
+        #if hasattr(me, 'map_profile'):
+        #    print('access_token:', me.map_profile.oauth_access_token)
+        #    print('refresh_token:', me.map_profile.oauth_refresh_token)
         group_list = mapcore_users_map_groups(me)
         mapcore_group_sync_to_rdm(group_list[1])
 
         # for group in group_list:
         #    mapcore_group_sync_to_rdm(group)
 
+    if True:  # get RDM conributors and copy to mAP
+        # owner = OSFUser.objects.get(eppn='hnagahara@openidp.nii.ac.jp')
+        # mapcore_refresh_accesstoken(owner)  # token refresh
+        node = Node.objects.get(title=sys.argv[1])
+        mapcore_group_sync_to_map(node)
+        pass

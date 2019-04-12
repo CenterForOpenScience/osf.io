@@ -1,1 +1,0 @@
-mAP core renkei 

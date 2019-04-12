@@ -3,7 +3,6 @@
 #
 # @COPYRIGHT@
 #
-import datetime as dt
 import logging
 
 from django.db import models

@@ -175,7 +175,8 @@ def create_or_join_group_projects(user):
         groupname = group.name
         ###### TTTTTTTTTTTTTTTTTTTTTTTTTTTT
         group_key = group.group_key
-        logger.info("!!!! create_or_join_group_projects: group_key=" + group_key)
+        # logger.info('!!!! create_or_join_group_projects: group_key=' + group_key)
+        #   FIXIT: logging module is not imported (commented by nagahara)
         ###### TTTTTTTTTTTTTTTTTTTTTTTTTTTT
         group_admin = is_group_admin(user, groupname)
         group_node = get_group_node(groupname)

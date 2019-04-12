@@ -303,9 +303,9 @@ def node_setting(auth, node, **kwargs):
 
     ###
     if node.group is None:
-        logger.info("!!!! NODE SETTING: group is None")
+        logger.info('!!!! NODE SETTING: group is None')
     else:
-        logger.info("!!!! NODE SETTING: group_key=" + node.group.name)
+        logger.info('!!!! NODE SETTING: group_key=' + node.group.name)
     ###
 
     return ret
@@ -484,9 +484,9 @@ def configure_requests(node, **kwargs):
 def view_project(auth, node, **kwargs):
     '''
     if node.group is None:
-        logger.info("!!!! VIEW PROJECT: group is None")
+        logger.info('!!!! VIEW PROJECT: group is None')
     else:
-        logger.info("!!!! VIEW PROJECT: group_key=" + node.group.name)
+        logger.info('!!!! VIEW PROJECT: group_key=' + node.group.name)
     '''
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth,
@@ -609,7 +609,7 @@ def project_set_privacy(auth, node, **kwargs):
         node.set_privacy(permissions, auth)
     except NodeStateError as e:
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short="Can't change privacy",
+            message_short='Can\'t change privacy',
             message_long=e.message
         ))
 
@@ -630,7 +630,7 @@ def update_node(auth, node, **kwargs):
         updated_field_names = node.update(data, auth=auth)
     except NodeUpdateError as e:
         raise HTTPError(400, data=dict(
-            message_short="Failed to update attribute '{0}'".format(e.key),
+            message_short='Failed to update attribute \'{0}\''.format(e.key),
             message_long=e.reason
         ))
     # Need to cast tags to a string to make them JSON-serialiable

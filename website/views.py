@@ -163,7 +163,7 @@ def find_bookmark_collection(user):
 
 @must_be_logged_in
 def dashboard(auth):
-    logger.info("Views dashboard called")
+    logger.info('Views dashboard called')
     return use_ember_app()
 
 
@@ -515,5 +515,5 @@ def oauth_start(**kwargs):
 
 def oauth_complete(**kwargs):
     # Redirect to COS News page
-    logger.info("Enter oauth_finish()")
+    logger.info('Enter oauth_finish()')
     return redirect(mapcore_receive_authcode(_get_current_user() or MockUser(), request.args.to_dict()))
