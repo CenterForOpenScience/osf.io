@@ -21,7 +21,6 @@ class TestRegionList:
 
     @pytest.fixture()
     def user(self):
-        import logging
         usr = AuthUserFactory()
         inst = InstitutionFactory()
         usr.affiliated_institutions.add(inst)
