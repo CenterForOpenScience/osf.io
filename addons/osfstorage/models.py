@@ -31,6 +31,14 @@ settings = apps.get_app_config('addons_osfstorage')
 logger = logging.getLogger(__name__)
 
 
+class OsfStorageFolderManager(BaseFileNodeManager):
+
+    def get_root(self, target):
+        # Get the root folder that the target file belongs to
+        content_type = ContentType.objects.get_for_model(target)
+        return self.get(target_object_id=target.id, target_content_type=content_type, is_root=True)
+
+
 class OsfStorageFileNode(BaseFileNode):
     _provider = 'osfstorage'
 
@@ -392,7 +400,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
     is_root = models.NullBooleanField()
 
-    objects = BaseFileNodeManager()
+    objects = OsfStorageFolderManager()
 
     @property
     def is_checked_out(self):
