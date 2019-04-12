@@ -11,7 +11,7 @@ from tests.base import test_app
 from webtest_plus import TestApp
 from website.app import init_app
 from tests.json_api_test_app import JSONAPITestApp
-from osf.quickfiles.legacy_quickfiles import QuickFilesNode
+from api.quickfiles.legacy_quickfiles import QuickFilesNode
 from api_tests.utils import create_test_file
 
 import logging
@@ -97,6 +97,8 @@ class MigrationTestCase:
 
         users = Model.objects.bulk_create(objects)
         from website import settings
+        from api.quickfiles.legacy_quickfiles import QuickFilesNode
+
         if with_quickfiles_node:  # TODO this should be better
             for user in users:
                 for addon in settings.ADDONS_AVAILABLE:

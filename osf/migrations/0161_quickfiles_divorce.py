@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from django.db import migrations
 
 from osf.models import QuickFolder
-from osf.quickfiles.migration_utils import create_quickfolders, migrate_quickfiles_to_quickfolders
+from scripts.quickfiles.divorce_quickfiles import create_quickfolders, migrate_quickfiles_to_quickfolders
 
 import logging
 logger = logging.getLogger(__name__)
@@ -22,6 +22,10 @@ def remove_quickfolders(*args, **kwargs):
 
 
 class Migration(migrations.Migration):
+
+    dependencies = [
+        ('osf', '0160_auto_20190410_1325'),
+    ]
 
     operations = [
         migrations.RunPython(migrate_to_quickfolders, remove_quickfolders),

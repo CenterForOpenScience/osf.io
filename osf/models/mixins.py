@@ -1637,19 +1637,19 @@ class FileTargetMixin(Loggable):
     class Meta:
         abstract = True
 
-    @staticmethod
-    def has_node_addon(target):
-        addon = getattr(target, 'get_addon', None)
-        if addon:
-            from addons.base.models import BaseNodeSettings
-            return isinstance(addon('osfstorage'), BaseNodeSettings)
-        return False
-
     @classmethod
     def load_target_from_guid(cls, _id):
         valid_model_content_types = [subclass._meta.model_name for subclass in cls.__subclasses__()]
 
         return Guid.objects.get(_id=_id, content_type__model__in=valid_model_content_types).referent
+
+    @property
+    def has_node_addon(self):
+        addon = getattr(self, 'get_addon', None)
+        if addon:
+            from addons.base.models import BaseNodeSettings
+            return isinstance(addon('osfstorage'), BaseNodeSettings)
+        return False
 
     @abstractmethod
     def get_root_folder(self, provider='osfstorage'):
@@ -1690,6 +1690,7 @@ class FileTargetMixin(Loggable):
     @abstractmethod
     def can_view_files(self, auth=None):
         return self.can_view(auth)
+
 
 class CleanMixin(models.Model):
     """

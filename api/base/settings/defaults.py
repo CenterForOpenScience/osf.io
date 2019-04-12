@@ -94,7 +94,6 @@ INSTALLED_APPS = (
 
     # OSF
     'osf',
-    'osf.quickfiles',
 
     # Addons
     'addons.osfstorage',

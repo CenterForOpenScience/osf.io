@@ -158,7 +158,7 @@ class TestFileDetailView(V2ViewsCase):
         assert res.status_code == 410
 
     def test_get_files_detail_has_user_relationship(self, app, user, file_node):
-        url = self.get_url('files:file-detail', file_id=file_node.get_guid()._id)
+        url = '/{}files/{}/'.format(API_BASE, file_node._id)
         res = app.get(url, auth=user.auth)
         file_detail_json = res.json['data']
 

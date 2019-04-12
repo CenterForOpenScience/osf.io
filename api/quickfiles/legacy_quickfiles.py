@@ -11,7 +11,7 @@ class QuickFilesNodeManager(AbstractNodeManager):
 
         quickfiles, created = QuickFilesNode.objects.get_or_create(
             title=possessive_title,
-            creator=user
+            creator=user,
         )
 
         if not created:

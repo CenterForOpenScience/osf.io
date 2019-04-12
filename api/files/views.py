@@ -24,10 +24,14 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.permissions import FileMetadataRecordPermission
-from api.files.serializers import FileSerializer, FileMetadataRecordSerializer
+from api.files.serializers import (
+    FileSerializer,
+    FileMetadataRecordSerializer,
+    FileDetailSerializer,
+    FileVersionSerializer,
+    QuickFilesDetailSerializer,
+)
 
-from api.files.serializers import FileDetailSerializer, FileVersionSerializer
-from osf.quickfiles.serializers import QuickFilesDetailSerializer
 
 class FileMixin(object):
     """Mixin with convenience methods for retrieving the current file based on the

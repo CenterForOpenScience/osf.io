@@ -1,9 +1,9 @@
 from osf.utils.testing.pytest_utils import MigrationTestCase
-from osf.quickfiles.migration_utils import create_quickfolders, migrate_quickfiles_to_quickfolders
+from scripts.quickfiles.divorce_quickfiles import create_quickfolders, migrate_quickfiles_to_quickfolders
 
 from osf_tests.factories import AuthUserFactory
 from osf.models import OSFUser, QuickFolder, Guid
-from osf.quickfiles.legacy_quickfiles import QuickFilesNode
+from api.quickfiles.legacy_quickfiles import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
 
 

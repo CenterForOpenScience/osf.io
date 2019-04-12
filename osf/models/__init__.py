@@ -45,4 +45,4 @@ from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAc
 from osf.models.storage import ProviderAssetFile  # noqa
 from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
 from osf.models.blacklisted_email_domain import BlacklistedEmailDomain  # noqa
-from osf.quickfiles.models import QuickFolder  # noqa
+from osf.models.quickfolder import QuickFolder  # noqa

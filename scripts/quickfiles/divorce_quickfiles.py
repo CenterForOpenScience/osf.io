@@ -1,5 +1,5 @@
 from osf.models import QuickFolder, OSFUser
-from osf.quickfiles.legacy_quickfiles import QuickFilesNode
+from api.quickfiles.legacy_quickfiles import QuickFilesNode
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery, Count
 from django.contrib.contenttypes.models import ContentType

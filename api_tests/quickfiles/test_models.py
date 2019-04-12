@@ -5,15 +5,12 @@ from addons.osfstorage.models import OsfStorageFile
 from osf.exceptions import MaxRetriesError
 from api_tests.utils import create_test_quickfile, create_test_file, create_test_folder
 from django.core.exceptions import ValidationError
-from framework.auth.core import Auth
 
-from osf_tests.factories import ProjectFactory, PrivateLinkFactory
+from osf_tests.factories import ProjectFactory
 from django.contrib.contenttypes.models import ContentType
 
 from osf_tests.factories import AuthUserFactory
 from osf.models import QuickFolder
-from osf.exceptions import NodeStateError
-from osf.quickfiles.legacy_quickfiles import QuickFilesNode
 from django.db import IntegrityError
 
 
@@ -202,66 +199,3 @@ class TestQuickFolder:
             quickfiles.save()
 
         assert 'duplicate key value violates unique constraint "one_quickfolder_per_user"' in exc.value.message
-
-@pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
-class TestQuickFilesNode:
-    """
-    Legacy
-    """
-
-    @pytest.fixture()
-    def legacy_user(self, user):
-        QuickFilesNode.objects.create_for_user(user)
-        return user
-
-    @pytest.fixture()
-    def quickfiles_node(self, legacy_user):
-        return QuickFilesNode.objects.get(creator=legacy_user)
-
-    def test_legacy_user(self, legacy_user):
-        assert getattr(legacy_user, 'quickfolder', False)
-        assert legacy_user.quickfiles.count() == 0
-
-        # No QuickFolders in nodes
-        assert legacy_user.nodes.filter(type='osf.quickfolder').count() == 0
-
-        # No old QuickFilesNode in nodes
-        assert legacy_user.nodes.filter(type='osf.quickfilesnode').count() == 0
-
-    def test_link_cannot_be_added_for_quickfiles(self, legacy_user):
-        link = PrivateLinkFactory()
-        quickfiles_node = QuickFilesNode.objects.get(creator=legacy_user)
-
-        with pytest.raises(ValidationError):
-            link.nodes.add(quickfiles_node)
-
-    def test_non_implemented_methods(self, quickfiles_node, user):
-        assert quickfiles_node.is_public
-        assert not quickfiles_node.is_registration
-        assert not quickfiles_node.is_collection
-
-        with pytest.raises(NodeStateError) as exc:
-            quickfiles_node.set_privacy('junk data')
-
-        assert exc.value.message == 'You may not set privacy for a QuickFilesNode.'
-
-        with pytest.raises(NodeStateError) as exc:
-            quickfiles_node.add_contributor('junk data')
-
-        assert exc.value.message == 'A QuickFilesNode may not have additional contributors.'
-
-        with pytest.raises(NodeStateError) as exc:
-            quickfiles_node.clone()
-
-        assert exc.value.message == 'A QuickFilesNode may not be forked, used as a template, or registered.'
-
-        with pytest.raises(NodeStateError) as exc:
-            quickfiles_node.remove_node(Auth(user))
-
-        assert exc.value.message == 'A QuickFilesNode may not be deleted.'
-
-        with pytest.raises(NodeStateError) as exc:
-            quickfiles_node.add_addon('not osfstorage', Auth(user))
-
-        assert exc.value.message == 'A QuickFilesNode can only have the osfstorage addon.'

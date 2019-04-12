@@ -61,7 +61,7 @@ _MOCKS = {
         'mark': 'enable_bookmark_creation',
         'replacement': lambda *args, **kwargs: None,
     },
-    'osf.quickfiles.signals._create_quickfiles': {
+    'api.quickfiles.signals._create_quickfiles': {
         'mark': 'enable_quickfiles_creation',
         'replacement': lambda *args, **kwargs: None,
     },

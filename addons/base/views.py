@@ -298,7 +298,7 @@ def get_auth(auth, **kwargs):
 
     check_access(target, auth, action, cas_resp)
     provider_settings = None
-    if hasattr(target, 'get_addon') and not isinstance(target, OSFUser):
+    if target.has_node_addon:
         provider_settings = target.get_addon(provider_name)
         if not provider_settings:
             raise HTTPError(httplib.BAD_REQUEST)
@@ -358,23 +358,6 @@ def get_auth(auth, **kwargs):
     if not (credentials and waterbutler_settings):
         credentials = target.serialize_waterbutler_credentials(provider_name)
         waterbutler_settings = target.serialize_waterbutler_settings(provider_name)
-
-    # TODO: Add a signal here?
-    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-        user = auth.user
-        #TODO: Move to a metrics mixin
-        if isinstance(target, Preprint) and target.counts_towards_analytics(user):
-            metric_class = get_metric_class_for_action(action)
-            if metric_class:
-                try:
-                    metric_class.record_for_preprint(
-                        preprint=target,
-                        user=user,
-                        version=fileversion.identifier if fileversion else None,
-                        path=path
-                    )
-                except es_exceptions.ConnectionError:
-                    log_exception()
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
@@ -711,7 +694,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if FileTargetMixin.has_node_addon(target):
+    if target.has_node_addon:
         node_addon = target.get_addon(provider)
 
         if not isinstance(node_addon, BaseStorageAddon):

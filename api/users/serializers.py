@@ -9,13 +9,13 @@ from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     VersionedDateTimeField, HideIfDisabled, IDField,
-    LinksField, TypeField, RelationshipField, JSONAPIListField,
-    ShowIfCurrentUser,
+    Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
+    WaterbutlerLink, ShowIfCurrentUser,
 )
 from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
 from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
-
+from api.files.serializers import QuickFilesSerializer
 from osf.models import Email
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
 from osf.models import OSFUser, Preprint
@@ -304,6 +304,16 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class UserQuickFilesSerializer(QuickFilesSerializer):
+    links = LinksField({
+        'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
+        'upload': WaterbutlerLink(),
+        'delete': WaterbutlerLink(),
+        'move': WaterbutlerLink(),
+        'download': WaterbutlerLink(must_be_file=True),
+    })
 
 
 class ReadEmailUserDetailSerializer(UserDetailSerializer):

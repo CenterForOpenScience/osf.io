@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def add_quickfiles(*args, **kwargs):
-    from osf.quickfiles.legacy_quickfiles import QuickFilesNode, get_quickfiles_project_title
+    from api.quickfiles.legacy_quickfiles import QuickFilesNode, get_quickfiles_project_title
     ids_without_quickfiles = list(OSFUser.objects.exclude(nodes_created__type=QuickFilesNode._typedmodels_type).values_list('id', flat=True))
 
     users_without_quickfiles = OSFUser.objects.filter(id__in=ids_without_quickfiles).order_by('id')
@@ -76,7 +76,7 @@ def add_quickfiles(*args, **kwargs):
         OSFSNodeSettings.objects.bulk_create(osfs_to_create)
 
 def remove_quickfiles(*args, **kwargs):
-    from osf.quickfiles.legacy_quickfiles import QuickFilesNode
+    from api.quickfiles.legacy_quickfiles import QuickFilesNode
     QuickFilesNode.objects.all().delete()
 
 
