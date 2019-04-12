@@ -1002,6 +1002,3 @@ class TestCopyPreprint():
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid Payload'
-
-    def test_test(self):
-        assert False
