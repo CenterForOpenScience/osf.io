@@ -61,7 +61,19 @@ class RegionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     ordering = ('name', )
 
     def get_default_queryset(self):
-        return Region.objects.all()
+        default_region = self.request.user.get_addon('osfstorage').default_region
+        available_regions = Region.objects.filter(_id=default_region._id)
+        institution_id = self.request.user.affiliated_institutions.first()
+        if institution_id is not None:
+            region_queryset = Region.objects.filter(_id=institution_id._id)
+            if region_queryset.count() > 0:
+                return region_queryset
+            else:
+                return available_regions
+            #available_regions = region_queryset
+        else:
+            return available_regions
+        #return available_regions
 
     # overrides ListAPIView
     def get_queryset(self):
