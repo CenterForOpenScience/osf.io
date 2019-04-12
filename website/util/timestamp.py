@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-'''
-Common functions for timestamp.
-'''
+"""Common functions for timestamp.
+"""
 from __future__ import absolute_import
 import datetime
 import hashlib
@@ -41,12 +40,13 @@ RESULT_MESSAGE = {
         api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG,  # 'TST missing(Unverify)'
     api_settings.FILE_NOT_EXISTS:
         api_settings.FILE_NOT_EXISTS_MSG,  # 'FILE missing'
+    api_settings.TIME_STAMP_VERIFICATION_ERR:
+        api_settings.TIME_STAMP_VERIFICATION_ERR_MSG,
 }
 
 def get_error_list(pid):
-    '''
-    Retrieve from the database the list of all timestamps that has an error.
-    '''
+    """Retrieve from the database the list of all timestamps that has an error.
+    """
     data_list = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=pid).order_by('provider', 'path')
     provider_error_list = []
     provider = None
@@ -148,9 +148,8 @@ def get_error_list(pid):
     return provider_error_list
 
 def get_full_list(uid, pid, node):
-    '''
-    Get a full list of timestamps from all files uploaded to a storage.
-    '''
+    """Get a full list of timestamps from all files uploaded to a storage.
+    """
     user_info = OSFUser.objects.get(id=uid)
     cookie = user_info.get_or_create_cookie()
 
@@ -232,30 +231,42 @@ def check_file_timestamp(uid, node, data):
     tmp_dir = None
     result = None
 
-    file_node = BaseFileNode.objects.get(_id=data['file_id'])
-    tmp_dir = tempfile.mkdtemp()
+    try:
+        file_node = BaseFileNode.objects.get(_id=data['file_id'])
+        tmp_dir = tempfile.mkdtemp()
 
-    if not os.path.exists(tmp_dir):
-        os.mkdir(tmp_dir)
-    download_file_path = waterbutler.download_file(cookie, file_node, tmp_dir)
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)
 
-    if download_file_path is None:
-        intentional_remove_status = [
-            api_settings.FILE_NOT_EXISTS,
-        ]
-        file_data = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=data['file_id'])
-        if file_data.exists() and \
-                file_data.get().inspection_result_status not in intentional_remove_status:
-            file_data.update(inspection_result_status=api_settings.FILE_NOT_FOUND)
-        return False
-    if not userkey_generation_check(user._id):
-        userkey_generation(user._id)
+        download_file_path = waterbutler.download_file(cookie, file_node, tmp_dir)
 
-    verify_check = TimeStampTokenVerifyCheck()
-    result = verify_check.timestamp_check(
-        user._id, data, node._id, download_file_path, tmp_dir)
-    shutil.rmtree(tmp_dir)
-    return result
+        if download_file_path is None:
+            intentional_remove_status = [
+                api_settings.FILE_NOT_EXISTS,
+            ]
+            file_data = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=data['file_id'])
+            if file_data.exists() and \
+                    file_data.get().inspection_result_status not in intentional_remove_status:
+                file_data.update(inspection_result_status=api_settings.FILE_NOT_FOUND)
+            return False
+
+        if not userkey_generation_check(user._id):
+            userkey_generation(user._id)
+
+        verify_check = TimeStampTokenVerifyCheck()
+
+        result = verify_check.timestamp_check(
+            user._id, data, node._id, download_file_path, tmp_dir
+        )
+
+        shutil.rmtree(tmp_dir)
+        return result
+
+    except Exception as err:
+        if tmp_dir and os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
+        logger.exception(err)
+        raise
 
 def add_token(uid, node, data):
     user = OSFUser.objects.get(id=uid)
@@ -299,6 +310,30 @@ def add_token(uid, node, data):
             shutil.rmtree(tmp_dir)
         logger.exception(err)
         raise
+
+def get_file_info(cookie, file_node, version):
+    headers = {'content-type': 'application/json'}
+    file_data_request = requests.get(
+        file_node.generate_waterbutler_url(
+            version=version.identifier, meta='', _internal=True
+        ), headers=headers, cookies={settings.COOKIE_NAME: cookie}
+    )
+    if file_data_request.status_code == 200:
+        file_data = file_data_request.json().get('data')
+        file_info = {
+            'provider': file_node.provider,
+            'file_id': file_node._id,
+            'file_name': file_data['attributes'].get('name'),
+            'file_path': file_data['attributes'].get('materialized'),
+            'size': file_data['attributes'].get('size'),
+            'created': file_data['attributes'].get('created_utc'),
+            'modified': file_data['attributes'].get('modified_utc'),
+            'version': ''
+        }
+        if file_node.provider == 'osfstorage':
+            file_info['version'] = file_data['attributes']['extra'].get('version')
+        return file_info
+    return None
 
 def file_created_or_updated(node, metadata, user_id, created_flag):
     if metadata['provider'] != 'osfstorage':
@@ -401,7 +436,6 @@ def userkey_generation_check(guid):
     return RdmUserKey.objects.filter(guid=Guid.objects.get(_id=guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id).exists()
 
 def userkey_generation(guid):
-    logger.info('userkey_generation guid:' + guid)
 
     try:
         generation_date = datetime.datetime.now()
@@ -412,20 +446,15 @@ def userkey_generation(guid):
         generation_pub_key_name = api_settings.KEY_NAME_FORMAT.format(
             guid, generation_date_hash, api_settings.KEY_NAME_PUBLIC, api_settings.KEY_EXTENSION)
         # private key generation
-        pvt_key_generation_cmd = [
-            api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_GENRSA,
-            api_settings.OPENSSL_OPTION_OUT,
+        pvt_key_generation_cmd = api_settings.SSL_PRIVATE_KEY_GENERATION.format(
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pvt_key_name),
             api_settings.KEY_BIT_VALUE
-        ]
+        ).split(' ')
 
-        pub_key_generation_cmd = [
-            api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_RSA,
-            api_settings.OPENSSL_OPTION_IN,
+        pub_key_generation_cmd = api_settings.SSL_PUBLIC_KEY_GENERATION.format(
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pvt_key_name),
-            api_settings.OPENSSL_OPTION_PUBOUT, api_settings.OPENSSL_OPTION_OUT,
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pub_key_name)
-        ]
+        ).split(' ')
 
         prc = subprocess.Popen(
             pvt_key_generation_cmd, shell=False, stdin=subprocess.PIPE,
@@ -466,11 +495,7 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
 class AddTimestamp:
     #1 create tsq (timestamp request) from file, and keyinfo
     def get_timestamp_request(self, file_name):
-        cmd = [
-            api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_TS,
-            api_settings.OPENSSL_OPTION_QUERY, api_settings.OPENSSL_OPTION_DATA,
-            file_name, api_settings.OPENSSL_OPTION_CERT, api_settings.OPENSSL_OPTION_SHA512
-        ]
+        cmd = api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name.encode('utf-8')).split(' ')
         process = subprocess.Popen(
             cmd, shell=False, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -502,6 +527,23 @@ class AddTimestamp:
 
         return res_content
 
+    def get_timestamp_upki(self, file_name, tmp_dir):
+        cmd = api_settings.UPKI_CREATE_TIMESTAMP.format(
+            file_name.encode('utf-8'),
+            '/dev/stdout'
+        ).split(' ')
+        try:
+            process = subprocess.Popen(
+                cmd, shell=False, stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            stdout_data, stderr_data = process.communicate()
+
+            return stdout_data
+        except Exception as err:
+            logger.exception(err)
+            raise err
+
     def add_timestamp(self, guid, file_info, project_id, file_name, tmp_dir):
         user_id = Guid.objects.get(_id=guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id
 
@@ -509,9 +551,16 @@ class AddTimestamp:
             guid=user_id, key_kind=api_settings.PUBLIC_KEY_VALUE
         ).key_name
 
-        tsa_response = self.get_timestamp_response(
-            file_name, self.get_timestamp_request(file_name), key_file_name
-        )
+        try:
+            if not api_settings.USE_UPKI:
+                tsa_response = self.get_timestamp_response(
+                    file_name, self.get_timestamp_request(file_name), key_file_name
+                )
+            else:
+                tsa_response = self.get_timestamp_upki(file_name, tmp_dir)
+        except Exception as err:
+            logger.exception(err)
+            tsa_response = None
 
         verify_data = RdmFileTimestamptokenVerifyResult.objects.filter(
             file_id=file_info['file_id'])
@@ -531,7 +580,6 @@ class AddTimestamp:
 
         return TimeStampTokenVerifyCheck().timestamp_check(
             guid, file_info, project_id, file_name, tmp_dir)
-
 
 class TimeStampTokenVerifyCheck:
     # get abstractNode
@@ -672,36 +720,78 @@ class TimeStampTokenVerifyCheck:
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG
 
             if ret == 0:
-                timestamptoken_file = guid + '.tsr'
-                timestamptoken_file_path = os.path.join(tmp_dir, timestamptoken_file)
-                try:
-                    with open(timestamptoken_file_path, 'wb') as fout:
-                        fout.write(verify_result.timestamp_token)
 
-                except Exception as err:
-                    raise err
+                if not api_settings.USE_UPKI:
+                    timestamptoken_file = guid + '.tsr'
+                    timestamptoken_file_path = os.path.join(tmp_dir, timestamptoken_file)
+                    try:
+                        with open(timestamptoken_file_path, 'wb') as fout:
+                            fout.write(verify_result.timestamp_token)
 
-                # verify timestamptoken and rootCA
-                cmd = [
-                    api_settings.OPENSSL_MAIN_CMD, api_settings.OPENSSL_OPTION_TS,
-                    api_settings.OPENSSL_OPTION_VERIFY, api_settings.OPENSSL_OPTION_DATA,
-                    file_name, api_settings.OPENSSL_OPTION_IN, timestamptoken_file_path,
-                    api_settings.OPENSSL_OPTION_CAFILE,
-                    os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
-                ]
-                prc = subprocess.Popen(
-                    cmd, shell=False, stdin=subprocess.PIPE,
-                    stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-                stdout_data, stderr_data = prc.communicate()
-                ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
+                    except Exception as err:
+                        raise err
+                    # verify timestamptoken and rootCA (FreeTSA)
+                    try:
+                        with open(timestamptoken_file_path, 'wb') as fout:
+                            fout.write(verify_result.timestamp_token)
 
-                if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
-                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
-                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
+                    except Exception as err:
+                        raise err
+
+                    cmd = api_settings.SSL_GET_TIMESTAMP_RESPONSE.format(
+                        file_name.encode('utf-8'),
+                        timestamptoken_file_path,
+                        os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
+                    ).split(' ')
+                    prc = subprocess.Popen(
+                        cmd, shell=False, stdin=subprocess.PIPE,
+                        stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                    stdout_data, stderr_data = prc.communicate()
+                    ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
+
+                    if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
+                        ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
+                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
+
+                    else:
+                        ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
+                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'NG'
 
                 else:
-                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
-                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'NG'
+                    #verify timestamptoken (uPKI))
+                    try:
+                        with open(file_name + '.tst', 'wb') as fout:
+                            fout.write(verify_result.timestamp_token)
+                    except Exception as err:
+                        raise err
+                    cmd = api_settings.UPKI_VERIFY_TIMESTAMP.format(
+                        file_name.encode('utf-8'),
+                        file_name.encode('utf-8') + '.tst'
+                    ).split(' ')
+                    try:
+                        process = subprocess.Popen(
+                            cmd, shell=False, stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        stdout_data, stderr_data = process.communicate()
+
+                        if not stderr_data:
+                            ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
+                            verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
+                        elif stderr_data.__str__().find(api_settings.UPKI_VERIFY_INVALID_MSG) > -1:
+                            ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
+                            verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'OK'
+                        else:
+                            ret = api_settings.TIME_STAMP_VERIFICATION_ERR
+                            verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'FAIL'
+                            logger.error(
+                                'Trusted Timestamp Token Verification failed({}/{}{}):{}'.format(project_id,
+                                                                                          verify_result.provider,
+                                                                                          verify_result.path,
+                                                                                          stderr_data.__str__()))
+                    except Exception as err:
+                        ret = api_settings.TIME_STAMP_VERIFICATION_ERR
+                        verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'FAIL'
+                        logger.error('upki verify error({}):{}'.format(file_name.encode('utf-8'), err))
 
                 verify_result.inspection_result_status = ret
 

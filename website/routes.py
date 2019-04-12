@@ -97,7 +97,11 @@ def get_globals():
     return {
         'embedded_ds': settings.to_bool('USE_EMBEDDED_DS', False),
         'nav_dropdown': settings.to_bool('NAV_DROPDOWN', True),
+        'nav_quickfiles': settings.to_bool('NAV_QUICKFILES', True),
+        'nav_search': settings.to_bool('NAV_SEARCH', True),
         'nav_support': settings.to_bool('NAV_SUPPORT', True),
+        'nav_donate': settings.to_bool('NAV_DONATE', True),
+        'nav_signup': settings.to_bool('NAV_SIGNUP', True),
         'pages_footer': settings.to_bool('PAGES_FOOTER', True),
         'project_analytics': settings.to_bool('PROJECT_ANALYTICS', True),
         'project_registrations': settings.to_bool('PROJECT_REGISTRATIONS', True),

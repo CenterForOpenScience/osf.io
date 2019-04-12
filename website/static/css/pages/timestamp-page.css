@@ -1,0 +1,76 @@
+.table>thead>tr>th {
+    vertical-align: middle;
+}
+.form-group .input-group {
+    margin-bottom: 10px;
+}
+.panel.affix {
+    top: 105px;
+}
+@media (max-width: 992px) {
+    .panel.affix {
+        position: relative;
+        top: 0px;
+    }
+}
+
+/* Pagination */
+.pagination-wrap {
+    display: inline-block;
+    padding-left: 0;
+    margin: 12px 0;
+    border-radius: 4px;
+}
+.pagination-wrap li {
+    display: inline;
+}
+.pagination-wrap>li:first-child>a {
+    margin-left: 0;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+.pagination-wrap>li:last-child>a {
+    margin-left: -1px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+.pagination-wrap li>a {
+    position: relative;
+    width: 42px;
+    float: left;
+    padding: 6px 12px;
+    margin-left: -1px;
+    line-height: 1.42857143;
+    color: #337ab7;
+    text-decoration: none;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+.pagination-wrap .active>a {
+    z-index: 3;
+    color: #fff;
+    cursor: default;
+    background-color: #337ab7;
+    border-color: #337ab7;
+}
+.pagination-wrap>ul {
+    display: inline;
+    padding: 0;
+}
+
+/* Table */
+.table-addon-terms .sorter {
+    display: block;
+    float: right;
+}
+.table-addon-terms .header_text {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.table-addon-terms td {
+    background-color: white;
+    word-break: break-all;
+}
