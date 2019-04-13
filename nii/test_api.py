@@ -15,15 +15,16 @@ if __name__ == '__main__':
     # stdout = logging.StreamHandler()  # log to stdio
     # logger.addHandler(stdout)
     logger.setLevel(level=logging.DEBUG)
-else:
-    from osf.models.user import OSFUser, CGGroup
-    from osf.models.node import Node
-    from osf.models.map import MAPProfile
-    from nii.mapcore_api import MAPCore, MAPCoreException, MAPCoreTokenExpired
 
-from website.app import init_app
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
 
+from osf.models.user import OSFUser
 from website import settings
+
+from nii.mapcore_api import MAPCore, MAPCoreException, MAPCoreTokenExpired
+
 map_hostname = settings.MAPCORE_HOSTNAME
 map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
 map_token_path = settings.MAPCORE_TOKEN_PATH
@@ -39,16 +40,6 @@ my_home = settings.DOMAIN
 #
 if __name__ == '__main__':
     print('In Main')
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
-    from website.app import init_app
-    init_app(routes=False, set_backends=False)
-
-    from osf.models.user import OSFUser
-    from osf.models.node import Node
-    from osf.models.map import MAPProfile
-    from nii.mapcore_api import MAPCore, MAPCoreException, MAPCoreTokenExpired
-
-    from website import settings
 
     #
     # Get OSFUser object for an account specified by argument.
@@ -122,7 +113,7 @@ if __name__ == '__main__':
 
     group_key = j['result']['groups'][0]['group_key']
     logger.info('Group key for ' + group_name + ' found, ' + group_key)
-    logger.info(json.dumps(j, indent = 2))
+    logger.info(json.dumps(j, indent=2))
 
     #
     # group_key で指定したグループの名前、紹介文を変更
@@ -136,7 +127,7 @@ if __name__ == '__main__':
         logger.info('ERROR: ' + str(e))
         sys.exit()
 
-    logger.info(json.dumps(j, indent = 2))
+    logger.info(json.dumps(j, indent=2))
 
     #
     # group_key で指定したグループの情報を取得
@@ -150,7 +141,7 @@ if __name__ == '__main__':
         logger.info('ERROR: ' + str(e))
         sys.exit()
 
-    logger.info(json.dumps(j, indent = 2))
+    logger.info(json.dumps(j, indent=2))
 
     #
     # user_eppn を一般会員としてメンバーに追加

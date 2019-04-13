@@ -139,6 +139,10 @@ class MAPCore:
 
         logger.debug('MAPCore::get_api_version:')
 
+        if (self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise MAPCoreTokenExpired
+
         count = 0
         while count < 2:
             time_stamp, signature = self.calc_signature()
@@ -171,6 +175,10 @@ class MAPCore:
     def get_group_by_name(self, group_name):
 
         logger.debug('MAPCore::get_group_by_name (group_name=' + group_name + ')')
+
+        if (self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise MAPCoreTokenExpired
 
         count = 0
         while count < 2:
@@ -214,6 +222,10 @@ class MAPCore:
 
         logger.debug('MAPCore::get_group_by_key (group_key=' + group_key + ')')
 
+        if (self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise MAPCoreTokenExpired
+
         count = 0
         while count < 2:
             time_stamp, signature = self.calc_signature()
@@ -251,6 +263,10 @@ class MAPCore:
     def create_group(self, group_name):
 
         logger.debug('MAPCore::create_group (group_name=' + group_name + ')')
+
+        if (self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise MAPCoreTokenExpired
 
         #
         # Create new group named "group_name".
@@ -308,6 +324,10 @@ class MAPCore:
 
         logger.debug('MAPCore::edit_group (group_name=' + group_name + ', introduction=' + introduction + ')')
 
+        if (self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise MAPCoreTokenExpired
+
         count = 0
         while count < 2:
             time_stamp, signature = self.calc_signature()
@@ -360,6 +380,10 @@ class MAPCore:
 
         logger.debug('MAPCore::get_group_members (group_key=' + group_key + ')')
 
+        if (self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise MAPCoreTokenExpired
+
         count = 0
         while count < 2:
             time_stamp, signature = self.calc_signature()
@@ -393,6 +417,10 @@ class MAPCore:
 
         logger.debug('MAPCore::get_my_groups:')
 
+        if (self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise MAPCoreTokenExpired
+
         count = 0
         while count < 2:
             time_stamp, signature = self.calc_signature()
@@ -425,6 +453,10 @@ class MAPCore:
     def add_to_group(self, group_key, eppn, admin):
 
         logger.debug('MAPCore::add_to_group (group_key=' + group_key + ', eppn=' + eppn + ', admin=' + str(admin) + ')')
+
+        if (self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise MAPCoreTokenExpired
 
         count = 0
         while count < 2:
@@ -472,6 +504,10 @@ class MAPCore:
 
         logger.debug('MAPCore::remove_from_group (group_key=' + group_key + ', eppn=' + eppn + ')')
 
+        if (self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise MAPCoreTokenExpired
+
         count = 0
         while count < 2:
             time_stamp, signature = self.calc_signature()
@@ -504,6 +540,10 @@ class MAPCore:
     def edit_member(self, group_key, eppn, admin):
 
         logger.debug('MAPCore::edit_member (group_key=' + group_key + ', eppn=' + eppn + ', admin=' + str(admin) + ')')
+
+        if (self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise MAPCoreTokenExpired
 
         # NOTE: If error occurs, an exception will be thrown.
         j = self.remove_from_group(group_key, eppn)

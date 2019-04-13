@@ -14,14 +14,15 @@ if __name__ == '__main__':
     # stdout = logging.StreamHandler()  # log to stdio
     # logger.addHandler(stdout)
     logger.setLevel(level=logging.DEBUG)
-else:
-    from osf.models.user import OSFUser, CGGroup
-    from osf.models.node import Node
-    from osf.models.map import MAPProfile
-    from nii.mapcore_api import MAPCore
 
-from website.app import init_app
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
+
+from osf.models.user import OSFUser
 from website import settings
+
+from nii.mapcore_api import MAPCore
 
 map_hostname = settings.MAPCORE_HOSTNAME
 map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
@@ -37,18 +38,6 @@ my_home = settings.DOMAIN
 # テスト用メインプログラム
 #
 if __name__ == '__main__':
-
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
-    from website.app import init_app
-    init_app(routes=False, set_backends=False)
-
-    from osf.models.user import OSFUser
-    from osf.models.node import Node
-    from osf.models.map import MAPProfile
-    from nii.mapcore_api import MAPCore
-
-    from website import settings
-
     #
     # Get existent OSFUsers.
     #

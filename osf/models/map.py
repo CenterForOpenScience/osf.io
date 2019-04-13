@@ -6,9 +6,8 @@
 import logging
 
 from django.db import models
-from django.utils import timezone
 
-from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
+from osf.models.base import BaseModel
 from osf.utils.fields import NonNaiveDateTimeField
 
 logger = logging.getLogger(__name__)

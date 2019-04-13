@@ -5,8 +5,8 @@ import logging
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import must_be_logged_in
 from framework.flask import redirect  # VOL-aware redirect
-from flask import request, send_from_directory, Response, stream_with_context
-from website.ember_osf_web.decorators import ember_flag_is_active, MockUser, storage_i18n_flag_active
+from flask import request
+from website.ember_osf_web.decorators import MockUser
 
 # mapcore library
 from nii.mapcore import mapcore_request_authcode

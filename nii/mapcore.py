@@ -10,8 +10,8 @@ import requests
 import urllib
 from operator import attrgetter
 from pprint import pformat as pp
-from website import settings
 
+from website import settings
 
 map_hostname = settings.MAPCORE_HOSTNAME
 map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
@@ -29,12 +29,16 @@ if __name__ == '__main__':
     # stdout = logging.StreamHandler()  # log to stdio
     # logger.addHandler(stdout)
     logger.setLevel(level=logging.DEBUG)
-else:
-    from osf.models.user import OSFUser
-    from osf.models.node import Node
-    from osf.models.map import MAPProfile
-    from nii.mapcore_api import MAPCore
-    from website.util import web_url_for
+
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
+
+from osf.models.user import OSFUser
+from osf.models.node import Node
+from osf.models.map import MAPProfile
+from website.util import web_url_for
+from nii.mapcore_api import MAPCore
 
 def mapcore_is_enabled():
     if map_clientid == '':
@@ -75,7 +79,7 @@ def mapcore_request_authcode(**kwargs):
     params = {'response_type': 'code',
               'redirect_uri': redirect_uri,
               'client_id': map_clientid,
-              'state': state_str }
+              'state': state_str}
     query = url + '?' + urllib.urlencode(params)
     logger.info('redirect to AuthCode request: ' + query)
     return query
@@ -155,7 +159,7 @@ def mapcore_get_accesstoken(authcode, redirect, clientid=map_clientid, secret=ma
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
     }
-    res = requests.post(url, data=param, headers=headers, auth = basic_auth)
+    res = requests.post(url, data=param, headers=headers, auth=basic_auth)
     res.raise_for_status()  # error check
     logger.info('mapcore_get_accesstoken response: ' + res.text)
     json = res.json()
@@ -452,7 +456,7 @@ def mapcore_group_sync_to_rdm(map_group):
         for admin_eppn in map_group['group_admin_eppn']:
             try:
                 adminu = OSFUser.objects.get(eppn=admin_eppn)
-            except Exception as e:
+            except Exception:
                 logger.info('mAP group admin [' + admin_eppn + '] doesn\'t have account in GRDM.')
                 continue
             owner = adminu
@@ -650,19 +654,9 @@ def add_contributor_to_project(node_name, eppn):
 
 if __name__ == '__main__':
     print('In Main')
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
-    from website.app import init_app
-    init_app(routes=False, set_backends=False)
-
-    from osf.models.user import OSFUser
-    from osf.models.node import Node
-    from osf.models.map import MAPProfile
-    from nii.mapcore_api import MAPCore
-
-    from website import settings
 
     if False:  # get mAP group and members -> RDM
-        # me = OSFUser.objects.get(eppn=sys.argv[1])
+        me = OSFUser.objects.get(eppn=sys.argv[1])
         # mapcore_refresh_accesstoken(me)  # token refresh
         # print('name:', me.fullname)
         # print('eppn:', me.eppn)
