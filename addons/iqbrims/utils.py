@@ -27,3 +27,13 @@ def to_hgrid(item, node, path):
         'urls': build_iqbrims_urls(item, node, path=path)
     }
     return serialized
+
+def serialize_iqbrims_widget(node):
+    iqbrims = node.get_addon('iqbrims')
+    ret = {
+        'complete': True,
+        'include': False,
+        'can_expand': True,
+    }
+    ret.update(iqbrims.config.to_json())
+    return ret

@@ -9,8 +9,14 @@ from framework.exceptions import HTTPError
 
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 from osf.models import AbstractNode, RdmAddonOption
-from website.project.decorators import must_have_addon, must_be_addon_authorizer, must_have_permission
 from osf.utils import permissions
+from website.project.decorators import (
+    must_have_addon,
+    must_be_valid_project,
+    must_be_addon_authorizer,
+    must_have_permission
+)
+from website.ember_osf_web.views import use_ember_app
 
 from addons.base import generic_views, exceptions
 from addons.iqbrims.serializer import IQBRIMSSerializer
@@ -51,6 +57,11 @@ iqbrims_import_auth = generic_views.import_auth(
 iqbrims_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
+
+@must_be_valid_project
+@must_have_addon('iqbrims', 'node')
+def project_iqbrims(**kwargs):
+    return use_ember_app()
 
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)

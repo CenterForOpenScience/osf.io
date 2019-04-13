@@ -3,8 +3,30 @@
 """
 
 from framework.routing import Rule, json_renderer
+from website.routes import OsfWebRenderer
 
 from . import views
+
+TEMPLATE_DIR = './addons/iqbrims/templates/'
+
+# HTML endpoints
+page_routes = {
+
+    'rules': [
+
+        # Home (Base) | GET
+        Rule(
+            [
+                '/<pid>/iqbrims',
+                '/<pid>/node/<nid>/iqbrims',
+            ],
+            'get',
+            views.project_iqbrims,
+            OsfWebRenderer('page.mako', trust=False, template_dir=TEMPLATE_DIR)
+        ),
+
+    ]
+}
 
 # JSON endpoints
 api_routes = {

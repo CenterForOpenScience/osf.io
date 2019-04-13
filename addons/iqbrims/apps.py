@@ -9,6 +9,7 @@ class IQBRIMSAddonConfig(BaseAddonAppConfig):
     full_name = 'IQB-RIMS'
     short_name = 'iqbrims'
     owners = ['user', 'node']
+    views = ['widget', 'page']
     configs = ['accounts', 'node']
     categories = ['storage']
     has_hgrid_files = True
@@ -26,7 +27,7 @@ class IQBRIMSAddonConfig(BaseAddonAppConfig):
     @property
     def routes(self):
         from . import routes
-        return [routes.api_routes]
+        return [routes.page_routes, routes.api_routes]
 
     @property
     def user_settings(self):
