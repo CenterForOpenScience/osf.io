@@ -15,16 +15,14 @@ if __name__ == '__main__':
     # stdout = logging.StreamHandler()  # log to stdio
     # logger.addHandler(stdout)
     logger.setLevel(level=logging.DEBUG)
-
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     from website.app import init_app
     init_app(routes=False, set_backends=False)
 
 from osf.models.user import OSFUser
-from website import settings
-
 from nii.mapcore_api import MAPCore, MAPCoreException, MAPCoreTokenExpired
 
+
+"""
 map_hostname = settings.MAPCORE_HOSTNAME
 map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
 map_token_path = settings.MAPCORE_TOKEN_PATH
@@ -34,12 +32,14 @@ map_secret = settings.MAPCORE_SECRET
 map_redirect = settings.MAPCORE_REDIRECT
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 my_home = settings.DOMAIN
+"""
 
 #
 # テスト用メインプログラム
 #
 if __name__ == '__main__':
     print('In Main')
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
 
     #
     # Get OSFUser object for an account specified by argument.
@@ -51,12 +51,14 @@ if __name__ == '__main__':
 
     print('name:', user.fullname)
     print('eppn:', user.eppn)
+    '''
     if hasattr(user, 'map_profile'):
-        print('access_token:', user.map_profile.oauth_access_token)
-        print('refresh_token:', user.map_profile.oauth_refresh_token)
+        #print('access_token:', user.map_profile.oauth_access_token)
+        #print('refresh_token:', user.map_profile.oauth_refresh_token)
     else:
         logger.info('User does not have map_profile')
         sys.exit()
+    '''
 
     group_name = u'mAP Coop Test 001'
     introduction = u'mAP Coop Test 001'
@@ -72,8 +74,11 @@ if __name__ == '__main__':
     #
     try:
         j = mapcore.get_api_version()
-    except MAPCoreTokenExpired:
-        logger.info('FATAL ERROR: TOKEN EXPIRED')
+    except MAPCoreTokenExpired as e:
+        if e.caller == user:
+            logger.info('FATAL ERROR: TOKEN EXPIRED (CALLER)')
+        else:
+            logger.info('FATAL ERROR: TOKEN EXPIRED')
         sys.exit()
     except MAPCoreException as e:
         logger.info('ERROR: ' + str(e))
