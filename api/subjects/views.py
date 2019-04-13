@@ -93,8 +93,6 @@ class SubjectRelationshipBaseView(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
 
 
 class SubjectList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/subjects_list).
-    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,

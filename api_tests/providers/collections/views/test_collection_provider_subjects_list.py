@@ -1,7 +1,12 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api_tests.providers.mixins import ProviderSpecificSubjectsMixin, ProviderHighlightedSubjectsMixin, ProviderCustomTaxonomyMixin
+from api_tests.providers.mixins import (
+    ProviderSpecificSubjectsMixin,
+    ProviderHighlightedSubjectsMixin,
+    ProviderCustomTaxonomyMixin,
+    ProviderCustomSubjectMixin,
+)
 
 from osf_tests.factories import CollectionProviderFactory
 
@@ -54,7 +59,7 @@ class TestProviderHighlightedSubjects(ProviderHighlightedSubjectsMixin):
         return '/{}providers/collections/{}/subjects/highlighted/'.format(API_BASE, provider._id)
 
 
-class TestCustomSubjects(ProviderCustomTaxonomyMixin):
+class TestCustomSubjects(ProviderCustomSubjectMixin):
     provider_class = CollectionProviderFactory
 
     @pytest.fixture()

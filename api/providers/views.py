@@ -179,7 +179,7 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
-        provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
+        provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
         if parent:
             if parent == 'null':
                 return provider.top_level_subjects
@@ -192,21 +192,21 @@ class CollectionProviderTaxonomies(GenericProviderTaxonomies):
     To be deprecated: In favor of CollectionProviderSubjects
     """
     view_category = 'collection-providers'
-    _model_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
+    provider_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
 
 class RegistrationProviderTaxonomies(GenericProviderTaxonomies):
     """
     To be deprecated: In favor of RegistrationProviderSubjects
     """
     view_category = 'registration-providers'
-    _model_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
+    provider_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
 
 class PreprintProviderTaxonomies(GenericProviderTaxonomies):
     """
     To be deprecated: In favor of PreprintProviderSubjects
     """
     view_category = 'preprint-providers'
-    _model_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
+    provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
 
 
 class BaseProviderSubjects(SubjectList):
@@ -215,7 +215,7 @@ class BaseProviderSubjects(SubjectList):
 
     def get_default_queryset(self):
         parent = self.request.query_params.get('filter[parent]', None)
-        provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
+        provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
         if parent:
             if parent == 'null':
                 return provider.top_level_subjects
@@ -225,19 +225,19 @@ class BaseProviderSubjects(SubjectList):
 
 class CollectionProviderSubjects(BaseProviderSubjects):
     view_category = 'collection-providers'
-    _model_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
+    provider_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
 
 
 class RegistrationProviderSubjects(BaseProviderSubjects):
     view_category = 'registration-providers'
-    _model_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
+    provider_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
 
 
 class PreprintProviderSubjects(BaseProviderSubjects):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_subjects_list).
     """
     view_category = 'preprint-providers'
-    _model_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
+    provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
 
 
 class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIView):
@@ -254,7 +254,7 @@ class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIVi
     serializer_class = TaxonomySerializer
 
     def get_queryset(self):
-        provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
+        provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
         return optimize_subject_query(Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text'))
 
 
@@ -263,7 +263,7 @@ class CollectionProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxono
     To be deprecated: In favor of CollectionProviderHighlightedSubjectList
     """
     view_category = 'collection-providers'
-    _model_class = CollectionProvider
+    provider_class = CollectionProvider
 
 
 class RegistrationProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxonomyList):
@@ -271,7 +271,7 @@ class RegistrationProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxo
     To be deprecated: In favor of RegistrationProviderHighlightedSubjectList
     """
     view_category = 'registration-providers'
-    _model_class = RegistrationProvider
+    provider_class = RegistrationProvider
 
 
 class PreprintProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxonomyList):
@@ -279,7 +279,7 @@ class PreprintProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxonomy
     To be deprecated: In favor of PreprintProviderHighlightedSubjectList
     """
     view_category = 'preprint-providers'
-    _model_class = PreprintProvider
+    provider_class = PreprintProvider
 
 
 class GenericProviderHighlightedSubjectList(GenericProviderHighlightedTaxonomyList):
@@ -289,17 +289,17 @@ class GenericProviderHighlightedSubjectList(GenericProviderHighlightedTaxonomyLi
 
 class CollectionProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):
     view_category = 'collection-providers'
-    _model_class = CollectionProvider
+    provider_class = CollectionProvider
 
 
 class RegistrationProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):
     view_category = 'registration-providers'
-    _model_class = RegistrationProvider
+    provider_class = RegistrationProvider
 
 
 class PreprintProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):
     view_category = 'preprint-providers'
-    _model_class = PreprintProvider
+    provider_class = PreprintProvider
 
 
 class GenericProviderLicenseList(LicenseList):
@@ -311,7 +311,7 @@ class GenericProviderLicenseList(LicenseList):
         return NodeLicense.objects.preprint_licenses()
 
     def get_queryset(self):
-        provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
+        provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
         if not provider.licenses_acceptable.count():
             if not provider.default_license:
                 return super(GenericProviderLicenseList, self).get_queryset()
@@ -323,17 +323,17 @@ class GenericProviderLicenseList(LicenseList):
 
 class CollectionProviderLicenseList(GenericProviderLicenseList):
     view_category = 'collection-providers'
-    _model_class = CollectionProvider
+    provider_class = CollectionProvider
 
 
 class RegistrationProviderLicenseList(GenericProviderLicenseList):
     view_category = 'registration-providers'
-    _model_class = RegistrationProvider
+    provider_class = RegistrationProvider
 
 
 class PreprintProviderLicenseList(GenericProviderLicenseList):
     view_category = 'preprint-providers'
-    _model_class = PreprintProvider
+    provider_class = PreprintProvider
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin):

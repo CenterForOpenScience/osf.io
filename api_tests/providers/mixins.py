@@ -513,6 +513,7 @@ class ProviderSpecificSubjectsMixin(ProviderMixinBase):
         res = app.get(url_1)
         assert res.json['data'][-1]['id'] == rootOther._id
 
+
 @pytest.mark.django_db
 class ProviderCustomTaxonomyMixin(ProviderMixinBase):
 
@@ -549,6 +550,44 @@ class ProviderCustomTaxonomyMixin(ProviderMixinBase):
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
         assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
         assert asdf_res.json['data'][0]['attributes']['share_title'] == asdf_provider.share_title
+
+
+@pytest.mark.django_db
+class ProviderCustomSubjectMixin(ProviderMixinBase):
+
+    @pytest.fixture()
+    def osf_provider(self):
+        return self.provider_class(_id='osf')
+
+    @pytest.fixture()
+    def asdf_provider(self):
+        return self.provider_class(_id='asdf')
+
+    @pytest.fixture()
+    def bepress_subj(self, osf_provider):
+        return SubjectFactory(text='BePress Text', provider=osf_provider)
+
+    @pytest.fixture()
+    def other_subj(self, bepress_subj, asdf_provider):
+        return SubjectFactory(text='Other Text', bepress_subject=bepress_subj, provider=asdf_provider)
+
+    @pytest.fixture()
+    def url(self):
+        raise NotImplementedError
+
+    def test_taxonomy_share_title(self, app, url, osf_provider, asdf_provider, bepress_subj, other_subj):
+        bepress_res = app.get(
+            url.format(
+                API_BASE,
+                osf_provider._id))
+        asdf_res = app.get(
+            url.format(
+                API_BASE,
+                asdf_provider._id))
+
+        assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
+        assert bepress_res.json['data'][0]['attributes']['taxonomy_name'] == osf_provider.share_title
+        assert asdf_res.json['data'][0]['attributes']['taxonomy_name'] == asdf_provider.share_title
 
 
 @pytest.mark.django_db

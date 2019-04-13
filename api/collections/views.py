@@ -75,8 +75,8 @@ class CollectionMixin(object):
             ), user=user,
         )
 
-    def get_cgm(self, check_object_permissions=True):
-        cgm = get_object_or_error(
+    def get_collection_submission(self, check_object_permissions=True):
+        collection_submission = get_object_or_error(
             CollectionSubmission,
             self.kwargs['cgm_id'],
             self.request,
@@ -84,8 +84,8 @@ class CollectionMixin(object):
         )
         # May raise a permission denied
         if check_object_permissions:
-            self.check_object_permissions(self.request, cgm)
-        return cgm
+            self.check_object_permissions(self.request, collection_submission)
+        return collection_submission
 
 
 class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, CollectionMixin):
@@ -362,7 +362,7 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
 
     # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_cgm()
+        return self.get_collection_submission()
 
     def perform_destroy(self, instance):
         # Skip collection permission check -- perms class checks when getting CGM
@@ -388,7 +388,7 @@ class CollectedMetaSubjectsList(BaseResourceSubjectsList, CollectionMixin):
     view_name = 'collected-metadata-subjects'
 
     def get_resource(self):
-        return self.get_cgm()
+        return self.get_collection_submission()
 
 
 class CollectedMetaSubjectsRelationship(SubjectRelationshipBaseView, CollectionMixin):
@@ -407,7 +407,7 @@ class CollectedMetaSubjectsRelationship(SubjectRelationshipBaseView, CollectionM
     view_name = 'collected-metadata-relationships-subjects'
 
     def get_resource(self, check_object_permissions=True):
-        return self.get_cgm(check_object_permissions)
+        return self.get_collection_submission(check_object_permissions)
 
 
 class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):

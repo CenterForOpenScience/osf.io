@@ -299,7 +299,6 @@ class TestCustomTaxonomy:
             url.format(
                 API_BASE,
                 asdf_provider._id))
-
         assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
         assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
         assert asdf_res.json['data'][0]['attributes']['share_title'] == asdf_provider.share_title
@@ -311,3 +310,29 @@ class TestCustomSubjects(TestCustomTaxonomy):
     @pytest.fixture()
     def url(self):
         return '/{}providers/preprints/{}/subjects/'
+
+    def test_taxonomy_share_title(self, app, url_deprecated, url, osf_provider, asdf_provider, bepress_subj, other_subj):
+        bepress_res = app.get(
+            url_deprecated.format(
+                API_BASE,
+                osf_provider._id))
+        asdf_res = app.get(
+            url_deprecated.format(
+                API_BASE,
+                asdf_provider._id))
+
+        assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
+        assert bepress_res.json['data'][0]['attributes']['share_title'] == osf_provider.share_title
+        assert asdf_res.json['data'][0]['attributes']['share_title'] == asdf_provider.share_title
+
+        bepress_res = app.get(
+            url.format(
+                API_BASE,
+                osf_provider._id))
+        asdf_res = app.get(
+            url.format(
+                API_BASE,
+                asdf_provider._id))
+        assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
+        assert bepress_res.json['data'][0]['attributes']['taxonomy_name'] == osf_provider.share_title
+        assert asdf_res.json['data'][0]['attributes']['taxonomy_name'] == asdf_provider.share_title
