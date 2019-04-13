@@ -36,10 +36,13 @@ else:
     from osf.models.map import MAPProfile
     from nii.mapcore_api import MAPCore
 
-def mapcore_request_authcode():
+def mapcore_request_authcode(**kwargs):
     '''
     get an authorization code from mAP. this process will redirect some times.
+    :param params  dict of GET parameters in request
     '''
+    from website.util import web_url_for
+
     # logger.info("enter mapcore_get_authcode.")
     # logger.info("MAPCORE_HOSTNAME: " + map_hostname)
     # logger.info("MAPCORE_AUTHCODE_PATH: " + map_authcode_path)
@@ -49,12 +52,24 @@ def mapcore_request_authcode():
     # logger.info("MAPCORE_SECRET: " + map_secret)
     # logger.info("MAPCORE_REIRECT: " + map_redirect)
 
+    # parameter check
+    if 'request' in kwargs.keys():
+        kwargs = kwargs['request']
+    logger.info('mapcore_request_authcode get params:\n')
+    logger.info(pp(kwargs))
+    if 'next_url' in kwargs.keys():
+        state_str = kwargs['next_url'].encode('base64')
+    else:
+        state_str = map_secret
+
     # make call
     url = map_hostname + map_authcode_path
+    redirect_uri = settings.DOMAIN + web_url_for('mapcore_oauth_complete')[1:]
+    logger.info('mapcore_request_authcode: redirect_uri is [' + redirect_uri + ']')
     params = {'response_type': 'code',
-              'redirect_uri': map_redirect,
+              'redirect_uri': redirect_uri,
               'client_id': map_clientid,
-              'state': 'GRDM_mAP_AuthCode'}
+              'state': state_str }
     query = url + '?' + urllib.urlencode(params)
     logger.info('redirect to AuthCode request: ' + query)
     return query
@@ -78,7 +93,7 @@ def mapcore_receive_authcode(user, params):
     logger.info('oauth returned parameters: ' + s)
 
     # authorization code check
-    if 'code' not in params or 'state' not in params or params['state'] != map_authcode_magic:
+    if 'code' not in params or 'state' not in params:
         raise ValueError('invalid response from oauth provider')
 
     # exchange autorization code to access token
@@ -100,6 +115,7 @@ def mapcore_receive_authcode(user, params):
     user.save()
 
     # DEBUG: read record and print
+    """
     logger.info('In database:')
     me = OSFUser.objects.get(eppn=user.eppn)
     logger.info('name: ' + me.fullname)
@@ -107,8 +123,11 @@ def mapcore_receive_authcode(user, params):
     if hasattr(me, 'map_profile'):
         logger.info('access_token: ' + me.map_profile.oauth_access_token)
         logger.info('refresh_token: ' + me.map_profile.oauth_refresh_token)
+    """
 
-    return my_home  # redirect to home -> will redirect to dashboard
+    if params['state'] != map_secret:
+        return params['state'].decode('base64')  # user defined state string
+    return my_home   # redirect to home -> will redirect to dashboard
 
 
 def mapcore_get_accesstoken(authcode, clientid=map_clientid, secret=map_secret, rediret=map_redirect):
@@ -284,9 +303,9 @@ def mapcore_get_extended_group_info(mapcore, group_key):
     #      "管理者の名前",
     #      "管理者の名前"
     #  ],
-    #  "group_admin_eepn": [      <-- これが欲しい
-    #      "管理者のeepn",
-    #      "管理者のeepn"
+    #  "group_admin_eppn": [      <-- これが欲しい
+    #      "管理者のeppn",
+    #      "管理者のeppn"
     #  ],
     #  "group_member_list": [     <-- メンバーのリスト(管理者を探す)
     #   {
@@ -594,12 +613,6 @@ def mapcore_group_sync_to_map(node):
 #
 
 
-# print variable type
-def startup():
-    print('loaded')
-    return
-
-
 # add a contirbutor to a project
 def add_contributor_to_project(node_name, eppn):
     # get node object
@@ -655,9 +668,12 @@ if __name__ == '__main__':
         # for group in group_list:
         #    mapcore_group_sync_to_rdm(group)
 
-    if True:  # get RDM conributors and copy to mAP
+    if False:  # get RDM conributors and copy to mAP
         # owner = OSFUser.objects.get(eppn='hnagahara@openidp.nii.ac.jp')
         # mapcore_refresh_accesstoken(owner)  # token refresh
         node = Node.objects.get(title=sys.argv[1])
         mapcore_group_sync_to_map(node)
         pass
+
+    if True:  # test for authcode request
+        mapcore_request_authcode(next_url=sys.argv[1])

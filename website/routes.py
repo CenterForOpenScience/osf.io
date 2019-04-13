@@ -62,6 +62,7 @@ from website.identifiers import views as identifier_views
 from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 from website.rdm_addons import views as rdm_addon_views
 from website.rdm_announcement import views as rdm_announcement_views
+from website.mapcore.mapcore_routes import mapcore_oauth_start, mapcore_oauth_complete
 
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
@@ -406,22 +407,6 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        # mapcore OAuth start
-        Rule(
-            '/oauth_start/',
-            'get',
-            website_views.oauth_start,
-            notemplate
-        ),
-
-        # mapcore Oauth result catcher
-        Rule(
-            '/oauth_complete',
-            'get',
-            website_views.oauth_complete,
-            notemplate
-        ),
-
         Rule(
             '/dashboard/',
             'get',
@@ -639,6 +624,25 @@ def make_url_map(app):
         Rule('/confirmed_emails/', 'delete', auth_views.unconfirmed_email_remove, json_renderer)
 
     ], prefix='/api/v1')
+
+    ### mAP core ###
+    process_rules(app, [
+        # mapcore OAuth start
+        Rule(
+            '/oauth_start',
+            'get',
+            mapcore_oauth_start,
+            notemplate
+        ),
+
+        # mapcore Oauth result catcher
+        Rule(
+            '/oauth_complete',
+            'get',
+            mapcore_oauth_complete,
+            notemplate
+        ),
+    ])
 
     ### Metadata ###
     process_rules(app, [

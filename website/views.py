@@ -33,10 +33,6 @@ from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
 
-# mapcore library
-from nii.mapcore import mapcore_request_authcode
-from nii.mapcore import mapcore_receive_authcode
-
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 registries_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['registries']['path']))
@@ -431,14 +427,3 @@ def get_storage_region_list(user, node=False):
     available_regions.insert(0, available_regions.pop(available_regions.index(default_region)))  # default should be at top of list for UI.
 
     return available_regions
-
-
-# mAP core
-def oauth_start(**kwargs):
-    # enterance for OAuth
-    return redirect(mapcore_request_authcode())
-
-def oauth_complete(**kwargs):
-    # Redirect to COS News page
-    logger.info('Enter oauth_finish()')
-    return redirect(mapcore_receive_authcode(_get_current_user() or MockUser(), request.args.to_dict()))
