@@ -139,7 +139,7 @@ class MAPCore:
 
         logger.debug('MAPCore::get_api_version:')
 
-        if (self.user.map_profile is None:
+        if self.user.map_profile is None:
             # Access token is not issued yet.
             raise MAPCoreTokenExpired
 
@@ -160,14 +160,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired
+                    raise MAPCoreTokenExpired(self.user)
                 count += 1
             else:
                 # Any other API error.
                 raise MAPCoreException(self.get_last_error())
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired
+        raise MAPCoreTokenExpired(self.user)
 
     #
     # Get group information by group name.
@@ -176,9 +176,9 @@ class MAPCore:
 
         logger.debug('MAPCore::get_group_by_name (group_name=' + group_name + ')')
 
-        if (self.user.map_profile is None:
+        if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired
+            raise MAPCoreTokenExpired(self.user)
 
         count = 0
         while count < 2:
@@ -206,14 +206,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired
+                    raise MAPCoreTokenExpired(self.user)
                 count += 1
             else:
                 # Any other API error.
                 raise MAPCoreException(self.get_last_error())
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired
+        raise MAPCoreTokenExpired(self.user)
 
     #
     # Get group information by group key.
@@ -222,9 +222,9 @@ class MAPCore:
 
         logger.debug('MAPCore::get_group_by_key (group_key=' + group_key + ')')
 
-        if (self.user.map_profile is None:
+        if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired
+            raise MAPCoreTokenExpired(self.user)
 
         count = 0
         while count < 2:
@@ -248,14 +248,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired
+                    raise MAPCoreTokenExpired(self.user)
                 count += 1
             else:
                 # Any other API error.
                 raise MAPCoreException(self.get_last_error())
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired
+        raise MAPCoreTokenExpired(self.user)
 
     #
     # Create new group, and make it public, active and open_member.
@@ -264,9 +264,9 @@ class MAPCore:
 
         logger.debug('MAPCore::create_group (group_name=' + group_name + ')')
 
-        if (self.user.map_profile is None:
+        if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired
+            raise MAPCoreTokenExpired(self.user)
 
         #
         # Create new group named "group_name".
@@ -308,14 +308,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired
+                    raise MAPCoreTokenExpired(self.user)
                 count += 1
             else:
                 # Any other API error.
                 raise MAPCoreException(self.get_last_error())
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired
+        raise MAPCoreTokenExpired(self.user)
 
     #
     # Change group properties.
@@ -324,9 +324,9 @@ class MAPCore:
 
         logger.debug('MAPCore::edit_group (group_name=' + group_name + ', introduction=' + introduction + ')')
 
-        if (self.user.map_profile is None:
+        if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired
+            raise MAPCoreTokenExpired(self.user)
 
         count = 0
         while count < 2:
@@ -364,14 +364,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired
+                    raise MAPCoreTokenExpired(self.user)
                 count += 1
             else:
                 # Any other API error.
                 raise MAPCoreException(self.get_last_error())
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired
+        raise MAPCoreTokenExpired(self.user)
 
     #
     # Get member of group.
@@ -380,9 +380,9 @@ class MAPCore:
 
         logger.debug('MAPCore::get_group_members (group_key=' + group_key + ')')
 
-        if (self.user.map_profile is None:
+        if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired
+            raise MAPCoreTokenExpired(self.user)
 
         count = 0
         while count < 2:
@@ -401,14 +401,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired
+                    raise MAPCoreTokenExpired(self.user)
                 count += 1
             else:
                 # Any other API error.
                 raise MAPCoreException(self.get_last_error())
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired
+        raise MAPCoreTokenExpired(self.user)
 
     #
     # Get joined group list.
@@ -417,9 +417,9 @@ class MAPCore:
 
         logger.debug('MAPCore::get_my_groups:')
 
-        if (self.user.map_profile is None:
+        if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired
+            raise MAPCoreTokenExpired(self.user)
 
         count = 0
         while count < 2:
@@ -438,14 +438,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired
+                    raise MAPCoreTokenExpired(self.user)
                 count += 1
             else:
                 # Any other API error.
                 raise MAPCoreException(self.get_last_error())
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired
+        raise MAPCoreTokenExpired(self.user)
 
     #
     # Add to group.
@@ -454,9 +454,9 @@ class MAPCore:
 
         logger.debug('MAPCore::add_to_group (group_key=' + group_key + ', eppn=' + eppn + ', admin=' + str(admin) + ')')
 
-        if (self.user.map_profile is None:
+        if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired
+            raise MAPCoreTokenExpired(self.user)
 
         count = 0
         while count < 2:
@@ -488,14 +488,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired
+                    raise MAPCoreTokenExpired(self.user)
                 count += 1
             else:
                 # Any other API error.
                 raise MAPCoreException(self.get_last_error())
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired
+        raise MAPCoreTokenExpired(self.user)
 
     #
     # Remove from group.
@@ -504,9 +504,9 @@ class MAPCore:
 
         logger.debug('MAPCore::remove_from_group (group_key=' + group_key + ', eppn=' + eppn + ')')
 
-        if (self.user.map_profile is None:
+        if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired
+            raise MAPCoreTokenExpired(self.user)
 
         count = 0
         while count < 2:
@@ -525,14 +525,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired
+                    raise MAPCoreTokenExpired(self.user)
                 count += 1
             else:
                 # Any other API error.
                 raise MAPCoreException(self.get_last_error())
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired
+        raise MAPCoreTokenExpired(self.user)
 
     #
     # Edit member.
@@ -541,9 +541,9 @@ class MAPCore:
 
         logger.debug('MAPCore::edit_member (group_key=' + group_key + ', eppn=' + eppn + ', admin=' + str(admin) + ')')
 
-        if (self.user.map_profile is None:
+        if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired
+            raise MAPCoreTokenExpired(self.user)
 
         # NOTE: If error occurs, an exception will be thrown.
         j = self.remove_from_group(group_key, eppn)
