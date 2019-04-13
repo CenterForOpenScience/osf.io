@@ -1975,7 +1975,6 @@ MAPCORE_AUTHCODE_PATH = '/oauth/shib/authrequest.php'
 MAPCORE_TOKEN_PATH = '/oauth/token.php'
 MAPCORE_API_PATH = '/api2/v1'
 MAPCORE_REFRESH_PATH = '/oauth/token.php'
-MAPCORE_REDIRECT = 'https://www.dev1.rdm.nii.ac.jp/oauth_complete'
 MAPCORE_AUTHCODE_MAGIC = 'GRDM_mAP_AuthCode'
 MAPCORE_CLIENTID = None
 MAPCORE_SECRET = None

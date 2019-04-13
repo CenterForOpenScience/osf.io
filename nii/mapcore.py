@@ -19,7 +19,6 @@ map_token_path = settings.MAPCORE_TOKEN_PATH
 map_refresh_path = settings.MAPCORE_REFRESH_PATH
 map_clientid = settings.MAPCORE_CLIENTID
 map_secret = settings.MAPCORE_SECRET
-map_redirect = settings.MAPCORE_REDIRECT
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 my_home = settings.DOMAIN
 
@@ -35,13 +34,19 @@ else:
     from osf.models.node import Node
     from osf.models.map import MAPProfile
     from nii.mapcore_api import MAPCore
+    from website.util import web_url_for
+
+def mapcore_is_enabled():
+    if map_clientid == '':
+        return False
+    return True
+
 
 def mapcore_request_authcode(**kwargs):
     '''
     get an authorization code from mAP. this process will redirect some times.
     :param params  dict of GET parameters in request
     '''
-    from website.util import web_url_for
 
     # logger.info("enter mapcore_get_authcode.")
     # logger.info("MAPCORE_HOSTNAME: " + map_hostname)
@@ -55,10 +60,11 @@ def mapcore_request_authcode(**kwargs):
     # parameter check
     if 'request' in kwargs.keys():
         kwargs = kwargs['request']
-    logger.info('mapcore_request_authcode get params:\n')
-    logger.info(pp(kwargs))
-    if 'next_url' in kwargs.keys():
-        state_str = kwargs['next_url'].encode('base64')
+    logger.debug('mapcore_request_authcode get params:\n')
+    logger.debug(pp(kwargs))
+    next_url = kwargs.get('next_url')
+    if next_url is not None:
+        state_str = next_url.encode('base64')
     else:
         state_str = map_secret
 
@@ -100,7 +106,8 @@ def mapcore_receive_authcode(user, params):
     authcode = params['code']
     # authcode = 'AUTHORIZATIONCODESAMPLE'
     # eppn = 'foobar@esample.com'
-    (access_token, refresh_token) = mapcore_get_accesstoken(authcode)
+    redirect_uri = settings.DOMAIN + web_url_for('mapcore_oauth_complete')[1:]
+    (access_token, refresh_token) = mapcore_get_accesstoken(authcode, redirect_uri)
 
     # set mAP attribute into current user
     map_user, created = MAPProfile.objects.get_or_create(eppn=user.eppn)
@@ -130,7 +137,7 @@ def mapcore_receive_authcode(user, params):
     return my_home   # redirect to home -> will redirect to dashboard
 
 
-def mapcore_get_accesstoken(authcode, clientid=map_clientid, secret=map_secret, rediret=map_redirect):
+def mapcore_get_accesstoken(authcode, redirect, clientid=map_clientid, secret=map_secret):
     '''
     exchange authorization code to access token and refresh token
     API call returns the JSON response from mAP authorization code service
@@ -141,7 +148,7 @@ def mapcore_get_accesstoken(authcode, clientid=map_clientid, secret=map_secret, 
     basic_auth = (map_clientid, map_secret)
     param = {
         'grant_type': 'authorization_code',
-        'redirect_uri': map_redirect,
+        'redirect_uri': redirect,
         'code': authcode
     }
     param = urllib.urlencode(param)

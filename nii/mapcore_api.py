@@ -31,7 +31,6 @@ map_refresh_path = settings.MAPCORE_REFRESH_PATH
 map_api_path = settings.MAPCORE_API_PATH
 map_clientid = settings.MAPCORE_CLIENTID
 map_secret = settings.MAPCORE_SECRET
-map_redirect = settings.MAPCORE_REDIRECT
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 
 class MAPCoreException(Exception):
