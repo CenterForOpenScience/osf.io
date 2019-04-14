@@ -8,7 +8,7 @@ from rest_framework.exceptions import NotAuthenticated, NotFound
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
-from api.base.views import JSONAPIBaseView
+from api.base.views import JSONAPIBaseView, DeprecatedView
 from api.base.metrics import MetricsViewMixin
 from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
@@ -187,19 +187,23 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
         return optimize_subject_query(provider.all_subjects)
 
 
-class CollectionProviderTaxonomies(GenericProviderTaxonomies):
+class CollectionProviderTaxonomies(DeprecatedView, GenericProviderTaxonomies):
     """
     To be deprecated: In favor of CollectionProviderSubjects
     """
     view_category = 'collection-providers'
     provider_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
 
-class RegistrationProviderTaxonomies(GenericProviderTaxonomies):
+    max_version = '2.14'
+
+class RegistrationProviderTaxonomies(DeprecatedView, GenericProviderTaxonomies):
     """
     To be deprecated: In favor of RegistrationProviderSubjects
     """
     view_category = 'registration-providers'
     provider_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
+
+    max_version = '2.14'
 
 class PreprintProviderTaxonomies(GenericProviderTaxonomies):
     """
@@ -207,6 +211,8 @@ class PreprintProviderTaxonomies(GenericProviderTaxonomies):
     """
     view_category = 'preprint-providers'
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
+
+    max_version = '2.14'
 
 
 class BaseProviderSubjects(SubjectList):
@@ -258,28 +264,34 @@ class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIVi
         return optimize_subject_query(Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text'))
 
 
-class CollectionProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxonomyList):
+class CollectionProviderHighlightedTaxonomyList(DeprecatedView, GenericProviderHighlightedTaxonomyList):
     """
     To be deprecated: In favor of CollectionProviderHighlightedSubjectList
     """
     view_category = 'collection-providers'
     provider_class = CollectionProvider
 
+    max_version = '2.14'
 
-class RegistrationProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxonomyList):
+
+class RegistrationProviderHighlightedTaxonomyList(DeprecatedView, GenericProviderHighlightedTaxonomyList):
     """
     To be deprecated: In favor of RegistrationProviderHighlightedSubjectList
     """
     view_category = 'registration-providers'
     provider_class = RegistrationProvider
 
+    max_version = '2.14'
 
-class PreprintProviderHighlightedTaxonomyList(GenericProviderHighlightedTaxonomyList):
+
+class PreprintProviderHighlightedTaxonomyList(DeprecatedView, GenericProviderHighlightedTaxonomyList):
     """
     To be deprecated: In favor of PreprintProviderHighlightedSubjectList
     """
     view_category = 'preprint-providers'
     provider_class = PreprintProvider
+
+    max_version = '2.14'
 
 
 class GenericProviderHighlightedSubjectList(GenericProviderHighlightedTaxonomyList):
