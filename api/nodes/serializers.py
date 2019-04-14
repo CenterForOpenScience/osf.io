@@ -1,6 +1,5 @@
 from django.db import connection
 from distutils.version import StrictVersion
-from django.contrib.contenttypes.models import ContentType
 
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
@@ -448,13 +447,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_logs_count'},
     )
 
-    meeting_submission = RelationshipField(
-        related_view='files:file-detail',
-        related_view_kwargs={'file_id': '<meeting_submission._id>'},
-        read_only=False,
-        related_meta={'download_count': 'get_submission_download_count'},
-    )
-
     linked_nodes = RelationshipField(
         related_view='nodes:linked-nodes',
         related_view_kwargs={'node_id': '<_id>'},
@@ -547,28 +539,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_logs_count(self, obj):
         return obj.logs.count()
-
-    def get_submission_download_count(self, obj):
-        """
-        Return the download counts of the first osfstorage file
-        """
-        node_ct = ContentType.objects.get_for_model(AbstractNode).id
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT P.total
-                FROM osf_basefilenode F, osf_pagecounter P
-                WHERE (F.type = 'osf.osfstoragefile'
-                     AND F.provider = 'osfstorage'
-                     AND F.target_content_type_id = %s
-                     AND F.target_object_id = %s
-                     AND P._id = 'download:' || %s || ':' || F._id)
-                ORDER BY F.id ASC
-                LIMIT 1;
-            """, [node_ct, obj.id, obj._id],
-            )
-
-            return int(cursor.fetchone()[0])
 
     def get_node_count(self, obj):
         auth = get_user_auth(self.context['request'])
