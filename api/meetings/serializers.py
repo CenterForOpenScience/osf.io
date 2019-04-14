@@ -32,6 +32,9 @@ class MeetingSerializer(JSONAPISerializer):
     info_url = ser.URLField(read_only=True)
     logo_url = ser.URLField(read_only=True)
     field_names = ser.DictField(read_only=True)
+    # TODO - decide: can this be SerializerMethodField for easy sorting,
+    # or do we need to get sorting working on related counts?
+    submissions_count = ser.SerializerMethodField()
 
     submissions = RelationshipField(
         related_view='meetings:meeting-submissions',
@@ -55,13 +58,43 @@ class MeetingSerializer(JSONAPISerializer):
 
 
 class MeetingSubmissionSerializer(NodeSerializer):
+    filterable_fields = frozenset([
+        'title',
+        'tags',
+        'date_created',
+        'author_name',
+    ])
+
+    author_name = ser.SerializerMethodField()
+
+    author = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': 'get_author_id'},
+        read_only=True,
+    )
 
     meeting_submission = RelationshipField(
         related_view='files:file-detail',
         related_view_kwargs={'file_id': 'get_meeting_submission_id'},
-        read_only=False,
+        read_only=True,
         related_meta={'download_count': 'get_submission_download_count'},
     )
+
+    def get_author(self, obj):
+        contrib_queryset = obj.contributor_set.filter(visible=True).order_by('_order')
+        if contrib_queryset:
+            return contrib_queryset.first().user
+        return None
+
+    def get_author_id(self, obj):
+        author = self.get_author(obj)
+        return author._id if author else None
+
+    def get_author_name(self, obj):
+        author = self.get_author(obj)
+        if author:
+            return author.family_name if author.family_name else author.fullname
+        return None
 
     def get_submission_download_count(self, obj):
         """

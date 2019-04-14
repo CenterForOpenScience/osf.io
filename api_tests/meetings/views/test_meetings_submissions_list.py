@@ -29,11 +29,15 @@ class TestMeetingSubmissionsList:
 
     @pytest.fixture()
     def spare_fieldsets_query(self):
-        return '?fields[nodes]=tags,title,contributors,date_created,submission_download_count,meeting_submission'
+        return '?fields[nodes]=tags,title,author,author_name,date_created,submission_download_count,meeting_submission'
 
     @pytest.fixture()
     def user(self):
-        return AuthUserFactory()
+        return AuthUserFactory(fullname='Grapes McGee')
+
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory(fullname='Orange Juice')
 
     @pytest.fixture()
     def meeting_one_submission(self, meeting, user):
@@ -50,10 +54,10 @@ class TestMeetingSubmissionsList:
         return submission
 
     @pytest.fixture()
-    def meeting_two_submission(self, meeting_two, user):
-        submission = ProjectFactory(title='Apples', is_public=True, creator=user)
-        submission.add_tag(meeting_two.endpoint, Auth(user))
-        submission.add_tag('poster', Auth(user))
+    def meeting_two_submission(self, meeting_two, user_two):
+        submission = ProjectFactory(title='Apples', is_public=True, creator=user_two)
+        submission.add_tag(meeting_two.endpoint, Auth(user_two))
+        submission.add_tag('poster', Auth(user_two))
         return submission
 
     @pytest.fixture()
@@ -76,7 +80,7 @@ class TestMeetingSubmissionsList:
     def mock_download(self, project, file, download_count):
         return PageCounter.objects.create(_id='download:{}:{}'.format(project._id, file._id), total=download_count)
 
-    def test_meeting_submissions_list(self, app, meeting, url, meeting_one_submission, meeting_one_private_submission):
+    def test_meeting_submissions_list(self, app, user, meeting, url, meeting_one_submission, meeting_one_private_submission):
         res = app.get(url)
         assert res.status_code == 200
         data = res.json['data']
@@ -84,6 +88,7 @@ class TestMeetingSubmissionsList:
         assert data[0]['id'] == meeting_one_submission._id
         assert data[0]['type'] == 'nodes'
         assert data[0]['attributes']['title'] == meeting_one_submission.title
+        assert data[0]['attributes']['author_name'] == user.family_name
         assert 'meeting_submission' not in data[0]['relationships']
 
     def test_meeting_submissions_list_sorting_and_filtering(self, app, url_meeting_two, meeting_two, meeting_two_submission, file, meeting_two_second_submission, file_two):
@@ -111,6 +116,48 @@ class TestMeetingSubmissionsList:
         assert len(data) == 1
         assert res.json['data'][0]['id'] == meeting_two_submission._id
 
+        # test sort title
+        res = app.get(url_meeting_two + '&sort=title')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 2
+        assert set([meeting_two_submission._id, meeting_two_second_submission._id]) == set([meeting['id'] for meeting in data])
+
+        # test reverse sort title
+        res = app.get(url_meeting_two + '&sort=-title')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 2
+        assert set([meeting_two_second_submission._id, meeting_two_submission._id]) == set([meeting['id'] for meeting in data])
+
+        # test sort author
+        res = app.get(url_meeting_two + '&sort=author')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 2
+        assert set([meeting_two_second_submission._id, meeting_two_submission._id]) == set([meeting['id'] for meeting in data])
+
+        # test reverse sort author
+        res = app.get(url_meeting_two + '&sort=-author')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 2
+        assert set([meeting_two_submission._id, meeting_two_second_submission._id]) == set([meeting['id'] for meeting in data])
+
+        # test sort created
+        res = app.get(url_meeting_two + '&sort=date_created')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 2
+        assert set([meeting_two_submission._id, meeting_two_second_submission._id]) == set([meeting['id'] for meeting in data])
+
+        # test sort reverse created
+        res = app.get(url_meeting_two + '&sort=-date_created')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 2
+        assert set([meeting_two_second_submission._id, meeting_two_submission._id]) == set([meeting['id'] for meeting in data])
+
         # test search category (actually tags)
         res = app.get(url_meeting_two + '&filter[tags]=poster')
         assert res.status_code == 200
@@ -123,3 +170,7 @@ class TestMeetingSubmissionsList:
         data = res.json['data']
         assert len(data) == 1
         assert res.json['data'][0]['id'] == meeting_two_second_submission._id
+
+        # TODO search author
+        # TODO sort download count
+        # TODO sort category (actually tags)

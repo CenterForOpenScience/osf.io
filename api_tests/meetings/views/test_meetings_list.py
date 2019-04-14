@@ -1,8 +1,9 @@
 import pytest
 import datetime
 from django.utils import timezone
+from framework.auth.core import Auth
 
-from osf_tests.factories import ConferenceFactory
+from osf_tests.factories import ConferenceFactory, ProjectFactory, AuthUserFactory
 
 
 @pytest.mark.django_db
@@ -47,6 +48,31 @@ class TestMeetingListFilter:
     @pytest.fixture()
     def meeting_three(self):
         return ConferenceFactory(name='Neurons', location='Charlottesville, VA', start_date=(timezone.now() - datetime.timedelta(days=5)))
+
+    @pytest.fixture()
+    def meeting_one_submission(self, meeting_one, user):
+        submission = ProjectFactory(is_public=True, creator=user)
+        submission.add_tag(meeting_one.endpoint, Auth(user))
+        submission.add_tag('poster', Auth(user))
+        return submission
+
+    @pytest.fixture()
+    def meeting_three_submission_one(self, meeting_one, user):
+        submission = ProjectFactory(is_public=True, creator=user)
+        submission.add_tag(meeting_one.endpoint, Auth(user))
+        submission.add_tag('poster', Auth(user))
+        return submission
+
+    @pytest.fixture()
+    def meeting_three_submission_two(self, meeting_three, user):
+        submission = ProjectFactory(is_public=True, creator=user)
+        submission.add_tag(meeting_three.endpoint, Auth(user))
+        submission.add_tag('poster', Auth(user))
+        return submission
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
     @pytest.fixture()
     def filter_url(self):
@@ -98,3 +124,13 @@ class TestMeetingListFilter:
         res = app.get('{}{}'.format(sort_url, '-start_date'))
         assert len(res.json['data']) == 3
         assert set([meeting_one.endpoint, meeting_three.endpoint, meeting_two.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+
+        # Sort on submissions count
+        res = app.get('{}{}'.format(sort_url, 'submissions_count'))
+        assert len(res.json['data']) == 3
+        assert set([meeting_two.endpoint, meeting_one.endpoint, meeting_three.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+
+        # Reverse sort on submissions count
+        res = app.get('{}{}'.format(sort_url, '-submissions_count'))
+        assert len(res.json['data']) == 3
+        assert set([meeting_three.endpoint, meeting_one.endpoint, meeting_two.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
