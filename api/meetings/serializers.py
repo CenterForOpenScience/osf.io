@@ -45,8 +45,7 @@ class MeetingSerializer(JSONAPISerializer):
     })
 
     def get_submissions_count(self, obj):
-        view = self.context['view']
-        return view.get_submissions().count()
+        return obj.submissions.count()
 
     def get_absolute_url(self, obj):
         return absolute_reverse('meetings:meeting-detail', kwargs={'meeting_id': obj.endpoint})

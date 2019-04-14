@@ -12,7 +12,7 @@ from api.meetings.permissions import IsPublic
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Conference, Tag
+from osf.models import AbstractNode, Conference
 
 
 class MeetingMixin(object):
@@ -29,11 +29,6 @@ class MeetingMixin(object):
             display_name='meeting',
         )
         return meeting
-
-    def get_submissions(self):
-        conference = self.get_meeting()
-        tags = Tag.objects.filter(system=False, name__iexact=conference.endpoint).values_list('pk', flat=True)
-        return AbstractNode.objects.filter(tags__in=tags, is_public=True, is_deleted=False)
 
 
 class MeetingList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -113,7 +108,7 @@ class MeetingSubmissionList(JSONAPIBaseView, generics.ListAPIView, MeetingMixin,
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        return self.get_submissions()
+        return self.get_meeting().submissions
 
     # overrides ListAPIView
     def get_queryset(self):

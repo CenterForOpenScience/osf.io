@@ -3,6 +3,7 @@ import urlparse
 
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models import Tag, AbstractNode
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 
@@ -79,6 +80,11 @@ class Conference(ObjectIDMixin, BaseModel):
     @property
     def absolute_url(self):
         return urlparse.urljoin(settings.DOMAIN, '/view/{}'.format(self.endpoint))
+
+    @property
+    def submissions(self):
+        tags = Tag.objects.filter(system=False, name__iexact=self.endpoint).values_list('pk', flat=True)
+        return AbstractNode.objects.filter(tags__in=tags, is_public=True, is_deleted=False)
 
     class Meta:
         # custom permissions for use in the OSF Admin App
