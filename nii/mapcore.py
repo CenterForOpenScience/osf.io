@@ -50,6 +50,9 @@ def mapcore_api_is_available(user):
     mapcore = MAPCore(user)
     return mapcore.get_api_version()
 
+def mapcore_log_error(msg):
+    logger.error(msg)
+
 def mapcore_request_authcode(**kwargs):
     '''
     get an authorization code from mAP. this process will redirect some times.

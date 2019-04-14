@@ -42,6 +42,13 @@ class MAPCoreTokenExpired(MAPCoreException):
     def __init__(self, caller=None):
         self.caller = caller
 
+    def __str__(self):
+        if self.caller:
+            username = self.caller.username
+        else:
+            username = 'UNKNOWN USER'
+        return 'mAP Core Access Token (for {}) is expired'.format(username)
+
 class MAPCore:
 
     MODE_MEMBER = 0     # Ordinary member
@@ -579,16 +586,17 @@ class MAPCore:
         self.last_error = ''
 
         if result.status_code != requests.codes.ok:
-            s = result.headers['WWW-Authenticate']
-            logger.info('MAPCore::check_result: status_code=' + str(result.status_code))
-            logger.info('MAPCore::check_result: WWW-Authenticate=' + s)
+            s = result.headers.get('WWW-Authenticate')
+            if s:
+                logger.info('MAPCore::check_result: status_code=' + str(result.status_code))
+                logger.info('MAPCore::check_result: WWW-Authenticate=' + s)
 
-            if s.find('Access token expired') != -1:
-                self.last_error = 'Access token expired'
-            else:
-                self.last_error = s
+                if s.find('Access token expired') != -1:
+                    self.last_error = 'Access token expired'
+                else:
+                    self.last_error = s
 
-            return False
+                return False
 
         j = result.json()
         if j['status']['error_code'] != 0:

@@ -59,7 +59,7 @@ def validate_user(data, user):
         # raise an error if request doesn't have user id
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
 
-@must_be_logged_in
+@must_be_logged_in_without_checking_email
 def resend_confirmation(auth):
     user = auth.user
     data = request.get_json()
