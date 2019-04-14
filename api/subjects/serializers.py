@@ -51,6 +51,7 @@ class SubjectSerializer(JSONAPISerializer):
     parent = RelationshipField(
         related_view='subjects:subject-detail',
         related_view_kwargs={'subject_id': '<parent._id>'},
+        always_embed=True,
     )
 
     children = RelationshipField(

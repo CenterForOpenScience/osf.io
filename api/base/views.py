@@ -127,9 +127,6 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 with transaction.atomic():
                     ret = view.handle_exception(e).data
 
-            # Allow request to be gc'd
-            ser._context = None
-
             # Cache our final result
             cache[_cache_key] = ret
 
