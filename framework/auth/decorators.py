@@ -69,7 +69,8 @@ def _must_be_logged_in_factory(login=True, email=True, mapcore_token=True):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             from nii.mapcore_api import MAPCoreTokenExpired, MAPCoreException
-            from nii.mapcore import (mapcore_api_is_available,
+            from nii.mapcore import (mapcore_is_enabled,
+                                     mapcore_api_is_available,
                                      mapcore_request_authcode,
                                      mapcore_log_error)
 
@@ -81,7 +82,8 @@ def _must_be_logged_in_factory(login=True, email=True, mapcore_token=True):
 
                 # for GakuNin mAP Core (API v2)
                 def mapcore_check_token(*args, **kwargs):
-                    if mapcore_token:  # require available token
+                    if mapcore_token and mapcore_is_enabled():
+                        # require available token
                         try:
                             try:
                                 mapcore_api_is_available(auth.user)

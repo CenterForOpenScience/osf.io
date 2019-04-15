@@ -41,9 +41,7 @@ from website.util import web_url_for
 from nii.mapcore_api import MAPCore
 
 def mapcore_is_enabled():
-    if map_clientid == '':
-        return False
-    return True
+    return True if map_clientid else False
 
 def mapcore_api_is_available(user):
 
