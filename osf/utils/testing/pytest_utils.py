@@ -97,7 +97,7 @@ class MigrationTestCase:
 
         users = Model.objects.bulk_create(objects)
         from website import settings
-        from api.quickfiles.legacy_quickfiles import QuickFilesNode
+        from osf.models.legacy_quickfiles import QuickFilesNode
 
         if with_quickfiles_node:  # TODO this should be better
             for user in users:

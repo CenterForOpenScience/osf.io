@@ -6,7 +6,7 @@ from django.db.models import F, Count
 
 from website.app import setup_django
 setup_django()
-from api.quickfiles.legacy_quickfiles import QuickFilesNode
+from osf.models.legacy_quickfiles import QuickFilesNode
 from scripts import utils as script_utils
 
 
