@@ -211,7 +211,7 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
             base_queryset = self
 
         if permission not in PERMISSIONS:
-            raise ValueError('Permission must be one of <read_node>, <write_node>, or <admin_node>.')
+            raise ValueError('Permission must be one of {}, {}, or {}}.'.format(PERMISSIONS[0], PERMISSIONS[1], PERMISSIONS[2]))
 
         nodes = base_queryset.filter(is_deleted=False)
         permission_object_id = Permission.objects.get(codename=permission).id
