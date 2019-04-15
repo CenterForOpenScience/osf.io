@@ -127,7 +127,7 @@ class TestOSFGroupMembersFilter:
 def make_create_payload(role, user=None, full_name=None, email=None):
     base_payload = {
         'data': {
-            'type': 'group_members',
+            'type': 'group-members',
             'attributes': {
                 'role': role
             }
@@ -273,7 +273,7 @@ class TestOSFGroupMembersCreate:
 
 def make_bulk_create_payload(role, user=None, full_name=None, email=None):
     base_payload = {
-        'type': 'group_members',
+        'type': 'group-members',
         'attributes': {
             'role': role
         }
@@ -434,7 +434,7 @@ class TestOSFGroupMembersBulkCreate:
 def build_bulk_update_payload(group_id, user_id, role):
     return {
         'id': '{}-{}'.format(group_id, user_id),
-        'type': 'group_members',
+        'type': 'group-members',
         'attributes': {
             'role': role
         }
@@ -478,7 +478,7 @@ class TestOSFGroupMembersBulkUpdate:
     def test_bulk_update_errors(self, app, member, manager, user, osf_group, url):
         # id not in payload
         payload = {
-            'type': 'group_members',
+            'type': 'group-members',
             'attributes': {
                 'role': MEMBER
             }
@@ -530,7 +530,7 @@ class TestOSFGroupMembersBulkUpdate:
 def create_bulk_delete_payload(group_id, user_id):
     return {
         'id': '{}-{}'.format(group_id, user_id),
-        'type': 'group_members'
+        'type': 'group-members'
     }
 
 @pytest.mark.django_db

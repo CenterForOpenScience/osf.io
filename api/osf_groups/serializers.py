@@ -111,7 +111,7 @@ class GroupMemberSerializer(JSONAPISerializer):
         return role
 
     class Meta:
-        type_ = 'group_members'
+        type_ = 'group-members'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -168,9 +168,6 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
             raise exceptions.ValidationError(detail=str(e.message))
 
         return user
-
-    class Meta:
-        type_ = 'group_members'
 
 
 class GroupMemberDetailSerializer(GroupMemberSerializer):

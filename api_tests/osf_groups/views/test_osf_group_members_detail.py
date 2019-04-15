@@ -67,7 +67,7 @@ class TestOSFGroupMembersDetail:
         assert res.status_code == 200
         data = res.json['data']
         assert data['id'] == '{}-{}'.format(osf_group._id, member._id)
-        assert data['type'] == 'group_members'
+        assert data['type'] == 'group-members'
         assert data['attributes']['role'] == MEMBER
         assert data['attributes']['unregistered_member'] is None
         assert data['attributes']['full_name'] == member.fullname
@@ -78,7 +78,7 @@ class TestOSFGroupMembersDetail:
         assert res.status_code == 200
         data = res.json['data']
         assert data['id'] == '{}-{}'.format(osf_group._id, user._id)
-        assert data['type'] == 'group_members'
+        assert data['type'] == 'group-members'
         assert data['attributes']['role'] == MANAGER
         assert data['attributes']['unregistered_member'] == 'Crazy 8s'
         assert data['attributes']['full_name'] == 'Crazy 8s'
@@ -89,7 +89,7 @@ def build_update_payload(group_id, user_id, role):
     return {
         'data': {
             'id': '{}-{}'.format(group_id, user_id),
-            'type': 'group_members',
+            'type': 'group-members',
             'attributes': {
                 'role': role
             }
@@ -132,7 +132,7 @@ class TestOSFGroupMembersUpdate:
         # id not in payload
         payload = {
             'data': {
-                'type': 'group_members',
+                'type': 'group-members',
                 'attributes': {
                     'role': MEMBER
                 }
