@@ -2185,9 +2185,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return node_addon.create_waterbutler_log(auth, action, metadata)
 
-    def can_view_files(self, auth=None):
-        return self.can_view(auth)
-
     @property
     def file_read_scope(self):
         return oauth_scopes.CoreScopes.NODE_FILE_READ
