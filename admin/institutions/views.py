@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+import ast
 
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
@@ -10,6 +11,8 @@ from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from admin.rdm.utils import RdmPermissionMixin
+from django.core.exceptions import PermissionDenied
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
@@ -96,7 +99,7 @@ class InstitutionDetail(PermissionRequiredMixin, View):
         view = InstitutionChangeForm.as_view()
         return view(request, *args, **kwargs)
 
-class InstitutionDefaultStorageDisplay(PermissionRequiredMixin, TemplateView):
+class InstitutionDefaultStorageDisplay(RdmPermissionMixin, TemplateView):
     model = Institution
     template_name = 'institutions/default_storage.html'
     permission_required = 'osf.view_institution'
@@ -108,21 +111,36 @@ class InstitutionDefaultStorageDisplay(PermissionRequiredMixin, TemplateView):
             kwargs['region'] = Region.objects.get(_id=kwargs['institution'])
         else:
             kwargs['region'] = Region.objects.first()
+        kwargs['region'].waterbutler_credentials = json.dumps(kwargs['region'].waterbutler_credentials)
+        kwargs['region'].waterbutler_settings = json.dumps(kwargs['region'].waterbutler_settings)
         return kwargs
 
-class InstitutionDefaultStorageDetail(PermissionRequiredMixin, View):
-    permission_required = 'osf.view_institution'
-    raise_exception = True
-    model = Institution
+#from django.contrib.admin.views.decorators import staff_member_required
+#@staff_member_required
+class InstitutionDefaultStorageDetail(RdmPermissionMixin, View):
+    permission_required = None
+    raise_exception = False
     template_name = 'institutions/default_storage.html'
 
+    def test_func(self):
+        """check user permissions"""
+        if not self.is_super_admin and self.is_admin and self.request.user.affiliated_institutions.all().count() > 0:
+            return True
+        else:
+            return False
+
     def get(self, request, *args, **kwargs):
-        view = InstitutionDefaultStorageDisplay.as_view()
-        return view(request, *args, **kwargs)
+        if not self.is_super_admin and self.is_admin and self.request.user.affiliated_institutions.all().count() > 0:
+            view = InstitutionDefaultStorageDisplay.as_view()
+            return view(request, *args, **kwargs)
+        else:
+            raise PermissionDenied
 
     def post(self, request, *args, **kwargs):
         post_data = request.POST
-        values_to_update = {'_id': post_data['_id'], 'name': post_data['name'], 'waterbutler_credentials': post_data['waterbutler_credentials'], 'waterbutler_url': post_data['waterbutler_url'], 'mfr_url': post_data['mfr_url'], 'waterbutler_settings': post_data['waterbutler_settings']}
+        waterbutler_settings = eval(post_data['waterbutler_settings'])
+        waterbutler_credentials = eval(post_data['waterbutler_credentials'])
+        values_to_update = {'_id': post_data['_id'], 'name': post_data['name'], 'waterbutler_credentials': waterbutler_credentials, 'waterbutler_url': post_data['waterbutler_url'], 'mfr_url': post_data['mfr_url'], 'waterbutler_settings': waterbutler_settings}
         obj_store, created = Region.objects.update_or_create(_id=post_data['_id'], defaults=values_to_update)
         return HttpResponseRedirect(self.request.path_info)
 
