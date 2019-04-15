@@ -70,10 +70,6 @@ class QuickFilesNode(AbstractNode):
     def is_quickfiles(self):
         return True
 
-    @property
-    def is_disabled(self):
-        return self.creator.is_disabled
-
 
 def get_quickfiles_project_title(user):
     possessive_title_name = user.fullname + "'s" if user.fullname[-1] != 's' else user.fullname + "'"
