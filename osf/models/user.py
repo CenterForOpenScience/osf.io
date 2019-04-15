@@ -48,7 +48,6 @@ from osf.models.validators import validate_email, validate_social, validate_hist
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
-from osf.utils.permissions import PERMISSIONS
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
 from website import settings as website_settings
@@ -860,9 +859,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self_contributor = PreprintContributor.objects.get(preprint=preprint, user=self)
                 self_perms = self_contributor.permission
 
-                max_perms_index = max(PERMISSIONS.index(self_perms), PERMISSIONS.index(user_perms))
+                max_perms_index = max(API_CONTRIBUTOR_PERMISSIONS.index(self_perms), API_CONTRIBUTOR_PERMISSIONS.index(user_perms))
                 # Add the highest of `self` perms or `user` perms to `self`
-                preprint.set_permissions(user=self, permissions=PERMISSIONS[max_perms_index])
+                preprint.set_permissions(user=self, permissions=API_CONTRIBUTOR_PERMISSIONS[max_perms_index])
 
                 if not self_contributor.visible and user_contributor.visible:
                     # if `self` is not visible, but `user` is visible, make `self` visible.

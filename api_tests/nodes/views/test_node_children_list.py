@@ -206,6 +206,24 @@ class TestNodeChildrenList:
         # Nodes with implicit admin perms are also included in the count
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
 
+    def test_child_counts_permissions(self, app, user, public_project):
+        NodeFactory(parent=public_project, creator=user)
+
+        url = '/{}nodes/{}/?related_counts=children'.format(API_BASE, public_project._id)
+        user_two = AuthUserFactory()
+
+        # Unauthorized
+        res = app.get(url)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+
+        # Logged in noncontrib
+        res = app.get(url, auth=user_two.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+
+        # Logged in contrib
+        res = app.get(url, auth=user.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
 
 @pytest.mark.django_db
 class TestNodeChildrenListFiltering:

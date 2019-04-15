@@ -595,10 +595,10 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                     INNER JOIN osf_nodegroupobjectpermission AS G ON (P.id = G.permission_id)
                     INNER JOIN osf_osfuser_groups AS UG ON (G.group_id = UG.group_id)
                     WHERE (P.codename = 'admin_node'
-                           AND G.content_object_id IN (
+                           AND (G.content_object_id IN (
                                 SELECT parent_id
                                 FROM parents
-                           ) OR G.content_object_id = %s
+                           ) OR G.content_object_id = %s)
                            AND UG.osfuser_id = %s)
                 ))
                 SELECT COUNT(DISTINCT child_id)

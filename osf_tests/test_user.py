@@ -348,9 +348,9 @@ class TestOSFUser:
 
         assert user.preprints.count() == 5
         # one group for each preprint
-        assert user.groups.count() == 5
+        assert user.groups.filter(name__icontains='preprint').count() == 5
         assert user2.preprints.count() == 0
-        assert not user2.groups.all()
+        assert not user2.groups.filter(name__icontains='preprint').all()
 
         contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_one)
         assert contrib_obj.visible is True
