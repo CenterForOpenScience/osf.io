@@ -1656,10 +1656,6 @@ class FileTargetMixin(Loggable):
         raise NotImplementedError()
 
     @abstractmethod
-    def has_permission(self, user, perm):
-        raise NotImplementedError()
-
-    @abstractmethod
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         raise NotImplementedError()
 
