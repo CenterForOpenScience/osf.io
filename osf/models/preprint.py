@@ -22,7 +22,7 @@ from framework.exceptions import PermissionsError
 from framework.analytics import increment_user_activity_counters
 from framework.auth import oauth_scopes
 
-from osf.models import Subject, Tag, OSFUser, PreprintProvider, SpamStatus
+from osf.models import Subject, Tag, OSFUser, PreprintProvider
 from osf.models.preprintlog import PreprintLog
 from osf.models.contributor import PreprintContributor
 from osf.models.mixins import ReviewableMixin, Taggable, GuardianMixin, FileTargetMixin
@@ -102,8 +102,8 @@ class PreprintManager(IncludeManager):
         return ret.distinct('id', 'created') if include_non_public else ret
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel,
-        FileTargetMixin, Taggable, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, ContributorMixin):
+class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, Taggable, GuardianMixin,
+        SpamOverrideMixin, TaxonomizableMixin, ContributorMixin, FileTargetMixin):
 
     objects = PreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
@@ -1056,10 +1056,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     def counts_towards_analytics(self, user):
         return not self.is_contributor(user)
-
-    @property
-    def is_spam(self):
-        return self.spam_status == SpamStatus.SPAM
 
     def get_root_folder(self, provider='osfstorage'):
         return self.root_folder

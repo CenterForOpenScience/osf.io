@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, abstractproperty
 
 import pytz
 import markupsafe
@@ -1683,7 +1683,7 @@ class FileTargetMixin(Loggable):
     def counts_towards_analytics(self, user):
         raise NotImplementedError()
 
-    @abstractmethod
+    @abstractproperty
     def is_spam(self):
         raise NotImplementedError()
 
