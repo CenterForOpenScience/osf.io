@@ -1735,6 +1735,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def is_spam(self):
         return 'spam_confirmed' in self.system_tags
 
+    # Overrides FileTargetMixin
     def get_root_folder(self, provider='osfstorage'):
         return self.quickfolder
 

@@ -604,10 +604,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def nodes_active(self):
         return self._nodes.filter(is_deleted=False)
 
+    # Overrides FileTargetMixin
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
         return web_url_for(view_name, pid=self._primary_key,
                            _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
+    # Overrides FileTargetMixin
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute, *args, **kwargs)
 
@@ -1233,6 +1235,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
+    # Overrides FileTargetMixin
     def get_root_folder(self, provider='osfstorage'):
         return self.get_addon(provider).get_root()
 
@@ -2165,12 +2168,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
 
+    # Overrides FileTargetMixin
     def serialize_waterbutler_credentials(self, provider_name):
         return self.get_addon(provider_name).serialize_waterbutler_credentials()
 
+    # Overrides FileTargetMixin
     def serialize_waterbutler_settings(self, provider_name):
         return self.get_addon(provider_name).serialize_waterbutler_settings()
 
+    # Overrides FileTargetMixin
     def create_waterbutler_log(self, auth, action, payload):
         try:
             metadata = payload['metadata']
@@ -2234,6 +2240,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             update_storage_usage(self)  # sets cache
             return storage_usage_cache.get(key)
 
+    # Overrides FileTargetMixin
     def counts_towards_analytics(self, user):
         return not self.is_contributor(user)
 

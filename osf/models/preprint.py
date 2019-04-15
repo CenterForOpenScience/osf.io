@@ -382,10 +382,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         return csl
 
+    # Overrides FileTargetMixin
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
         return web_url_for(view_name, pid=self._id,
                            _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
+    # Overrides FileTargetMixin
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         return api_url_for(view_name, pid=self._id, _absolute=_absolute, *args, **kwargs)
 
@@ -420,6 +422,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         return log
 
+    # Overrides FileTargetMixin
     def can_view_files(self, auth=None):
         if self.is_retracted:
             return False
@@ -1005,6 +1008,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             logger.exception(e)
             log_exception()
 
+    # Overrides FileTargetMixin
     def serialize_waterbutler_settings(self, provider_name=None):
         """
         Since preprints don't have addons, this method has been pulled over from the
@@ -1021,6 +1025,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             )
         })
 
+    # Overrides FileTargetMixin
     def serialize_waterbutler_credentials(self, provider_name=None):
         """
         Since preprints don't have addons, this method has been pulled over from the
@@ -1028,6 +1033,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         """
         return Region.objects.get(id=self.region_id).waterbutler_credentials
 
+    # Overrides FileTargetMixin
     def create_waterbutler_log(self, auth, action, payload):
         """
         Since preprints don't have addons, this method has been pulled over from the
@@ -1054,9 +1060,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params=params
         )
 
+    # Overrides FileTargetMixin
     def counts_towards_analytics(self, user):
         return not self.is_contributor(user)
 
+    # Overrides FileTargetMixin
     def get_root_folder(self, provider='osfstorage'):
         return self.root_folder
 
