@@ -356,6 +356,16 @@ class TestQuickFilesV1(V1ViewsCase):
         assert log.action == 'quickfiles_file_added'
         assert log.params['target'] == user._id
 
+    def test_waterbutler_hook_succeeds_for_quickfiles(self, app, user):
+        materialized_path = 'pizza'
+        url = user.api_url_for('create_waterbutler_log')
+        payload = build_payload_v1_logs(user, metadata={
+            'path': 'abc123',
+            'materialized': materialized_path,
+            'kind': 'file'}, provider='osfstorage')
+        resp = app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        assert resp.status_code == 200
+
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation

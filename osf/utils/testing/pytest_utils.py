@@ -64,6 +64,16 @@ class V1ViewsCase:
         test_app.testing = True
         return test_app
 
+    @pytest.yield_fixture(autouse=True)
+    def request_context(self, app_init):
+        context = app_init.test_request_context(headers={
+            'Remote-Addr': '146.9.219.56',
+            'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3'
+        })
+        context.push()
+        yield context
+        context.pop()
+
 
 class V2ViewsCase:
 
