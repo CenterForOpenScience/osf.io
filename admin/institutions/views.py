@@ -111,8 +111,8 @@ class InstitutionDefaultStorageDisplay(RdmPermissionMixin, TemplateView):
             kwargs['region'] = Region.objects.get(_id=kwargs['institution'])
         else:
             kwargs['region'] = Region.objects.first()
-        kwargs['region'].waterbutler_credentials = ast.literal_eval(json.dumps(kwargs['region'].waterbutler_credentials))
-        kwargs['region'].waterbutler_settings = ast.literal_eval(json.dumps(kwargs['region'].waterbutler_settings))
+        kwargs['region'].waterbutler_credentials = json.dumps(kwargs['region'].waterbutler_credentials)
+        kwargs['region'].waterbutler_settings = json.dumps(kwargs['region'].waterbutler_settings)
         return kwargs
 
 #from django.contrib.admin.views.decorators import staff_member_required
@@ -138,7 +138,7 @@ class InstitutionDefaultStorageDetail(RdmPermissionMixin, View):
 
     def post(self, request, *args, **kwargs):
         post_data = request.POST
-                waterbutler_settings = eval(post_data['waterbutler_settings'])
+        waterbutler_settings = eval(post_data['waterbutler_settings'])
         waterbutler_credentials = eval(post_data['waterbutler_credentials'])
         values_to_update = {'_id': post_data['_id'], 'name': post_data['name'], 'waterbutler_credentials': waterbutler_credentials, 'waterbutler_url': post_data['waterbutler_url'], 'mfr_url': post_data['mfr_url'], 'waterbutler_settings': waterbutler_settings}
         obj_store, created = Region.objects.update_or_create(_id=post_data['_id'], defaults=values_to_update)
@@ -274,9 +274,10 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
         for user in user_query_set:
             try:
                 max_quota = user.userquota.max_quota
+                used_quota = user.userquota.used
             except ObjectDoesNotExist:
                 max_quota = api_settings.DEFAULT_MAX_QUOTA
-            used_quota = quota.used_quota(user.guids.first()._id)
+                used_quota = quota.used_quota(user.guids.first()._id)
             used_quota_abbr = quota.abbreviate_size(used_quota)
             if used_quota_abbr[1] == 'B':
                 used_quota_abbr = '{:.0f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])

@@ -96,10 +96,11 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
 
         try:
             max_quota = user.userquota.max_quota
+            used_quota = user.userquota.used
         except ObjectDoesNotExist:
             max_quota = api_settings.DEFAULT_MAX_QUOTA
+            used_quota = quota.used_quota(user._id)
 
-        used_quota = quota.used_quota(user._id)
         used_quota_abbr = quota.abbreviate_size(used_quota)
         if used_quota_abbr[1] == 'B':
             used_quota_abbr = '{:.0f}[{}]'.format(used_quota_abbr[0], used_quota_abbr[1])

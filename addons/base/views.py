@@ -36,7 +36,7 @@ from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, RegistrationSchema,
-                        Guid, FileVersionUserMetadata, FileVersion, FileInfo)
+                        Guid, FileVersionUserMetadata, FileVersion)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -492,15 +492,6 @@ def create_waterbutler_log(payload, **kwargs):
             # Create/update timestamp record
             if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
                 metadata = payload.get('metadata') or payload.get('destination')
-
-                if payload['provider'] == 'osfstorage':
-                    file_node = BaseFileNode.objects.get(_id=metadata['path'])
-                    fileinfo = FileInfo.objects.filter(file=file_node).first()
-                    if not fileinfo:
-                        fileinfo = FileInfo()
-                        fileinfo.file = file_node
-                    fileinfo.file_size = metadata['size']
-                    fileinfo.save()
 
                 if metadata['kind'] == 'file':
                     created_flag = action == NodeLog.FILE_ADDED

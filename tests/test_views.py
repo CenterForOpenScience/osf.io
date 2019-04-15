@@ -56,6 +56,7 @@ from website.project.views.contributor import (
     send_claim_email,
     send_claim_registered_email,
 )
+from website import views as website_view
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
@@ -5339,6 +5340,23 @@ class TestAddonFileViewTimestampFunc(OsfTestCase):
         shutil.rmtree(tmp_dir)
         assert_in('verify_result', result)
         assert_equal(result['verify_result'], 1)
+
+def test_get_storage_region_list_with_default():
+    user = AuthUserFactory()
+    institution = InstitutionFactory()
+    user.affiliated_institutions.add(institution)
+    assert_true(len(website_view.get_storage_region_list(user))==1)
+
+def test_get_storage_region_list_with_own_institution():
+    user = AuthUserFactory()
+    institution = InstitutionFactory()
+    user.affiliated_institutions.add(institution)
+    new_region = RegionFactory()
+    new_region.name = 'China'
+    new_region._id = institution._id
+    new_region.save()
+    assert_equal(website_view.get_storage_region_list(user)[0]['name'], new_region.name)
+
 
 
 if __name__ == '__main__':
