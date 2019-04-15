@@ -3,7 +3,7 @@ from scripts.quickfiles.divorce_quickfiles import create_quickfolders, migrate_q
 
 from osf_tests.factories import AuthUserFactory
 from osf.models import OSFUser, QuickFolder, Guid
-from api.quickfiles.legacy_quickfiles import QuickFilesNode
+from osf.models.legacy_quickfiles import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
 
 

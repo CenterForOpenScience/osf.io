@@ -731,7 +731,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
 
         from osf.models import BaseFileNode
-        from api.quickfiles.legacy_quickfiles import QuickFilesNode
+        from osf.models.legacy_quickfiles import QuickFilesNode
 
         # - projects where the user was the creator
         user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)

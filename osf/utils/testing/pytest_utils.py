@@ -11,7 +11,7 @@ from tests.base import test_app
 from webtest_plus import TestApp
 from website.app import init_app
 from tests.json_api_test_app import JSONAPITestApp
-from api.quickfiles.legacy_quickfiles import QuickFilesNode
+from osf.models.legacy_quickfiles import QuickFilesNode
 from api_tests.utils import create_test_file
 
 import logging
