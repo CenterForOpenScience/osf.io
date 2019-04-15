@@ -16,10 +16,12 @@ import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
+from django.contrib.contenttypes.models import ContentType
 from django.dispatch import receiver
 from django.db import models
 from django.db.models import Count
@@ -1755,3 +1757,26 @@ def add_default_user_addons(sender, instance, created, **kwargs):
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
+
+
+def _create_quickfiles(instance):
+    """
+    This underscored function is just here to make `create_quickfiles` easier to mock for test speed ups.
+    :param instance:
+    :return:
+    """
+    QuickFolder = apps.get_model('osf', 'QuickFolder')
+    content_type_id = ContentType.objects.get_for_model(OSFUser).id
+    quickfiles = QuickFolder(
+        target_object_id=instance.id,
+        target_content_type_id=content_type_id,
+        provider=QuickFolder._provider,
+        path='/',
+    )
+    quickfiles.save()
+
+
+@receiver(post_save, sender=OSFUser)
+def create_quickfiles(sender, instance, created, **kwargs):
+    if created:
+        _create_quickfiles(instance)
