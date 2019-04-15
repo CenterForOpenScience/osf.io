@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import json
-import ast
 
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
