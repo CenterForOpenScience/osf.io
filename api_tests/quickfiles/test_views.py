@@ -459,6 +459,18 @@ class TestQuickFileMisc:
         assert res.status_code == 200
         assert res.request.path == '/{}/'.format(guid)
 
+    def test_deleted_quick_file_gone(self, flask_app, user):
+        quickfile = user.quickfiles.first()
+        guid = quickfile.get_guid(create=True)._id
+        quickfile.delete()
+
+        url = '/{}/'.format(guid)
+
+        res = flask_app.get(url, expect_errors=True)
+
+        assert res.status_code == 410
+        assert res.request.path == '/{}/'.format(guid)
+
     def test_addon_view_or_download_quickfile(self, flask_app, user):
         quickfile = user.quickfiles.first()
         url = '/quickfiles/{}/'.format(quickfile._id)
