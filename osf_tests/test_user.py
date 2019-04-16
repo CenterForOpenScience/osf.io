@@ -1706,6 +1706,7 @@ class TestUser(OsfTestCase):
         group = OSFGroupFactory(creator=self.user, name='Platform')
         group_project = ProjectFactory()
         group_project.add_osf_group(group, permissions.READ)
+        registration = RegistrationFactory(creator=self.user)
 
         contributor_to_or_group_member_nodes = [node._id for node in self.user.contributor_or_group_member_to]
 
@@ -1716,6 +1717,7 @@ class TestUser(OsfTestCase):
         assert bookmark_collection_node._id not in contributor_to_or_group_member_nodes
         assert collection_node._id not in contributor_to_or_group_member_nodes
         assert group_project._id in contributor_to_or_group_member_nodes
+        assert registration._id in contributor_to_or_group_member_nodes
 
     def test_all_nodes_property(self):
         project = ProjectFactory(creator=self.user)

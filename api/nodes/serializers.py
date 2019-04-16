@@ -1786,7 +1786,7 @@ class NodeGroupsSerializer(JSONAPISerializer):
         return obj.get_permission_to_node(node)
 
     class Meta:
-        type_ = 'node_groups'
+        type_ = 'node-groups'
 
 
 class NodeGroupsCreateSerializer(NodeGroupsSerializer):

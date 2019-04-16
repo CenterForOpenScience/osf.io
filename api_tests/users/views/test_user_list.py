@@ -145,7 +145,7 @@ class TestUsers:
             if user['id'] == user_two._id:
                 meta = user['relationships']['nodes']['links']['related']['meta']
                 assert 'projects_in_common' in meta
-                assert meta['projects_in_common'] == 3
+                assert meta['projects_in_common'] == 4
 
     def test_users_projects_in_common(self, app, user_one, user_two):
         user_one.fullname = 'hello'
