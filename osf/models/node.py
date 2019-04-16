@@ -45,6 +45,7 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.user import CGGroup
+from osf.models.project_storage_type import ProjectStorageType
 from osf.models.validators import validate_doi, validate_title
 from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -2976,7 +2977,7 @@ def remove_addons(auth, resource_object_list):
 @receiver(post_save, sender='osf.QuickFilesNode')
 def add_creator_as_contributor(sender, instance, created, **kwargs):
     if created:
-        Contributor.objects.get_or_create(
+        x = Contributor.objects.get_or_create(
             user=instance.creator,
             node=instance,
             visible=True,
@@ -3019,6 +3020,16 @@ def add_default_node_addons(sender, instance, created, **kwargs):
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
+                try:
+                    from addons.osfstorage.models import NodeSettings
+                    storage_type = NodeSettings.objects.get(owner_id=instance.id).region_id
+                    if storage_type > 2:
+                        storage_type = 2
+                    obj, created = ProjectStorageType.objects.update_or_create(
+                        node_id=instance.id, storage_type=storage_type,defaults = {'node_id': instance.id, 'storage_type': storage_type}
+                        )
+                except Exception as err:
+                    logger.critical(er)
 
 
 @receiver(post_save, sender=Node)
