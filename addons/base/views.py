@@ -735,6 +735,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         if not file_node.pk:
             file_node = BaseFileNode.load(path)
 
+            if not file_node:
+                raise HTTPError(httplib.NOT_FOUND, data={
+                    'message_short': 'File Not Found',
+                    'message_long': 'The requested file could not be found.'
+                })
+
             if file_node.kind == 'folder':
                 raise HTTPError(httplib.BAD_REQUEST, data={
                     'message_short': 'Bad Request',
@@ -742,7 +748,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
                 })
 
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
-            if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
+            if file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
                     file_node.target.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
                 )
