@@ -13,16 +13,18 @@ import hashlib
 import requests
 import urllib
 
-from datetime import datetime as dt
+from django.utils import timezone
+
 from website import settings
 
 #
 # Global settings.
 #
 logger = logging.getLogger(__name__)
-logger.setLevel(10)
-stdout = logging.StreamHandler()
-logger.addHandler(stdout)
+
+#logger.setLevel(10)
+#stdout = logging.StreamHandler()
+#logger.addHandler(stdout)
 
 map_hostname = settings.MAPCORE_HOSTNAME
 map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
@@ -73,8 +75,7 @@ class MAPCore:
     # Refresh access token.
     #
     def refresh_token(self):
-
-        logger.debug('MAPCore::refresh_token:')
+        #logger.debug('MAPCore::refresh_token:')
 
         self.lock_refresh()
 
@@ -92,20 +93,21 @@ class MAPCore:
 
         r = requests.post(url, auth=basic_auth, headers=headers, data=params)
         if r.status_code != requests.codes.ok:
-            logger.info('MAPCore::refresh_token: Refreshing token failed: status_code=' + str(r.status_code))
+            logger.info('MAPCore::refresh_token: Refreshing token failed: status_code=' + str(r.status_code) + ', user=' + str(self.user))
             self.unlock_refresh()
             return False
 
         j = r.json()
         if 'error' in j:
-            logger.info('MAPCore::refresh_token: Refreshing token failed: ' + j['error'])
+            logger.info('MAPCore::refresh_token: Refreshing token failed: ' + j['error'] + ', user=' + str(self.user))
             if 'error_description' in j:
-                logger.info('MAPCore::refresh_token: Refreshing token failed: ' + j['error_description'])
+                logger.info('MAPCore::refresh_token: Refreshing token failed: ' + j['error_description'] + ', user=' + str(self.user))
             self.unlock_refresh()
             return False
 
-        logger.debug('  New access_token: ' + j['access_token'])
-        logger.debug('  New refresh_token: ' + j['refresh_token'])
+        logger.info('MAPCore::refresh_token: SUCCESS: user=' + str(self.user))
+        #logger.debug('  New access_token: ' + j['access_token'])
+        #logger.debug('  New refresh_token: ' + j['refresh_token'])
 
         self.user.map_profile.oauth_access_token = j['access_token']
         self.user.map_profile.oauth_refresh_token = j['refresh_token']
@@ -113,7 +115,7 @@ class MAPCore:
         #
         # Update database.
         #
-        self.user.map_profile.oauth_refresh_time = dt.utcnow()
+        self.user.map_profile.oauth_refresh_time = timezone.now()
         self.user.map_profile.save()
         self.user.save()
 

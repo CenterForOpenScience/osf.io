@@ -459,6 +459,7 @@ class CeleryConfig:
         'scripts.retract_registrations',
         'website.archiver.tasks',
         'scripts.add_missing_identifiers_to_preprints'
+        'nii.mapcore_refresh_tokens',
     }
 
     try:
@@ -516,6 +517,7 @@ class CeleryConfig:
         'scripts.premigrate_created_modified',
         'scripts.generate_prereg_csv',
         'scripts.add_missing_identifiers_to_preprints',
+        'nii.mapcore_refresh_tokens',
     )
 
     # Modules that need metrics and release requirements
@@ -625,6 +627,12 @@ class CeleryConfig:
             'generate_prereg_csv': {
                 'task': 'scripts.generate_prereg_csv',
                 'schedule': crontab(minute=0, hour=10, day_of_week=0),  # Sunday 5:00 a.m.
+            },
+            'mapcore_refresh_token': {
+                'task': 'nii.mapcore_refresh_tokens',
+                'schedule': crontab(minute=0, hour=10),  # Daily 5:00 a.m. EST (-5h)
+                #'schedule': crontab(minute='*/1'), # for DEBUG
+                'kwargs': {'dry_run': False},
             },
         }
 

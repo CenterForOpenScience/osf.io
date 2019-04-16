@@ -7,6 +7,8 @@ import logging
 import os
 import sys
 
+from framework.celery_tasks import app as celery_app
+
 # global setting
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
@@ -30,27 +32,29 @@ map_token_path = settings.MAPCORE_TOKEN_PATH
 map_refresh_path = settings.MAPCORE_REFRESH_PATH
 map_clientid = settings.MAPCORE_CLIENTID
 map_secret = settings.MAPCORE_SECRET
-map_redirect = settings.MAPCORE_REDIRECT
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 my_home = settings.DOMAIN
 
-#
-# テスト用メインプログラム
-#
-if __name__ == '__main__':
-    #
-    # Get existent OSFUsers.
-    #
+def mapcore_refresh_tokens(debug=False):
     for user in OSFUser.objects.all():
-        if hasattr(user, 'map_profile'):
-            if hasattr(user.map_profile, 'oauth_access_token'):
-                print('Refreshing: ' + user.username + ' (' + user.map_profile.oauth_access_token + ')')
+        if user.map_profile is not None:
+            if user.map_profile.oauth_access_token is not None:
+                if debug:
+                    logger.info('Refreshing: ' + user.username + ' (' + user.map_profile.oauth_access_token + ')')
 
-                mapcore = MAPCore(user)
-                mapcore.refresh_token()
+                mapcore_api = MAPCore(user)
+                mapcore_api.refresh_token()
 
-    #
-    # 終了
-    #
+@celery_app.task(name='nii.mapcore_refresh_tokens')
+def run_main(rate_limit=(5, 1), dry_run=True):
+    if not dry_run:
+        mapcore_refresh_tokens()
+    pass
+
+# for test
+if __name__ == '__main__':
+    # Get existent OSFUsers.
+    mapcore_refresh_tokens(True)
+
     logger.info('Function completed')
     sys.exit()
