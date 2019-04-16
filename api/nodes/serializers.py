@@ -125,7 +125,7 @@ class RegionRelationshipField(RelationshipField):
         try:
             region_id = Region.objects.filter(_id=data).values_list('id', flat=True).get()
         except Region.DoesNotExist:
-            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(region_id))
+            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(data))
         return {'region_id': region_id}
 
 
