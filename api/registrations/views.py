@@ -18,7 +18,6 @@ from api.base.utils import get_user_auth, default_node_list_permission_queryset,
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
 from api.nodes.views import NodeIdentifierList
-from api.nodes.utils import NodeOptimizationMixin
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 
@@ -80,7 +79,7 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpdateJSONAPIView, NodesFilterMixin, NodeOptimizationMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpdateJSONAPIView, NodesFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_list).
     """
     permission_classes = (
