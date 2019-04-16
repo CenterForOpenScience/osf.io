@@ -993,24 +993,16 @@ function test_fangornDropzoneSuccess(treebeard, file, response) {
 
 
 function _fangornDropzoneSuccess(treebeard, file, response) {
+    treebeard.options.uploadInProgress = false;
 
-     var res_provider = response.data.attributes.provider;
-     console.log(res_provider);
-     treebeard.options.uploadInProgress = false;
-
-  if(res_provider === 'osfstorage'){
-
-        var usedgb = parseFloat(window.contextVars.used_quota/1073741824).toFixed( 2 );
-
-    if (usedgb > window.contextVars.max_quota) {
-
-        $osf.growl('Quota usage alert', 'You have surpassed the maximum quota allowed for your project.', 'danger');
-       }
-    else if (usedgb > window.contextVars.max_quota * window.contextVars.threshhold) {
-
-      $osf.growl('Quota usage alert', 'You have used more than '+window.contextVars.threshhold *100+' of the quota allowed for your project.', 'warning');
-      }
-  }
+    if (response.data.attributes.provider === 'osfstorage') {
+        var usedQuota = window.contextVars.used_quota;
+        var maxQuota = window.contextVars.max_quota;
+        var threshold = window.contextVars.threshold;
+        if (usedQuota > maxQuota * threshold) {
+            $osf.growl('Quota usage alert', 'You have used more than ' + (threshold * 100) + '% of your quota.', 'warning');
+        }
+    }
 
     var parent = file.treebeardParent, item,revisedItem, child;
 

@@ -654,7 +654,7 @@ ${parent.javascript_bottom()}
         },
         max_quota: ${node['max_quota']},
         used_quota: ${node['used_quota']},
-        threshhold: ${node['threshhold']},
+        threshold: ${node['threshold']},
 
         storageRegions: ${ storage_regions | sjson, n },
         storageFlagIsActive: ${ storage_flag_is_active | sjson, n },
