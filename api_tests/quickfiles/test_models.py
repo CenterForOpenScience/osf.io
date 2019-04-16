@@ -4,7 +4,6 @@ import pytest
 from addons.osfstorage.models import OsfStorageFile
 from osf.exceptions import MaxRetriesError
 from api_tests.utils import create_test_quickfile, create_test_file, create_test_folder
-from django.core.exceptions import ValidationError
 
 from osf_tests.factories import ProjectFactory
 from django.contrib.contenttypes.models import ContentType
@@ -39,50 +38,6 @@ class TestQuickFolder:
     @pytest.fixture()
     def folder_node(self, user, project):
         return create_test_folder(project, 'test folder')
-
-    cases = {
-        'test_validate_quickfolder': [{
-            'expected': {
-                'error_message': QuickFolder.DIRTY_TARGET_MSG
-            },
-            'env': {
-                'field': 'target',
-                'bad_data': bad_node
-            }
-        }, {
-            'expected': {
-                'error_message': QuickFolder.DIRTY_CONTENT_TYPE_MSG
-            },
-            'env': {
-                'field': 'target_content_type',
-                'bad_data': bad_content_type
-
-            }
-        }, {
-            'expected': {
-                'error_message': QuickFolder.DIRTY_PARENT_MSG
-            },
-            'env': {
-                'field': 'parent',
-                'bad_data': bad_file_node
-            }
-        }]
-    }
-
-    def test_validate_quickfolder(self, user, quickfolder, expected, env):
-        bad_data = env.get('bad_data')
-        if callable(bad_data):
-            bad_data = bad_data()
-
-        setattr(quickfolder, env.get('field'), bad_data)
-        with pytest.raises(ValidationError) as exc:
-            quickfolder.save()
-
-        assert expected.get('error_message') in exc.value.messages
-        quickfolder.refresh_from_db()
-
-        assert quickfolder.parent is None
-        assert quickfolder.target == user
 
     def test_new_user_has_quickfolder(self, user):
         assert getattr(user, 'quickfolder', False)

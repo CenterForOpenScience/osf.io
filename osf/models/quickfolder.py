@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from django.core.exceptions import ValidationError
-
-
-from django.contrib.contenttypes.models import ContentType
-from osf.models import TrashedFileNode, OSFUser
+from osf.models import TrashedFileNode
 from addons.osfstorage.models import OsfStorageFolder
-from osf.models.mixins import CleanMixin
 
 
-class QuickFolder(OsfStorageFolder, CleanMixin):
+class QuickFolder(OsfStorageFolder):
     """
     QuickFolder's a are specialized OsfStorageFolder models that are attached to the user instead of a
     project, preprint, registration etc. QuickFolders have a few special restrictions normal Folder models don't have.
@@ -25,35 +20,12 @@ class QuickFolder(OsfStorageFolder, CleanMixin):
     who doesn't own the Quickfolder that file was in.
     """
     _provider = 'osfstorage'
-    DIRTY_TARGET_MSG = 'QuickFolder target must be an OSFUser'
-    DIRTY_PARENT_MSG = 'parent must be none'
-    DIRTY_PATH_MSG = 'path must be \'/\'/'
-    DIRTY_CONTENT_TYPE_MSG = 'ContentType must be OSFUser'
-
-    @CleanMixin.cleans_field('parent')
-    def _clean_parent(self, value):
-        if value is not None:
-            raise ValidationError(self.DIRTY_PARENT_MSG)
-
-    @CleanMixin.cleans_field('target')
-    def _clean_target(self, value):
-        if not isinstance(value, OSFUser):
-            raise ValidationError(self.DIRTY_TARGET_MSG)
-
-    @CleanMixin.cleans_field('target_content_type')
-    def _clean_target_content_type(self, value):
-        if not ContentType.objects.get_for_model(OSFUser) == value:
-            raise ValidationError(self.DIRTY_CONTENT_TYPE_MSG)
 
     @property
     def title(self):
         fullname = self.target.fullname
         possessive_title_name = fullname + "'s" if fullname[-1] != 's' else fullname + "'"
         return '{} Quick Files'.format(possessive_title_name)
-
-    @property
-    def logs(self):
-        return self.target.logs
 
     @property
     def path(self):
