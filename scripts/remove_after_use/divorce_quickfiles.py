@@ -15,6 +15,7 @@ def create_quickfolders():
     quickfolder_content_type_id = ContentType.objects.get_for_model(QuickFolder).id
 
     paginated_users = Paginator(users, 1000)
+    logger.info('There are {} '.format(users.count()))
 
     total_created = 0
     quickfolders_to_create = []
@@ -27,7 +28,7 @@ def create_quickfolders():
 
             quickfolders_to_create.append(quickfolder)
 
-        total_created += 1
+            total_created += 1
     logger.info('There are {} total quickfolders created'.format(total_created))
     QuickFolder.objects.bulk_create(quickfolders_to_create)
 
@@ -37,8 +38,8 @@ def create_quickfolders():
     for page_num in paginated_quickfiles_nodes.page_range:
         for quickfiles_nodes in paginated_quickfiles_nodes.page(page_num).object_list:
             guid = quickfiles_nodes.guids.last()
-            guid.referent = quickfolder
-            guid.object_id = quickfolder.id
+            guid.referent = guid.referent.creator.quickfolder
+            guid.object_id = guid.referent.target.quickfolder.id
             guid.content_type_id = quickfolder_content_type_id
             guid.save()
 

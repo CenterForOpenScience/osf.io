@@ -92,10 +92,13 @@ class MigrationTestCase:
     logger = logging.getLogger(__name__)
 
     def sprinkle_quickfiles(self, num_of_files):
-        random_queryset = QuickFilesNode.objects.order_by('?')
-        for num in range(0, num_of_files):
-            node = random_queryset[num]
-            create_test_file(node, node.creator, filename=str(uuid.uuid4()))
+        random_queryset = list(QuickFilesNode.objects.order_by('?'))
+        import random
+        for _ in range(0, num_of_files):
+            random.shuffle(random_queryset)
+            node = random_queryset[0]
+            file_node = create_test_file(node, node.creator, filename=str(uuid.uuid4()))
+            file_node.save()
 
     def bulk_add(self, num, factory, **kwargs):
         with_quickfiles_node = kwargs.pop('with_quickfiles_node')
