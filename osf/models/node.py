@@ -2977,7 +2977,7 @@ def remove_addons(auth, resource_object_list):
 @receiver(post_save, sender='osf.QuickFilesNode')
 def add_creator_as_contributor(sender, instance, created, **kwargs):
     if created:
-        x = Contributor.objects.get_or_create(
+        Contributor.objects.get_or_create(
             user=instance.creator,
             node=instance,
             visible=True,
@@ -3026,10 +3026,10 @@ def add_default_node_addons(sender, instance, created, **kwargs):
                     if storage_type > 2:
                         storage_type = 2
                     obj, created = ProjectStorageType.objects.update_or_create(
-                        node_id=instance.id, storage_type=storage_type,defaults = {'node_id': instance.id, 'storage_type': storage_type}
-                        )
+                        node_id=instance.id, storage_type=storage_type, defaults={'node_id': instance.id, 'storage_type': storage_type}
+                    )
                 except Exception as err:
-                    logger.critical(er)
+                    logger.critical(err)
 
 
 @receiver(post_save, sender=Node)
