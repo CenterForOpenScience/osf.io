@@ -16,7 +16,7 @@ class AbstractBaseContributor(models.Model):
     def __repr__(self):
         return ('<{self.__class__.__name__}(user={self.user}, '
                 'visible={self.visible}, '
-                'permission={self.permission}, '
+                'permission={self.permission}'
                 ')>').format(self=self)
 
     class Meta:
@@ -28,7 +28,7 @@ class AbstractBaseContributor(models.Model):
 
     @property
     def permission(self):
-        return get_contributor_permission(self, self.node.id, 'node')
+        return get_contributor_permission(self, self.node)
 
 
 class Contributor(AbstractBaseContributor):
@@ -59,7 +59,7 @@ class PreprintContributor(AbstractBaseContributor):
 
     @property
     def permission(self):
-        return get_contributor_permission(self, self.preprint.id, 'preprint')
+        return get_contributor_permission(self, self.preprint)
 
     class Meta:
         unique_together = ('user', 'preprint')
@@ -88,13 +88,13 @@ class RecentlyAddedContributor(models.Model):
     class Meta:
         unique_together = ('user', 'contributor')
 
-def get_contributor_permission(contributor, object_id, model_type):
+def get_contributor_permission(contributor, resource):
     """
     Returns a contributor's permissions - perms through contributorship only. No permissions through osf group membership.
     """
-    read = '{}_{}_read'.format(model_type, object_id)
-    write = '{}_{}_write'.format(model_type, object_id)
-    admin = '{}_{}_admin'.format(model_type, object_id)
+    read = resource.format_group(permissions.READ)
+    write = resource.format_group(permissions.WRITE)
+    admin = resource.format_group(permissions.ADMIN)
     # Checking for django group membership allows you to also get the intended permissions of unregistered contributors
     user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
     if admin in user_groups:
