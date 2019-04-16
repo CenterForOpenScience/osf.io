@@ -4,11 +4,12 @@ from django.core.exceptions import ValidationError
 
 
 from django.contrib.contenttypes.models import ContentType
-from osf.models import BaseFileNode, Folder, TrashedFileNode, OSFUser
+from osf.models import TrashedFileNode, OSFUser
+from addons.osfstorage.models import OsfStorageFolder
 from osf.models.mixins import CleanMixin
 
 
-class QuickFolder(BaseFileNode, Folder, CleanMixin):
+class QuickFolder(OsfStorageFolder, CleanMixin):
     """
     QuickFolder's a are specialized OsfStorageFolder models that are attached to the user instead of a
     project, preprint, registration etc. QuickFolders have a few special restrictions normal Folder models don't have.
