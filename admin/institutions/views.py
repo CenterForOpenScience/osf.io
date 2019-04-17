@@ -268,8 +268,9 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
     paginate_by = 10
 
     def get_user_list_institute_id(self):
-        user_query_set = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
-        dict_of_list = []
+        user_query_set = OSFUser.objects.filter(
+            affiliated_institutions=self.kwargs['institution_id'])
+        user_list = []
         for user in user_query_set:
             try:
                 max_quota = user.userquota.max_quota
@@ -282,7 +283,7 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
                 used_quota_abbr = '{:.0f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
             else:
                 used_quota_abbr = '{:.1f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
-            dict_of_list.append({
+            user_list.append({
                 'id': user.guids.first()._id,
                 'name': user.fullname,
                 'username': user.username,
@@ -290,15 +291,19 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
                 'usage': used_quota_abbr,
                 'limit_value': str(max_quota) + ' GB'
             })
-        return dict_of_list
+        return user_list
 
     def get_queryset(self):
         return self.get_user_list_institute_id()
 
     def get_context_data(self, **kwargs):
+        institution = Institution.objects.get(id=self.kwargs['institution_id'])
+        kwargs['institution_name'] = institution.name
+
         self.users = self.get_queryset()
         kwargs['users'] = self.users
         self.page_size = self.get_paginate_by(self.users)
-        self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.users, self.page_size)
+        self.paginator, self.page, self.query_set, self.is_paginated = \
+            self.paginate_queryset(self.users, self.page_size)
         kwargs['page'] = self.page
         return super(UserListByInstitutionID, self).get_context_data(**kwargs)
