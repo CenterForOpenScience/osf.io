@@ -63,6 +63,9 @@ from osf.utils.requests import get_headers_from_request
 from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, expand_permissions
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from api.caching.tasks import update_storage_usage
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 
 
 logger = logging.getLogger(__name__)
@@ -677,6 +680,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         try:
             search.search.update_node(self, bulk=False, async_update=True)
+            if self.is_collected and self.is_public:
+                search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -2218,6 +2223,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log_date=timezone.now(),
         )
         self.save()
+
+    @property
+    def storage_usage(self):
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self._id)
+
+        storage_usage_total = storage_usage_cache.get(key)
+        if storage_usage_total:
+            return storage_usage_total
+        else:
+            update_storage_usage(self)  # sets cache
+            return storage_usage_cache.get(key)
 
 
 class Node(AbstractNode):

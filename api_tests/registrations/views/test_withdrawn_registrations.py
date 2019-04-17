@@ -123,13 +123,6 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
-    #   test_cannot_access_withdrawn_affiliated_institutions
-        registration.save()
-        url = '/{}registrations/{}/institutions/'.format(
-            API_BASE, registration._id)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
-
     def test_cannot_access_withdrawn_comments(
             self, app, user, project_public, pointer_public,
             registration, withdrawn_registration):
@@ -148,7 +141,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
-    def test_withdrawn_registrations_display_limited_fields(
+    def test_withdrawn_registrations_display_limited_attributes_fields(
             self, app, user, registration, withdrawn_registration, url_withdrawn):
         registration = registration
         res = app.get(url_withdrawn, auth=user.auth)
@@ -172,7 +165,6 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
                 'Z'),
             'withdrawal_justification': registration.retraction.justification,
             'public': None,
-            'category': None,
             'registration': True,
             'fork': None,
             'collection': None,
@@ -194,19 +186,26 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert contributors == '/{}registrations/{}/contributors/'.format(
             API_BASE, registration._id)
 
+    def test_withdrawn_registrations_display_limited_relationship_fields(
+            self, app, user, registration, withdrawn_registration):
+
+        url_withdrawn = '/{}registrations/{}/?version=2.14'.format(API_BASE, registration._id)
+        res = app.get(url_withdrawn, auth=user.auth)
+
         assert 'children' not in res.json['data']['relationships']
         assert 'comments' not in res.json['data']['relationships']
         assert 'node_links' not in res.json['data']['relationships']
         assert 'registrations' not in res.json['data']['relationships']
-        assert 'parent' not in res.json['data']['relationships']
+        assert 'parent' in res.json['data']['relationships']
         assert 'forked_from' not in res.json['data']['relationships']
         assert 'files' not in res.json['data']['relationships']
         assert 'logs' not in res.json['data']['relationships']
         assert 'registered_by' not in res.json['data']['relationships']
-        assert 'registered_from' not in res.json['data']['relationships']
-        assert 'root' not in res.json['data']['relationships']
-        assert 'affiliated_institutions' not in res.json['data']['relationships']
+        assert 'registered_from' in res.json['data']['relationships']
+        assert 'root' in res.json['data']['relationships']
+        assert 'affiliated_institutions' in res.json['data']['relationships']
         assert 'license' not in res.json['data']['relationships']
+        assert 'identifiers' in res.json['data']['relationships']
 
     def test_field_specific_related_counts_ignored_if_hidden_field_on_withdrawn_registration(
             self, app, user, registration, withdrawn_registration):

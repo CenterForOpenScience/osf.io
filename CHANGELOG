@@ -2,12 +2,40 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.5.0 (2019-04-01)
+===================
+- Display OSF Storage Usage on project overview page
+- APIv2: turn on wb hook tests on travis
+- APIv2: display related counts on user relationship fields
+- Banner for IE users
+- Allow embedding quickfiles in a wiki
+- Migrate old forks whose last_logged date doesn't match the forked date
+
+19.4.0 (2019-03-28)
+===================
+- Chronos backend
+- APIv2: user_passwords type change
+- Preprint withdrawal email template changes
+
+19.3.0 (2019-03-04)
+===================
+- Generate absolute url for confirmation url in claim user email
+- Allow searching by contributor and tags on collections
+- APIv2: Add render links when serializing files and file versions, html links for files
+
+19.2.0 (2019-02-18)
+===================
+- Backend for File Metadata
+- Make embedded wiki images viewable with VOL
+- APIv2: Two factor improvements
+- APIv2: Request deactivation through user settings
+- APIv2: Initiate registration withdrawal
+- APIv2: Handle validation errors on tokens and applications requests
+- APIv2: Handle requesting user guid from files endpoint
 
 19.1.0 (2019-01-30)
 ===================
 - Track OSFS file versions
-- Make embedded wiki images viewable with VOL
-- Fix last_logged date on existing forks
 
 19.0.0 (2019-01-23)
 ===================

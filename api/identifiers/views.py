@@ -13,9 +13,9 @@ from api.identifiers.serializers import NodeIdentifierSerializer, RegistrationId
 
 from api.nodes.permissions import (
     IsPublic,
-    ExcludeWithdrawals,
     AdminOrPublic,
     EditIfPublic,
+    ReadOnlyIfWithdrawn,
 )
 
 from osf.models import Node, Registration, Preprint, Identifier
@@ -28,7 +28,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixi
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals,
+        ReadOnlyIfWithdrawn,
     )
 
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
@@ -49,7 +49,6 @@ class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixi
     # overrides ListCreateAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
-
 
 class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """List of identifiers for a specified node. *Read-only*.
