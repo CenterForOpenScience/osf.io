@@ -281,14 +281,15 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
             if used_quota_abbr[1] == 'B':
                 used_quota_abbr = '{:.0f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
             else:
-                used_quota_abbr = '{:.1f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
+                size_unit = used_quota_abbr[1].replace('B', 'iB', 1)
+                used_quota_abbr = '{:.1f} {}'.format(used_quota_abbr[0], size_unit)
             dict_of_list.append({
                 'id': user.guids.first()._id,
                 'name': user.fullname,
                 'username': user.username,
                 'ratio_to_quota': '{:.1f}%'.format(float(used_quota) / (max_quota * 1024 ** 3) * 100),
                 'usage': used_quota_abbr,
-                'limit_value': str(max_quota) + ' GB'
+                'limit_value': str(max_quota) + ' GiB'
             })
         return dict_of_list
 
