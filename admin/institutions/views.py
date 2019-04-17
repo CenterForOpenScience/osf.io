@@ -270,10 +270,8 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
 
     def custom_size_abbreviation(self, size, abbr):
         if abbr == 'B':
-            custom_abbr = '{:.1f} {}'.format(size / 1024, 'KiB')
-        else:
-            custom_abbr = '{:.1f} {}'.format(size, abbr.replace('B', 'iB'))
-        return custom_abbr
+            return (size / 1024, 'KiB')
+        return size, abbr.replace('B', 'iB')
 
     def get_queryset(self):
         user_query_set = OSFUser.objects.filter(
@@ -295,8 +293,10 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
                 'name': user.fullname,
                 'username': user.username,
                 'ratio': float(used_quota) / max_quota_bytes * 100,
-                'usage': used_quota_abbr,
-                'remaining': remaining_abbr,
+                'usage': used_quota_abbr[0],
+                'usage_abbr': used_quota_abbr[1],
+                'remaining': remaining_abbr[0],
+                'remaining_abbr': remaining_abbr[1],
                 'quota': max_quota
             })
         return sorted(user_list, key=itemgetter('ratio'), reverse=True)

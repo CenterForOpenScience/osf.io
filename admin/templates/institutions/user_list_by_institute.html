@@ -47,8 +47,8 @@
             <td>{{user.username}}</td>
             <td>{{user.name}}</td>
             <td>{{user.ratio|floatformat:1}}%</td>
-            <td>{{user.usage}}</td>
-            <td>{{user.remaining}}</td>
+            <td>{{user.usage|floatformat:1}} {{user.usage_abbr}}</td>
+            <td>{{user.remaining|floatformat:1}} {{user.remaining_abbr}}</td>
             <td>{{user.quota}} GiB</td>
         </tr>
         {% endfor %}
