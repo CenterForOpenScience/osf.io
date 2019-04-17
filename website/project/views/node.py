@@ -530,8 +530,13 @@ def view_project(auth, node, **kwargs):
         addons_widget_data['jupyterhub'] = serialize_jupyterhub_widget(node)
 
     ret.update({'addons_widget_data': addons_widget_data})
-    projectStorageType = ProjectStorageType.objects.get(node=node)
-    ret['isCustomStorageLocation'] = False if projectStorageType.storage_type == 1 else True
+    try:
+        projectStorageType = ProjectStorageType.objects.get(node=node)
+        ret['isCustomStorageLocation'] = False if projectStorageType.storage_type == 1 else True
+    except Exception as err:
+        logger.critical(err)
+        ret['isCustomStorageLocation'] = False
+
     return ret
 
 # Reorder components
