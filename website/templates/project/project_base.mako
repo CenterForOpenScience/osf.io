@@ -153,6 +153,10 @@
     var userApiUrl = ${ user_api_url | sjson, n };
     var nodeApiUrl = ${ node['api_url'] | sjson, n };
     var absoluteUrl = ${ node['display_absolute_url'] | sjson, n };
+    var isCusStorageLoc = false;
+    % if isCustomStorageLocation is not UNDEFINED:
+        isCusStorageLoc = ${ isCustomStorageLocation | sjson, n }
+    % endif
     <%
        parent_exists = parent_node['exists']
        parent_title = ''
@@ -212,7 +216,8 @@
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
             contributors: ${ node['contributors'] | sjson, n },
-        }
+        },
+        isCustomStorageLocation: isCusStorageLoc
     });
 </script>
 <script type="text/x-mathjax-config">

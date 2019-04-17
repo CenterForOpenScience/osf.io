@@ -3021,10 +3021,10 @@ def add_default_node_addons(sender, instance, created, **kwargs):
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
                 try:
-                    from addons.osfstorage.models import NodeSettings
-                    storage_type = NodeSettings.objects.get(owner_id=instance.id).region_id
-                    if storage_type > 2:
-                        storage_type = 2
+                    from addons.osfstorage.models import NodeSettings  # this import was essential
+                    storage_type = 2
+                    if NodeSettings.objects.get(owner_id=instance.id).region_id == 1:
+                        storage_type = 1
                     obj, created = ProjectStorageType.objects.update_or_create(
                         node_id=instance.id, storage_type=storage_type, defaults={'node_id': instance.id, 'storage_type': storage_type}
                     )
