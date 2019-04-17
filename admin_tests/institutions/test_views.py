@@ -315,7 +315,7 @@ class TestGetUserListWithQuota(AdminTestCase):
         UserQuota.objects.create(user=self.user, max_quota=100, used=560)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
-        nt.assert_equal(round(user_quota['usage'], 1), 0.5)
+        nt.assert_equal(round(user_quota['usage_value'], 1), 0.5)
         nt.assert_equal(user_quota['usage_abbr'], 'KiB')
         nt.assert_equal(round(user_quota['ratio'], 1), 0)
 
@@ -323,7 +323,7 @@ class TestGetUserListWithQuota(AdminTestCase):
         UserQuota.objects.create(user=self.user, max_quota=100, used=5.2 * 1024 ** 3)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
-        nt.assert_equal(round(user_quota['usage'], 1), 5.2)
+        nt.assert_equal(round(user_quota['usage_value'], 1), 5.2)
         nt.assert_equal(user_quota['usage_abbr'], 'GiB')
         nt.assert_equal(round(user_quota['ratio'], 1), 5.2)
 
