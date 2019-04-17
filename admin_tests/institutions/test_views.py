@@ -303,13 +303,13 @@ class TestGetUserListWithQuota(AdminTestCase):
 
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
-        nt.assert_equal(user_quota['limit_value'], str(api_settings.DEFAULT_MAX_QUOTA) + ' GB')
+        nt.assert_equal(user_quota['limit_value'], str(api_settings.DEFAULT_MAX_QUOTA) + ' GiB')
 
     def test_custom_quota(self):
         UserQuota.objects.create(user=self.user, max_quota=200)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
-        nt.assert_equal(user_quota['limit_value'], '200 GB')
+        nt.assert_equal(user_quota['limit_value'], '200 GiB')
 
     def test_used_quota_bytes(self):
         UserQuota.objects.create(user=self.user, max_quota=100, used=560)
@@ -322,7 +322,7 @@ class TestGetUserListWithQuota(AdminTestCase):
         UserQuota.objects.create(user=self.user, max_quota=100, used=5.2 * 1024 ** 3)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
-        nt.assert_equal(user_quota['usage'], '5.2 GB')
+        nt.assert_equal(user_quota['usage'], '5.2 GiB')
         nt.assert_equal(user_quota['ratio_to_quota'], '5.2%')
 
 class InstitutionDefaultStorageDisplay(AdminTestCase):
