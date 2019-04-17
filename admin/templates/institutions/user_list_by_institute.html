@@ -24,9 +24,10 @@
             <th>GUID</th>
             <th>Username</th>
             <th>Fullname</th>
-            <th>Quota ratio</th>
+            <th>Ratio</th>
             <th>Usage</th>
-            <th>Limit value</th>
+            <th>Remaining</th>
+            <th>Quota</th>
         </tr>
     </thead>
     <tbody>
@@ -43,21 +44,12 @@
                     {{ user.id }}
                 </a>
             </td>
-            <td>
-                {{user.username}}
-            </td>
-            <td>
-                {{ user.name }}
-            </td>
-            <td>
-                {{user.ratio_to_quota}}
-            </td>
-            <td>
-                {{user.usage}}
-            </td>
-            <td>
-                {{user.limit_value}}
-            </td>
+            <td>{{user.username}}</td>
+            <td>{{user.name}}</td>
+            <td>{{user.ratio|floatformat:1}}%</td>
+            <td>{{user.usage}}</td>
+            <td>{{user.remaining}}</td>
+            <td>{{user.quota}} GiB</td>
         </tr>
         {% endfor %}
     </tbody>

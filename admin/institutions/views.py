@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+from operator import itemgetter
 
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
@@ -267,7 +268,14 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
     raise_exception = True
     paginate_by = 10
 
-    def get_user_list_institute_id(self):
+    def custom_size_abbreviation(self, size, abbr):
+        if abbr == 'B':
+            custom_abbr = '{:.1f} {}'.format(size / 1024, 'KiB')
+        else:
+            custom_abbr = '{:.1f} {}'.format(size, abbr.replace('B', 'iB'))
+        return custom_abbr
+
+    def get_queryset(self):
         user_query_set = OSFUser.objects.filter(
             affiliated_institutions=self.kwargs['institution_id'])
         user_list = []
@@ -278,24 +286,20 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
             except ObjectDoesNotExist:
                 max_quota = api_settings.DEFAULT_MAX_QUOTA
                 used_quota = quota.used_quota(user.guids.first()._id)
-            used_quota_abbr = quota.abbreviate_size(used_quota)
-            if used_quota_abbr[1] == 'B':
-                used_quota_abbr = '{:.0f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
-            else:
-                size_unit = used_quota_abbr[1].replace('B', 'iB', 1)
-                used_quota_abbr = '{:.1f} {}'.format(used_quota_abbr[0], size_unit)
+            max_quota_bytes = max_quota * 1024 ** 3
+            used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
+            remaining_abbr = self.custom_size_abbreviation(
+                *quota.abbreviate_size(max_quota_bytes - used_quota))
             user_list.append({
                 'id': user.guids.first()._id,
                 'name': user.fullname,
                 'username': user.username,
-                'ratio_to_quota': '{:.1f}%'.format(float(used_quota) / (max_quota * 1024 ** 3) * 100),
+                'ratio': float(used_quota) / max_quota_bytes * 100,
                 'usage': used_quota_abbr,
-                'limit_value': str(max_quota) + ' GiB'
+                'remaining': remaining_abbr,
+                'quota': max_quota
             })
-        return user_list
-
-    def get_queryset(self):
-        return self.get_user_list_institute_id()
+        return sorted(user_list, key=itemgetter('ratio'), reverse=True)
 
     def get_context_data(self, **kwargs):
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
