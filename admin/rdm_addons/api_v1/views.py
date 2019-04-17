@@ -10,12 +10,15 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404
 from django.http.response import JsonResponse
 from django.utils.decorators import method_decorator
+from django.core.exceptions import ValidationError
 import flask
 
-from osf.models import ExternalAccount
+from osf.models import ExternalAccount, AbstractNode, Guid
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_addons.utils import get_rdm_addon_option
 from framework.auth import Auth
+
+from admin.rdm_addons import utils
 
 
 class OAuthView(RdmPermissionMixin, UserPassesTestMixin, View):
@@ -149,6 +152,69 @@ class AccountsView(RdmPermissionMixin, UserPassesTestMixin, View):
         # registration of authentication / authorization information
         response, status = add_account(json_request, institution_id, addon_name)
         return JsonResponse(response, status=status)
+
+class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
+    """View for management project of add-on"""
+    raise_exception = True
+
+    def test_func(self):
+        """check user permissions"""
+        institution_id = int(self.kwargs.get('institution_id'))
+        return self.has_auth(institution_id)
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        """disable CSRF"""
+        return super(ManageView, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        addon_name = kwargs['addon_name']
+
+        institution_id = int(kwargs['institution_id'])
+        rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
+
+        guid = rdm_addon_option.management_node._id if rdm_addon_option.management_node is not None else None
+
+        return JsonResponse({'guid': guid})
+
+    def put(self, request, *args, **kwargs):
+        addon_name = kwargs['addon_name']
+        institution_id = int(kwargs['institution_id'])
+        json_request = json.loads(request.body)
+        if 'guid' not in json_request:
+            return JsonResponse({
+                'message': 'Require "guid" parameter.'
+            }, status=httplib.BAD_REQUEST)
+
+        rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
+
+        try:
+            guid_obj = Guid.objects.get(_id=json_request['guid'])
+            node = guid_obj.referent
+        except ValidationError:
+            return JsonResponse({
+                'message': 'Invalid GUID of management project'
+            }, status=httplib.BAD_REQUEST)
+
+        if not isinstance(node, AbstractNode):
+            return JsonResponse({
+                'message': 'Invalid GUID of management project'
+            }, status=httplib.BAD_REQUEST)
+
+        rdm_addon_option.management_node = node
+        rdm_addon_option.save()
+
+        return JsonResponse({}, status=httplib.OK)
+
+    def delete(self, request, *args, **kwargs):
+        addon_name = kwargs['addon_name']
+        institution_id = int(kwargs['institution_id'])
+
+        rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
+        rdm_addon_option.management_node = None
+        rdm_addon_option.save()
+
+        return JsonResponse({}, status=httplib.OK)
 
 def add_addon_extra_info(ret, external_account, addon_name):
     """add each add-on's account information"""
