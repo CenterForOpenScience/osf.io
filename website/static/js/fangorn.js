@@ -1589,10 +1589,10 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 function _fangornTitleColumn(item, col) {
     var tb = this;
     if(item.data.nodeRegion){
-        if(window.contextVars['isCustomStorageLocation']){
+        if(window.contextVars.isCustomStorageLocation){
             return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion, '/', 'fg-file-links');
         }
-        else if(item.data.nodeRegion==item.data.addonFullname){
+        else if(item.data.nodeRegion===item.data.addonFullname){
             return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion, '/', 'fg-file-links');
         }
         else{
