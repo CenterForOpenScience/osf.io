@@ -315,16 +315,31 @@ class TestGetUserListWithQuota(AdminTestCase):
         UserQuota.objects.create(user=self.user, max_quota=100, used=560)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
+
+        nt.assert_equal(user_quota['usage'], 560)
         nt.assert_equal(round(user_quota['usage_value'], 1), 0.5)
         nt.assert_equal(user_quota['usage_abbr'], 'KiB')
+
+        nt.assert_equal(user_quota['remaining'], int(100 * 1024 ** 3) - 560)
+        nt.assert_equal(round(user_quota['remaining_value'], 1), 100)
+        nt.assert_equal(user_quota['remaining_abbr'], 'GiB')
+
         nt.assert_equal(round(user_quota['ratio'], 1), 0)
 
     def test_used_quota_giga(self):
-        UserQuota.objects.create(user=self.user, max_quota=100, used=5.2 * 1024 ** 3)
+        used = int(5.2 * 1024 ** 3)
+        UserQuota.objects.create(user=self.user, max_quota=100, used=used)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
+
+        nt.assert_equal(user_quota['usage'], used)
         nt.assert_equal(round(user_quota['usage_value'], 1), 5.2)
         nt.assert_equal(user_quota['usage_abbr'], 'GiB')
+
+        nt.assert_equal(user_quota['remaining'], 100 * 1024 ** 3 - used)
+        nt.assert_equal(round(user_quota['remaining_value'], 1), 100 - 5.2)
+        nt.assert_equal(user_quota['remaining_abbr'], 'GiB')
+
         nt.assert_equal(round(user_quota['ratio'], 1), 5.2)
 
 class InstitutionDefaultStorageDisplay(AdminTestCase):
