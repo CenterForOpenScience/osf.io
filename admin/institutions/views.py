@@ -301,7 +301,8 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
             })
         order_by = self.get_order_by()
         reverse = self.get_direction() != 'asc'
-        return sorted(user_list, key=itemgetter(order_by), reverse=reverse)
+        user_list.sort(key=itemgetter(order_by), reverse=reverse)
+        return user_list
 
     def get_context_data(self, **kwargs):
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
