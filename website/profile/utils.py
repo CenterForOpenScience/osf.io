@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from django.core.exceptions import ObjectDoesNotExist
 from framework import auth
 
 from api.base import settings as api_settings
@@ -94,13 +93,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         default_region = user.get_addon('osfstorage').default_region
         available_regions = [region for region in Region.objects.all().values('_id', 'name')]
 
-        try:
-            max_quota = user.userquota.max_quota
-            used_quota = user.userquota.used
-        except ObjectDoesNotExist:
-            max_quota = api_settings.DEFAULT_MAX_QUOTA
-            used_quota = quota.used_quota(user._id)
-
+        max_quota, used_quota = quota.get_quota_info(user)
         used_quota_abbr = quota.abbreviate_size(used_quota)
         if used_quota_abbr[1] == 'B':
             used_quota_abbr = '{:.0f}[{}]'.format(used_quota_abbr[0], used_quota_abbr[1])
