@@ -6,6 +6,7 @@ import pytest
 
 from addons.osfstorage.models import OsfStorageFileNode
 from api.base import settings as api_settings
+from framework.auth import signing
 from tests.base import OsfTestCase
 from osf.models import FileLog, FileInfo, TrashedFileNode, TrashedFolder, UserQuota
 from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
@@ -18,7 +19,7 @@ class TestQuotaProfileView(OsfTestCase):
     def setUp(self):
         super(TestQuotaProfileView, self).setUp()
         self.user = AuthUserFactory()
-        self.quota_text = '{}%, {}[{}] / {}[GB]'
+        self.quota_text = '{}%, {}[{}] / {}[GiB]'
 
     def tearDown(self):
         super(TestQuotaProfileView, self).tearDown()
@@ -56,7 +57,7 @@ class TestQuotaProfileView(OsfTestCase):
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
         )
-        assert_in(self.quota_text.format(5.2, 5.2, 'GB', 100), response.body)
+        assert_in(self.quota_text.format(5.2, 5.2, 'GiB', 100), response.body)
 
     def test_used_quota_storage_icon_ok(self):
         UserQuota.objects.create(user=self.user, max_quota=100, used=0)
@@ -826,3 +827,33 @@ class TestSaveUsedQuota(OsfTestCase):
                 }
             }
         )
+
+class TestQuotaApi(OsfTestCase):
+    def setUp(self):
+        super(TestQuotaApi, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+    def test_default_values(self):
+        response = self.app.get(
+            '{}?payload={payload}&signature={signature}'.format(
+                self.node.api_url_for('creator_quota'),
+                **signing.sign_data(signing.default_signer, {})
+            )
+        )
+        assert_equal(response.status_code, 200)
+        assert_equal(response.json['max'], api_settings.DEFAULT_MAX_QUOTA * 1024 ** 3)
+        assert_equal(response.json['used'], 0)
+
+    def test_used_half_custom_quota(self):
+        UserQuota.objects.create(user=self.user, max_quota=200, used=100 * 1024 ** 3)
+
+        response = self.app.get(
+            '{}?payload={payload}&signature={signature}'.format(
+                self.node.api_url_for('creator_quota'),
+                **signing.sign_data(signing.default_signer, {})
+            )
+        )
+        assert_equal(response.status_code, 200)
+        assert_equal(response.json['max'], 200 * 1024 ** 3)
+        assert_equal(response.json['used'], 100 * 1024 ** 3)

@@ -1,4 +1,7 @@
-{% include "util/pagination.html" with items=page status=status %}
+<h2 id="title">Statistical Status of NII Storage</h2>
+<h3 id="sub-title">NII Storage > {{ institution_name }}</h3>
+
+{% include "util/pagination.html" with items=page status=direction order=order_by %}
 {% if form_action %}
 <form action={{form_action}} method="POST">
 {% endif %}
@@ -19,11 +22,36 @@
             </th>
             {% endif %}
             <th>GUID</th>
-            <th>Username</th>
-            <th>Fullname</th>
-            <th>Quota ratio</th>
-            <th>Usage</th>
-            <th>Limit value</th>
+            <th>
+                Username
+                <a href="?order_by=username&amp;status=desc&amp;page={{page.number}}" class="caret"></a>
+                <span class="dropup"><a href="?order_by=username&amp;status=asc&amp;page={{page.number}}" class="caret"></a></span>
+            </th>
+            <th>
+                Fullname
+                <a href="?order_by=fullname&amp;status=desc&amp;page={{page.number}}" class="caret"></a>
+                <span class="dropup"><a href="?order_by=fullname&amp;status=asc&amp;page={{page.number}}" class="caret"></a></span>
+            </th>
+            <th>
+                Ratio
+                <a href="?order_by=ratio&amp;status=desc&amp;page={{page.number}}" class="caret"></a>
+                <span class="dropup"><a href="?order_by=ratio&amp;status=asc&amp;page={{page.number}}" class="caret"></a></span>
+            </th>
+            <th>
+                Usage
+                <a href="?order_by=usage&amp;status=desc&amp;page={{page.number}}" class="caret"></a>
+                <span class="dropup"><a href="?order_by=usage&amp;status=asc&amp;page={{page.number}}" class="caret"></a></span>
+            </th>
+            <th>
+                Remaining
+                <a href="?order_by=remaining&amp;status=desc&amp;page={{page.number}}" class="caret"></a>
+                <span class="dropup"><a href="?order_by=remaining&amp;status=asc&amp;page={{page.number}}" class="caret"></a></span>
+            </th>
+            <th>
+                Quota
+                <a href="?order_by=quota&amp;status=desc&amp;page={{page.number}}" class="caret"></a>
+                <span class="dropup"><a href="?order_by=quota&amp;status=asc&amp;page={{page.number}}" class="caret"></a></span>
+            </th>
         </tr>
     </thead>
     <tbody>
@@ -40,21 +68,12 @@
                     {{ user.id }}
                 </a>
             </td>
-            <td>
-                {{user.username}}
-            </td>
-            <td>
-                {{ user.name }}
-            </td>
-            <td>
-                {{user.ratio_to_quota}}
-            </td>
-            <td>
-                {{user.usage}}
-            </td>
-            <td>
-                {{user.limit_value}}
-            </td>
+            <td>{{user.username}}</td>
+            <td>{{user.fullname}}</td>
+            <td>{{user.ratio|floatformat:1}}%</td>
+            <td>{{user.usage_value|floatformat:1}} {{user.usage_abbr}}</td>
+            <td>{{user.remaining_value|floatformat:1}} {{user.remaining_abbr}}</td>
+            <td>{{user.quota}} GiB</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -82,4 +101,3 @@
 {% csrf_token %}
 </form>
 {% endif %}
-
