@@ -1,4 +1,5 @@
 import json
+from operator import itemgetter
 
 from nose import tools as nt
 import mock
@@ -341,6 +342,104 @@ class TestGetUserListWithQuota(AdminTestCase):
         nt.assert_equal(user_quota['remaining_abbr'], 'GiB')
 
         nt.assert_equal(round(user_quota['ratio'], 1), 5.2)
+
+class TestGetUserListWithQuotaSorted(AdminTestCase):
+    def setUp(self):
+        self.institution = InstitutionFactory()
+        self.users = []
+        self.users.append(self.add_user(100, 80 * 1024 ** 3))
+        self.users.append(self.add_user(200, 90 * 1024 ** 3))
+        self.users.append(self.add_user(10, 10 * 1024 ** 3))
+
+    def add_user(self, max_quota, used):
+        user = AuthUserFactory()
+        user.affiliated_institutions.add(self.institution)
+        user.save()
+        UserQuota.objects.create(user=user, max_quota=max_quota, used=used)
+        return user
+
+    def view_get(self, url_params):
+        request = RequestFactory().get('/fake_path?{}'.format(url_params))
+        view = setup_user_view(
+            views.UserListByInstitutionID(),
+            request,
+            user=self.users[0],
+            institution_id=self.institution.id
+        )
+        return view.get(request)
+
+    def test_sort_username_asc(self):
+        expected = sorted(map(lambda u: u.username, self.users), reverse=False)
+        response = self.view_get('order_by=username&status=asc')
+        result = map(itemgetter('username'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_username_desc(self):
+        expected = sorted(map(lambda u: u.username, self.users), reverse=True)
+        response = self.view_get('order_by=username&status=desc')
+        result = map(itemgetter('username'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_fullname_asc(self):
+        expected = sorted(map(lambda u: u.fullname, self.users), reverse=False)
+        response = self.view_get('order_by=fullname&status=asc')
+        result = map(itemgetter('fullname'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_fullname_desc(self):
+        expected = sorted(map(lambda u: u.fullname, self.users), reverse=True)
+        response = self.view_get('order_by=fullname&status=desc')
+        result = map(itemgetter('fullname'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_ratio_asc(self):
+        expected = [45.0, 80.0, 100.0]
+        response = self.view_get('order_by=ratio&status=asc')
+        result = map(itemgetter('ratio'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_ratio_desc(self):
+        expected = [100.0, 80.0, 45.0]
+        response = self.view_get('order_by=ratio&status=desc')
+        result = map(itemgetter('ratio'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_usage_asc(self):
+        expected = map(lambda x: x * 1024 ** 3, [10, 80, 90])
+        response = self.view_get('order_by=usage&status=asc')
+        result = map(itemgetter('usage'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_usage_desc(self):
+        expected = map(lambda x: x * 1024 ** 3, [90, 80, 10])
+        response = self.view_get('order_by=usage&status=desc')
+        result = map(itemgetter('usage'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_remaining_asc(self):
+        expected = map(lambda x: x * 1024 ** 3, [0, 20, 110])
+        response = self.view_get('order_by=remaining&status=asc')
+        result = map(itemgetter('remaining'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_remaining_desc(self):
+        expected = map(lambda x: x * 1024 ** 3, [110, 20, 0])
+        response = self.view_get('order_by=remaining&status=desc')
+        result = map(itemgetter('remaining'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_quota_asc(self):
+        expected = [10, 100, 200]
+        response = self.view_get('order_by=quota&status=asc')
+        result = map(itemgetter('quota'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_quota_desc(self):
+        expected = [200, 100, 10]
+        response = self.view_get('order_by=quota&status=desc')
+        result = map(itemgetter('quota'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
 
 class InstitutionDefaultStorageDisplay(AdminTestCase):
     def setUp(self):
