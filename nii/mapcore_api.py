@@ -35,6 +35,9 @@ map_clientid = settings.MAPCORE_CLIENTID
 map_secret = settings.MAPCORE_SECRET
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 
+VERIFY = True  # for requests.{get,post}(verify=VERIFY)
+#VERIFY = False
+
 class MAPCoreException(Exception):
 
     pass
@@ -91,7 +94,7 @@ class MAPCore:
         params = urllib.urlencode(params)
         logger.debug('  params=' + params)
 
-        r = requests.post(url, auth=basic_auth, headers=headers, data=params)
+        r = requests.post(url, auth=basic_auth, headers=headers, data=params, verify=VERIFY)
         if r.status_code != requests.codes.ok:
             logger.info('MAPCore::refresh_token: Refreshing token failed: status_code=' + str(r.status_code) + ', user=' + str(self.user))
             self.unlock_refresh()
@@ -161,7 +164,7 @@ class MAPCore:
             payload = {'time_stamp': time_stamp, 'signature': signature}
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
-            r = requests.get(url, headers=headers, params=payload)
+            r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
             j = self.check_result(r)
             if j is not False:
                 # Function succeeded.
@@ -202,7 +205,7 @@ class MAPCore:
             }
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
-            r = requests.get(url, headers=headers, params=payload)
+            r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
             j = self.check_result(r)
             if j is not False:
                 if len(j['result']['groups']) == 0:
@@ -244,7 +247,7 @@ class MAPCore:
             payload = {'time_stamp': time_stamp, 'signature': signature}
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
-            r = requests.get(url, headers=headers, params=payload)
+            r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
             j = self.check_result(r)
             if j is not False:
                 if len(j['result']['groups']) == 0:
@@ -303,7 +306,7 @@ class MAPCore:
                 'Content-Length': str(len(params))
             }
 
-            r = requests.post(url, headers=headers, data=params)
+            r = requests.post(url, headers=headers, data=params, verify=VERIFY)
             j = self.check_result(r)
             if j is not False:
                 group_key = j['result']['groups'][0]['group_key']
@@ -365,7 +368,7 @@ class MAPCore:
                 'Content-Length': str(len(params))
             }
 
-            r = requests.post(url, headers=headers, data=params)
+            r = requests.post(url, headers=headers, data=params, verify=VERIFY)
             j = self.check_result(r)
             if j is not False:
                 # Function succeeded.
@@ -402,7 +405,7 @@ class MAPCore:
             payload = {'time_stamp': time_stamp, 'signature': signature}
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
-            r = requests.get(url, headers=headers, params=payload)
+            r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
             j = self.check_result(r)
             if j is not False:
                 # Function succeeded.
@@ -439,7 +442,7 @@ class MAPCore:
             payload = {'time_stamp': time_stamp, 'signature': signature}
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
-            r = requests.get(url, headers=headers, params=payload)
+            r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
             j = self.check_result(r)
             if j is not False:
                 # Function succeeded.
@@ -489,7 +492,7 @@ class MAPCore:
                 'Content-Length': str(len(params))
             }
 
-            r = requests.post(url, headers=headers, data=params)
+            r = requests.post(url, headers=headers, data=params, verify=VERIFY)
             j = self.check_result(r)
             if j is not False:
                 # Function succeeded.
