@@ -2974,11 +2974,13 @@ def remove_addons(auth, resource_object_list):
 def set_project_storage_type(instance):
     from addons.osfstorage.models import NodeSettings  # this import was essential
     storage_type = 2
-    if NodeSettings.objects.get(owner_id=instance.id).region_id == 1:
-        storage_type = 1
-    obj, created = ProjectStorageType.objects.update_or_create(
-        node_id=instance.id, defaults={'node_id': instance.id, 'storage_type': storage_type}
-    )
+    nodeSettings = NodeSettings.objects.filter(owner_id=instance.id).first()
+    if nodeSettings is not None:
+        if nodeSettings.region_id == 1:
+            storage_type = 1
+        obj, created = ProjectStorageType.objects.update_or_create(
+            node_id=instance.id, defaults={'node_id': instance.id, 'storage_type': storage_type}
+        )
 
 
 ##### Signal listeners #####
@@ -3029,7 +3031,7 @@ def add_default_node_addons(sender, instance, created, **kwargs):
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
-                set_project_storage_type(instance)
+        set_project_storage_type(instance)
 
 
 @receiver(post_save, sender=Node)
