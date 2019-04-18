@@ -702,12 +702,7 @@ class TestProject:
         assert deleted_linked_node not in project.nodes_active
 
     def test_ProjectStorageType(self, project, auth):
-        projectStorageType = ProjectStorageType(node=project, storage_type=1)
-        fetch_newly_created_project = ProjectStorageType.objects.get(node=project)
-        assert fetch_newly_created_project.storage_type == projectStorageType.storage_type
-
-    def test_ProjectStorageType(self, project, auth):
-        projectStorageType = ProjectStorageType(node=project, storage_type=1)
+        projectStorageType = ProjectStorageType(node=project, storage_type= auth.user.get_addon('osfstorage').default_region_id)
         fetch_newly_created_project = ProjectStorageType.objects.get(node=project)
         assert fetch_newly_created_project.storage_type == projectStorageType.storage_type
 

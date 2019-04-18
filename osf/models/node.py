@@ -2971,6 +2971,25 @@ def remove_addons(auth, resource_object_list):
             for addon in addon_list:
                 addon.after_delete(auth.user)
 
+def set_project_storage_type(instance):
+    from addons.osfstorage.models import NodeSettings  # this import was essential
+    storage_type = 2
+    if NodeSettings.objects.get(owner_id=instance.id).region_id == 1:
+    storage_type = 1
+    obj, created = ProjectStorageType.objects.update_or_create(
+        node_id=instance.id, storage_type=storage_type, defaults={'node_id': instance.id, 'storage_type': storage_type}
+        )
+    # try:
+    #     from addons.osfstorage.models import NodeSettings  # this import was essential
+    #     storage_type = 2
+    #     if NodeSettings.objects.get(owner_id=instance.id).region_id == 1:
+    #         storage_type = 1
+    #         obj, created = ProjectStorageType.objects.update_or_create(
+    #             node_id=instance.id, storage_type=storage_type, defaults={'node_id': instance.id, 'storage_type': storage_type}
+    #             )
+    # except Exception as err:
+    #     logger.critical(err)
+
 
 ##### Signal listeners #####
 @receiver(post_save, sender=Node)
@@ -3020,16 +3039,7 @@ def add_default_node_addons(sender, instance, created, **kwargs):
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
-                try:
-                    from addons.osfstorage.models import NodeSettings  # this import was essential
-                    storage_type = 2
-                    if NodeSettings.objects.get(owner_id=instance.id).region_id == 1:
-                        storage_type = 1
-                    obj, created = ProjectStorageType.objects.update_or_create(
-                        node_id=instance.id, storage_type=storage_type, defaults={'node_id': instance.id, 'storage_type': storage_type}
-                    )
-                except Exception as err:
-                    logger.critical(err)
+                set_project_storage_type(instance)
 
 
 @receiver(post_save, sender=Node)
