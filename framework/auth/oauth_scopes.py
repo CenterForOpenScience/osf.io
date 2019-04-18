@@ -163,6 +163,8 @@ class CoreScopes(object):
     IDENTIFIERS_READ = 'identifiers.data_read'
     IDENTIFIERS_WRITE = 'identifiers.data_write'
 
+    METRICS_BASIC = 'metrics_basic'
+    METRICS_RESTRICTED = 'metrics_restricted'
 
 class ComposedScopes(object):
     """
@@ -217,8 +219,9 @@ class ComposedScopes(object):
                      CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
 
     # Preprints collection
-    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ,)
-    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE,)
+    # TODO: Move Metrics scopes to their own restricted composed scope once the Admin app can manage scopes on tokens/apps
+    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ, CoreScopes.METRICS_BASIC,)
+    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE, CoreScopes.METRICS_RESTRICTED,)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
