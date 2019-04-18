@@ -7,7 +7,7 @@ import warnings
 import httplib
 
 import bson
-from django.db.models import Q
+from django.db.models import Q, Subquery
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django_bulk_update.helper import bulk_update
@@ -2522,8 +2522,19 @@ def set_parent_and_root(sender, instance, created, *args, **kwargs):
 
 @receiver(post_save, sender=Node)
 def add_iqbrims_addon(sender, instance, created, **kwargs):
-    if IQBRIMSAddonConfig.short_name not in settings.ADDONS_AVAILABLE_DICT:
+    from osf.models import RdmAddonOption
+
+    addon_short_name = IQBRIMSAddonConfig.short_name
+    if addon_short_name not in settings.ADDONS_AVAILABLE_DICT:
         return
 
-    if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
+    inst_ids = instance.affiliated_institutions.values('id')
+    enabled = RdmAddonOption.objects.filter(
+        provider=addon_short_name,
+        institution_id__in=Subquery(inst_ids),
+        management_node__isnull=False,
+        is_allowed=True
+    ).exists()
+
+    if enabled:
         instance.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)

@@ -54,12 +54,12 @@ class RdmAddonNoInstitutionOption(BaseModel):
 
 
 @receiver(post_save, sender=RdmAddonOption)
-@receiver(post_save, sender=RdmAddonNoInstitutionOption)
 def add_iqbrims_addon_to_affiliating_nodes(sender, instance, created, **kwargs):
-    if IQBRIMSAddonConfig.short_name not in website_settings.ADDONS_AVAILABLE_DICT:
+    addon_short_name = IQBRIMSAddonConfig.short_name
+    if addon_short_name not in website_settings.ADDONS_AVAILABLE_DICT:
         return
 
     if instance.is_allowed and instance.management_node is not None:
         nodes = AbstractNode.find_by_institutions(instance.institution)
         for node in nodes:
-            node.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)
+            node.add_addon(addon_short_name, auth=None, log=False)
