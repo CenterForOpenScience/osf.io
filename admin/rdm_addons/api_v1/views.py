@@ -13,7 +13,7 @@ from django.utils.decorators import method_decorator
 from django.core.exceptions import ValidationError
 import flask
 
-from osf.models import ExternalAccount, AbstractNode, Guid
+from osf.models import ExternalAccount
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_addons.utils import get_rdm_addon_option
 from framework.auth import Auth
@@ -172,8 +172,7 @@ class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
 
         institution_id = int(kwargs['institution_id'])
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
-
-        guid = rdm_addon_option.management_node._id if rdm_addon_option.management_node is not None else None
+        guid = rdm_addon_option.get_management_node_guid()
 
         return JsonResponse({'guid': guid})
 
@@ -187,22 +186,12 @@ class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
             }, status=httplib.BAD_REQUEST)
 
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
-
         try:
-            guid_obj = Guid.objects.get(_id=json_request['guid'])
-            node = guid_obj.referent
-        except ValidationError:
+            rdm_addon_option.set_management_node_by_guid(json_request['guid'], save=True)
+        except (ValidationError, TypeError):
             return JsonResponse({
-                'message': 'Invalid GUID of management project'
+                'message': 'Invalid GUID of management project.'
             }, status=httplib.BAD_REQUEST)
-
-        if not isinstance(node, AbstractNode):
-            return JsonResponse({
-                'message': 'Invalid GUID of management project'
-            }, status=httplib.BAD_REQUEST)
-
-        rdm_addon_option.management_node = node
-        rdm_addon_option.save()
 
         return JsonResponse({}, status=httplib.OK)
 
@@ -211,8 +200,7 @@ class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
         institution_id = int(kwargs['institution_id'])
 
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
-        rdm_addon_option.management_node = None
-        rdm_addon_option.save()
+        rdm_addon_option.unset_management_node(save=True)
 
         return JsonResponse({}, status=httplib.OK)
 
