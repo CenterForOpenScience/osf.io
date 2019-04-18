@@ -1,23 +1,18 @@
-from include import IncludeManager
-
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
-from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.baselog import BaseLog
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
-from website.util import api_v2_url
 
 
-class NodeLog(ObjectIDMixin, BaseModel):
+class NodeLog(BaseLog):
     FIELD_ALIASES = {
         # TODO: Find a better way
         'node': 'node__guids___id',
         'user': 'user__guids___id',
         'original_node': 'original_node__guids___id'
     }
-
-    objects = IncludeManager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -166,18 +161,3 @@ class NodeLog(ObjectIDMixin, BaseModel):
     class Meta:
         ordering = ['-date']
         get_latest_by = 'date'
-
-    @property
-    def absolute_api_v2_url(self):
-        path = '/logs/{}/'.format(self._id)
-        return api_v2_url(path)
-
-    def get_absolute_url(self):
-        return self.absolute_api_v2_url
-
-    @property
-    def absolute_url(self):
-        return self.absolute_api_v2_url
-
-    def _natural_key(self):
-        return self._id

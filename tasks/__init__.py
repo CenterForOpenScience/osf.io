@@ -354,7 +354,6 @@ API_TESTS3 = [
     'api_tests/taxonomies',
     'api_tests/test',
     'api_tests/tokens',
-    'api_tests/quickfiles',
     'api_tests/view_only_links',
     'api_tests/wikis',
 ]

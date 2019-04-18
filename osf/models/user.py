@@ -45,6 +45,7 @@ from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
+from osf.models.userlog import UserLog
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
@@ -1694,6 +1695,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             auth=auth,
             params=params
         )
+
+    # Overrides Loggable
+    def add_log(self, action, params, auth):
+        user = auth.user
+
+        log = UserLog(action=action, user=user, params=params)
+        log.save()
+
+        if self.user_logs.count() == 1:
+            self.last_logged = log.created.replace(tzinfo=pytz.utc)
+        else:
+            self.last_logged = self.user_logs.first().created
+
+        return log
 
     # Overrides FileTargetMixin
     def can_edit(self, auth):

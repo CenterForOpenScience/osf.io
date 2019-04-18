@@ -18,7 +18,7 @@ from django.core.urlresolvers import reverse
 
 from osf.utils.testing.pytest_utils import V1ViewsCase, V2ViewsCase
 
-from osf.models import NodeLog
+from osf.models import UserLog
 from osf_tests.factories import AuthUserFactory
 
 default_signer = partial(signing.sign_data, signing.default_signer)
@@ -351,8 +351,8 @@ class TestQuickFilesV1(V1ViewsCase):
         assert resp.status_code == 200
         assert resp.json == {'status': 'success'}
 
-        log = NodeLog.objects.first()
-        assert NodeLog.objects.count() == 1
+        log = UserLog.objects.first()
+        assert UserLog.objects.count() == 1
         assert log.action == 'quickfiles_file_added'
         assert log.params['target'] == user._id
 

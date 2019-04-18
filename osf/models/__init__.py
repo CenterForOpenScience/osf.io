@@ -9,6 +9,7 @@ from osf.models.node import AbstractNode, Node  # noqa
 from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, DraftRegistrationApproval, EmbargoTerminationApproval  # noqa
 from osf.models.registrations import Registration, DraftRegistrationLog, DraftRegistration  # noqa
 from osf.models.nodelog import NodeLog  # noqa
+from osf.models.userlog import UserLog  # noqa
 from osf.models.preprintlog import PreprintLog  # noqa
 from osf.models.tag import Tag  # noqa
 from osf.models.comment import Comment  # noqa

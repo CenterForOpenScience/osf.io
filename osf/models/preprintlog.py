@@ -1,20 +1,15 @@
-from include import IncludeManager
-
 from django.apps import apps
 from django.db import models
-from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from website.util import api_v2_url
+from osf.models.baselog import BaseLog
 
 
-class PreprintLog(ObjectIDMixin, BaseModel):
+class PreprintLog(BaseLog):
     FIELD_ALIASES = {
         # TODO: Find a better way
         'preprint': 'preprint__guids___id',
         'user': 'user__guids___id',
     }
-
-    objects = IncludeManager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -71,18 +66,3 @@ class PreprintLog(ObjectIDMixin, BaseModel):
     class Meta:
         ordering = ['-created']
         get_latest_by = 'created'
-
-    @property
-    def absolute_api_v2_url(self):
-        path = '/logs/{}/'.format(self._id)
-        return api_v2_url(path)
-
-    def get_absolute_url(self):
-        return self.absolute_api_v2_url
-
-    @property
-    def absolute_url(self):
-        return self.absolute_api_v2_url
-
-    def _natural_key(self):
-        return self._id
