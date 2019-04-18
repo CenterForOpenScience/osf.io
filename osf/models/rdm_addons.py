@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from website import settings as website_settings
+from addons.iqbrims.apps import IQBRIMSAddonConfig
 from osf.models.base import BaseModel, Guid
 from osf.models import ExternalAccount, Institution, AbstractNode
 
@@ -46,3 +51,15 @@ class RdmAddonNoInstitutionOption(BaseModel):
     management_node = models.ForeignKey(AbstractNode, blank=True, null=True, default=None, on_delete=models.CASCADE)
 
     external_accounts = models.ManyToManyField(ExternalAccount, blank=True)
+
+
+@receiver(post_save, sender=RdmAddonOption)
+@receiver(post_save, sender=RdmAddonNoInstitutionOption)
+def add_iqbrims_addon_to_affiliating_nodes(sender, instance, created, **kwargs):
+    if IQBRIMSAddonConfig.short_name not in website_settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    if instance.is_allowed and instance.management_node is not None:
+        nodes = AbstractNode.find_by_institutions(instance.institution)
+        for node in nodes:
+            node.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)
