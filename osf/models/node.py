@@ -2975,20 +2975,10 @@ def set_project_storage_type(instance):
     from addons.osfstorage.models import NodeSettings  # this import was essential
     storage_type = 2
     if NodeSettings.objects.get(owner_id=instance.id).region_id == 1:
-    storage_type = 1
+        storage_type = 1
     obj, created = ProjectStorageType.objects.update_or_create(
-        node_id=instance.id, storage_type=storage_type, defaults={'node_id': instance.id, 'storage_type': storage_type}
-        )
-    # try:
-    #     from addons.osfstorage.models import NodeSettings  # this import was essential
-    #     storage_type = 2
-    #     if NodeSettings.objects.get(owner_id=instance.id).region_id == 1:
-    #         storage_type = 1
-    #         obj, created = ProjectStorageType.objects.update_or_create(
-    #             node_id=instance.id, storage_type=storage_type, defaults={'node_id': instance.id, 'storage_type': storage_type}
-    #             )
-    # except Exception as err:
-    #     logger.critical(err)
+        node_id=instance.id, defaults={'node_id': instance.id, 'storage_type': storage_type}
+    )
 
 
 ##### Signal listeners #####
