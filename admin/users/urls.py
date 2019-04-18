@@ -24,4 +24,5 @@ urlpatterns = [
     url(r'^(?P<guid>[a-z0-9]+)/reindex_elastic_user/$', views.UserReindexElastic.as_view(), name='reindex-elastic-user'),
     url(r'^(?P<guid>[a-z0-9]+)/merge_accounts/$', views.UserMergeAccounts.as_view(), name='merge-accounts'),
     url(r'^(?P<guid>[a-z0-9]+)/quota/$', views.UserQuotaView.as_view(), name='quota'),
+    url(r'^(?P<guid>[a-z0-9]+)/details/$', views.UserDetailsView.as_view(), name='user-details'),
 ]

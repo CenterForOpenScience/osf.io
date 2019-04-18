@@ -36,6 +36,7 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 
+from admin.rdm.utils import RdmPermissionMixin
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm
 from admin.users.templatetags.user_extras import reverse_user
@@ -640,3 +641,18 @@ class UserQuotaView(View):
             user_quota.save()
 
         return redirect(reverse_user(uid))
+
+
+class UserDetailsView(RdmPermissionMixin, GuidView):
+    """
+    User screen for intitution managers.
+    """
+    template_name = 'users/user_details.html'
+    context_object_name = 'current_user'
+
+    def test_func(self):
+        return not self.is_super_admin and self.is_admin \
+            and self.request.user.affiliated_institutions.exists()
+
+    def get_object(self, queryset=None):
+        return serialize_user(OSFUser.load(self.kwargs.get('guid')))
