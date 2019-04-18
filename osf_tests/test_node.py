@@ -68,6 +68,7 @@ from osf_tests.factories import (
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive, MockShareResponse
+from osf.models.project_storage_type import ProjectStorageType
 
 pytestmark = pytest.mark.django_db
 
@@ -699,6 +700,17 @@ class TestProject:
 
         assert linked_node in project.nodes_active
         assert deleted_linked_node not in project.nodes_active
+
+    def test_ProjectStorageType(self, project, auth):
+        projectStorageType = ProjectStorageType(node=project, storage_type=1)
+        fetch_newly_created_project = ProjectStorageType.objects.get(node=project)
+        assert fetch_newly_created_project.storage_type == projectStorageType.storage_type
+
+    def test_ProjectStorageType(self, project, auth):
+        projectStorageType = ProjectStorageType(node=project, storage_type=1)
+        fetch_newly_created_project = ProjectStorageType.objects.get(node=project)
+        assert fetch_newly_created_project.storage_type == projectStorageType.storage_type
+
 
 class TestLogging:
 
