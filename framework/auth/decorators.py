@@ -72,7 +72,9 @@ def _must_be_logged_in_factory(login=True, email=True, mapcore_token=True):
             from nii.mapcore import (mapcore_is_enabled,
                                      mapcore_api_is_available,
                                      mapcore_request_authcode,
-                                     mapcore_log_error)
+                                     mapcore_log_error,
+                                     mapcore_url_is_sync_target,
+                                     mapcore_sync_rdm_user_projects)
 
             auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
             if login:  # require auth
@@ -86,18 +88,27 @@ def _must_be_logged_in_factory(login=True, email=True, mapcore_token=True):
                         # require available token
                         try:
                             try:
-                                mapcore_api_is_available(auth.user)
+                                if mapcore_url_is_sync_target(request.url):
+                                    mapcore_sync_rdm_user_projects(auth.user)
+                                else:
+                                    mapcore_api_is_available(auth.user)
                             except MAPCoreTokenExpired as e:
                                 if e.caller is None or e.caller != auth.user:
                                     raise e
                                 return redirect(mapcore_request_authcode(
                                     next_url=request.url))
                         except MAPCoreException as e:
+                            if settings.DEBUG_MODE:
+                                import traceback
+                                emsg = '<pre>{}</pre>'.format(
+                                    traceback.format_exc())
+                            else:
+                                emsg = str(e)
                             mapcore_log_error('{}: {}'.format(
-                                e.__class__.__name__, str(e)))
+                                e.__class__.__name__, emsg))
                             raise HTTPError(httplib.SERVICE_UNAVAILABLE, data={
                                 'message_short': 'mAP Core API Error',
-                                'message_long': str(e)
+                                'message_long': emsg
                             })
                     return func(*args, **kwargs)
 

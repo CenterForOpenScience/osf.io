@@ -39,13 +39,23 @@ VERIFY = True  # for requests.{get,post}(verify=VERIFY)
 #VERIFY = False
 
 class MAPCoreException(Exception):
+    def __init__(self, mapcore):
+        self.mapcore = mapcore
+        super(MAPCoreException, self).__init__(
+            'http_status_code={}, api_error_code={}, message={}'.format(
+                mapcore.http_status_code, mapcore.api_error_code,
+                mapcore.error_message))
 
-    pass
+    def group_does_not_exist(self):
+        if self.mapcore.api_error_code == 208 and \
+           self.mapcore.error_message == 'You do not have access permission':
+            return True
+        return False
 
 class MAPCoreTokenExpired(MAPCoreException):
-
-    def __init__(self, caller=None):
-        self.caller = caller
+    def __init__(self, mapcore):
+        self.caller = mapcore.user
+        super(MAPCoreTokenExpired, self).__init__(self)
 
     def __str__(self):
         if self.caller:
@@ -64,7 +74,9 @@ class MAPCore:
     user = False
     client_id = False
     client_secret = False
-    last_error = False
+    http_status_code = None
+    api_error_code = None
+    error_message = None
 
     #
     # Constructor.
@@ -154,7 +166,7 @@ class MAPCore:
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired(caller=self.user)
+            raise self.get_token_expired()
 
         count = 0
         while count < 2:
@@ -173,14 +185,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired(caller=self.user)
+                    raise self.get_token_expired()
                 count += 1
             else:
                 # Any other API error.
-                raise MAPCoreException(self.get_last_error())
+                raise self.get_exception()
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired(caller=self.user)
+        raise self.get_token_expired()
 
     #
     # Get group information by group name.
@@ -191,7 +203,7 @@ class MAPCore:
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired(caller=self.user)
+            raise self.get_token_expired()
 
         count = 0
         while count < 2:
@@ -209,24 +221,24 @@ class MAPCore:
             j = self.check_result(r)
             if j is not False:
                 if len(j['result']['groups']) == 0:
-                    self.last_error = 'Group not found'
-                    logger.debug('  Group not found')
+                    self.error_message = 'Group not found'
+                    logger.debug('  {}'.format(self.error_message))
                     # Group not found.
-                    raise MAPCoreException(self.get_last_error())
+                    raise self.get_exception()
                 # Function succeeded.
                 return j
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired(caller=self.user)
+                    raise self.get_token_expired()
                 count += 1
             else:
                 # Any other API error.
-                raise MAPCoreException(self.get_last_error())
+                raise self.get_exception()
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired(caller=self.user)
+        raise self.get_token_expired()
 
     #
     # Get group information by group key.
@@ -237,7 +249,7 @@ class MAPCore:
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired(caller=self.user)
+            raise self.get_token_expired()
 
         count = 0
         while count < 2:
@@ -251,24 +263,24 @@ class MAPCore:
             j = self.check_result(r)
             if j is not False:
                 if len(j['result']['groups']) == 0:
-                    self.last_error = 'Group not found'
-                    logger.debug('  Group not found')
+                    self.error_message = 'Group not found'
+                    logger.debug('  {}'.format(self.error_message))
                     # Group not found.
-                    raise MAPCoreException(self.get_last_error())
+                    raise self.get_exception()
                 # Function succeeded.
                 return j
 
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired(caller=self.user)
+                    raise self.get_token_expired()
                 count += 1
             else:
                 # Any other API error.
-                raise MAPCoreException(self.get_last_error())
+                raise self.get_exception()
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired(caller=self.user)
+        raise self.get_token_expired()
 
     #
     # Create new group, and make it public, active and open_member.
@@ -279,7 +291,7 @@ class MAPCore:
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired(caller=self.user)
+            raise self.get_token_expired()
 
         #
         # Create new group named "group_name".
@@ -321,14 +333,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired(caller=self.user)
+                    raise self.get_token_expired()
                 count += 1
             else:
                 # Any other API error.
-                raise MAPCoreException(self.get_last_error())
+                raise self.get_exception()
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired(caller=self.user)
+        raise self.get_token_expired()
 
     #
     # Change group properties.
@@ -339,7 +351,7 @@ class MAPCore:
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired(caller=self.user)
+            raise self.get_token_expired()
 
         count = 0
         while count < 2:
@@ -377,14 +389,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired(caller=self.user)
+                    raise self.get_token_expired()
                 count += 1
             else:
                 # Any other API error.
-                raise MAPCoreException(self.get_last_error())
+                raise self.get_exception()
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired(caller=self.user)
+        raise self.get_token_expired()
 
     #
     # Get member of group.
@@ -395,7 +407,7 @@ class MAPCore:
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired(caller=self.user)
+            raise self.get_token_expired()
 
         count = 0
         while count < 2:
@@ -414,14 +426,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired(caller=self.user)
+                    raise self.get_token_expired()
                 count += 1
             else:
                 # Any other API error.
-                raise MAPCoreException(self.get_last_error())
+                raise self.get_exception()
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired(caller=self.user)
+        raise self.get_token_expired()
 
     #
     # Get joined group list.
@@ -432,7 +444,7 @@ class MAPCore:
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired(caller=self.user)
+            raise self.get_token_expired()
 
         count = 0
         while count < 2:
@@ -451,14 +463,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired(caller=self.user)
+                    raise self.get_token_expired()
                 count += 1
             else:
                 # Any other API error.
-                raise MAPCoreException(self.get_last_error())
+                raise self.get_exception()
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired(caller=self.user)
+        raise self.get_token_expired()
 
     #
     # Add to group.
@@ -469,7 +481,7 @@ class MAPCore:
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired(caller=self.user)
+            raise self.get_token_expired()
 
         count = 0
         while count < 2:
@@ -501,14 +513,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired(caller=self.user)
+                    raise self.get_token_expired()
                 count += 1
             else:
                 # Any other API error.
-                raise MAPCoreException(self.get_last_error())
+                raise self.get_exception()
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired(caller=self.user)
+        raise self.get_token_expired()
 
     #
     # Remove from group.
@@ -519,7 +531,7 @@ class MAPCore:
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired(caller=self.user)
+            raise self.get_token_expired()
 
         count = 0
         while count < 2:
@@ -538,14 +550,14 @@ class MAPCore:
             if self.is_token_expired(r):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
-                    raise MAPCoreTokenExpired(caller=self.user)
+                    raise self.get_token_expired()
                 count += 1
             else:
                 # Any other API error.
-                raise MAPCoreException(self.get_last_error())
+                raise self.get_exception()
 
         # Could not refresh token after retries (may not occur).
-        raise MAPCoreTokenExpired(caller=self.user)
+        raise self.get_token_expired()
 
     #
     # Edit member.
@@ -556,7 +568,7 @@ class MAPCore:
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
-            raise MAPCoreTokenExpired(caller=self.user)
+            raise self.get_token_expired()
 
         # NOTE: If error occurs, an exception will be thrown.
         j = self.remove_from_group(group_key, eppn)
@@ -565,11 +577,16 @@ class MAPCore:
         return j
 
     #
-    # Get last error.
+    # Get MAPCoreException.
     #
-    def get_last_error(self):
+    def get_exception(self):
+        return MAPCoreException(self)
 
-        return self.last_error
+    #
+    # Get MAPCoreTokenExpired.
+    #
+    def get_token_expired(self):
+        return MAPCoreTokenExpired(self)
 
     #
     # Calculate API signature.
@@ -582,46 +599,50 @@ class MAPCore:
         digest = hashlib.sha256(s.encode('utf-8')).hexdigest()
         return time_stamp, digest
 
+    WWW_AUTHENTICATE = 'WWW-Authenticate'
+    MSG_ACCESS_TOKEN_EXPIRED = 'Access token expired'
+    MSG_INVALID_ACCESS_TOKEN = 'Invalid access token'
+
     #
     # Check API result status.
     # If any error occurs, a False will be returned.
     #
     def check_result(self, result):
-
-        self.last_error = ''
+        self.http_status_code = result.status_code
+        self.api_error_code = None
+        self.error_message = ''
 
         if result.status_code != requests.codes.ok:
-            s = result.headers.get('WWW-Authenticate')
-            if s:
-                logger.info('MAPCore::check_result: status_code=' + str(result.status_code))
-                logger.info('MAPCore::check_result: WWW-Authenticate=' + s)
-
-                if s.find('Access token expired') != -1:
-                    self.last_error = 'Access token expired'
-                else:
-                    self.last_error = s
-
-                return False
+            if self.is_token_expired(result):
+                self.error_message = self.MSG_ACCESS_TOKEN_EXPIRED
+                logger.info('MAPCore::check_result: status_code=' +
+                            str(result.status_code))
+                logger.info('MAPCore::check_result: {}={}'.format(
+                    self.WWW_AUTHENTICATE, self.error_message))
+            else:
+                self.error_message = result.headers.get(self.WWW_AUTHENTICATE)
+            return False
 
         j = result.json()
         if j['status']['error_code'] != 0:
-            s = j['status']['error_msg']
-            logger.info('MAPCore::check_result: error_code=' + str(j['status']['error_code']))
-            logger.info('MAPCore::check_result: error_msg=' + s)
-
-            self.last_error = s
-
+            self.api_error_code = j['status']['error_code']
+            self.error_message = j['status']['error_msg']
+            logger.info('MAPCore::check_result: error_code=' +
+                        str(self.api_error_code))
+            logger.info('MAPCore::check_result: error_msg=' +
+                        self.error_message)
             return False
-
         return j
 
     def is_token_expired(self, result):
-
         if result.status_code != requests.codes.ok:
-            s = result.headers['WWW-Authenticate']
-            if s.find('Access token expired') != -1:
+            s = result.headers.get(self.WWW_AUTHENTICATE)
+            if s is None:
+                return False
+            if s.find(self.MSG_ACCESS_TOKEN_EXPIRED) != -1:
+                return True
+            if s.find(self.MSG_INVALID_ACCESS_TOKEN) != -1:
                 return True
             else:
                 return False
-
         return False

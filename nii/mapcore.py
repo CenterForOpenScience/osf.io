@@ -11,6 +11,8 @@ import urllib
 from operator import attrgetter
 from pprint import pformat as pp
 
+from urlparse import urlparse
+
 from website import settings
 
 map_hostname = settings.MAPCORE_HOSTNAME
@@ -628,7 +630,7 @@ def mapcore_get_extended_group_info(mapcore, group_key, can_abort=True):
     result = mapcore.get_group_by_key(group_key)
     group_ext = result['result']['groups'][0]
     logger.debug('Group info:\n' + pp(group_ext))
-    if group_ext['open_member'] == 0:
+    if group_ext['open_member'] == 1:
         msg = 'mAP group [' + group_ext['group_name'] + '] has CLOSED_MEMBER setting.'
         logger.error(msg)
         if can_abort:
@@ -896,6 +898,15 @@ def mapcore_sync_map_group(node, title_desc=True, contributors=True, mapcore=Non
     return True
 
 
+def mapcore_url_is_sync_target(request_url):
+    pages = ['dashboard', 'my_projects']
+
+    for name in pages:
+        if urlparse(request_url).path == urlparse(web_url_for(name)).path:
+            return True
+    return False
+
+
 def mapcore_sync_rdm_user_projects(user, rdm2map=True):
     '''
     ユーザーが属するグループをmAPから取得して、対応するRDMのNodeと比較して以下の処理を行う
@@ -915,9 +926,10 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
     group_link_map2map = {}
     for grp in result['result']['groups']:
         group_key = grp['group_key']
-        grp_ext = mapcore.get_group_by_key(group_key)['result']['groups'][0]  # get all attirbutes
-        group_link_map2map[group_key] = grp_ext
-        if not grp_ext['active'] or not grp_ext['public'] or grp_ext['open_member'] != 1:
+        #grp2 = mapcore.get_group_by_key(group_key)['result']['groups'][0]  # get all attirbutes
+        grp2 = grp
+        group_link_map2map[group_key] = grp2
+        if not grp2['active'] or not grp2['public'] or grp2['open_member'] == 1:
             logger.warn('mAP group [' + grp['group_name'] + '] has unsoutable attribute(s).  Ignore')
             continue
 
@@ -927,21 +939,33 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
             # both exist when succes -> just sync mAP to RDM
         except ObjectDoesNotExist as e:
             # exist only in mAP -> create new Node in RDM
-            node = mapcore_create_new_node_from_mapgroup(mapcore, grp_ext)
-            if node is None:
-                logger.error('cannot create RDM project for mAP group [' + grp['group_name'] + '].  skip.')
-                continue
+            try:
+                node = mapcore_create_new_node_from_mapgroup(mapcore, grp2)
+                if node is None:
+                    logger.error('cannot create RDM project for mAP group [' + grp['group_name'] + '].  skip.')
+                    continue
+            except MAPCoreException as e:
+                if e.group_does_not_exist():
+                    # This group is not linked to RDM SP.
+                    del group_link_map2map[group_key]
+                else:
+                    raise e
 
         # sync group info and members
         mapcore_sync_rdm_project(node, title_desc=True, contributors=True, mapcore=mapcore)
 
     # list-up RDM projects
     group_link_map2rdm = {}
-    for project in Node.objects.filter(is_deleted=False).filter(contributor__user__id=user._id):
+    for project in Node.objects.filter(contributor__user__id=user.id):
         group_link_map2rdm[project.map_group_key] = project
         if project.is_deleted:
             logger.info('RDM project [' + project.title + '] is deleted.  Ignore.')
             continue
+        if project.map_group_key is None:
+            continue
+
+        #logger.info('project.map_group_key={}'.format(project.map_group_key))
+
         if project.map_group_key in group_link_map2map.keys():
             logger.info('RDM project [' + project.title + '] is listed on mAP.  Nothing to do.')
             continue  # already sync on top half loop in this function
@@ -952,9 +976,10 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
             mapcore_sync_rdm_project(project, title_desc=False, contributors=True, mapcore=mapcore)
             continue
         except MAPCoreException as e:
-            if e.message != 'FIXME: cannot get member list':  # this condition means group is NOT exist
-                logger.info('RDM project [' + project.title + '] is delted because linked mAP group is not exist.')
+            if e.group_does_not_exist():
+                logger.info('RDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(project.title, project._id))
                 project.is_deleted = True
+                project.save()
                 continue
 
     logger.debug('mapcore_sync_rdm_user_projects finished.')
@@ -998,9 +1023,27 @@ def add_contributor_to_project(node_name, eppn):
 if __name__ == '__main__':
     print('In Main')
 
-    if True:
+    if False:
         me = OSFUser.objects.get(eppn=sys.argv[1])
         print('mapcore_api_is_available=' + str(mapcore_api_is_available(me)))
+
+    if True:
+        me = OSFUser.objects.get(eppn=sys.argv[1])
+        mapcore = MAPCore(me)
+        result = mapcore.get_my_groups()
+        print('mapcore.get_my_groups=' + str(result))
+        groups = result['result']['groups']
+        for g in groups:
+            group_key = g['group_key'] + '__NOTFOUND'
+            print(group_key)
+            try:
+                ginfo = mapcore.get_group_by_key(group_key)
+                print(str(ginfo))
+            except MAPCoreException as e:
+                print(e)
+                print(e.group_does_not_exist())
+            gext = mapcore_get_extended_group_info(mapcore, group_key)
+            print(str(gext))
 
     # manual add contributor
     if False:
