@@ -14,7 +14,7 @@ from api.base.serializers import (
     WaterbutlerLink, relationship_diff, BaseAPISerializer,
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
 )
-from api.base.settings import ADDONS_FOLDER_CONFIGURABLE, DEFAULT_MAX_QUOTA, WARNING_THRESHOLD
+from api.base.settings import ADDONS_FOLDER_CONFIGURABLE, WARNING_THRESHOLD
 from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
@@ -22,7 +22,7 @@ from api.base.utils import (
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from osf.models import Tag
