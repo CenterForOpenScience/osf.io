@@ -24,6 +24,7 @@ from framework.auth.core import generate_verification_key
 
 from website.mailchimp_utils import subscribe_on_confirm
 from website import search
+from website.util import quota
 
 from admin.base.views import GuidView
 from osf.models.admin_log_entry import (
@@ -37,7 +38,7 @@ from osf.models.admin_log_entry import (
 )
 
 from admin.rdm.utils import RdmPermissionMixin
-from admin.users.serializers import serialize_user
+from admin.users.serializers import serialize_user, serialize_simple_node
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
@@ -655,4 +656,12 @@ class UserDetailsView(RdmPermissionMixin, GuidView):
             and self.request.user.affiliated_institutions.exists()
 
     def get_object(self, queryset=None):
-        return serialize_user(OSFUser.load(self.kwargs.get('guid')))
+        user = OSFUser.load(self.kwargs.get('guid'))
+        max_quota, _ = quota.get_quota_info(user, UserQuota.CUSTOM_STORAGE)
+        return {
+            'username': user.username,
+            'name': user.fullname,
+            'id': user._id,
+            'nodes': map(serialize_simple_node, user.contributor_to),
+            'quota': max_quota
+        }
