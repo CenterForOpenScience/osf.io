@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_204_NO_CONTENT
+from rest_framework.status import HTTP_204_NO_CONTENT, HTTP_200_OK
 
 from addons.base.exceptions import InvalidAuthError
 from addons.osfstorage.models import OsfStorageFolder
@@ -123,6 +123,8 @@ from website import mails
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import RdmTimestampGrantPattern
+
+from nii.mapcore import mapcore_set_ready_to_sync_rdm2map
 
 import logging
 logger = logging.getLogger(__name__)
@@ -383,6 +385,20 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
                 'templated_by_count': node.templated_list.count(),
             }
         return context
+
+    # overrides RetrieveUpdateDestroyAPIView
+    def put(self, request, *args, **kwargs):
+        res = super(NodeDetail, self).put(request, *args, **kwargs)
+        if res.status_code == HTTP_200_OK:
+            mapcore_set_ready_to_sync_rdm2map(self.get_object())
+        return res
+
+    # overrides RetrieveUpdateDestroyAPIView
+    def patch(self, request, *args, **kwargs):
+        res = super(NodeDetail, self).patch(request, *args, **kwargs)
+        if res.status_code == HTTP_200_OK:
+            mapcore_set_ready_to_sync_rdm2map(self.get_object())
+        return res
 
 
 class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):

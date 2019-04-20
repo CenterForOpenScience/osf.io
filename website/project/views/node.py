@@ -57,6 +57,8 @@ from addons.forward.utils import serialize_forward_widget
 from addons.jupyterhub.utils import serialize_jupyterhub_widget
 from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
+from nii.mapcore import mapcore_set_ready_to_sync_rdm2map
+
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
 
@@ -91,6 +93,7 @@ def edit_node(auth, node, **kwargs):
             http.BAD_REQUEST,
             data=dict(message_long=e.message)
         )
+    mapcore_set_ready_to_sync_rdm2map(node)
     return {
         'status': 'success',
         'newValue': new_val  # Used by x-editable  widget to reflect changes made by sanitizer

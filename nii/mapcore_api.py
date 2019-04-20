@@ -17,15 +17,7 @@ from django.utils import timezone
 
 from website import settings
 
-#
-# Global settings.
-#
-logger = logging.getLogger(__name__)
-
-#logger.setLevel(10)
-#stdout = logging.StreamHandler()
-#logger.addHandler(stdout)
-
+# TODO import
 map_hostname = settings.MAPCORE_HOSTNAME
 map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
 map_token_path = settings.MAPCORE_TOKEN_PATH
@@ -35,8 +27,36 @@ map_clientid = settings.MAPCORE_CLIENTID
 map_secret = settings.MAPCORE_SECRET
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 
+#
+# Global settings.
+#
 VERIFY = True  # for requests.{get,post}(verify=VERIFY)
 #VERIFY = False
+
+MAPCORE_DEBUG = True
+
+MAPCORE_API_PRIVATE_MEMBER_LIST_BUG_WORKAROUND = True
+
+class MAPCoreLogger(object):
+    def __init__(self, logger):
+        self.logger = logger
+
+    def error(self, msg, *args, **kwargs):
+        self.logger.error('MAPCORE_ERROR: ' + msg, *args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        self.logger.error('MAPCORE_WARNING: ' + msg, *args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        self.logger.error('MAPCORE_INFO:' + msg, *args, **kwargs)
+
+    def debug(self, msg, *args, **kwargs):
+        self.logger.error('MAPCORE_DEBUG: ' + msg, *args, **kwargs)
+
+logger = logging.getLogger(__name__)
+if MAPCORE_DEBUG:
+    logger = MAPCoreLogger(logger)
+
 
 class MAPCoreException(Exception):
     def __init__(self, mapcore, ext_message):
@@ -74,8 +94,29 @@ class MAPCoreTokenExpired(MAPCoreException):
             username = 'UNKNOWN USER'
         return 'mAP Core Access Token (for {}) is expired'.format(username)
 
-class MAPCore:
 
+if MAPCORE_API_PRIVATE_MEMBER_LIST_BUG_WORKAROUND:
+    OPEN_MEMBER_PRIVATE = 1
+    OPEN_MEMBER_PUBLIC = 0
+    OPEN_MEMBER_MEMBER_ONLY = 2
+    OPEN_MEMBER_DEFAULT = OPEN_MEMBER_MEMBER_ONLY
+else:
+    OPEN_MEMBER_PRIVATE = 0
+    OPEN_MEMBER_PUBLIC = 1
+    OPEN_MEMBER_MEMBER_ONLY = 2
+    OPEN_MEMBER_DEFAULT = OPEN_MEMBER_PUBLIC
+
+def mapcore_group_member_is_private(group_info):
+    return group_info['open_member'] == OPEN_MEMBER_PRIVATE
+
+def mapcore_group_member_is_public(group_info):
+    return group_info['open_member'] == OPEN_MEMBER_PUBLIC
+
+def mapcore_group_member_is_member_only(group_info):
+    return group_info['open_member'] == OPEN_MEMBER_MEMBER_ONLY
+
+
+class MAPCore(object):
     MODE_MEMBER = 0     # Ordinary member
     MODE_ADMIN = 2      # Administrator member
 
@@ -175,7 +216,7 @@ class MAPCore:
     #
     def get_api_version(self):
 
-        logger.debug('MAPCore::get_api_version:')
+        logger.debug('MAPCore(user={})::get_api_version:'.format(self.user.username))
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
@@ -360,7 +401,7 @@ class MAPCore:
     #
     def edit_group(self, group_key, group_name, introduction):
 
-        logger.debug('MAPCore::edit_group (group_name=' + group_name + ', introduction=' + introduction + ')')
+        logger.debug('MAPCore(user={})::edit_group(group_name={}, introduction={})'.format(self.user.username, group_name, introduction))
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
@@ -382,7 +423,7 @@ class MAPCore:
                 'introduction_en': '',
                 'public': 1,
                 'active': 1,
-                'open_member': 0
+                'open_member': OPEN_MEMBER_DEFAULT
             }
             params = json.dumps(params).encode('utf-8')
 
@@ -453,7 +494,7 @@ class MAPCore:
     #
     def get_my_groups(self):
 
-        logger.debug('MAPCore::get_my_groups:')
+        logger.debug('MAPCore(user={})::get_my_groups:'.format(self.user.username))
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
@@ -636,10 +677,7 @@ class MAPCore:
         if j['status']['error_code'] != 0:
             self.api_error_code = j['status']['error_code']
             self.error_message = j['status']['error_msg']
-            logger.info('MAPCore::check_result: error_code=' +
-                        str(self.api_error_code))
-            logger.info('MAPCore::check_result: error_msg=' +
-                        self.error_message)
+            logger.info('MAPCore(user={})::check_result: error_code={}, error_msg={}'.format(self.user.username, self.api_error_code, self.error_message))
             return False
         return j
 
@@ -650,10 +688,7 @@ class MAPCore:
                 return False
             if s.find(self.MSG_ACCESS_TOKEN_EXPIRED) != -1 \
                or s.find(self.MSG_INVALID_ACCESS_TOKEN) != -1:
-                logger.info('MAPCore::check_result: status_code=' +
-                            str(result.status_code))
-                logger.info('MAPCore::check_result: {}={}'.format(
-                    self.WWW_AUTHENTICATE, self.error_message))
+                logger.info('MAPCore(user={})::check_result: status_code={}, {}={}'.format(self.user.username, result.status_code, self.WWW_AUTHENTICATE, self.error_message))
                 return True
             else:
                 return False

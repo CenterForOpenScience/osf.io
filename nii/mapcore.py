@@ -25,32 +25,11 @@ map_secret = settings.MAPCORE_SECRET
 map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 my_home = settings.DOMAIN
 
-
-# logging global setting
-class MyLogger(logging.Logger):
-    def error(self, msg, *args, **kwargs):
-        super(MyLogger, self).error(msg, *args, **kwargs)
-
-    def warning(self, msg, *args, **kwargs):
-        super(MyLogger, self).warning(msg, *args, **kwargs)
-
-    def info(self, msg, *args, **kwargs):
-        super(MyLogger, self).info(msg, *args, **kwargs)
-
-    def debug(self, msg, *args, **kwargs):
-        super(MyLogger, self).debug(msg, *args, **kwargs)
-
-
-logging.setLoggerClass(MyLogger)
 logger = logging.getLogger(__name__)
 
 # initialize for standalone exec
 if __name__ == '__main__':
-    logger = logging.getLogger('nii.mapcore')
-    # stdout = logging.StreamHandler()  # log to stdio
-    # logger.addHandler(stdout)
     logger.setLevel(level=logging.DEBUG)
-
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     from website.app import init_app
     init_app(routes=False, set_backends=False)
@@ -59,8 +38,14 @@ from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.map import MAPProfile
 from website.util import web_url_for
-from nii.mapcore_api import MAPCore, MAPCoreException, VERIFY
+from nii.mapcore_api import (MAPCore, MAPCoreException, VERIFY,
+                             MAPCORE_DEBUG, MAPCoreLogger,
+                             mapcore_group_member_is_private)
 from django.core.exceptions import ObjectDoesNotExist
+
+
+if MAPCORE_DEBUG:
+    logger = MAPCoreLogger(logger)
 
 
 def mapcore_is_enabled():
@@ -77,16 +62,6 @@ def mapcore_api_is_available(user):
 
 def mapcore_log_error(msg):
     logger.error(msg)
-
-
-def mapcore_group_member_is_public(group_ext):
-    return group_ext['open_member'] == 0
-
-def mapcore_group_member_is_private(group_ext):
-    return group_ext['open_member'] == 1
-
-def mapcore_group_member_is_member_only(group_ext):
-    return group_ext['open_member'] == 2
 
 
 def mapcore_request_authcode(**kwargs):
@@ -258,7 +233,7 @@ def mapcore_refresh_accesstoken(user, force=False):
 ###
 
 # OSFuser essential feild keeper for comparing member
-class RDMmember:
+class RDMmember(object):
     def __init__(self, node, user):
         self.node = node
         self.user = user
@@ -505,7 +480,7 @@ def is_node_admin(node, user):
 #     # get the RDM contributor and make lists
 #     rdm_admin = []
 #     rdm_members = []
-#     for member in node.contributors:
+#     for member in node.contributors.all():
 #         rdmu = RDMmember(node, member)
 #         rdm_members.append(rdmu)
 #         if rdmu.is_admin:
@@ -617,7 +592,7 @@ def mapcore_get_extended_group_info(mapcore, group_key, can_abort=True):
     #  "introduction_en": "This is an introduction message for the new group.",
     #  "public": 1,
     #  "inspect_join": メンバー参加条件 0=誰でも参加, 1=監視者の承諾が必要
-    #  "open_member": メンバーの公開・非公開: 0=公開、1=非公開、2=参加者のみに公開
+    #  "open_member": メンバーの公開・非公開: 0=非公開、1=公開、2=参加者のみに公開
     #  "group_admin": [  <-- 名前は重複がありうるのでキーにならない
     #      "管理者の名前",
     #      "管理者の名前"
@@ -646,13 +621,13 @@ def mapcore_get_extended_group_info(mapcore, group_key, can_abort=True):
     result = mapcore.get_group_by_key(group_key)
     group_ext = result['result']['groups'][0]
     logger.debug('Group info:\n' + pp(group_ext))
-    if mapcore_group_member_is_private(group_ext):
-        msg = 'mAP group [' + group_ext['group_name'] + '] has CLOSED_MEMBER setting.'
-        logger.error(msg)
-        if can_abort:
-            raise MAPCoreUserInfoException(msg, 'MapGroupSetting')
-        else:
-            return False
+    # if mapcore_group_member_is_private(group_ext):
+    #     msg = 'mAP group [' + group_ext['group_name'] + '] has CLOSED_MEMBER setting.'
+    #     logger.error(msg)
+    #     if can_abort:
+    #         raise MAPCoreUserInfoException(msg, 'MapGroupSetting')
+    #     else:
+    #         return False
 
     # get member list
     result = mapcore.get_group_members(group_ext['group_key'])
@@ -784,8 +759,10 @@ def mapcore_sync_rdm_project(node, title_desc=False, contributors=False, mapcore
         logger.error('mAP group [' + map_group['group_name'] + '] is not public  no sync')
         return False
     if mapcore_group_member_is_private(map_group):
-        logger.error('mAP group [' + map_group['group_name'] + '] member list is not public  no sync')
-        return False
+        # logger.error('mAP group [' + map_group['group_name'] + '] member list is not public  no sync')
+        # return False
+        logger.warning('mAP group({}) member list is private.'.format(map_group['group_name']))
+        # TODO warning log
 
     # copy group info to rdm
     if title_desc:
@@ -867,7 +844,7 @@ def mapcore_sync_map_group(node, title_desc=True, contributors=True, mapcore=Non
     # get the RDM contributor and make lists
     rdm_admin = []
     rdm_members = []
-    for member in node.contributors:
+    for member in node.contributors.all():
         rdmu = RDMmember(node, member)
         rdm_members.append(rdmu)
         if rdmu.is_admin:
@@ -875,6 +852,7 @@ def mapcore_sync_map_group(node, title_desc=True, contributors=True, mapcore=Non
         logger.debug('RDM contributor:\n' + pp(vars(rdmu)))
     rdm_members.sort(key=attrgetter('eppn'))
 
+    # TODO retry by node.contributors
     # get admin privilaged tokens
     if mapcore is None:
         mapcore = MAPCore(node.creator)
@@ -1000,9 +978,11 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
         grp2 = grp
         my_map_groups[group_key] = grp2
 
-        if not grp2['active'] or not grp2['public'] \
-           or mapcore_group_member_is_private(grp2):
+        if not grp2['active'] or not grp2['public']:
             logger.warn('mAP group [' + grp['group_name'] + '] has unsoutable attribute(s).  Ignore')
+            continue
+        if mapcore_group_member_is_private(grp2):
+            logger.warning('mAP group({}) member list is private. (skipped)'.format(grp2['group_name']))
             continue
 
         new_project = False
@@ -1041,15 +1021,15 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
                 project.title, project._id))
             continue
 
-        grp = my_map_groups.get(project.map_group_key)
-        if grp:
-            if project.title != grp['group_name']:
-                mapcore_sync_rdm_project_or_map_group(user, project)
-            # else: already synchronized project
-            continue
-
-        # Project contributors is different from mAP group members.
         try:
+            grp = my_map_groups.get(project.map_group_key)
+            if grp:
+                if project.title != grp['group_name']:
+                    mapcore_sync_rdm_project_or_map_group(user, project)
+                # else: already synchronized project
+                continue
+
+            # Project contributors is different from mAP group members.
             #TODO retry in mapcore_get_extended_group_info()
             accessible_user = mapcore_get_accessible_user(user, project)
             mapcore_sync_rdm_project_or_map_group(accessible_user, project)
@@ -1062,17 +1042,19 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
     logger.debug('mapcore_sync_rdm_user_projects finished.')
 
 
-READY_SYNC_FILE_TMPL = '/code_src/rdm_mapcore_ready_to_sync_{}'  # TODO do not use
+READY_SYNC_FILE_TMPL = '/code_src/tmp/rdm_mapcore_ready_to_sync_{}'  # TODO do not use
 
 def mapcore_set_ready_to_sync_rdm2map(node):
     # TODO node.mapcore_ready_to_sync_rdm2map = True
     # TODO node.save()
     filename = READY_SYNC_FILE_TMPL.format(node._id)  # use Guid
     try:
-        with os.open(filename, os.O_RDWR | os.O_CREAT, 0644):
+        with open(filename, 'w'):
             pass
-    except Exception as e:
-        raise MAPCoreException(None, str(e))
+    except OSError as e:
+        # raise MAPCoreException(None, str(e))
+        # TODO log
+        logger.error('The project ({}) cannot synchronize to mAP. reason={}'.format(node._id, str(e)))
 
 
 def mapcore_is_ready_to_sync_rdm2map(node):
@@ -1087,10 +1069,10 @@ def mapcore_unset_ready_to_sync_rdm2map(node):
     except OSError as e:
         import errno
         if e.errno != errno.ENOENT:
-            raise e
-        # ignored
-    except Exception as e:
-        raise MAPCoreException(None, str(e))
+            # raise MAPCoreException(None, str(e))
+            # TODO log
+            logger.error('FATAL: {} cannot be deleted.'.format(filename))
+            logger.error('The project ({}) cannot synchronize from mAP.'.format(node._id))
 
 
 def mapcore_sync_rdm_project_or_map_group(access_user, node):

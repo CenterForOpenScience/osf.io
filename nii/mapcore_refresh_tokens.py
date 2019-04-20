@@ -12,11 +12,7 @@ from framework.celery_tasks import app as celery_app
 # global setting
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
-    logger = logging.getLogger('nii.mapcore')
-    # stdout = logging.StreamHandler()  # log to stdio
-    # logger.addHandler(stdout)
     logger.setLevel(level=logging.DEBUG)
-
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     from website.app import init_app
     init_app(routes=False, set_backends=False)
@@ -26,6 +22,7 @@ from website import settings
 
 from nii.mapcore_api import MAPCore
 
+# TODO import
 map_hostname = settings.MAPCORE_HOSTNAME
 map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
 map_token_path = settings.MAPCORE_TOKEN_PATH
