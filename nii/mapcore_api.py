@@ -39,12 +39,16 @@ VERIFY = True  # for requests.{get,post}(verify=VERIFY)
 #VERIFY = False
 
 class MAPCoreException(Exception):
-    def __init__(self, mapcore):
+    def __init__(self, mapcore, ext_message):
         self.mapcore = mapcore
-        super(MAPCoreException, self).__init__(
-            'http_status_code={}, api_error_code={}, message={}'.format(
-                mapcore.http_status_code, mapcore.api_error_code,
-                mapcore.error_message))
+        if ext_message is not None and mapcore is None:
+            super(MAPCoreException, self).__init__(
+                'ext_message={}'.format(ext_message))
+        else:
+                super(MAPCoreException, self).__init__(
+                    'http_status_code={}, api_error_code={}, message={}, ext_message={}'.format(
+                        mapcore.http_status_code, mapcore.api_error_code,
+                        mapcore.error_message, ext_message))
 
     def group_does_not_exist(self):
         if self.mapcore.api_error_code == 208 and \
@@ -59,9 +63,9 @@ class MAPCoreException(Exception):
         return False
 
 class MAPCoreTokenExpired(MAPCoreException):
-    def __init__(self, mapcore):
+    def __init__(self, mapcore, ext_message):
         self.caller = mapcore.user
-        super(MAPCoreTokenExpired, self).__init__(mapcore)
+        super(MAPCoreTokenExpired, self).__init__(mapcore, ext_message)
 
     def __str__(self):
         if self.caller:
@@ -152,7 +156,8 @@ class MAPCore:
     def lock_refresh(self):
 
         while True:
-            fd = os.open(self.REFRESH_LOCK, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0666)
+            # TODO handle OSError
+            fd = os.open(self.REFRESH_LOCK, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
             if fd >= 0:
                 os.close(fd)
                 return
@@ -588,13 +593,13 @@ class MAPCore:
     # Get MAPCoreException.
     #
     def get_exception(self):
-        return MAPCoreException(self)
+        return MAPCoreException(self, None)
 
     #
     # Get MAPCoreTokenExpired.
     #
     def get_token_expired(self):
-        return MAPCoreTokenExpired(self)
+        return MAPCoreTokenExpired(self, None)
 
     #
     # Calculate API signature.
