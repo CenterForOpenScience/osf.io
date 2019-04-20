@@ -113,7 +113,7 @@ def mapcore_request_authcode(**kwargs):
     if next_url is not None:
         state_str = next_url.encode('base64')
     else:
-        state_str = map_secret
+        state_str = map_authcode_magic
 
     # make call
     url = map_hostname + map_authcode_path
@@ -179,12 +179,12 @@ def mapcore_receive_authcode(user, params):
         logger.info('refresh_token: ' + me.map_profile.oauth_refresh_token)
     """
 
-    if params['state'] != map_secret:
+    if params['state'] != map_authcode_magic:
         return params['state'].decode('base64')  # user defined state string
     return my_home   # redirect to home -> will redirect to dashboard
 
 
-def mapcore_get_accesstoken(authcode, redirect, clientid=map_clientid, secret=map_secret):
+def mapcore_get_accesstoken(authcode, redirect):
     '''
     exchange authorization code to access token and refresh token
     API call returns the JSON response from mAP authorization code service
