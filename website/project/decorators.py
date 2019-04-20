@@ -7,6 +7,7 @@ from flask import request
 
 from framework import status
 from framework.auth import Auth, cas
+from framework.auth import decorators as auth_deco
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
@@ -274,13 +275,14 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
             target = target or kwargs.get('node')
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
-            user = kwargs['auth'].user
+            auth = kwargs['auth']
+            user = auth.user
             if user is not None:
                 user.update_date_last_access()
 
-            response = check_contributor_auth(target, kwargs['auth'], include_public, include_view_only_anon)
+            response = check_contributor_auth(target, auth, include_public, include_view_only_anon)
 
-            return response or func(*args, **kwargs)
+            return response or auth_deco.mapcore_check_token(True, func, *args, **kwargs)
 
         return wrapped
 
@@ -392,7 +394,8 @@ def must_have_permission(permission):
             target = kwargs.get('node') or getattr(Guid.load(kwargs.get('guid')), 'referent', None)
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
-            user = kwargs['auth'].user
+            auth = kwargs['auth']
+            user = auth.user
 
             # User must be logged in
             if user is None:
@@ -405,7 +408,7 @@ def must_have_permission(permission):
             user.update_date_last_access()
 
             # Call view function
-            return func(*args, **kwargs)
+            return auth_deco.mapcore_check_token(True, func, *args, **kwargs)
 
         # Return decorated function
         return wrapped

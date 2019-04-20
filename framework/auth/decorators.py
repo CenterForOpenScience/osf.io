@@ -64,17 +64,49 @@ def must_be_confirmed(func):
     return wrapped
 
 
-def _must_be_logged_in_factory(login=True, email=True, mapcore_token=True):
+# for GakuNin mAP Core (API v2)
+def mapcore_check_token(use_mapcore, func, *args, **kwargs):
+    from nii.mapcore_api import MAPCoreTokenExpired, MAPCoreException
+    from nii.mapcore import (mapcore_is_enabled,
+                             mapcore_api_is_available,
+                             mapcore_request_authcode,
+                             mapcore_log_error,
+                             mapcore_url_is_sync_target,
+                             mapcore_sync_rdm_user_projects)
+
+    auth = kwargs.get('auth')
+    if auth and use_mapcore and mapcore_is_enabled():
+        try:
+            try:
+                if mapcore_url_is_sync_target(request.url):
+                    mapcore_sync_rdm_user_projects(auth.user)
+                else:
+                    # check available token only
+                    mapcore_api_is_available(auth.user)
+            except MAPCoreTokenExpired as e:
+                if e.caller is None or e.caller != auth.user:
+                    raise e
+                return redirect(mapcore_request_authcode(
+                    next_url=request.url))
+        except MAPCoreException as e:
+            if settings.DEBUG_MODE:
+                import traceback
+                emsg = '<pre>{}</pre>'.format(traceback.format_exc())
+            else:
+                emsg = str(e)
+                mapcore_log_error('{}: {}'.format(
+                    e.__class__.__name__, emsg))
+                raise HTTPError(httplib.SERVICE_UNAVAILABLE, data={
+                    'message_short': 'mAP Core API Error',
+                    'message_long': emsg
+                })
+    return func(*args, **kwargs)
+
+
+def _must_be_logged_in_factory(login=True, email=True, use_mapcore=True):
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            from nii.mapcore_api import MAPCoreTokenExpired, MAPCoreException
-            from nii.mapcore import (mapcore_is_enabled,
-                                     mapcore_api_is_available,
-                                     mapcore_request_authcode,
-                                     mapcore_log_error,
-                                     mapcore_url_is_sync_target,
-                                     mapcore_sync_rdm_user_projects)
 
             auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
             if login:  # require auth
@@ -82,45 +114,17 @@ def _must_be_logged_in_factory(login=True, email=True, mapcore_token=True):
             if auth.logged_in:
                 auth.user.update_date_last_access()
 
-                # for GakuNin mAP Core (API v2)
-                def mapcore_check_token(*args, **kwargs):
-                    if mapcore_token and mapcore_is_enabled():
-                        # require available token
-                        try:
-                            try:
-                                if mapcore_url_is_sync_target(request.url):
-                                    mapcore_sync_rdm_user_projects(auth.user)
-                                else:
-                                    mapcore_api_is_available(auth.user)
-                            except MAPCoreTokenExpired as e:
-                                if e.caller is None or e.caller != auth.user:
-                                    raise e
-                                return redirect(mapcore_request_authcode(
-                                    next_url=request.url))
-                        except MAPCoreException as e:
-                            if settings.DEBUG_MODE:
-                                import traceback
-                                emsg = '<pre>{}</pre>'.format(
-                                    traceback.format_exc())
-                            else:
-                                emsg = str(e)
-                            mapcore_log_error('{}: {}'.format(
-                                e.__class__.__name__, emsg))
-                            raise HTTPError(httplib.SERVICE_UNAVAILABLE, data={
-                                'message_short': 'mAP Core API Error',
-                                'message_long': emsg
-                            })
-                    return func(*args, **kwargs)
-
                 if email:  # require have_email=True
                     if auth.user.have_email:
                         # for GakuNin CloudGateway (mAP API v1)
                         setup_cggroups(auth)
-                        return mapcore_check_token(*args, **kwargs)
+                        return mapcore_check_token(use_mapcore,
+                                                   func, *args, **kwargs)
                     else:
                         return redirect(web_url_for('user_account_email'))
                 else:
-                    return mapcore_check_token(*args, **kwargs)
+                    return mapcore_check_token(use_mapcore,
+                                               func, *args, **kwargs)
             elif login:  # require logged_in=True
                 return redirect(cas.get_login_url(request.url))
             else:
@@ -132,22 +136,22 @@ def _must_be_logged_in_factory(login=True, email=True, mapcore_token=True):
 
 # Require that user has email.
 email_required = _must_be_logged_in_factory(
-    login=False, email=True, mapcore_token=True)
+    login=False, email=True, use_mapcore=True)
 
 # Require that user be logged in. Modifies kwargs to include the
 # current user.
 must_be_logged_in = _must_be_logged_in_factory(
-    login=True, email=True, mapcore_token=True)
+    login=True, email=True, use_mapcore=True)
 
 # Require that user be logged in. Modifies kwargs to include the
 # current user without checking email existence.
 must_be_logged_in_without_checking_email = _must_be_logged_in_factory(
-    login=True, email=False, mapcore_token=False)
+    login=True, email=False, use_mapcore=False)
 
 # Require that user be logged in. Modifies kwargs to include the
 # current user without checking availability of user's mAP Core access token.
 must_be_logged_in_without_checking_mapcore_token = _must_be_logged_in_factory(
-    login=True, email=True, mapcore_token=False)
+    login=True, email=True, use_mapcore=False)
 
 
 # for GakuNin CloudGateway (mAP API v1)

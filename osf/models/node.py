@@ -732,10 +732,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         For details on this schema, see:
             https://github.com/citation-style-language/schema#csl-json-schema
         """
-# XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-#        access_token = contributor.name
-#        logger.info("!!!! NODE: CSL() CALLED: " + access_token)
-# XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         csl = {
             'id': self._id,
             'title': sanitize.unescape_entities(self.title),

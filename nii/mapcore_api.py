@@ -52,10 +52,16 @@ class MAPCoreException(Exception):
             return True
         return False
 
+    def listing_group_member_is_not_permitted(self):
+        if self.mapcore.api_error_code == 206 and \
+           self.mapcore.error_message == 'Listing group member is not permitted':
+            return True
+        return False
+
 class MAPCoreTokenExpired(MAPCoreException):
     def __init__(self, mapcore):
         self.caller = mapcore.user
-        super(MAPCoreTokenExpired, self).__init__(self)
+        super(MAPCoreTokenExpired, self).__init__(mapcore)
 
     def __str__(self):
         if self.caller:
@@ -69,6 +75,8 @@ class MAPCore:
     MODE_MEMBER = 0     # Ordinary member
     MODE_ADMIN = 2      # Administrator member
 
+    #TODO rdm_mapcore_refresh_token_<user._id>
+    #TODO MAPCORE_LOCKDIR
     REFRESH_LOCK = '/var/run/lock/refresh.lck'
 
     user = False
@@ -108,7 +116,7 @@ class MAPCore:
 
         r = requests.post(url, auth=basic_auth, headers=headers, data=params, verify=VERIFY)
         if r.status_code != requests.codes.ok:
-            logger.info('MAPCore::refresh_token: Refreshing token failed: status_code=' + str(r.status_code) + ', user=' + str(self.user))
+            logger.info('MAPCore::refresh_token: Refreshing token failed: status_code=' + str(r.status_code) + ', user=' + str(self.user) + ', text=' + r.text)
             self.unlock_refresh()
             return False
 
@@ -364,12 +372,12 @@ class MAPCore:
             }
             params['parameter'] = {
                 'group_name': group_name,
-                'group_name_en': group_name,
+                'group_name_en': '',
                 'introduction': introduction,
-                'introduction_en': introduction,
+                'introduction_en': '',
                 'public': 1,
                 'active': 1,
-                'open_member': 1
+                'open_member': 0
             }
             params = json.dumps(params).encode('utf-8')
 
@@ -615,10 +623,6 @@ class MAPCore:
         if result.status_code != requests.codes.ok:
             if self.is_token_expired(result):
                 self.error_message = self.MSG_ACCESS_TOKEN_EXPIRED
-                logger.info('MAPCore::check_result: status_code=' +
-                            str(result.status_code))
-                logger.info('MAPCore::check_result: {}={}'.format(
-                    self.WWW_AUTHENTICATE, self.error_message))
             else:
                 self.error_message = result.headers.get(self.WWW_AUTHENTICATE)
             return False
@@ -639,9 +643,12 @@ class MAPCore:
             s = result.headers.get(self.WWW_AUTHENTICATE)
             if s is None:
                 return False
-            if s.find(self.MSG_ACCESS_TOKEN_EXPIRED) != -1:
-                return True
-            if s.find(self.MSG_INVALID_ACCESS_TOKEN) != -1:
+            if s.find(self.MSG_ACCESS_TOKEN_EXPIRED) != -1 \
+               or s.find(self.MSG_INVALID_ACCESS_TOKEN) != -1:
+                logger.info('MAPCore::check_result: status_code=' +
+                            str(result.status_code))
+                logger.info('MAPCore::check_result: {}={}'.format(
+                    self.WWW_AUTHENTICATE, self.error_message))
                 return True
             else:
                 return False

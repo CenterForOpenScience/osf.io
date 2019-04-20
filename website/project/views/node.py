@@ -301,13 +301,6 @@ def node_setting(auth, node, **kwargs):
     ret['group'] = node.group.name if node.group is not None else None
     ret['can_delete'] = True if node.group is None else False
 
-    ###
-    if node.group is None:
-        logger.info('!!!! NODE SETTING: group is None')
-    else:
-        logger.info('!!!! NODE SETTING: group_key=' + node.group.name)
-    ###
-
     return ret
 
 @must_be_valid_project
@@ -482,12 +475,6 @@ def configure_requests(node, **kwargs):
 @must_be_contributor_or_public
 @ember_flag_is_active('ember_project_detail_page')
 def view_project(auth, node, **kwargs):
-    '''
-    if node.group is None:
-        logger.info('!!!! VIEW PROJECT: group is None')
-    else:
-        logger.info('!!!! VIEW PROJECT: group_key=' + node.group.name)
-    '''
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth,
                         primary=primary,
@@ -747,12 +734,35 @@ def _view_project(node, auth, primary=False,
     except Contributor.DoesNotExist:
         contributor = None
 
-    ## sync with v1 API may be race with mAP core API --> disabled by HN
-    ##if node.group is not None and user.groups_sync is not None and not user.groups_sync.filter(name=node.group.name).exists():
-    ##    from nii import project_sync
-    ##    project_sync.project_sync_one(node, None)
-    ##    user.groups_sync.add(node.group)  # checked
-    ##    user.save()
+    from nii.mapcore_api import MAPCoreException
+    from nii.mapcore import (mapcore_is_enabled,
+                             mapcore_log_error,
+                             mapcore_sync_rdm_project_or_map_group)
+    if mapcore_is_enabled():
+        try:
+            mapcore_sync_rdm_project_or_map_group(auth.user, node)
+        except MAPCoreException as e:
+            # Do not call redirect() here
+            if settings.DEBUG_MODE:
+                import traceback
+                emsg = '<pre>{}</pre>'.format(
+                    traceback.format_exc())
+            else:
+                emsg = str(e)
+                mapcore_log_error('{}: {}'.format(
+                    e.__class__.__name__, emsg))
+                raise HTTPError(http.SERVICE_UNAVAILABLE, data={
+                    'message_short': 'mAP Core API Error',
+                    'message_long': emsg
+                })
+    else:
+        # for CloudGateway API v1
+        if node.group is not None and user.cggroups_sync is not None \
+           and not user.cggroups_sync.filter(name=node.group.name).exists():
+            from nii import project_sync
+            project_sync.project_sync_one(node, None)
+            user.cggroups_sync.add(node.group)  # checked
+            user.save()
 
     in_bookmark_collection = False
     bookmark_collection_id = ''
