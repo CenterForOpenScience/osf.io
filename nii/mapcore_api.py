@@ -35,7 +35,7 @@ VERIFY = True  # for requests.{get,post}(verify=VERIFY)
 
 MAPCORE_DEBUG = True
 
-MAPCORE_API_PRIVATE_MEMBER_LIST_BUG_WORKAROUND = True
+MAPCORE_API_MEMBER_LIST_BUG_WORKAROUND = True
 
 class MAPCoreLogger(object):
     def __init__(self, logger):
@@ -95,7 +95,7 @@ class MAPCoreTokenExpired(MAPCoreException):
         return 'mAP Core Access Token (for {}) is expired'.format(username)
 
 
-if MAPCORE_API_PRIVATE_MEMBER_LIST_BUG_WORKAROUND:
+if MAPCORE_API_MEMBER_LIST_BUG_WORKAROUND:
     OPEN_MEMBER_PRIVATE = 1
     OPEN_MEMBER_PUBLIC = 0
     OPEN_MEMBER_MEMBER_ONLY = 2

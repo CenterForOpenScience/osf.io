@@ -124,7 +124,7 @@ from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import RdmTimestampGrantPattern
 
-from nii.mapcore import mapcore_set_ready_to_sync_rdm2map
+from nii.mapcore import mapcore_sync_map_group
 
 import logging
 logger = logging.getLogger(__name__)
@@ -390,14 +390,14 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     def put(self, request, *args, **kwargs):
         res = super(NodeDetail, self).put(request, *args, **kwargs)
         if res.status_code == HTTP_200_OK:
-            mapcore_set_ready_to_sync_rdm2map(self.get_object())
+            mapcore_sync_map_group(self.get_object())
         return res
 
     # overrides RetrieveUpdateDestroyAPIView
     def patch(self, request, *args, **kwargs):
         res = super(NodeDetail, self).patch(request, *args, **kwargs)
         if res.status_code == HTTP_200_OK:
-            mapcore_set_ready_to_sync_rdm2map(self.get_object())
+            mapcore_sync_map_group(self.get_object())
         return res
 
 

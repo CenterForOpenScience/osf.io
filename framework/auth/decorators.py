@@ -74,6 +74,11 @@ def mapcore_check_token(use_mapcore, func, *args, **kwargs):
                              mapcore_url_is_sync_target,
                              mapcore_sync_rdm_user_projects)
 
+    # from framework import status
+    # msg = 'test mapcore message'
+    # status.push_status_message(msg, kind='info', dismissible=True, trust=True)
+    # -> "Missing translation: status.<msg>" in dashboard from ember-osf-web
+
     auth = kwargs.get('auth')
     if auth and use_mapcore and mapcore_is_enabled():
         try:

@@ -30,6 +30,7 @@ from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import web_url_for, is_json_request
 from website.exceptions import NodeStateError
 
+from nii.mapcore import mapcore_sync_map_group
 
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
@@ -232,6 +233,7 @@ def project_contributors_post(auth, node, **kwargs):
         return {'status': 400, 'message': e.args[0]}, 400
 
     node.save()
+    mapcore_sync_map_group(node)
 
     # Disconnect listener to avoid multiple invite emails
     unreg_contributor_added.disconnect(finalize_invitation)
@@ -248,6 +250,8 @@ def project_contributors_post(auth, node, **kwargs):
 
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
+        mapcore_sync_map_group(child)
+
     # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
 
@@ -282,6 +286,8 @@ def project_manage_contributors(auth, node, **kwargs):
         node.manage_contributors(contributors, auth=auth, save=True)
     except (ValueError, NodeStateError) as error:
         raise HTTPError(http.BAD_REQUEST, data={'message_long': error.args[0]})
+
+    mapcore_sync_map_group(node)
 
     # If user has removed herself from project, alert; redirect to
     # node summary if node is public, else to user's dashboard page
@@ -344,6 +350,8 @@ def project_remove_contributor(auth, **kwargs):
         if not nodes_removed:
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_long': 'Could not remove contributor.'})
+
+        mapcore_sync_map_group(node)
 
         # On parent node, if user has removed herself from project, alert; redirect to
         # node summary if node is public, else to user's dashboard page
