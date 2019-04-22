@@ -136,7 +136,7 @@ class OsfStorageFileNode(BaseFileNode):
         """Path is dynamically computed as storedobject.path is stored
         as an empty string to make the unique index work properly for osfstorage
         """
-        return '/' + self._id + ('' if self.is_file else '/')
+        return '/' + str(self._id) + ('' if self.is_file else '/')
 
     @property
     def is_checked_out(self):

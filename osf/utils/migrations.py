@@ -78,7 +78,7 @@ def ensure_licenses(*args, **kwargs):
 
     :return tuple: (number inserted, number updated)
 
-    Moved from website/project/licenses/__init__.py.py
+    Moved from website/project/licenses/__init__.py
     """
     ninserted = 0
     nupdated = 0

@@ -642,7 +642,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
 
     error_msg = ERROR_MESSAGES[error_type].format(**format_params)
-    if isinstance(target, FileTargetMixin):
+    if isinstance(target, AbstractNode):
         error_msg += format_last_known_metadata(auth, target, file_node, error_type)
         ret = serialize_node(target, auth, primary=True)
         ret.update(rubeus.collect_addon_assets(target))
