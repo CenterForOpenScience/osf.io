@@ -63,6 +63,13 @@ api_routes = {
             views.iqbrims_import_auth,
             json_renderer
         ),
+
+        Rule(
+            ['/project/<pid>/iqbrims/config/register-paper/'],
+            'put',
+            views.iqbrims_register_paper,
+            json_renderer
+        ),
     ],
     'prefix': '/api/v1'
 }
