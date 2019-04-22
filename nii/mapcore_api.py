@@ -6,6 +6,7 @@
 #
 
 import os
+import errno
 import time
 import json
 import logging
@@ -115,7 +116,6 @@ def mapcore_group_member_is_public(group_info):
 def mapcore_group_member_is_member_only(group_info):
     return group_info['open_member'] == OPEN_MEMBER_MEMBER_ONLY
 
-
 class MAPCore(object):
     MODE_MEMBER = 0     # Ordinary member
     MODE_ADMIN = 2      # Administrator member
@@ -197,19 +197,27 @@ class MAPCore(object):
     def lock_refresh(self):
 
         while True:
-            # TODO handle OSError
-            fd = os.open(self.REFRESH_LOCK, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0644)
+            try:
+                fd = os.open(self.REFRESH_LOCK, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o644)
+            except OSError as e:
+                if e.errno == errno.EEXIST:
+                    time.sleep(1)
+                    continue
+                else:
+                    raise e
             if fd >= 0:
                 os.close(fd)
                 return
-            time.sleep(1)
 
     #
     # Unlock refresh process.
     #
     def unlock_refresh(self):
-
-        os.unlink(self.REFRESH_LOCK)
+        try:
+            os.unlink(self.REFRESH_LOCK)
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise e
 
     #
     # Get API version.
