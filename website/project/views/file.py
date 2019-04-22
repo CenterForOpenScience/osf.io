@@ -27,11 +27,6 @@ def grid_data(auth, node, **kwargs):
     """
     data = request.args.to_dict()
     ret = rubeus.to_hgrid(node, auth, **data)
-    import logging
-    logging.critical("#######################################")
-    for x in NodeSettings.objects.filter(owner_id=node.id):
-        logging.critical(vars(x))
-    logging.critical("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
     try:
         if NodeSettings.objects.get(owner_id=node.id).region_id != 1:
             ret[0]['children'][0]['iconUrl'] = '/static/addons/osfstorage/comicon_custom_storage.png'
