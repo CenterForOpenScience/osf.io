@@ -25,12 +25,26 @@ def collect_file_trees(auth, node, **kwargs):
 def grid_data(auth, node, **kwargs):
     """View that returns the formatted data for rubeus.js/hgrid
     """
+    import logging
     data = request.args.to_dict()
     ret = rubeus.to_hgrid(node, auth, **data)
     try:
-        if NodeSettings.objects.get(owner_id=node.id).region_id != 1:
-            ret[0]['children'][0]['iconUrl'] = '/static/addons/osfstorage/comicon_custom_storage.png'
-            ret[0]['children'][0]['addonFullname'] = ret[0]['children'][0]['nodeRegion']
-    except Exception as error: 
+        nodeSettinglist = NodeSettings.objects.filter(owner_id=node.id);
+        if nodeSettinglist.count()>0:
+            if len(ret[0]['children'])>0:
+                i = 0
+                while i<len(ret[0]['children']):
+                    if ret[0]['children'][i]['provider'] == 'osfstorage':
+                        if 'nodeRegion' in ret[0]['children'][i]:
+                            logging.critical("i am hit")
+                            ret[0]['children'][i]['iconUrl'] = '/static/addons/osfstorage/comicon_custom_storage.png'
+                            ret[0]['children'][i]['addonFullname'] = ret[0]['children'][i]['nodeRegion']
+
+                    i += 1
+    except Exception as error:
+        import sys
+        import traceback
+        logging.critical(traceback.format_exc())
+        logging.critical(sys.exc_info()[0])
         logging.critical(error)
     return {'data': ret}
