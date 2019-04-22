@@ -19,7 +19,7 @@ from framework.analytics import get_basic_counters
 from framework import sentry
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
-from osf.models.mixins import Taggable
+from osf.models.mixins import Taggable, FileTargetMixin
 from osf.models.validators import validate_location
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
@@ -205,6 +205,13 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     @classmethod
     def get_from_target(cls, _id, target):
+        return cls.active.get(_id=_id,
+                              target_object_id=target.id,
+                              target_content_type=ContentType.objects.get_for_model(target))
+
+    @classmethod
+    def get_from_target_guid(cls, _id, target_id):
+        target = FileTargetMixin.load_target_from_guid(target_id)
         return cls.active.get(_id=_id,
                               target_object_id=target.id,
                               target_content_type=ContentType.objects.get_for_model(target))

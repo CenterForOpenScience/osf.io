@@ -88,8 +88,10 @@ def waterbutler_opt_hook(func):
         try:
             user = OSFUser.load(payload['user'])
             # Waterbutler is sending back ['node'] under the destination payload - WB should change to target
-            source = OsfStorageFileNode.objects.get(_id=payload['source'])
-            dest_parent = BaseFileNode.objects.get(_id=payload['destination']['parent'])
+            source = OsfStorageFileNode.get_from_target_guid(_id=payload['source'],
+                                                             target_id=payload['target'])
+            dest_parent = BaseFileNode.get_from_target_guid(_id=payload['destination']['parent'],
+                                                            target_id=payload['destination']['target'])
 
             kwargs.update({
                 'user': user,

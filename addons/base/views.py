@@ -336,7 +336,7 @@ def get_auth(auth, **kwargs):
 
                     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
                         if isinstance(target, Preprint):
-                            metric_class = get_metric_class_for_action(action, from_mfr=download_is_from_mfr)
+                            metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
                             if metric_class:
                                 try:
                                     metric_class.record_for_preprint(
@@ -412,7 +412,8 @@ def create_waterbutler_log(payload, **kwargs):
             raise HTTPError(httplib.BAD_REQUEST)
 
         auth = Auth(user=user)
-        target = kwargs.get('node') or kwargs.get('project') or Preprint.load(kwargs.get('nid')) or FileTargetMixin.load_target_from_guid(kwargs.get('pid'))
+        target_id = kwargs.get('nid') or kwargs.get('pid')
+        target = kwargs.get('node') or kwargs.get('project') or FileTargetMixin.load_target_from_guid(target_id)
 
         if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
 
