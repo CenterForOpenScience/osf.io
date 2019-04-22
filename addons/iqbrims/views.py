@@ -14,7 +14,7 @@ from website.project.decorators import (
     must_have_addon,
     must_be_valid_project,
     must_be_addon_authorizer,
-    must_have_permission
+    must_have_permission,
 )
 from website.ember_osf_web.views import use_ember_app
 
@@ -74,6 +74,27 @@ def iqbrims_folder_list(node_addon, **kwargs):
 
     return node_addon.get_folders(folder_path=path, folder_id=folder_id)
 
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+def iqbrims_get_status(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    iqbrims = node.get_addon('iqbrims')
+    return {'data': {'id': node._id, 'type': 'iqbrims-status',
+                     'attributes': iqbrims.get_status()}}
+
+@must_be_valid_project
+@must_have_permission('admin')
+@must_have_addon(SHORT_NAME, 'node')
+def iqbrims_set_status(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    iqbrims = node.get_addon('iqbrims')
+    try:
+        status = request.json['data']['attributes']
+    except KeyError:
+        raise HTTPError(httplib.BAD_REQUEST)
+    logger.info('Status: {}'.format(status))
+    iqbrims.set_status(status)
+    return {}
 
 @must_have_addon(SHORT_NAME, 'node')
 @must_have_permission(permissions.WRITE)

@@ -82,6 +82,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     folder_path = models.TextField(null=True, blank=True)
     serializer = IQBRIMSSerializer
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
+    status = models.TextField(blank=True, null=True)
 
     _api = None
 
@@ -236,4 +237,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def on_delete(self):
         self.deauthorize(add_log=False)
+        self.save()
+
+    def get_status(self):
+        if self.status is None or self.status == '':
+            return {'state': 'initialized'}
+        return json.loads(self.status)
+
+    def set_status(self, status):
+        assert 'state' in status
+        self.status = json.dumps(status)
         self.save()

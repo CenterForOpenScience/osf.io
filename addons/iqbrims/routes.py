@@ -92,6 +92,15 @@ api_routes = {
             views.iqbrims_register_paper,
             json_renderer
         ),
+
+        Rule([
+            '/project/<pid>/iqbrims/status',
+            '/project/<pid>/node/<nid>/iqbrims/status',
+        ], 'get', views.iqbrims_get_status, json_renderer),
+        Rule([
+            '/project/<pid>/iqbrims/status',
+            '/project/<pid>/node/<nid>/iqbrims/status',
+        ], 'put', views.iqbrims_set_status, json_renderer),
     ],
     'prefix': '/api/v1'
 }

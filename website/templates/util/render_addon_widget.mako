@@ -8,6 +8,9 @@
                     % if addon_data['has_page']:
                         <a href="${node['url']}${addon_data['short_name']}/">  <i class="fa fa-external-link"></i> </a>
                     % endif
+                    % if 'can_expand' in addon_data and addon_data['can_expand']:
+                        <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
+                    % endif
                 </div>
             </div>
             % if addon_data['complete']:
@@ -197,6 +200,41 @@
                               </div><!-- end modal-content -->
                           </div>
                       </div>
+                    </div>
+                % endif
+
+                % if addon_name == 'iqbrims':
+                    <div id="iqbrims-content" class="scripted">
+                      <!-- ko if: loading -->
+                      <div>Loading</div>
+                      <!-- /ko -->
+                      <!-- ko if: loadFailed -->
+                      <div class="text-danger">Error occurred</div>
+                      <!-- /ko -->
+                      <!-- ko if: loadCompleted -->
+                        <!-- ko if: modeDeposit -->
+                        <div style="margin: 0.5em;">Processing</div>
+                        <!-- /ko -->
+                        <!-- ko ifnot: modeDeposit -->
+                          <!-- ko if: modeCheck -->
+                          <div style="margin: 0.5em;">Checking</div>
+                          <!-- /ko -->
+                          <!-- ko ifnot: modeCheck -->
+                          <div class="form-group">
+                            <button type="button" class="btn btn-primary"
+                                    data-bind="click: gotoDepositForm">Deposit Manuscript & Data</button>
+                            <small class="form-text text-muted" data-bind="text: depositHelp">
+                            </small>
+                          </div>
+                          <div class="form-group">
+                            <button type="button" class="btn btn-primary"
+                                    data-bind="click: gotoCheckForm">Image Scan Service</button>
+                            <small class="form-text text-muted" data-bind="text: checkHelp">
+                            </small>
+                          </div>
+                          <!-- /ko -->
+                        <!-- /ko -->
+                      <!-- /ko -->
                     </div>
                 % endif
 
