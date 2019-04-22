@@ -1176,7 +1176,7 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
                     project.is_deleted = True
                     project.save()
     finally:
-        locker.unlock_user()
+        locker.unlock_user(user)
 
     logger.debug('mapcore_sync_rdm_user_projects finished.')
 
