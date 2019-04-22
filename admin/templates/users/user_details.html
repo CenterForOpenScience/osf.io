@@ -49,7 +49,7 @@
                     <tr>
                         <td>Quota for Default Storage (GB)</td>
                         <td>
-                            <form method="post" action="{% url 'users:quota' current_user.id %}" class="row">
+                            <form method="post" action="{% url 'users:institution_quota' current_user.id %}" class="row">
                                 {% csrf_token %}
                                 <div class="col-xs-2">
                                     <input type="number" name="maxQuota" id="storageLimit" class="form-control" value="{{ current_user.quota }}" />

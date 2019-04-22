@@ -632,15 +632,15 @@ class UserQuotaView(View):
     def post(self, request, *args, **kwargs):
         uid = self.kwargs.get('guid')
         user = OSFUser.load(uid)
-        user_quota = UserQuota.objects.filter(user=user).first()
         max_quota = int(request.POST.get('maxQuota'))
+        if max_quota <= 0:
+            max_quota = 1
 
-        if user_quota is None:
-            UserQuota.objects.create(user=user, max_quota=max_quota)
-        else:
-            user_quota.max_quota = max_quota
-            user_quota.save()
-
+        UserQuota.objects.update_or_create(
+            user=user,
+            storage_type=UserQuota.NII_STORAGE,
+            defaults={'max_quota': max_quota}
+        )
         return redirect(reverse_user(uid))
 
 
@@ -665,3 +665,26 @@ class UserDetailsView(RdmPermissionMixin, UserPassesTestMixin, GuidView):
             'nodes': map(serialize_simple_node, user.contributor_to),
             'quota': max_quota
         }
+
+
+class UserInstitutionQuotaView(RdmPermissionMixin, UserPassesTestMixin, View):
+    """
+    User screen for intitution managers.
+    """
+    def test_func(self):
+        return not self.is_super_admin and self.is_admin \
+            and self.request.user.affiliated_institutions.exists()
+
+    def post(self, request, *args, **kwargs):
+        uid = self.kwargs.get('guid')
+        user = OSFUser.load(uid)
+        max_quota = int(request.POST.get('maxQuota'))
+        if max_quota <= 0:
+            max_quota = 1
+
+        UserQuota.objects.update_or_create(
+            user=user,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            defaults={'max_quota': max_quota}
+        )
+        return redirect('users:user_details', guid=uid)
