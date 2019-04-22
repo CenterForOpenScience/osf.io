@@ -436,10 +436,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return False
 
     @property
-    def is_quickfiles(self):
-        return False
-
-    @property
     def is_original(self):
         return not self.is_registration and not self.is_fork
 

@@ -1594,7 +1594,7 @@ class SpamOverrideMixin(SpamMixin):
 
             # Make public nodes private from this contributor
             for node in user.contributed:
-                if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
+                if self._id != node._id and len(node.contributors) == 1 and node.is_public:
                     node.set_privacy('private', log=False, save=True)
 
             # Make preprints private from this contributor

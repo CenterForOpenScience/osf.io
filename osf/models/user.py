@@ -732,10 +732,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
 
         from osf.models import BaseFileNode
-        from osf.models.legacy_quickfiles import QuickFilesNode
-
-        # - projects where the user was the creator
-        user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         for file_node in BaseFileNode.files_checked_out(user=user):
