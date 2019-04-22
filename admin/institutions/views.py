@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+from operator import itemgetter
 
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
@@ -267,38 +268,65 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
     raise_exception = True
     paginate_by = 10
 
-    def get_user_list_institute_id(self):
-        user_query_set = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
-        dict_of_list = []
-        for user in user_query_set:
+    def custom_size_abbreviation(self, size, abbr):
+        if abbr == 'B':
+            return (size / 1024, 'KiB')
+        return size, abbr.replace('B', 'iB')
+
+    def get_queryset(self):
+        user_list = []
+        for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
             try:
                 max_quota = user.userquota.max_quota
                 used_quota = user.userquota.used
             except ObjectDoesNotExist:
                 max_quota = api_settings.DEFAULT_MAX_QUOTA
                 used_quota = quota.used_quota(user.guids.first()._id)
-            used_quota_abbr = quota.abbreviate_size(used_quota)
-            if used_quota_abbr[1] == 'B':
-                used_quota_abbr = '{:.0f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
-            else:
-                used_quota_abbr = '{:.1f} {}'.format(used_quota_abbr[0], used_quota_abbr[1])
-            dict_of_list.append({
+            max_quota_bytes = max_quota * 1024 ** 3
+            remaining_quota = max_quota_bytes - used_quota
+            used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
+            remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
+            user_list.append({
                 'id': user.guids.first()._id,
-                'name': user.fullname,
+                'fullname': user.fullname,
                 'username': user.username,
-                'ratio_to_quota': '{:.1f}%'.format(float(used_quota) / (max_quota * 1024 ** 3) * 100),
-                'usage': used_quota_abbr,
-                'limit_value': str(max_quota) + ' GB'
+                'ratio': float(used_quota) / max_quota_bytes * 100,
+                'usage': used_quota,
+                'usage_value': used_quota_abbr[0],
+                'usage_abbr': used_quota_abbr[1],
+                'remaining': remaining_quota,
+                'remaining_value': remaining_abbr[0],
+                'remaining_abbr': remaining_abbr[1],
+                'quota': max_quota
             })
-        return dict_of_list
-
-    def get_queryset(self):
-        return self.get_user_list_institute_id()
+        order_by = self.get_order_by()
+        reverse = self.get_direction() != 'asc'
+        user_list.sort(key=itemgetter(order_by), reverse=reverse)
+        return user_list
 
     def get_context_data(self, **kwargs):
-        self.users = self.get_queryset()
-        kwargs['users'] = self.users
-        self.page_size = self.get_paginate_by(self.users)
-        self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.users, self.page_size)
+        institution = Institution.objects.get(id=self.kwargs['institution_id'])
+        kwargs['institution_name'] = institution.name
+
+        self.query_set = self.get_queryset()
+        self.page_size = self.get_paginate_by(self.query_set)
+        self.paginator, self.page, self.query_set, self.is_paginated = \
+            self.paginate_queryset(self.query_set, self.page_size)
+
+        kwargs['users'] = self.query_set
         kwargs['page'] = self.page
+        kwargs['order_by'] = self.get_order_by()
+        kwargs['direction'] = self.get_direction()
         return super(UserListByInstitutionID, self).get_context_data(**kwargs)
+
+    def get_order_by(self):
+        order_by = self.request.GET.get('order_by', 'ratio')
+        if order_by not in ['fullname', 'username', 'ratio', 'usage', 'remaining', 'quota']:
+            return 'ratio'
+        return order_by
+
+    def get_direction(self):
+        direction = self.request.GET.get('status', 'desc')
+        if direction not in ['asc', 'desc']:
+            return 'desc'
+        return direction

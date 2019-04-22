@@ -58,6 +58,7 @@ from addons.jupyterhub.utils import serialize_jupyterhub_widget
 from admin.rdm_addons.utils import validate_rdm_addons_allowed
 from api.base import settings as api_settings
 from website.util import quota
+from osf.models.project_storage_type import ProjectStorageType
 
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
@@ -529,6 +530,13 @@ def view_project(auth, node, **kwargs):
         addons_widget_data['jupyterhub'] = serialize_jupyterhub_widget(node)
 
     ret.update({'addons_widget_data': addons_widget_data})
+    try:
+        projectStorageType = ProjectStorageType.objects.get(node=node)
+        ret['isCustomStorageLocation'] = False if projectStorageType.storage_type == 1 else True
+    except Exception as err:
+        logger.critical(err)
+        ret['isCustomStorageLocation'] = False
+
     return ret
 
 # Reorder components
@@ -776,10 +784,10 @@ def _view_project(node, auth, primary=False,
     NodeRelation = apps.get_model('osf.NodeRelation')
     try:
         max_quota = node.creator.userquota.max_quota
+        used_quota = node.creator.userquota.used
     except ObjectDoesNotExist:
         max_quota = api_settings.DEFAULT_MAX_QUOTA
-    used_quota = quota.used_quota(node.creator._id)
-    threshhold = api_settings.WARNING_THRESHOLD
+        used_quota = quota.used_quota(node.creator._id)
     is_registration = node.is_registration
     timestamp_pattern = get_timestamp_pattern_division(auth, node)
     data = {
@@ -790,8 +798,8 @@ def _view_project(node, auth, primary=False,
             'category': node.category_display,
             'category_short': node.category,
             'used_quota': used_quota,
-            'max_quota': max_quota,
-            'threshhold': threshhold,
+            'max_quota': max_quota * 1024 ** 3,
+            'threshold': api_settings.WARNING_THRESHOLD,
             'node_type': node.project_or_component,
             'description': node.description or '',
             'license': serialize_node_license_record(node.license),

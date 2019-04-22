@@ -7,6 +7,7 @@ from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public, must_not_be_retracted_registration
 from website.project.views.node import _view_project
 from website.ember_osf_web.decorators import ember_flag_is_active
+from addons.osfstorage.models import NodeSettings
 
 @must_not_be_retracted_registration
 @must_be_contributor_or_public
@@ -25,4 +26,8 @@ def grid_data(auth, node, **kwargs):
     """View that returns the formatted data for rubeus.js/hgrid
     """
     data = request.args.to_dict()
-    return {'data': rubeus.to_hgrid(node, auth, **data)}
+    ret = rubeus.to_hgrid(node, auth, **data)
+    if NodeSettings.objects.get(owner_id=node.id).region_id != 1:
+        ret[0]['children'][0]['iconUrl'] = '/static/addons/github/comicon.png'
+        ret[0]['children'][0]['addonFullname'] = ret[0]['children'][0]['nodeRegion']
+    return {'data': ret}
