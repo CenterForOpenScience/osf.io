@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from django.db.models import Q
 from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView, TemplateView, View
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
@@ -624,7 +624,7 @@ class UserReindexElastic(UserDeleteView):
 
 class UserQuotaView(View):
     """
-    Changes the maximum quota for a user.
+    Changes the maximum quota on NII Storage for a user.
     """
     permission_required = 'osf.change_osfuser'
     raise_exception = True
@@ -644,7 +644,7 @@ class UserQuotaView(View):
         return redirect(reverse_user(uid))
 
 
-class UserDetailsView(RdmPermissionMixin, GuidView):
+class UserDetailsView(RdmPermissionMixin, UserPassesTestMixin, GuidView):
     """
     User screen for intitution managers.
     """
