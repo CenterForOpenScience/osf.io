@@ -573,10 +573,6 @@ class File(models.Model):
         """
         return None
 
-    @property
-    def is_root(self):
-        return False
-
 
 class Folder(models.Model):
 

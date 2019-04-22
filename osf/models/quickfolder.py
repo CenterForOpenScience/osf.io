@@ -27,10 +27,6 @@ class QuickFolder(OsfStorageFolder):
         possessive_title_name = fullname + "'s" if fullname[-1] != 's' else fullname + "'"
         return '{} Quick Files'.format(possessive_title_name)
 
-    @property
-    def path(self):
-        return '/'
-
     def append_folder(self, name):
         raise NotImplementedError('Folder creation is illegal for Quickfiles')
 

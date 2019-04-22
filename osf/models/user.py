@@ -1785,7 +1785,7 @@ def _create_quickfiles(instance):
         target_object_id=instance.id,
         target_content_type_id=content_type_id,
         provider=QuickFolder._provider,
-        path='/',
+        is_root=True,
     )
     quickfiles.save()
 
