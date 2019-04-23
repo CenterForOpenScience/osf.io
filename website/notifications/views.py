@@ -6,7 +6,7 @@ from framework import sentry
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
-from osf.models import AbstractNode, NotificationSubscription
+from osf.models import AbstractNode, NotificationSubscription, Registration
 from website.notifications import utils
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.project.decorators import must_be_valid_project
@@ -72,6 +72,12 @@ def configure_subscription(auth):
         if not node.has_permission(user, 'read'):
             sentry.log_message('{!r} attempted to subscribe to private node, {}'.format(user, target_id))
             raise HTTPError(http.FORBIDDEN)
+
+        if isinstance(node, Registration):
+            sentry.log_message(
+                '{!r} attempted to subscribe to registration, {}'.format(user, target_id)
+            )
+            raise HTTPError(http.BAD_REQUEST)
 
         if notification_type != 'adopt_parent':
             owner = node
