@@ -222,6 +222,10 @@ class JSONAPIOnetoOneRelationshipParserForRegularJSON(JSONAPIOnetoOneRelationshi
 
 
 class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
+    """
+    If edits are made to this class, be sure to check JSONAPIMultipleRelationshipsParserForRegularJSON to see if corresponding
+    edits should be made there.
+    """
     def flatten_relationships(self, relationships):
         rel = {}
         for resource in relationships:
@@ -238,12 +242,22 @@ class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
 
 
 class JSONAPIMultipleRelationshipsParserForRegularJSON(JSONAPIParserForRegularJSON):
+    """
+    Allows same processing as JSONAPIMultipleRelationshipsParser to occur for requests with application/json media type.
+    """
     def flatten_relationships(self, relationships):
-        ret = super(JSONAPIMultipleRelationshipsParserForRegularJSON, self).flatten_relationships(relationships)
-        related_resource = relationships.keys()[0]
-        if ret.get('target_type') and ret.get('id'):
-            return {related_resource: ret['id']}
-        return ret
+        rel = {}
+        for resource in relationships:
+            ret = super(JSONAPIMultipleRelationshipsParserForRegularJSON, self).flatten_relationships({resource: relationships[resource]})
+            if isinstance(ret, list):
+                rel[resource] = []
+                for item in ret:
+                    if item.get('target_type') and item.get('id'):
+                        rel[resource].append(item['id'])
+            else:
+                if ret.get('target_type') and ret.get('id'):
+                    rel[resource] = ret['id']
+        return rel
 
 
 class HMACSignedParser(JSONParser):
