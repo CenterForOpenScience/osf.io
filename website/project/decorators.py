@@ -14,7 +14,6 @@ from framework.database import get_or_http_error
 
 from osf.models import AbstractNode, Guid, Preprint, OSFUser
 
-from addons.osfstorage.models import OsfStorageFile
 from website import settings, language
 from website.util import web_url_for
 
@@ -285,10 +284,6 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            if OsfStorageFile.objects.filter(_id=kwargs.get('path')).exists():
-                file_node = OsfStorageFile.objects.get(_id=kwargs.get('path'))
-                kwargs['parent'] = file_node.parent
-
             target = None
             guid = Guid.load(kwargs.get('guid'))
             if guid:
