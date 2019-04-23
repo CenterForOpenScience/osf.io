@@ -21,27 +21,35 @@ from website.util import web_url_for
 _load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
 
 
+def get_non_node_from_pid(kwargs):
+    """
+    Returns resource if kwargs has a `pid` that resolves to a guid that's not a node
+    """
+    pid = kwargs.get('pid')
+    target = getattr(Guid.load(pid), 'referent', None)
+    return None if isinstance(target, AbstractNode) else target
+
+
 def _kwargs_to_nodes(kwargs):
     """Retrieve project and component objects from keyword arguments.
 
     :param dict kwargs: Dictionary of keyword arguments
-    :return: Tuple of parent and node
+    :return: Tuple of parent and target
 
     """
-    target = kwargs.get('node') or kwargs.get('project') or OSFUser.load(kwargs.get('pid'))
+    target = kwargs.get('node') or kwargs.get('project') or get_non_node_from_pid(kwargs)
     parent = kwargs.get('parent')
     if target:
         return parent, target
 
     pid = kwargs.get('pid')
     nid = kwargs.get('nid')
+
     if pid and nid:
         target = _load_node_or_fail(nid)
         parent = _load_node_or_fail(pid)
     elif pid and not nid:
-        target = Preprint.load(pid)
-        if not target:
-            target = _load_node_or_fail(pid)
+        target = _load_node_or_fail(pid)
     elif nid and not pid:
         target = _load_node_or_fail(nid)
     elif not pid and not nid:
