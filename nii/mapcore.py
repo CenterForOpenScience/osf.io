@@ -98,7 +98,7 @@ class MAPCoreLocker():
                     raise e
             if fd >= 0:
                 os.close(fd)
-                logger.debug('OSFUser ' + user.eppn + 'is locked.')
+                logger.debug('OSFUser ' + user.eppn + ' is locked.')
                 return
 
     def unlock_user(self, user):
@@ -109,7 +109,7 @@ class MAPCoreLocker():
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise e
-        logger.debug('OSFUser ' + user.eppn + 'is unlocked.')
+        logger.debug('OSFUser ' + user.eppn + ' is unlocked.')
         return
 
     def lock_node(self, node):
@@ -1121,6 +1121,7 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
             if mapcore_group_member_is_private(grp2):
                 logger.warning('mAP group( {} ) member list is private. (skipped)'.format(grp2['group_name']))
                 continue
+            logger.debug('mAP group [' + grp['group_name'] + '] (' + grp['group_key'] + ') is a candidate to Sync.')
 
             new_project = False
             try:
@@ -1134,6 +1135,7 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
                         logger.error('cannot create RDM project for mAP group [' + grp['group_name'] + '].  skip.')
                         #TODO log?
                         continue
+                    logger.info('New node is created from mAP group [' + grp['group_name'] + '] (' + grp['group_key'] + ')')
                     new_project = True
                     # copy info and members to RDM
                     mapcore_sync_rdm_project(node, title_desc=True,
@@ -1150,7 +1152,8 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
                 # different contributors or title
                 if my_rdm_projects.get(group_key) is None \
                    or node.title != grp2['group_name']:
-                    mapcore_sync_rdm_project_or_map_group(user, node)
+                    mapcore_sync_rdm_project_or_map_group(user, node)  # この意図がよくわからない
+                    # mapcore_sync_rdm_project(node, title_desc=True, contributors=True)
 
         for group_key, project in my_rdm_projects.items():
             if project.is_deleted:
@@ -1279,6 +1282,51 @@ if __name__ == '__main__':
     print('In Main')
 
     if False:
+        # API呼び出しの権限テスト
+        me1 = OSFUser.objects.get(eppn='nagahara@openidp.nii.ac.jp')
+        map1 = MAPCore(me1)
+        me2 = OSFUser.objects.get(eppn='hnagahara@openidp.nii.ac.jp')
+        map2 = MAPCore(me2)
+        me3 = OSFUser.objects.get(eppn='nnagahara@openidp.nii.ac.jp')
+        map3 = MAPCore(me3)
+
+        try:
+            res = map1.get_group_by_key(sys.argv[1])
+            # res = map1.get_group_by_name(sys.argv[1])
+            grp1 = res['result']['groups'][0]
+            gk1 = grp1['group_key']
+            print('Title [' + grp1['group_name'] + '], Key [' + grp1['group_key'] + '], by user [' + me1.eppn + ']')
+            res = map1.get_group_members(gk1)
+            for mem in res['result']['accounts']:
+                print('ePPN [' + mem['eppn'] + '], Account [' + mem['account_name'] + ']')
+        except Exception as e:
+            print(e.message)
+
+        try:
+            res = map2.get_group_by_key(sys.argv[1])
+            # res = map2.get_group_by_name(sys.argv[1])
+            grp2 = res['result']['groups'][0]
+            gk2 = grp2['group_key']
+            print('Title [' + grp2['group_name'] + '], Key [' + grp2['group_key'] + '], by user [' + me2.eppn + ']')
+            res = map2.get_group_members(gk2)
+            for mem in res['result']['accounts']:
+                print('ePPN [' + mem['eppn'] + '], Account [' + mem['account_name'] + ']')
+        except Exception as e:
+            print(e.message)
+
+        try:
+            res = map3.get_group_by_key(sys.argv[1])
+            # res = map3.get_group_by_name(sys.argv[1])
+            grp3 = res['result']['groups'][0]
+            gk3 = grp3['group_key']
+            print('Title [' + grp3['group_name'] + '], Key [' + grp3['group_key'] + '], by user [' + me3.eppn + ']')
+            res = map3.get_group_members(gk3)
+            for mem in res['result']['accounts']:
+                print('ePPN [' + mem['eppn'] + '], Account [' + mem['account_name'] + ']')
+        except Exception as e:
+            print(e.message)
+
+    if False:
         me = OSFUser.objects.get(eppn=sys.argv[1])
         mapcore = MAPCore(me)
         result = mapcore.get_my_groups()
@@ -1294,7 +1342,7 @@ if __name__ == '__main__':
             print(pp(json))
         exit(0)
 
-    if True:
+    if False:
         me = OSFUser.objects.get(eppn=sys.argv[1])
         mapcore_sync_rdm_user_projects(me)
         pass
