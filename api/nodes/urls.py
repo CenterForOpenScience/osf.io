@@ -13,6 +13,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/addons/$', views.NodeAddonList.as_view(), name=views.NodeAddonList.view_name),
     url(r'^(?P<node_id>\w+)/addons/(?P<provider>\w+)/$', views.NodeAddonDetail.as_view(), name=views.NodeAddonDetail.view_name),
     url(r'^(?P<node_id>\w+)/addons/(?P<provider>\w+)/folders/$', views.NodeAddonFolderList.as_view(), name=views.NodeAddonFolderList.view_name),
+    url(r'^(?P<node_id>\w+)/bibliographic_contributors/$', views.NodeBibliographicContributorsList.as_view(), name=views.NodeBibliographicContributorsList.view_name),
     url(r'^(?P<node_id>\w+)/children/$', views.NodeChildrenList.as_view(), name=views.NodeChildrenList.view_name),
     url(r'^(?P<node_id>\w+)/citation/$', views.NodeCitationDetail.as_view(), name=views.NodeCitationDetail.view_name),
     url(r'^(?P<node_id>\w+)/citation/(?P<style_id>[-\w]+)/$', views.NodeCitationStyleDetail.as_view(), name=views.NodeCitationStyleDetail.view_name),
