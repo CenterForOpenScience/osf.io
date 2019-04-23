@@ -2,7 +2,7 @@
 import logging
 
 from addons.base import signals as file_signals
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, Region
 from api.base import settings as api_settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum
@@ -127,6 +127,15 @@ def file_modified(target, user, payload, file_node):
 
     file_info.file_size = file_size
     file_info.save()
+
+def update_default_storage(user):
+    try:
+        if user is not None:
+            user_settings = user.get_addon('osfstorage')
+            instId = user.affiliated_institutions.first()._id
+            user_settings.set_region(Region.objects.get(_id=instId)._id)
+    except Exception:
+            pass
 
 def get_node_file_list(file_node):
     if 'file' in file_node.type:

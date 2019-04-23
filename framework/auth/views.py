@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 
+from website.util.quota import update_default_storage
 from addons.osfstorage.models import Region
 from framework import forms, sentry, status
 from framework import auth as framework_auth
@@ -317,6 +318,7 @@ def auth_login(auth):
 
     data = login_and_register_handler(auth, login=True, campaign=campaign, next_url=next_url)
     if data['status_code'] == http.FOUND:
+        update_default_storage(auth.user)
         return redirect(data['next_url'])
 
 
@@ -730,6 +732,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         external_id_provider=external_id_provider,
         destination=destination
     )
+    print('Confirmation URL:', confirmation_url)
 
     try:
         merge_target = OSFUser.objects.get(emails__address=email)
@@ -851,6 +854,7 @@ def register_user(**kwargs):
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=user.username)
         message = language.REGISTRATION_SUCCESS.format(email=user.username)
+        print(message)
         return {'message': message}
     else:
         return {'message': 'You may now log in.'}
