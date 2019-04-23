@@ -25,7 +25,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from osf.models import Tag
+from osf.models import Tag, ProjectStorageType
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
@@ -473,9 +473,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     quota_threshold = ser.SerializerMethodField()
 
     def get_quota_rate(self, obj):
-        max_quota, used_quota = quota.get_quota_info(obj.creator)
-        if max_quota <= 0:
-            return 2
+        try:
+            storage_type = ProjectStorageType.objects.get(node=obj).storage_type
+        except ProjectStorageType.DoesNotExist:
+            storage_type = ProjectStorageType.NII_STORAGE
+        max_quota, used_quota = quota.get_quota_info(obj.creator, storage_type)
         return float(used_quota) / (max_quota * 1024 ** 3) * 100
 
     def get_quota_threshold(self, obj):
