@@ -21,6 +21,9 @@ from website.util import quota
 from addons.osfstorage.models import Region
 from django.http import HttpResponseRedirect
 
+from website.views import get_storage_region_list
+from osf.models.user_quota import UserQuota
+
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'institutions/list.html'
@@ -311,6 +314,80 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
         kwargs['order_by'] = self.get_order_by()
         kwargs['direction'] = self.get_direction()
         return super(UserListByInstitutionID, self).get_context_data(**kwargs)
+
+    def get_order_by(self):
+        order_by = self.request.GET.get('order_by', 'ratio')
+        if order_by not in ['fullname', 'username', 'ratio', 'usage', 'remaining', 'quota']:
+            return 'ratio'
+        return order_by
+
+    def get_direction(self):
+        direction = self.request.GET.get('status', 'desc')
+        if direction not in ['asc', 'desc']:
+            return 'desc'
+        return direction
+
+
+class DifferentUserListByInstitutionID(RdmPermissionMixin, ListView):
+    template_name = 'institutions/different_list_institute.html'
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+    paginate_by = 10
+
+    def custom_size_abbreviation(self, size, abbr):
+        if abbr == 'B':
+            return (size / 1024, 'KiB')
+        return size, abbr.replace('B', 'iB')
+
+    def get_queryset(self):
+        user_list = []
+        for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
+            try:
+                max_quota = user.userquota.max_quota
+                used_quota = user.userquota.used
+            except ObjectDoesNotExist:
+                max_quota = api_settings.DEFAULT_MAX_QUOTA
+                used_quota = quota.used_quota(user.guids.first()._id)
+            
+            user_quota = UserQuota.objects.filter(user=user)
+            storage_type = user_quota[0].storage_type if len(user_quota) else None
+            if storage_type == None or storage_type == 2:
+                max_quota_bytes = max_quota * 1024 ** 3
+                remaining_quota = max_quota_bytes - used_quota
+                used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
+                remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
+                user_list.append({
+                    'id': user.guids.first()._id,
+                    'fullname': user.fullname,
+                    'username': user.username,
+                    'ratio': float(used_quota) / max_quota_bytes * 100,
+                    'usage': used_quota,
+                    'usage_value': used_quota_abbr[0],
+                    'usage_abbr': used_quota_abbr[1],
+                    'remaining': remaining_quota,
+                    'remaining_value': remaining_abbr[0],
+                    'remaining_abbr': remaining_abbr[1],
+                    'quota': max_quota
+                })
+        order_by = self.get_order_by()
+        reverse = self.get_direction() != 'asc'
+        user_list.sort(key=itemgetter(order_by), reverse=reverse)
+        return user_list
+
+    def get_context_data(self, **kwargs):
+        institution = Institution.objects.get(id=self.kwargs['institution_id'])
+        kwargs['institution_name'] = institution.name
+
+        self.query_set = self.get_queryset()
+        self.page_size = self.get_paginate_by(self.query_set)
+        self.paginator, self.page, self.query_set, self.is_paginated = \
+            self.paginate_queryset(self.query_set, self.page_size)
+
+        kwargs['users'] = self.query_set
+        kwargs['page'] = self.page
+        kwargs['order_by'] = self.get_order_by()
+        kwargs['direction'] = self.get_direction()
+        return super(DifferentUserListByInstitutionID, self).get_context_data(**kwargs)
 
     def get_order_by(self):
         order_by = self.request.GET.get('order_by', 'ratio')
