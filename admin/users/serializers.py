@@ -1,11 +1,12 @@
 """
 Serialize user
 """
+from osf.models import UserQuota
 from website.util import quota
 
 
 def serialize_user(user):
-    max_quota, _ = quota.get_quota_info(user)
+    max_quota, _ = quota.get_quota_info(user, UserQuota.NII_STORAGE)
 
     return {
         'username': user.username,
