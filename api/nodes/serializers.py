@@ -14,7 +14,7 @@ from api.base.serializers import (
     WaterbutlerLink, relationship_diff, BaseAPISerializer,
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
 )
-from api.base.settings import ADDONS_FOLDER_CONFIGURABLE, DEFAULT_MAX_QUOTA, WARNING_THRESHOLD
+from api.base.settings import ADDONS_FOLDER_CONFIGURABLE, WARNING_THRESHOLD
 from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
@@ -22,7 +22,7 @@ from api.base.utils import (
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from osf.models import Tag
@@ -473,12 +473,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     quota_threshold = ser.SerializerMethodField()
 
     def get_quota_rate(self, obj):
-        try:
-            max_quota = obj.creator.userquota.max_quota
-            used_quota = obj.creator.userquota.used
-        except ObjectDoesNotExist:
-            max_quota = DEFAULT_MAX_QUOTA
-            used_quota = quota.used_quota(obj.creator._id)
+        max_quota, used_quota = quota.get_quota_info(obj.creator)
         if max_quota <= 0:
             return 2
         return float(used_quota) / (max_quota * 1024 ** 3) * 100

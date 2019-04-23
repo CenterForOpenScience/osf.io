@@ -4,7 +4,6 @@ import json
 from operator import itemgetter
 
 from django.core import serializers
-from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse_lazy
@@ -17,7 +16,6 @@ from django.core.exceptions import PermissionDenied
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm
-from api.base import settings as api_settings
 from osf.models import Institution, Node, OSFUser
 from website.util import quota
 from addons.osfstorage.models import Region
@@ -276,12 +274,7 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
     def get_queryset(self):
         user_list = []
         for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
-            try:
-                max_quota = user.userquota.max_quota
-                used_quota = user.userquota.used
-            except ObjectDoesNotExist:
-                max_quota = api_settings.DEFAULT_MAX_QUOTA
-                used_quota = quota.used_quota(user.guids.first()._id)
+            max_quota, used_quota = quota.get_quota_info(user)
             max_quota_bytes = max_quota * 1024 ** 3
             remaining_quota = max_quota_bytes - used_quota
             used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))

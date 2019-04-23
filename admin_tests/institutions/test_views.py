@@ -440,6 +440,12 @@ class TestGetUserListWithQuotaSorted(AdminTestCase):
         result = map(itemgetter('quota'), response.context_data['users'])
         nt.assert_equal(result, expected)
 
+    def test_sort_invalid(self):
+        expected = [100.0, 80.0, 45.0]
+        response = self.view_get('order_by=invalid&status=hello')
+        result = map(itemgetter('ratio'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
 
 class InstitutionDefaultStorageDisplay(AdminTestCase):
     def setUp(self):
