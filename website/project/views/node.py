@@ -782,12 +782,7 @@ def _view_project(node, auth, primary=False,
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     NodeRelation = apps.get_model('osf.NodeRelation')
-    try:
-        max_quota = node.creator.userquota.max_quota
-        used_quota = node.creator.userquota.used
-    except ObjectDoesNotExist:
-        max_quota = api_settings.DEFAULT_MAX_QUOTA
-        used_quota = quota.used_quota(node.creator._id)
+    max_quota, used_quota = quota.get_quota_info(node.creator)
     is_registration = node.is_registration
     timestamp_pattern = get_timestamp_pattern_division(auth, node)
     data = {

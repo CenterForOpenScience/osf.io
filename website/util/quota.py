@@ -41,6 +41,12 @@ def abbreviate_size(size):
 
     return (size, abbr_dict[power])
 
+def get_quota_info(user, storage_type=UserQuota.NII_STORAGE):
+    user_quota = user.userquota_set.filter(storage_type=storage_type).first()
+    if user_quota is None:
+        return (api_settings.DEFAULT_MAX_QUOTA, used_quota(user._id))
+    return (user_quota.max_quota, user_quota.used)
+
 @file_signals.file_updated.connect
 def update_used_quota(self, target, user, event_type, payload):
     if payload.get('provider') != 'osfstorage':

@@ -4299,7 +4299,7 @@ class TestFileViews(OsfTestCase):
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
         data = res.json['data']
         assert_equal(len(data), len(expected))
-        assert_equal(data[0]['children'][0]['iconUrl'], '/static/addons/github/comicon.png')
+        assert_equal(data[0]['children'][0]['iconUrl'], '/static/addons/osfstorage/comicon_custom_storage.png')
         assert_equal(data[0]['children'][0]['addonFullname'], data[0]['children'][0]['nodeRegion'])
 
 

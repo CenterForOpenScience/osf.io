@@ -35,7 +35,7 @@ def grid_data(auth, node, **kwargs):
                 while i < len(ret[0]['children']):
                     if ret[0]['children'][i]['provider'] == 'osfstorage':
                         if 'nodeRegion' in ret[0]['children'][i]:
-                            if ret[0]['children'][i]['nodeRegion'] not in ['NII Storage', 'United States'] :
+                            if ret[0]['children'][i]['nodeRegion'] not in ['NII Storage', 'United States']:
                                 ret[0]['children'][i]['iconUrl'] = '/static/addons/osfstorage/comicon_custom_storage.png'
                                 ret[0]['children'][i]['addonFullname'] = ret[0]['children'][i]['nodeRegion']
                     i += 1
