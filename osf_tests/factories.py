@@ -1034,3 +1034,11 @@ class ChronosSubmissionFactory(DjangoModelFactory):
         instance = super(ChronosSubmissionFactory, cls)._create(target_class, *args, **kwargs)
         instance.save()
         return instance
+
+
+class UserLogFactory(DjangoModelFactory):
+    class Meta:
+        model = models.UserLog
+    action = 'file_added'
+    params = {'path': '/'}
+    user = SubFactory(UserFactory)

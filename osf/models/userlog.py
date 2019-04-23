@@ -36,6 +36,7 @@ class UserLog(BaseLog):
     params = DateTimeAwareJSONField(default=dict)
     user = models.ForeignKey('OSFUser', related_name='user_logs', db_index=True,
                              null=True, blank=True, on_delete=models.CASCADE)
+    should_hide = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-created']

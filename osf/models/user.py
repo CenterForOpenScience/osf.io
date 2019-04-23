@@ -742,6 +742,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         self._merge_users_quickfiles(user)
         self._merge_users_preprints(user)
+        self._merge_users_logs(user)
 
         # finalize the merge
 
@@ -829,6 +830,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             preprint.remove_permission(user, user_perms)
             preprint.save()
+
+    def _merge_users_logs(self, user):
+        user.user_logs.update(user=self)
 
     def disable_account(self):
         """
@@ -1689,7 +1693,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         }
 
         self.add_log(
-            'quickfiles_{0}'.format(action),
+            action,
             auth=auth,
             params=params
         )

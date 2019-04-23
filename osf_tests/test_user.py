@@ -50,7 +50,8 @@ from .factories import (
     UnregUserFactory,
     UserFactory,
     RegistrationFactory,
-    PreprintFactory
+    PreprintFactory,
+    UserLogFactory
 )
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
@@ -1865,6 +1866,14 @@ class TestUserMerging(OsfTestCase):
         self.user.merge_user(other_user)
         assert other_user.merged_by._id == self.user._id
         assert mock_notify.called is False
+
+    def test_merge_user_logs(self):
+        other_user = UserFactory()
+        user_log = UserLogFactory(user=other_user)
+        user_log.save()
+
+        self.user.merge_user(other_user)
+        assert user_log in self.user.user_logs.all()
 
 
 @pytest.mark.enable_implicit_clean
