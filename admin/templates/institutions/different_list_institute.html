@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+<title>{{ institution_name }} User List - Statistical Status of Default Storage</title>
+{% endblock title %}
+{% block content %}
+  {% include 'institutions/different_user_list_by_institute.html' %}
+    {% if not users|length %}
+     <h3>No results found</h3>
+    {% endif %}
+{% endblock content %}
