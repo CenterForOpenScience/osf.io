@@ -2,6 +2,20 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.7.0 (2019-04-22)
+===================
+- Update from jessie to stretch
+- APIv2: Add ability to update user's default storage location
+- APIv2: Allow access to preprint metric data for date ranges
+- Backend support for new registries overview page, including:
+- Modify approval links format for registrations
+- Add article_doi field to registrations
+- APIv2: Make several registration fields editable by admins
+- APIv2: Expose more withdrawn registration fields
+- APIv2: Add node/registration bibliographic contributor list endpoints
+- APIv2: Fix DELETE CollectionLinkedRegistrationsRelationship 500 error
+- APIv2: Fix children count on NodeSerializer
+
 19.6.0 (2019-04-09)
 ===================
 - Add support for sending withdrawal request denied emails
