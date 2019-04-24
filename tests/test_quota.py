@@ -8,7 +8,9 @@ from addons.osfstorage.models import OsfStorageFileNode
 from api.base import settings as api_settings
 from framework.auth import signing
 from tests.base import OsfTestCase
-from osf.models import FileLog, FileInfo, TrashedFileNode, TrashedFolder, UserQuota
+from osf.models import (
+    FileLog, FileInfo, TrashedFileNode, TrashedFolder, UserQuota, ProjectStorageType
+)
 from osf_tests.factories import (
     AuthUserFactory, ProjectFactory, UserFactory, InstitutionFactory, RegionFactory
 )
@@ -889,7 +891,43 @@ class TestQuotaApi(OsfTestCase):
         assert_equal(response.json['used'], 0)
 
     def test_used_half_custom_quota(self):
-        UserQuota.objects.create(user=self.user, max_quota=200, used=100 * 1024 ** 3)
+        UserQuota.objects.create(
+            storage_type=UserQuota.NII_STORAGE,
+            user=self.user,
+            max_quota=200,
+            used=100 * 1024 ** 3
+        )
+
+        response = self.app.get(
+            '{}?payload={payload}&signature={signature}'.format(
+                self.node.api_url_for('creator_quota'),
+                **signing.sign_data(signing.default_signer, {})
+            )
+        )
+        assert_equal(response.status_code, 200)
+        assert_equal(response.json['max'], 200 * 1024 ** 3)
+        assert_equal(response.json['used'], 100 * 1024 ** 3)
+
+    def test_used_half_custom_institution_quota(self):
+        UserQuota.objects.create(
+            storage_type=UserQuota.NII_STORAGE,
+            user=self.user,
+            max_quota=150,
+            used=0
+        )
+        UserQuota.objects.create(
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            user=self.user,
+            max_quota=200,
+            used=100 * 1024 ** 3
+        )
+
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        RegionFactory(_id=institution._id)
+        ProjectStorageType.objects.filter(node=self.node).update(
+            storage_type=ProjectStorageType.CUSTOM_STORAGE
+        )
 
         response = self.app.get(
             '{}?payload={payload}&signature={signature}'.format(
