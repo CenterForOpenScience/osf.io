@@ -90,7 +90,7 @@ def mapcore_check_token(use_mapcore, func, *args, **kwargs):
                     mapcore_api_is_available(auth.user)
             except MAPCoreTokenExpired as e:
                 if e.caller is None or e.caller != auth.user:
-                    raise e
+                    raise
                 return redirect(mapcore_request_authcode(
                     next_url=request.url))
         except MAPCoreException as e:

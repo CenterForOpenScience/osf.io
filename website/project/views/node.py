@@ -98,7 +98,7 @@ def edit_node(auth, node, **kwargs):
             data=dict(message_long=e.message)
         )
     if mapcore_is_enabled():
-        mapcore_sync_map_group(node)
+        mapcore_sync_map_group(auth.user, node)
     return {
         'status': 'success',
         'newValue': new_val  # Used by x-editable  widget to reflect changes made by sanitizer

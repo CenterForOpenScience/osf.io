@@ -95,7 +95,7 @@ class MAPCoreLocker():
                     time.sleep(1)
                     continue
                 else:
-                    raise e
+                    raise
             if fd >= 0:
                 os.close(fd)
                 logger.debug('OSFUser ' + user.eppn + ' is locked.')
@@ -108,7 +108,7 @@ class MAPCoreLocker():
             os.unlink(fname)
         except OSError as e:
             if e.errno != errno.ENOENT:
-                raise e
+                raise
         logger.debug('OSFUser ' + user.eppn + ' is unlocked.')
         return
 
@@ -127,7 +127,7 @@ class MAPCoreLocker():
                     time.sleep(1)
                     continue
                 else:
-                    raise e
+                    raise
             if fd >= 0:
                 os.close(fd)
                 logger.debug('Node \'' + node.title + '\' is locked.')
@@ -140,7 +140,7 @@ class MAPCoreLocker():
             os.unlink(fname)
         except OSError as e:
             if e.errno != errno.ENOENT:
-                raise e
+                raise
         logger.debug('Node \'' + node.title + '\' is unlocked.')
         return
 
@@ -233,7 +233,7 @@ def mapcore_receive_authcode(user, params):
     me = OSFUser.objects.get(eppn=user.eppn)
     logger.info('name: ' + me.fullname)
     logger.info('eppn: ' + me.eppn)
-    if hasattr(me, 'map_profile'):
+    if me.map_profile:
         logger.info('access_token: ' + me.map_profile.oauth_access_token)
         logger.info('refresh_token: ' + me.map_profile.oauth_refresh_token)
     """
@@ -662,17 +662,61 @@ def is_node_admin(node, user):
 #     return
 
 
+def _mapcore_api_with_switching_token(access_user, node, group_key, func):
+    candidates = []
+    if access_user:
+        candidates.append(access_user)  # top priority
+    else:
+        candidates.append(node.creator)
+    for contributor in node.contributors.all():
+        candidates.append(contributor)
+    # maintain the order and remove duplicated users
+    first_e = None
+    for candidate in sorted(set(candidates), key=candidates.index):
+        try:
+            mapcore = MAPCore(candidate)
+            return func(mapcore, node, group_key)
+        except MAPCoreException as e:
+            if e.group_does_not_exist():
+                raise
+            if first_e is None:
+                first_e = e
+    raise first_e   # missing original traceback
+
+def _get_group_by_key(mapcore, node, group_key):
+    return mapcore.get_group_by_key(group_key)
+
+def _get_group_members(mapcore, node, group_key):
+    return mapcore.get_group_members(group_key)
+
+def _edit_group(mapcore, node, group_key):
+    return mapcore.edit_group(group_key, node.title, node.description)
+
+def mapcore_get_group_by_key(access_user, node, group_key):
+    return _mapcore_api_with_switching_token(
+        access_user, node, group_key, _get_group_by_key)
+
+def mapcore_get_group_members(access_user, node, group_key):
+    return _mapcore_api_with_switching_token(
+        access_user, node, group_key, _get_group_members)
+
+def mapcore_update_group(access_user, node, group_key):
+    return _mapcore_api_with_switching_token(
+        access_user, node, group_key, _edit_group)
+
+
 #
 # functions for Web UI
 #
 
+# TODO unnecessary
 class MAPCoreUserInfoException(MAPCoreException):
     def __init__(self, msg, type='UNKNOWN'):
         ext_message = '{} (type={})'.format(msg, type)
         super(MAPCoreUserInfoException, self).__init__(None, ext_message)
 
 # make mAP extended group info with members
-def mapcore_get_extended_group_info(mapcore, group_key, base_grp=None, can_abort=True):
+def mapcore_get_extended_group_info(access_user, node, group_key, base_grp=None, can_abort=True):
     '''
     make mAP extended group info with members
     :param mapcore: MAPCore instance to access mAP core
@@ -718,10 +762,11 @@ def mapcore_get_extended_group_info(mapcore, group_key, base_grp=None, can_abort
     try:
         group_ext = base_grp
         if base_grp is None:
-            result = mapcore.get_group_by_key(group_key)
+            result = mapcore_get_group_by_key(access_user, node, group_key)
             group_ext = result['result']['groups'][0]
             #logger.debug('Group info:\n' + pp(group_ext))
 
+        # TODO unnecessary
         # if mapcore_group_member_is_private(group_ext):
         #     msg = 'mAP group [' + group_ext['group_name'] + '] has CLOSED_MEMBER setting.'
         #     logger.error(msg)
@@ -731,7 +776,7 @@ def mapcore_get_extended_group_info(mapcore, group_key, base_grp=None, can_abort
         #         return False
 
         # get member list
-        result = mapcore.get_group_members(group_ext['group_key'])
+        result = mapcore_get_group_members(access_user, node, group_ext['group_key'])
         member_list = result['result']['accounts']
         admins = []
         members = []
@@ -746,9 +791,9 @@ def mapcore_get_extended_group_info(mapcore, group_key, base_grp=None, can_abort
         group_ext['group_admin_eppn'] = admins
         group_ext['group_member_list'] = members
         #logger.debug('Member info:\n' + pp(members))
-    except Exception as e:
+    except Exception:
         if can_abort:
-            raise e
+            raise
         else:
             return False
 
@@ -778,21 +823,6 @@ def mapcore_sync_map_new_group(user, title):
     return group_key
 
 
-def mapcore_get_group_detail_info(mapcore, group_key):
-    '''
-    get details for the group
-    :param mapcore: MAPCoreインスタンス
-    :param group_key: group_key
-    :return: mAPグループ情報のdict
-    '''
-    result = mapcore.get_group_by_key(group_key)
-    if result is False:
-        return False
-    group_ext = result['result']['groups'][0]
-    #logger.debug('Group info:\n' + pp(group_ext))
-    return group_ext
-
-
 def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
     '''
     create new Node from mAP group info
@@ -802,9 +832,7 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
 
     # switch to admin user
     group_key = map_group['group_key']
-    group_info_ext = mapcore_get_extended_group_info(mapcore, group_key, base_grp=map_group, can_abort=False)
-    if group_info_ext is False:
-        return None
+    group_info_ext = mapcore_get_extended_group_info(mapcore, group_key, base_grp=map_group)
 
     creator = None
     for admin_eppn in group_info_ext['group_admin_eppn']:
@@ -833,8 +861,7 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
     return node
 
 
-#TODO mapcore -> access_user
-def mapcore_sync_rdm_project(node, title_desc=False, contributors=False, mapcore=None):
+def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=False):
     '''
     mAP coreグループの情報をRDM Nodeに同期する
     :param node: Node object
@@ -855,16 +882,14 @@ def mapcore_sync_rdm_project(node, title_desc=False, contributors=False, mapcore
         locker.lock_node(node)
         # take mAP group info
         group_key = node.map_group_key
-        if mapcore is None:
-            mapcore = MAPCore(node.creator)
-        map_group = mapcore_get_extended_group_info(mapcore, group_key)
+        map_group = mapcore_get_extended_group_info(access_user, node, group_key)
 
         # check conditions to sync
         if not map_group['active']:
-            logger.error('mAP group [' + map_group['group_name'] + '] is not active, no sync')
+            logger.info('mAP group [' + map_group['group_name'] + '] is not active, no sync')
             return False
         if not map_group['public']:
-            logger.error('mAP group [' + map_group['group_name'] + '] is not public  no sync')
+            logger.info('mAP group [' + map_group['group_name'] + '] is not public  no sync')
             return False
         if mapcore_group_member_is_private(map_group):
             # logger.error('mAP group [' + map_group['group_name'] + '] member list is not public  no sync')
@@ -884,6 +909,7 @@ def mapcore_sync_rdm_project(node, title_desc=False, contributors=False, mapcore
             for rdm_user in node.contributors.all():
                 rdm_member_list.append(RDMmember(node, rdm_user))
 
+            # TODO sorted in compare_members
             # compare members
             rdm_member_list_s = sorted(rdm_member_list, key=attrgetter('eppn'))
             map_member_list = sorted(map_group['group_member_list'], key=lambda x: x['eppn'])
@@ -933,8 +959,7 @@ def mapcore_resign_map_group(node, user):
     return mapcore.remove_from_group(node.map_group_key, user.eppn)
 
 
-#TODO mapcore -> access_user
-def _mapcore_sync_map_group(node, title_desc=True, contributors=True, mapcore=None):
+def _mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True):
     '''
     RDM Nodeの情報をmAPグループに同期する
     :param node: Node object
@@ -953,39 +978,30 @@ def _mapcore_sync_map_group(node, title_desc=True, contributors=True, mapcore=No
 
     try:
         locker.lock_node(node)
-        # get the RDM contributor and make lists
-        #rdm_admin = []
-        rdm_members = []
-        for member in node.contributors.all():
-            rdmu = RDMmember(node, member)
-            rdm_members.append(rdmu)
-            # if rdmu.is_admin:
-            #    rdm_admin.append(rdmu)
-            logger.debug('RDM contributor:\n' + pp(vars(rdmu)))
-
-        rdm_members.sort(key=attrgetter('eppn'))
-
-        # TODO retry by node.contributors
-        # get admin privilaged tokens
-        if mapcore is None:
-            mapcore = MAPCore(node.creator)
-        logger.debug('group [' + node.title + '] sync with [' + node.creator.eppn + ']\'s AccessToken')
-
-        # get mAP group
         group_key = node.map_group_key
-        map_group = mapcore_get_extended_group_info(mapcore, group_key)
-        map_members = map_group['group_member_list']
-        map_members.sort(key=lambda u: u['eppn'])
-        # logger.debug('mAP group info:\n' + pp(map_group))
-        logger.debug('mAP group members: ' + pp(map_members))
 
         # sync group info
         if title_desc:
-            mapcore.edit_group(group_key, node.title, node.description)
+            mapcore_update_group(access_user, node, group_key)
             logger.info('Node title [' + node.title + '] and desctiption is sync to mAP group [' + group_key + '].')
 
         # sync members
         if contributors:
+            rdm_members = []
+            for member in node.contributors.all():
+                rdmu = RDMmember(node, member)
+                rdm_members.append(rdmu)
+                # logger.debug('RDM contributor:\n' + pp(vars(rdmu)))
+
+            rdm_members.sort(key=attrgetter('eppn'))
+
+            map_group = mapcore_get_extended_group_info(access_user, node, group_key)
+            # TODO sorted in compare_members
+            map_members = map_group['group_member_list']
+            map_members.sort(key=lambda u: u['eppn'])
+            # logger.debug('mAP group info:\n' + pp(map_group))
+            logger.debug('mAP group members: ' + pp(map_members))
+
             # compare members
             add, delete, upgrade, downgrade = compare_members(rdm_members, map_members, True)
             #   add: RDMmember,  delete: map_member, upgrade: map_member, downgrade: map_member
@@ -1017,16 +1033,16 @@ def _mapcore_sync_map_group(node, title_desc=True, contributors=True, mapcore=No
     return True
 
 
-def mapcore_sync_map_group(node, title_desc=True, contributors=True, mapcore=None):
+def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True):
     try:
-        ret = _mapcore_sync_map_group(node, title_desc=title_desc, contributors=contributors, mapcore=mapcore)
+        ret = _mapcore_sync_map_group(access_user, node, title_desc=title_desc, contributors=contributors)
         pass
     except Exception as e:
         logger.warning('The project ({}) cannot synchronize to mAP. (retry later): reason={}'.format(node._id, str(e)))
         # TODO log
         mapcore_set_standby_to_upload(node)  # retry later
-        # Do not raise
-        raise e
+        # TODO Do not raise ?
+        raise
         #return False
     if ret:
         mapcore_unset_standby_to_upload(node)
@@ -1040,6 +1056,8 @@ def mapcore_url_is_sync_target(request_url):
             return True
     return False
 
+
+#TODO unnecessary
 def mapcore_member_list_is_accessible(access_user, node):
     try:
         mapcore = MAPCore(access_user)
@@ -1048,8 +1066,9 @@ def mapcore_member_list_is_accessible(access_user, node):
     except MAPCoreException as e:
         if e.listing_group_member_is_not_permitted():
             return False
-        raise e
+        raise
 
+#TODO unnecessary
 def mapcore_get_accessible_user(access_user, node):
     if mapcore_member_list_is_accessible(access_user, node):
         return access_user
@@ -1062,7 +1081,7 @@ def mapcore_get_accessible_user(access_user, node):
     return None
 
 
-def mapcore_sync_rdm_user_projects(user, rdm2map=True):
+def mapcore_sync_rdm_user_projects(user):
     '''
     RDMとmAPの両方にグループに所属:
        タイトルが変わっていない場合: なにもしない
@@ -1086,7 +1105,6 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
         プロジェクトをis_deleted=Trueにする
 
     :param user: OSFUser
-    :param rdm2map: boolean  enable RDM->mAP sync (mAP->RDM sync is always enable) (not implemented)
     :return: なし。エラー時には例外投げる
 
     '''
@@ -1108,15 +1126,13 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
         my_map_groups = {}
         for grp in result['result']['groups']:
             group_key = grp['group_key']
-            #grp2 = mapcore.get_group_by_key(group_key)['result']['groups'][0]  # unnecessary
-            grp2 = grp
-            my_map_groups[group_key] = grp2
+            my_map_groups[group_key] = grp
 
-            if not grp2['active'] or not grp2['public']:
+            if not grp['active'] or not grp['public']:
                 logger.warning('mAP group [' + grp['group_name'] + '] has unsoutable attribute(s).  Ignore')
                 continue
-            if mapcore_group_member_is_private(grp2):
-                logger.warning('mAP group( {} ) member list is private. (skipped)'.format(grp2['group_name']))
+            if mapcore_group_member_is_private(grp):
+                logger.warning('mAP group( {} ) member list is private. (skipped)'.format(grp['group_name']))
                 continue
             logger.debug('mAP group [' + grp['group_name'] + '] (' + grp['group_key'] + ') is a candidate to Sync.')
 
@@ -1127,7 +1143,7 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
             except ObjectDoesNotExist as e:
                 # exists only in mAP -> create new Node in RDM
                 try:
-                    node = mapcore_create_new_node_from_mapgroup(mapcore, grp2)
+                    node = mapcore_create_new_node_from_mapgroup(mapcore, grp)
                     if node is None:
                         logger.error('cannot create RDM project for mAP group [' + grp['group_name'] + '].  skip.')
                         #TODO log?
@@ -1135,22 +1151,22 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
                     logger.info('New node is created from mAP group [' + grp['group_name'] + '] (' + grp['group_key'] + ')')
                     new_project = True
                     # copy info and members to RDM
-                    mapcore_sync_rdm_project(node, title_desc=True,
-                                             contributors=True, mapcore=mapcore)
+                    mapcore_sync_rdm_project(user, node,
+                                             title_desc=True,
+                                             contributors=True)
                 except MAPCoreException as e:
                     if e.group_does_not_exist():
                         # This group is not linked to this RDM SP.
                         # Other SPs may have the group.
                         del my_map_groups[group_key]
                     else:
-                        raise e
+                        raise
 
             if new_project is False:
                 # different contributors or title
                 if my_rdm_projects.get(group_key) is None \
-                   or node.title != grp2['group_name']:
-                    mapcore_sync_rdm_project_or_map_group(user, node)  # この意図がよくわからない
-                    # mapcore_sync_rdm_project(node, title_desc=True, contributors=True)
+                   or node.title != grp['group_name']:
+                    mapcore_sync_rdm_project_or_map_group(user, node)
 
         for group_key, project in my_rdm_projects.items():
             if project.is_deleted:
@@ -1167,9 +1183,7 @@ def mapcore_sync_rdm_user_projects(user, rdm2map=True):
                     continue
 
                 # Project contributors is different from mAP group members.
-                #TODO retry in mapcore_get_extended_group_info()
-                accessible_user = mapcore_get_accessible_user(user, project)
-                mapcore_sync_rdm_project_or_map_group(accessible_user, project)
+                mapcore_sync_rdm_project_or_map_group(user, project)
             except MAPCoreException as e:
                 if e.group_does_not_exist():
                     logger.info('RDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(project.title, project._id))
@@ -1222,12 +1236,14 @@ def mapcore_sync_rdm_project_or_map_group(access_user, node):
         group_key = mapcore_sync_map_new_group(node.creator, node.title)
         node.map_group_key = group_key
         node.save()
-        mapcore_sync_map_group(node, title_desc=True, contributors=True)
+        mapcore_sync_map_group(access_user, node,
+                               title_desc=True, contributors=True)
     elif mapcore_is_on_standby_to_upload(node):
-        mapcore_sync_map_group(node, title_desc=True, contributors=True)
+        mapcore_sync_map_group(access_user, node,
+                               title_desc=True, contributors=True)
     else:
-        mapcore_sync_rdm_project(node, title_desc=True, contributors=True,
-                                 mapcore=MAPCore(access_user))
+        mapcore_sync_rdm_project(access_user, node,
+                                 title_desc=True, contributors=True)
 
 
 #
@@ -1376,12 +1392,6 @@ if __name__ == '__main__':
         add_contributor_to_project('Nagahara Test 001', 'hnagahara@openidp.nii.ac.jp')
         pass
 
-    # mAP -> RDM group sync
-    if False:
-        print('Sync from user belonging.')
-        me = OSFUser.objects.get(eppn=sys.argv[1])
-        mapcore_sync_rdm_user_projects(me, rdm2map=False)
-
     # RDM -> mAP project sync
     if False:
         print('RDM -> mAP sync test')
@@ -1392,7 +1402,7 @@ if __name__ == '__main__':
             node.map_group_key = group_key
             node.save()
         try:
-            mapcore_sync_map_group(node)
+            mapcore_sync_map_group(user, node)
         except Exception as e:
             print(e.message)
 

@@ -71,15 +71,15 @@ class MAPCoreException(Exception):
                         mapcore.http_status_code, mapcore.api_error_code,
                         mapcore.error_message, ext_message))
 
-    def group_does_not_exist(self):
-        if self.mapcore.api_error_code == 208 and \
-           self.mapcore.error_message == 'You do not have access permission':
-            return True
-        return False
-
     def listing_group_member_is_not_permitted(self):
         if self.mapcore.api_error_code == 206 and \
            self.mapcore.error_message == 'Listing group member is not permitted':
+            return True
+        return False
+
+    def group_does_not_exist(self):
+        if self.mapcore.api_error_code == 208 and \
+           self.mapcore.error_message == 'You do not have access permission':
             return True
         return False
 
@@ -204,7 +204,7 @@ class MAPCore(object):
                     time.sleep(1)
                     continue
                 else:
-                    raise e
+                    raise
             if fd >= 0:
                 os.close(fd)
                 return
@@ -217,7 +217,7 @@ class MAPCore(object):
             os.unlink(self.REFRESH_LOCK)
         except OSError as e:
             if e.errno != errno.ENOENT:
-                raise e
+                raise
 
     #
     # Get API version.

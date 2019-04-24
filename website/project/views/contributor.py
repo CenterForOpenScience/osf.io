@@ -234,7 +234,7 @@ def project_contributors_post(auth, node, **kwargs):
 
     node.save()
     if mapcore_is_enabled():
-        mapcore_sync_map_group(node)
+        mapcore_sync_map_group(auth.user, node)
 
     # Disconnect listener to avoid multiple invite emails
     unreg_contributor_added.disconnect(finalize_invitation)
@@ -252,7 +252,7 @@ def project_contributors_post(auth, node, **kwargs):
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
         if mapcore_is_enabled():
-            mapcore_sync_map_group(child)
+            mapcore_sync_map_group(auth.user, child)
 
     # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
@@ -290,7 +290,7 @@ def project_manage_contributors(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST, data={'message_long': error.args[0]})
 
     if mapcore_is_enabled():
-        mapcore_sync_map_group(node)
+        mapcore_sync_map_group(auth.user, node)
 
     # If user has removed herself from project, alert; redirect to
     # node summary if node is public, else to user's dashboard page
@@ -355,7 +355,7 @@ def project_remove_contributor(auth, **kwargs):
                 'message_long': 'Could not remove contributor.'})
 
         if mapcore_is_enabled():
-            mapcore_sync_map_group(node)
+            mapcore_sync_map_group(auth.uesr, node)
 
         # On parent node, if user has removed herself from project, alert; redirect to
         # node summary if node is public, else to user's dashboard page
