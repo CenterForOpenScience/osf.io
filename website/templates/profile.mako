@@ -70,7 +70,7 @@
            ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}<!-- , ${profile["number_public_projects"]} public -->
         </h2>
         <h2>
-            Usage of NII storage<br />
+            Usage of ${ 'NII' if profile['quota']['storage_type'] == 1 else 'Default' } storage<br />
             <img width="35" height="40" src="${profile['quota']['icon_url']}" style="margin: 5px 10px;">${profile['quota']['rate']}%, ${profile['quota']['used']} / ${profile['quota']['max']}[GiB]
         </h2>
     </div>

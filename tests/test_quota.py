@@ -9,7 +9,9 @@ from api.base import settings as api_settings
 from framework.auth import signing
 from tests.base import OsfTestCase
 from osf.models import FileLog, FileInfo, TrashedFileNode, TrashedFolder, UserQuota
-from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
+from osf_tests.factories import (
+    AuthUserFactory, ProjectFactory, UserFactory, InstitutionFactory, RegionFactory
+)
 from website.util import web_url_for, quota
 
 
@@ -34,14 +36,55 @@ class TestQuotaProfileView(OsfTestCase):
         )
         expected = self.quota_text.format(0.0, 0, 'B', api_settings.DEFAULT_MAX_QUOTA)
         assert_in(expected, response.body)
+        assert_in('Usage of NII storage', response.body)
 
     def test_custom_quota(self):
-        UserQuota.objects.create(user=self.user, max_quota=200, used=0)
+        UserQuota.objects.create(
+            storage_type=UserQuota.NII_STORAGE,
+            user=self.user,
+            max_quota=200,
+            used=0
+        )
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
         )
         assert_in(self.quota_text.format(0.0, 0, 'B', 200), response.body)
+        assert_in('Usage of NII storage', response.body)
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_institution_default_quota(self, mock_usedquota):
+        mock_usedquota.return_value = 0
+
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        RegionFactory(_id=institution._id)
+
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        expected = self.quota_text.format(0.0, 0, 'B', api_settings.DEFAULT_MAX_QUOTA)
+        assert_in(expected, response.body)
+        assert_in('Usage of Default storage', response.body)
+
+    def test_institution_custom_quota(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        RegionFactory(_id=institution._id)
+
+        UserQuota.objects.create(
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            user=self.user,
+            max_quota=200,
+            used=100 * 1024 ** 3
+        )
+        response = self.app.get(
+            web_url_for('profile_view_id', uid=self.user._id),
+            auth=self.user.auth
+        )
+        assert_in(self.quota_text.format(50.0, 100.0, 'GiB', 200), response.body)
+        assert_in('Usage of Default storage', response.body)
 
     def test_used_quota_bytes(self):
         UserQuota.objects.create(user=self.user, max_quota=100, used=560)
