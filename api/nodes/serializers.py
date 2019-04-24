@@ -474,7 +474,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_quota_rate(self, obj):
         max_quota, used_quota = quota.get_quota_info(
-            obj.creator, quota.get_project_storage_type(obj)
+            obj.creator, quota.get_project_storage_type(obj),
         )
         return float(used_quota) / (max_quota * 1024 ** 3) * 100
 
