@@ -782,7 +782,9 @@ def _view_project(node, auth, primary=False,
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     NodeRelation = apps.get_model('osf.NodeRelation')
-    max_quota, used_quota = quota.get_quota_info(node.creator)
+    max_quota, used_quota = quota.get_quota_info(
+        node.creator, quota.get_project_storage_type(node)
+    )
     is_registration = node.is_registration
     timestamp_pattern = get_timestamp_pattern_division(auth, node)
     data = {

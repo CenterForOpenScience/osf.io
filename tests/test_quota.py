@@ -880,6 +880,7 @@ class TestQuotaApi(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
 
     def test_default_values(self):
+        ProjectStorageType.objects.filter(node=self.node).delete()
         response = self.app.get(
             '{}?payload={payload}&signature={signature}'.format(
                 self.node.api_url_for('creator_quota'),
