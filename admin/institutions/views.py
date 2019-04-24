@@ -16,7 +16,7 @@ from django.core.exceptions import PermissionDenied
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm
-from osf.models import Institution, Node, OSFUser
+from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
 from addons.osfstorage.models import Region
 from django.http import HttpResponseRedirect
@@ -274,7 +274,7 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
     def get_queryset(self):
         user_list = []
         for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
-            max_quota, used_quota = quota.get_quota_info(user)
+            max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
             max_quota_bytes = max_quota * 1024 ** 3
             remaining_quota = max_quota_bytes - used_quota
             used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))

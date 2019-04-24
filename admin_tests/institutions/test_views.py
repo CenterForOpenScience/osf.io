@@ -307,13 +307,13 @@ class TestGetUserListWithQuota(AdminTestCase):
         nt.assert_equal(user_quota['quota'], api_settings.DEFAULT_MAX_QUOTA)
 
     def test_custom_quota(self):
-        UserQuota.objects.create(user=self.user, max_quota=200)
+        UserQuota.objects.create(user=self.user, storage_type=UserQuota.NII_STORAGE, max_quota=200)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
         nt.assert_equal(user_quota['quota'], 200)
 
     def test_used_quota_bytes(self):
-        UserQuota.objects.create(user=self.user, max_quota=100, used=560)
+        UserQuota.objects.create(user=self.user, storage_type=UserQuota.NII_STORAGE, max_quota=100, used=560)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
 
@@ -329,7 +329,7 @@ class TestGetUserListWithQuota(AdminTestCase):
 
     def test_used_quota_giga(self):
         used = int(5.2 * 1024 ** 3)
-        UserQuota.objects.create(user=self.user, max_quota=100, used=used)
+        UserQuota.objects.create(user=self.user, storage_type=UserQuota.NII_STORAGE, max_quota=100, used=used)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
 
