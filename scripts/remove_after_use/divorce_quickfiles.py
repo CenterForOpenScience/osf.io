@@ -1,4 +1,4 @@
-from osf.models import QuickFolder, OSFUser
+from osf.models import QuickFolder, OSFUser, UserLog
 from osf.models.legacy_quickfiles import QuickFilesNode
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery, Count
@@ -7,6 +7,12 @@ from django.contrib.contenttypes.models import ContentType
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+
+def transfer_logs(quickfiles_node):
+    for log in quickfiles_node.logs.all():
+        log.__class__ = UserLog
+        log.save()
 
 
 def create_quickfolders():
@@ -49,7 +55,7 @@ def create_quickfolders():
 def migrate_quickfiles_to_quickfolders():
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
     find_quickfolders = Subquery(QuickFolder.objects.filter(target_object_id=OuterRef('id')).values('id'))
-    users_ids_for_with_quickfiles = QuickFilesNode.objects.all().annotate(file_count=Count('files')).filter(file_count__gt=1).values_list('creator_id', flat=True)
+    users_ids_for_with_quickfiles = QuickFilesNode.objects.all().annotate(file_count=Count('files')).filter(file_count__gt=0).values_list('creator_id', flat=True)
     users_with_quickfiles = OSFUser.objects.filter(id__in=users_ids_for_with_quickfiles).annotate(_quickfolder=find_quickfolders).prefetch_related('guids')
 
     for user in users_with_quickfiles:
@@ -59,5 +65,9 @@ def migrate_quickfiles_to_quickfolders():
                                          target_object_id=user.id,
                                          target_content_type_id=user_content_type_id)
         except QuickFilesNode.DoesNotExist as exc:
-            logger.info('OSFUser {} does not have quickfiles')
+            logger.info('OSFUser {} does not have quickfiles'.format(user))
             raise exc
+
+        transfer_logs(quickfiles_node)
+
+    QuickFilesNode.objects.all().delete()

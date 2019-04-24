@@ -17,19 +17,17 @@ class UserLog(BaseLog):
 
     FILE_METADATA_UPDATED = 'file_metadata_updated'
 
-    FILE_MOVED = 'addon_file_moved'
-    FILE_COPIED = 'addon_file_copied'
-    FILE_RENAMED = 'addon_file_renamed'
+    FILE_MOVED = 'osf_storage_file_moved'
+    FILE_COPIED = 'osf_storage_file_copied'
+    FILE_RENAMED = 'osf_storage_file_renamed'
 
-    FOLDER_CREATED = 'folder_created'
-
-    FILE_ADDED = 'file_added'
-    FILE_UPDATED = 'file_updated'
-    FILE_REMOVED = 'file_removed'
-    FILE_RESTORED = 'file_restored'
+    FILE_ADDED = 'osf_storage_file_added'
+    FILE_UPDATED = 'osf_storage_file_updated'
+    FILE_REMOVED = 'osf_storage_file_removed'
+    FILE_RESTORED = 'osf_storage_file_restored'
 
     actions = (FILE_TAG_REMOVED, FILE_TAG_ADDED, FILE_MOVED, FILE_COPIED, FILE_METADATA_UPDATED,
-               FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED)
+               FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED)
 
     action_choices = [(action, action.upper()) for action in actions]
     action = models.CharField(max_length=255, db_index=True, choices=action_choices)

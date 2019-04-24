@@ -1039,6 +1039,6 @@ class ChronosSubmissionFactory(DjangoModelFactory):
 class UserLogFactory(DjangoModelFactory):
     class Meta:
         model = models.UserLog
-    action = 'file_added'
+    action = 'osf_storage_file_added'
     params = {'path': '/'}
     user = SubFactory(UserFactory)
