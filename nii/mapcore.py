@@ -1018,9 +1018,6 @@ def _mapcore_sync_map_group(node, title_desc=True, contributors=True, mapcore=No
 
 
 def mapcore_sync_map_group(node, title_desc=True, contributors=True, mapcore=None):
-    if not mapcore_is_enabled():
-        return False
-
     try:
         ret = _mapcore_sync_map_group(node, title_desc=title_desc, contributors=contributors, mapcore=mapcore)
         pass

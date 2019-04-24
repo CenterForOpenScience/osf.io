@@ -124,7 +124,9 @@ from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import RdmTimestampGrantPattern
 
-from nii.mapcore import mapcore_sync_map_group
+from nii.mapcore import (mapcore_is_enabled,
+                         mapcore_sync_map_group,
+                         mapcore_sync_map_new_group)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -279,7 +281,11 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         """
         # On creation, make sure that current user is the creator
         user = self.request.user
-        serializer.save(creator=user)
+        node = serializer.save(creator=user)
+        if mapcore_is_enabled():
+            group_key = mapcore_sync_map_new_group(node.creator, node.title)
+            node.map_group_key = group_key
+            node.save()
 
     # overrides BulkDestroyJSONAPIView
     def allow_bulk_destroy_resources(self, user, resource_list):
@@ -389,14 +395,14 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     # overrides RetrieveUpdateDestroyAPIView
     def put(self, request, *args, **kwargs):
         res = super(NodeDetail, self).put(request, *args, **kwargs)
-        if res.status_code == HTTP_200_OK:
+        if res.status_code == HTTP_200_OK and mapcore_is_enabled():
             mapcore_sync_map_group(self.get_object())
         return res
 
     # overrides RetrieveUpdateDestroyAPIView
     def patch(self, request, *args, **kwargs):
         res = super(NodeDetail, self).patch(request, *args, **kwargs)
-        if res.status_code == HTTP_200_OK:
+        if res.status_code == HTTP_200_OK and mapcore_is_enabled():
             mapcore_sync_map_group(self.get_object())
         return res
 

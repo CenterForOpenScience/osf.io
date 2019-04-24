@@ -97,7 +97,8 @@ def edit_node(auth, node, **kwargs):
             http.BAD_REQUEST,
             data=dict(message_long=e.message)
         )
-    mapcore_sync_map_group(node)
+    if mapcore_is_enabled():
+        mapcore_sync_map_group(node)
     return {
         'status': 'success',
         'newValue': new_val  # Used by x-editable  widget to reflect changes made by sanitizer
