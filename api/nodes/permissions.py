@@ -35,7 +35,7 @@ class ContributorOrPublic(permissions.BasePermission):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
-            return getattr(obj, 'is_public', False) or obj.can_view(auth)
+            return obj.is_public or obj.can_view(auth)
         else:
             return obj.can_edit(auth)
 

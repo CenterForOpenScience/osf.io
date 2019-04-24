@@ -664,12 +664,10 @@ def update_file(file_, index=None, delete=False):
     else:
         part_of_tag_in_target_title = False
 
-    is_public = getattr(target, 'is_public', False) or file_.is_quickfile
-
     file_node_is_qa = file_tag_in_do_not_index or target_tag_in_do_not_index or part_of_tag_in_target_title
-    flagged = getattr(target, 'spam_status', None) == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH
+    flagged = target.is_spam and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH
 
-    if not file_.name or not is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or flagged:
+    if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or flagged:
         client().delete(
             index=index,
             doc_type='file',

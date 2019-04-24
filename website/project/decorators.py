@@ -474,7 +474,7 @@ def check_contributor_auth(target, auth, include_public, include_view_only_anon)
         except PrivateLink.DoesNotExist:
             link_anon = None
 
-    if not getattr(target, 'is_public', True) or not include_public:
+    if not target.is_public or not include_public:
         if not include_view_only_anon and link_anon:
             if not check_can_access(node=target, user=user):
                 raise HTTPError(http.UNAUTHORIZED)
