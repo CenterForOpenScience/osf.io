@@ -71,38 +71,40 @@ def update_used_quota(self, target, user, event_type, payload):
         logging.error('FileNode not found, cannot update used quota!')
         return
 
-    if event_type == FileLog.FILE_ADDED:
-        file_added(target, payload, file_node)
-    elif event_type == FileLog.FILE_REMOVED:
-        node_removed(target, user, payload, file_node)
-    elif event_type == FileLog.FILE_UPDATED:
-        file_modified(target, user, payload, file_node)
+    storage_type = get_project_storage_type(target)
 
-def file_added(target, payload, file_node):
+    if event_type == FileLog.FILE_ADDED:
+        file_added(target, payload, file_node, storage_type)
+    elif event_type == FileLog.FILE_REMOVED:
+        node_removed(target, user, payload, file_node, storage_type)
+    elif event_type == FileLog.FILE_UPDATED:
+        file_modified(target, user, payload, file_node, storage_type)
+
+def file_added(target, payload, file_node, storage_type):
     file_size = int(payload['metadata']['size'])
     if file_size < 0:
         return
     try:
         user_quota = UserQuota.objects.get(
             user=target.creator,
-            storage_type=UserQuota.NII_STORAGE
+            storage_type=storage_type
         )
         user_quota.used += file_size
         user_quota.save()
     except UserQuota.DoesNotExist:
         UserQuota.objects.create(
             user=target.creator,
-            storage_type=UserQuota.NII_STORAGE,
+            storage_type=storage_type,
             max_quota=api_settings.DEFAULT_MAX_QUOTA,
             used=file_size
         )
 
     FileInfo.objects.create(file=file_node, file_size=file_size)
 
-def node_removed(target, user, payload, file_node):
+def node_removed(target, user, payload, file_node, storage_type):
     user_quota = UserQuota.objects.filter(
         user=target.creator,
-        storage_type=UserQuota.NII_STORAGE
+        storage_type=storage_type
     ).first()
     if user_quota is not None:
         if 'osf.trashed' not in file_node.type:
@@ -120,14 +122,14 @@ def node_removed(target, user, payload, file_node):
             user_quota.used -= file_size
         user_quota.save()
 
-def file_modified(target, user, payload, file_node):
+def file_modified(target, user, payload, file_node, storage_type):
     file_size = int(payload['metadata']['size'])
     if file_size < 0:
         return
 
     user_quota, _ = UserQuota.objects.get_or_create(
         user=target.creator,
-        storage_type=UserQuota.NII_STORAGE,
+        storage_type=storage_type,
         defaults={'max_quota': api_settings.DEFAULT_MAX_QUOTA}
     )
 
