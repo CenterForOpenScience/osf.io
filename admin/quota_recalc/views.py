@@ -3,7 +3,7 @@
 from django.http import HttpResponse
 
 def by_user_id(request, **kwargs):
-  return HttpResponse("Hello world!"+ " from user_id:"+ kwargs["user_id"])
+    return HttpResponse("Hello world!" + " from user_id:" + kwargs["user_id"])
 
 def index(request, **kwargs):
-  return HttpResponse("Hello world!")
+    return HttpResponse("Hello world!")
