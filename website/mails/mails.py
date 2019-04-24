@@ -243,6 +243,7 @@ CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
     subject='You have been added as a moderator for {}'.format(provider.name)
+)
 PREPRINT_CONFIRMATION_DEFAULT = Mail(
     'preprint_confirmation_default',
     subject="You've shared a preprint on GakuNin RDM preprints"
