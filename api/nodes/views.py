@@ -124,9 +124,7 @@ from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import RdmTimestampGrantPattern
 
-from nii.mapcore import (mapcore_is_enabled,
-                         mapcore_sync_map_group,
-                         mapcore_sync_map_new_group)
+from nii.mapcore import mapcore_is_enabled, mapcore_sync_map_group, mapcore_sync_map_new_group
 
 import logging
 logger = logging.getLogger(__name__)
