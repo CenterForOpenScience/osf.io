@@ -2,7 +2,6 @@
 # mAP core Group / Member syncronization
 
 
-from datetime import datetime as dt
 import time
 import logging
 import os
@@ -14,6 +13,7 @@ from operator import attrgetter
 from pprint import pformat as pp
 
 from urlparse import urlparse
+from django.utils import timezone
 
 from website import settings
 
@@ -221,7 +221,7 @@ def mapcore_receive_authcode(user, params):
         logger.info('MAPprofile new record created for ' + user.eppn)
     map_user.oauth_access_token = access_token
     map_user.oauth_refresh_token = refresh_token
-    map_user.oauth_refresh_time = dt.utcnow()
+    map_user.oauth_refresh_time = timezone.now()
     user.map_profile = map_user
     map_user.save()
     logger.info('User [' + user.eppn + '] get access_token [' + access_token + '] -> saved')
@@ -306,11 +306,21 @@ def mapcore_refresh_accesstoken(user, force=False):
     # update database
     user.map_profile.oauth_access_token = json['access_token']
     user.map_profile.oauth_refresh_token = json['refresh_token']
-    user.map_profile.oauth_refresh_time = dt.utcnow()
+    user.map_profile.oauth_refresh_time = timezone.now()
     user.map_profile.save()
     user.save()
 
     return 0
+
+
+def mapcore_remove_token(user):
+    if user.map_profile is None:
+        return
+    user.map_profile.oauth_access_token = ''
+    user.map_profile.oauth_refresh_token = ''
+    user.map_profile.oauth_refresh_time = timezone.now()
+    user.map_profile.save()
+
 
 ###
 ### sync functions
@@ -1198,7 +1208,7 @@ def mapcore_sync_rdm_user_projects(user):
 READY_SYNC_FILE_TMPL = '/code_src/tmp/rdm_mapcore_ready_to_sync_{}'  # TODO do not use
 
 def mapcore_set_standby_to_upload(node):
-    # TODO node.mapcore_standby_to_upload = dt.utcnow()
+    # TODO node.mapcore_standby_to_upload = timezone.now()
     # TODO node.save()
     # TODO MAPCORE_STANDBY_TO_UPLOAD_TIMEOUT = 5 min.
     filename = READY_SYNC_FILE_TMPL.format(node._id)  # use Guid

@@ -224,7 +224,7 @@ class MAPCore(object):
     #
     def get_api_version(self):
 
-        logger.debug('MAPCore(user={})::get_api_version:'.format(self.user.username))
+        logger.debug('MAPCore(user={})::get_api_version'.format(self.user.username))
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
@@ -679,6 +679,9 @@ class MAPCore(object):
                 self.error_message = self.MSG_ACCESS_TOKEN_EXPIRED
             else:
                 self.error_message = result.headers.get(self.WWW_AUTHENTICATE)
+                if not self.error_message:
+                    self.error_message = result.text
+            logger.info('MAPCore(user={})::check_result: status_code={}, error_msg={}'.format(self.user.username, result.status_code, self.error_message))
             return False
 
         j = result.json()
@@ -694,8 +697,9 @@ class MAPCore(object):
             s = result.headers.get(self.WWW_AUTHENTICATE)
             if s is None:
                 return False
-            if s.find(self.MSG_ACCESS_TOKEN_EXPIRED) != -1 \
-               or s.find(self.MSG_INVALID_ACCESS_TOKEN) != -1:
+            #if s.find(self.MSG_ACCESS_TOKEN_EXPIRED) != -1 \
+            #   or s.find(self.MSG_INVALID_ACCESS_TOKEN) != -1:
+            if result.status_code == 401:  # Unauthorized
                 logger.info('MAPCore(user={})::check_result: status_code={}, {}={}'.format(self.user.username, result.status_code, self.WWW_AUTHENTICATE, self.error_message))
                 return True
             else:

@@ -916,3 +916,43 @@ def unset_maintenance(ctx):
     print('Taking down maintenance notice...')
     unset_maintenance()
     print('...Done.')
+
+
+@task
+def mapcore_remove_token(ctx, username=None, eppn=None):
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
+
+    from osf.models import OSFUser
+    from nii.mapcore import mapcore_remove_token
+
+    user = None
+    if username:
+        try:
+            user = OSFUser.objects.get(username=username)
+        except Exception as e:
+            print e
+            print('Error: no such username: ' + username)
+            print('--- existing username list ---')
+            for user in OSFUser.objects.all():
+                print(user.username)
+            return
+    elif eppn:
+        try:
+            user = OSFUser.objects.get(eppn=eppn)
+        except Exception as e:
+            print e
+            print('Error: no such ePPN: ' + eppn)
+            print('--- existing ePPN list ---')
+            for user in OSFUser.objects.all():
+                if user.eppn:
+                    print(user.eppn)
+            return
+    else:
+        ctx.run('invoke --help mapcore_remove_token')
+        return
+    mapcore_remove_token(user)
+    if username:
+        print('token is REMOVED: username = ' + user.uesrname)
+    elif eppn:
+        print('token is REMOVED: ePPN = ' + user.eppn)

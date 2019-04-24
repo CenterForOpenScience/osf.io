@@ -17,11 +17,6 @@ class MAPProfile(BaseModel):
     oauth_access_token = models.CharField(null=True, blank=True, unique=True, max_length=255)
     oauth_refresh_token = models.CharField(null=True, blank=True, unique=True, max_length=255)
     oauth_refresh_time = NonNaiveDateTimeField(null=True, blank=True)
-    #
-    # Reference to OSFUser object.
-    #
-    #user = models.OneToOneField(OSFUser,
-    #    null=False, related_name='map_user')
 
     def __unicode__(self):
         return self.oauth_access_token
