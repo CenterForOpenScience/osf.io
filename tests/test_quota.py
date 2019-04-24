@@ -178,7 +178,8 @@ class TestUsedQuota(OsfTestCase):
         file_list = []
 
         # No files
-        assert_equal(quota.used_quota(self.user._id), 0)
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE), 0)
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE), 0)
 
         # Add a file to node[0]
         file_list.append(OsfStorageFileNode.create(
@@ -187,7 +188,8 @@ class TestUsedQuota(OsfTestCase):
         ))
         file_list[0].save()
         FileInfo.objects.create(file=file_list[0], file_size=500)
-        assert_equal(quota.used_quota(self.user._id), 500)
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE), 500)
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE), 0)
 
         # Add a file to node[1]
         file_list.append(OsfStorageFileNode.create(
@@ -196,7 +198,44 @@ class TestUsedQuota(OsfTestCase):
         ))
         file_list[1].save()
         FileInfo.objects.create(file=file_list[1], file_size=1000)
-        assert_equal(quota.used_quota(self.user._id), 1500)
+
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE), 1500)
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE), 0)
+
+    def test_calculate_used_quota_custom_storage(self):
+        file_list = []
+
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        RegionFactory(_id=institution._id)
+        ProjectStorageType.objects.filter(node__in=[self.node[0], self.node[1]]).update(
+            storage_type=ProjectStorageType.CUSTOM_STORAGE
+        )
+
+        # No files
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE), 0)
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE), 0)
+
+        # Add a file to node[0]
+        file_list.append(OsfStorageFileNode.create(
+            target=self.node[0],
+            name='file0'
+        ))
+        file_list[0].save()
+        FileInfo.objects.create(file=file_list[0], file_size=500)
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE), 0)
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE), 500)
+
+        # Add a file to node[1]
+        file_list.append(OsfStorageFileNode.create(
+            target=self.node[1],
+            name='file1'
+        ))
+        file_list[1].save()
+        FileInfo.objects.create(file=file_list[1], file_size=1000)
+
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE), 0)
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE), 1500)
 
     def test_calculate_used_quota_deleted_file(self):
         # Add a (deleted) file to node[0]
@@ -208,7 +247,9 @@ class TestUsedQuota(OsfTestCase):
         )
         file_node.save()
         FileInfo.objects.create(file=file_node, file_size=500)
-        assert_equal(quota.used_quota(self.user._id), 0)
+
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE), 0)
+        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE), 0)
 
 
 class TestSaveFileInfo(OsfTestCase):
