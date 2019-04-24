@@ -25,7 +25,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from osf.models import Tag, ProjectStorageType
+from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
