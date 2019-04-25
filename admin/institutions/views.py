@@ -328,8 +328,8 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
         return direction
 
 
-class DifferentUserListByInstitutionID(RdmPermissionMixin, ListView):
-    template_name = 'institutions/different_list_institute.html'
+class StatisticalStatusDefaultStorage(RdmPermissionMixin, ListView):
+    template_name = 'institutions/statistical_status_default_storage.html'
     permission_required = 'osf.view_institution'
     raise_exception = True
     paginate_by = 10
@@ -376,6 +376,7 @@ class DifferentUserListByInstitutionID(RdmPermissionMixin, ListView):
 
     def get_context_data(self, **kwargs):
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
+        kwargs['institution_id'] = self.kwargs['institution_id']
         kwargs['institution_name'] = institution.name
 
         self.query_set = self.get_queryset()
@@ -387,7 +388,7 @@ class DifferentUserListByInstitutionID(RdmPermissionMixin, ListView):
         kwargs['page'] = self.page
         kwargs['order_by'] = self.get_order_by()
         kwargs['direction'] = self.get_direction()
-        return super(DifferentUserListByInstitutionID, self).get_context_data(**kwargs)
+        return super(StatisticalStatusDefaultStorage, self).get_context_data(**kwargs)
 
     def get_order_by(self):
         order_by = self.request.GET.get('order_by', 'ratio')
