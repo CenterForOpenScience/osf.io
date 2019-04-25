@@ -233,6 +233,17 @@
                         {% for system_tag in user.system_tags %}
                             {{ system_tag }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
+                    <a href="{% url 'users:add_system_tag' user.id %}"
+                        class="btn btn-default"
+                        data-toggle="modal"
+                        data-target="#systemTagModal">
+                         add system tag
+                     </a>
+                     <div class="modal" id="systemTagModal">
+                         <div class="modal-dialog">
+                             <div class="modal-content"></div>
+                         </div>
+                     </div>
                     </td>
                 </tr>
                 <tr>

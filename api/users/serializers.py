@@ -23,7 +23,7 @@ from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGI
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website import mails
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
-from api.nodes.serializers import NodeSerializer
+from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
 
@@ -142,10 +142,10 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
-    default_region = ShowIfCurrentUser(RelationshipField(
+    default_region = ShowIfCurrentUser(RegionRelationshipField(
         related_view='regions:region-detail',
         related_view_kwargs={'region_id': 'get_default_region_id'},
-        read_only=True,
+        read_only=False,
     ))
 
     settings = ShowIfCurrentUser(RelationshipField(
@@ -245,6 +245,12 @@ class UserSerializer(JSONAPISerializer):
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
+            elif 'region_id' == attr:
+                region_id = validated_data.get('region_id')
+                user_settings = instance._settings_model('osfstorage').objects.get(owner=instance)
+                user_settings.default_region_id = region_id
+                user_settings.save()
+                instance.default_region = self.context['request'].data['default_region']
             else:
                 setattr(instance, attr, value)
         try:

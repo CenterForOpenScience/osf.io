@@ -36,7 +36,7 @@ from website.project.decorators import (
     must_not_be_registration,
     must_not_be_retracted_registration,
 )
-from website.tokens import process_token_or_pass
+from osf.utils.tokens import process_token_or_pass
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
@@ -480,6 +480,14 @@ def view_project(auth, node, **kwargs):
 
     ret.update({'addons_widget_data': addons_widget_data})
     return ret
+
+
+@process_token_or_pass
+@must_be_valid_project(retractions_valid=True)
+@must_be_contributor_or_public
+def token_action(auth, node, **kwargs):
+    return redirect(node.url)
+
 
 # Reorder components
 @must_be_valid_project
