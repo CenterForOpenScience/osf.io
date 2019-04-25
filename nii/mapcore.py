@@ -913,7 +913,7 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
     return node
 
 
-def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=False):
+def _mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=False):
     '''
     mAP coreグループの情報をRDM Nodeに同期する
     :param node: Node object
@@ -998,6 +998,16 @@ def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=F
         locker.unlock_node(node)
     return True
 
+def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=False):
+    try:
+        _mapcore_sync_rdm_project(access_user, node, title_desc=title_desc, contributors=contributors)
+    except MAPCoreException as e:
+        if e.group_does_not_exist():
+            logger.info('RDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(node.title, node._id))
+            from framework.auth import Auth
+            node.remove_node(Auth(user=node.creator))
+        else:
+            raise
 
 def mapcore_resign_map_group(node, user):
     '''
@@ -1095,9 +1105,7 @@ def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True
         logger.warning('The project ({}) cannot synchronize to mAP. (retry later): reason={}'.format(node._id, str(e)))
         # TODO log
         mapcore_set_standby_to_upload(node)  # retry later
-        # TODO Do not raise ?
         raise
-        #return False
     if ret:
         mapcore_unset_standby_to_upload(node)
     return ret
@@ -1207,22 +1215,17 @@ def mapcore_sync_rdm_my_projects(user):
                     project.title, project._id))
                 continue
 
-            try:
-                grp = my_map_groups.get(project.map_group_key)
-                if grp:
-                    if project.title != grp['group_name']:
-                        logger.debug('different title')
-                        mapcore_sync_rdm_project_or_map_group(user, project)
-                    # else: already synchronized project
+            grp = my_map_groups.get(project.map_group_key)
+            if grp:
+                if project.title == grp['group_name']:
+                    # already synchronized project
                     continue
-
+                else:
+                    logger.debug('different title')
+                    mapcore_sync_rdm_project_or_map_group(user, project)
+            else:
                 # Project contributors is different from mAP group members.
                 mapcore_sync_rdm_project_or_map_group(user, project)
-            except MAPCoreException as e:
-                if e.group_does_not_exist():
-                    logger.info('RDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(project.title, project._id))
-                    from framework.auth import Auth
-                    project.remove_node(Auth(user=user))
     finally:
         locker.unlock_user(user)
 

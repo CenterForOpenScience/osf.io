@@ -735,6 +735,9 @@ def _view_project(node, auth, primary=False,
     project.view.mako.
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+    if node.is_deleted:
+        raise HTTPError(http.GONE)
+
     user = auth.user
 
     try:
