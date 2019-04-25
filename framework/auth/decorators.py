@@ -102,12 +102,12 @@ def mapcore_check_token(auth, node, use_mapcore=True):
                 emsg = '<pre>{}</pre>'.format(traceback.format_exc())
             else:
                 emsg = str(e)
-                mapcore_log_error('{}: {}'.format(
-                    e.__class__.__name__, emsg))
-                raise HTTPError(httplib.SERVICE_UNAVAILABLE, data={
-                    'message_short': 'mAP Core API Error',
-                    'message_long': emsg
-                })
+            mapcore_log_error('{}: {}'.format(
+                e.__class__.__name__, emsg))
+            raise HTTPError(httplib.SERVICE_UNAVAILABLE, data={
+                'message_short': 'mAP Core API Error',
+                'message_long': emsg
+            })
     return None
 
 
