@@ -104,6 +104,7 @@ class OSFUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+
 class Email(BaseModel):
     address = LowercaseEmailField(unique=True, db_index=True, validators=[validate_email])
     user = models.ForeignKey('OSFUser', related_name='emails', on_delete=models.CASCADE)
@@ -111,11 +112,13 @@ class Email(BaseModel):
     def __unicode__(self):
         return self.address
 
+
 class CGGroup(BaseModel):
     name = models.CharField(max_length=255, unique=True)
 
     def __unicode__(self):
         return self.name
+
 
 class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     FIELD_ALIASES = {

@@ -120,8 +120,9 @@ class MAPCore(object):
     MODE_MEMBER = 0     # Ordinary member
     MODE_ADMIN = 2      # Administrator member
 
-    #TODO rdm_mapcore_refresh_token_<user._id>
-    #TODO MAPCORE_LOCKDIR
+    #TODO use DB instead of file
+    #(TODO rdm_mapcore_refresh_token_<user._id>)
+    #(TODO MAPCORE_LOCKDIR)
     REFRESH_LOCK = '/var/run/lock/refresh.lck'
 
     user = False
