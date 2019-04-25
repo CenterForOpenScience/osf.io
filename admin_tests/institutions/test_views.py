@@ -493,6 +493,50 @@ class TestGetDifferentUserListWithQuota(AdminTestCase):
         nt.assert_equal(round(user_quota['ratio'], 1), 5.2)
 >>>>>>> tests, they still fail though
 
+class TestGetDifferentUserListWithQuota(AdminTestCase):
+    def setUp(self):
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.save()
+        self.request = RequestFactory().get('/fake_path')
+        self.view = setup_user_view(
+            views.DifferentUserListByInstitutionID(),
+            self.request,
+            user=self.user,
+            institution_id=self.institution.id
+        )
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_default_quota(self, mock_usedquota):
+        mock_usedquota.return_value = 0
+
+        response = self.view.get(self.request)
+        user_quota = response.context_data['users'][0]
+        nt.assert_equal(user_quota['quota'], api_settings.DEFAULT_MAX_QUOTA)
+
+    def test_custom_quota(self):
+        UserQuota.objects.create(user=self.user, max_quota=200)
+        response = self.view.get(self.request)
+        user_quota = response.context_data['users'][0]
+        nt.assert_equal(user_quota['quota'], 200)
+
+    def test_used_quota_bytes(self):
+        UserQuota.objects.create(user=self.user, max_quota=100, used=560)
+        response = self.view.get(self.request)
+        user_quota = response.context_data['users'][0]
+        nt.assert_equal(round(user_quota['usage_value'], 1), 0.5)
+        nt.assert_equal(user_quota['usage_abbr'], 'KiB')
+        nt.assert_equal(round(user_quota['ratio'], 1), 0)
+
+    def test_used_quota_giga(self):
+        UserQuota.objects.create(user=self.user, max_quota=100, used=5.2 * 1024 ** 3)
+        response = self.view.get(self.request)
+        user_quota = response.context_data['users'][0]
+        nt.assert_equal(round(user_quota['usage_value'], 1), 5.2)
+        nt.assert_equal(user_quota['usage_abbr'], 'GiB')
+        nt.assert_equal(round(user_quota['ratio'], 1), 5.2)
+
 class InstitutionDefaultStorageDisplay(AdminTestCase):
     def setUp(self):
         super(InstitutionDefaultStorageDisplay, self).setUp()
