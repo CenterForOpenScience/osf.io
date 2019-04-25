@@ -341,7 +341,7 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, ListView):
 
     def get_queryset(self):
         user_list = []
-        for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
+        for user in OSFUser.objects.filter(affiliated_institutions=self.request.user.affiliated_institutions.filter()[0].id):
             max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
 
             user_quota = UserQuota.objects.filter(user=user)
@@ -370,8 +370,8 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, ListView):
         return user_list
 
     def get_context_data(self, **kwargs):
-        institution = Institution.objects.get(id=self.kwargs['institution_id'])
-        kwargs['institution_id'] = self.kwargs['institution_id']
+        institution = Institution.objects.get(id=self.request.user.affiliated_institutions.filter()[0].id)
+        kwargs['institution_id'] = self.request.user.affiliated_institutions.filter()[0].id
         kwargs['institution_name'] = institution.name
 
         self.query_set = self.get_queryset()
