@@ -1,0 +1,308 @@
+# -*- coding: utf-8 -*-
+import mock
+import pytest
+
+from collections import OrderedDict
+
+from django.utils import timezone
+
+from addons.osfstorage import settings as osfstorage_settings
+from api_tests.utils import create_test_file
+from framework.auth import Auth
+from osf.models import QuickFilesNode, RegistrationSchema
+from osf_tests.factories import (
+    PreprintFactory,
+    ProjectFactory,
+    RegionFactory,
+    UserFactory,
+)
+from tests.base import DbTestCase
+from osf.management.commands.data_storage_usage import (
+    PRIVATE_SIZE_THRESHOLD,
+    process_usages,
+)
+
+
+# Using powers of two so that any combination of file sizes will give a unique total
+def next_power_of_2(x):
+    # https://stackoverflow.com/a/14267825/3579517
+    return 1 if x == 0 else 1 << (x-1).bit_length()
+
+
+def next_file_size():
+    size = 1
+    while size < PRIVATE_SIZE_THRESHOLD:
+        yield size
+        size *= 2
+
+
+def next_big_file_size():
+    big_size = next_power_of_2(PRIVATE_SIZE_THRESHOLD)
+    while True:
+        yield big_size
+        big_size *= 2
+
+
+class TestDataStorageUsage(DbTestCase):
+
+    def setUp(self):
+        super(TestDataStorageUsage, self).setUp()
+        self.region_us = RegionFactory(_id='US', name='United States')
+
+    @staticmethod
+    def add_file_version(file_to_version, user, size, version=1):
+        file_to_version.create_version(user, {
+            'object': '06d80e' + str(version),
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': size,
+            'contentType': 'img/png'
+        }).save()
+
+    @pytest.fixture()
+    def project(self, creator, is_public=True, is_deleted=False, region=None, parent=None):
+        if region is None:
+            region = self.region_us
+        project = ProjectFactory(creator=creator, is_public=is_public, is_deleted=is_deleted)
+        addon = project.get_addon('osfstorage')
+        addon.region = region
+        addon.save()
+
+        return project
+
+    @pytest.fixture()
+    def registration(self, project, creator, withdrawn=False):
+        schema = RegistrationSchema.objects.first()
+        registration = project.register_node(schema, Auth(user=creator), 'Registration')
+        registration.is_public = True
+        registration.save()
+
+        if withdrawn:
+            registration.retract_registration(creator)
+            withdrawal = registration.retraction
+            token = withdrawal.approval_state.values()[0]['approval_token']
+            with mock.patch('osf.models.AbstractNode.update_search'):
+                withdrawal.approve_retraction(creator, token)
+            withdrawal.save()
+
+        return registration
+
+    @pytest.fixture()
+    def component(self, parent, user):
+        return ProjectFactory(creator=user, parent=parent)
+
+    @pytest.fixture()
+    def project_deleted(self, user):
+        return ProjectFactory(creator=user, is_deleted=True)
+
+    @mock.patch('website.settings.ENABLE_ARCHIVER', False)
+    @pytest.mark.enable_quickfiles_creation
+    def test_data_storage_usage_command(self):
+        import logging
+        logger = logging.getLogger(__name__)
+
+        expected_summary_data = OrderedDict([
+            ('date', None),
+            ('total', 0),
+            ('deleted', 0),
+            ('registrations', 0),
+            ('nd_quick_files', 0),
+            ('nd_public_nodes', 0),
+            ('nd_private_nodes_under5', 0),
+            ('nd_private_nodes_over5', 0),
+            ('nd_preprints', 0),
+            ('nd_supp_nodes', 0),
+            ('canada_montreal', 0),
+            ('australia_syndey', 0),
+            ('germany_frankfurt', 0),
+            ('united_states', 0),
+        ])
+        user = UserFactory()
+        user_addon = user.get_addon('osfstorage')
+        user_addon.default_region_id = self.region_us
+        region_ca = RegionFactory(_id='CA-1', name=u'Canada - Montréal')
+        region_de = RegionFactory(_id='DE-1', name='Germany - Frankfurt')
+        region_au = RegionFactory(_id='AU-1', name='Australia - Sydney')
+
+        project_public_us = self.project(creator=user, is_public=True)
+        small_size = next_file_size()
+        big_size = next_big_file_size()
+        file_size = next(small_size)
+        project_public_us_test_file = create_test_file(
+            target=project_public_us,
+            user=user,
+            size=file_size
+        )
+        logger.debug(u'Public project, US: {}'.format(file_size))
+        expected_summary_data['total'] += file_size
+        expected_summary_data['nd_public_nodes'] += file_size
+        expected_summary_data['united_states'] += file_size
+        file_size = next(small_size)
+        self.add_file_version(
+            project_public_us_test_file,
+            user=user,
+            size=file_size,
+        )
+        logger.debug(u'Public project file version, US: {}'.format(file_size))
+        expected_summary_data['total'] += file_size
+        expected_summary_data['nd_public_nodes'] += file_size
+        expected_summary_data['united_states'] += file_size
+
+        project_private_small_ca = self.project(creator=user, is_public=False, region=region_ca)
+        file_size = next(small_size)
+        create_test_file(
+            target=project_private_small_ca,
+            user=user,
+            size=file_size
+        )
+        logger.debug(u'Private project (small), CA: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['nd_private_nodes_under5'] += file_size
+        expected_summary_data['canada_montreal'] += file_size
+
+        project_private_large_au = self.project(creator=user, is_public=False, region=region_au)
+        file_size = next(big_size)
+        create_test_file(
+            target=project_private_large_au,
+            user=user,
+            size=file_size
+        )
+        logger.debug(u'Private project (large), AU: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['nd_private_nodes_over5'] += file_size
+        expected_summary_data['australia_syndey'] += file_size
+
+        component_private_small_deleted_de = self.project(
+            creator=user,
+            is_public=False,
+            region=region_de,
+            parent=project_public_us
+        )
+        file_size = next(small_size)
+        deleted_file = create_test_file(
+            target=component_private_small_deleted_de,
+            user=user,
+            size=file_size,
+        )
+        logger.debug('Before deletion: {}'.format(deleted_file.target.title))
+
+        # Deleting a node deletes the files
+        deleted_file.delete(user=user, save=True)
+        logger.debug(u'Deleted project, DE: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['deleted'] += file_size
+        expected_summary_data['germany_frankfurt'] += file_size
+        logger.debug('After deletion: {}'.format(deleted_file.target.title))
+
+        file_size = next(small_size)
+        PreprintFactory(creator=user, file_size=file_size)  # preprint_us
+        logger.debug(u'Preprint, US: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['nd_preprints'] += file_size
+        expected_summary_data['united_states'] += file_size
+
+        user_addon.default_region_id = region_ca
+        user_addon.save()
+        file_size = next(small_size)
+        preprint_with_supplement_ca = PreprintFactory(creator=user, file_size=file_size)
+        logger.debug(u'Preprint, CA: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['nd_preprints'] += file_size
+        expected_summary_data['canada_montreal'] += file_size
+        user_addon.default_region_id = self.region_us
+        user_addon.save()
+        supplementary_node_public_us = self.project(creator=user, is_public=True, region=self.region_us)
+        preprint_with_supplement_ca.node = supplementary_node_public_us
+        preprint_with_supplement_ca.save()
+        file_size = next(small_size)
+        create_test_file(
+            target=supplementary_node_public_us,
+            user=user,
+            size=file_size
+        )
+        logger.debug(u'Public supplemental project of Canadian preprint, US: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['nd_supp_nodes'] += file_size
+        expected_summary_data['nd_public_nodes'] += file_size
+        expected_summary_data['united_states'] += file_size
+
+        file_size = next(small_size)
+        withdrawn_preprint_us = PreprintFactory(creator=user, file_size=file_size)
+        withdrawn_preprint_us.date_withdrawn = timezone.now()
+        withdrawn_preprint_us.save()
+        logger.debug(u'Withdrawn preprint, US: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['nd_preprints'] += file_size
+        expected_summary_data['united_states'] += file_size
+
+        quickfiles_node_us = QuickFilesNode.objects.get(creator=user)
+        file_size = next(small_size)
+        quickfile = create_test_file(target=quickfiles_node_us, user=user, size=file_size)
+        logger.debug(u'Quickfile, US: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['nd_quick_files'] += file_size
+        expected_summary_data['united_states'] += file_size
+
+        file_size = next(small_size)
+        quickfile_deleted = create_test_file(
+            filename='deleted_test_file',
+            target=quickfiles_node_us,
+            user=user,
+            size=file_size
+        )
+        quickfile_deleted.delete(user=user, save=True)
+        logger.debug(u'Deleted quickfile, US: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['deleted'] += file_size
+        expected_summary_data['united_states'] += file_size
+
+        project_to_register_us = self.project(creator=user, is_public=True, region=self.region_us)
+
+        registration = self.registration(project=project_to_register_us, creator=user)
+        file_size = next(small_size)
+        create_test_file(
+            target=registration,
+            user=user,
+            size=file_size
+        )
+        assert registration.get_addon('osfstorage').region == self.region_us
+        logger.debug(u'Registration, US: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['united_states'] += file_size
+        expected_summary_data['registrations'] += file_size
+
+        withdrawal = self.registration(project=project_to_register_us, creator=user, withdrawn=True)
+        file_size = next(small_size)
+        create_test_file(
+            target=withdrawal,
+            user=user,
+            size=file_size
+        )
+        logger.debug(u'Withdrawn registration, US: {}'.format(file_size))
+
+        expected_summary_data['total'] += file_size
+        expected_summary_data['united_states'] += file_size
+        expected_summary_data['registrations'] += file_size
+
+        actual_summary_data = process_usages(write_detail=False, write_summary=False)
+
+        actual_keys = actual_summary_data.keys()
+        expected_keys = expected_summary_data.keys()
+
+        assert actual_keys == expected_keys
+        assert len(actual_keys) != 0
+
+        for key in actual_keys:
+            if key != 'date':
+                assert (key, expected_summary_data[key]) == (key, actual_summary_data[key])
