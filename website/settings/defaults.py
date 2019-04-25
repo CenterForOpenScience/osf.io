@@ -144,7 +144,7 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 # support email
 OSF_SUPPORT_EMAIL = 'nii-rdmp@meatmail.jp'
 # contact email
-OSF_CONTACT_EMAIL = 'contact@osf.io'
+OSF_CONTACT_EMAIL = 'rcos-office@nii.ac.jp'
 
 # prereg email
 PREREG_EMAIL = 'prereg@cos.io'
