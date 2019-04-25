@@ -26,7 +26,7 @@
     % endif
         <br>
         Sincerely,<br>
-        The ${reviewable.provider.name} and OSF Teams
+        The ${reviewable.provider.name} and GRDM Teams
         <br>
 
 </tr>

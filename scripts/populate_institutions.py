@@ -70,7 +70,7 @@ def main(env):
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
                     encode_uri_component('urn:mace:incommon:asu.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
-                    encode_uri_component('https://osf.io/goodbye')),
+                    encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': ['osf.asu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -130,7 +130,7 @@ def main(env):
                 'banner_name': 'callutheran-banner.png',
                 'logo_name': 'callutheran-shield.png',
                 'login_url': None,
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
@@ -163,14 +163,14 @@ def main(env):
                 '_id': 'cmu',
                 'name': 'Carnegie Mellon University',
                 'description': 'A Project Management Tool for the CMU Community: <a href="https://l'
-                               'ibrary.cmu.edu/OSF">Get Help at CMU</a> | <a href="https://cos.io/o'
-                               'ur-products/osf/">About OSF</a> | <a href="https://osf.io/support/"'
+                               'ibrary.cmu.edu/OSF">Get Help at CMU</a> | <a href="https://nii.ac.jp/o'
+                               'ur-products/osf/">About OSF</a> | <a href="https://rdm.nii.ac.jp/support/"'
                                '>OSF Support</a> | <a href="https://library.cmu.edu/OSF/terms-of-us'
                                'e">Terms of Use</a>',
                 'banner_name': 'cmu-banner.png',
                 'logo_name': 'cmu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.cmu.edu/idp/shibboleth')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': ['osf.library.cmu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -194,7 +194,7 @@ def main(env):
                 'banner_name': 'cornell-banner.png',
                 'logo_name': 'cornell-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp.cit.cornell.edu/idp/shibboleth')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -290,7 +290,7 @@ def main(env):
                 'banner_name': 'gmu-banner.png',
                 'logo_name': 'gmu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.gmu.edu/idp/shibboleth')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -302,7 +302,7 @@ def main(env):
                 'banner_name': 'gwu-banner.png',
                 'logo_name': 'gwu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://singlesignon.gwu.edu/idp/shibboleth')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -326,7 +326,7 @@ def main(env):
                 'banner_name': 'iit-banner.png',
                 'logo_name': 'iit-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.iit.edu/cas/idp')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': ['osf.iit.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -338,7 +338,7 @@ def main(env):
                 'banner_name': 'itb-banner.png',
                 'logo_name': 'itb-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.itb.ac.id/idp/shibboleth')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -398,7 +398,7 @@ def main(env):
                 'banner_name': 'mit-banner.png',
                 'logo_name': 'mit-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:mit.edu')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -422,7 +422,7 @@ def main(env):
                 'banner_name': 'mq-banner.png',
                 'logo_name': 'mq-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exkebok0cpJxGzMKz0h7')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': ['osf.mq.edu.au'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -472,7 +472,7 @@ def main(env):
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
                     encode_uri_component('urn:mace:incommon:sc.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
-                    encode_uri_component('https://osf.io/goodbye')),
+                    encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': ['osf.sc.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -484,7 +484,7 @@ def main(env):
                 'banner_name': 'temple-banner.png',
                 'logo_name': 'temple-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fim.temple.edu/idp/shibboleth')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -652,7 +652,7 @@ def main(env):
                 'banner_name': 'uwstout-banner.png',
                 'logo_name': 'uwstout-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://smidp.uwstout.edu/idp/shibboleth')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://rdm.nii.ac.jp/goodbye')),
                 'domains': ['open.uwstout.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
@@ -875,8 +875,8 @@ def main(env):
                 '_id': 'cmu',
                 'name': 'Carnegie Mellon University [Test]',
                 'description': 'A Project Management Tool for the CMU Community: <a href="https://l'
-                               'ibrary.cmu.edu/OSF">Get Help at CMU</a> | <a href="https://cos.io/o'
-                               'ur-products/osf/">About OSF</a> | <a href="https://osf.io/support/"'
+                               'ibrary.cmu.edu/OSF">Get Help at CMU</a> | <a href="https://nii.ac.jp/o'
+                               'ur-products/osf/">About OSF</a> | <a href="https://rdm.nii.ac.jp/support/"'
                                '>OSF Support</a> | <a href="https://library.cmu.edu/OSF/terms-of-us'
                                'e">Terms of Use</a>',
                 'banner_name': 'cmu-banner.png',

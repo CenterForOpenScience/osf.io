@@ -162,7 +162,7 @@ class TestPreprintCitationContentMLA(ApiTestCase):
     def test_citation_osf_provider(self):
         self.node.title = 'A Study of Coffee.'
         self.node.save()
-        self.published_preprint.provider.name = 'Open Science Framework'
+        self.published_preprint.provider.name = 'GakuNin RDM'
         self.published_preprint.provider.save()
         res = self.app.get(self.published_preprint_url)
         assert_equal(res.status_code, 200)
