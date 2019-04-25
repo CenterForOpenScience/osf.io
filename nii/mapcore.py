@@ -345,7 +345,10 @@ class RDMmember(object):
 
 
 # compare member lists and apply  actions
-def compare_members(rdm_members, map_members, to_map):
+def compare_members(rdm_members1, map_members1, to_map):
+    rdm_members = sorted(rdm_members1, key=attrgetter('eppn'))
+    map_members = sorted(map_members1, key=lambda x: x['eppn'])
+
     rdm_index = 0
     map_index = 0
     add = []
@@ -949,13 +952,12 @@ def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=F
             rdm_member_list = []
             for rdm_user in node.contributors.all():
                 rdm_member_list.append(RDMmember(node, rdm_user))
-
-            # TODO sorted in compare_members
-            # compare members
-            rdm_member_list_s = sorted(rdm_member_list, key=attrgetter('eppn'))
-            map_member_list = sorted(map_group['group_member_list'], key=lambda x: x['eppn'])
-            add, delete, upg, downg = compare_members(rdm_member_list_s, map_member_list, False)
-            #   add: map_member, delete: RDMmember,  upg: RDMmember,  downg: RDMmember
+            map_member_list = map_group['group_member_list']
+            add, delete, upg, downg = compare_members(rdm_member_list, map_member_list, False)
+            #  add: map_member
+            #  delete: RDMmember
+            #  upg: RDMmember,
+            #  downg: RDMmember
 
             # apply members to RDM
             for mapu in add:
@@ -1034,18 +1036,16 @@ def _mapcore_sync_map_group(access_user, node, title_desc=True, contributors=Tru
                 rdm_members.append(rdmu)
                 # logger.debug('RDM contributor:\n' + pp(vars(rdmu)))
 
-            rdm_members.sort(key=attrgetter('eppn'))
-
             map_group = mapcore_get_extended_group_info(access_user, node, group_key)
-            # TODO sorted in compare_members
             map_members = map_group['group_member_list']
-            map_members.sort(key=lambda u: u['eppn'])
-            # logger.debug('mAP group info:\n' + pp(map_group))
-            logger.debug('mAP group members: ' + pp(map_members))
+            #logger.debug('mAP group info:\n' + pp(map_group))
+            #logger.debug('mAP group members: ' + pp(map_members))
 
-            # compare members
             add, delete, upgrade, downgrade = compare_members(rdm_members, map_members, True)
-            #   add: RDMmember,  delete: map_member, upgrade: map_member, downgrade: map_member
+            #  add: RDMmember,
+            #  delete: map_member
+            #  upgrade: map_member
+            #  downgrade: map_member
 
             # apply members to mAP group
             for u in add:
