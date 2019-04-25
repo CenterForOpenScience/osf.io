@@ -13,9 +13,9 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 
+SCHEMA_VERSION = 2
 
 @pytest.mark.django_db
 class DraftRegistrationTestCase:
@@ -78,7 +78,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -184,7 +184,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider):
@@ -387,7 +387,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             self, app, user, provider, project_public, prereg_metadata):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -470,7 +470,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             self, app, user, payload, url_draft_registrations):
         schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
         payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['datacompletion'] = 'No, data collection has not begun'
@@ -488,7 +488,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             self, app, user, payload, url_draft_registrations):
         schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}
@@ -508,7 +508,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             self, app, user, payload, url_draft_registrations):
         schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}
@@ -529,7 +529,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             self, app, user, payload, url_draft_registrations):
         schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}

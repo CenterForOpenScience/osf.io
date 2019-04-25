@@ -32,7 +32,7 @@ from website import language, settings
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_ORDERING
+from website.project.metadata.schemas import METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 
@@ -387,7 +387,7 @@ def get_metaschemas(*args, **kwargs):
 
     meta_schemas = RegistrationSchema.objects.filter(active=True)
     if include == 'latest':
-        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
+        meta_schemas = RegistrationSchema.objects.get_latest_versions()
 
     meta_schemas = sorted(meta_schemas, key=lambda x: METASCHEMA_ORDERING.index(x.name))
 
