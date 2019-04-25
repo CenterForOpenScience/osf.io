@@ -353,7 +353,7 @@ class TestQuickFilesV1(V1ViewsCase):
 
         log = UserLog.objects.first()
         assert UserLog.objects.count() == 1
-        assert log.action == 'file_added'
+        assert log.action == 'quickfiles_file_added'
         assert log.params['target'] == user._id
 
     def test_waterbutler_hook_succeeds_for_quickfiles(self, app, user):

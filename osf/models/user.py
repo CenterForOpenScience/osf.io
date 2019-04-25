@@ -1693,7 +1693,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         }
 
         self.add_log(
-            action,
+            'quickfiles_{}'.format(action),
             auth=auth,
             params=params
         )

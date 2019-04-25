@@ -10,12 +10,21 @@ logging.basicConfig(level=logging.INFO)
 
 
 def transfer_logs(quickfiles_node):
+    """
+    Recasts logs and saves them, old logs will be deleted with all quickfilesnodes.
+    :param quickfiles_node: a QuickFilesNode
+    :return:
+    """
     for log in quickfiles_node.logs.all():
         log.__class__ = UserLog
         log.save()
 
 
 def create_quickfolders():
+    """
+    Bulk creates a Quickfolder for every user.
+    :return:
+    """
     users = OSFUser.objects.all()
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
     quickfolder_content_type_id = ContentType.objects.get_for_model(QuickFolder).id
@@ -35,11 +44,20 @@ def create_quickfolders():
             quickfolders_to_create.append(quickfolder)
 
             total_created += 1
-    logger.info('There are {} total quickfolders created'.format(total_created))
     QuickFolder.objects.bulk_create(quickfolders_to_create)
+    logger.info('There are {} total quickfolders created'.format(total_created))
+
+
+def repoint_guids():
+    """
+    This takes Guids from Quickfilesnode and repoints them at Quickfolders
+    :return:
+    """
+    guids_repointed = 0
 
     quickfiles_nodes = QuickFilesNode.objects.all()
     paginated_quickfiles_nodes = Paginator(quickfiles_nodes, 1000)
+    quickfolder_content_type_id = ContentType.objects.get_for_model(QuickFolder).id
 
     for page_num in paginated_quickfiles_nodes.page_range:
         for quickfiles_nodes in paginated_quickfiles_nodes.page(page_num).object_list:
@@ -48,11 +66,16 @@ def create_quickfolders():
             guid.object_id = guid.referent.target.quickfolder.id
             guid.content_type_id = quickfolder_content_type_id
             guid.save()
+            guids_repointed += 1
 
-    logger.info('There are {} total quickfolders created'.format(total_created))
+    logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
 
 
 def migrate_quickfiles_to_quickfolders():
+    """
+    This migrates the actual files from Quickfilesnode to Quickfolders
+    :return:
+    """
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
     find_quickfolders = Subquery(QuickFolder.objects.filter(target_object_id=OuterRef('id')).values('id'))
     users_ids_for_with_quickfiles = QuickFilesNode.objects.all().annotate(file_count=Count('files')).filter(file_count__gt=0).values_list('creator_id', flat=True)
@@ -71,3 +94,13 @@ def migrate_quickfiles_to_quickfolders():
         transfer_logs(quickfiles_node)
 
     QuickFilesNode.objects.all().delete()
+
+
+def main():
+    create_quickfolders()
+    repoint_guids()
+    migrate_quickfiles_to_quickfolders()
+
+if __name__ == '__main__':
+    main()
+
