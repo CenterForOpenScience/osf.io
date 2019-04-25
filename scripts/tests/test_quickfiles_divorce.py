@@ -18,7 +18,7 @@ from addons.osfstorage.models import OsfStorageFile
 class TestQuickFilesMigration(MigrationTestCase):
 
     number_of_quickfiles = 20
-    number_of_users = 1000
+    number_of_users = 10
 
     def test_quickfiles_divorce(self):
         self.bulk_add(self.number_of_users, AuthUserFactory, with_quickfiles_node=True)

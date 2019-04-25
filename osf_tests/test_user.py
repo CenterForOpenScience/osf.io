@@ -1237,8 +1237,8 @@ class TestCitationProperties:
 
 # copied from tests/test_models.py
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
 class TestMergingUsers:
 
     @pytest.yield_fixture()

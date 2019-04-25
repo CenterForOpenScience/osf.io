@@ -231,8 +231,8 @@ class TestFrameworkUtils(unittest.TestCase):
 
     def test_leading_underscores(self):
         assert_equal(
-            '__init__.py.py',
-            secure_filename('__init__.py.py')
+            '__init__.py',
+            secure_filename('__init__.py')
         )
 
     def test_werkzeug_cases(self):

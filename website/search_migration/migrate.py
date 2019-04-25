@@ -31,7 +31,7 @@ def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
     """ Run provided SQL and send output to elastic.
 
     :param str index: Elastic index to update (formatted into `sql`)
-    :param str sql: SQL to format and run. See __init__.py.py in this module
+    :param str sql: SQL to format and run. See __init__.py in this module
     :param int max_id: Last known object id. Indicates when to stop paging
     :param int increment: Page size
     :param  dict es_args:  Dict or None, to pass to `helpers.bulk`

@@ -146,11 +146,3 @@ class TestQuickFolder:
 
         with pytest.raises(MaxRetriesError):
             user.merge_user(user2)
-
-    def test_unique_constraints(self, user):
-        quickfiles = QuickFolder(target=user, provider=QuickFolder._provider, path='/')
-
-        with pytest.raises(IntegrityError) as exc:
-            quickfiles.save()
-
-        assert 'duplicate key value violates unique constraint "one_quickfolder_per_user"' in exc.value.message

@@ -776,7 +776,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
                 # check if new name conflicts, update til it does not (try up to 1000 times)
                 rename_count = 0
-
                 while self.quickfiles.filter(name=new_name).exists():
                     digit += 1
                     new_name = new_name_format.format(name_without_extension, digit, extension)

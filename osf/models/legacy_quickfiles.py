@@ -1,7 +1,12 @@
 from __future__ import unicode_literals
 
+import logging
+
 from osf.models.node import AbstractNode, AbstractNodeManager
 from osf.exceptions import NodeStateError
+
+
+logger = logging.getLogger(__name__)
 
 
 class QuickFilesNodeManager(AbstractNodeManager):
@@ -11,7 +16,7 @@ class QuickFilesNodeManager(AbstractNodeManager):
 
         quickfiles, created = QuickFilesNode.objects.get_or_create(
             title=possessive_title,
-            creator=user,
+            creator=user
         )
 
         if not created:

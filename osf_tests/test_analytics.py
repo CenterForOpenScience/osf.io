@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Unit tests for analytics logic in framework/analytics/__init__.py.py
+Unit tests for analytics logic in framework/analytics/__init__.py
 """
 
 import mock

@@ -49,10 +49,6 @@ class BaseFileNodeManager(TypedModelManager, IncludeManager):
             return qs.filter(provider=self.model._provider)
         return qs
 
-    def get_root(self, target):
-        # Get the root folder that the target file belongs to
-        content_type = ContentType.objects.get_for_model(target)
-        return self.get(target_object_id=target.id, target_content_type=content_type, is_root=True)
 
 class ActiveFileNodeManager(Manager):
     """Manager that filters out TrashedFileNodes.
@@ -137,14 +133,12 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     @property
     def is_quickfile(self):
-        # TODO: delete old school quickfile after migration
-        if getattr(self.target, 'type', None) == 'osf.quickfilenode':
+        if self.type == 'osf.quickfolder':
             return True
-
-        # new school quickfile
-        if self.type == 'osf.quickfolder' or getattr(self, 'parent') and self.parent.type == 'osf.quickfolder':
+        elif self.parent and self.parent.type == 'osf.quickfolder':
             return True
-        return False
+        else:
+            return False
 
     @property
     def path(self):
@@ -352,6 +346,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         headers = {}
         if auth_header:
             headers['Authorization'] = auth_header
+
         resp = requests.get(
             self.generate_waterbutler_url(revision=revision, meta=True, _internal=True, **kwargs),
             headers=headers,
