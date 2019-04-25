@@ -9,7 +9,7 @@ from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from admin.rdm.utils import RdmPermissionMixin
 from django.core.exceptions import PermissionDenied
 
@@ -328,11 +328,15 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
         return direction
 
 
-class StatisticalStatusDefaultStorage(RdmPermissionMixin, ListView):
+class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, ListView):
     template_name = 'institutions/statistical_status_default_storage.html'
     permission_required = 'osf.view_institution'
     raise_exception = True
     paginate_by = 10
+
+    def test_func(self):
+        return not self.is_super_admin and self.is_admin \
+            and self.request.user.affiliated_institutions.exists()
 
     def custom_size_abbreviation(self, size, abbr):
         if abbr == 'B':
@@ -341,12 +345,12 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, ListView):
 
     def get_queryset(self):
         user_list = []
-        for user in OSFUser.objects.filter(affiliated_institutions=self.request.user.affiliated_institutions.filter()[0].id):
-            max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
 
-            user_quota = UserQuota.objects.filter(user=user)
-            storage_type = user_quota[0].storage_type if len(user_quota) else None
-            if storage_type == None or storage_type == 2:
+        institution = self.request.user.affiliated_institutions.first()
+        if institution is not None and Region.objects.filter(_id=institution._id).exists():
+
+            for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
+                max_quota, used_quota = quota.get_quota_info(user, UserQuota.CUSTOM_STORAGE)
                 max_quota_bytes = max_quota * 1024 ** 3
                 remaining_quota = max_quota_bytes - used_quota
                 used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
