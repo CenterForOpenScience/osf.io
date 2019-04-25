@@ -280,9 +280,13 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
             if user is not None:
                 user.update_date_last_access()
 
+            response = auth_deco.mapcore_check_token(auth, target)
+            if response:
+                return response
+
             response = check_contributor_auth(target, auth, include_public, include_view_only_anon)
 
-            return response or auth_deco.mapcore_check_token(True, func, *args, **kwargs)
+            return response or func(*args, **kwargs)
 
         return wrapped
 
@@ -401,6 +405,10 @@ def must_have_permission(permission):
             if user is None:
                 raise HTTPError(http.UNAUTHORIZED)
 
+            response = auth_deco.mapcore_check_token(auth, target)
+            if response:
+                return response
+
             # User must have permissions
             if not target.has_permission(user, permission):
                 raise HTTPError(http.FORBIDDEN)
@@ -408,7 +416,7 @@ def must_have_permission(permission):
             user.update_date_last_access()
 
             # Call view function
-            return auth_deco.mapcore_check_token(True, func, *args, **kwargs)
+            return func(*args, **kwargs)
 
         # Return decorated function
         return wrapped

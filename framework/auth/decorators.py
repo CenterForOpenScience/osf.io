@@ -65,26 +65,29 @@ def must_be_confirmed(func):
 
 
 # for GakuNin mAP Core (API v2)
-def mapcore_check_token(use_mapcore, func, *args, **kwargs):
+# If node is not None, mapcore_sync_rdm_project_or_map_group() is called.
+def mapcore_check_token(auth, node, use_mapcore=True):
     from nii.mapcore_api import MAPCoreTokenExpired, MAPCoreException
     from nii.mapcore import (mapcore_is_enabled,
                              mapcore_api_is_available,
                              mapcore_request_authcode,
                              mapcore_log_error,
-                             mapcore_url_is_sync_target,
-                             mapcore_sync_rdm_user_projects)
+                             mapcore_url_is_my_projects,
+                             mapcore_sync_rdm_my_projects,
+                             mapcore_sync_rdm_project_or_map_group)
 
     # from framework import status
     # msg = 'test mapcore message'
     # status.push_status_message(msg, kind='info', dismissible=True, trust=True)
     # -> "Missing translation: status.<msg>" in dashboard from ember-osf-web
 
-    auth = kwargs.get('auth')
     if auth and use_mapcore and mapcore_is_enabled():
         try:
             try:
-                if mapcore_url_is_sync_target(request.url):
-                    mapcore_sync_rdm_user_projects(auth.user)
+                if mapcore_url_is_my_projects(request.url):
+                    mapcore_sync_rdm_my_projects(auth.user)
+                elif node:
+                    mapcore_sync_rdm_project_or_map_group(auth.user, node)
                 else:
                     # check available token only
                     mapcore_api_is_available(auth.user)
@@ -105,7 +108,7 @@ def mapcore_check_token(use_mapcore, func, *args, **kwargs):
                     'message_short': 'mAP Core API Error',
                     'message_long': emsg
                 })
-    return func(*args, **kwargs)
+    return None
 
 
 def _must_be_logged_in_factory(login=True, email=True, use_mapcore=True):
@@ -123,13 +126,15 @@ def _must_be_logged_in_factory(login=True, email=True, use_mapcore=True):
                     if auth.user.have_email:
                         # for GakuNin CloudGateway (mAP API v1)
                         setup_cggroups(auth)
-                        return mapcore_check_token(use_mapcore,
-                                                   func, *args, **kwargs)
+                        response = mapcore_check_token(auth, None,
+                                                       use_mapcore=use_mapcore)
+                        return response or func(*args, **kwargs)
                     else:
                         return redirect(web_url_for('user_account_email'))
                 else:
-                    return mapcore_check_token(use_mapcore,
-                                               func, *args, **kwargs)
+                    response = mapcore_check_token(auth, None,
+                                                   use_mapcore=use_mapcore)
+                    return response or func(*args, **kwargs)
             elif login:  # require logged_in=True
                 return redirect(cas.get_login_url(request.url))
             else:

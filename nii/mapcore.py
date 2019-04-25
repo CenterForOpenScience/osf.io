@@ -1058,15 +1058,6 @@ def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True
         mapcore_unset_standby_to_upload(node)
     return ret
 
-def mapcore_url_is_sync_target(request_url):
-    pages = ['dashboard', 'my_projects']
-
-    for name in pages:
-        if urlparse(request_url).path == urlparse(web_url_for(name)).path:
-            return True
-    return False
-
-
 #TODO unnecessary
 def mapcore_member_list_is_accessible(access_user, node):
     try:
@@ -1091,7 +1082,15 @@ def mapcore_get_accessible_user(access_user, node):
     return None
 
 
-def mapcore_sync_rdm_user_projects(user):
+def mapcore_url_is_my_projects(request_url):
+    pages = ['dashboard', 'my_projects']
+
+    for name in pages:
+        if urlparse(request_url).path == urlparse(web_url_for(name)).path:
+            return True
+    return False
+
+def mapcore_sync_rdm_my_projects(user):
     '''
     RDMとmAPの両方にグループに所属:
        タイトルが変わっていない場合: なにもしない
@@ -1119,7 +1118,7 @@ def mapcore_sync_rdm_user_projects(user):
 
     '''
 
-    logger.info('starting mapcore_sync_rdm_user_projects(\'' + user.eppn + '\').')
+    logger.info('starting mapcore_sync_rdm_my_projects(\'' + user.eppn + '\').')
 
     try:
         locker.lock_user(user)
@@ -1197,15 +1196,16 @@ def mapcore_sync_rdm_user_projects(user):
             except MAPCoreException as e:
                 if e.group_does_not_exist():
                     logger.info('RDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(project.title, project._id))
-                    project.is_deleted = True
-                    project.save()
+                    from framework.auth import Auth
+                    project.remove_node(Auth(user=user))
     finally:
         locker.unlock_user(user)
 
-    logger.debug('mapcore_sync_rdm_user_projects finished.')
+    logger.debug('mapcore_sync_rdm_my_projects finished.')
 
 
-READY_SYNC_FILE_TMPL = '/code_src/tmp/rdm_mapcore_ready_to_sync_{}'  # TODO do not use
+SHARE_DIR = '/code_src/tmp'  # TODO do not use
+READY_SYNC_FILE_TMPL = SHARE_DIR + '/rdm_mapcore_ready_to_sync_{}'  # TODO do not use
 
 def mapcore_set_standby_to_upload(node):
     # TODO node.mapcore_standby_to_upload = timezone.now()
@@ -1239,9 +1239,42 @@ def mapcore_unset_standby_to_upload(node):
             logger.error('The project ({}) cannot synchronize from mAP after this.'.format(node._id))
 
 
+SYNC_CACHE_TIME = 10  # sec.
+SYNC_CACHE_FILE_TMPL = SHARE_DIR + '/rdm_mapcore_sync_cache_{}'  # TODO do not use
+
+# TODO use DB
+def mapcore_set_sync_time(node):
+    filename = SYNC_CACHE_FILE_TMPL.format(node._id)  # use Guid
+    with open(filename, 'w'):  # update mtime
+        pass
+    logger.debug('mapcore_set_sync_time: called: id={}'.format(id(node)))
+
+# TODO use DB
+def mapcore_is_sync_time_expired(node):
+    import traceback
+    logger.debug('mapcore_is_sync_time_expired: called: id={}'.format(id(node)))
+    logger.debug('mapcore_is_sync_time_expired: Trace={}'.format(''.join(traceback.format_stack())))  # TODO
+
+    filename = SYNC_CACHE_FILE_TMPL.format(node._id)  # use Guid
+    try:
+        st = os.stat(filename)
+        mtime = st.st_mtime
+        now = time.time()
+        if now >= mtime + SYNC_CACHE_TIME:
+            return True
+        else:
+            logger.debug('mapcore_is_sync_time_expired: skip sync')
+            return False
+    except Exception:
+        pass
+    return True
+
 def mapcore_sync_rdm_project_or_map_group(access_user, node):
     if node.is_deleted:
         return
+    if not mapcore_is_sync_time_expired(node):
+        return  # skipped
+
     if node.map_group_key is None:
         group_key = mapcore_sync_map_new_group(node.creator, node.title)
         node.map_group_key = group_key
@@ -1254,6 +1287,7 @@ def mapcore_sync_rdm_project_or_map_group(access_user, node):
     else:
         mapcore_sync_rdm_project(access_user, node,
                                  title_desc=True, contributors=True)
+    mapcore_set_sync_time(node)
 
 
 #
@@ -1367,7 +1401,7 @@ if __name__ == '__main__':
 
     if False:
         me = OSFUser.objects.get(eppn=sys.argv[1])
-        mapcore_sync_rdm_user_projects(me)
+        mapcore_sync_rdm_my_projects(me)
         pass
 
     if False:
