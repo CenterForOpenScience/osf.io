@@ -1059,11 +1059,14 @@ def _mapcore_sync_map_group(access_user, node, title_desc=True, contributors=Tru
                 eppn = u['eppn']
                 try:
                     user = OSFUser.objects.get(eppn=eppn)
-                    mapcore_remove_from_group(access_user, node, group_key, eppn)
-                    logger.info('mAP group [' + map_group['group_name'] + ']s member [' + eppn + '] is removed')
                 except Exception:
                     logger.info('The user(eppn={}) does not exist in RDM. Do not remove the user from the mAP group({}).'.format(eppn, map_group['group_name']))
                     # TODO log?
+                    user = None
+                if user:
+                    mapcore_remove_from_group(access_user, node, group_key, eppn)
+                    logger.info('mAP group [' + map_group['group_name'] + ']s member [' + eppn + '] is removed')
+
             for u in upgrade:
                 mapcore_edit_member(access_user, node, group_key, u['eppn'], MAPCore.MODE_ADMIN)
                 logger.info('mAP group [' + map_group['group_name'] + ']s admin [' + u['eppn'] + '] is now a member')
