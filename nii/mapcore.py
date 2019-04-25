@@ -326,6 +326,10 @@ def mapcore_remove_token(user):
 ### sync functions
 ###
 
+# ignore user.eppn=None
+def query_contributors(node):
+    return node.contributors.exclude(eppn=None)
+
 # OSFuser essential feild keeper for comparing member
 class RDMmember(object):
     def __init__(self, node, user):
@@ -531,7 +535,7 @@ def is_node_admin(node, user):
 #     # make contirbutor list
 #     rdm_member_list = []
 #     if hasattr(node, 'contributors'):
-#         for rdm_user in node.contributors.all():
+#         for rdm_user in query_contributors(node):
 #             rdm_member_list.append(RDMmember(node, rdm_user))
 
 #     # compare members
@@ -588,7 +592,7 @@ def is_node_admin(node, user):
 #     # get the RDM contributor and make lists
 #     rdm_admin = []
 #     rdm_members = []
-#     for member in node.contributors.all():
+#     for member in query_contributors(node)):
 #         rdmu = RDMmember(node, member)
 #         rdm_members.append(rdmu)
 #         if rdmu.is_admin:
@@ -677,12 +681,16 @@ def is_node_admin(node, user):
 
 def _mapcore_api_with_switching_token(access_user, node, group_key, func, **kwargs):
     candidates = []
-    if access_user:
+    if access_user and access_user.eppn:
         candidates.append(access_user)  # top priority
     if node:
-        candidates.append(node.creator)
-        for contributor in node.contributors.all():
+        if node.creator.eppn:
+            candidates.append(node.creator)
+        for contributor in query_contributors(node):
             candidates.append(contributor)
+    if len(candidates) == 0:
+        raise MAPCoreException(None, 'No user can use API of mAP Core.')
+
     # maintain the order and remove duplicated users
     first_e = None
     for candidate in sorted(set(candidates), key=candidates.index):
@@ -950,7 +958,7 @@ def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=F
         if contributors:
             # make contirbutor list
             rdm_member_list = []
-            for rdm_user in node.contributors.all():
+            for rdm_user in query_contributors(node):
                 rdm_member_list.append(RDMmember(node, rdm_user))
             map_member_list = map_group['group_member_list']
             add, delete, upg, downg = compare_members(rdm_member_list, map_member_list, False)
@@ -1031,7 +1039,7 @@ def _mapcore_sync_map_group(access_user, node, title_desc=True, contributors=Tru
         # sync members
         if contributors:
             rdm_members = []
-            for member in node.contributors.all():
+            for member in query_contributors(node):
                 rdmu = RDMmember(node, member)
                 rdm_members.append(rdmu)
                 # logger.debug('RDM contributor:\n' + pp(vars(rdmu)))
@@ -1094,30 +1102,6 @@ def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True
         mapcore_unset_standby_to_upload(node)
     return ret
 
-#TODO unnecessary
-def mapcore_member_list_is_accessible(access_user, node):
-    try:
-        mapcore = MAPCore(access_user)
-        mapcore.get_group_members(node.map_group_key)
-        return True
-    except MAPCoreException as e:
-        if e.listing_group_member_is_not_permitted():
-            return False
-        raise
-
-#TODO unnecessary
-def mapcore_get_accessible_user(access_user, node):
-    if mapcore_member_list_is_accessible(access_user, node):
-        return access_user
-    if mapcore_member_list_is_accessible(node.creator, node):
-        return node.creator
-    for contributor in node.contributors.all():
-        if access_user != contributor and node.creator != contributor:
-            if mapcore_member_list_is_accessible(contributor, node):
-                return contributor
-    return None
-
-
 def mapcore_url_is_my_projects(request_url):
     pages = ['dashboard', 'my_projects']
 
@@ -1134,7 +1118,7 @@ def mapcore_sync_rdm_my_projects(user):
 
     mAPグループだけに所属:
       対応するRDMにプロジェクトが存在:
-        つまりconributors不整合状態
+        つまりcontributors不整合状態
         RDM側に反映 (mAP側に反映すべき情報がある場合はmAP側へ反映)
       対応するRDMにプロジェクトが無い:
         RDMにプロジェクトを作成し、mAPグループから情報取得してRDM側に反映
@@ -1144,7 +1128,7 @@ def mapcore_sync_rdm_my_projects(user):
         つまりまだmAP側と関連付けられていない
         プロジェクト画面遷移時にmAPグループを作成するので、何もしない
       mAPにグループが存在:
-        つまりconributors不整合状態
+        つまりcontributors不整合状態
         RDM側に反映 (mAP側に反映すべき情報がある場合はmAP側へ反映)
       mAPにグループが無い:
         プロジェクトをis_deleted=Trueにする
@@ -1509,7 +1493,7 @@ if __name__ == '__main__':
         # for group in group_list:
         #    mapcore_group_sync_to_rdm(group)
 
-    if False:  # get RDM conributors and copy to mAP
+    if False:  # get RDM contributors and copy to mAP
         # owner = OSFUser.objects.get(eppn='hnagahara@openidp.nii.ac.jp')
         # mapcore_refresh_accesstoken(owner)  # token refresh
         node = Node.objects.get(title=sys.argv[1])
