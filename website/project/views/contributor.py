@@ -355,7 +355,7 @@ def project_remove_contributor(auth, **kwargs):
                 'message_long': 'Could not remove contributor.'})
 
         if mapcore_is_enabled():
-            mapcore_sync_map_group(auth.uesr, node)
+            mapcore_sync_map_group(auth.user, node)
 
         # On parent node, if user has removed herself from project, alert; redirect to
         # node summary if node is public, else to user's dashboard page
