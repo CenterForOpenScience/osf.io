@@ -342,13 +342,8 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, ListView):
     def get_queryset(self):
         user_list = []
         for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
-            try:
-                max_quota = user.userquota.max_quota
-                used_quota = user.userquota.used
-            except ObjectDoesNotExist:
-                max_quota = api_settings.DEFAULT_MAX_QUOTA
-                used_quota = quota.used_quota(user.guids.first()._id)
-            
+            max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
+
             user_quota = UserQuota.objects.filter(user=user)
             storage_type = user_quota[0].storage_type if len(user_quota) else None
             if storage_type == None or storage_type == 2:
