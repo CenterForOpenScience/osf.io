@@ -202,6 +202,11 @@ class TestUserEmailsList:
         assert len([email for email in data if email['attributes']['confirmed']]) == confirmed_count
         assert len([email for email in data if email['attributes']['confirmed'] is False]) == unconfirmed_count
 
+    def test_get_emails_not_throttled(self, app, url, user_one):
+        for i in range(3):
+            res = app.get(url, auth=user_one.auth)
+            assert res.status_code == 200
+
     def test_get_emails_not_current_user(self, app, url, user_one, user_two):
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
