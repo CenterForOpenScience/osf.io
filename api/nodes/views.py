@@ -281,7 +281,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         user = self.request.user
         node = serializer.save(creator=user)
         if mapcore_is_enabled():
-            # TODO ignore exception
+            # may raise
             group_key = mapcore_sync_map_new_group(node.creator, node.title)
             node.map_group_key = group_key
             node.save()
@@ -396,7 +396,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         res = super(NodeDetail, self).put(request, *args, **kwargs)
         if res.status_code == HTTP_200_OK and mapcore_is_enabled():
             auth = get_user_auth(self.request)
-            # TODO ignore exception
+            # may raise
             mapcore_sync_map_group(auth.user, self.get_object())
         return res
 
@@ -405,7 +405,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         res = super(NodeDetail, self).patch(request, *args, **kwargs)
         if res.status_code == HTTP_200_OK and mapcore_is_enabled():
             auth = get_user_auth(self.request)
-            # TODO ignore exception
+            # may raise
             mapcore_sync_map_group(auth.user, self.get_object())
         return res
 

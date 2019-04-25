@@ -964,7 +964,7 @@ def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=F
                 try:
                     rdmu = OSFUser.objects.get(eppn=mapu['eppn'])
                 except Exception:
-                    logger.info('mAP member [' + mapu['eppn'] + '] is not registed in RDM.  Ignore')
+                    logger.info('mAP member [' + mapu['eppn'] + '] is not registed in RDM. (ignored)')
                     continue
                 if mapu['is_admin']:
                     logger.info('mAP member [' + mapu['eppn'] + '] is registed as contributor ADMIN.')
@@ -1056,8 +1056,14 @@ def _mapcore_sync_map_group(access_user, node, title_desc=True, contributors=Tru
                 mapcore_add_to_group(access_user, node, group_key, u.eppn, admin)
                 logger.info('mAP group [' + map_group['group_name'] + '] get new member [' + u.eppn + ']')
             for u in delete:
-                mapcore_remove_from_group(access_user, node, group_key, u['eppn'])
-                logger.info('mAP group [' + map_group['group_name'] + ']s member [' + u['eppn'] + '] is removed')
+                eppn = u['eppn']
+                try:
+                    user = OSFUser.objects.get(eppn=eppn)
+                    mapcore_remove_from_group(access_user, node, group_key, eppn)
+                    logger.info('mAP group [' + map_group['group_name'] + ']s member [' + eppn + '] is removed')
+                except Exception:
+                    logger.info('The user(eppn={}) does not exist in RDM. Do not remove the user from the mAP group({}).'.format(eppn, map_group['group_name']))
+                    # TODO log?
             for u in upgrade:
                 mapcore_edit_member(access_user, node, group_key, u['eppn'], MAPCore.MODE_ADMIN)
                 logger.info('mAP group [' + map_group['group_name'] + ']s admin [' + u['eppn'] + '] is now a member')
@@ -1508,3 +1514,10 @@ if __name__ == '__main__':
 
     if False:  # test for authcode request
         mapcore_request_authcode(next_url=sys.argv[1])
+
+    if True:
+        user = OSFUser.objects.get(eppn=sys.argv[1])
+        node = Node.objects.get(title=sys.argv[2])
+        eppn = sys.argv[3]
+        #eppn = user.eppn
+        mapcore_add_to_group(user, node, node.map_group_key, eppn, MAPCore.MODE_MEMBER)
