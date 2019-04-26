@@ -113,11 +113,10 @@ class BitbucketClient(BaseClient):
 
     def repo_default_branch(self, user, repo):
         """Return the default branch for a BB repository (what they call the
-        "main branch").  They do not provide this via their v2 API,
-        but there is a v1 endpoint that will return it.
+        "main branch").
 
         API doc:
-        https://confluence.atlassian.com/bitbucket/repository-resource-1-0-296095202.html#repositoryResource1.0-GETtherepository%27smainbranch
+        https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D/%7Brepo_slug%7D
 
         :param str user: Bitbucket user name
         :param str repo: Bitbucket repo name
@@ -127,11 +126,11 @@ class BitbucketClient(BaseClient):
         """
         res = self._make_request(
             'GET',
-            self._build_url(settings.BITBUCKET_V1_API_URL, 'repositories', user, repo, 'main-branch'),
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', user, repo),
             expects=(200, ),
             throws=HTTPError(401)
         )
-        return res.json()['name']
+        return res.json()['mainbranch']['name']
 
     def branches(self, user, repo):
         """List a repo's branches.  This endpoint is paginated and may require
