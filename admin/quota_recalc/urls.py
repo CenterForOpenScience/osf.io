@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from . import views
 
-app_name = 'admin'
+app_name = 'quota_recalc'
 
 urlpatterns = [
     url(r'^$', views.all_users, name='all_users'),
