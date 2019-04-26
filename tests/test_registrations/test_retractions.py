@@ -17,7 +17,7 @@ from osf_tests.factories import (
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
     UnregUserFactory
 )
-from website import tokens
+from osf.utils import tokens
 from osf.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     NodeStateError,
@@ -622,7 +622,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
     def test_GET_approve_from_unauthorized_user_returns_HTTPError_UNAUTHORIZED(self):
         unauthorized_user = AuthUserFactory()
         res = self.app.get(
-            self.registration.web_url_for('view_project', token=self.approval_token),
+            self.registration.web_url_for('token_action', token=self.approval_token),
             auth=unauthorized_user.auth,
             expect_errors=True
         )
@@ -635,7 +635,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.retraction.save()
 
         res = self.app.get(
-            self.registration.web_url_for('view_project', token=self.approval_token),
+            self.registration.web_url_for('token_action', token=self.approval_token),
             auth=self.user.auth,
             expect_errors=True
         )
@@ -643,7 +643,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
 
     def test_GET_approve_with_invalid_token_returns_HTTPError_BAD_REQUEST(self):
         res = self.app.get(
-            self.registration.web_url_for('view_project', token=self.corrupt_token),
+            self.registration.web_url_for('token_action', token=self.corrupt_token),
             auth=self.user.auth,
             expect_errors=True
         )
@@ -651,28 +651,28 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
 
     def test_GET_approve_with_non_existant_sanction_returns_HTTPError_BAD_REQUEST(self):
         res = self.app.get(
-            self.registration.web_url_for('view_project', token=self.token_without_sanction),
+            self.registration.web_url_for('token_action', token=self.token_without_sanction),
             auth=self.user.auth,
             expect_errors=True
         )
         assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
-    def test_GET_approve_with_valid_token_returns_200(self):
+    def test_GET_approve_with_valid_token_returns_302(self):
         res = self.app.get(
-            self.registration.web_url_for('view_project', token=self.approval_token),
+            self.registration.web_url_for('token_action', token=self.approval_token),
             auth=self.user.auth
         )
         self.registration.retraction.reload()
         assert_true(self.registration.is_retracted)
         assert_false(self.registration.is_pending_retraction)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert_equal(res.status_code,  http_status.HTTP_302_FOUND)
 
     # node_registration_retraction_disapprove_tests
     def test_GET_disapprove_from_unauthorized_user_returns_HTTPError_UNAUTHORIZED(self):
         unauthorized_user = AuthUserFactory()
 
         res = self.app.get(
-            self.registration.web_url_for('view_project', token=self.rejection_token),
+            self.registration.web_url_for('token_action', token=self.rejection_token),
             auth=unauthorized_user.auth,
             expect_errors=True
         )
@@ -685,7 +685,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.retraction.save()
 
         res = self.app.get(
-            self.registration.web_url_for('view_project', token=self.rejection_token),
+            self.registration.web_url_for('token_action', token=self.rejection_token),
             auth=self.user.auth,
             expect_errors=True
         )
@@ -693,7 +693,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
 
     def test_GET_disapprove_with_invalid_token_HTTPError_BAD_REQUEST(self):
         res = self.app.get(
-            self.registration.web_url_for('view_project', token=self.corrupt_token),
+            self.registration.web_url_for('token_action', token=self.corrupt_token),
             auth=self.user.auth,
             expect_errors=True
         )
@@ -701,14 +701,15 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
 
     def test_GET_disapprove_with_valid_token_returns_redirect(self):
         res = self.app.get(
-            self.registration.web_url_for('view_project', token=self.rejection_token),
+            self.registration.web_url_for('token_action', token=self.rejection_token),
             auth=self.user.auth,
         )
         self.registration.retraction.reload()
         assert_false(self.registration.is_retracted)
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.retraction.is_rejected)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert_equal(res.status_code, http_status.HTTP_302_FOUND)
+
 
 @pytest.mark.enable_bookmark_creation
 class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
@@ -925,7 +926,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.retract_registration(self.user)
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
 
-        approval_url = self.registration.web_url_for('view_project', token=approval_token)
+        approval_url = self.registration.web_url_for('token_action', token=approval_token)
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
         assert_true(self.registration.is_pending_retraction)
@@ -936,7 +937,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.retract_registration(self.user)
         rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
 
-        disapproval_url = self.registration.web_url_for('view_project', token=rejection_token)
+        disapproval_url = self.registration.web_url_for('token_action', token=rejection_token)
         res = self.app.get(disapproval_url, auth=non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
         assert_true(self.registration.is_pending_retraction)

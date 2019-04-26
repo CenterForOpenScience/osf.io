@@ -1963,9 +1963,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         values = {}
         for key, value in fields.items():
             if key not in self.WRITABLE_WHITELIST:
-                continue
-            if self.is_registration and key != 'is_public':
-                raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
+                if self.is_registration:
+                    raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
+                else:
+                    continue
             # Title and description have special methods for logging purposes
             if key == 'title':
                 if not self.is_bookmark_collection or not self.is_quickfiles:

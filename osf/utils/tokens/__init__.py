@@ -6,7 +6,7 @@ from flask import request
 from framework.exceptions import HTTPError
 
 from website import settings
-from website.tokens import handlers
+from osf.utils.tokens import handlers
 from osf.exceptions import TokenHandlerNotFound
 
 class TokenHandler(object):

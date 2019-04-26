@@ -17,6 +17,8 @@ from osf.utils.permissions import ADMIN
 def node_identifiers_post(auth, node, **kwargs):
     """Create identifier pair for a node. Node must be a public registration.
     """
+    # TODO this functionality exists in APIv2. When front end is entirely using
+    # v2 for minting DOI's, remove this view.
     if not node.is_public or node.is_retracted:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     if node.get_identifier('doi') or node.get_identifier('ark'):

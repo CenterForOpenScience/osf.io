@@ -261,6 +261,7 @@ elif osf_settings.DEV_MODE or osf_settings.DEBUG_MODE:
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
 API_BASE = 'v2/'
+API_PRIVATE_BASE = '_/'
 STATIC_URL = '/static/'
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
