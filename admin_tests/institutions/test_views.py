@@ -343,7 +343,6 @@ class TestGetUserListWithQuota(AdminTestCase):
 
         nt.assert_equal(round(user_quota['ratio'], 1), 5.2)
 
-<<<<<<< 810229fde35fb5aae03c76fa6b0f479c0ed3aede
 class TestGetUserListWithQuotaSorted(AdminTestCase):
     def setUp(self):
         self.institution = InstitutionFactory()
@@ -447,7 +446,6 @@ class TestGetUserListWithQuotaSorted(AdminTestCase):
         result = map(itemgetter('ratio'), response.context_data['users'])
         nt.assert_equal(result, expected)
 
-=======
 class TestGetDifferentUserListWithQuota(AdminTestCase):
     def setUp(self):
         self.institution = InstitutionFactory()
@@ -491,7 +489,6 @@ class TestGetDifferentUserListWithQuota(AdminTestCase):
         nt.assert_equal(round(user_quota['usage_value'], 1), 5.2)
         nt.assert_equal(user_quota['usage_abbr'], 'GiB')
         nt.assert_equal(round(user_quota['ratio'], 1), 5.2)
->>>>>>> tests, they still fail though
 
 class TestGetDifferentUserListWithQuota(AdminTestCase):
     def setUp(self):

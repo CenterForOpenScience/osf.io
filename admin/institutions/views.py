@@ -21,8 +21,6 @@ from website.util import quota
 from addons.osfstorage.models import Region
 from django.http import HttpResponseRedirect
 
-from website.views import get_storage_region_list
-from osf.models.user_quota import UserQuota
 
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
