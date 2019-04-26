@@ -298,10 +298,10 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
         args += ['-s']
     if numprocesses > 1:
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
-    modules = [module] if isinstance(module, basestring) else module
+    modules = [module] if isinstance(module, str) else module
     args.extend(modules)
     if params:
-        params = [params] if isinstance(params, basestring) else params
+        params = [params] if isinstance(params, str) else params
         args.extend(params)
     retcode = pytest.main(args)
     sys.exit(retcode)
@@ -786,7 +786,7 @@ def webpack(ctx, clean=False, watch=False, dev=False, colors=False):
 def build_js_config_files(ctx):
     from website import settings
     print('Building JS config files...')
-    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'w') as fp:
         json.dump(settings.NODE_CATEGORY_MAP, fp)
     print('...Done.')
 

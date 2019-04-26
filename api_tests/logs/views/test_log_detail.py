@@ -138,7 +138,7 @@ class TestLogDetail(LogsTestCase):
             '{}?format=api'.format(url_log_detail_public),
             auth=user_one.auth)
         assert res.status_code == 200
-        assert log_public._id in unicode(res.body, 'utf-8')
+        assert log_public._id in str(res.body, 'utf-8')
 
 
 @pytest.mark.django_db

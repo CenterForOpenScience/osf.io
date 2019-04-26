@@ -117,7 +117,7 @@ class ConferenceMessage(object):
         else:
             # sender format: email@domain.tld
             name = self.sender
-        return unicode(HumanName(name))
+        return str(HumanName(name))
 
     @cached_property
     def sender_email(self):

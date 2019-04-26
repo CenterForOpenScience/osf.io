@@ -11,7 +11,7 @@ def gravatar(user, use_ssl=False, d=None, r=None, size=None):
 
     # user can be a User instance or a username string
     username = user.username if hasattr(user, 'username') else user
-    hash_code = hashlib.md5(unicode(username).encode('utf-8')).hexdigest()
+    hash_code = hashlib.md5(str(username).encode('utf-8')).hexdigest()
 
     url = base_url + '?'
 

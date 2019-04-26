@@ -362,7 +362,7 @@ class JSONRenderer(Renderer):
                 try:
                     return obj.to_json()
                 except TypeError:  # BS4 objects have to_json that isn't callable
-                    return unicode(obj)
+                    return str(obj)
             return json.JSONEncoder.default(self, obj)
 
     def handle_error(self, error):

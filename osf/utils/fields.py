@@ -33,6 +33,9 @@ def encrypt_string(value, prefix='jwe:::'):
 
 
 def decrypt_string(value, prefix='jwe:::'):
+    if type(value) == bytes:
+        value = str(value)
+
     if value and value.startswith(prefix):
         value = ensure_bytes(value)
         try:

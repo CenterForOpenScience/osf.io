@@ -163,7 +163,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
         for field in fields_check:
             if getattr(fields_check[field], 'always_embed', False) and field not in embeds:
-                embeds.append(unicode(field))
+                embeds.append(str(field))
             if getattr(fields_check[field], 'never_embed', False) and field in embeds:
                 embeds.remove(field)
         embeds_partials = {}
