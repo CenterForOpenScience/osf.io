@@ -1,7 +1,7 @@
 import abc
 import datetime as dt
 import functools
-import httplib as http
+from rest_framework import status as http_status
 import logging
 
 from django.contrib.postgres.fields import ArrayField
@@ -264,7 +264,7 @@ class ExternalProvider(object):
                     code=request.args.get('code'),
                 )
             except (MissingTokenError, RequestsHTTPError):
-                raise HTTPError(http.SERVICE_UNAVAILABLE)
+                raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE)
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)
         # call the hook for subclasses to parse values from the response

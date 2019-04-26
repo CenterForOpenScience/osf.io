@@ -3,7 +3,7 @@ import pytest
 import furl
 import pytz
 import datetime
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 from nose.tools import *  # noqa:
 
 from addons.wiki.models import WikiPage

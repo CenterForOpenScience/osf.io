@@ -1,6 +1,6 @@
 from dateutil.parser import parse as parse_date
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeSerializer

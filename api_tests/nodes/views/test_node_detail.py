@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory

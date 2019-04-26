@@ -1,7 +1,9 @@
 import mock
 import pytest
+
+from future.moves.urllib.parse import urlparse
+
 import responses
-from urlparse import urlparse
 from django.utils import timezone
 from framework.auth.core import Auth
 

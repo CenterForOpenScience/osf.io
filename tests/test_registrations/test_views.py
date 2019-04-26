@@ -4,7 +4,7 @@
 from __future__ import absolute_import
 import datetime as dt
 import mock
-import httplib as http
+from rest_framework import status as http_status
 import pytz
 from django.utils import timezone
 
@@ -36,14 +36,14 @@ class TestRegistrationViews(RegistrationsTestBase):
     def test_node_register_page_not_registration_redirects(self):
         url = self.node.web_url_for('node_register_page')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.FOUND)
+        assert_equal(res.status_code, http_status.HTTP_302_FOUND)
 
     @mock.patch('website.archiver.tasks.archive')
     def test_node_register_page_registration(self, mock_archive):
         reg = self.node.register_node(get_default_metaschema(), self.auth, '', None)
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
 
     def test_non_admin_can_view_node_register_page(self):
         non_admin = AuthUserFactory()
@@ -56,7 +56,7 @@ class TestRegistrationViews(RegistrationsTestBase):
         reg = RegistrationFactory(project=self.node)
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=non_admin.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
 
     def test_is_public_node_register_page(self):
         self.node.is_public = True
@@ -66,7 +66,7 @@ class TestRegistrationViews(RegistrationsTestBase):
         reg.save()
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=None)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task', mock.Mock())
     def test_register_template_page_backwards_comptability(self):
@@ -81,7 +81,7 @@ class TestRegistrationViews(RegistrationsTestBase):
             metaschema_id=_name_to_id(self.meta_schema.name),
         )
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
 
     def test_register_template_page_redirects_if_not_registration(self):
         url = self.node.web_url_for(
@@ -89,7 +89,7 @@ class TestRegistrationViews(RegistrationsTestBase):
             metaschema_id=self.meta_schema._id,
         )
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.FOUND)
+        assert_equal(res.status_code, http_status.HTTP_302_FOUND)
 
 
 @pytest.mark.enable_bookmark_creation
@@ -102,7 +102,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             self.embargo_payload,
             auth=self.user.auth
         )
-        assert_equal(res.status_code, http.ACCEPTED)
+        assert_equal(res.status_code, http_status.HTTP_202_ACCEPTED)
         data = res.json
         assert_in('status', data)
         assert_equal(data['status'], 'initiated')
@@ -122,7 +122,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_submit_draft_for_review_already_registered(self):
         self.draft.register(Auth(self.user), save=True)
@@ -133,14 +133,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_equal(res.json['message_long'], 'This draft has already been registered, if you wish to register it '
                                                'again or submit it for review please create a new draft.')
 
     def test_draft_before_register_page(self):
         url = self.draft_url('draft_before_register_page')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
 
     def test_submit_draft_for_review_non_admin(self):
         url = self.draft_api_url('submit_draft_for_review')
@@ -150,7 +150,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             auth=self.non_admin.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     @mock.patch('osf.models.DraftRegistration.register', autospec=True)
     def test_register_draft_registration(self, mock_register_draft):
@@ -164,7 +164,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             },
         }, auth=self.user.auth)
 
-        assert_equal(res.status_code, http.ACCEPTED)
+        assert_equal(res.status_code, http_status.HTTP_202_ACCEPTED)
         assert_equal(mock_register_draft.call_args[0][0]._id, self.draft._id)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
@@ -172,7 +172,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
 
-        assert_equal(res.status_code, http.ACCEPTED)
+        assert_equal(res.status_code, http_status.HTTP_202_ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
         reg = self.node.registrations_all.order_by('-registered_date').first()
@@ -188,7 +188,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
 
-        assert_equal(res.status_code, http.ACCEPTED)
+        assert_equal(res.status_code, http_status.HTTP_202_ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
         reg = self.node.registrations_all.order_by('-registered_date').first()
@@ -214,7 +214,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             },
             auth=self.user.auth)
 
-        assert_equal(res.status_code, http.ACCEPTED)
+        assert_equal(res.status_code, http_status.HTTP_202_ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
         reg = self.node.registrations_all.order_by('-registered_date').first()
@@ -234,7 +234,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, http.ACCEPTED)
+        assert_equal(res.status_code, http_status.HTTP_202_ACCEPTED)
         self.node.reload()
         # Logs: Created, registered, embargo initiated
         assert_equal(self.node.logs.count(), initial_project_logs + 1)
@@ -247,7 +247,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, http.ACCEPTED)
+        assert_equal(res.status_code, http_status.HTTP_202_ACCEPTED)
 
         registration = Registration.objects.all().order_by('-registered_date').first()
 
@@ -264,7 +264,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             expect_errors=True
         )
 
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_register_draft_registration_invalid_registrationChoice(self):
         res = self.app.post_json(
@@ -273,7 +273,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_register_draft_registration_already_registered(self):
         reg = RegistrationFactory(user=self.user)
@@ -283,12 +283,12 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_get_draft_registration(self):
         url = self.draft_api_url('get_draft_registration')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_equal(res.json['pk'], self.draft._id)
 
     def test_get_draft_registration_deleted(self):
@@ -298,17 +298,17 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         url = self.draft_api_url('get_draft_registration')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.GONE)
+        assert_equal(res.status_code, http_status.HTTP_410_GONE)
 
     def test_get_draft_registration_invalid(self):
         url = self.node.api_url_for('get_draft_registration', draft_id='13123123')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.NOT_FOUND)
+        assert_equal(res.status_code, http_status.HTTP_404_NOT_FOUND)
 
     def test_get_draft_registration_not_admin(self):
         url = self.draft_api_url('get_draft_registration')
         res = self.app.get(url, auth=self.non_admin.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_get_draft_registrations_only_gets_drafts_for_that_node(self):
         dummy = NodeFactory()
@@ -335,7 +335,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('get_draft_registrations')
 
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         # 3 new, 1 from setUp
         assert_equal(len(res.json['drafts']), 4)
         for draft in res.json['drafts']:
@@ -350,7 +350,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = target.web_url_for('new_draft_registration')
 
         res = self.app.post(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, http.FOUND)
+        assert_equal(res.status_code, http_status.HTTP_302_FOUND)
         target.reload()
         draft = DraftRegistration.objects.get(branched_from=target)
         assert_equal(draft.registration_schema, self.meta_schema)
@@ -363,7 +363,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         }
         url = target.web_url_for('new_draft_registration')
         res = self.app.post(url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_update_draft_registration_cant_update_registered(self):
         metadata = {
@@ -379,13 +379,13 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
         res = self.app.put_json(url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_edit_draft_registration_page_already_registered(self):
         self.draft.register(self.auth, save=True)
         url = self.node.web_url_for('edit_draft_registration_page', draft_id=self.draft._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_update_draft_registration(self):
         metadata = {
@@ -403,7 +403,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
         res = self.app.put_json(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
 
         open_ended_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
@@ -427,14 +427,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
         res = self.app.put_json(url, payload, auth=self.non_admin.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_delete_draft_registration(self):
         assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.NO_CONTENT)
+        assert_equal(res.status_code, http_status.HTTP_204_NO_CONTENT)
         assert_equal(0, DraftRegistration.objects.filter(deleted__isnull=True).count())
 
     def test_delete_draft_registration_non_admin(self):
@@ -442,7 +442,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=self.non_admin.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
         assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
 
     @mock.patch('website.archiver.tasks.archive')
@@ -451,7 +451,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     @mock.patch('website.archiver.tasks.archive')
     def test_delete_draft_registration_approved_and_registration_deleted(self, mock_register_draft):
@@ -463,7 +463,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.NO_CONTENT)
+        assert_equal(res.status_code, http_status.HTTP_204_NO_CONTENT)
         assert_equal(0, DraftRegistration.objects.filter(deleted__isnull=True).count())
 
     def test_only_admin_can_delete_registration(self):
@@ -472,7 +472,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=non_admin.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
         assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
 
     def test_get_metaschemas(self):
@@ -486,7 +486,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     def test_get_metaschemas_all(self):
         url = api_url_for('get_metaschemas', include='all')
         res = self.app.get(url)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_equal(
             len(res.json['meta_schemas']),
             RegistrationSchema.objects.filter(active=True).count()
@@ -499,7 +499,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         try:
             draft_views.validate_embargo_end_date(too_soon.isoformat(), registration)
         except HTTPError as e:
-            assert_equal(e.code, http.BAD_REQUEST)
+            assert_equal(e.code, http_status.HTTP_400_BAD_REQUEST)
         else:
             self.fail()
 
@@ -510,7 +510,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         try:
             draft_views.validate_embargo_end_date(too_late.isoformat(), registration)
         except HTTPError as e:
-            assert_equal(e.code, http.BAD_REQUEST)
+            assert_equal(e.code, http_status.HTTP_400_BAD_REQUEST)
         else:
             self.fail()
 
@@ -530,7 +530,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         try:
             draft_views.check_draft_state(self.draft)
         except HTTPError as e:
-            assert_equal(e.code, http.FORBIDDEN)
+            assert_equal(e.code, http_status.HTTP_403_FORBIDDEN)
         else:
             self.fail()
 
@@ -550,7 +550,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)):
                 draft_views.check_draft_state(self.draft)
         except HTTPError as e:
-            assert_equal(e.code, http.FORBIDDEN)
+            assert_equal(e.code, http_status.HTTP_403_FORBIDDEN)
         else:
             self.fail()
 
@@ -559,7 +559,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)), mock.patch.object(DraftRegistration, 'is_approved', mock.PropertyMock(return_value=True)):
                 draft_views.check_draft_state(self.draft)
         except HTTPError as e:
-            assert_equal(e.code, http.FORBIDDEN)
+            assert_equal(e.code, http_status.HTTP_403_FORBIDDEN)
         else:
             self.fail()
 
@@ -591,6 +591,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
                 auth=self.user.auth,
                 expect_errors=True
             )
-        assert_equal(res.status_code, http.GONE)
+        assert_equal(res.status_code, http_status.HTTP_410_GONE)
         data = res.json
         assert_equal(data['message_short'], 'The Prereg Challenge has ended')
