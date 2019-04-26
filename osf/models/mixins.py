@@ -691,10 +691,11 @@ class ReviewProviderMixin(GuardianMixin):
     def get_request_state_counts(self):
         # import stuff here to get around circular imports
         from osf.models import PreprintRequest
-        qs = PreprintRequest.objects.filter(target__provider__id=self.id,
-                                            target__node__isnull=False,
-                                            target__node__is_deleted=False,
-                                            target__node__is_public=True)
+        qs = PreprintRequest.objects.filter(
+            target__provider__id=self.id,
+            target__is_public=True,
+            target__deleted__isnull=True,
+        )
         qs = qs.values('machine_state').annotate(count=models.Count('*'))
         counts = {state.value: 0 for state in DefaultStates}
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})

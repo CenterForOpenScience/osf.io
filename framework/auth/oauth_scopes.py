@@ -135,6 +135,9 @@ class CoreScopes(object):
 
     PROVIDERS_WRITE = 'providers_write'
 
+    CHRONOS_SUBMISSION_READ = 'chronos_submission_read'
+    CHRONOS_SUBMISSION_WRITE = 'chronos_submission_write'
+
     WAFFLE_READ = 'waffle_read'
 
     NULL = 'null'
@@ -158,7 +161,10 @@ class CoreScopes(object):
     WIKI_BASE_WRITE = 'wikis.base_write'
 
     IDENTIFIERS_READ = 'identifiers.data_read'
+    IDENTIFIERS_WRITE = 'identifiers.data_write'
 
+    METRICS_BASIC = 'metrics_basic'
+    METRICS_RESTRICTED = 'metrics_restricted'
 
 class ComposedScopes(object):
     """
@@ -195,6 +201,7 @@ class ComposedScopes(object):
 
     # Identifier views
     IDENTIFIERS_READ = (CoreScopes.IDENTIFIERS_READ, )
+    IDENTIFIERS_WRITE = (CoreScopes.IDENTIFIERS_WRITE, )
 
     # Comment reports collection
     COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
@@ -207,13 +214,14 @@ class ComposedScopes(object):
                           CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
                           CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
-                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
+                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.IDENTIFIERS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
                      CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
 
     # Preprints collection
-    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ,)
-    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE,)
+    # TODO: Move Metrics scopes to their own restricted composed scope once the Admin app can manage scopes on tokens/apps
+    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ, CoreScopes.METRICS_BASIC,)
+    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE, CoreScopes.METRICS_RESTRICTED,)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.

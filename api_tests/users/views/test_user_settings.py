@@ -105,7 +105,7 @@ class TestUserChangePassword:
     def payload(self, user_one):
         return {
             'data': {
-                'type': 'user_password',
+                'type': 'user_passwords',
                 'id': user_one._id,
                 'attributes': {
                     'existing_password': 'password1',
@@ -201,6 +201,11 @@ class TestUserEmailsList:
         assert len(data) == confirmed_count + unconfirmed_count
         assert len([email for email in data if email['attributes']['confirmed']]) == confirmed_count
         assert len([email for email in data if email['attributes']['confirmed'] is False]) == unconfirmed_count
+
+    def test_get_emails_not_throttled(self, app, url, user_one):
+        for i in range(3):
+            res = app.get(url, auth=user_one.auth)
+            assert res.status_code == 200
 
     def test_get_emails_not_current_user(self, app, url, user_one, user_two):
         res = app.get(url, auth=user_two.auth, expect_errors=True)
