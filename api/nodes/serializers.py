@@ -236,28 +236,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'subjects',
     ])
 
-    non_anonymized_fields = [
-        'id',
-        'title',
-        'description',
-        'category',
-        'date_created',
-        'date_modified',
-        'registration',
-        'tags',
-        'public',
-        'license',
-        'links',
-        'children',
-        'comments',
-        'contributors',
-        'files',
-        'node_links',
-        'parent',
-        'root',
-        'logs',
-        'wikis',
-        'subjects',
+    anonymized_fields = [
+        'forks',
+        'registrations',
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -1006,7 +987,15 @@ class ContributorIDField(IDField):
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
-    non_anonymized_fields = ['bibliographic', 'permission']
+    anonymized_fields = [
+        'id',
+        'index',
+        'links',
+        'node',
+        'type',
+        'unregistered_contributor',
+        'users',
+    ]
     filterable_fields = frozenset([
         'id',
         'bibliographic',

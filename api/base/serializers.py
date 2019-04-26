@@ -1358,20 +1358,18 @@ class JSONAPISerializer(BaseAPISerializer):
             context_envelope = None
         enable_esi = self.context.get('enable_esi', False)
         is_anonymous = is_anonymized(self.context['request'])
-        to_be_removed = set()
-        if is_anonymous and hasattr(self, 'non_anonymized_fields'):
-            # Drop any fields that are not specified in the `non_anonymized_fields` variable.
-            allowed = set(self.non_anonymized_fields)
-            existing = set(self.fields.keys())
-            to_be_removed = existing - allowed
+        not_allowed = []
+        if is_anonymous and hasattr(self, 'anonymized_fields'):
+            # Drop any fields that are specified in the `anonymized_fields` variable.
+            not_allowed = self.anonymized_fields
 
         fields = [
             field for field in self.fields.values() if
-            not field.write_only and field.field_name not in to_be_removed
+            not field.write_only and field.field_name not in not_allowed
         ]
 
         invalid_embeds = self.invalid_embeds(fields, embeds)
-        invalid_embeds = invalid_embeds - to_be_removed
+        invalid_embeds = invalid_embeds - set(not_allowed)
         if invalid_embeds:
             raise api_exceptions.InvalidQueryStringError(
                 parameter='embed',
