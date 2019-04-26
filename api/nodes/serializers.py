@@ -473,9 +473,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     quota_threshold = ser.SerializerMethodField()
 
     def get_quota_rate(self, obj):
-        max_quota, used_quota = quota.get_quota_info(obj.creator)
-        if max_quota <= 0:
-            return 2
+        max_quota, used_quota = quota.get_quota_info(
+            obj.creator, quota.get_project_storage_type(obj),
+        )
         return float(used_quota) / (max_quota * 1024 ** 3) * 100
 
     def get_quota_threshold(self, obj):
