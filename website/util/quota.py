@@ -13,12 +13,15 @@ from osf.models import (
 )
 
 
-def used_quota(user_id):
+def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
     guid = Guid.objects.get(
         _id=user_id,
         content_type_id=ContentType.objects.get_for_model(OSFUser).id
     )
-    projects = AbstractNode.objects.filter(creator_id=guid.object_id).all()
+    projects = AbstractNode.objects.filter(
+        projectstoragetype__storage_type=storage_type,
+        creator_id=guid.object_id
+    ).all()
     projects_ids = list(map(lambda p: p.id, projects))
 
     files = OsfStorageFileNode.objects.filter(
@@ -31,7 +34,7 @@ def used_quota(user_id):
 
     db_sum = FileInfo.objects.filter(file_id__in=files_ids).aggregate(
         filesize_sum=Coalesce(Sum('file_size'), 0))
-    return db_sum['filesize_sum']
+    return db_sum['filesize_sum'] if db_sum['filesize_sum'] is not None else 0
 
 def abbreviate_size(size):
     size = float(size)
@@ -49,7 +52,7 @@ def get_quota_info(user, storage_type=UserQuota.NII_STORAGE):
         user_quota = user.userquota_set.get(storage_type=storage_type)
         return (user_quota.max_quota, user_quota.used)
     except UserQuota.DoesNotExist:
-        return (api_settings.DEFAULT_MAX_QUOTA, used_quota(user._id))
+        return (api_settings.DEFAULT_MAX_QUOTA, used_quota(user._id, storage_type))
 
 def get_project_storage_type(node):
     try:
