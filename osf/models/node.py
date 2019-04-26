@@ -1998,6 +1998,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if isinstance(forked, Registration):
             forked.recast('osf.node')
 
+        forked.map_group_key = None
         forked.custom_citation = ''
         forked.is_fork = True
         forked.forked_date = when
