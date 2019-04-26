@@ -189,7 +189,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             request_headers = {
                 k: v
                 for k, v in get_headers_from_request(request).items()
-                if isinstance(v, basestring)
+                if isinstance(v, str)
             }
 
         node = self.wiki_page.node

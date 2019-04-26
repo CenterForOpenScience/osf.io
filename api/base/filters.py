@@ -273,7 +273,7 @@ class FilterMixin(object):
 
     def convert_key(self, field_name, field):
         """Used so that that queries on fields with the source attribute set will work
-        :param basestring field_name: text representation of the field name
+        :param str field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
         field = utils.decompose_field(field)
@@ -284,7 +284,7 @@ class FilterMixin(object):
 
     def convert_value(self, value, field):
         """Used to convert incoming values from query params to the appropriate types for filter comparisons
-        :param basestring value: value to be resolved
+        :param str value: value to be resolved
         :param rest_framework.fields.Field field: Field instance
         """
         field = utils.decompose_field(field)

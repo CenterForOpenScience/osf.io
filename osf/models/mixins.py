@@ -921,7 +921,7 @@ class ContributorMixin(models.Model):
             # Add default contributor permissions
             permissions = permissions or self.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-            if not isinstance(permissions, basestring):
+            if not isinstance(permissions, str):
                 # Currently node permissions are passed in as a list
                 for perm in permissions:
                     setattr(contributor_obj, perm, True)
@@ -1121,7 +1121,7 @@ class ContributorMixin(models.Model):
                     'User {0} not in contributors'.format(user.fullname)
                 )
             if (isinstance(permissions, list) and set(permissions) != set(self.get_permissions(user))) or (
-                    isinstance(permissions, basestring) and not self.get_group(permissions).user_set.filter(id=user.id).exists()):
+                    isinstance(permissions, str) and not self.get_group(permissions).user_set.filter(id=user.id).exists()):
                 self.set_permissions(user, permissions, save=False)
                 permissions_changed = {
                     user._id: permissions

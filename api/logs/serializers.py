@@ -139,7 +139,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         params_node = obj.get('node', None)
 
         if contributor_data:
-            contributor_ids = [each for each in contributor_data if isinstance(each, basestring)]
+            contributor_ids = [each for each in contributor_data if isinstance(each, str)]
             # Very old logs may contain contributror data with dictionaries for non-registered contributors,
             # e.g. {'nr_email': 'foo@bar.com', 'nr_name': 'Foo Bar'}
             non_registered_contributor_data = [each for each in contributor_data if isinstance(each, dict)]

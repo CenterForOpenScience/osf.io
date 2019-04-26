@@ -1717,7 +1717,7 @@ class TestSendDigest(OsfTestCase):
                 u'user_id': self.user_1._id,
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
+                    u'node_lineage': [str(self.project._id)],
                     u'_id': d._id
                 }]
             },
@@ -1725,7 +1725,7 @@ class TestSendDigest(OsfTestCase):
                 u'user_id': self.user_2._id,
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
+                    u'node_lineage': [str(self.project._id)],
                     u'_id': d2._id
                 }]
             }
@@ -1769,7 +1769,7 @@ class TestSendDigest(OsfTestCase):
                 u'user_id': str(self.user_1._id),
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
+                    u'node_lineage': [str(self.project._id)],
                     u'_id': str(d._id)
                 }]
             },
@@ -1777,7 +1777,7 @@ class TestSendDigest(OsfTestCase):
                 u'user_id': str(self.user_2._id),
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(self.project._id)],
+                    u'node_lineage': [str(self.project._id)],
                     u'_id': str(d2._id)
                 }]
             }

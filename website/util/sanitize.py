@@ -22,7 +22,7 @@ def escape_html(data):
             escape_html(value)
             for value in data
         ]
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         return bleach.clean(data)
     return data
 

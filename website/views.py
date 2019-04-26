@@ -205,7 +205,7 @@ def _build_guid_url(base, suffix=None):
         each.strip('/') for each in [base, suffix]
         if each
     ])
-    if not isinstance(url, unicode):
+    if not isinstance(url, str):
         url = url.decode('utf-8')
     return u'/{0}/'.format(url)
 

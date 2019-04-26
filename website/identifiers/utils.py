@@ -78,7 +78,7 @@ def request_identifiers(target_object):
     only_doi = True
     try:
         identifiers = target_object.request_identifier(category='doi')
-    except exceptions.IdentifierAlreadyExists as error:
+    except exceptions.IdentifierAlreadyExists:
         identifiers = client.get_identifier(doi)
         already_exists = True
         only_doi = False

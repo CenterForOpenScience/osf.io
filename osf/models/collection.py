@@ -50,7 +50,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         else:
             if cgm_id and collection_id:
                 try:
-                    if isinstance(data, basestring):
+                    if isinstance(data, str):
                         return (cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update
                                 else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get())
                 except cls.DoesNotExist:

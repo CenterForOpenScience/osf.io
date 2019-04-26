@@ -19,7 +19,7 @@ class server_side_cursors(object):
         self.itersize = itersize
         if isinstance(qs_or_using_or_connection, QuerySet):
             self.connection = connections[qs_or_using_or_connection.db]
-        elif isinstance(qs_or_using_or_connection, basestring):
+        elif isinstance(qs_or_using_or_connection, str):
             self.connection = connections[qs_or_using_or_connection]
         else:
             self.connection = qs_or_using_or_connection

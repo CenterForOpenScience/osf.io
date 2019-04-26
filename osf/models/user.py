@@ -442,7 +442,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         social_user_fields = {}
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
-                if not isinstance(val, basestring):
+                if not isinstance(val, str):
                     social_user_fields[key] = val
                 else:
                     social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)

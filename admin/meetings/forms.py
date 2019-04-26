@@ -14,7 +14,7 @@ class MultiEmailField(forms.Field):
         if not value:
             ret = None
         else:
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 ret = value
             else:
                 ret = ', '.join(list(value))

@@ -617,7 +617,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 request_headers = {
                     k: v
                     for k, v in get_headers_from_request(request).items()
-                    if isinstance(v, basestring)
+                    if isinstance(v, str)
                 }
             user = OSFUser.load(user_id)
             if user:

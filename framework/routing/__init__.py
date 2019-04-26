@@ -512,7 +512,7 @@ class WebRenderer(Renderer):
             except Exception as error:
                 logger.exception(error)
                 if error_msg:
-                    return '<div>{}</div>'.format(markupsafe.escape(unicode(error_msg))), is_replace
+                    return '<div>{}</div>'.format(markupsafe.escape(str(error_msg))), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)

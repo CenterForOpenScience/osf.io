@@ -132,7 +132,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
-            if not isinstance(private_link, basestring):
+            if not isinstance(private_link, str):
                 raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
@@ -1881,7 +1881,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             request_headers = {
                 k: v
                 for k, v in get_headers_from_request(request).items()
-                if isinstance(v, basestring)
+                if isinstance(v, str)
             }
         self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
