@@ -5,7 +5,7 @@
   <td style="border-collapse: collapse;">
     Hello ${user.fullname},<br>
     <br>
-    You have been added by ${referrer.fullname} as ${'an administrator' if is_admin else 'a moderator'} to ${provider.name}, powered by OSF.<br>
+    You have been added by ${referrer.fullname} as ${'an administrator' if is_admin else 'a moderator'} to ${provider.name}, powered by GRDM.<br>
     <br>
     You will automatically be subscribed to notification emails for new ${provider.preprint_word} submissions to ${provider.name}.<br>
     <br>
@@ -13,6 +13,6 @@
     <br>
     Sincerely,<br>
     <br>
-    Your ${provider.name} and OSF teams<br>
+    Your ${provider.name} and GRDM teams<br>
 </tr>
 </%def>

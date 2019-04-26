@@ -15,7 +15,7 @@
     <br>
     Sincerely,<br>
     <br>
-    The OSF Team<br>
+    The GRDM Team<br>
 
 </tr>
 </%def>

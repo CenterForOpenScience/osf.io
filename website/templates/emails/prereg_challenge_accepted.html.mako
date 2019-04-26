@@ -31,5 +31,5 @@ Sincerely,
 <br />
 The team at the National Institute of Informatics
 
-<p>National Institute of Informatics<br>210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903</p>
+<p>National Institute of Informatics<br>2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN</p>
 <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>

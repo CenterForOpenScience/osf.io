@@ -99,7 +99,7 @@ class TestDataCiteClient:
         assert len(creators.getchildren()) == len(registration.visible_contributors)
 
         publisher = root.find('{%s}publisher' % schema40.ns[None])
-        assert publisher.text == 'Open Science Framework'
+        assert publisher.text == 'GakuNin RDM'
 
         pub_year = root.find('{%s}publicationYear' % schema40.ns[None])
         assert pub_year.text == str(registration.registered_date.year)

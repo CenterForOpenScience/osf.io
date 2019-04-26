@@ -11,7 +11,7 @@
     ${initiated_by} initiated a withdrawal of your registration ${project_name}. The registration can be viewed here: ${registration_link}.<br>
     % endif
     <br>
-    If approved, the registration will be marked as withdrawn. Its content will be removed from the OSF, but leave basic metadata behind. The title of a withdrawn registration and its contributor list will remain, as will justification or explanation of the withdrawal, should you wish to provide it.<br>
+    If approved, the registration will be marked as withdrawn. Its content will be removed from the GRDM, but leave basic metadata behind. The title of a withdrawn registration and its contributor list will remain, as will justification or explanation of the withdrawal, should you wish to provide it.<br>
     <br>
     To approve this withdrawal, click the following link: ${approval_link}.<br>
     <br>
@@ -21,7 +21,7 @@
     <br>
     Sincerely yours,<br>
     <br>
-    The OSF Robots<br>
+    The GRDM Robots<br>
 
 
 </tr>

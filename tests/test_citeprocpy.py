@@ -134,7 +134,7 @@ class TestCiteprocpyMLA(OsfTestCase):
     def test_citation_osf_provider(self):
         self.preprint.node.title = 'A Study of Coffee.'
         self.preprint.node.save()
-        self.preprint.provider.name = 'Open Science Framework'
+        self.preprint.provider.name = 'GakuNin RDM'
         self.preprint.provider.save()
         citation = render_citation(self.preprint, 'modern-language-association')
         assert_equal(citation, u'Tordoff, John. “{}” {}, {}. Web.'.format(
