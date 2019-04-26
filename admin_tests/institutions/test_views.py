@@ -446,19 +446,18 @@ class TestGetUserListWithQuotaSorted(AdminTestCase):
         result = map(itemgetter('ratio'), response.context_data['users'])
         nt.assert_equal(result, expected)
 
-from django.forms.models import model_to_dict
 class TestStatisticalStatusDefaultStorage(AdminTestCase):
     def setUp(self):
         self.institution = InstitutionFactory()
-        
+
         self.us = RegionFactory()
         self.us._id = self.institution._id
         self.us.save()
-        
+
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.add(self.institution)
         self.user.save()
-        
+
         self.request = RequestFactory().get('/fake_path')
         self.view = setup_user_view(
             views.StatisticalStatusDefaultStorage(),
