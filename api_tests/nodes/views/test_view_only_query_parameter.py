@@ -13,6 +13,9 @@ from osf.utils import permissions
 def admin():
     return AuthUserFactory()
 
+@pytest.fixture()
+def base_url():
+    return '/{}nodes/'.format(API_BASE)
 
 @pytest.fixture()
 def read_contrib():
@@ -303,10 +306,15 @@ class TestNodeDetailViewOnlyLinks:
             embeds = res.json['data']['embeds']
         else:
             embeds = {}
+
+        assert 'current_user_can_comment' not in relationships
+        assert 'citation' not in relationships
+        assert 'custom_citation' not in relationships
+        assert 'node_license' not in relationships
         assert 'registrations' not in relationships
-        assert 'forks' not in relationships, 'Add forks view to blacklist in hide_view_when_anonymous().'
+        assert 'forks' not in relationships, 'Add forks to anonymized_fields.'
         assert 'registrations' not in embeds
-        assert 'forks' not in embeds, 'Add forks view to blacklist in hide_view_when_anonymous().'
+        assert 'forks' not in embeds, 'Add forks to anonymized_fields.'
 
     #   test_bad_view_only_link_does_not_modify_permissions
         res = app.get(private_node_one_url + 'logs/', {
@@ -374,10 +382,11 @@ class TestNodeListViewOnlyLinks:
             self, app, valid_contributors,
             private_node_one,
             private_node_one_private_link,
-            private_node_one_anonymous_link):
+            private_node_one_anonymous_link,
+            base_url):
 
         #   test_private_link_does_not_show_node_in_list
-        res = app.get('/{}nodes/'.format(API_BASE), {
+        res = app.get(base_url, {
             'view_only': private_node_one_private_link.key,
         })
         assert res.status_code == 200
@@ -388,7 +397,7 @@ class TestNodeListViewOnlyLinks:
         assert private_node_one._id not in node_ids
 
     #   test_anonymous_link_does_not_show_contributor_id_in_node_list
-        res = app.get('/{}nodes/'.format(API_BASE), {
+        res = app.get(base_url, {
             'view_only': private_node_one_anonymous_link.key,
             'embed': 'contributors',
         })
@@ -403,7 +412,7 @@ class TestNodeListViewOnlyLinks:
         assert assertions != 0
 
     #   test_non_anonymous_link_does_show_contributor_id_in_node_list
-        res = app.get('/{}nodes/'.format(API_BASE), {
+        res = app.get(base_url, {
             'view_only': private_node_one_private_link.key,
             'embed': 'contributors',
         })

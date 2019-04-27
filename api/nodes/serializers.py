@@ -171,6 +171,9 @@ class NodeLicenseRelationshipField(RelationshipField):
 
 
 class NodeCitationSerializer(JSONAPISerializer):
+    anonymized_fields = [
+        'author',
+    ]
     id = IDField(read_only=True)
     title = ser.CharField(allow_blank=True, read_only=True)
     author = ser.ListField(read_only=True)
@@ -237,7 +240,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ])
 
     anonymized_fields = [
+        'current_user_can_comment',
         'forks',
+        'citation',
+        'custom_citation',
+        'node_license',
         'registrations',
     ]
 

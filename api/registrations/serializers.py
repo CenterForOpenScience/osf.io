@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from api.base.exceptions import Conflict, InvalidModelValueError
-
+from api.base.serializers import is_anonymized
 from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
@@ -22,9 +22,9 @@ from api.base.serializers import (
 )
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError, NodeStateError
-from osf.models import Node
+from osf.models import Node, RegistrationSchema
 from osf.utils import permissions
-
+from website.settings import ANONYMIZED_TITLES
 from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
@@ -299,22 +299,14 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True,
     )
 
-    links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
-
-    def get_registration_url(self, obj):
-        return absolute_reverse(
-            'registrations:registration-detail', kwargs={
-                'node_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
+    links = LinksField({'html': 'get_absolute_html_url'})
 
     def get_absolute_url(self, obj):
-        return self.get_registration_url(obj)
+        return obj.get_absolute_url()
 
     def get_registered_meta(self, obj):
         if obj.registered_meta:
-            meta_values = obj.registered_meta.values()[0]
+            meta_values = self.anonymize_registered_meta(obj)
             try:
                 return json.loads(meta_values)
             except TypeError:
@@ -344,6 +336,21 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_total_comments_count(self, obj):
         return obj.comment_set.filter(page='node', is_deleted=False).count()
+
+    def anonymize_registered_meta(self, obj):
+        """
+        Looks at every question on every page of the schema, for any titles
+        matching ANONYMIZED_TITLES.  If present, deletes that question's response
+        from meta_values.
+        """
+        meta_values = obj.registered_meta.values()[0]
+        if is_anonymized(self.context['request']):
+            registration_schema = RegistrationSchema.objects.get(_id=obj.registered_schema_id)
+            for page in registration_schema.schema['pages']:
+                for question in page['questions']:
+                    if question['title'] in ANONYMIZED_TITLES and meta_values.get(question.get('qid')):
+                        del meta_values[question['qid']]
+        return meta_values
 
     def check_admin_perms(self, registration, user, validated_data):
         """
