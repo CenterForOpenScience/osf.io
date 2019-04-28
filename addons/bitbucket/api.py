@@ -1,9 +1,11 @@
 import urllib
 
+from addons.bitbucket import settings
+
+from framework import sentry
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
-from addons.bitbucket import settings
 
 
 class BitbucketClient(BaseClient):
@@ -27,6 +29,14 @@ class BitbucketClient(BaseClient):
         API docs::
 
         * https://developer.atlassian.com/bitbucket/api/2/reference/resource/user
+
+        Bitbucket API GDPR Update::
+
+        * https://developer.atlassian.com/cloud/bitbucket/bitbucket-api-changes-gdpr/
+
+        As mentioned in the GDPR update on "removal of username", the ``/2.0/user`` endpoint will
+        continue to provide the ``username`` field in its response since this endpoint only ever
+        returns the authenticated user's own user object, not that of other users.
 
         :rtype: dict
         :return: a metadata object representing the user
@@ -75,7 +85,30 @@ class BitbucketClient(BaseClient):
             throws=HTTPError(401),
             params={'pagelen': 100}
         )
-        return res.json()['values']
+        repo_list = res.json()['values']
+
+        # GDPR docs: https://developer.atlassian.com/cloud/bitbucket/bitbucket-api-changes-gdpr/
+        #
+        # The GDPR guide is quite ambiguous on "removal of username".  It mentions that this change
+        # should only affect the ``/2.0/users/`` endpoint but also says that the ``username`` field
+        # will be removed from the ``User`` object.  Without an explicit exception statement, we are
+        # not quite certain that each repository object in the response will continue to provide the
+        # ``owner.username``.  This attribute is used to 1) Set the ``user`` field for the addon's
+        # ``node_settings`` and 2) to build the repo URL during addon configuration.  The config
+        # would break if ``username`` is gone.  If it happened, we can apply a few fixes including
+        # 1) replacing ``owner.username`` with ``owner.account_id``, 2) using the ``display_name``
+        # of the ``ExternalAccount`` model, and 3) using one of the repo URL links in the response.
+        #
+        # Added the following check and sentry log to make sure that we would be informed of the
+        # failure if it happened after the GDPR update.  Checking the first itme should be good.
+        for repo in repo_list:
+            username = repo['owner'].get('username', None)
+            if not username:
+                sentry.log_message('WARNING: Bitbucket V2 "repositories/user" no '
+                                   'longer returns required field "owner.username".')
+            break
+
+        return repo_list
 
     def team_repos(self):
         """Return a list of repositories owned by teams the user is a member of.
