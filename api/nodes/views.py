@@ -1881,7 +1881,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
 
     def get_object(self):
         try:
-            return self.get_node().private_links.get(_id=self.kwargs['link_id'])
+            return self.get_node().private_links.get(_id=self.kwargs['link_id'], is_deleted=False)
         except PrivateLink.DoesNotExist:
             raise NotFound
 

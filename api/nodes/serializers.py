@@ -1505,13 +1505,10 @@ class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
     def update(self, link, validated_data):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
 
-        name = validated_data.get('name')
-        anonymous = validated_data.get('anonymous')
-
-        if name:
-            link.name = name
-        if anonymous:
-            link.anonymous = anonymous
+        if 'name' in validated_data:
+            link.name = validated_data.get('name')
+        if 'anonymous' in validated_data:
+            link.anonymous = validated_data.get('anonymous')
 
         link.save()
         return link
