@@ -7,8 +7,8 @@ from osf.utils.functional import rapply
 
 from osf.exceptions import NaiveDatetimeException
 
-SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
-                             settings.SENSITIVE_DATA_SALT.encode('utf-8'))
+SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET,
+                             settings.SENSITIVE_DATA_SALT)
 
 
 def ensure_bytes(value):
@@ -18,11 +18,11 @@ def ensure_bytes(value):
     return value.encode('utf-8')
 
 
-def encrypt_string(value, prefix='jwe:::'):
-    if value and not value.startswith(prefix):
+def encrypt_string(value, prefix=b'jwe:::'):
+    if value and not value.startswith(str(prefix)):
         value = ensure_bytes(value)
         try:
-            value = prefix + jwe.encrypt(bytes(value), SENSITIVE_DATA_KEY)
+            value = prefix + jwe.encrypt(value, SENSITIVE_DATA_KEY)
         except InvalidTag:
             # Allow use of an encrypted DB locally without encrypting fields
             if settings.DEBUG_MODE:
@@ -32,7 +32,7 @@ def encrypt_string(value, prefix='jwe:::'):
     return value
 
 
-def decrypt_string(value, prefix='jwe:::'):
+def decrypt_string(value, prefix=b'jwe:::'):
     if type(value) == bytes:
         value = str(value)
 
@@ -72,7 +72,7 @@ class EncryptedTextField(models.TextField):
     This field transparently encrypts data in the database. It should probably only be used with PG unless
     the user takes into account the db specific trade-offs with TextFields.
     """
-    prefix = 'jwe:::'
+    prefix = b'jwe:::'
 
     def get_db_prep_value(self, value, **kwargs):
         return encrypt_string(value, prefix=self.prefix)
@@ -96,7 +96,7 @@ class EncryptedJSONField(JSONField):
     """
     Very similar to EncryptedTextField, but for postgresql's JSONField
     """
-    prefix = 'jwe:::'
+    prefix = b'jwe:::'
 
     def get_prep_value(self, value, **kwargs):
         value = rapply(value, encrypt_string, prefix=self.prefix)
