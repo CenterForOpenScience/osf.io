@@ -24,6 +24,8 @@ from osf.management.commands.data_storage_usage import (
 
 
 # Using powers of two so that any combination of file sizes will give a unique total
+# If a summary value is incorrect, subtract out the values that are correct and convert
+# to binary. Each of the 1s will correspond something that wasn't handled properly.
 def next_power_of_2(x):
     # https://stackoverflow.com/a/14267825/3579517
     return 1 if x == 0 else 1 << (x-1).bit_length()
@@ -189,7 +191,6 @@ class TestDataStorageUsage(DbTestCase):
         )
         logger.debug('Before deletion: {}'.format(deleted_file.target.title))
 
-        # Deleting a node deletes the files
         deleted_file.delete(user=user, save=True)
         logger.debug(u'Deleted project, DE: {}'.format(file_size))
 

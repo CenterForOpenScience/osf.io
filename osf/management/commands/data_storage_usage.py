@@ -3,14 +3,16 @@ import csv
 from collections import OrderedDict
 from datetime import date
 from django.core.management.base import BaseCommand
+from django.core.paginator import Paginator
 from django.db.models import BooleanField, Case, CharField, Count, F, OuterRef, QuerySet, Subquery, Sum, Value, When
 
 from osf.models import AbstractNode, Node, Preprint, Registration, TrashedFile
 from addons.osfstorage.models import NodeSettings, Region
 import os
+import logging
 
 PRIVATE_SIZE_THRESHOLD = 5368709120
-PAGE_SIZE = 10000
+PAGE_SIZE = 1
 VALUES = (
         'guids___id',
         'type',
@@ -26,13 +28,28 @@ VALUES = (
     )
 
 
+logger = logging.getLogger(__name__)
+
+
 # Detail gatherers
 def gather_node_usage():
+    logger.info('Gathering node usage')
     region = Region.objects.filter(id=OuterRef('region_id'))
     node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('name')[:1])).filter(
         owner_id=OuterRef('pk'))
     node_set = Node.objects.exclude(
         spam_status=2,  # SPAM
+    ).only(
+        'guids',
+        'type',
+        'title',
+        'root',
+        'is_fork',
+        'is_public',
+        'is_deleted',
+        'files',
+        'spam_status',
+        'created',
     ).annotate(
         Count('files__versions'),
         Sum('files__versions__size'),
@@ -47,11 +64,13 @@ def gather_node_usage():
             output_field=BooleanField()
         ),
         region_name=Subquery(node_settings.values('region_abbrev')[:1])
-    )
+    ).order_by('created')
+    # logger.info(node_set.explain())
     return node_set
 
 
 def gather_registration_usage():
+    logger.info('Gathering registration usage')
     region = Region.objects.filter(id=OuterRef('region_id'))
     node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('name')[:1])).filter(
         owner_id=OuterRef('pk'))
@@ -71,12 +90,13 @@ def gather_registration_usage():
             output_field=BooleanField()
         ),
         region_name=Subquery(node_settings.values('region_abbrev')[:1])
-    )
+    ).order_by('guids___id')
 
     return registration_set
 
 
 def gather_preprint_usage():
+    logger.info('Gathering preprint usage')
     preprints = Preprint.objects.exclude(
         spam_status=2,  # SPAM
     ).annotate(
@@ -96,7 +116,7 @@ def gather_preprint_usage():
             output_field=BooleanField()
         ),
         region_name=F('region__name')
-    )
+    ).order_by('guids___id')
 
     return preprints
 
@@ -104,6 +124,7 @@ def gather_preprint_usage():
 def gather_quickfile_usage():
     # TODO: Make this like preprint usage when quickfiles are no longer in nodes
     # (this is why it's not part of gather_node_usage(), for easy replacement)
+    logger.info('Gathering quickfile usage')
 
     quickfiles = AbstractNode.objects.filter(
         files__type='osf.osfstoragefile',
@@ -116,13 +137,17 @@ def gather_quickfile_usage():
         region_name=Value('United States', CharField())
     ).filter(
         files__versions__count__gte=1,
-    )
+    ).order_by('guids___id')
 
     return quickfiles
 
 
 def gather_summary_data():
+    logger.info('Gathering summary data')
+    logger.info('Deleted')
+
     deleted = TrashedFile.objects.all().aggregate(total_deleted=Sum('versions__size'))['total_deleted']
+    logger.info('Registrations')
 
     registrations = Registration.objects.all().annotate(
             Count('files__versions'),
@@ -132,6 +157,7 @@ def gather_summary_data():
     ).aggregate(
         registrations=Sum('files__versions__size__sum')
     )['registrations']
+    logger.info('Nodes')
 
     nodes = Node.objects.all().filter(
             files__type='osf.osfstoragefile',
@@ -144,15 +170,19 @@ def gather_summary_data():
         ).filter(
             files__versions__count__gte=1,
         )
+    logger.info('Public nodes')
+
     public = nodes.filter(is_public=True).aggregate(public=Sum('files__versions__size__sum'))['public']
     if not public:
         public = 0
     private = nodes.filter(is_public=False).annotate(Sum('files__versions__size'))
+    logger.info('Under 5')
     under = private.filter(
             files__versions__size__sum__lt=PRIVATE_SIZE_THRESHOLD,
         ).aggregate(under=Sum('files__versions__size__sum'))['under']
     if not under:
         under = 0
+    logger.info('Over 5')
     over = private.filter(
             files__versions__size__sum__gte=PRIVATE_SIZE_THRESHOLD,
         ).aggregate(over=Sum('files__versions__size__sum'))['over']
@@ -163,12 +193,18 @@ def gather_summary_data():
 
 
 def convert_regional_data(regional_data):
-    return {item['region_name']: item['files__versions__size__sum'] for item in regional_data}
+    logger.info('Convert regional data: {}'.format(regional_data))
+    return {
+        item['region_name']:
+            item['files__versions__size__sum'] if item['files__versions__size__sum'] is not None else 0
+        for item in regional_data
+    }
 
 
 def combine_regional_data(*args):
     regional_totals = {}
     for region_data_item in args:
+        # logger.info('Combine regional item: {}'.format(region_data_item))
         if isinstance(region_data_item, QuerySet):
             region_data_set = convert_regional_data(region_data_item)
         else:
@@ -176,16 +212,6 @@ def combine_regional_data(*args):
         for key in region_data_set.keys():
             regional_totals[key] = regional_totals.get(key, 0) + region_data_set.get(key, 0)
     return regional_totals
-
-
-def paginate_data(data, index=0):
-    start = 0
-    end = PAGE_SIZE + 1
-    for lines in range(0, data.count(), PAGE_SIZE):
-        index += 1
-        yield data[start:end], index
-        end += PAGE_SIZE
-        start += PAGE_SIZE
 
 
 def write_summary_data(filename, summary_data):
@@ -264,6 +290,7 @@ def process_usages(write_detail=True, write_summary=True):
         ('germany_frankfurt', 0),
         ('united_states', 0),
     ])
+    logger.info('Collecting usage details')
 
     usage_details = {
         'node': gather_node_usage(),
@@ -279,8 +306,17 @@ def process_usages(write_detail=True, write_summary=True):
     index = 0
 
     for key in usage_details.keys():
-        pages = paginate_data(usage_details[key], index=index)
-        for data_page, index in pages:
+        query_set = usage_details[key]
+        logger.info('Processing {}'.format(key))
+        page_start = 0
+        page_end = page_start + PAGE_SIZE
+        data_page = query_set[page_start:page_end]
+        logger.info(data_page.query)
+        logger.info(data_page.explain())
+        while data_page.count() > 0:
+            page_end = page_start + PAGE_SIZE
+            index += 1
+            logger.info('Index: {}'.format(index))
             if key == 'quickfile':
                 quickfiles_total = data_page.aggregate(
                     quickfiles_total=Sum('files__versions__size__sum'),
@@ -291,6 +327,7 @@ def process_usages(write_detail=True, write_summary=True):
                     {'United States': quickfiles_total},
                 )
             else:
+                logger.info('regional_totals')
                 regional_totals = combine_regional_data(
                     regional_totals,
                     data_page.values('region_name').annotate(Sum('files__versions__size'))
@@ -315,11 +352,16 @@ def process_usages(write_detail=True, write_summary=True):
 
                 supplemental_node_total += supplemental_node_usage.aggregate(
                     supplemental_node_total=Sum('files__versions__size__sum'),
-                )['supplemental_node_total']
+                ).get(supplemental_node_total, 0)
 
             if write_detail:
+                logger.info('Writing ./data-usage-raw-{}.csv'.format(index))
+
                 data = data_page.values_list(*VALUES)
                 write_raw_data(data=data, filename='./data-usage-raw-{}.csv'.format(index))
+            page_start = page_end
+            page_end = page_start + PAGE_SIZE
+            data_page = query_set[page_start:page_end]
 
     deleted, registrations, public, under, over = gather_summary_data()
     summary_data['total'] = deleted + registrations + quickfiles + public + under + over + preprints
