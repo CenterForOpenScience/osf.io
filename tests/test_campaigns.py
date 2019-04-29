@@ -154,7 +154,7 @@ class TestCampaignMethods(OsfTestCase):
 
     def test_campaign_for_user(self):
         user = factories.UserFactory()
-        user.add_system_tag('osf_preprints')
+        user.add_system_tag('source:provider|preprint|osf')
         user.save()
         campaign = campaigns.campaign_for_user(user)
         assert_equal(campaign, 'osf-preprints')
