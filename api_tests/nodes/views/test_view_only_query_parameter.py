@@ -409,6 +409,9 @@ class TestNodeListViewOnlyLinks:
             for contributor in contributors:
                 assertions += 1
                 assert contributor['id'] == ''
+                assert contributor['type'] == 'contributors'
+                assert contributor['links'] == {}
+                assert 'relationships' not in contributor
         assert assertions != 0
 
     #   test_non_anonymous_link_does_show_contributor_id_in_node_list
