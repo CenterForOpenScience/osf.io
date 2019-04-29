@@ -2370,7 +2370,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def add_contributor(self, *args, **kwargs):
         contributor = super(AbstractNode, self).add_contributor(*args, **kwargs)
-        if not contributor.is_registered:
+        if contributor and not contributor.is_registered:
             prereg_system_tag = self.all_tags.filter(name='source:campaign|prereg', system=True).first()
             registered_report_system_tag = self.all_tags.filter(name='source:campaign|osf_registered_reports', system=True).first()
             osf4m_system_tag = self.all_tags.filter(name='source:campaign|osf4m', system=True).first()
