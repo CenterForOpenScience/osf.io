@@ -301,20 +301,43 @@ class TestNodeDetailViewOnlyLinks:
             'view_only': private_node_one_anonymous_link.key,
         })
         assert res.status_code == 200
+        attributes = res.json['data']['attributes']
         relationships = res.json['data']['relationships']
         if 'embeds' in res.json['data']:
             embeds = res.json['data']['embeds']
         else:
             embeds = {}
 
-        assert 'current_user_can_comment' not in relationships
+        assert 'current_user_can_comment' not in attributes
         assert 'citation' not in relationships
-        assert 'custom_citation' not in relationships
-        assert 'node_license' not in relationships
+        assert 'custom_citation' not in attributes
+        assert 'node_license' not in attributes
         assert 'registrations' not in relationships
         assert 'forks' not in relationships, 'Add forks to anonymized_fields.'
         assert 'registrations' not in embeds
         assert 'forks' not in embeds, 'Add forks to anonymized_fields.'
+
+    #   test_deleted_anonymous_VOL_gives_401_for_unauthorized
+        private_node_one_anonymous_link.is_deleted = True
+        private_node_one_anonymous_link.save()
+        res = app.get(private_node_one_url, {
+            'view_only': private_node_one_anonymous_link.key,
+        }, expect_errors=True)
+        assert res.status_code == 401
+
+    #   test_deleted_anonymous_VOL_does_not_anonymize_data_for_authorized
+        res = app.get(private_node_one_url, {
+            'view_only': private_node_one_anonymous_link.key,
+        }, auth=admin.auth)
+        assert res.status_code == 200
+        assert 'anonymous' not in res.json['meta']
+        attributes = res.json['data']['attributes']
+        relationships = res.json['data']['relationships']
+        assert 'current_user_can_comment' in attributes
+        assert 'citation' in relationships
+        assert 'custom_citation' in attributes
+        assert 'node_license' in attributes
+        assert 'forks' in relationships
 
     #   test_bad_view_only_link_does_not_modify_permissions
         res = app.get(private_node_one_url + 'logs/', {
