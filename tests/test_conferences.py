@@ -5,7 +5,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 
 import hmac
 import hashlib
-from StringIO import StringIO
+from io import StringIO
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
