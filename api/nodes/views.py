@@ -19,8 +19,6 @@ from api.base.exceptions import (
     InvalidModelValueError,
     JSONAPIException,
     Gone,
-    InvalidFilterOperator,
-    InvalidFilterValue,
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
     InvalidQueryStringError,
@@ -81,6 +79,7 @@ from api.nodes.permissions import (
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
+    ReadOnlyIfWithdrawn,
 )
 from api.nodes.serializers import (
     NodeSerializer,
@@ -126,7 +125,7 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
-from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS, WRITE_NODE
+from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails
 
 # This is used to rethrow v1 exceptions as v2
@@ -395,23 +394,6 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     def get_resource(self):
         return self.get_node()
 
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'bibliographic':
-            operation['source_field_name'] = 'visible'
-
-    def build_query_from_field(self, field_name, operation):
-        if field_name == 'permission':
-            if operation['op'] != 'eq':
-                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
-            # operation['value'] should be 'admin', 'write', or 'read'
-            query_val = operation['value'].lower().strip()
-            if query_val not in API_CONTRIBUTOR_PERMISSIONS:
-                raise InvalidFilterValue(value=operation['value'])
-            # Group members not returned under contributors endpoints
-            return Q(user__in=self.get_resource().get_group(query_val).user_set.all())
-        return super(NodeContributorsList, self).build_query_from_field(field_name, operation)
-
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
         """
@@ -566,6 +548,31 @@ class NodeContributorsAndGroupMembersList(JSONAPIBaseView, generics.ListAPIView,
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
         return queryset
+
+
+class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
+    permission_classes = (
+        AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    model_class = OSFUser
+
+    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle,)
+
+    pagination_class = NodeContributorPagination
+    serializer_class = NodeContributorsSerializer
+    view_category = 'nodes'
+    view_name = 'node-bibliographic-contributors'
+    ordering = ('_order',)  # default ordering
+
+    def get_default_queryset(self):
+        contributors = super(NodeBibliographicContributorsList, self).get_default_queryset()
+        return contributors.filter(visible=True)
 
 
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
@@ -1557,6 +1564,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         AdminOrPublic,
+        ReadOnlyIfWithdrawn,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]

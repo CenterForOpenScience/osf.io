@@ -1,9 +1,19 @@
 from rest_framework import serializers as ser
-from api.base.utils import absolute_reverse
+from rest_framework import exceptions
+
+from api.base.utils import absolute_reverse, get_user_auth
+from api.base.exceptions import ServiceUnavailableError
 from api.base.serializers import JSONAPISerializer, RelationshipField, IDField, LinksField
+from osf.models import NodeLog
+from framework.exceptions import HTTPError
+
+from website.identifiers.utils import get_or_create_identifiers
 
 
 class RegistrationIdentifierSerializer(JSONAPISerializer):
+    writeable_method_fields = frozenset([
+        'category',
+    ])
 
     category = ser.SerializerMethodField()
 
@@ -44,6 +54,33 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+    def create(self, validated_data):
+        node = self.context['view'].get_node()
+        auth = get_user_auth(self.context['request'])
+        if validated_data.get('category', None) == 'doi':
+            if node.get_identifier('doi'):
+                raise exceptions.ValidationError('A DOI already exists for this resource.')
+            try:
+                identifiers = get_or_create_identifiers(node)
+            except HTTPError:
+                raise exceptions.ValidationError('Error response from client.')
+            except TypeError:
+                raise ServiceUnavailableError()
+            for category, value in identifiers.items():
+                node.set_identifier_value(category, value)
+            node.add_log(
+                NodeLog.EXTERNAL_IDS_ADDED,
+                params={
+                    'parent_node': node.parent_id,
+                    'node': node._id,
+                    'identifiers': identifiers,
+                },
+                auth=auth,
+            )
+            return node.identifiers.get(category='doi')
+        else:
+            raise exceptions.ValidationError('You can only mint a DOI, not a different type of identifier.')
 
 
 class NodeIdentifierSerializer(RegistrationIdentifierSerializer):

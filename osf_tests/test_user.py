@@ -259,11 +259,11 @@ class TestOSFUser:
         project_three.add_contributor(user, visible=False)
 
         project_four = ProjectFactory(title='project_four')
-        project_four.add_contributor(user2, permissions='read', visible=False)
+        project_four.add_contributor(user2, permissions=permissions.READ, visible=False)
 
         project_five = ProjectFactory(title='project_five')
-        project_five.add_contributor(user2, permissions='read', visible=False)
-        project_five.add_contributor(user, permissions='write', visible=True)
+        project_five.add_contributor(user2, permissions=permissions.READ, visible=False)
+        project_five.add_contributor(user, permissions=permissions.WRITE, visible=True)
 
         # two projects shared b/t user and user2
         assert user.nodes.filter(type='osf.node').count() == 3
@@ -284,37 +284,37 @@ class TestOSFUser:
 
         contrib_obj = Contributor.objects.get(user=user, node=project_one)
         assert contrib_obj.visible is True
-        assert contrib_obj.permission == 'admin'
+        assert contrib_obj.permission == permissions.ADMIN
         assert project_one.creator == user
-        assert not project_one.has_permission(user2, 'read')
+        assert not project_one.has_permission(user2, permissions.READ)
         assert not project_one.is_contributor(user2)
 
         contrib_obj = Contributor.objects.get(user=user, node=project_two)
         assert contrib_obj.visible is True
-        assert contrib_obj.permission == 'write'
+        assert contrib_obj.permission == permissions.WRITE
         assert project_two.creator != user
-        assert not project_two.has_permission(user2, 'read')
+        assert not project_two.has_permission(user2, permissions.READ)
         assert not project_two.is_contributor(user2)
 
         contrib_obj = Contributor.objects.get(user=user, node=project_three)
         assert contrib_obj.visible is True
-        assert contrib_obj.permission == 'admin'  # of the two users the highest perm wins out.
+        assert contrib_obj.permission == permissions.ADMIN  # of the two users the highest perm wins out.
         assert project_three.creator == user
-        assert not project_three.has_permission(user2, 'read')
+        assert not project_three.has_permission(user2, permissions.READ)
         assert not project_three.is_contributor(user2)
 
         contrib_obj = Contributor.objects.get(user=user, node=project_four)
         assert contrib_obj.visible is False
-        assert contrib_obj.permission == 'read'
+        assert contrib_obj.permission == permissions.READ
         assert project_four.creator != user
-        assert not project_four.has_permission(user2, 'read')
+        assert not project_four.has_permission(user2, permissions.READ)
         assert not project_four.is_contributor(user2)
 
         contrib_obj = Contributor.objects.get(user=user, node=project_five)
         assert contrib_obj.visible is True
-        assert contrib_obj.permission == 'write'
+        assert contrib_obj.permission == permissions.WRITE
         assert project_five.creator != user
-        assert not project_five.has_permission(user2, 'read')
+        assert not project_five.has_permission(user2, permissions.READ)
         assert not project_five.is_contributor(user2)
 
     def test_merge_preprints(self, user):
@@ -329,11 +329,11 @@ class TestOSFUser:
         preprint_three.add_contributor(user, visible=False)
 
         preprint_four = PreprintFactory(title='preprint_four')
-        preprint_four.add_contributor(user2, permissions='read', visible=False)
+        preprint_four.add_contributor(user2, permissions=permissions.READ, visible=False)
 
         preprint_five = PreprintFactory(title='preprint_five')
-        preprint_five.add_contributor(user2, permissions='read', visible=False)
-        preprint_five.add_contributor(user, permissions='write', visible=True)
+        preprint_five.add_contributor(user2, permissions=permissions.READ, visible=False)
+        preprint_five.add_contributor(user, permissions=permissions.WRITE, visible=True)
 
         # two preprints shared b/t user and user2
         assert user.preprints.count() == 3
@@ -354,37 +354,37 @@ class TestOSFUser:
 
         contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_one)
         assert contrib_obj.visible is True
-        assert contrib_obj.permission == 'admin'
+        assert contrib_obj.permission == permissions.ADMIN
         assert preprint_one.creator == user
-        assert not preprint_one.has_permission(user2, 'read')
+        assert not preprint_one.has_permission(user2, permissions.READ)
         assert not preprint_one.is_contributor(user2)
 
         contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_two)
         assert contrib_obj.visible is True
-        assert contrib_obj.permission == 'write'
+        assert contrib_obj.permission == permissions.WRITE
         assert preprint_two.creator != user
-        assert not preprint_two.has_permission(user2, 'read')
+        assert not preprint_two.has_permission(user2, permissions.READ)
         assert not preprint_two.is_contributor(user2)
 
         contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_three)
         assert contrib_obj.visible is True
-        assert contrib_obj.permission == 'admin'  # of the two users the highest perm wins out.
+        assert contrib_obj.permission == permissions.ADMIN  # of the two users the highest perm wins out.
         assert preprint_three.creator == user
-        assert not preprint_three.has_permission(user2, 'read')
+        assert not preprint_three.has_permission(user2, permissions.READ)
         assert not preprint_three.is_contributor(user2)
 
         contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_four)
         assert contrib_obj.visible is False
-        assert contrib_obj.permission == 'read'
+        assert contrib_obj.permission == permissions.READ
         assert preprint_four.creator != user
-        assert not preprint_four.has_permission(user2, 'read')
+        assert not preprint_four.has_permission(user2, permissions.READ)
         assert not preprint_four.is_contributor(user2)
 
         contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_five)
         assert contrib_obj.visible is True
-        assert contrib_obj.permission == 'write'
+        assert contrib_obj.permission == permissions.WRITE
         assert preprint_five.creator != user
-        assert not preprint_five.has_permission(user2, 'read')
+        assert not preprint_five.has_permission(user2, permissions.READ)
         assert not preprint_five.is_contributor(user2)
 
     def test_cant_create_user_without_username(self):

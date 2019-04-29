@@ -126,7 +126,7 @@ class RegionRelationshipField(RelationshipField):
         try:
             region_id = Region.objects.filter(_id=data).values_list('id', flat=True).get()
         except Region.DoesNotExist:
-            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(region_id))
+            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(data))
         return {'region_id': region_id}
 
 
@@ -340,6 +340,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'},
+    )
+
+    bibliographic_contributors = RelationshipField(
+        related_view='nodes:node-bibliographic-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
     )
 
     implicit_contributors = RelationshipField(

@@ -3,6 +3,7 @@ import pytest
 import datetime
 
 from addons.wiki.models import WikiVersion
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
@@ -512,6 +513,31 @@ class TestNodeSanctionStates:
         with mock_archive(node, embargo=True, autoapprove=True) as registration:
             sub_reg = registration._nodes.first()._nodes.first()
             assert sub_reg.is_embargoed
+
+
+@pytest.mark.enable_implicit_clean
+class TestDOIValidation:
+
+    def test_validate_bad_doi(self):
+        reg = factories.RegistrationFactory()
+
+        with pytest.raises(ValidationError):
+            reg.article_doi = 'nope'
+            reg.save()
+        with pytest.raises(ValidationError):
+            reg.article_doi = 'https://dx.doi.org/10.123.456'
+            reg.save()  # should save the bare DOI, not a URL
+        with pytest.raises(ValidationError):
+            reg.article_doi = 'doi:10.10.1038/nwooo1170'
+            reg.save()  # should save without doi: prefix
+
+    def test_validate_good_doi(self):
+        reg = factories.RegistrationFactory()
+
+        doi = '10.11038/nwooo1170'
+        reg.article_doi = doi
+        reg.save()
+        assert reg.article_doi == doi
 
 
 class TestDraftRegistrations:

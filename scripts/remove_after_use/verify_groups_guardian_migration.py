@@ -15,6 +15,7 @@ from osf.utils.permissions import PERMISSIONS, reduce_permissions
 from osf.models import AbstractNode, Contributor, Preprint, Node, Registration, QuickFilesNode
 from osf.models.node import NodeGroupObjectPermission
 from osf.models.preprint import PreprintGroupObjectPermission
+from osf.utils.permissions import READ, WRITE, ADMIN
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -84,13 +85,13 @@ def _verify_contributor_perms(resource):
         contrib = Contributor.objects.get(node=resource, user=user)
 
         if contrib.admin:
-            if contrib.permission != 'admin':
+            if contrib.permission != ADMIN:
                 _suspected_contributor_migration_error(contrib)
         elif contrib.write:
-            if contrib.permission != 'write':
+            if contrib.permission != WRITE:
                 _suspected_contributor_migration_error(contrib)
         elif contrib.read:
-            if contrib.permission != 'read':
+            if contrib.permission != READ:
                 _suspected_contributor_migration_error(contrib)
 
 

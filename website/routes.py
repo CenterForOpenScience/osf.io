@@ -1080,6 +1080,17 @@ def make_url_map(app):
             OsfWebRenderer('project/project.mako', trust=False)
         ),
 
+        # Process token action
+        Rule(
+            [
+                '/token_action/<pid>/',
+            ],
+            'get',
+            project_views.node.token_action,
+            notemplate,
+        ),
+
+
         # Create a new subproject/component
         Rule(
             '/project/<pid>/newnode/',

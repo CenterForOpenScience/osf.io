@@ -13,7 +13,7 @@ from framework.exceptions import PermissionsError
 from osf.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
-from website import tokens
+from osf.utils import tokens
 from osf.models.sanctions import (
     Sanction,
     PreregCallbackMixin,

@@ -3205,6 +3205,54 @@ class TestCollectionRelationshipNodeLinks:
         assert len(res.json['data']) + \
             len(reg_res.json['data']) == number_of_links
 
+    def test_delete_linked_registration(
+            self, app, make_payload, url_private_linked_regs, user_two,
+            collection_private, user_one, registration_private):
+
+        payload = {
+            'data': [
+                {'id': registration_private._id, 'type': 'linked_registrations'}
+            ]
+        }
+        # Cannot delete registration from someone else's collection
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_two.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        assert collection_private.guid_links.filter(_id=registration_private._id).exists()
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_one.auth
+        )
+        assert res.status_code == 204
+        collection_private.reload()
+        assert not collection_private.guid_links.filter(_id=registration_private._id).exists()
+
+    def test_delete_linked_registration_213(
+            self, app, make_payload, url_private_linked_regs, user_two,
+            collection_private, user_one, registration_private):
+
+        payload = {
+            'data': [
+                {'id': registration_private._id, 'type': 'registrations'}
+            ]
+        }
+        url_private_linked_regs = '{}?version=2.13'.format(url_private_linked_regs)
+
+        # Cannot delete registration from someone else's collection
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_two.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        assert collection_private.guid_links.filter(_id=registration_private._id).exists()
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_one.auth
+        )
+        assert res.status_code == 204
+        collection_private.reload()
+        assert not collection_private.guid_links.filter(_id=registration_private._id).exists()
+
     def test_node_links_and_relationship_represent_same_nodes(
             self, app, user_one, url_private_linked_nodes, auth_user_one,
             node_admin, node_contributor, collection_private):

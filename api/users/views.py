@@ -10,6 +10,8 @@ from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
 from api.base.serializers import get_meta_type, AddonAccountSerializer
 from api.base.utils import (
@@ -182,6 +184,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     view_name = 'user-detail'
 
     serializer_class = UserDetailSerializer
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     def get_serializer_class(self):
         if self.request.auth:

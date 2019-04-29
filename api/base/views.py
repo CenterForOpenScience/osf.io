@@ -4,7 +4,7 @@ from distutils.version import StrictVersion
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.http import JsonResponse
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics
@@ -17,7 +17,7 @@ from rest_framework.response import Response
 
 from api.base import permissions as base_permissions
 from api.base import utils
-from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.exceptions import RelationshipPostMakesNoChanges, InvalidFilterValue, InvalidFilterOperator
 from api.base.filters import ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
@@ -37,6 +37,7 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS
 from waffle.models import Flag, Switch, Sample
 from waffle import flag_is_active, sample_is_active
 
@@ -491,6 +492,23 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
                     raise ValidationError('Contributor identifier incorrectly formatted.')
             queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
         return queryset
+
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'bibliographic':
+            operation['source_field_name'] = 'visible'
+
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'permission':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            # operation['value'] should be 'admin', 'write', or 'read'
+            query_val = operation['value'].lower().strip()
+            if query_val not in API_CONTRIBUTOR_PERMISSIONS:
+                raise InvalidFilterValue(value=operation['value'])
+            # Group members not returned under contributors endpoints
+            return Q(user__in=self.get_resource().get_group(query_val).user_set.all())
+        return super(BaseContributorList, self).build_query_from_field(field_name, operation)
 
 
 class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):

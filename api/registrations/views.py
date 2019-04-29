@@ -12,12 +12,12 @@ from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContribut
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
-from api.base.parsers import JSONAPIRelationshipParser
-from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
+from api.base.parsers import JSONAPIRelationshipParser, JSONAPIMultipleRelationshipsParser
+from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMultipleRelationshipsParserForRegularJSON
 from api.base.utils import get_user_auth, default_node_list_permission_queryset, is_bulk_request, is_truthy
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
-from api.nodes.views import NodeIdentifierList
+from api.nodes.views import NodeIdentifierList, NodeBibliographicContributorsList
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
 
@@ -44,7 +44,7 @@ from api.nodes.views import (
     NodeCommentsList, NodeStorageProvidersList, NodeFilesList, NodeFileDetail,
     NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
-    NodeLinkedRegistrationsList, NodeLinkedByNodesList, NodeLinkedByRegistrationsList,
+    NodeLinkedRegistrationsList, NodeLinkedByNodesList, NodeLinkedByRegistrationsList, NodeInstitutionsRelationship,
 )
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
@@ -96,6 +96,8 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
 
     ordering = ('-modified',)
     model_class = Registration
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     # overrides BulkUpdateJSONAPIView
     def get_serializer_class(self):
@@ -168,6 +170,8 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
     view_category = 'registrations'
     view_name = 'registration-detail'
 
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
     # overrides RetrieveAPIView
     def get_object(self):
         registration = self.get_node()
@@ -226,6 +230,15 @@ class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, Us
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
     )
+
+
+class RegistrationBibliographicContributorsList(NodeBibliographicContributorsList, RegistrationMixin):
+
+    pagination_class = NodeContributorPagination
+    serializer_class = RegistrationContributorsSerializer
+
+    view_category = 'registrations'
+    view_name = 'registration-bibliographic-contributors'
 
 
 class RegistrationImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
@@ -511,6 +524,19 @@ class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
     """
     view_category = 'registrations'
     view_name = 'registration-institutions'
+
+
+class RegistrationInstitutionsRelationship(NodeInstitutionsRelationship, RegistrationMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_institutions_relationship).
+    """
+    view_category = 'registrations'
+    view_name = 'registration-relationships-institutions'
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        AdminOrPublic,
+    )
 
 
 class RegistrationWikiList(NodeWikiList, RegistrationMixin):

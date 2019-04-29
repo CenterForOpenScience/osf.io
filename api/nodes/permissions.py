@@ -69,6 +69,18 @@ class IsAdminContributor(permissions.BasePermission):
         else:
             return obj.is_admin_contributor(auth.user)
 
+
+class EditIfPublic(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode,)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        if request.method not in permissions.SAFE_METHODS:
+            return obj.is_public
+        return True
+
+
 class IsAdmin(permissions.BasePermission):
     acceptable_models = (AbstractNode, PrivateLink,)
 
@@ -122,8 +134,12 @@ class AdminOrPublic(permissions.BasePermission):
     acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings,)
 
     def has_object_permission(self, request, view, obj):
+        if isinstance(obj, dict) and 'self' in obj:
+            obj = obj['self']
+
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
+
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
         else:
@@ -157,6 +173,16 @@ class ExcludeWithdrawals(permissions.BasePermission):
             return False
         return True
 
+class ReadOnlyIfWithdrawn(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if isinstance(obj, Node):
+            node = obj
+        else:
+            context = request.parser_context['kwargs']
+            node = AbstractNode.load(context[view.node_lookup_url_kwarg])
+        if node.is_retracted:
+            return request.method in permissions.SAFE_METHODS
+        return True
 
 class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
