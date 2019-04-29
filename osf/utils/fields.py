@@ -32,9 +32,9 @@ def encrypt_string(value, prefix=b'jwe:::'):
     return value
 
 
-def decrypt_string(value, prefix=b'jwe:::'):
-    if type(value) == bytes:
-        value = str(value)
+def decrypt_string(value, prefix='jwe:::'):
+    if isinstance(prefix, bytes):
+        prefix = str(prefix)
 
     if value and value.startswith(prefix):
         value = ensure_bytes(value)
