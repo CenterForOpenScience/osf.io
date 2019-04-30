@@ -956,3 +956,23 @@ def mapcore_remove_token(ctx, username=None, eppn=None):
         print('token is REMOVED: username = ' + user.uesrname)
     elif eppn:
         print('token is REMOVED: ePPN = ' + user.eppn)
+
+
+@task(help={'user': 'filter with creator\'s mail address',
+            'file': 'file name contains group_key list',
+            'grdm': 'remove groups from GRDM',
+            'map': 'remove groups from mAP',
+            'key-only': 'remove link (group_key) only',
+            'interactive': 'select delete groups interactively',
+            'verbose': 'show more group information',
+            'dry-run': 'dry-run'})
+def mapcore_rmgroups(ctx, user=None, file=None, grdm=False, map=False, key_only=False,
+                     interactive=False, verbose=False, dry_run=False):
+    '''GRDM/mAP group maintanance utility for bulk deletion'''
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
+
+    from nii.rmgroups import Options, remove_multi_groups
+
+    options = Options(user, file, grdm, map, key_only, interactive, verbose, dry_run)
+    remove_multi_groups(options)

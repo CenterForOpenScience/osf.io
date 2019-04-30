@@ -46,13 +46,13 @@ class MAPCoreLogger(object):
         self.logger.error('MAPCORE_ERROR: ' + msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        self.logger.error('MAPCORE_WARNING: ' + msg, *args, **kwargs)
+        self.logger.warning('MAPCORE_WARNING: ' + msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        self.logger.error('MAPCORE_INFO:' + msg, *args, **kwargs)
+        self.logger.info('MAPCORE_INFO:' + msg, *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
-        self.logger.error('MAPCORE_DEBUG: ' + msg, *args, **kwargs)
+        self.logger.debug('MAPCORE_DEBUG: ' + msg, *args, **kwargs)
 
 logger = logging.getLogger(__name__)
 if MAPCORE_DEBUG:
@@ -330,6 +330,43 @@ class MAPCore(object):
                     logger.debug('  {}'.format(self.error_message))
                     # Group not found.
                     raise self.get_exception()
+                # Function succeeded.
+                return j
+
+            if self.is_token_expired(r):
+                if self.refresh_token() is False:
+                    # Automatic refreshing token failed.
+                    raise self.get_token_expired()
+                count += 1
+            else:
+                # Any other API error.
+                raise self.get_exception()
+
+        # Could not refresh token after retries (may not occur).
+        raise self.get_token_expired()
+
+    #
+    # delete group  by group key.
+    #
+    def delete_group(self, group_key):
+
+        logger.debug('MAPCore::delete_group_by_key (group_key=' + group_key + ')')
+
+        if self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise self.get_token_expired()
+
+        count = 0
+        while count < 2:
+            time_stamp, signature = self.calc_signature()
+
+            url = map_hostname + map_api_path + '/group/' + group_key
+            payload = {'time_stamp': time_stamp, 'signature': signature}
+            headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
+
+            r = requests.delete(url, headers=headers, params=payload, verify=VERIFY)
+            j = self.check_result(r)
+            if j is not False:
                 # Function succeeded.
                 return j
 
