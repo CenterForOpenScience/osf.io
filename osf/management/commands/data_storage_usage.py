@@ -12,7 +12,7 @@ import os
 import logging
 
 PRIVATE_SIZE_THRESHOLD = 5368709120
-PAGE_SIZE = 1
+PAGE_SIZE = 100
 VALUES = (
         'guids___id',
         'type',
@@ -312,8 +312,8 @@ def process_usages(write_detail=True, write_summary=True):
         page_end = page_start + PAGE_SIZE
         data_page = query_set[page_start:page_end]
         logger.info(data_page.query)
-        logger.info(data_page.explain())
-        while data_page.count() > 0:
+        # logger.info(data_page.explain())
+        while data_page.exists():
             page_end = page_start + PAGE_SIZE
             index += 1
             logger.info('Index: {}'.format(index))
@@ -384,8 +384,16 @@ def process_usages(write_detail=True, write_summary=True):
 
 
 class Command(BaseCommand):
-    """Get raw and summary data of storage usage for Product and Metascience"""
+    help = 'Get raw and summary data of storage usage for Product and Metascience'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--dry_run',
+            type=bool,
+            default=False,
+            help='Delete poll instead of closing it',
+        )
 
     # Management command handler
     def handle(self, *args, **options):
-        process_usages()
+        process_usages(write_summary=not options['dry_run'], write_detail=not options['dry_run'])
