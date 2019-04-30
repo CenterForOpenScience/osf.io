@@ -63,8 +63,7 @@ class TestNodeInstitutionList:
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
         node_one.add_osf_group(group, READ)
-        url = '/{0}nodes/{1}/institutions/'.format(API_BASE, node_one._id)
-        res = app.get(url)
+        res = app.get(node_one_url)
         assert res.status_code == 200
 
     #   test_non_contrib
