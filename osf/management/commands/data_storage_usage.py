@@ -12,7 +12,7 @@ import os
 import logging
 
 PRIVATE_SIZE_THRESHOLD = 5368709120
-PAGE_SIZE = 100
+PAGE_SIZE = 10000
 VALUES = (
         'guids___id',
         'type',
@@ -48,7 +48,7 @@ def gather_node_usage():
     data_page = node_limit[page_start:page_end]
     # logger.info(data_page.explain())
     while data_page.exists():
-        logger.info(data_page.query)
+        # logger.info(data_page.query)
         logger.info('Node data {} to {}'.format(page_start, page_end))
         node_set = Node.objects.filter(id__in=Subquery(data_page.values('id'))).only(
             'guids',
