@@ -33,40 +33,54 @@ logger = logging.getLogger(__name__)
 
 # Detail gatherers
 def gather_node_usage():
+    queries = []
     logger.info('Gathering node usage')
     region = Region.objects.filter(id=OuterRef('region_id'))
     node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('name')[:1])).filter(
         owner_id=OuterRef('pk'))
-    node_set = Node.objects.exclude(
+    node_limit = Node.objects.exclude(
         spam_status=2,  # SPAM
     ).only(
-        'guids',
-        'type',
-        'title',
-        'root',
-        'is_fork',
-        'is_public',
-        'is_deleted',
-        'files',
-        'spam_status',
-        'created',
-    ).annotate(
-        Count('files__versions'),
-        Sum('files__versions__size'),
-        roots_id=Case(
-            When(root__isnull=False, then='root__guids___id'),
-            default=Value(None),
-            output_field=CharField(),
-        ),
-        is_spam=Case(
-            When(spam_status=2, then=True),
-            default=Value(False),
-            output_field=BooleanField()
-        ),
-        region_name=Subquery(node_settings.values('region_abbrev')[:1])
-    ).order_by('created')
-    # logger.info(node_set.explain())
-    return node_set
+        'id',
+    )
+    page_start = 0
+    page_end = page_start + PAGE_SIZE
+    data_page = node_limit[page_start:page_end]
+    # logger.info(data_page.explain())
+    while data_page.exists():
+        logger.info(data_page.query)
+        logger.info('Node data {} to {}'.format(page_start, page_end))
+        node_set = Node.objects.filter(id__in=Subquery(data_page.values('id'))).only(
+            'guids',
+            'type',
+            'title',
+            'root',
+            'is_fork',
+            'is_public',
+            'is_deleted',
+            'files',
+            'spam_status',
+            'created',
+        ).annotate(
+            Count('files__versions'),
+            Sum('files__versions__size'),
+            roots_id=Case(
+                When(root__isnull=False, then='root__guids___id'),
+                default=Value(None),
+                output_field=CharField(),
+            ),
+            is_spam=Case(
+                When(spam_status=2, then=True),
+                default=Value(False),
+                output_field=BooleanField()
+            ),
+            region_name=Subquery(node_settings.values('region_abbrev')[:1])
+        ).order_by('created')
+        queries.append(node_set)
+        page_start = page_end
+        page_end = page_start + PAGE_SIZE
+        data_page = node_limit[page_start:page_end]
+    return queries
 
 
 def gather_registration_usage():
@@ -308,60 +322,75 @@ def process_usages(write_detail=True, write_summary=True):
     for key in usage_details.keys():
         query_set = usage_details[key]
         logger.info('Processing {}'.format(key))
-        page_start = 0
-        page_end = page_start + PAGE_SIZE
-        data_page = query_set[page_start:page_end]
-        logger.info(data_page.query)
-        # logger.info(data_page.explain())
-        while data_page.exists():
-            page_end = page_start + PAGE_SIZE
-            index += 1
-            logger.info('Index: {}'.format(index))
-            if key == 'quickfile':
-                quickfiles_total = data_page.aggregate(
-                    quickfiles_total=Sum('files__versions__size__sum'),
-                )['quickfiles_total']
-                quickfiles += quickfiles_total
-                regional_totals = combine_regional_data(
-                    regional_totals,
-                    {'United States': quickfiles_total},
-                )
-            else:
+        if key == 'node':
+            for item in usage_details[key]:
+                index += 1
+                logger.info('Index: {}'.format(index))
                 logger.info('regional_totals')
                 regional_totals = combine_regional_data(
                     regional_totals,
-                    data_page.values('region_name').annotate(Sum('files__versions__size'))
+                    item.values('region_name').annotate(Sum('files__versions__size'))
                 )
-            if key == 'preprint':
-                preprints += data_page.aggregate(
-                    preprints_total=Sum('files__versions__size__sum'),
-                )['preprints_total']
+                if write_detail:
+                    logger.info('Writing ./data-usage-raw-{}.csv'.format(index))
 
-                supplemental_node_usage = Node.objects.filter(
-                    id__in=Subquery(data_page.values('node')),
-                    files__type='osf.osfstoragefile',
-                    is_deleted=False,
-                ).exclude(
-                    spam_status=2,  # SPAM
-                ).annotate(
-                    Count('files__versions'),
-                    Sum('files__versions__size'),
-                ).filter(
-                    files__versions__count__gte=1,
-                )
-
-                supplemental_node_total += supplemental_node_usage.aggregate(
-                    supplemental_node_total=Sum('files__versions__size__sum'),
-                ).get(supplemental_node_total, 0)
-
-            if write_detail:
-                logger.info('Writing ./data-usage-raw-{}.csv'.format(index))
-
-                data = data_page.values_list(*VALUES)
-                write_raw_data(data=data, filename='./data-usage-raw-{}.csv'.format(index))
-            page_start = page_end
+                    data = item.values_list(*VALUES)
+                    write_raw_data(data=data, filename='./data-usage-raw-{}.csv'.format(index))
+        else:
+            page_start = 0
             page_end = page_start + PAGE_SIZE
             data_page = query_set[page_start:page_end]
+            logger.info(data_page.query)
+            # logger.info(data_page.explain())
+            while data_page.exists():
+                page_end = page_start + PAGE_SIZE
+                index += 1
+                logger.info('Index: {}'.format(index))
+                if key == 'quickfile':
+                    quickfiles_total = data_page.aggregate(
+                        quickfiles_total=Sum('files__versions__size__sum'),
+                    )['quickfiles_total']
+                    quickfiles += quickfiles_total
+                    regional_totals = combine_regional_data(
+                        regional_totals,
+                        {'United States': quickfiles_total},
+                    )
+                else:
+                    logger.info('regional_totals')
+                    regional_totals = combine_regional_data(
+                        regional_totals,
+                        data_page.values('region_name').annotate(Sum('files__versions__size'))
+                    )
+                if key == 'preprint':
+                    preprints += data_page.aggregate(
+                        preprints_total=Sum('files__versions__size__sum'),
+                    )['preprints_total']
+
+                    supplemental_node_usage = Node.objects.filter(
+                        id__in=Subquery(data_page.values('node')),
+                        files__type='osf.osfstoragefile',
+                        is_deleted=False,
+                    ).exclude(
+                        spam_status=2,  # SPAM
+                    ).annotate(
+                        Count('files__versions'),
+                        Sum('files__versions__size'),
+                    ).filter(
+                        files__versions__count__gte=1,
+                    )
+
+                    supplemental_node_total += supplemental_node_usage.aggregate(
+                        supplemental_node_total=Sum('files__versions__size__sum'),
+                    ).get(supplemental_node_total, 0)
+
+                if write_detail:
+                    logger.info('Writing ./data-usage-raw-{}.csv'.format(index))
+
+                    data = data_page.values_list(*VALUES)
+                    write_raw_data(data=data, filename='./data-usage-raw-{}.csv'.format(index))
+                page_start = page_end
+                page_end = page_start + PAGE_SIZE
+                data_page = query_set[page_start:page_end]
 
     deleted, registrations, public, under, over = gather_summary_data()
     summary_data['total'] = deleted + registrations + quickfiles + public + under + over + preprints
