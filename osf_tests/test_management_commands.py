@@ -28,7 +28,7 @@ from osf.management.commands.data_storage_usage import (
 # to binary. Each of the 1s will correspond something that wasn't handled properly.
 def next_power_of_2(x):
     # https://stackoverflow.com/a/14267825/3579517
-    return 1 if x == 0 else 1 << (x-1).bit_length()
+    return 1 if x == 0 else 1 << (x - 1).bit_length()
 
 
 def next_file_size():
@@ -246,7 +246,7 @@ class TestDataStorageUsage(DbTestCase):
 
         quickfiles_node_us = QuickFilesNode.objects.get(creator=user)
         file_size = next(small_size)
-        quickfile = create_test_file(target=quickfiles_node_us, user=user, size=file_size)
+        create_test_file(target=quickfiles_node_us, user=user, size=file_size)
         logger.debug(u'Quickfile, US: {}'.format(file_size))
 
         expected_summary_data['total'] += file_size

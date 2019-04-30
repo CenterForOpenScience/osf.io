@@ -3,7 +3,6 @@ import csv
 from collections import OrderedDict
 from datetime import date
 from django.core.management.base import BaseCommand
-from django.core.paginator import Paginator
 from django.db.models import BooleanField, Case, CharField, Count, F, OuterRef, QuerySet, Subquery, Sum, Value, When
 
 from osf.models import AbstractNode, Node, Preprint, Registration, TrashedFile
@@ -12,21 +11,20 @@ import os
 import logging
 
 PRIVATE_SIZE_THRESHOLD = 5368709120
-PAGE_SIZE = 10000
+PAGE_SIZE = 1000
 VALUES = (
-        'guids___id',
-        'type',
-        'roots_id',
-        'title',
-        'is_fork',
-        'is_public',
-        'is_deleted',
-        'region_name',
-        'files__versions__count',
-        'files__versions__size__sum',
-        'is_spam',
-    )
-
+    'guids___id',
+    'type',
+    'roots_id',
+    'title',
+    'is_fork',
+    'is_public',
+    'is_deleted',
+    'region_name',
+    'files__versions__count',
+    'files__versions__size__sum',
+    'is_spam',
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +35,9 @@ def gather_node_usage():
     region = Region.objects.filter(id=OuterRef('region_id'))
     node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('name')[:1])).filter(
         owner_id=OuterRef('pk'))
-    node_limit = Node.objects.exclude(
-        spam_status=2,  # SPAM
-    ).only(
+    node_limit = Node.objects.only(
         'id',
-    )
+    ).order_by('created')
     queries = []
     page_start = 0
     page_end = page_start + PAGE_SIZE
@@ -73,7 +69,7 @@ def gather_node_usage():
                 output_field=BooleanField()
             ),
             region_name=Subquery(node_settings.values('region_abbrev')[:1])
-        ).order_by('created')
+        )
         queries.append(node_set)
         page_start = page_end
         page_end = page_start + PAGE_SIZE
@@ -86,11 +82,9 @@ def gather_registration_usage():
     region = Region.objects.filter(id=OuterRef('region_id'))
     node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('name')[:1])).filter(
         owner_id=OuterRef('pk'))
-    registration_limit = Registration.objects.exclude(
-        spam_status=2,  # SPAM
-    ).only(
+    registration_limit = Registration.objects.only(
         'id',
-    )
+    ).order_by('created')
 
     queries = []
     page_start = 0
@@ -122,7 +116,7 @@ def gather_registration_usage():
                 output_field=BooleanField()
             ),
             region_name=Subquery(node_settings.values('region_abbrev')[:1])
-        ).order_by('guids___id')
+        )
         queries.append(registration_set)
         page_start = page_end
         page_end = page_start + PAGE_SIZE
@@ -132,11 +126,9 @@ def gather_registration_usage():
 
 def gather_preprint_usage():
     logger.info('Gathering preprint usage')
-    preprint_limit = Preprint.objects.exclude(
-        spam_status=2,  # SPAM
-    ).only(
+    preprint_limit = Preprint.objects.only(
         'id',
-    )
+    ).order_by('created')
 
     queries = []
     page_start = 0
@@ -168,7 +160,7 @@ def gather_preprint_usage():
                 output_field=BooleanField()
             ),
             region_name=F('region__name')
-        ).order_by('guids___id')
+        )
         queries.append(preprints_set)
         page_start = page_end
         page_end = page_start + PAGE_SIZE
@@ -186,7 +178,7 @@ def gather_quickfile_usage():
         type='osf.quickfilesnode'
     ).only(
         'id',
-    )
+    ).order_by('created')
     queries = []
     page_start = 0
     page_end = page_start + PAGE_SIZE
@@ -211,7 +203,7 @@ def gather_quickfile_usage():
             region_name=Value('United States', CharField())
         ).filter(
             files__versions__count__gte=1,
-        ).order_by('guids___id')
+        )
         queries.append(quickfiles_set)
         page_start = page_end
         page_end = page_start + PAGE_SIZE
@@ -227,26 +219,26 @@ def gather_summary_data():
     logger.info('Registrations')
 
     registrations = Registration.objects.all().annotate(
-            Count('files__versions'),
-            Sum('files__versions__size'),
+        Count('files__versions'),
+        Sum('files__versions__size'),
     ).filter(
-            files__versions__count__gte=1,
+        files__versions__count__gte=1,
     ).aggregate(
         registrations=Sum('files__versions__size__sum')
     )['registrations']
     logger.info('Nodes')
 
     nodes = Node.objects.all().filter(
-            files__type='osf.osfstoragefile',
-        ).exclude(
-            spam_status=2,  # SPAM
-            type='osf.registration',
-        ).annotate(
-            Count('files__versions'),
-            Sum('files__versions__size'),
-        ).filter(
-            files__versions__count__gte=1,
-        )
+        files__type='osf.osfstoragefile',
+    ).exclude(
+        spam_status=2,  # SPAM
+        type='osf.registration',
+    ).annotate(
+        Count('files__versions'),
+        Sum('files__versions__size'),
+    ).filter(
+        files__versions__count__gte=1,
+    )
     logger.info('Public nodes')
 
     public = nodes.filter(is_public=True).aggregate(public=Sum('files__versions__size__sum'))['public']
@@ -255,14 +247,14 @@ def gather_summary_data():
     private = nodes.filter(is_public=False).annotate(Sum('files__versions__size'))
     logger.info('Under 5')
     under = private.filter(
-            files__versions__size__sum__lt=PRIVATE_SIZE_THRESHOLD,
-        ).aggregate(under=Sum('files__versions__size__sum'))['under']
+        files__versions__size__sum__lt=PRIVATE_SIZE_THRESHOLD,
+    ).aggregate(under=Sum('files__versions__size__sum'))['under']
     if not under:
         under = 0
     logger.info('Over 5')
     over = private.filter(
-            files__versions__size__sum__gte=PRIVATE_SIZE_THRESHOLD,
-        ).aggregate(over=Sum('files__versions__size__sum'))['over']
+        files__versions__size__sum__gte=PRIVATE_SIZE_THRESHOLD,
+    ).aggregate(over=Sum('files__versions__size__sum'))['over']
     if not over:
         over = 0
 
@@ -392,9 +384,9 @@ def process_usages(write_detail=True, write_summary=True):
                 logger.info('Quickfile totals')
                 quickfiles_total = item.aggregate(
                     quickfiles_total=Sum('files__versions__size__sum'),
-                )['quickfiles_total']
+                ).get('quickfiles_total', 0)
                 quickfiles += quickfiles_total
-                logger.info('Quickfile regional_totals')
+                logger.info('Quickfile regional_totals: {}'.format(quickfiles_total))
                 regional_totals = combine_regional_data(
                     regional_totals,
                     {'United States': quickfiles_total},
@@ -410,13 +402,10 @@ def process_usages(write_detail=True, write_summary=True):
                 preprints += item.aggregate(
                     preprints_total=Sum('files__versions__size__sum'),
                 )['preprints_total']
-
                 supplemental_node_usage = Node.objects.filter(
                     id__in=Subquery(item.values('node')),
                     files__type='osf.osfstoragefile',
                     is_deleted=False,
-                ).exclude(
-                    spam_status=2,  # SPAM
                 ).annotate(
                     Count('files__versions'),
                     Sum('files__versions__size'),
@@ -426,7 +415,7 @@ def process_usages(write_detail=True, write_summary=True):
 
                 supplemental_node_total += supplemental_node_usage.aggregate(
                     supplemental_node_total=Sum('files__versions__size__sum'),
-                ).get(supplemental_node_total, 0)
+                ).get('supplemental_node_total', 0)
 
             if write_detail:
                 logger.info('Writing ./data-usage-raw-{}.csv'.format(index))
