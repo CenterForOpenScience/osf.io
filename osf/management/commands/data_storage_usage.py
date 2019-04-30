@@ -340,7 +340,7 @@ def write_raw_data(data, filename):
             row_to_write = []
             for s in row:
                 item = s.encode('utf-8') if isinstance(s, (str, unicode)) else s
-                row_to_write.append(s)
+                row_to_write.append(item)
             writer.writerow(row_to_write)
 
 
