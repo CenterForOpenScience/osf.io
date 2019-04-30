@@ -452,7 +452,7 @@ class Command(BaseCommand):
             '--dry_run',
             type=bool,
             default=False,
-            help='Delete poll instead of closing it',
+            help='Run queries but do not write files',
         )
         parser.add_argument(
             '--page_size',
