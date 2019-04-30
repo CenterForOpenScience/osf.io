@@ -18,11 +18,11 @@ def ensure_bytes(value):
     return value.encode('utf-8')
 
 
-def encrypt_string(value, prefix=b'jwe:::'):
-    if value and not value.startswith(str(prefix)):
+def encrypt_string(value, prefix='jwe:::'):
+    if value and not value.startswith(prefix):
         value = ensure_bytes(value)
         try:
-            value = prefix + jwe.encrypt(value, SENSITIVE_DATA_KEY)
+            value = prefix + jwe.encrypt(value, SENSITIVE_DATA_KEY).decode()
         except InvalidTag:
             # Allow use of an encrypted DB locally without encrypting fields
             if settings.DEBUG_MODE:
@@ -33,13 +33,10 @@ def encrypt_string(value, prefix=b'jwe:::'):
 
 
 def decrypt_string(value, prefix='jwe:::'):
-    if isinstance(prefix, bytes):
-        prefix = str(prefix)
 
     if value and value.startswith(prefix):
-        value = ensure_bytes(value)
         try:
-            value = jwe.decrypt(bytes(value[len(prefix):]), SENSITIVE_DATA_KEY)
+            value = jwe.decrypt(value[len(prefix):].encode(), SENSITIVE_DATA_KEY).decode()
         except InvalidTag:
             # Allow use of an encrypted DB locally without decrypting fields
             if settings.DEBUG_MODE:
@@ -72,7 +69,7 @@ class EncryptedTextField(models.TextField):
     This field transparently encrypts data in the database. It should probably only be used with PG unless
     the user takes into account the db specific trade-offs with TextFields.
     """
-    prefix = b'jwe:::'
+    prefix = 'jwe:::'
 
     def get_db_prep_value(self, value, **kwargs):
         return encrypt_string(value, prefix=self.prefix)
@@ -96,7 +93,7 @@ class EncryptedJSONField(JSONField):
     """
     Very similar to EncryptedTextField, but for postgresql's JSONField
     """
-    prefix = b'jwe:::'
+    prefix = 'jwe:::'
 
     def get_prep_value(self, value, **kwargs):
         value = rapply(value, encrypt_string, prefix=self.prefix)
