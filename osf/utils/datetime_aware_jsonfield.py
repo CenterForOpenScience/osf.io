@@ -37,6 +37,8 @@ def coerce_nonnaive_datetimes(json_data):
 
 class DateTimeAwareJSONEncoder(DjangoJSONEncoder):
     def default(self, o):
+        if isinstance(o, bytes):
+            return o.decode()
         if isinstance(o, dt.datetime):
             if o.tzinfo is None or o.tzinfo.utcoffset(o) is None:
                 raise NaiveDatetimeException('Tried to encode a naive datetime.')
