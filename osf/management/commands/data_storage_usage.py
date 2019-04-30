@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 import csv
+import datetime
+import logging
+import os
+
 from collections import OrderedDict
 from datetime import date
 from django.core.management.base import BaseCommand
@@ -7,11 +11,8 @@ from django.db.models import BooleanField, Case, CharField, Count, F, OuterRef, 
 
 from osf.models import AbstractNode, Node, Preprint, Registration, TrashedFile
 from addons.osfstorage.models import NodeSettings, Region
-import os
-import logging
 
 PRIVATE_SIZE_THRESHOLD = 5368709120
-PAGE_SIZE = 1000
 VALUES = (
     'guids___id',
     'type',
@@ -30,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 # Detail gatherers
-def gather_node_usage():
-    logger.info('Gathering node usage')
+def gather_node_usage(page_size):
+    logger.info('Gathering node usage at {}'.format(datetime.datetime.now()))
     region = Region.objects.filter(id=OuterRef('region_id'))
     node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('name')[:1])).filter(
         owner_id=OuterRef('pk'))
@@ -40,7 +41,7 @@ def gather_node_usage():
     ).order_by('created')
     queries = []
     page_start = 0
-    page_end = page_start + PAGE_SIZE
+    page_end = page_start + page_size
     data_page = node_limit[page_start:page_end]
     while data_page.exists():
         logger.info('Node data {} to {}'.format(page_start, page_end))
@@ -72,13 +73,13 @@ def gather_node_usage():
         )
         queries.append(node_set)
         page_start = page_end
-        page_end = page_start + PAGE_SIZE
+        page_end = page_start + page_size
         data_page = node_limit[page_start:page_end]
     return queries
 
 
-def gather_registration_usage():
-    logger.info('Gathering registration usage')
+def gather_registration_usage(page_size):
+    logger.info('Gathering registration usage at {}'.format(datetime.datetime.now()))
     region = Region.objects.filter(id=OuterRef('region_id'))
     node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('name')[:1])).filter(
         owner_id=OuterRef('pk'))
@@ -88,7 +89,7 @@ def gather_registration_usage():
 
     queries = []
     page_start = 0
-    page_end = page_start + PAGE_SIZE
+    page_end = page_start + page_size
     data_page = registration_limit[page_start:page_end]
     while data_page.exists():
         registration_set = Registration.objects.filter(id__in=Subquery(data_page.values('id'))).only(
@@ -119,20 +120,20 @@ def gather_registration_usage():
         )
         queries.append(registration_set)
         page_start = page_end
-        page_end = page_start + PAGE_SIZE
+        page_end = page_start + page_size
         data_page = registration_limit[page_start:page_end]
     return queries
 
 
-def gather_preprint_usage():
-    logger.info('Gathering preprint usage')
+def gather_preprint_usage(page_size):
+    logger.info('Gathering preprint usage at {}'.format(datetime.datetime.now()))
     preprint_limit = Preprint.objects.only(
         'id',
     ).order_by('created')
 
     queries = []
     page_start = 0
-    page_end = page_start + PAGE_SIZE
+    page_end = page_start + page_size
     data_page = preprint_limit[page_start:page_end]
     while data_page.exists():
         preprints_set = Preprint.objects.filter(id__in=Subquery(data_page.values('id'))).only(
@@ -163,25 +164,25 @@ def gather_preprint_usage():
         )
         queries.append(preprints_set)
         page_start = page_end
-        page_end = page_start + PAGE_SIZE
+        page_end = page_start + page_size
         data_page = preprint_limit[page_start:page_end]
     return queries
 
 
-def gather_quickfile_usage():
+def gather_quickfile_usage(page_size):
     # TODO: Make this like preprint usage when quickfiles are no longer in nodes
     # (this is why it's not part of gather_node_usage(), for easy replacement)
-    logger.info('Gathering quickfile usage')
+    logger.info('Gathering quickfile usage at {}'.format(datetime.datetime.now()))
 
     quickfile_limit = AbstractNode.objects.filter(
         files__type='osf.osfstoragefile',
-        type='osf.quickfilesnode'
+        type='osf.quickfilesnode',
     ).only(
         'id',
     ).order_by('created')
     queries = []
     page_start = 0
-    page_end = page_start + PAGE_SIZE
+    page_end = page_start + page_size
     data_page = quickfile_limit[page_start:page_end]
     while data_page.exists():
         quickfiles_set = AbstractNode.objects.filter(id__in=Subquery(data_page.values('id'))).only(
@@ -206,13 +207,13 @@ def gather_quickfile_usage():
         )
         queries.append(quickfiles_set)
         page_start = page_end
-        page_end = page_start + PAGE_SIZE
+        page_end = page_start + page_size
         data_page = quickfile_limit[page_start:page_end]
     return queries
 
 
-def gather_summary_data():
-    logger.info('Gathering summary data')
+def gather_summary_data(size_threshold):
+    logger.info('Gathering summary data at {}'.format(datetime.datetime.now()))
     logger.info('Deleted')
 
     deleted = TrashedFile.objects.all().aggregate(total_deleted=Sum('versions__size'))['total_deleted']
@@ -247,13 +248,13 @@ def gather_summary_data():
     private = nodes.filter(is_public=False).annotate(Sum('files__versions__size'))
     logger.info('Under 5')
     under = private.filter(
-        files__versions__size__sum__lt=PRIVATE_SIZE_THRESHOLD,
+        files__versions__size__sum__lt=size_threshold,
     ).aggregate(under=Sum('files__versions__size__sum'))['under']
     if not under:
         under = 0
     logger.info('Over 5')
     over = private.filter(
-        files__versions__size__sum__gte=PRIVATE_SIZE_THRESHOLD,
+        files__versions__size__sum__gte=size_threshold,
     ).aggregate(over=Sum('files__versions__size__sum'))['over']
     if not over:
         over = 0
@@ -336,7 +337,7 @@ def write_raw_data(data, filename):
             writer.writerow(row_to_write)
 
 
-def process_usages(write_detail=True, write_summary=True):
+def process_usages(write_detail=True, write_summary=True, page_size=1000, size_threshold=PRIVATE_SIZE_THRESHOLD):
     # We can't re-order these columns after they are released, only add columns to the end
     # This is why we can't just append whatever storage regions we add to the system automatically,
     # because then they'd likely be out of order when they were added.
@@ -362,10 +363,10 @@ def process_usages(write_detail=True, write_summary=True):
     logger.info('Collecting usage details')
 
     usage_details = {
-        'node': gather_node_usage(),
-        'registration': gather_registration_usage(),
-        'preprint': gather_preprint_usage(),
-        'quickfile': gather_quickfile_usage(),
+        'node': gather_node_usage(page_size=page_size),
+        'registration': gather_registration_usage(page_size=page_size),
+        'preprint': gather_preprint_usage(page_size=page_size),
+        'quickfile': gather_quickfile_usage(page_size=page_size),
     }
 
     regional_totals = {}
@@ -381,7 +382,7 @@ def process_usages(write_detail=True, write_summary=True):
             logger.info('Index: {}'.format(index))
 
             if key == 'quickfile':
-                logger.info('Quickfile totals')
+                logger.info('Quickfile totals at {}'.format(datetime.datetime.now()))
                 quickfiles_total = item.aggregate(
                     quickfiles_total=Sum('files__versions__size__sum'),
                 ).get('quickfiles_total', 0)
@@ -392,13 +393,13 @@ def process_usages(write_detail=True, write_summary=True):
                     {'United States': quickfiles_total},
                 )
             else:
-                logger.info('Other regional_totals')
+                logger.info('Other regional_totals at {}'.format(datetime.datetime.now()))
                 regional_totals = combine_regional_data(
                     regional_totals,
                     item.values('region_name').annotate(Sum('files__versions__size'))
                 )
             if key == 'preprint':
-                logger.info('Preprint totals')
+                logger.info('Preprint totals at {}'.format(datetime.datetime.now()))
                 preprints += item.aggregate(
                     preprints_total=Sum('files__versions__size__sum'),
                 )['preprints_total']
@@ -423,7 +424,7 @@ def process_usages(write_detail=True, write_summary=True):
                 data = item.values_list(*VALUES)
                 write_raw_data(data=data, filename='./data-usage-raw-{}.csv'.format(index))
 
-    deleted, registrations, public, under, over = gather_summary_data()
+    deleted, registrations, public, under, over = gather_summary_data(size_threshold=size_threshold)
     summary_data['total'] = deleted + registrations + quickfiles + public + under + over + preprints
     summary_data['deleted'] = deleted
     summary_data['registrations'] = registrations
@@ -453,7 +454,30 @@ class Command(BaseCommand):
             default=False,
             help='Delete poll instead of closing it',
         )
+        parser.add_argument(
+            '--page_size',
+            type=int,
+            default=1000,
+            help='How many items at a time to include for each query',
+        )
+        parser.add_argument(
+            '--size_threshold',
+            type=int,
+            default=PRIVATE_SIZE_THRESHOLD,
+            help='How big should a node storage be to be considered big',
+        )
 
     # Management command handler
     def handle(self, *args, **options):
-        process_usages(write_summary=not options['dry_run'], write_detail=not options['dry_run'])
+        script_start_time = datetime.datetime.now()
+        logging.info('Script started time: {}'.format(script_start_time))
+        process_usages(
+            write_summary=not options['dry_run'],
+            write_detail=not options['dry_run'],
+            page_size=options['page_size'],
+            size_threshold=options['size_threshold']
+        )
+
+        script_finish_time = datetime.datetime.now()
+        logging.info('Script finished time: {}'.format(script_finish_time))
+        logging.info('Run time {}'.format(script_finish_time - script_start_time))
