@@ -570,6 +570,9 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
     view_name = 'node-bibliographic-contributors'
     ordering = ('_order',)  # default ordering
 
+    def get_resource(self):
+        return self.get_node()
+
     def get_default_queryset(self):
         contributors = super(NodeBibliographicContributorsList, self).get_default_queryset()
         return contributors.filter(visible=True)

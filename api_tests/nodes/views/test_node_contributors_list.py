@@ -2916,7 +2916,11 @@ class TestNodeContributorFiltering:
         assert len(errors) == 1
         assert errors[0]['detail'] == '\'full_name\' is not a valid field for this endpoint.'
 
-    #   test_filtering_permission_field
+        user_two = AuthUserFactory()
+        user_three = AuthUserFactory()
+        project.add_contributor(user_two, permissions.WRITE)
+        project.add_contributor(user_three, permissions.READ, visible=False)
+    #   test_filtering_permission_field_admin
         url = '/{}nodes/{}/contributors/?filter[permission]=admin'.format(
             API_BASE, project._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -2924,24 +2928,38 @@ class TestNodeContributorFiltering:
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
 
+    #   test_filtering_permission_field_write
+        url = '/{}nodes/{}/contributors/?filter[permission]=write'.format(
+            API_BASE, project._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+
+    #   test_filtering_permission_field_read
+        url = '/{}nodes/{}/contributors/?filter[permission]=read'.format(
+            API_BASE, project._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 3
+
     #   test_filtering_node_with_only_bibliographic_contributors
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
         # no filter
         res = app.get(base_url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 3
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 2
         assert res.json['data'][0]['attributes'].get('bibliographic', None)
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
         res = app.get(url, auth=user.auth)
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == 1
 
     #   test_filtering_on_invalid_field
         url = '/{}nodes/{}/contributors/?filter[invalid]=foo'.format(
@@ -2951,16 +2969,6 @@ class TestNodeContributorFiltering:
         errors = res.json['errors']
         assert len(errors) == 1
         assert errors[0]['detail'] == '\'invalid\' is not a valid field for this endpoint.'
-
-    #   test_filtering_write_contributors
-        user_two = AuthUserFactory()
-        project.add_contributor(user_two, permissions.WRITE)
-        url = '/{}nodes/{}/contributors/?filter[permission]=write'.format(
-            API_BASE, project._id)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes'].get('permission') == permissions.WRITE
 
     def test_filtering_node_with_non_bibliographic_contributor(
             self, app, user, project):

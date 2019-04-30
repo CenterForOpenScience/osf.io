@@ -2946,10 +2946,21 @@ class TestPreprintContributorFiltering:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def preprint(self, user):
-        return PreprintFactory(creator=user)
+    def write_contrib(self):
+        return AuthUserFactory()
 
-    def test_filtering(self, app, user, preprint):
+    @pytest.fixture()
+    def read_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def preprint(self, user, write_contrib, read_contrib):
+        preprint = PreprintFactory(creator=user)
+        preprint.add_contributor(write_contrib, permissions.WRITE, visible=False)
+        preprint.add_contributor(read_contrib, permissions.READ)
+        return preprint
+
+    def test_filtering(self, app, user, write_contrib, read_contrib, preprint):
         #   test_filtering_full_name_field
         url = '/{}preprints/{}/contributors/?filter[full_name]=Freddie'.format(
             API_BASE, preprint._id)
@@ -2959,7 +2970,7 @@ class TestPreprintContributorFiltering:
         assert len(errors) == 1
         assert errors[0]['detail'] == '\'full_name\' is not a valid field for this endpoint.'
 
-    #   test_filtering_permission_field
+    #   test_filtering_permission_field_admin
         url = '/{}preprints/{}/contributors/?filter[permission]=admin'.format(
             API_BASE, preprint._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -2967,24 +2978,38 @@ class TestPreprintContributorFiltering:
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
 
+    #   test_filtering_permission_field_write
+        url = '/{}preprints/{}/contributors/?filter[permission]=write'.format(
+            API_BASE, preprint._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+
+    #   test_filtering_permission_field_read
+        url = '/{}preprints/{}/contributors/?filter[permission]=read'.format(
+            API_BASE, preprint._id)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 3
+
     #   test_filtering_node_with_only_bibliographic_contributors
         base_url = '/{}preprints/{}/contributors/'.format(API_BASE, preprint._id)
         # no filter
         res = app.get(base_url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 3
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 2
         assert res.json['data'][0]['attributes'].get('bibliographic', None)
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
         res = app.get(url, auth=user.auth)
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == 1
 
     #   test_filtering_on_invalid_field
         url = '/{}preprints/{}/contributors/?filter[invalid]=foo'.format(
@@ -3006,16 +3031,16 @@ class TestPreprintContributorFiltering:
         # no filter
         res = app.get(base_url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 2
+        assert len(res.json['data']) == 4
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
         res = app.get(url, auth=user.auth)
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 2
         assert res.json['data'][0]['attributes'].get('bibliographic', None)
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
         res = app.get(url, auth=user.auth)
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 2
         assert not res.json['data'][0]['attributes'].get('bibliographic', None)
