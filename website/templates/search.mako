@@ -253,7 +253,7 @@
         <p>
             <strong>Groups:</strong> <span data-bind="foreach: groups">
                 <!-- ko if: url -->
-                    <a data-bind="attr: {href: url}, text: name"></a>
+                    <span data-bind="text: name"></span>
                 <!-- /ko-->
             <!-- ko if: ($index()+1) < ($parent.groups.length) -->&nbsp;- <!-- /ko -->
             </span>
@@ -308,7 +308,7 @@
         <!-- /ko -->
     </script>
     <script type="text/html" id="group">
-        <h4><a data-bind="attr: {href: url}, text: title"></a> </h4>
+        <h4><span data-bind="text: title"></span></h4>
         <!-- ko if: managers.length > 0 -->
         <p>
             <strong>Managers:</strong> <span data-bind="foreach: managers">
