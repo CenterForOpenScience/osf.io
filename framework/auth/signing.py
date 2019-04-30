@@ -15,7 +15,7 @@ def order_recursive(data):
     Used to ensure consistent ordering of JSON payloads.
     """
     if isinstance(data, dict):
-        return collections.OrderedDict(
+        return collections.OrderedDict(  # TODO: PY3 check if still necessary
             sorted(
                 (
                     (key, order_recursive(value))
@@ -34,8 +34,9 @@ def order_recursive(data):
 
 def serialize_payload(payload):
     ordered = order_recursive(payload)
-    return base64.b64encode(json.dumps(ordered))
-
+    ordered = json.dumps(ordered)
+    ordered = ordered.encode('utf-8')
+    return base64.b64encode(ordered)
 
 def unserialize_payload(message):
     payload = json.loads(base64.b64decode(message))
@@ -51,7 +52,7 @@ class Signer(object):
 
     def sign_message(self, message):
         return hmac.new(
-            key=self.secret,
+            key=self.secret.encode('utf-8'),
             digestmod=self.digest,
             msg=message,
         ).hexdigest()
