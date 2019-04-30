@@ -370,9 +370,6 @@ class JSONRenderer(Renderer):
         return self.render(error.to_data(), None), error.code, headers
 
     def render(self, data, redirect_url, *args, **kwargs):
-        if data and data.get('errors'):
-            data['errors'] = list(data['errors'])
-
         return json.dumps(data, cls=self.Encoder)
 
 # Create a single JSONRenderer instance to avoid repeated construction
