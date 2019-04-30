@@ -184,6 +184,8 @@ def gather_quickfile_usage():
     quickfile_limit = AbstractNode.objects.filter(
         files__type='osf.osfstoragefile',
         type='osf.quickfilesnode'
+    ).only(
+        'id',
     )
     queries = []
     page_start = 0
