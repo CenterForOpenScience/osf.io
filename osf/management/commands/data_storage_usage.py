@@ -270,7 +270,7 @@ def gather_summary_data():
 
 
 def convert_regional_data(regional_data):
-    logger.info('Convert regional data: {}'.format(regional_data))
+    # logger.info('Convert regional data: {}'.format(regional_data))
     return {
         item['region_name']:
             item['files__versions__size__sum'] if item['files__versions__size__sum'] is not None else 0
@@ -387,24 +387,26 @@ def process_usages(write_detail=True, write_summary=True):
         for item in usage_details[key]:
             index += 1
             logger.info('Index: {}'.format(index))
-            logger.info('regional_totals')
 
             if key == 'quickfile':
+                logger.info('Quickfile totals')
                 quickfiles_total = item.aggregate(
                     quickfiles_total=Sum('files__versions__size__sum'),
                 )['quickfiles_total']
                 quickfiles += quickfiles_total
+                logger.info('Quickfile regional_totals')
                 regional_totals = combine_regional_data(
                     regional_totals,
                     {'United States': quickfiles_total},
                 )
             else:
-                logger.info('regional_totals')
+                logger.info('Other regional_totals')
                 regional_totals = combine_regional_data(
                     regional_totals,
                     item.values('region_name').annotate(Sum('files__versions__size'))
                 )
             if key == 'preprint':
+                logger.info('Preprint totals')
                 preprints += item.aggregate(
                     preprints_total=Sum('files__versions__size__sum'),
                 )['preprints_total']
