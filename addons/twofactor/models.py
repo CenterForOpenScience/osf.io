@@ -19,7 +19,7 @@ class UserSettings(BaseUserSettings):
     @property
     def otpauth_url(self):
         return 'otpauth://totp/OSF:{}?secret={}'.format(self.owner.username,
-                                                        self.totp_secret_b32)
+                                                        self.totp_secret_b32.decode())
 
     def to_json(self, user):
         rv = super(UserSettings, self).to_json(user)
