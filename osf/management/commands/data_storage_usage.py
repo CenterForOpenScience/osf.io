@@ -3,6 +3,7 @@ import csv
 import datetime
 import logging
 import os
+import gc
 
 from collections import OrderedDict
 from datetime import date
@@ -138,7 +139,6 @@ def gather_preprint_usage(page_size):
     while data_page.exists():
         preprints_set = Preprint.objects.filter(id__in=Subquery(data_page.values('id'))).only(
             'guids',
-            'type',
             'title',
             'is_public',
             'files',
@@ -378,6 +378,8 @@ def process_usages(write_detail=True, write_summary=True, page_size=1000, size_t
     for key in usage_details.keys():
         logger.info('Processing {}'.format(key))
         for item in usage_details[key]:
+            gc.collect()
+            logger.debug(item.explain())
             index += 1
             logger.info('Index: {}'.format(index))
 
@@ -469,6 +471,7 @@ class Command(BaseCommand):
 
     # Management command handler
     def handle(self, *args, **options):
+        # gc.set_debug(gc.DEBUG_STATS)
         script_start_time = datetime.datetime.now()
         logging.info('Script started time: {}'.format(script_start_time))
         process_usages(
