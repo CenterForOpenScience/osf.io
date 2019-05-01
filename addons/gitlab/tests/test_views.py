@@ -239,13 +239,22 @@ class TestGitLabViews(OsfTestCase):
 
     # make sure permissions are not granted for editing a registration
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
-    def test_permissions(self, mock_has_auth):
+    @mock.patch('addons.gitlab.api.GitLabClient.repo')
+    def test_permissions(self, mock_repo, mock_has_auth):
         gitlab_mock = self.gitlab
         mock_has_auth.return_value = True
         connection = gitlab_mock
+        mock_repository = mock.Mock(**{
+            'user': 'fred',
+            'repo': 'mock-repo',
+            'permissions': {
+                'project_access': {'access_level': 20, 'notification_level': 3}
+            },
+        })
+        mock_repo.attributes.return_value = mock_repository
         with mock.patch('osf.models.node.AbstractNode.is_registration', new_callable=mock.PropertyMock) as mock_is_reg:
             mock_is_reg.return_value = True
-            assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, 'master'))
+            assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, 'master', repo=mock_repository))
 
     def check_hook_urls(self, urls, node, path, sha):
         url = node.web_url_for('addon_view_or_download_file', path=path, provider='gitlab')
