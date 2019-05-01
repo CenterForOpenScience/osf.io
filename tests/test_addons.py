@@ -285,7 +285,7 @@ class TestAddonLogs(OsfTestCase):
         }
         message, signature = signing.default_signer.sign_payload(options)
         return {
-            'payload': message,
+            'payload': message.decode(),
             'signature': signature,
         }
 
