@@ -195,14 +195,26 @@ class TestGitLabViews(OsfTestCase):
 
     # Tests for _check_permissions
     # make a user with no authorization; make sure check_permissions returns false
-    def test_permissions_no_auth(self):
+    @mock.patch('addons.gitlab.api.GitLabClient.repo')
+    def test_permissions_no_auth(self, mock_repo):
         gitlab_mock = self.gitlab
         # project is set to private right now
+        mock_repository = mock.Mock(**{
+            'user': 'fred',
+            'repo': 'mock-repo',
+            'permissions': {
+                'project_access': {'access_level': 20, 'notification_level': 3}
+            },
+        })
+        mock_repo.attributes.return_value = mock_repository
+
+
         connection = gitlab_mock
+
         non_authenticated_user = UserFactory()
         non_authenticated_auth = Auth(user=non_authenticated_user)
         branch = 'master'
-        assert_false(check_permissions(self.node_settings, non_authenticated_auth, connection, branch))
+        assert_false(check_permissions(self.node_settings, non_authenticated_auth, connection, branch, repo=mock_repository))
 
     # make a repository that doesn't allow push access for this user;
     # make sure check_permissions returns false
@@ -233,9 +245,17 @@ class TestGitLabViews(OsfTestCase):
         mock_branch = mock.Mock(**{
             'commit': {'id': '67890'}
         })
+        mock_repository = mock.Mock(**{
+            'user': 'fred',
+            'repo': 'mock-repo',
+            'permissions': {
+                'project_access': {'access_level': 20, 'notification_level': 3}
+            },
+        })
+        mock_repo.attributes.return_value = mock_repository
         connection.branches.return_value = mock_branch
         sha = '12345'
-        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha))
+        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha, repo=mock_repository))
 
     # make sure permissions are not granted for editing a registration
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
