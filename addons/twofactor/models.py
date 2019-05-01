@@ -14,12 +14,12 @@ class UserSettings(BaseUserSettings):
 
     @property
     def totp_secret_b32(self):
-        return b32encode(unhexlify(self.totp_secret))
+        return b32encode(unhexlify(self.totp_secret)).decode()
 
     @property
     def otpauth_url(self):
         return 'otpauth://totp/OSF:{}?secret={}'.format(self.owner.username,
-                                                        self.totp_secret_b32.decode())
+                                                        self.totp_secret_b32)
 
     def to_json(self, user):
         rv = super(UserSettings, self).to_json(user)

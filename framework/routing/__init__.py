@@ -358,6 +358,8 @@ class JSONRenderer(Renderer):
 
     class Encoder(json.JSONEncoder):
         def default(self, obj):
+            if isinstance(obj, bytes) and hasattr(obj, 'decode'):
+                return obj.decode()
             if hasattr(obj, 'to_json'):
                 try:
                     return obj.to_json()
