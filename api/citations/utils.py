@@ -154,7 +154,7 @@ def mla_reformat(node, cit):
     contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
     cit = remove_extra_period_after_right_quotation(cit)
-    cit_minus_authors = ('\xe2\x80\x9c' + cit.encode('utf-8').split('\xe2\x80\x9c')[1]).decode('utf-8')
+    cit_minus_authors = ('\xe2\x80\x9c' + cit.split('\xe2\x80\x9c')[1])
 
     # throw error if there is no visible contributor
     if contributors_list_length == 0:
@@ -177,7 +177,7 @@ def mla_reformat(node, cit):
     return new_mla + ' ' + cit_minus_authors
 
 def remove_extra_period_after_right_quotation(cit):
-    return cit.encode('utf-8').replace('\xe2\x80\x9d.', '\xe2\x80\x9d').decode('utf-8')
+    return cit.replace('\xe2\x80\x9d.', '\xe2\x80\x9d')
 
 def chicago_reformat(node, cit):
     cit = remove_extra_period_after_right_quotation(cit)
