@@ -8,8 +8,8 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
-FIELD_SEPARATOR = '\n'
-PAIR_SEPARATOR = ': '
+FIELD_SEPARATOR = b'\n'
+PAIR_SEPARATOR = b': '
 
 
 def encode(match):
