@@ -5,7 +5,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 
 import hmac
 import hashlib
-from io import StringIO
+from io import BytesIO
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -96,7 +96,7 @@ class TestConferenceUtils(OsfTestCase):
         username = 'kanye@mailinator.com'
         with assert_raises(BlacklistedEmailError) as e:
             get_or_create_user(fullname, username, is_spam=True)
-        assert_equal(e.exception.message, 'Invalid Email')
+        assert_equal(str(e.exception), 'Invalid Email')
 
 
 class ContextTestCase(OsfTestCase):
@@ -117,10 +117,10 @@ class ContextTestCase(OsfTestCase):
         data = {
             'X-Mailgun-Sscore': 0,
             'timestamp': '123',
-            'token': 'secret',
+            'token': b'secret',
             'signature': hmac.new(
-                key=settings.MAILGUN_API_KEY,
-                msg='{}{}'.format('123', 'secret'),
+                key=settings.MAILGUN_API_KEY.encode(),
+                msg='{}{}'.format('123', 'secret').encode(),
                 digestmod=hashlib.sha256,
             ).hexdigest(),
         }
@@ -140,9 +140,9 @@ class TestProvisionNode(ContextTestCase):
         self.node = ProjectFactory()
         self.user = self.node.creator
         self.conference = ConferenceFactory()
-        self.body = 'dragon on my back'
-        self.content = 'dragon attack'
-        self.attachment = StringIO(self.content)
+        self.body = b'dragon on my back'
+        self.content = b'dragon attack'
+        self.attachment = BytesIO(self.content)
         self.recipient = '{0}{1}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             self.conference.endpoint,
@@ -411,8 +411,8 @@ class TestMessage(ContextTestCase):
             assert_equal(msg.attachments, [])
 
     def test_attachments_count_one(self):
-        content = 'slightly mad'
-        sio = StringIO(content)
+        content = b'slightly mad'
+        sio = BytesIO(content)
         ctx = self.make_context(
             method='POST',
             data={
@@ -571,7 +571,7 @@ class TestConferenceIntegration(ContextTestCase):
         title = 'good songs'
         conference = ConferenceFactory()
         body = 'dragon on my back'
-        content = 'dragon attack'
+        content = b'dragon attack'
         recipient = '{0}{1}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             conference.endpoint,
@@ -581,10 +581,10 @@ class TestConferenceIntegration(ContextTestCase):
             {
                 'X-Mailgun-Sscore': 0,
                 'timestamp': '123',
-                'token': 'secret',
+                'token': b'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -629,10 +629,10 @@ class TestConferenceIntegration(ContextTestCase):
             {
                 'X-Mailgun-Sscore': 0,
                 'timestamp': '123',
-                'token': 'secret',
+                'token': b'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -660,7 +660,7 @@ class TestConferenceIntegration(ContextTestCase):
         title = 'no full name only email'
         conference = ConferenceFactory()
         body = 'dragon on my back'
-        content = 'dragon attack'
+        content = b'dragon attack'
         recipient = '{0}{1}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             conference.endpoint,
@@ -670,10 +670,10 @@ class TestConferenceIntegration(ContextTestCase):
             {
                 'X-Mailgun-Sscore': 0,
                 'timestamp': '123',
-                'token': 'secret',
+                'token': b'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -711,7 +711,7 @@ class TestConferenceIntegration(ContextTestCase):
         ProjectFactory(creator=user, title=title)
 
         body = 'Greg is a good plant'
-        content = 'Long may they reign.'
+        content = b'Long may they reign.'
         recipient = '{0}{1}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             conference.endpoint,
@@ -721,10 +721,10 @@ class TestConferenceIntegration(ContextTestCase):
             {
                 'X-Mailgun-Sscore': 0,
                 'timestamp': '123',
-                'token': 'secret',
+                'token': b'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
