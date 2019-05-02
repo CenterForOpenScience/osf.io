@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import logging
 
 from django.db.models import Subquery
 from flask import request
@@ -21,6 +22,8 @@ from website.ember_osf_web.views import use_ember_app
 from addons.base import generic_views, exceptions
 from addons.iqbrims.serializer import IQBRIMSSerializer
 from addons.iqbrims.models import NodeSettings as IQBRIMSNodeSettings
+
+logger = logging.getLogger(__name__)
 
 SHORT_NAME = 'iqbrims'
 FULL_NAME = 'IQB-RIMS'
@@ -92,9 +95,38 @@ def iqbrims_set_status(**kwargs):
         status = request.json['data']['attributes']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
-    logger.info('Status: {}'.format(status))
-    iqbrims.set_status(status)
-    return {}
+    all_status = iqbrims.get_status()
+    all_status.update(status)
+    logger.info('Status: patch={}, all={}'.format(status, all_status))
+    iqbrims.set_status(all_status)
+    if all_status['state'] in ['deposit', 'check'] and 'labo_id' in all_status:
+        auth = kwargs['auth']
+        register_type = all_status['state']
+        labo_name = all_status['labo_id']
+
+        inst_ids = node.affiliated_institutions.values('id')
+        try:
+            opt = RdmAddonOption.objects.filter(
+                provider=SHORT_NAME,
+                institution_id__in=Subquery(inst_ids),
+                management_node__isnull=False,
+                is_allowed=True
+            ).first()
+        except RdmAddonOption.DoesNotExist:
+            raise HTTPError(http.FORBIDDEN)
+
+        # import auth
+        _iqbrims_import_auth_from_management_node(node, iqbrims, opt.management_node)
+
+        # create folder
+        root_folder = _iqbrims_init_folders(node, opt.management_node, register_type, labo_name)
+
+        # mount container
+        iqbrims.set_folder(root_folder, auth=auth)
+        iqbrims.save()
+
+    return {'data': {'id': node._id, 'type': 'iqbrims-status',
+                     'attributes': iqbrims.get_status()}}
 
 @must_have_addon(SHORT_NAME, 'node')
 @must_have_permission(permissions.WRITE)

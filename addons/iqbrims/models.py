@@ -2,6 +2,7 @@
 """Persistence layer for the IQB-RIMS addon.
 """
 import os
+import json
 
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)

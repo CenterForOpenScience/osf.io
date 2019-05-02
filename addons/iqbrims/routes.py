@@ -100,7 +100,7 @@ api_routes = {
         Rule([
             '/project/<pid>/iqbrims/status',
             '/project/<pid>/node/<nid>/iqbrims/status',
-        ], 'put', views.iqbrims_set_status, json_renderer),
+        ], 'patch', views.iqbrims_set_status, json_renderer),
     ],
     'prefix': '/api/v1'
 }
