@@ -839,7 +839,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
-        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+        assert_equal(location.url, file_node.generate_waterbutler_url(format='pdf', action='download', direct=None, version=''))
 
 
     def test_action_download_redirects_to_download_with_path_uppercase(self):

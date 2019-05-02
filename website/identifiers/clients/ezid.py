@@ -45,7 +45,7 @@ class EzidClient(BaseClient, DataCiteClient):
                 data=utils.to_anvl(metadata or {}),
             )
             if resp.status_code != 201:
-                if 'identifier already exists' in resp.content:
+                if b'identifier already exists' in resp.content:
                     raise exceptions.IdentifierAlreadyExists()
                 else:
                     raise exceptions.ClientResponseError(resp)

@@ -98,7 +98,7 @@ class TestAuthUtils(OsfTestCase):
                                      mail=mails.WELCOME)
 
 
-        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie())
+        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
         res = self.app.get('/confirm/{}/{}'.format(user._id, token))
 
         res = res.follow()
