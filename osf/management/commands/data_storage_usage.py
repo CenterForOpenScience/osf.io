@@ -9,6 +9,7 @@ from collections import OrderedDict
 from datetime import date
 from django.core.management.base import BaseCommand
 from django.db.models import BooleanField, Case, CharField, Count, F, OuterRef, QuerySet, Subquery, Sum, Value, When
+from django.db.utils import OperationalError
 
 from osf.models import AbstractNode, Node, Preprint, Registration, TrashedFile
 from addons.osfstorage.models import NodeSettings, Region
@@ -275,12 +276,19 @@ def combine_regional_data(*args):
     regional_totals = {}
     for region_data_item in args:
         # logger.info('Combine regional item: {}'.format(region_data_item))
-        if isinstance(region_data_item, QuerySet):
-            region_data_set = convert_regional_data(region_data_item)
-        else:
-            region_data_set = region_data_item
-        for key in region_data_set.keys():
-            regional_totals[key] = regional_totals.get(key, 0) + region_data_set.get(key, 0)
+            if isinstance(region_data_item, QuerySet):
+                try:
+                    region_data_set = convert_regional_data(region_data_item)
+                except OperationalError as e:
+                    logger.error('Operational error: {}'.format(e))
+                    logger.error('Data: {}'.format(region_data_item.query))
+                    logger.error('Skipping this data')
+                    continue
+            else:
+                region_data_set = region_data_item
+            for key in region_data_set.keys():
+                regional_totals[key] = regional_totals.get(key, 0) + region_data_set.get(key, 0)
+
     return regional_totals
 
 
@@ -379,9 +387,9 @@ def process_usages(write_detail=True, write_summary=True, page_size=1000, size_t
         logger.info('Processing {}'.format(key))
         for item in usage_details[key]:
             gc.collect()
-            logger.debug(item.explain())
             index += 1
             logger.info('Index: {}'.format(index))
+            logger.debug(item.explain())
 
             if key == 'quickfile':
                 logger.info('Quickfile totals at {}'.format(datetime.datetime.now()))
