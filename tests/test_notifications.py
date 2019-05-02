@@ -734,12 +734,12 @@ class TestNotificationUtils(OsfTestCase):
         node_subscription_ids = [x._id for x in utils.get_all_node_subscriptions(self.user, self.node,
                                                                           user_subscriptions=user_subscriptions)]
         expected_node_subscription_ids = [x._id for x in self.node_subscription]
-        assert_items_equal(node_subscription_ids, expected_node_subscription_ids)
+        assert_list_equal(node_subscription_ids, expected_node_subscription_ids)
 
     def test_get_all_node_subscriptions_given_user_and_node(self):
         node_subscription_ids = [x._id for x in utils.get_all_node_subscriptions(self.user, self.node)]
         expected_node_subscription_ids = [x._id for x in self.node_subscription]
-        assert_items_equal(node_subscription_ids, expected_node_subscription_ids)
+        assert_list_equal(node_subscription_ids, expected_node_subscription_ids)
 
     def test_get_configured_project_ids_does_not_return_user_or_node_ids(self):
         configured_nodes = utils.get_configured_projects(self.user)

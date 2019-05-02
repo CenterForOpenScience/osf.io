@@ -81,7 +81,7 @@ def format_creators(preprint):
         if contributor.external_identity.get('ORCID'):
             verified = list(contributor.external_identity['ORCID'].values())[0] == 'VERIFIED'
             if verified:
-                creator.append(E.nameIdentifier(contributor.external_identity['ORCID'].keys()[0], nameIdentifierScheme='ORCID', schemeURI='http://orcid.org/'))
+                creator.append(E.nameIdentifier(list(contributor.external_identity['ORCID'].keys())[0], nameIdentifierScheme='ORCID', schemeURI='http://orcid.org/'))
 
         creators.append(creator)
 

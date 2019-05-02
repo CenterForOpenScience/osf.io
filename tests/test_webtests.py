@@ -226,7 +226,7 @@ class TestAUser(OsfTestCase):
         non_ascii = to_mongo_key('WöRlÐé')
         WikiPage.objects.create_for_node(project, 'WöRlÐé', 'new content', Auth(self.user))
         wv = WikiVersion.objects.get_for_node(project, non_ascii)
-        assert wv.wiki_page.page_name.upper() == non_ascii.decode('utf-8').upper()
+        assert wv.wiki_page.page_name.upper() == non_ascii.upper()
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
         user2 = UserFactory()
