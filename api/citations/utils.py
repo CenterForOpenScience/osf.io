@@ -154,7 +154,7 @@ def mla_reformat(node, cit):
     contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
     cit = remove_extra_period_after_right_quotation(cit)
-    cit_minus_authors = ('\xe2\x80\x9c' + cit.split('\xe2\x80\x9c')[1])
+    cit_minus_authors = ('“' + cit.split('“')[1])   # watch out these double quotes are “ \xe2\x80\x9c not normal "s
 
     # throw error if there is no visible contributor
     if contributors_list_length == 0:
@@ -177,7 +177,7 @@ def mla_reformat(node, cit):
     return new_mla + ' ' + cit_minus_authors
 
 def remove_extra_period_after_right_quotation(cit):
-    return cit.replace('\xe2\x80\x9d.', '\xe2\x80\x9d')
+    return cit.replace('”.', '”')  # watch out these double quotes are “ \xe2\x80\x9c not normal "s
 
 def chicago_reformat(node, cit):
     cit = remove_extra_period_after_right_quotation(cit)
