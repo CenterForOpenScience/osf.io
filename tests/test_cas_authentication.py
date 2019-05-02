@@ -179,7 +179,7 @@ class TestCASClient(OsfTestCase):
             responses.Response(
                 responses.POST,
                 url,
-                body={'client_id': client_id,
+                json={'client_id': client_id,
                       'client_secret': client_secret},
                 status=204
             )
@@ -197,7 +197,7 @@ class TestCASClient(OsfTestCase):
             responses.Response(
                 responses.POST,
                 url,
-                body={'client_id': client_id,
+                json={'client_id': client_id,
                       'client_secret': client_secret},
                 status=400
             )
