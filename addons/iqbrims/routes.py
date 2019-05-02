@@ -97,10 +97,22 @@ api_routes = {
             '/project/<pid>/iqbrims/status',
             '/project/<pid>/node/<nid>/iqbrims/status',
         ], 'get', views.iqbrims_get_status, json_renderer),
+
         Rule([
             '/project/<pid>/iqbrims/status',
             '/project/<pid>/node/<nid>/iqbrims/status',
         ], 'patch', views.iqbrims_set_status, json_renderer),
+
+        Rule([
+            '/project/<pid>/iqbrims/notify',
+            '/project/<pid>/node/<nid>/iqbrims/notify',
+        ], 'post', views.iqbrims_post_notify, json_renderer),
+
+        Rule([
+            '/project/<pid>/iqbrims/storage/<folder>',
+            '/project/<pid>/node/<nid>/iqbrims/storage/<folder>',
+        ], 'get', views.iqbrims_get_storage, json_renderer),
+
     ],
     'prefix': '/api/v1'
 }

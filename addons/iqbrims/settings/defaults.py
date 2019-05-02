@@ -14,3 +14,8 @@ OAUTH_SCOPE = [
 ]
 OAUTH_BASE_URL = 'https://accounts.google.com/o/oauth2/'
 API_BASE_URL = 'https://www.googleapis.com/'
+
+FLOWABLE_HOST = 'http://localhost:9977/flowable-rest/'
+FLOWABLE_RESEARCH_APP_ID = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
+FLOWABLE_USER = 'testuser'
+FLOWABLE_PASSWORD = 'testpass'

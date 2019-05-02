@@ -5,7 +5,7 @@ import logging
 from django.db.models import Subquery
 from flask import request
 
-from addons.iqbrims.client import IQBRIMSClient
+from addons.iqbrims.client import IQBRIMSClient, IQBRIMSFlowableClient
 from framework.exceptions import HTTPError
 
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
@@ -18,6 +18,7 @@ from website.project.decorators import (
     must_have_permission,
 )
 from website.ember_osf_web.views import use_ember_app
+from addons.iqbrims import settings
 
 from addons.base import generic_views, exceptions
 from addons.iqbrims.serializer import IQBRIMSSerializer
@@ -96,13 +97,23 @@ def iqbrims_set_status(**kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
     all_status = iqbrims.get_status()
+    last_status = all_status.copy()
     all_status.update(status)
     logger.info('Status: patch={}, all={}'.format(status, all_status))
-    iqbrims.set_status(all_status)
     if all_status['state'] in ['deposit', 'check'] and 'labo_id' in all_status:
         auth = kwargs['auth']
         register_type = all_status['state']
         labo_name = all_status['labo_id']
+
+        if last_status['state'] != register_type:
+            app_id = None
+            if register_type == 'deposit':
+                app_id = settings.FLOWABLE_RESEARCH_APP_ID
+            elif register_type == 'check':
+                app_id = settings.FLOWABLE_SCAN_APP_ID
+            flowable = IQBRIMSFlowableClient(app_id)
+            logger.info('Starting...: app_id={} project_id={}'.format(app_id, node._id))
+            flowable.start_workflow(node._id, node.title)
 
         inst_ids = node.affiliated_institutions.values('id')
         try:
@@ -125,8 +136,27 @@ def iqbrims_set_status(**kwargs):
         iqbrims.set_folder(root_folder, auth=auth)
         iqbrims.save()
 
+    iqbrims.set_status(all_status)
     return {'data': {'id': node._id, 'type': 'iqbrims-status',
                      'attributes': iqbrims.get_status()}}
+
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+def iqbrims_post_notify(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    iqbrims = node.get_addon('iqbrims')
+    # TODO
+    logger.info('Notified: {}'.format(request.data))
+
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+def iqbrims_get_storage(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    iqbrims = node.get_addon('iqbrims')
+    folder = kwargs['folder']
+    # TODO
+    logger.info('Checking Storage: {}'.format(folder))
+    return {'status': 'complete'}
 
 @must_have_addon(SHORT_NAME, 'node')
 @must_have_permission(permissions.WRITE)

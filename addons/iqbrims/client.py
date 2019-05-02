@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import requests
 
 from framework.exceptions import HTTPError
 
@@ -80,3 +81,26 @@ class IQBRIMSClient(BaseClient):
             return False, exists[0]
         else:
             return True, self.create_folder(folder_id, title)
+
+
+class IQBRIMSFlowableClient(object):
+
+    def __init__(self, app_id):
+        self.app_id = app_id
+
+    def start_workflow(self, project_id, project_title):
+        url = '{}service/runtime/process-instances'.format(settings.FLOWABLE_HOST)
+        payload = { 'processDefinitionId': self.app_id,
+                    'variables': [ { 'name': 'projectId',
+                                     'type': 'string',
+                                     'value': '{}'.format(project_id) },
+                                   { 'name': 'paperTitle',
+                                     'type': 'string',
+                                     'value': project_title } ] }
+        headers = { 'Content-Type': 'application/json',
+                    'Accept': 'application/json' }
+        response = requests.post(url, data=json.dumps(payload),
+                                 headers=headers,
+                                 auth=(settings.FLOWABLE_USER,
+                                       settings.FLOWABLE_PASSWORD))
+        response.raise_for_status()
