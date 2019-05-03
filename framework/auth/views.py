@@ -622,7 +622,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     except exceptions.EmailConfirmTokenError as e:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': e.message_short,
-            'message_long': e.message_long
+            'message_long': str(e)
         })
 
     if is_initial_confirmation:
@@ -700,7 +700,7 @@ def unconfirmed_email_add(auth=None):
     except exceptions.EmailConfirmTokenError as e:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_short': e.message_short,
-            'message_long': e.message_long
+            'message_long': str(e)
         })
 
     user.save()

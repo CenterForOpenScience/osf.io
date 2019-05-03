@@ -633,9 +633,9 @@ class TestSubscriptionManipulations(OsfTestCase):
 
     def test_subscription_user_union(self):
         result = utils.subscriptions_users_union(self.emails_1, self.emails_2)
-        assert set(self.union_1_2['email_transactional']) ==  set(result['email_transactional'])
-        assert set(self.union_1_2['none']) ==  set(result['none'])
-        assert set(self.union_1_2['email_digest']) ==  set(result['email_digest'])
+        assert set(self.union_1_2['email_transactional']) == set(result['email_transactional'])
+        assert set(self.union_1_2['none']) == set(result['none'])
+        assert set(self.union_1_2['email_digest']) == set(result['email_digest'])
 
     def test_remove_duplicates(self):
         result = utils.subscriptions_users_remove_duplicates(
@@ -647,7 +647,10 @@ class TestSubscriptionManipulations(OsfTestCase):
         result = utils.subscriptions_users_remove_duplicates(
             self.emails_1, self.emails_1, remove_same=True
         )
-        assert_equal({email_digest: [], email_transactional: [], 'none': ['h1234', 'g1234', 'i1234']}, result)
+
+        assert set(result['none']) == set(['h1234', 'g1234', 'i1234'])
+        assert result['email_digest'] == []
+        assert result['email_transactional'] == []
 
 
 wb_path = u'5581cb50a24f710b0f4623f9'
