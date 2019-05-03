@@ -2442,7 +2442,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         }
         message, signature = signing.default_signer.sign_payload(options)
         return {
-            'payload': message,
+            'payload': message.decode(),
             'signature': signature,
         }
 
@@ -2540,7 +2540,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
 
     def test_action_downloads_contrib(self):
         url = self.preprint.api_url_for('create_waterbutler_log')
-        download_actions=('download_file', 'download_zip')
+        download_actions = ('download_file', 'download_zip')
         wb_url = settings.WATERBUTLER_URL + '?version=1'
         for action in download_actions:
             payload = self.build_payload(metadata={'path': '/testfile',

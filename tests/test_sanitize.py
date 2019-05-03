@@ -14,7 +14,7 @@ class TestSanitize(unittest.TestCase):
             'bar'
         )
         assert_equal(
-            sanitize.strip_html(b'<foo>bar</foo>'),
+            sanitize.strip_html('<foo>bar</foo>'),
             'bar'
         )
 

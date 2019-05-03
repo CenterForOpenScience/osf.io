@@ -39,7 +39,7 @@ class TokenHandler(object):
                     'message_long': e.message
                 }
             )
-        return cls(encoded_token=encoded_token, payload=payload)
+        return cls(encoded_token=encoded_token.decode(), payload=payload)
 
     @classmethod
     def from_payload(cls, payload):
