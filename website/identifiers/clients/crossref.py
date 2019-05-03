@@ -191,7 +191,7 @@ class CrossRefClient(AbstractIdentifierClient):
             if name_parts.get('suffix'):
                 person.append(element.suffix(remove_control_characters(name_parts['suffix'])))
             if contributor.external_identity.get('ORCID'):
-                orcid = contributor.external_identity['ORCID'].keys()[0]
+                orcid = list(contributor.external_identity['ORCID'].keys())[0]
                 verified = list(contributor.external_identity['ORCID'].values())[0] == 'VERIFIED'
                 if orcid and verified:
                     person.append(

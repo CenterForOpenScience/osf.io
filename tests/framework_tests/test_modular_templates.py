@@ -152,7 +152,7 @@ class WebRendererTestCase(OsfTestCase):
 
         self.assertIn(
             'foo:bar',
-            resp.data
+            resp.data.decode()
         )
 
     def test_http_error_raised(self):

@@ -375,7 +375,7 @@ class TestPrivateLinkView(OsfTestCase):
             'is being viewed through a private, view-only link. '
             'Anyone with the link can view this project. Keep '
             'the link safe.',
-            res.body
+            res.body.decode()
         )
 
     def test_no_warning_for_read_only_user_with_invalid_link(self):
