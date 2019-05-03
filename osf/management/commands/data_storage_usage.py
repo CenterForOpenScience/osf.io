@@ -38,9 +38,9 @@ def gather_node_usage(page_size):
     region = Region.objects.filter(id=OuterRef('region_id'))
     node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('name')[:1])).filter(
         owner_id=OuterRef('pk'))
-    node_limit = Node.objects.only(
+    node_limit = Node.objects.exclude(type='osf.collection').only(
         'id',
-    ).order_by('created')
+    ).order_by('id')
     queries = []
     page_start = 0
     page_end = page_start + page_size
@@ -87,7 +87,7 @@ def gather_registration_usage(page_size):
         owner_id=OuterRef('pk'))
     registration_limit = Registration.objects.only(
         'id',
-    ).order_by('created')
+    ).order_by('id')
 
     queries = []
     page_start = 0
@@ -131,7 +131,7 @@ def gather_preprint_usage(page_size):
     logger.info('Gathering preprint usage at {}'.format(datetime.datetime.now()))
     preprint_limit = Preprint.objects.only(
         'id',
-    ).order_by('created')
+    ).order_by('id')
 
     queries = []
     page_start = 0
@@ -180,7 +180,7 @@ def gather_quickfile_usage(page_size):
         type='osf.quickfilesnode',
     ).only(
         'id',
-    ).order_by('created')
+    ).order_by('id')
     queries = []
     page_start = 0
     page_end = page_start + page_size
