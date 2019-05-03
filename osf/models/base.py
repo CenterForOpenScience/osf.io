@@ -49,7 +49,7 @@ class QuerySetExplainMixin:
     def explain(self):
         cursor = connections[self.db].cursor()
         query, params = self.query.sql_with_params()
-        cursor.execute('explain %s' % query, params)
+        cursor.execute('explain analyze verbose %s' % query, params)
         return '\n'.join(r[0] for r in cursor.fetchall())
 
 
