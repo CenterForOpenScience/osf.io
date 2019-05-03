@@ -46,7 +46,6 @@ def gather_node_usage(page_size):
     page_end = page_start + page_size
     data_page = node_limit[page_start:page_end]
     while data_page.exists():
-        logger.debug(data_page.explain())
         first_node = data_page.all().first().id
         last_node = data_page.all().last().id
         logger.info('Node data {} to {}'.format(page_start, page_end))
@@ -392,10 +391,9 @@ def process_usages(write_detail=True, write_summary=True, page_size=1000, size_t
     for key in usage_details.keys():
         logger.info('Processing {}'.format(key))
         for item in usage_details[key]:
-            gc.collect()
             index += 1
             logger.info('Index: {}'.format(index))
-            logger.debug(item.explain())
+            logger.debug(item.explain('analyze'))
 
             if key == 'quickfile':
                 logger.info('Quickfile totals at {}'.format(datetime.datetime.now()))
