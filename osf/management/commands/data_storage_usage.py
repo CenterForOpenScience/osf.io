@@ -46,8 +46,13 @@ def gather_node_usage(page_size):
     page_end = page_start + page_size
     data_page = node_limit[page_start:page_end]
     while data_page.exists():
+        first_node = data_page.all().first().id
+        last_node = data_page.all().last().id
         logger.info('Node data {} to {}'.format(page_start, page_end))
-        node_set = Node.objects.filter(id__in=Subquery(data_page.values('id'))).only(
+        node_set = Node.objects.order_by('id').exclude(type='osf.collection').filter(
+            id__gte=first_node,
+            id__lt=last_node
+        ).only(
             'guids',
             'type',
             'title',
