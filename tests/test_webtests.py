@@ -390,7 +390,7 @@ class TestPrivateLinkView(OsfTestCase):
             'is being viewed through a private, view-only link. '
             'Anyone with the link can view this project. Keep '
             'the link safe.',
-            res.body
+            res.body.decode()
         )
 
 
