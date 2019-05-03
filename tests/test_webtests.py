@@ -133,7 +133,7 @@ class TestAUser(OsfTestCase):
             permissions=['read', 'write', 'admin'],
             save=True)
         res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
-        assert_in('OSF Storage', res)
+        assert_in('OSF Storage', res.body.decode())
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard

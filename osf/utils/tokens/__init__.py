@@ -39,6 +39,10 @@ class TokenHandler(object):
                     'message_long': e.message
                 }
             )
+
+        if isinstance(encoded_token, bytes):
+            encoded_token = encoded_token.decode()
+
         return cls(encoded_token=encoded_token.decode(), payload=payload)
 
     @classmethod
