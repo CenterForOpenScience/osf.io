@@ -15,18 +15,6 @@ from pprint import pformat as pp
 from urlparse import urlparse
 from django.utils import timezone
 
-from website import settings
-
-# TODO import
-map_hostname = settings.MAPCORE_HOSTNAME
-map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
-map_token_path = settings.MAPCORE_TOKEN_PATH
-map_refresh_path = settings.MAPCORE_REFRESH_PATH
-map_clientid = settings.MAPCORE_CLIENTID
-map_secret = settings.MAPCORE_SECRET
-map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
-my_home = settings.DOMAIN
-
 logger = logging.getLogger(__name__)
 
 # initialize for standalone exec
@@ -39,7 +27,16 @@ if __name__ == '__main__':
 from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.map import MAPProfile
+
 from website.util import web_url_for
+from website.settings import (MAPCORE_HOSTNAME,
+                              MAPCORE_AUTHCODE_PATH,
+                              MAPCORE_TOKEN_PATH,
+                              MAPCORE_CLIENTID,
+                              MAPCORE_SECRET,
+                              MAPCORE_AUTHCODE_MAGIC,
+                              DOMAIN)
+
 from nii.mapcore_api import (MAPCore, MAPCoreException, VERIFY,
                              MAPCORE_DEBUG, MAPCoreLogger,
                              mapcore_group_member_is_private)
@@ -51,7 +48,10 @@ if MAPCORE_DEBUG:
 
 
 def mapcore_is_enabled():
-    return True if map_clientid else False
+    from website.settings import STATIC_URL_PATH
+    sys.stderr.write('mapcore_is_enabled: STATIC_URL_PATH={}\n'.format(STATIC_URL_PATH))
+    sys.stderr.write('mapcore_is_enabled: MAPCORE_CLIENTID={}\n'.format(MAPCORE_CLIENTID))
+    return True if MAPCORE_CLIENTID else False
 
 
 # True or Exception
@@ -155,15 +155,6 @@ def mapcore_request_authcode(**kwargs):
     :param params  dict of GET parameters in request
     '''
 
-    # logger.info("enter mapcore_get_authcode.")
-    # logger.info("MAPCORE_HOSTNAME: " + map_hostname)
-    # logger.info("MAPCORE_AUTHCODE_PATH: " + map_authcode_path)
-    # logger.info("MAPCORE_TOKEN_PATH: " + map_token_path)
-    # logger.info("MAPCORE_REFRESH_PATH: " + map_refresh_path)
-    # logger.info("MAPCORE_CLIENTID: " + map_clientid)
-    # logger.info("MAPCORE_SECRET: " + map_secret)
-    # logger.info("MAPCORE_REIRECT: " + map_redirect)
-
     # parameter check
     if 'request' in kwargs.keys():
         kwargs = kwargs['request']
@@ -173,15 +164,15 @@ def mapcore_request_authcode(**kwargs):
     if next_url is not None:
         state_str = next_url.encode('base64')
     else:
-        state_str = map_authcode_magic
+        state_str = MAPCORE_AUTHCODE_MAGIC
 
     # make call
-    url = map_hostname + map_authcode_path
-    redirect_uri = settings.DOMAIN + web_url_for('mapcore_oauth_complete')[1:]
+    url = MAPCORE_HOSTNAME + MAPCORE_AUTHCODE_PATH
+    redirect_uri = DOMAIN + web_url_for('mapcore_oauth_complete')[1:]
     logger.info('mapcore_request_authcode: redirect_uri is [' + redirect_uri + ']')
     params = {'response_type': 'code',
               'redirect_uri': redirect_uri,
-              'client_id': map_clientid,
+              'client_id': MAPCORE_CLIENTID,
               'state': state_str}
     query = url + '?' + urllib.urlencode(params)
     logger.info('redirect to AuthCode request: ' + query)
@@ -213,7 +204,7 @@ def mapcore_receive_authcode(user, params):
     authcode = params['code']
     # authcode = 'AUTHORIZATIONCODESAMPLE'
     # eppn = 'foobar@esample.com'
-    redirect_uri = settings.DOMAIN + web_url_for('mapcore_oauth_complete')[1:]
+    redirect_uri = DOMAIN + web_url_for('mapcore_oauth_complete')[1:]
     (access_token, refresh_token) = mapcore_get_accesstoken(authcode, redirect_uri)
 
     # set mAP attribute into current user
@@ -239,9 +230,9 @@ def mapcore_receive_authcode(user, params):
         logger.info('refresh_token: ' + me.map_profile.oauth_refresh_token)
     """
 
-    if params['state'] != map_authcode_magic:
+    if params['state'] != MAPCORE_AUTHCODE_MAGIC:
         return params['state'].decode('base64')  # user defined state string
-    return my_home   # redirect to home -> will redirect to dashboard
+    return DOMAIN   # redirect to home -> will redirect to dashboard
 
 
 def mapcore_get_accesstoken(authcode, redirect):
@@ -251,8 +242,8 @@ def mapcore_get_accesstoken(authcode, redirect):
     '''
 
     logger.info('mapcore_get_accesstoken started.')
-    url = map_hostname + map_token_path
-    basic_auth = (map_clientid, map_secret)
+    url = MAPCORE_HOSTNAME + MAPCORE_TOKEN_PATH
+    basic_auth = (MAPCORE_CLIENTID, MAPCORE_SECRET)
     param = {
         'grant_type': 'authorization_code',
         'redirect_uri': redirect,
@@ -278,7 +269,7 @@ def mapcore_refresh_accesstoken(user, force=False):
     '''
 
     logger.info('refuresh token for [' + user.eppn + '].')
-    url = map_hostname + map_token_path
+    url = MAPCORE_HOSTNAME + MAPCORE_TOKEN_PATH
 
     # access token availability check
     if not force:
@@ -289,7 +280,7 @@ def mapcore_refresh_accesstoken(user, force=False):
             return 0  # notihng to do
 
     # do refresh
-    basic_auth = (map_clientid, map_secret)
+    basic_auth = (MAPCORE_CLIENTID, MAPCORE_SECRET)
     param = {
         'grant_type': 'refresh_token',
         'refresh_token': user.map_profile.oauth_refresh_token
@@ -1099,7 +1090,7 @@ def user_lock_test(user):
 if __name__ == '__main__':
     print('In Main')
 
-    if False:
+    if True:
         #TODO use argv
         # API呼び出しの権限テスト
         me1 = OSFUser.objects.get(eppn='nagahara@openidp.nii.ac.jp')
