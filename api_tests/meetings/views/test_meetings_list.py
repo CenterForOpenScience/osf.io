@@ -5,33 +5,41 @@ from framework.auth.core import Auth
 
 from osf_tests.factories import ConferenceFactory, ProjectFactory, AuthUserFactory
 
+def create_eligible_conference(active=True):
+    conference = ConferenceFactory(active=active)
+    for i in range(0, 5):
+        project = ProjectFactory(is_public=True)
+        project.add_tag(conference.endpoint, Auth(project.creator))
+        project.save()
+    return conference
 
 @pytest.mark.django_db
 class TestMeetingsList:
 
     @pytest.fixture()
-    def meetings(self):
-        return [ConferenceFactory(), ConferenceFactory(), ConferenceFactory()]
+    def meeting_one(self):
+        return ConferenceFactory()
 
     @pytest.fixture()
-    def meeting_ids(self, meetings):
-        return [meeting.endpoint for meeting in meetings]
+    def meeting_two(self):
+        return create_eligible_conference()
+
+    @pytest.fixture()
+    def meeting_three(self):
+        return create_eligible_conference()
 
     @pytest.fixture()
     def url(self):
         return '/_/meetings/'
 
     @pytest.fixture()
-    def res(self, app, meetings, url):
+    def res(self, app, meeting_one, meeting_two, meeting_three, url):
         return app.get(url)
 
-    @pytest.fixture()
-    def data(self, res):
-        return res.json['data']
-
-    def test_meeting_list(self, res, data, meeting_ids):
+    def test_meeting_list(self, res, meeting_one, meeting_two, meeting_three):
         assert res.status_code == 200
-        assert set(meeting_ids) == set([meeting['id'] for meeting in data])
+        assert len(res.json['data']) == 2
+        assert set([meeting['id']for meeting in res.json['data']]) == set([meeting_two.endpoint, meeting_three.endpoint])
 
 
 @pytest.mark.django_db
@@ -39,15 +47,33 @@ class TestMeetingListFilter:
 
     @pytest.fixture()
     def meeting_one(self):
-        return ConferenceFactory(name='Science and Reproducibility', location='San Diego, CA', start_date=(timezone.now() - datetime.timedelta(days=1)))
+        # Will have 6 submissions total
+        conference = create_eligible_conference()
+        conference.name = 'Science and Reproducibility'
+        conference.location = 'San Diego, CA'
+        conference.start_date = (timezone.now() - datetime.timedelta(days=1))
+        conference.save()
+        return conference
 
     @pytest.fixture()
     def meeting_two(self):
-        return ConferenceFactory(name='Open Science', location='Richmond, VA', start_date=(timezone.now() - datetime.timedelta(days=30)))
+        # Will have 5 submissions total
+        conference = create_eligible_conference()
+        conference.name = 'Open Science'
+        conference.location = 'Richmond, VA'
+        conference.start_date = (timezone.now() - datetime.timedelta(days=30))
+        conference.save()
+        return conference
 
     @pytest.fixture()
     def meeting_three(self):
-        return ConferenceFactory(name='Neurons', location='Charlottesville, VA', start_date=(timezone.now() - datetime.timedelta(days=5)))
+        # Will have 7 submissions total
+        conference = create_eligible_conference()
+        conference.name = 'Neurons'
+        conference.location = 'Charlottesville, VA'
+        conference.start_date = (timezone.now() - datetime.timedelta(days=5))
+        conference.save()
+        return conference
 
     @pytest.fixture()
     def meeting_one_submission(self, meeting_one, user):

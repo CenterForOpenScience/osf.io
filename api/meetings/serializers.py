@@ -32,14 +32,15 @@ class MeetingSerializer(JSONAPISerializer):
     info_url = ser.URLField(read_only=True)
     logo_url = ser.URLField(read_only=True)
     field_names = ser.DictField(read_only=True)
-    # TODO - decide: can this be SerializerMethodField for easy sorting,
-    # or do we need to get sorting working on related counts?
-    submissions_count = ser.SerializerMethodField()
+    # num_submissions is cached in the view
+    submissions_count = ser.IntegerField(source='num_submissions', read_only=True)
+    active = ser.BooleanField(read_only=True)
+    submission_1_email = ser.SerializerMethodField()
+    submission_2_email = ser.SerializerMethodField()
 
     submissions = RelationshipField(
         related_view='meetings:meeting-submissions',
         related_view_kwargs={'meeting_id': '<endpoint>'},
-        related_meta={'count': 'get_submissions_count'},
     )
 
     links = LinksField({
@@ -47,8 +48,16 @@ class MeetingSerializer(JSONAPISerializer):
         'html': 'get_absolute_html_url',
     })
 
-    def get_submissions_count(self, obj):
-        return obj.submissions.count()
+    def format_submission_email(self, obj, submission_field):
+        if obj.active:
+            return '{}-{}@osf.io'.format(obj.endpoint, obj.field_names.get(submission_field))
+        return ''
+
+    def get_submission_1_email(self, obj):
+        return self.format_submission_email(obj, 'submission1')
+
+    def get_submission_2_email(self, obj):
+        return self.format_submission_email(obj, 'submission2')
 
     def get_absolute_url(self, obj):
         return absolute_reverse('meetings:meeting-detail', kwargs={'meeting_id': obj.endpoint})

@@ -13,7 +13,7 @@ from api.meetings.permissions import IsPublic
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Conference
-
+from website import settings
 
 class MeetingMixin(object):
     """Mixin with convenience method get_meeting
@@ -28,6 +28,9 @@ class MeetingMixin(object):
             self.request,
             display_name='meeting',
         )
+        # caching num_submissions on the Conference object
+        meeting.num_submissions = meeting.submissions.count()
+        meeting.save()
         return meeting
 
 
@@ -54,7 +57,12 @@ class MeetingList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        return Conference.objects.filter(is_meeting=True)
+        conferences = Conference.objects.filter(is_meeting=True)
+        for conference in conferences:
+            # caching num_submissions on the Conference objects
+            conference.num_submissions = conference.submissions.count()
+            conference.save()
+        return conferences.filter(num_submissions__gte=settings.CONFERENCE_MIN_COUNT)
 
     # overrides ListAPIView
     def get_queryset(self):

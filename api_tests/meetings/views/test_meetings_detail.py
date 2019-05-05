@@ -40,4 +40,17 @@ class TestMeetingDetail:
         assert data['id'] == meeting.endpoint
         assert data['type'] == 'meetings'
         assert data['attributes']['name'] == meeting.name
-        assert data['relationships']['submissions']['links']['related']['meta']['count'] == 1
+        assert data['attributes']['submission_1_email'] == 'osf2019-poster@osf.io'
+        assert data['attributes']['submission_2_email'] == 'osf2019-talk@osf.io'
+        assert data['attributes']['submissions_count'] == 1
+        assert data['attributes']['active'] is True
+
+        # Inactive meetings do not serialize submission emails
+        meeting.active = False
+        meeting.save()
+
+        res = app.get(url)
+        data = res.json['data']
+        assert data['attributes']['submission_1_email'] == ''
+        assert data['attributes']['submission_2_email'] == ''
+        assert data['attributes']['active'] is False
