@@ -152,11 +152,11 @@ class TestMeetingListFilter:
         assert set([meeting_one.endpoint, meeting_three.endpoint, meeting_two.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
 
         # Sort on submissions count
-        res = app.get('{}{}'.format(sort_url, 'submissions_count'))
+        res = app.get('{}{}'.format(sort_url, 'num_submissions'))
         assert len(res.json['data']) == 3
         assert set([meeting_two.endpoint, meeting_one.endpoint, meeting_three.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
 
         # Reverse sort on submissions count
-        res = app.get('{}{}'.format(sort_url, '-submissions_count'))
+        res = app.get('{}{}'.format(sort_url, '-num_submissions'))
         assert len(res.json['data']) == 3
         assert set([meeting_three.endpoint, meeting_one.endpoint, meeting_two.endpoint]) == set([meeting['id'] for meeting in res.json['data']])

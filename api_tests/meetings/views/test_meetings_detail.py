@@ -9,7 +9,11 @@ class TestMeetingDetail:
 
     @pytest.fixture()
     def meeting(self):
-        return ConferenceFactory(name='OSF 2019', endpoint='osf2019')
+        return ConferenceFactory(
+            name='OSF 2019',
+            endpoint='osf2019',
+            location='Boulder, CO'
+        )
 
     @pytest.fixture()
     def url(self, meeting):
@@ -42,7 +46,10 @@ class TestMeetingDetail:
         assert data['attributes']['name'] == meeting.name
         assert data['attributes']['submission_1_email'] == 'osf2019-poster@osf.io'
         assert data['attributes']['submission_2_email'] == 'osf2019-talk@osf.io'
-        assert data['attributes']['submissions_count'] == 1
+        assert data['attributes']['num_submissions'] == 1
+        assert data['attributes']['location'] == 'Boulder, CO'
+        assert 'start_date' in data['attributes']
+        assert 'end_date' in data['attributes']
         assert data['attributes']['active'] is True
 
         # Inactive meetings do not serialize submission emails

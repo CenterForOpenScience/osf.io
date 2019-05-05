@@ -32,8 +32,8 @@ class MeetingSerializer(JSONAPISerializer):
     info_url = ser.URLField(read_only=True)
     logo_url = ser.URLField(read_only=True)
     field_names = ser.DictField(read_only=True)
-    # num_submissions is cached in the view
-    submissions_count = ser.IntegerField(source='num_submissions', read_only=True)
+    # num_submissions is cached in the view - top level attribute for easy sorting
+    num_submissions = ser.IntegerField(read_only=True)
     active = ser.BooleanField(read_only=True)
     submission_1_email = ser.SerializerMethodField()
     submission_2_email = ser.SerializerMethodField()
@@ -69,12 +69,14 @@ class MeetingSerializer(JSONAPISerializer):
 class MeetingSubmissionSerializer(NodeSerializer):
     filterable_fields = frozenset([
         'title',
-        'tags',
-        'date_created',
+        'category',
         'author_name',
     ])
 
+    # Top level attributes for easier sorting
     author_name = ser.SerializerMethodField()
+    download_count = ser.SerializerMethodField()
+    category = ser.SerializerMethodField()
 
     author = RelationshipField(
         related_view='users:user-detail',
@@ -82,11 +84,10 @@ class MeetingSubmissionSerializer(NodeSerializer):
         read_only=True,
     )
 
-    meeting_submission = RelationshipField(
+    submission_file = RelationshipField(
         related_view='files:file-detail',
         related_view_kwargs={'file_id': 'get_meeting_submission_id'},
         read_only=True,
-        related_meta={'download_count': 'get_submission_download_count'},
     )
 
     def get_author(self, obj):
@@ -105,7 +106,14 @@ class MeetingSubmissionSerializer(NodeSerializer):
             return author.family_name if author.family_name else author.fullname
         return None
 
-    def get_submission_download_count(self, obj):
+    def get_category(self, obj):
+        meeting = self.context['meeting']
+        submission1_name = meeting.field_names.get('submission1')
+        submission2_name = meeting.field_names.get('submission2')
+        submission_tags = obj.tags.values_list('name', flat=True)
+        return submission1_name if submission1_name in submission_tags else submission2_name
+
+    def get_download_count(self, obj):
         """
         Return the download counts of the first osfstorage file
         """
@@ -134,5 +142,31 @@ class MeetingSubmissionSerializer(NodeSerializer):
         First osfstoragefile on a node - if the node was created for a meeting,
         assuming its first file is the meeting submission.
         """
-        first_file = obj.files.first()
-        return first_file._id if first_file else None
+        files = obj.files.order_by('created')
+        return files.first()._id if files else None
+
+    # Overrides SparseFieldsetMixin
+    def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
+        """
+        Since meeting submissions are actually nodes, we are subclassing the NodeSerializer,
+        but we only want to return a subset of fields specific to meetings
+        """
+        fieldset = [
+            'date_created',
+            'title',
+            'author',
+            'author_name',
+            'category',
+            'download_count',
+            'submission_file',
+        ]
+        for field_name in self.fields.fields.copy().keys():
+            if field_name in ('id', 'links', 'type'):
+                # MUST return these fields
+                continue
+            if field_name not in fieldset:
+                self.fields.pop(field_name)
+        return super(MeetingSubmissionSerializer, self).parse_sparse_fields(allow_unsafe, **kwargs)
+
+    class Meta:
+        type_ = 'meeting-submissions'

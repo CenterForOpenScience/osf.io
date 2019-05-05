@@ -89,6 +89,7 @@ class MeetingDetail(JSONAPIBaseView, generics.RetrieveAPIView, MeetingMixin):
     view_name = 'meeting-detail'
 
     def get_object(self):
+        # No minimum submissions count for accessing meeting directly
         return self.get_meeting()
 
 
@@ -113,6 +114,11 @@ class MeetingSubmissionList(JSONAPIBaseView, generics.ListAPIView, MeetingMixin,
     view_name = 'meeting-submissions'
 
     ordering = ('-modified', )  # default ordering
+
+    def get_serializer_context(self):
+        context = super(MeetingSubmissionList, self).get_serializer_context()
+        context['meeting'] = self.get_meeting()
+        return context
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
