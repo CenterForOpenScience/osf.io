@@ -133,32 +133,32 @@ class TestMeetingSubmissionsList:
         assert res.json['data'][0]['id'] == third
         assert res.json['data'][0]['attributes']['author_name'] == 'Lemonade'
 
-        # test search category
-        res = app.get(url_meeting_two + '?filter[category]=post')
+        # test search meeting_meeting_category
+        res = app.get(url_meeting_two + '?filter[meeting_category]=post')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 2
-        assert res.json['data'][0]['attributes']['category'] == 'poster'
-        assert res.json['data'][1]['attributes']['category'] == 'poster'
+        assert res.json['data'][0]['attributes']['meeting_category'] == 'poster'
+        assert res.json['data'][1]['attributes']['meeting_category'] == 'poster'
         assert set([submission['id'] for submission in res.json['data']]) == set([second, third])
 
-        # test search title, author, category combined (OR)
-        res = app.get(url_meeting_two + '?filter[title,author_name,category]=cantaloupe')
+        # test search title, author, meeting_category combined (OR)
+        res = app.get(url_meeting_two + '?filter[title,author_name,meeting_category]=cantaloupe')
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes']['title'] == 'Cantaloupe'
         assert res.json['data'][0]['id'] == third
 
-        res = app.get(url_meeting_two + '?filter[title,author_name,category]=mcgee')
+        res = app.get(url_meeting_two + '?filter[title,author_name,meeting_category]=mcgee')
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes']['author_name'] == 'McGee'
         assert res.json['data'][0]['id'] == first
 
-        res = app.get(url_meeting_two + '?filter[title,author_name,category]=talk')
+        res = app.get(url_meeting_two + '?filter[title,author_name,meeting_category]=talk')
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes']['category'] == 'talk'
+        assert res.json['data'][0]['attributes']['meeting_category'] == 'talk'
         assert res.json['data'][0]['id'] == first
 
-        res = app.get(url_meeting_two + '?filter[title,author_name,category]=juice')
+        res = app.get(url_meeting_two + '?filter[title,author_name,meeting_category]=juice')
         assert len(res.json['data']) == 2
         # Results include an author match and a title match
         assert set([first, second]) == set([sub['id'] for sub in res.json['data']])
@@ -210,21 +210,21 @@ class TestMeetingSubmissionsList:
         assert set([first, third, second]) == set([meeting['id'] for meeting in data])
         assert set(['McGee', 'Lemonade', 'Juice']) == set([meeting['attributes']['author_name'] for meeting in data])
 
-        # test sort category
-        res = app.get(url_meeting_two + '?sort=category')
+        # test sort meeting_category
+        res = app.get(url_meeting_two + '?sort=meeting_category')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
         assert set([second, third, first]) == set([meeting['id'] for meeting in data])
-        assert set(['poster', 'poster', 'talk']) == set([meeting['attributes']['category'] for meeting in data])
+        assert set(['poster', 'poster', 'talk']) == set([meeting['attributes']['meeting_category'] for meeting in data])
 
-        # test reverse sort category
-        res = app.get(url_meeting_two + '?sort=-category')
+        # test reverse sort meeting_category
+        res = app.get(url_meeting_two + '?sort=-meeting_category')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
         assert set([first, third, second]) == set([meeting['id'] for meeting in data])
-        assert set(['talk', 'poster', 'poster']) == set([meeting['attributes']['category'] for meeting in data])
+        assert set(['talk', 'poster', 'poster']) == set([meeting['attributes']['meeting_category'] for meeting in data])
 
         # test sort created
         res = app.get(url_meeting_two + '?sort=date_created')

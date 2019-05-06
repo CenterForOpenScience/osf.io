@@ -2,7 +2,10 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 from django.db.models import Q, Count, Subquery, OuterRef, Case, When, Value, CharField, F
+from django.db.models.functions import Length, Substr, Coalesce
+from django.contrib.contenttypes.models import ContentType
 
+from addons.osfstorage.models import OsfStorageFile
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterOperator
 from api.base.filters import ListFilterMixin
@@ -15,7 +18,7 @@ from api.nodes.views import NodeMixin
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Conference, Contributor, Tag
+from osf.models import AbstractNode, Conference, Contributor, Tag, PageCounter
 from website import settings
 
 class MeetingMixin(object):
@@ -109,7 +112,8 @@ class BaseMeetingSubmission(JSONAPIBaseView, MeetingMixin):
 class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFilterMixin):
     view_name = 'meeting-submissions'
 
-    ordering = ('-modified', )  # default ordering
+    ordering = ('-created', )  # default ordering
+    ordering_fields = ('title', 'meeting_category', 'author_name', 'download_count', 'created', )
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
@@ -121,7 +125,7 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
         ).annotate(
             annotated_file_count=Count('files'),
         ).filter(annotated_file_count__gte=1)
-        return self.annotate_queryset_for_filtering(meeting, queryset)
+        return self.annotate_queryset_for_filtering_and_sorting(meeting, queryset)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -133,16 +137,17 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
                 raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
             return Q(author_name__icontains=operation['value'])
 
-        if field_name == 'category':
+        if field_name == 'meeting_category':
             if operation['op'] != 'eq':
                 raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
             return Q(meeting_category__icontains=operation['value'])
 
         return super(MeetingSubmissionList, self).build_query_from_field(field_name, operation)
 
-    def annotate_queryset_for_filtering(self, meeting, queryset):
+    def annotate_queryset_for_filtering_and_sorting(self, meeting, queryset):
         queryset = self.annotate_queryset_with_meeting_category(meeting, queryset)
         queryset = self.annotate_queryset_with_author_name(queryset)
+        queryset = self.annotate_queryset_with_download_count(queryset)
         return queryset
 
     def annotate_queryset_with_meeting_category(self, meeting, queryset):
@@ -188,6 +193,32 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
                 default=F('author_family_name'),
                 output_field=CharField(),
             ),
+        )
+        return queryset
+
+    def annotate_queryset_with_download_count(self, queryset):
+        """
+        Annotates queryset with download count of first osfstorage file
+        """
+        pages = PageCounter.objects.annotate(
+            node_id=Substr('_id', 10, 5),
+            file_id=Substr('_id', 16),
+            _id_length=Length('_id'),
+        ).filter(
+            _id__icontains='download',
+            node_id=OuterRef('guids___id'),
+            file_id=OuterRef('file_id'),
+        ).exclude(_id_length__gt=39)
+
+        file_subqs = OsfStorageFile.objects.filter(
+            target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+            target_object_id=OuterRef('pk'),
+        ).order_by('created')
+
+        queryset = queryset.annotate(
+            file_id=Subquery(file_subqs.values('_id')[:1]),
+        ).annotate(
+            download_count=Coalesce(Subquery(pages.values('total')[:1]), Value(0)),
         )
         return queryset
 

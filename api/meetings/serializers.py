@@ -69,14 +69,14 @@ class MeetingSerializer(JSONAPISerializer):
 class MeetingSubmissionSerializer(NodeSerializer):
     filterable_fields = frozenset([
         'title',
-        'category',
+        'meeting_category',
         'author_name',
     ])
 
     # Top level attributes for easier sorting
     author_name = ser.SerializerMethodField()
     download_count = ser.SerializerMethodField()
-    category = ser.SerializerMethodField()
+    meeting_category = ser.SerializerMethodField()
 
     author = RelationshipField(
         related_view='users:user-detail',
@@ -116,7 +116,7 @@ class MeetingSubmissionSerializer(NodeSerializer):
                 return author.family_name if author.family_name else author.fullname
             return None
 
-    def get_category(self, obj):
+    def get_meeting_category(self, obj):
         """
         Returns the existance of a certain tag on the node.  If the first submission type tag exists,
         return that.  Otherwise, return the second submission type tag as a default.
@@ -135,25 +135,28 @@ class MeetingSubmissionSerializer(NodeSerializer):
         """
         Return the download counts of the first osfstorage file
         """
-        node_ct = ContentType.objects.get_for_model(AbstractNode).id
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT P.total
-                FROM osf_basefilenode F, osf_pagecounter P
-                WHERE (F.type = 'osf.osfstoragefile'
-                     AND F.provider = 'osfstorage'
-                     AND F.target_content_type_id = %s
-                     AND F.target_object_id = %s
-                     AND P._id = 'download:' || %s || ':' || F._id)
-                ORDER BY F.id ASC
-                LIMIT 1;
-            """, [node_ct, obj.id, obj._id],
-            )
-            result = cursor.fetchone()
-            if result:
-                return int(result[0])
-            return 0
+        if getattr(obj, 'download_count', None):
+            return obj.download_count or 0
+        else:
+            node_ct = ContentType.objects.get_for_model(AbstractNode).id
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT P.total
+                    FROM osf_basefilenode F, osf_pagecounter P
+                    WHERE (F.type = 'osf.osfstoragefile'
+                         AND F.provider = 'osfstorage'
+                         AND F.target_content_type_id = %s
+                         AND F.target_object_id = %s
+                         AND P._id = 'download:' || %s || ':' || F._id)
+                    ORDER BY F.id ASC
+                    LIMIT 1;
+                """, [node_ct, obj.id, obj._id],
+                )
+                result = cursor.fetchone()
+                if result:
+                    return int(result[0])
+                return 0
 
     def get_meeting_submission_id(self, obj):
         """
@@ -184,7 +187,7 @@ class MeetingSubmissionSerializer(NodeSerializer):
             'title',
             'author',
             'author_name',
-            'category',
+            'meeting_category',
             'download_count',
             'submission_file',
         ]
