@@ -18,8 +18,10 @@ def test_encryption():
 
     # Encrypted string is obfuscated
     encrypted_string = encrypt(private_string)
-    assert_not_in(private_string, encrypted_string)
+    print(private_string)
+    print(encrypted_string)
+    assert_not_in(private_string, encrypted_string.decode())
 
     # Original string can be recovered
     decrypted_string = decrypt(encrypted_string)
-    assert_equal(decrypted_string, private_string)
+    assert_equal(decrypted_string.decode(), private_string)
