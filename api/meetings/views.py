@@ -1,6 +1,7 @@
 
 from rest_framework import generics, permissions as drf_permissions
-from django.db.models import Q
+from rest_framework.exceptions import NotFound
+from django.db.models import Q, Count
 
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
@@ -9,6 +10,7 @@ from api.base.utils import get_object_or_error
 from api.base.versioning import PrivateVersioning
 from api.meetings.serializers import MeetingSerializer, MeetingSubmissionSerializer
 from api.meetings.permissions import IsPublic
+from api.nodes.views import NodeMixin
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -34,9 +36,7 @@ class MeetingMixin(object):
         return meeting
 
 
-class MeetingList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/meetings_list).
-    """
+class BaseMeetingView(JSONAPIBaseView, MeetingMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -51,6 +51,10 @@ class MeetingList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     serializer_class = MeetingSerializer
     view_category = 'meetings'
+
+
+class MeetingList(BaseMeetingView, generics.ListAPIView, ListFilterMixin):
+
     view_name = 'meeting-list'
 
     ordering = ('-modified', )  # default ordering
@@ -69,23 +73,8 @@ class MeetingList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         return self.get_queryset_from_request()
 
 
-class MeetingDetail(JSONAPIBaseView, generics.RetrieveAPIView, MeetingMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/meetings_detail).
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
+class MeetingDetail(BaseMeetingView, generics.RetrieveAPIView):
 
-    required_read_scopes = [CoreScopes.MEETINGS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-    model = Conference
-
-    # This view goes under the _/ namespace
-    versioning_class = PrivateVersioning
-
-    serializer_class = MeetingSerializer
-    view_category = 'meetings'
     view_name = 'meeting-detail'
 
     def get_object(self):
@@ -93,9 +82,7 @@ class MeetingDetail(JSONAPIBaseView, generics.RetrieveAPIView, MeetingMixin):
         return self.get_meeting()
 
 
-class MeetingSubmissionList(JSONAPIBaseView, generics.ListAPIView, MeetingMixin, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/meetings_submission_list).
-    """
+class BaseMeetingSubmission(JSONAPIBaseView, MeetingMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -111,19 +98,41 @@ class MeetingSubmissionList(JSONAPIBaseView, generics.ListAPIView, MeetingMixin,
 
     serializer_class = MeetingSubmissionSerializer
     view_category = 'meetings'
+
+    def get_serializer_context(self):
+        context = super(BaseMeetingSubmission, self).get_serializer_context()
+        context['meeting'] = self.get_meeting()
+        return context
+
+
+class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFilterMixin):
     view_name = 'meeting-submissions'
 
     ordering = ('-modified', )  # default ordering
 
-    def get_serializer_context(self):
-        context = super(MeetingSubmissionList, self).get_serializer_context()
-        context['meeting'] = self.get_meeting()
-        return context
-
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        return self.get_meeting().submissions
+        # Returning public meeting submissions that have at least one file attached
+        return self.get_meeting().submissions.filter(
+            files__type='osf.osfstoragefile',
+            files__deleted_on__isnull=True,
+        ).annotate(annotated_file_count=Count('files')).filter(annotated_file_count__gte=1)
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class MeetingSubmissionDetail(BaseMeetingSubmission, generics.RetrieveAPIView, NodeMixin):
+    view_name = 'meeting-submission-detail'
+
+    serializer_class = MeetingSubmissionSerializer
+    node_lookup_url_kwarg = 'submission_id'
+
+    def get_object(self):
+        meeting = self.get_meeting()
+        node = self.get_node()
+        # Submission must be associated with the Conference
+        if node._id not in meeting.submissions.values_list('guids___id', flat=True):
+            raise NotFound('This is not a submission to {}.'.format(meeting.name))
+        return node

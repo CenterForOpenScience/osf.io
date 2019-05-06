@@ -90,6 +90,8 @@ class MeetingSubmissionSerializer(NodeSerializer):
         read_only=True,
     )
 
+    links = LinksField({'self': 'get_absolute_url', 'html': 'get_absolute_html_url'})
+
     def get_author(self, obj):
         contrib_queryset = obj.contributor_set.filter(visible=True).order_by('_order')
         if contrib_queryset:
@@ -144,6 +146,16 @@ class MeetingSubmissionSerializer(NodeSerializer):
         """
         files = obj.files.order_by('created')
         return files.first()._id if files else None
+
+    def get_absolute_url(self, obj):
+        meeting_endpoint = self.context['meeting'].endpoint
+        return absolute_reverse(
+            'meetings:meeting-submission-detail',
+            kwargs={
+                'meeting_id': meeting_endpoint,
+                'submission_id': obj._id,
+            },
+        )
 
     # Overrides SparseFieldsetMixin
     def parse_sparse_fields(self, allow_unsafe=False, **kwargs):

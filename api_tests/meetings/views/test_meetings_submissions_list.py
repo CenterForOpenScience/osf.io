@@ -97,12 +97,19 @@ class TestMeetingSubmissionsList:
         res = app.get(url)
         assert res.status_code == 200
         data = res.json['data']
-        assert len(data) == 1
+        # meeting_one_submission does not have any associated files, so it's not included in the list
+        assert len(data) == 0
+
+        api_utils.create_test_file(meeting_one_submission, user, create_guid=False)
+        res = app.get(url)
+        data = res.json['data']
+        assert res.status_code == 200
         assert data[0]['id'] == meeting_one_submission._id
         assert data[0]['type'] == 'meeting-submissions'
         assert data[0]['attributes']['title'] == meeting_one_submission.title
         assert data[0]['attributes']['author_name'] == user.family_name
-        assert 'submission_file' not in data[0]['relationships']
+        assert 'submission_file' in data[0]['relationships']
+        assert 'author' in data[0]['relationships']
 
     def test_meeting_submissions_list_sorting_and_filtering(self, app, url_meeting_two, meeting_two,
             meeting_two_submission, file, meeting_two_second_submission, file_two, meeting_two_third_submission, file_three):

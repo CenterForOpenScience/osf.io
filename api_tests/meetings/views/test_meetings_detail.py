@@ -51,6 +51,10 @@ class TestMeetingDetail:
         assert 'start_date' in data['attributes']
         assert 'end_date' in data['attributes']
         assert data['attributes']['active'] is True
+        assert data['attributes']['field_names']['submission1'] == 'poster'
+        assert data['attributes']['field_names']['submission2'] == 'talk'
+        assert '_/meetings/{}/'.format(meeting.endpoint) in data['links']['self']
+        assert '_/meetings/{}/submissions'.format(meeting.endpoint) in data['relationships']['submissions']['links']['related']['href']
 
         # Inactive meetings do not serialize submission emails
         meeting.active = False
