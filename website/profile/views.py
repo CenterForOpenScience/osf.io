@@ -607,18 +607,6 @@ def get_target_user(auth, uid=None):
     return target
 
 
-def fmt_date_or_none(date, fmt='%Y-%m-%d'):
-    if date:
-        try:
-            return date.strftime(fmt)
-        except ValueError:
-            raise HTTPError(
-                http_status.HTTP_400_BAD_REQUEST,
-                data=dict(message_long='Year entered must be after 1900')
-            )
-    return None
-
-
 def append_editable(data, auth, uid=None):
     target = get_target_user(auth, uid)
     data['editable'] = auth.user == target
