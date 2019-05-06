@@ -2033,7 +2033,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint['date_updated'] == self.preprint.modified.isoformat()
         assert preprint.get('date_published') is None
 
-        people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
+        people = sorted([nodes.get(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
         expected_people = sorted([{
             '@type': 'person',
             'given_name': u'BoJack',
@@ -2052,7 +2052,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         assert people == expected_people
 
-        creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
+        creators = sorted([nodes.get(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
         assert creators == [{
             '@id': creators[0]['@id'],
             '@type': 'creator',
@@ -2069,7 +2069,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
-        contributors = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'contributor']
+        contributors = [nodes.get(k) for k, v in nodes.items() if v['@type'] == 'contributor']
         assert contributors == [{
             '@id': contributors[0]['@id'],
             '@type': 'contributor',
@@ -2078,7 +2078,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
-        agentidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'agentidentifier'}
+        agentidentifiers = {nodes.get(k)['uri'] for k, v in nodes.items() if v['@type'] == 'agentidentifier'}
         assert agentidentifiers == set([
             'mailto:' + self.user.username,
             'mailto:' + self.preprint.creator.username,
@@ -2086,11 +2086,9 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             self.preprint.creator.profile_image_url(),
         ]) | set(user.absolute_url for user in self.preprint.contributors)
 
-        workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
+        workidentifiers = {nodes.get(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
         assert workidentifiers == set([urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
-
-        assert nodes == {}
 
     def test_format_preprint_is_deleted(self):
         self.file = OsfStorageFile.create(
