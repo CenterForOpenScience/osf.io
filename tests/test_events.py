@@ -641,7 +641,9 @@ class TestSubscriptionManipulations(OsfTestCase):
         result = utils.subscriptions_users_remove_duplicates(
             self.emails_1, self.emails_4, remove_same=False
         )
-        assert_equal(self.dup_1_3, result)
+        assert set(self.dup_1_3['email_transactional']) == set(result['email_transactional'])
+        assert set(self.dup_1_3['none']) == set(result['none'])
+        assert set(self.dup_1_3['email_digest']) == set(result['email_digest'])
 
     def test_remove_duplicates_true(self):
         result = utils.subscriptions_users_remove_duplicates(
