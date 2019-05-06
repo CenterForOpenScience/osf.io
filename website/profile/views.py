@@ -369,7 +369,7 @@ def user_addons(auth, **kwargs):
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
-        'mailing_lists': dict(auth.user.mailchimp_mailing_lists.items() + auth.user.osf_mailing_lists.items())
+        'mailing_lists': dict(list(auth.user.mailchimp_mailing_lists.items()) + list(auth.user.osf_mailing_lists.items()))
     }
 
 @must_be_logged_in
