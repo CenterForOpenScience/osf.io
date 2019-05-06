@@ -33,7 +33,7 @@ class EzidClient(BaseClient, DataCiteClient):
             self._build_url('id', identifier),
             expects=(200, ),
         )
-        return utils.from_anvl(resp.content.strip('\n'))
+        return utils.from_anvl(resp.content.decode().strip('\n'))
 
     def create_identifier(self, object, category):
         if category in ['doi', 'ark']:
