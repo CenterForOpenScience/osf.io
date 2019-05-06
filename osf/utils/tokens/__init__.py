@@ -40,9 +40,6 @@ class TokenHandler(object):
                 }
             )
 
-        if isinstance(encoded_token, bytes):
-            encoded_token = encoded_token.decode()
-
         return cls(encoded_token=encoded_token, payload=payload)
 
     @classmethod
