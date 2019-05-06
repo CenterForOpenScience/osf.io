@@ -36,6 +36,7 @@ class TestMeetingSubmissionsList:
 
     @pytest.fixture()
     def user_three(self):
+        # Author doesn't have a family_name, just a fullname
         return AuthUserFactory(fullname='Lemonade')
 
     @pytest.fixture()
@@ -54,9 +55,9 @@ class TestMeetingSubmissionsList:
 
     @pytest.fixture()
     def meeting_two_submission(self, meeting_two, user):
-        submission = ProjectFactory(title='Apples', is_public=True, creator=user)
+        submission = ProjectFactory(title='Apple Juice', is_public=True, creator=user)
         submission.add_tag(meeting_two.endpoint, Auth(user))
-        submission.add_tag('talk', Auth(user))
+        # Submission doesn't have poster/talk tag added - will get talk tag by default (second submission type)
         return submission
 
     @pytest.fixture()
@@ -125,10 +126,42 @@ class TestMeetingSubmissionsList:
         assert res.json['data'][0]['id'] == first
 
         # test search author
+        res = app.get(url_meeting_two + '?filter[author_name]=Lemon')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 1
+        assert res.json['data'][0]['id'] == third
+        assert res.json['data'][0]['attributes']['author_name'] == 'Lemonade'
 
         # test search category
+        res = app.get(url_meeting_two + '?filter[category]=post')
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 2
+        assert res.json['data'][0]['attributes']['category'] == 'poster'
+        assert res.json['data'][1]['attributes']['category'] == 'poster'
+        assert set([submission['id'] for submission in res.json['data']]) == set([second, third])
 
-        # test search title, author, category combined
+        # test search title, author, category combined (OR)
+        res = app.get(url_meeting_two + '?filter[title,author_name,category]=cantaloupe')
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['title'] == 'Cantaloupe'
+        assert res.json['data'][0]['id'] == third
+
+        res = app.get(url_meeting_two + '?filter[title,author_name,category]=mcgee')
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['author_name'] == 'McGee'
+        assert res.json['data'][0]['id'] == first
+
+        res = app.get(url_meeting_two + '?filter[title,author_name,category]=talk')
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['category'] == 'talk'
+        assert res.json['data'][0]['id'] == first
+
+        res = app.get(url_meeting_two + '?filter[title,author_name,category]=juice')
+        assert len(res.json['data']) == 2
+        # Results include an author match and a title match
+        assert set([first, second]) == set([sub['id'] for sub in res.json['data']])
 
         # test sort title
         res = app.get(url_meeting_two + '?sort=title')
@@ -159,7 +192,7 @@ class TestMeetingSubmissionsList:
         data = res.json['data']
         assert len(data) == 3
         assert set([first, second, third]) == set([meeting['id'] for meeting in data])
-        assert set(['Cantaloupe', 'Bananas', 'Apples']) == set([meeting['attributes']['title'] for meeting in data])
+        assert set(['Cantaloupe', 'Bananas', 'Apple Juice']) == set([meeting['attributes']['title'] for meeting in data])
 
         # test sort author
         res = app.get(url_meeting_two + '?sort=author_name')

@@ -103,17 +103,33 @@ class MeetingSubmissionSerializer(NodeSerializer):
         return author._id if author else None
 
     def get_author_name(self, obj):
-        author = self.get_author(obj)
-        if author:
-            return author.family_name if author.family_name else author.fullname
-        return None
+        """
+        Returns the first bibliographic contributor's family_name if it exists.
+        Otherwise, return its fullname.
+        """
+        if getattr(obj, 'author_name', None):
+            # Field is annotated on queryset in ListView for filtering purposes
+            return obj.author_name
+        else:
+            author = self.get_author(obj)
+            if author:
+                return author.family_name if author.family_name else author.fullname
+            return None
 
     def get_category(self, obj):
-        meeting = self.context['meeting']
-        submission1_name = meeting.field_names.get('submission1')
-        submission2_name = meeting.field_names.get('submission2')
-        submission_tags = obj.tags.values_list('name', flat=True)
-        return submission1_name if submission1_name in submission_tags else submission2_name
+        """
+        Returns the existance of a certain tag on the node.  If the first submission type tag exists,
+        return that.  Otherwise, return the second submission type tag as a default.
+        """
+        if getattr(obj, 'meeting_category', None):
+            # Field is annotated on queryset in ListView for filtering purposes
+            return obj.meeting_category
+        else:
+            meeting = self.context['meeting']
+            submission1_name = meeting.field_names.get('submission1')
+            submission2_name = meeting.field_names.get('submission2')
+            submission_tags = obj.tags.values_list('name', flat=True)
+            return submission1_name if submission1_name in submission_tags else submission2_name
 
     def get_download_count(self, obj):
         """

@@ -1,9 +1,10 @@
 
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Subquery, OuterRef, Case, When, Value, CharField, F
 
 from api.base import permissions as base_permissions
+from api.base.exceptions import InvalidFilterOperator
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
@@ -14,7 +15,7 @@ from api.nodes.views import NodeMixin
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Conference
+from osf.models import AbstractNode, Conference, Contributor, Tag
 from website import settings
 
 class MeetingMixin(object):
@@ -113,14 +114,82 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
     # overrides ListFilterMixin
     def get_default_queryset(self):
         # Returning public meeting submissions that have at least one file attached
-        return self.get_meeting().submissions.filter(
+        meeting = self.get_meeting()
+        queryset = meeting.submissions.filter(
             files__type='osf.osfstoragefile',
             files__deleted_on__isnull=True,
-        ).annotate(annotated_file_count=Count('files')).filter(annotated_file_count__gte=1)
+        ).annotate(
+            annotated_file_count=Count('files'),
+        ).filter(annotated_file_count__gte=1)
+        return self.annotate_queryset_for_filtering(meeting, queryset)
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'author_name':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            return Q(author_name__icontains=operation['value'])
+
+        if field_name == 'category':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            return Q(meeting_category__icontains=operation['value'])
+
+        return super(MeetingSubmissionList, self).build_query_from_field(field_name, operation)
+
+    def annotate_queryset_for_filtering(self, meeting, queryset):
+        queryset = self.annotate_queryset_with_meeting_category(meeting, queryset)
+        queryset = self.annotate_queryset_with_author_name(queryset)
+        return queryset
+
+    def annotate_queryset_with_meeting_category(self, meeting, queryset):
+        """
+        Annotates queryset with meeting_category - if submission1 tag exists, use this,
+        otherwise assume default submission2 tag
+        """
+        # Setup meeting category subquery (really existence of certain tags)
+        category_1 = meeting.field_names.get('submission1', 'poster')
+        category_2 = meeting.field_names.get('submission2', 'talk')
+        tag_subquery = Tag.objects.filter(
+            abstractnode_tagged=OuterRef('pk'),
+            name=category_1,
+        ).values_list('name', flat=True)
+
+        queryset = queryset.annotate(cat_one_count=Count(Subquery(tag_subquery))).annotate(
+            meeting_category=Case(
+                When(cat_one_count=1, then=Value(category_1)),
+                default=Value(category_2),
+                output_field=CharField(),
+            ),
+        )
+        return queryset
+
+    def annotate_queryset_with_author_name(self, queryset):
+        """
+        Annotates queryset with author_name_category - it is the family_name if it exists, otherwise,
+        the fullname is used
+        """
+        # Setup author name subquery (really first bibliographic contributor)
+        contributors = Contributor.objects.filter(
+            visible=True,
+            node_id=OuterRef('pk'),
+        ).order_by('_order')
+
+        queryset = queryset.annotate(
+            author_family_name=Subquery(contributors.values(('user__family_name'))[:1]),
+        ).annotate(
+            author_full_name=Subquery(contributors.values(('user__fullname'))[:1]),
+        ).annotate(
+            author_name=Case(
+                When(author_family_name='', then=F('author_full_name')),
+                default=F('author_family_name'),
+                output_field=CharField(),
+            ),
+        )
+        return queryset
 
 
 class MeetingSubmissionDetail(BaseMeetingSubmission, generics.RetrieveAPIView, NodeMixin):
