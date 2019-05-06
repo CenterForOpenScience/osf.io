@@ -49,7 +49,7 @@ class EzidClient(BaseClient, DataCiteClient):
                     raise exceptions.IdentifierAlreadyExists()
                 else:
                     raise exceptions.ClientResponseError(resp)
-            resp = utils.from_anvl(resp.content)
+            resp = utils.from_anvl(resp.content.decode())
             return dict(
                 [each.strip('/') for each in pair.strip().split(':')]
                 for pair in resp['success'].split('|')
