@@ -73,7 +73,6 @@ class MeetingSubmissionSerializer(NodeSerializer):
         'author_name',
     ])
 
-    # Top level attributes for easier sorting
     author_name = ser.SerializerMethodField()
     download_count = ser.SerializerMethodField()
     meeting_category = ser.SerializerMethodField()
@@ -99,8 +98,12 @@ class MeetingSubmissionSerializer(NodeSerializer):
         return None
 
     def get_author_id(self, obj):
-        author = self.get_author(obj)
-        return author._id if author else None
+        # Author guid is annotated on queryset in ListView
+        if getattr(obj, 'author_id', None):
+            return obj.author_id
+        else:
+            author = self.get_author(obj)
+            return author._id if author else None
 
     def get_author_name(self, obj):
         """
@@ -163,8 +166,11 @@ class MeetingSubmissionSerializer(NodeSerializer):
         First osfstoragefile on a node - if the node was created for a meeting,
         assuming its first file is the meeting submission.
         """
-        files = obj.files.order_by('created')
-        return files.first()._id if files else None
+        if getattr(obj, 'file_id', None):
+            return obj.file_id
+        else:
+            files = obj.files.order_by('created')
+            return files.first()._id if files else None
 
     def get_absolute_url(self, obj):
         meeting_endpoint = self.context['meeting'].endpoint

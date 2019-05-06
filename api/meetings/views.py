@@ -21,6 +21,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode, Conference, Contributor, Tag, PageCounter
 from website import settings
 
+
 class MeetingMixin(object):
     """Mixin with convenience method get_meeting
     """
@@ -60,7 +61,6 @@ class BaseMeetingView(JSONAPIBaseView, MeetingMixin):
 class MeetingList(BaseMeetingView, generics.ListAPIView, ListFilterMixin):
 
     view_name = 'meeting-list'
-
     ordering = ('-modified', )  # default ordering
 
     # overrides ListFilterMixin
@@ -187,6 +187,8 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
             author_family_name=Subquery(contributors.values(('user__family_name'))[:1]),
         ).annotate(
             author_full_name=Subquery(contributors.values(('user__fullname'))[:1]),
+        ).annotate(
+            author_id=Subquery(contributors.values(('user__guids___id'))[:1]),
         ).annotate(
             author_name=Case(
                 When(author_family_name='', then=F('author_full_name')),
