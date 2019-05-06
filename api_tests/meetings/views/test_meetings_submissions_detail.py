@@ -71,7 +71,7 @@ class TestMeetingSubmissionsDetail:
         assert data['attributes']['author_name'] == user.family_name
         assert data['attributes']['download_count'] == 10
         assert 'date_created' in data['attributes']
-        assert data['attributes']['category'] == 'poster'
+        assert data['attributes']['meeting_category'] == 'poster'
         assert '/_/meetings/{}/submissions/{}'.format(meeting.endpoint, meeting_one_submission._id) in data['links']['self']
         assert data['relationships']['author']['data']['id'] == user._id
         assert data['relationships']['submission_file']['data']['id'] == file._id
@@ -102,4 +102,4 @@ class TestMeetingSubmissionsDetail:
         res = app.get(url)
         assert res.status_code == 200
         # Second submission type given by default if none exists (following legacy logic)
-        assert res.json['data']['attributes']['category'] == 'talk'
+        assert res.json['data']['attributes']['meeting_category'] == 'talk'
