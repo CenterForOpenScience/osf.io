@@ -16,7 +16,7 @@ from framework import status
 from framework.utils import iso8601format
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
+from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from osf.utils.functional import rapply
@@ -36,10 +36,11 @@ from website.project.decorators import (
     must_not_be_registration,
     must_not_be_retracted_registration,
 )
-from website.tokens import process_token_or_pass
+from osf.utils.tokens import process_token_or_pass
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
+from website.project.utils import sizeof_fmt
 from website.project.metadata.utils import serialize_meta_schemas
 from osf.models import AbstractNode, Collection, Guid, PrivateLink, Contributor, Node, NodeRelation, Preprint
 from addons.wiki.models import WikiPage
@@ -271,7 +272,7 @@ def node_forks(auth, node, **kwargs):
 @must_have_permission(READ)
 @ember_flag_is_active(features.EMBER_PROJECT_SETTINGS)
 def node_setting(auth, node, **kwargs):
-    if node.is_registration and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+    if node.is_registration and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE) and not auth.private_link:
         # Registration settings page obviated during redesign
         return redirect(node.url)
     auth.user.update_affiliated_institutions_by_email_domain()
@@ -479,6 +480,14 @@ def view_project(auth, node, **kwargs):
 
     ret.update({'addons_widget_data': addons_widget_data})
     return ret
+
+
+@process_token_or_pass
+@must_be_valid_project(retractions_valid=True)
+@must_be_contributor_or_public
+def token_action(auth, node, **kwargs):
+    return redirect(node.url)
+
 
 # Reorder components
 @must_be_valid_project
@@ -824,6 +833,10 @@ def _view_project(node, auth, primary=False,
 
     data.update({'storage_regions': region_list})
     data.update({'storage_flag_is_active': storage_i18n_flag_active()})
+    if storage_usage_flag_active():
+        storage_usage = node.storage_usage
+        if storage_usage:
+            data['node']['storage_usage'] = sizeof_fmt(storage_usage)
 
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_visible_contributors(node)

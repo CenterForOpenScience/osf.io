@@ -20,6 +20,7 @@ urlpatterns = [
                 url(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
                 url(r'^chronos/', include('api.chronos.urls', namespace='chronos')),
                 url(r'^meetings/', include('api.meetings.urls', namespace='meetings')),
+                url(r'^metrics/', include('api.metrics.urls', namespace='metrics')),
             ],
         ),
     ),

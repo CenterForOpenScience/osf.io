@@ -1,5 +1,6 @@
 import jsonschema
 from django.utils import timezone
+
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -11,15 +12,18 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
+from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
+from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
-from osf.models import OSFUser, QuickFilesNode, Email
+from osf.models import Email
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
+from osf.models import OSFUser, QuickFilesNode, Preprint
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL, OSF_SUPPORT_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website import mails
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
-from api.nodes.serializers import NodeSerializer
+from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
 
@@ -101,17 +105,22 @@ class UserSerializer(JSONAPISerializer):
     nodes = HideIfDisabled(RelationshipField(
         related_view='users:user-nodes',
         related_view_kwargs={'user_id': '<_id>'},
-        related_meta={'projects_in_common': 'get_projects_in_common'},
+        related_meta={
+            'projects_in_common': 'get_projects_in_common',
+            'count': 'get_node_count',
+        },
     ))
 
     quickfiles = HideIfDisabled(QuickFilesRelationshipField(
         related_view='users:user-quickfiles',
         related_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_quickfiles_count'},
     ))
 
     registrations = HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
         related_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_registration_count'},
     ))
 
     institutions = HideIfDisabled(RelationshipField(
@@ -119,11 +128,13 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
         self_view='users:user-institutions-relationship',
         self_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_institutions_count'},
     ))
 
     preprints = HideIfDisabled(RelationshipField(
         related_view='users:user-preprints',
         related_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_preprint_count'},
     ))
 
     emails = ShowIfCurrentUser(RelationshipField(
@@ -131,10 +142,10 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
-    default_region = ShowIfCurrentUser(RelationshipField(
+    default_region = ShowIfCurrentUser(RegionRelationshipField(
         related_view='regions:region-detail',
         related_view_kwargs={'region_id': 'get_default_region_id'},
-        read_only=True,
+        read_only=False,
     ))
 
     settings = ShowIfCurrentUser(RelationshipField(
@@ -164,6 +175,29 @@ class UserSerializer(JSONAPISerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+    def get_node_count(self, obj):
+        auth = get_user_auth(self.context['request'])
+        if obj != auth.user:
+            return default_node_list_permission_queryset(user=auth.user, model_cls=Node).filter(contributor__user__id=obj.id).count()
+
+        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=obj.id).count()
+
+    def get_quickfiles_count(self, obj):
+        return QuickFilesNode.objects.get(contributor__user__id=obj.id).files.filter(type='osf.osfstoragefile').count()
+
+    def get_registration_count(self, obj):
+        auth = get_user_auth(self.context['request'])
+        user_registration = default_node_list_queryset(model_cls=Registration).filter(contributor__user__id=obj.id)
+        return user_registration.can_view(user=auth.user, private_link=auth.private_link).count()
+
+    def get_preprint_count(self, obj):
+        auth_user = get_user_auth(self.context['request']).user
+        user_preprints_query = Preprint.objects.filter(_contributors__guids___id=obj._id).exclude(machine_state='initial')
+        return Preprint.objects.can_view(user_preprints_query, auth_user, allow_contribs=False).count()
+
+    def get_institutions_count(self, obj):
+        return obj.affiliated_institutions.count()
 
     def get_can_view_reviews(self, obj):
         group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
@@ -211,6 +245,12 @@ class UserSerializer(JSONAPISerializer):
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
+            elif 'region_id' == attr:
+                region_id = validated_data.get('region_id')
+                user_settings = instance._settings_model('osfstorage').objects.get(owner=instance)
+                user_settings.default_region_id = region_id
+                user_settings.save()
+                instance.default_region = self.context['request'].data['default_region']
             else:
                 setattr(instance, attr, value)
         try:

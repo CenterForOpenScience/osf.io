@@ -804,6 +804,8 @@ class TestCopy():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestCopyPreprint():
     @pytest.fixture()
     def preprint(self, user):
