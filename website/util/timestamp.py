@@ -339,7 +339,11 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     if metadata['provider'] != 'osfstorage':
         file_node = BaseFileNode.resolve_class(
             metadata['provider'], BaseFileNode.FILE
-        ).get_or_create(node, metadata.get('materialized'))
+        ).get_or_create(node, '/' + metadata.get('path').lstrip('/'))
+        file_node.path = '/' + metadata.get('path').lstrip('/')
+        file_node.name = metadata.get('name')
+        file_node.materialized_path = metadata.get('materialized')
+
         file_node.save()
         metadata['path'] = file_node._id
     created_at = metadata.get('created_utc')
@@ -743,19 +747,24 @@ class TimeStampTokenVerifyCheck:
                         timestamptoken_file_path,
                         os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
                     ).split(api_settings.TST_COMMAND_DELIMITER)
-                    prc = subprocess.Popen(
-                        cmd, shell=False, stdin=subprocess.PIPE,
-                        stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-                    stdout_data, stderr_data = prc.communicate()
-                    ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
-
-                    if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
-                        ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
-                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
-
-                    else:
-                        ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
-                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'NG'
+                    # exec timestamptoken verification
+                    try:
+                        prc = subprocess.Popen(
+                            cmd, shell=False, stdin=subprocess.PIPE,
+                            stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                        stdout_data, stderr_data = prc.communicate()
+                        ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
+                        if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
+                            ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
+                            verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
+                        else:
+                            logger.error('timestamp verification error occured.({}:{}) : {}'.format(verify_result.provider, verify_result.path, stderr_data))
+                            ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
+                            verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'NG'
+                    except Exception as err:
+                        logger.error('timestamp verification error occured.({}:{}) : {}'.format(verify_result.provider, verify_result.path, err))
+                        ret = api_settings.TIME_STAMP_VERIFICATION_ERR
+                        verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'NG'
 
                 else:
                     #verify timestamptoken (uPKI))
