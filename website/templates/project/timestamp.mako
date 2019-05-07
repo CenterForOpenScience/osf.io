@@ -179,7 +179,7 @@
                                     <input type="hidden" class="verify_date" value="${ error_info['verify_date'] }" />
                                     <input type="hidden" class="verify_result_title" value="${ error_info['verify_result_title'] }" />
 
-                                    <td class="verify_user_name_id">${ error_info['verify_user_name'] } (${ error_info['verify_user_id'] })</td>
+                                    <td class="verify_user_name_id">${ 'Unknown' if not error_info['verify_user_id'] else '{} ({})'.format(error_info['verify_user_name'], error_info['verify_user_id']) }</td>
                                     <td class="verify_date">${ error_info['verify_date'] }</td>
                                     <td class="verify_result_title">${ error_info['verify_result_title'] }</td>
                                 </tr>

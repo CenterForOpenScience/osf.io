@@ -5132,6 +5132,18 @@ class TestTimestampView(OsfTestCase):
         assert 'class="creator_email" value="freddiemercury' in res
 
     @mock.patch('website.project.views.node.find_bookmark_collection')
+    def test_timestamp_no_verify_user(self, mock_collection):
+        ts_list = RdmFileTimestamptokenVerifyResult.objects.filter(
+            project_id=self.project._id,
+            path='/osfstorage_test_file2.status_3'
+        ).update(verify_user=None)
+        res = self.app.get(self.project.url + 'timestamp/', auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        assert 'osfstorage_test_file2.status_3' in res
+        assert 'Unknown' in res
+
+    @mock.patch('website.project.views.node.find_bookmark_collection')
     @mock.patch('website.util.waterbutler.shutil')
     @mock.patch('requests.get')
     def test_add_timestamp_token(self, mock_get, mock_shutil, mock_collection):
