@@ -1,3 +1,4 @@
+from django.core.urlresolvers import NoReverseMatch
 from rest_framework import exceptions as drf_exceptions
 from rest_framework import versioning as drf_versioning
 from rest_framework.compat import unicode_http_header
@@ -127,3 +128,25 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         return utils.absolute_reverse(
             viewname, query_kwargs=query_kwargs, args=args, kwargs=kwargs,
         )
+
+class PrivateVersioning(BaseVersioning):
+
+    def reverse(self, viewname, args=None, kwargs=None, request=None, format=None, **extra):
+        """ Overrides BaseVersioning.reverse to maybe ignore 'version' arg
+
+        Requests to private views in the '_' namespace don't have any version associated
+        with them. Related fields in their serializers that point to views in a versioned
+        namespace require a version kwarg to be reversed correctly. This first tries the
+        reverse with one, then without if that fails.
+        """
+        try:
+            return super(PrivateVersioning, self).reverse(viewname, args=args, kwargs=kwargs, request=request, format=format, **extra)
+        except NoReverseMatch:
+            kwargs = kwargs or {}
+            if kwargs.get('version', False):
+                kwargs.pop('version')
+                return utils.absolute_reverse(
+                    viewname, query_kwargs=None, args=args, kwargs=kwargs,
+                )
+            kwargs['version'] = get_latest_sub_version('2')
+            return super(PrivateVersioning, self).reverse(viewname, args=args, kwargs=kwargs, request=request, format=format, **extra)

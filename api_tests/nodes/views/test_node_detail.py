@@ -4,6 +4,7 @@ import pytest
 from urlparse import urlparse
 
 
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import NodeLog
@@ -182,7 +183,7 @@ class TestNodeDetail:
         url = res.json['data']['relationships']['parent']['links']['related']['href']
         assert urlparse(url).path == url_public
 
-    def test_node_has(self, app, url_public):
+    def test_node_has(self, app, url_public, project_public):
 
         #   test_node_has_children_link
         res = app.get(url_public)
@@ -191,28 +192,33 @@ class TestNodeDetail:
         assert urlparse(url).path == expected_url
 
     #   test_node_has_contributors_link
-        res = app.get(url_public)
         url = res.json['data']['relationships']['contributors']['links']['related']['href']
         expected_url = '{}contributors/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     #   test_node_has_node_links_link
-        res = app.get(url_public)
         url = res.json['data']['relationships']['node_links']['links']['related']['href']
         expected_url = '{}node_links/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     #   test_node_has_registrations_link
-        res = app.get(url_public)
         url = res.json['data']['relationships']['registrations']['links']['related']['href']
         expected_url = '{}registrations/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     #   test_node_has_files_link
-        res = app.get(url_public)
         url = res.json['data']['relationships']['files']['links']['related']['href']
         expected_url = '{}files/'.format(url_public)
         assert urlparse(url).path == expected_url
+
+    #   test_node_has_affiliated_institutions_link_and_it_doesn't_serialize_to_none
+        assert project_public.affiliated_institutions.count() == 0
+        related_url = res.json['data']['relationships']['affiliated_institutions']['links']['related']['href']
+        expected_url = '{}institutions/'.format(url_public)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['affiliated_institutions']['links']['self']['href']
+        expected_url = '{}relationships/institutions/'.format(url_public)
+        assert urlparse(self_url).path == expected_url
 
     def test_node_has_comments_link(
             self, app, user, project_public, url_public):
@@ -258,6 +264,17 @@ class TestNodeDetail:
         unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
         unread_comments_node = unread['node']
         assert unread_comments_node == 1
+
+    def test_node_has_correct_wiki_page_count(self, user, app, url_private, project_private):
+        res = app.get('{}?related_counts=True'.format(url_private), auth=user.auth)
+        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 0
+
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            wiki_page = WikiFactory(node=project_private, user=user)
+            WikiVersionFactory(wiki_page=wiki_page)
+
+        res = app.get('{}?related_counts=True'.format(url_private), auth=user.auth)
+        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
 
     def test_node_properties(self, app, url_public):
         res = app.get(url_public)
@@ -1274,7 +1291,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         assert project_private.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
-    def test_delete_project_with_component_returns_error(self, app, user):
+    def test_delete_project_with_component_returns_errors_pre_2_12(self, app, user):
         project = ProjectFactory(creator=user)
         NodeFactory(parent=project, creator=user)
         # Return a 400 because component must be deleted before deleting the
@@ -1290,6 +1307,41 @@ class TestNodeDelete(NodeCRUDTestCase):
         assert (
             errors[0]['detail'] ==
             'Any child components must be deleted prior to deleting this project.')
+
+    def test_delete_project_with_component_allowed_with_2_12(self, app, user):
+        project = ProjectFactory(creator=user)
+        child = NodeFactory(parent=project, creator=user)
+        grandchild = NodeFactory(parent=child, creator=user)
+        # Versions 2.12 and greater delete all the nodes in the hierarchy
+        res = app.delete_json_api(
+            '/{}nodes/{}/?version=2.12'.format(API_BASE, project._id),
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 204
+        project.reload()
+        child.reload()
+        grandchild.reload()
+        assert project.is_deleted is True
+        assert child.is_deleted is True
+        assert grandchild.is_deleted is True
+
+    def test_delete_project_with_private_component_2_12(self, app, user):
+        user_two = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        child = NodeFactory(parent=project, creator=user_two)
+        # Versions 2.12 and greater delete all the nodes in the hierarchy
+        res = app.delete_json_api(
+            '/{}nodes/{}/?version=2.12'.format(API_BASE, project._id),
+            auth=user.auth,
+            expect_errors=True
+        )
+
+        assert res.status_code == 403
+        project.reload()
+        child.reload()
+        assert project.is_deleted is False
+        assert child.is_deleted is False
 
     def test_delete_bookmark_collection_returns_error(self, app, user):
         bookmark_collection = find_bookmark_collection(user)

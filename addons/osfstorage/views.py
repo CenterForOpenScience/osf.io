@@ -15,6 +15,7 @@ from framework.sessions import get_session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed, must_be_logged_in
 
+from api.caching.tasks import update_storage_usage
 from osf.exceptions import InvalidTagError, TagNotFoundError
 from osf.models import FileVersion, OSFUser
 from osf.utils.requests import check_select_for_update
@@ -122,13 +123,16 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
-    return source.copy_under(destination, name=name).serialize(), httplib.CREATED
-
+    ret = source.copy_under(destination, name=name).serialize(), httplib.CREATED
+    update_storage_usage(destination.target)
+    return ret
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
+    source_target = source.target
+
     try:
-        return source.move_under(destination, name=name).serialize(), httplib.OK
+        ret = source.move_under(destination, name=name).serialize(), httplib.OK
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
             'message_long': 'Cannot move file as it is checked out.'
@@ -138,6 +142,12 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
             'message_long': 'Cannot move file as it is the primary file of preprint.'
         })
 
+    # once the move is complete recalculate storage for both targets if it's a inter-target move.
+    if source_target != destination.target:
+        update_storage_usage(destination.target)
+        update_storage_usage(source_target)
+
+    return ret
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
@@ -309,27 +319,30 @@ def osfstorage_create_child(file_node, payload, **kwargs):
             )
         })
 
+    if file_node.checkout and file_node.checkout._id != user._id:
+        raise HTTPError(httplib.FORBIDDEN, data={
+            'message_long': 'File cannot be updated due to checkout status.'
+        })
+
     if not is_folder:
         try:
-            if file_node.checkout is None or file_node.checkout._id == user._id:
-                version = file_node.create_version(
-                    user,
-                    dict(payload['settings'], **dict(
-                        payload['worker'], **{
-                            'object': payload['metadata']['name'],
-                            'service': payload['metadata']['provider'],
-                        })
-                    ),
-                    dict(payload['metadata'], **payload['hashes'])
-                )
-                version_id = version._id
-                archive_exists = version.archive is not None
-            else:
-                raise HTTPError(httplib.FORBIDDEN, data={
-                    'message_long': 'File cannot be updated due to checkout status.'
-                })
+            metadata = dict(payload['metadata'], **payload['hashes'])
+            location = dict(payload['settings'], **dict(
+                payload['worker'], **{
+                    'object': payload['metadata']['name'],
+                    'service': payload['metadata']['provider'],
+                }
+            ))
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
+        current_version = file_node.get_version()
+        new_version = file_node.create_version(user, location, metadata)
+
+        if not current_version or not current_version.is_duplicate(new_version):
+            update_storage_usage(file_node.target)
+
+        version_id = new_version._id
+        archive_exists = new_version.archive is not None
     else:
         version_id = None
         archive_exists = False
@@ -365,6 +378,7 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
             'message_long': 'Cannot delete file as it is the primary file of preprint.'
         })
 
+    update_storage_usage(file_node.target)
     return {'status': 'success'}
 
 
@@ -388,9 +402,6 @@ def osfstorage_download(file_node, payload, **kwargs):
             raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
-    # TODO: Update analytics in MFR callback when it is implemented
-    if request.args.get('mode') not in ('render', ):
-        utils.update_analytics(file_node.target, file_node._id, int(version.identifier) - 1)
     return {
         'data': {
             'name': file_node.name,

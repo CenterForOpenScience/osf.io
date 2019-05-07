@@ -10,17 +10,20 @@ from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
-from api.base.serializers import AddonAccountSerializer
+from api.base.serializers import get_meta_type, AddonAccountSerializer
 from api.base.utils import (
     default_node_list_queryset,
     default_node_list_permission_queryset,
     get_object_or_error,
     get_user_auth,
     hashids,
+    is_truthy,
 )
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.throttling import SendEmailThrottle
+from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationSerializer
@@ -46,7 +49,6 @@ from api.users.serializers import (
     UserSettingsUpdateSerializer,
     UserQuickFilesSerializer,
     UserAccountExportSerializer,
-    UserAccountDeactivateSerializer,
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
 )
@@ -54,6 +56,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
 from django.utils import timezone
 from framework.auth.core import get_user
+from framework.auth.views import send_confirm_email
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
 from framework.utils import throttle_period_expired
@@ -179,6 +182,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     view_name = 'user-detail'
 
     serializer_class = UserDetailSerializer
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     def get_serializer_class(self):
         if self.request.auth:
@@ -507,7 +511,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         # DELETEs normally dont get type checked
         # not the best way to do it, should be enforced everywhere, maybe write a test for it
         for val in data:
-            if val['type'] != self.serializer_class.Meta.type_:
+            if val['type'] != get_meta_type(self.serializer_class, self.request):
                 raise Conflict()
         for val in data:
             if val['id'] in current_institutions:
@@ -613,38 +617,6 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class UserAccountDeactivate(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        CurrentUser,
-    )
-
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
-
-    view_category = 'users'
-    view_name = 'user-account-deactivate'
-
-    serializer_class = UserAccountDeactivateSerializer
-    throttle_classes = (SendEmailThrottle, )
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = self.get_user()
-        mails.send_mail(
-            to_addr=settings.OSF_SUPPORT_EMAIL,
-            mail=mails.REQUEST_DEACTIVATION,
-            user=user,
-            can_change_preferences=False,
-        )
-        user.email_last_sent = timezone.now()
-        user.requested_deactivation = True
-        user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -706,6 +678,7 @@ class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
+    throttle_classes = (SendEmailDeactivationThrottle, )
 
     view_category = 'users'
     view_name = 'user_settings'
@@ -805,7 +778,7 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin):
+class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -822,22 +795,32 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
 
     serializer_class = UserEmailsSerializer
 
-    # overrides ListAPIViewa
-    def get_queryset(self):
+    def get_default_queryset(self):
         user = self.get_user()
         serialized_emails = []
         for email in user.emails.all():
             primary = email.address == user.username
             hashed_id = hashids.encode(email.id)
-            serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, primary=primary)
+            serialized_email = UserEmail(email_id=hashed_id, address=email.address, confirmed=True, verified=True, primary=primary)
             serialized_emails.append(serialized_email)
-        email_verifications = user.email_verifications or []
-        for token in email_verifications:
-            detail = user.email_verifications[token]
-            serialized_unconfirmed_email = UserEmail(email_id=token, address=detail['email'], confirmed=detail['confirmed'], primary=False)
+        email_verifications = user.email_verifications or {}
+        for token, detail in email_verifications.iteritems():
+            is_merge = Email.objects.filter(address=detail['email']).exists()
+            serialized_unconfirmed_email = UserEmail(
+                email_id=token,
+                address=detail['email'],
+                confirmed=detail['confirmed'],
+                verified=False,
+                primary=False,
+                is_merge=is_merge,
+            )
             serialized_emails.append(serialized_unconfirmed_email)
 
         return serialized_emails
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
@@ -859,6 +842,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
     def get_object(self):
         email_id = self.kwargs['email_id']
         user = self.get_user()
+        email = None
 
         # check to see if it's a confirmed email with hashed id
         decoded_id = hashids.decode(email_id)
@@ -871,6 +855,8 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
                 primary = email.address == user.username
                 address = email.address
                 confirmed = True
+                verified = True
+                is_merge = False
 
         # check to see if it's an unconfirmed email with a token
         elif user.unconfirmed_emails:
@@ -878,14 +864,33 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
                 email = user.email_verifications[email_id]
                 address = email['email']
                 confirmed = email['confirmed']
+                verified = False
                 primary = False
+                is_merge = Email.objects.filter(address=address).exists()
             except KeyError:
                 email = None
 
         if not email:
             raise NotFound
 
-        return UserEmail(email_id=email_id, address=address, confirmed=confirmed, primary=primary)
+        # check for resend confirmation email query parameter in a GET request
+        if self.request.method == 'GET' and is_truthy(self.request.query_params.get('resend_confirmation')):
+            if not confirmed and settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+                if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                    send_confirm_email(user, email=address, renew=True)
+                    user.email_last_sent = timezone.now()
+                    user.save()
+
+        return UserEmail(email_id=email_id, address=address, confirmed=confirmed, verified=verified, primary=primary, is_merge=is_merge)
+
+    def get(self, request, *args, **kwargs):
+        response = super(UserEmailsDetail, self).get(request, *args, **kwargs)
+        if is_truthy(self.request.query_params.get('resend_confirmation')):
+            user = self.get_user()
+            email_id = kwargs.get('email_id')
+            if user.unconfirmed_emails and user.email_verifications.get(email_id):
+                response.status = response.status_code = status.HTTP_202_ACCEPTED
+        return response
 
     # Overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):

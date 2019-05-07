@@ -7,9 +7,10 @@ import warnings
 import httplib
 
 import bson
-from django.db.models import Q
+from django.db.models import Q, OuterRef, Exists
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
+from django_bulk_update.helper import bulk_update
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.paginator import Paginator
@@ -61,6 +62,9 @@ from website.identifiers.clients import DataCiteClient
 from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, expand_permissions
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from api.caching.tasks import update_storage_usage
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 
 
 logger = logging.getLogger(__name__)
@@ -71,11 +75,11 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
     def get_roots(self):
         return self.filter(id__in=self.exclude(type='osf.collection').exclude(type='osf.quickfilesnode').values_list('root_id', flat=True))
 
-    def get_children(self, root, active=False):
+    def get_children(self, root, active=False, include_root=False):
         # If `root` is a root node, we can use the 'descendants' related name
         # rather than doing a recursive query
         if root.id == root.root_id:
-            query = root.descendants.exclude(id=root.id)
+            query = root.descendants.all() if include_root else root.descendants.exclude(id=root.id)
             if active:
                 query = query.filter(is_deleted=False)
             return query
@@ -116,7 +120,9 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     root.pk])
                 row = cursor.fetchone()[0]
                 if not row:
-                    return AbstractNode.objects.none()
+                    return AbstractNode.objects.filter(id=root.pk) if include_root else AbstractNode.objects.none()
+                if include_root:
+                    row.append(root.pk)
                 return AbstractNode.objects.filter(id__in=row)
 
     def can_view(self, user=None, private_link=None):
@@ -169,8 +175,8 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
     def get_roots(self):
         return self.get_queryset().get_roots()
 
-    def get_children(self, root, active=False):
-        return self.get_queryset().get_children(root, active=active)
+    def get_children(self, root, active=False, include_root=False):
+        return self.get_queryset().get_children(root, active=active, include_root=include_root)
 
     def can_view(self, user=None, private_link=None):
         return self.get_queryset().can_view(user=user, private_link=private_link)
@@ -673,6 +679,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         try:
             search.search.update_node(self, bulk=False, async_update=True)
+            if self.is_collected and self.is_public:
+                search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1948,9 +1956,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         values = {}
         for key, value in fields.items():
             if key not in self.WRITABLE_WHITELIST:
-                continue
-            if self.is_registration and key != 'is_public':
-                raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
+                if self.is_registration:
+                    raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
+                else:
+                    continue
             # Title and description have special methods for logging purposes
             if key == 'title':
                 if not self.is_bookmark_collection or not self.is_quickfiles:
@@ -2036,7 +2045,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def remove_node(self, auth, date=None):
-        """Marks a node as deleted.
+        """Marks a node plus every node in its hierarchy as deleted
 
         TODO: Call a hook on addons
         Adds a log to the parent node if applicable
@@ -2046,30 +2055,31 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param datetime date: `datetime.datetime` or `None`
         """
         # TODO: rename "date" param - it's shadowing a global
-        if not self.can_edit(auth):
+        hierarchy = Node.objects.get_children(self, active=True, include_root=True)
+        is_admin = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=auth.user)
+        if len(hierarchy.annotate(has_admin_perm=Exists(is_admin)).filter(has_admin_perm=False)):
             raise PermissionsError(
-                '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
+                '{0!r} does not have permission to modify this {1}, or a component in its hierarchy.'.format(auth.user, self.category or 'node')
             )
 
-        if Node.objects.get_children(self, active=True).exists():
-            raise NodeStateError('Any child components must be deleted prior to deleting this project.')
-
         # After delete callback
-        remove_addons(auth, [self])
-
-        log_date = date or timezone.now()
+        remove_addons(auth, hierarchy)
 
         Comment = apps.get_model('osf.Comment')
-        Comment.objects.filter(node=self).update(root_target=None)
+        Comment.objects.filter(node__id__in=hierarchy).update(root_target=None)
 
-        # Add log to parent
-        self.add_remove_node_log(auth=auth, date=log_date)
+        log_date = date or timezone.now()
+        for node in hierarchy:
+            # Add log to parents
+            node.is_deleted = True
+            node.deleted_date = date
+            node.add_remove_node_log(auth=auth, date=log_date)
+            project_signals.node_deleted.send(node)
 
-        self.is_deleted = True
-        self.deleted_date = date
-        self.save()
+        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
 
-        project_signals.node_deleted.send(self)
+        if len(hierarchy.filter(is_public=True)):
+            AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
 
         return True
 
@@ -2206,6 +2216,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log_date=timezone.now(),
         )
         self.save()
+
+    @property
+    def storage_usage(self):
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self._id)
+
+        storage_usage_total = storage_usage_cache.get(key)
+        if storage_usage_total:
+            return storage_usage_total
+        else:
+            update_storage_usage(self)  # sets cache
+            return storage_usage_cache.get(key)
 
 
 class Node(AbstractNode):

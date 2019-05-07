@@ -439,3 +439,8 @@ PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
     'preprint_withdrawal_request_granted',
     subject='Your ${reviewable.provider.preprint_word} has been withdrawn',
 )
+
+PREPRINT_WITHDRAWAL_REQUEST_DECLINED = Mail(
+    'preprint_withdrawal_request_declined',
+    subject='Your withdrawal request has been declined',
+)

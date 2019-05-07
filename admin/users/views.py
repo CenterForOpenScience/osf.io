@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from django.db.models import Q
 from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView, TemplateView
+from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
@@ -14,6 +15,7 @@ from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
 
+from osf.exceptions import UserStateError
 from osf.models.base import Guid
 from osf.models.user import OSFUser
 from osf.models.node import Node, NodeLog
@@ -32,12 +34,13 @@ from osf.models.admin_log_entry import (
     USER_EMAILED,
     USER_REMOVED,
     USER_RESTORED,
+    USER_GDPR_DELETED,
     CONFIRM_SPAM,
     REINDEX_ELASTIC,
 )
 
 from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm
+from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 
@@ -100,6 +103,53 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get_object(self, queryset=None):
         return OSFUser.load(self.kwargs.get('guid'))
+
+
+class UserGDPRDeleteView(PermissionRequiredMixin, DeleteView):
+    """ Allow authorised admin user to totally erase user data.
+
+    Interface with OSF database. No admin models.
+    """
+    template_name = 'users/GDPR_delete_user.html'
+    context_object_name = 'user'
+    object = None
+    permission_required = 'osf.change_osfuser'
+    raise_exception = True
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            user = self.get_object()
+            user.gdpr_delete()
+            user.save()
+            message = 'User {} was successfully GDPR deleted'.format(user._id)
+            messages.success(request, message)
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=user.pk,
+                object_repr='User',
+                message=message,
+                action_flag=USER_GDPR_DELETED
+            )
+        except UserStateError as e:
+            messages.warning(request, str(e))
+
+        return redirect(reverse_user(self.kwargs.get('guid')))
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context.setdefault('guid', kwargs.get('object')._id)
+        return super(UserGDPRDeleteView, self).get_context_data(**context)
+
+    def get_object(self, queryset=None):
+        user = OSFUser.load(self.kwargs.get('guid'))
+        if user:
+            return user
+        else:
+            raise Http404(
+                '{} with id "{}" not found.'.format(
+                    self.context_object_name.title(),
+                    self.kwargs.get('guid')
+                ))
 
 
 class SpamUserDeleteView(UserDeleteView):
@@ -253,6 +303,32 @@ class User2FactorDeleteView(UserDeleteView):
             action_flag=USER_2_FACTOR
         )
         return redirect(reverse_user(self.kwargs.get('guid')))
+
+
+class UserAddSystemTag(PermissionRequiredMixin, FormView):
+
+    template_name = 'users/add_system_tag.html'
+    object_type = 'osfuser'
+    permission_required = 'osf.change_osfuser'
+    raise_exception = True
+    form_class = AddSystemTagForm
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('users:user', kwargs={'guid': self.kwargs.get('guid')})
+
+    def get_object(self, queryset=None):
+        return OSFUser.load(self.kwargs.get('guid'))
+
+    def get_context_data(self, **kwargs):
+        return {'guid': self.get_object()._id}
+
+    def form_valid(self, form):
+        user = self.get_object()
+        system_tag_to_add = form.cleaned_data['system_tag_to_add']
+        user.add_system_tag(system_tag_to_add)
+        user.save()
+
+        return super(UserAddSystemTag, self).form_valid(form)
 
 
 class UserFormView(PermissionRequiredMixin, FormView):

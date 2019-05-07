@@ -106,6 +106,18 @@ class TestApplicationList:
         )
         assert res.status_code == 400
 
+    @pytest.mark.enable_implicit_clean
+    def test_multiple_validation_errors(
+            self, app, user, url, sample_data):
+        # callback url and home url are both too long
+        sample_data['data']['attributes']['callback_url'] = 'https://cos.io/' + 'a' * 200
+        sample_data['data']['attributes']['home_url'] = 'https://cos.io/' + 'a' * 200
+        res = app.post_json_api(
+            url, sample_data, auth=user.auth, expect_errors=True
+        )
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 2
+
     def test_field_content_is_sanitized_upon_submission(
             self, app, user, url, sample_data):
         bad_text = '<a href=\'http://sanitized.name\'>User_text</a>'
