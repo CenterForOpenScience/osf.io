@@ -161,6 +161,7 @@ class TestProvisionNode(ContextTestCase):
 
     def test_provision(self):
         with self.make_context():
+            self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
         assert_true(self.node.is_public)
@@ -174,6 +175,7 @@ class TestProvisionNode(ContextTestCase):
         self.conference.public_projects = False
         self.conference.save()
         with self.make_context():
+            self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
         assert_false(self.node.is_public)
@@ -183,6 +185,7 @@ class TestProvisionNode(ContextTestCase):
 
     def test_provision_spam(self):
         with self.make_context(data={'X-Mailgun-Sscore': message.SSCORE_MAX_VALUE + 1}):
+            self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
         assert_false(self.node.is_public)
@@ -236,6 +239,7 @@ class TestProvisionNode(ContextTestCase):
         conference = ConferenceFactory()
 
         with self.make_context(data={'from': 'bdawk@sb52champs.com', 'subject': 'It\'s PARTY TIME!'}):
+            self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             views.add_poster_by_email(conference, msg)
 
@@ -421,6 +425,7 @@ class TestMessage(ContextTestCase):
             },
         )
         with ctx:
+            self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             assert_equal(len(msg.attachments), 1)
             assert_equal(msg.attachments[0].read(), content)
