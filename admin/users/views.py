@@ -248,7 +248,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
     template_name = 'users/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
-        if not request.user.get_perms('osf.mark_spam'):
+        if not request.user.has_perm('osf.mark_spam'):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
         user_ids = [
             uid for uid in request.POST.keys()
@@ -257,7 +257,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
         for uid in user_ids:
             user = OSFUser.load(uid)
             if 'spam_flagged' in user.system_tags:
-                user.system_tags.remove('spam_flagged')
+                user.tags.through.objects.filter(tag__name='spam_flagged').delete()
             user.confirm_spam()
             user.save()
             update_admin_log(
