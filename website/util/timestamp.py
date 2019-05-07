@@ -69,7 +69,10 @@ def get_error_list(pid):
             verify_result_title = api_settings.FILE_NOT_FOUND_MSG
 
         # User and date of the verification
-        verify_date = data.verify_date.strftime('%Y/%m/%d %H:%M:%S')
+        if data.verify_date is not None:
+            verify_date = data.verify_date.strftime('%Y/%m/%d %H:%M:%S')
+        else:
+            verify_date = 'Unknown'
 
         # Get file info
         base_file_data = BaseFileNode.objects.filter(_id=data.file_id)

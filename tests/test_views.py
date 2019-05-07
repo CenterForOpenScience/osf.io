@@ -5136,7 +5136,10 @@ class TestTimestampView(OsfTestCase):
         ts_list = RdmFileTimestamptokenVerifyResult.objects.filter(
             project_id=self.project._id,
             path='/osfstorage_test_file2.status_3'
-        ).update(verify_user=None)
+        ).update(
+            verify_user=None,
+            verify_date=None
+        )
         res = self.app.get(self.project.url + 'timestamp/', auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
