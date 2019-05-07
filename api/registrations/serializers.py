@@ -314,7 +314,7 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_registered_meta(self, obj):
         if obj.registered_meta:
-            meta_values = obj.registered_meta.values()[0]
+            meta_values = list(obj.registered_meta.values())[0]
             try:
                 return json.loads(meta_values)
             except TypeError:

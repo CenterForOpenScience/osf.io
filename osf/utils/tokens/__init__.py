@@ -51,6 +51,9 @@ class TokenHandler(object):
         action = self.payload.get('action', None)
         handler = self.HANDLERS.get(action)
         if handler:
+            if isinstance(self.encoded_token, bytes):
+                return handler(self.payload, self.encoded_token.decode())
+
             return handler(self.payload, self.encoded_token)
         else:
             raise TokenHandlerNotFound(action=action)

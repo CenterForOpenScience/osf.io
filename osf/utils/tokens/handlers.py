@@ -85,9 +85,11 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     if do_action:
         registration = sanction.registrations.get()
         registered_from = registration.registered_from
-        print(encoded_token)
+
         try:
-            do_action(auth.user, encoded_token.decode())
+            if isinstance(encoded_token, bytes):
+                do_action(auth.user, encoded_token.decode())
+            do_action(auth.user, encoded_token)
         except TokenError as e:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': e.message_short,
