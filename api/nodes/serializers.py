@@ -246,6 +246,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'custom_citation',
         'node_license',
         'registrations',
+        'contributors',
+        'bibliographic_contributors',
     ]
 
     id = IDField(source='_id', read_only=True)
