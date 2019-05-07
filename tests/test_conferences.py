@@ -152,7 +152,7 @@ class TestProvisionNode(ContextTestCase):
         data = {
             'attachment-count': '1',
             'attachment-1': (self.attachment, 'attachment-1'),
-            'X-Mailgun-Sscore': 0,
+            'X-Mailgun-Sscore': '0',
             'recipient': self.recipient,
             'stripped-text': self.body,
         }
@@ -416,7 +416,7 @@ class TestMessage(ContextTestCase):
         ctx = self.make_context(
             method='POST',
             data={
-                'attachment-count': 1,
+                'attachment-count': '1',
                 'attachment-1': (sio, 'attachment-1'),
             },
         )
