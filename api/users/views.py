@@ -5,6 +5,7 @@ from django.db.models import F, Q
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
+from api.base.waffle_decorators import require_flag
 from api.base.exceptions import Conflict, UserGone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
@@ -62,6 +63,7 @@ from framework.auth.exceptions import ChangePasswordError
 from framework.utils import throttle_period_expired
 from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError, HTTPError
+from osf.features import OSF_GROUPS
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
@@ -349,6 +351,7 @@ class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMix
     view_name = 'user-groups'
     ordering = ('-modified', )
 
+    @require_flag(OSF_GROUPS)
     def get_default_queryset(self):
         requested_user = self.get_user()
         current_user = self.request.user
