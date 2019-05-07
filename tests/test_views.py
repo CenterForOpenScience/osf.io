@@ -752,7 +752,7 @@ class TestProjectViews(OsfTestCase):
         node.suspended = True
         node.save()
         url = node.api_url
-        res = self.app.get(url, auth=Auth(self.user1), expect_errors=True)
+        res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 451)
 
     def test_private_link_edit_name(self):
