@@ -35,7 +35,7 @@ def error_out(msg):
 
 class Options:
 
-    def __init__(self):
+    def arg_parser(self):
         parser = argparse.ArgumentParser(description='GRDM/mAP group maintanance utility')
         parser.add_argument('-g', '--grdm', action='store_true', help='remove groups from GRDM')
         parser.add_argument('-m', '--map', action='store_true', help='remove groups from mAP')
@@ -64,10 +64,10 @@ class Options:
             except Exception as e:
                 error_out(e.message)
                 raise e
-            for l in f:
-                if l == '' or l == '\n' or l[:1] == '#':
+            for k in f:
+                if k == '' or k == '\n' or k[:1] == '#':
                     continue
-                self.keys.append(l.rstrip('\n'))
+                self.keys.append(k.rstrip('\n'))
 
         # flags
         self.delete_grdm = args.grdm
@@ -98,10 +98,10 @@ class Options:
             except Exception as e:
                 error_out(e.message)
                 raise e
-            for l in f:
-                if l == '' or l == '\n' or l[:1] == '#':
+            for k in f:
+                if k == '' or k == '\n' or k[:1] == '#':
                     continue
-                self.keys.append(l.rstrip('\n'))
+                self.keys.append(k.rstrip('\n'))
 
         # flags
         self.delete_grdm = grdm
@@ -183,11 +183,10 @@ def remove_one_group(node, options):
     flag = 'B'  # default: BOTH exist
     if group_key is not None:
         try:
-            map_group = mapcore.get_group_by_key(group_key)
+            mapcore.get_group_by_key(group_key)
         except MAPCoreException as e:
             if e.group_does_not_exist():
                 flag = 'R'  # GRDM only
-                map_group = None
 
     # display group info
     if options.interactive:
@@ -279,14 +278,5 @@ def remove_multi_groups(options):
 if __name__ == '__main__':
     # command line options
     options = Options()
+    options.arg_parser()
     remove_multi_groups(options)
-
-
-
-
-
-
-
-
-
-
