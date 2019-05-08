@@ -150,14 +150,13 @@ def add_prereg_campaign_tags():
     Tag = apps.get_model('osf', 'Tag')
     OSFUser = apps.get_model('osf', 'OSFuser')
     prereg_challenge_source_tag = Tag.all_tags.get(name='source:campaign|prereg_challenge', system=True)
-    logging.info('Added tag ' + prereg_challenge_source_tag.name)
     prereg_source_tag = Tag.all_tags.create(name='source:campaign|prereg', system=True)
     logging.info('Added tag ' + prereg_source_tag.name)
     prereg_challenge_cutoff_date = pytz.utc.localize(datetime(2019, 01, 01, 05, 59))
     prereg_users_registered_after_january_first = OSFUser.objects.filter(tags__id=prereg_challenge_source_tag.id, date_registered__gt=prereg_challenge_cutoff_date)
     logging.info('Number of OSFUsers created on/after 2019-01-01: ' + str(len(prereg_users_registered_after_january_first)))
     for user in prereg_users_registered_after_january_first:
-        user.tags.through.objects.filter(tag=prereg_challenge_source_tag).delete()
+        user.tags.through.objects.filter(tag=prereg_challenge_source_tag, osfuser=user).delete()
         user.add_system_tag(prereg_source_tag)
         # Check  whether the user is merged to another user
         # If so, add the same tag to that user as well
