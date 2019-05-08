@@ -88,13 +88,10 @@ def normalize_provider_source_tags():
     """
     Tag = apps.get_model('osf', 'Tag')
     for tag_name in PROVIDER_SOURCE_TAGS:
-        try:
-            tag = Tag.all_tags.get(name=tag_name[0], system=True)
-            tag.name = tag_name[1]
-            tag.save()
-            logging.info(tag_name[0] + ' migrated to ' + tag_name[1])
-        except Tag.DoesNotExist:
-            pass
+        tag = Tag.all_tags.get(name=tag_name[0], system=True)
+        tag.name = tag_name[1]
+        tag.save()
+        logging.info(tag_name[0] + ' migrated to ' + tag_name[1])
 
 
 def add_provider_claimed_tags():
@@ -112,13 +109,10 @@ def normalize_campaign_source_tags():
     """
     Tag = apps.get_model('osf', 'Tag')
     for tag_name in CAMPAIGN_SOURCE_TAGS:
-        try:
-            tag = Tag.all_tags.get(name=tag_name[0], system=True)
-            tag.name = tag_name[1]
-            tag.save()
-            logging.info(tag_name[0] + ' migrated to ' + tag_name[1])
-        except Tag.DoesNotExist:
-            pass
+        tag = Tag.all_tags.get(name=tag_name[0], system=True)
+        tag.name = tag_name[1]
+        tag.save()
+        logging.info(tag_name[0] + ' migrated to ' + tag_name[1])
 
 
 def add_campaign_claimed_tags():
