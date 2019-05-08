@@ -36,7 +36,7 @@
 }
 .pagination-wrap li>a {
     position: relative;
-    width: 42px;
+    /* width: 42px; */
     float: left;
     padding: 6px 12px;
     margin-left: -1px;
