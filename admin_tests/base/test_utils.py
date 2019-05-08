@@ -45,7 +45,7 @@ class TestSubjectRules(AdminTestCase):
         subjects_selected = [self.parent_one]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [[[self.parent_one._id], False]]
-        self.assertItemsEqual(rules_returned, rules_ideal)
+        assert rules_returned == rules_ideal
 
     def test_two_toplevel_subjects(self):
         subjects_selected = [
@@ -57,7 +57,7 @@ class TestSubjectRules(AdminTestCase):
             [[self.parent_one._id], False],
             [[self.parent_two._id], False]
         ]
-        self.assertItemsEqual(rules_returned, rules_ideal)
+        assert rules_returned == rules_ideal
 
     def test_one_child(self):
         subjects_selected = [
@@ -66,7 +66,7 @@ class TestSubjectRules(AdminTestCase):
         ]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [[[self.parent_one._id, self.child_one_1._id], False]]
-        self.assertItemsEqual(rules_returned, rules_ideal)
+        assert rules_returned == rules_ideal
 
     def test_one_child_all_grandchildren(self):
         subjects_selected = [
@@ -77,7 +77,7 @@ class TestSubjectRules(AdminTestCase):
         ]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [[[self.parent_one._id, self.child_one_1._id], True]]
-        self.assertItemsEqual(rules_returned, rules_ideal)
+        assert rules_returned == rules_ideal
 
     def test_all_children_all_grandchildren(self):
         subjects_selected = [
@@ -89,7 +89,7 @@ class TestSubjectRules(AdminTestCase):
         ]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [[[self.parent_one._id], True]]
-        self.assertItemsEqual(rules_returned, rules_ideal)
+        assert rules_returned == rules_ideal
 
     def test_one_child_with_one_grandchild(self):
         subjects_selected = [
@@ -101,7 +101,7 @@ class TestSubjectRules(AdminTestCase):
         rules_ideal = [
             [[self.parent_one._id, self.child_one_1._id, self.grandchild_one_1._id], False]
         ]
-        self.assertItemsEqual(rules_returned, rules_ideal)
+        assert rules_returned == rules_ideal
 
     def test_rules_to_subjects(self):
         rules = [
@@ -109,8 +109,7 @@ class TestSubjectRules(AdminTestCase):
         ]
         subject_queryset_ideal = Subject.objects.filter(Q(id=self.parent_one.id) | Q(id=self.child_one_1.id))
         returned_subjects = rules_to_subjects(rules)
-
-        self.assertItemsEqual(subject_queryset_ideal, returned_subjects)
+        assert list(subject_queryset_ideal) == list(returned_subjects)
 
 class TestNodeChanges(AdminTestCase):
     def setUp(self):
