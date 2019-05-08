@@ -26,7 +26,7 @@ def main(dry=True):
         state=Sanction.UNAPPROVED
     )
     logging.info('{} EmbargoTerminationApprovals that are going to be marked as approved'.format(bad_state_embargo_termination_approvals.count()))
-    logging.info('Affected Registrations: {}'.format((list(bad_state_embargo_termination_approvals.values_list('embargoed_registration__guids___id', flat=True)))))
+    logging.info('Affected Registrations: {}'.format((list(bad_state_embargo_termination_approvals.values_list('embargoed_registration__guids___id', flat=True).distinct()))))
 
     with transaction.atomic():
         bad_state_embargo_termination_approvals.update(state=Sanction.APPROVED)
