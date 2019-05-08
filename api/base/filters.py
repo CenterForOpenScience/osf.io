@@ -31,14 +31,14 @@ def lowercase(lower):
 def sort_multiple(fields):
     fields = list(fields)
 
-    def sort_fn(a, b):
+    def sort_fn(a, b=None):
         sort_direction = 1
         for field in fields:
             if field[0] == '-':
                 sort_direction = -1
                 field = field[1:]
             a_field = getattr(a, field)
-            b_field = getattr(b, field)
+            b_field = getattr(b, field, 0)
             if a_field > b_field:
                 return 1 * sort_direction
             elif a_field < b_field:
@@ -61,7 +61,7 @@ class OSFOrderingFilter(OrderingFilter):
             return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
         if ordering:
             if isinstance(ordering, (list, tuple)):
-                sorted_list = sorted(queryset, cmp=sort_multiple(ordering))
+                sorted_list = sorted(queryset, key=sort_multiple(ordering))
                 return sorted_list
             return queryset.sort(*ordering)
         return queryset
