@@ -626,7 +626,7 @@ def update_user(user, index=None):
                 val = six.u(val)
             except TypeError:
                 pass  # This is fine, will only happen in 2.x if val is already unicode
-            normalized_names[key] = unicodedata.normalize('NFKD', val).encode('ascii', 'ignore')
+            normalized_names[key] = unicodedata.normalize('NFKD', val)
 
     user_doc = {
         'id': user._id,
