@@ -23,7 +23,7 @@ class TestQuotaProfileView(OsfTestCase):
     def setUp(self):
         super(TestQuotaProfileView, self).setUp()
         self.user = AuthUserFactory()
-        self.quota_text = '{}%, {}[{}] / {}[GiB]'
+        self.quota_text = '{}%, {}[{}] / {}[GB]'
 
     def tearDown(self):
         super(TestQuotaProfileView, self).tearDown()
@@ -85,7 +85,7 @@ class TestQuotaProfileView(OsfTestCase):
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
         )
-        assert_in(self.quota_text.format(50.0, 100.0, 'GiB', 200), response.body)
+        assert_in(self.quota_text.format(50.0, 100.0, 'GB', 200), response.body)
         assert_in('Usage of Default storage', response.body)
 
     def test_used_quota_bytes(self):
@@ -102,7 +102,7 @@ class TestQuotaProfileView(OsfTestCase):
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
         )
-        assert_in(self.quota_text.format(5.2, 5.2, 'GiB', 100), response.body)
+        assert_in(self.quota_text.format(5.2, 5.2, 'GB', 100), response.body)
 
     def test_used_quota_storage_icon_ok(self):
         UserQuota.objects.create(user=self.user, max_quota=100, used=0)

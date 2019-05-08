@@ -319,11 +319,11 @@ class TestGetUserListWithQuota(AdminTestCase):
 
         nt.assert_equal(user_quota['usage'], 560)
         nt.assert_equal(round(user_quota['usage_value'], 1), 0.5)
-        nt.assert_equal(user_quota['usage_abbr'], 'KiB')
+        nt.assert_equal(user_quota['usage_abbr'], 'KB')
 
         nt.assert_equal(user_quota['remaining'], int(100 * 1024 ** 3) - 560)
         nt.assert_equal(round(user_quota['remaining_value'], 1), 100)
-        nt.assert_equal(user_quota['remaining_abbr'], 'GiB')
+        nt.assert_equal(user_quota['remaining_abbr'], 'GB')
 
         nt.assert_equal(round(user_quota['ratio'], 1), 0)
 
@@ -335,11 +335,11 @@ class TestGetUserListWithQuota(AdminTestCase):
 
         nt.assert_equal(user_quota['usage'], used)
         nt.assert_equal(round(user_quota['usage_value'], 1), 5.2)
-        nt.assert_equal(user_quota['usage_abbr'], 'GiB')
+        nt.assert_equal(user_quota['usage_abbr'], 'GB')
 
         nt.assert_equal(user_quota['remaining'], 100 * 1024 ** 3 - used)
         nt.assert_equal(round(user_quota['remaining_value'], 1), 100 - 5.2)
-        nt.assert_equal(user_quota['remaining_abbr'], 'GiB')
+        nt.assert_equal(user_quota['remaining_abbr'], 'GB')
 
         nt.assert_equal(round(user_quota['ratio'], 1), 5.2)
 

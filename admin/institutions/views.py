@@ -268,8 +268,8 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
 
     def custom_size_abbreviation(self, size, abbr):
         if abbr == 'B':
-            return (size / 1024, 'KiB')
-        return size, abbr.replace('B', 'iB')
+            return (size / 1024, 'KB')
+        return size, abbr
 
     def get_queryset(self):
         user_list = []
@@ -337,8 +337,8 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, L
 
     def custom_size_abbreviation(self, size, abbr):
         if abbr == 'B':
-            return (size / 1024, 'KiB')
-        return size, abbr.replace('B', 'iB')
+            return (size / 1024, 'KB')
+        return size, abbr
 
     def get_queryset(self):
         user_list = []
