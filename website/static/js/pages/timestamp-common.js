@@ -301,12 +301,13 @@ var download = function () {
         var filePathArr = item.file_path.split('/');
         var fileName = filePathArr[filePathArr.length - 1];
 
-        var tsDate = item.verify_date.replace(' ', '_').replace(/[/]/g, '-').replace(/:/g, '');
+        var userId = item.verify_user_id ? item.verify_user_id : 'Unknown';
+        var tsDate = item.verify_date ? item.verify_date.replace(' ', '_').replace(/[/]/g, '-').replace(/:/g, '') : 'Unknown';
         var fileCreationDate = item.file_create_date_on_verify ? item.file_create_date_on_verify.replace(' ', '_').replace(/[/]/g, '-').replace(/:/g, '') : null;
         var fileModificationDate = item.file_modify_date_on_verify ? item.file_modify_date_on_verify.replace(' ', '_').replace(/[/]/g, '-').replace(/:/g, '') : null;
 
         return {
-            timestampId: 'https://rdf.rdm.nii.ac.jp/resource/ts/' + item.project_id + '/' + item.file_id + '/' + item.verify_user_id + '/' + tsDate,
+            timestampId: 'https://rdf.rdm.nii.ac.jp/resource/ts/' + item.project_id + '/' + item.file_id + '/' + userId + '/' + tsDate,
             fileGuidResource: 'https://rdf.rdm.nii.ac.jp/resource/file/' + item.file_id,
             fileGuidLabel: {text: 'FILE:' + item.file_id, lang: 'en'},
             fileGuid: 'https://rdf.rdm.nii.ac.jp/' + item.file_id,
@@ -329,7 +330,7 @@ var download = function () {
             orgNameResource: item.organization_name ? 'https://rdf.rdm.nii.ac.jp/resource/org/' + item.organization_name.replace(/ /g, '_') : null,
             orgNameLabel: item.organization_name ? {text: item.organization_name, lang: 'en'} : null,
             userGuid: item.creator_id ? 'https://rdf.rdm.nii.ac.jp/' + item.creator_id : null,
-            tsIdLabel: {text: 'TS:' + item.project_id + '/' + item.file_id + '/' + item.verify_user_id + '/' + tsDate, lang: 'en'},
+            tsIdLabel: {text: 'TS:' + item.project_id + '/' + item.file_id + '/' + userId + '/' + tsDate, lang: 'en'},
             tsVerificationStatus: item.verify_result_title,
             latestTsVerificationDate: tsDate
         };
