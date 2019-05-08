@@ -196,7 +196,7 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
         legacy_type_allowed = parser_context.get('legacy_type_allowed', True)
         type_required = not (
             legacy_type_allowed and
-            parser_context['request'].version < 2.7 and
+            float(parser_context['request'].version) < 2.7 and
             parser_context['request'].method == 'PATCH'
         )
         if data:

@@ -300,7 +300,7 @@ class TestUserEmailsList:
         user_one.save()
 
         # test filter by confirmed
-        confirmed_tokens = [key for key, value in user_one.email_verifications.iteritems() if value['confirmed']]
+        confirmed_tokens = [key for key, value in user_one.email_verifications.items() if value['confirmed']]
         confirmed_count = user_one.emails.count() + len(confirmed_tokens)
         filtered_url = '{}?filter[confirmed]=True'.format(url)
         res = app.get(filtered_url, auth=user_one.auth)

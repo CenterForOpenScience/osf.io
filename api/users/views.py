@@ -573,7 +573,7 @@ class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Use
         except KeyError:
             raise NotFound('Requested external identity could not be found.')
 
-        return {'_id': identity_id, 'external_id': identity.keys()[0], 'status': identity.values()[0]}
+        return {'_id': identity_id, 'external_id': list(identity.keys())[0], 'status': identity.values()[0]}
 
     def perform_destroy(self, instance):
         user = self.get_user()

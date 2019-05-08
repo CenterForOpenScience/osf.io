@@ -110,7 +110,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
             'read': []
         }
         for i in range(0, 25):
-            perm = random.choice(users.keys())
+            perm = random.choice(list(users.keys()))
             user_two = AuthUserFactory()
 
             preprint_unpublished.add_contributor(user_two, permissions=perm)
