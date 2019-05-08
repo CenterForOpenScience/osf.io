@@ -21,7 +21,7 @@ from osf.utils import permissions
 from osf.utils.workflows import DefaultStates
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
-from tests.utils import assert_latest_log, assert_items_equal
+from tests.utils import assert_latest_log, assert_equals
 from website.project.signals import contributor_added, contributor_removed
 from api_tests.utils import disconnected_from_listeners
 
@@ -128,7 +128,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
             url_published, url_unpublished, make_contrib_id):
 
         #   test_return_published_contributor_list_logged_in
-        res = app.get(url_published, auth=user_two.auth)
+        res = app.get(url_published)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         assert len(res.json['data']) == 1
@@ -372,12 +372,8 @@ class TestPreprintContributorList(NodeCRUDTestCase):
                 auth=Auth(preprint_published.creator),
                 save=True
             )
-        req_one = app.get(
-            '{}?page=2'.format(url_published),
-            auth=Auth(preprint_published.creator))
-        req_two = app.get(
-            '{}?page=2'.format(url_published),
-            auth=Auth(preprint_published.creator))
+        req_one = app.get('{}?page=2'.format(url_published))
+        req_two = app.get('{}?page=2'.format(url_published))
         id_one = [item['id'] for item in req_one.json['data']]
         id_two = [item['id'] for item in req_two.json['data']]
         for a, b in zip(id_one, id_two):
@@ -1711,9 +1707,9 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
             {'data': [payload_one, payload_two]},
             auth=user.auth, bulk=True)
         assert res.status_code == 201
-        assert_items_equal([res.json['data'][0]['attributes']['bibliographic'],
+        assert_equals([res.json['data'][0]['attributes']['bibliographic'],
                             res.json['data'][1]['attributes']['bibliographic']], [True, False])
-        assert_items_equal([res.json['data'][0]['attributes']['permission'],
+        assert_equals([res.json['data'][0]['attributes']['permission'],
                             res.json['data'][1]['attributes']['permission']], ['admin', 'read'])
         assert res.content_type == 'application/vnd.api+json'
 
@@ -1726,9 +1722,9 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
                                 auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 201
         assert len(res.json['data']) == 2
-        assert_items_equal([res.json['data'][0]['attributes']['bibliographic'],
+        assert_equals([res.json['data'][0]['attributes']['bibliographic'],
                             res.json['data'][1]['attributes']['bibliographic']], [True, False])
-        assert_items_equal([res.json['data'][0]['attributes']['permission'],
+        assert_equals([res.json['data'][0]['attributes']['permission'],
                             res.json['data'][1]['attributes']['permission']], ['admin', 'read'])
         assert res.content_type == 'application/vnd.api+json'
 
@@ -1945,7 +1941,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -1964,7 +1960,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -1983,7 +1979,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2002,7 +1998,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2021,7 +2017,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2130,7 +2126,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2160,7 +2156,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2227,7 +2223,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
             ['admin', 'write']
@@ -2242,7 +2238,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
             ['admin', 'write']
@@ -2386,7 +2382,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2402,7 +2398,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2419,7 +2415,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2436,7 +2432,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2454,7 +2450,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2551,7 +2547,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2577,7 +2573,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
@@ -2591,7 +2587,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth, bulk=True)
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
             ['admin', 'write'])
@@ -2604,7 +2600,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth, bulk=True)
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal(
+        assert_equals(
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission']],
             ['admin', 'write'])

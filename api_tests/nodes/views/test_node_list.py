@@ -20,7 +20,7 @@ from osf_tests.factories import (
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
-from tests.utils import assert_items_equal
+from tests.utils import assert_equals
 from website.views import find_bookmark_collection
 from osf.utils.workflows import DefaultStates
 
@@ -76,7 +76,7 @@ class TestNodeList:
         assert private_project._id not in ids
 
     #   test_return_public_node_list_logged_in_user
-        res = app.get(url, auth=non_contrib)
+        res = app.get(url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         ids = [each['id'] for each in res.json['data']]
@@ -1702,7 +1702,7 @@ class TestNodeCreate:
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field is required.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/category'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/title'
 
     #   test_create_project_invalid_title
         project = {
@@ -1887,7 +1887,7 @@ class TestNodeBulkCreate:
             expect_errors=True, bulk=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/category'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/title'
 
         res = app.get(url, auth=user_one.auth)
         assert len(res.json['data']) == 0
@@ -2987,12 +2987,12 @@ class TestNodeBulkUpdateSkipUneditable:
         assert res.status_code == 200
         edited = res.json['data']
         skipped = res.json['errors']
-        assert_items_equal(
+        assert_equals(
             [edited[0]['id'], edited[1]['id']],
             [user_one_public_project_one._id,
              user_one_public_project_two._id]
         )
-        assert_items_equal(
+        assert_equals(
             [skipped[0]['_id'], skipped[1]['_id']],
             [user_two_public_project_one._id,
              user_two_public_project_two._id]
@@ -3021,12 +3021,12 @@ class TestNodeBulkUpdateSkipUneditable:
         assert res.status_code == 200
         edited = res.json['data']
         skipped = res.json['errors']
-        assert_items_equal(
+        assert_equals(
             [edited[0]['id'], edited[1]['id']],
             [user_one_public_project_one._id,
              user_one_public_project_two._id]
         )
-        assert_items_equal(
+        assert_equals(
             [skipped[0]['_id'], skipped[1]['_id']],
             [user_two_public_project_one._id,
              user_two_public_project_two._id]
@@ -3600,13 +3600,13 @@ class TestNodeBulkDeleteSkipUneditable:
         res = app.delete_json_api(url, payload, auth=user_one.auth, bulk=True)
         assert res.status_code == 200
         skipped = res.json['errors']
-        assert_items_equal(
+        assert_equals(
             [skipped[0]['id'], skipped[1]['id']],
             [public_project_three._id, public_project_four._id]
         )
 
         res = app.get('/{}nodes/'.format(API_BASE), auth=user_one.auth)
-        assert_items_equal(
+        assert_equals(
             [res.json['data'][0]['id'], res.json['data'][1]['id']],
             [public_project_three._id, public_project_four._id]
         )
@@ -3688,7 +3688,7 @@ class TestNodeListPagination:
         return '/{}nodes/'.format(API_BASE)
 
     def test_default_pagination_size(self, app, users, projects, url):
-        res = app.get(url, auth=Auth(users[0]))
+        res = app.get(url)
         pids = [e['id'] for e in res.json['data']]
         for project in projects[1:]:
             assert project._id in pids
@@ -3697,7 +3697,7 @@ class TestNodeListPagination:
 
     def test_max_page_size_enforced(self, app, users, projects, url):
         res_url = '{}?page[size]={}'.format(url, MAX_PAGE_SIZE + 1)
-        res = app.get(res_url, auth=Auth(users[0]))
+        res = app.get(res_url)
         pids = [e['id'] for e in res.json['data']]
         for project in projects:
             assert project._id in pids
@@ -3709,7 +3709,7 @@ class TestNodeListPagination:
 
         res_url = '{}?page[size]={}&embed=contributors'.format(
             url, MAX_PAGE_SIZE + 1)
-        res = app.get(res_url, auth=Auth(users[0]))
+        res = app.get(res_url)
         pids = [e['id'] for e in res.json['data']]
         for project in projects:
             assert project._id in pids

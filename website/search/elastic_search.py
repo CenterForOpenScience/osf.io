@@ -383,7 +383,7 @@ def serialize_node(node, category):
         normalized_title = six.u(node.title)
     except TypeError:
         normalized_title = node.title
-    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+    normalized_title = unicodedata.normalize('NFKD', normalized_title)
     elastic_document = {
         'id': node._id,
         'contributors': [
@@ -430,7 +430,7 @@ def serialize_preprint(preprint, category):
         normalized_title = six.u(preprint.title)
     except TypeError:
         normalized_title = preprint.title
-    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+    normalized_title = unicodedata.normalize('NFKD', normalized_title)
     elastic_document = {
         'id': preprint._id,
         'contributors': [

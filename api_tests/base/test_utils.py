@@ -6,7 +6,6 @@ import unittest
 from rest_framework import fields
 from rest_framework.exceptions import ValidationError
 from api.base import utils as api_utils
-
 from framework.status import push_status_message
 
 
@@ -49,7 +48,7 @@ class TestIsDeprecated(unittest.TestCase):
         assert is_deprecated is True
 
 
-class TestFlaskDjangoIntegration:
+class TestFlaskDjangoIntegration():
     def test_push_status_message_no_response(self):
         status_message = 'This is a message'
         statuses = ['info', 'warning', 'warn', 'success', 'danger', 'default']
@@ -70,7 +69,7 @@ class TestFlaskDjangoIntegration:
                 False,
                 'push_status_message() should have generated a ValidationError exception.'
             )
-        except ValidationError:
+        except ValidationError as e:
             assert_equal(
                 e.detail[0],
                 status_message,
@@ -107,7 +106,7 @@ class TestFlaskDjangoIntegration:
                 'push_status_message() should have re-raised the RuntimeError not gotten ValidationError.'
             )
         except RuntimeError as e:
-            assert_equal(getattr(e, 'message', None),
+            assert_equal(str(e),
                          exception_message,
                          'push_status_message() should have re-raised the '
                          'original RuntimeError with the original message.')

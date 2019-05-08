@@ -102,7 +102,7 @@ def render_citation(node, style='apa'):
     return cit
 
 def add_period_to_title(cit):
-    title_split = cit.encode('utf-8').split('\xe2\x80\x9d')
+    title_split = cit.split('”')  # quote is ” (\xe2\x80\x9d) not normal "
     if len(title_split) == 2 and title_split[0][-1] != '.':
         cit = (title_split[0] + '.' + '\xe2\x80\x9d' + title_split[1]).decode('utf-8')
     return cit
@@ -128,7 +128,7 @@ def apa_reformat(node, cit):
     # handle 8 or more contributors
     else:
         name_list = [apa_name(process_name(node, x)) for x in contributors_list[:6]]
-        new_apa = ' '.join(name_list) + ' \xe2\x80\xa6 '.decode('utf-8') + apa_name(process_name(node, contributors_list[-1]))
+        new_apa = ' '.join(name_list) + ' … ' + apa_name(process_name(node, contributors_list[-1]))
 
     cit = new_apa.rstrip(', ')
     if cit[-1] != '.':

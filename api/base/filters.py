@@ -37,11 +37,11 @@ def sort_multiple(fields):
             if field[0] == '-':
                 sort_direction = -1
                 field = field[1:]
-            a_field = getattr(a, field)
+            a_field = getattr(a, field, 0)
             b_field = getattr(b, field, 0)
-            if a_field > b_field:
+            if isinstance(a_field, int) and a_field > b_field:
                 return 1 * sort_direction
-            elif a_field < b_field:
+            elif isinstance(a_field, int) and a_field < b_field:
                 return -1 * sort_direction
         return 0
     return sort_fn

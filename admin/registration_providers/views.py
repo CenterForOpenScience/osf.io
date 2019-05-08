@@ -258,7 +258,7 @@ class ImportRegistrationProvider(PermissionRequiredMixin, View):
     def parse_file(self, f):
         parsed_file = ''
         for chunk in f.chunks():
-            parsed_file += chunk.decode('utf-8')
+            parsed_file += chunk
         return parsed_file
 
     def get_page_provider(self):

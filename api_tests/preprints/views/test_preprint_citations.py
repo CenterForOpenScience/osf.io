@@ -602,7 +602,7 @@ class TestPreprintCitationContentAPA(ApiTestCase):
         citation = res.json['data']['attributes']['citation']
         date = self.published_preprint.date_published.strftime('%Y, %B %-d')
         assert_equal(citation,
-            u'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., … Taylor5, J. ({}). {}. {}'.format(
+            'McGee, G. C. B., Jenkins, D. T. T., Junior, Schematics, L. R., Taylor1, J., Taylor2, J., Taylor3, J., … Taylor5, J. ({}). {}. {}'.format(
                 date,
                 self.published_preprint.title,
                 'https://doi.org/' + self.published_preprint.article_doi

@@ -72,7 +72,7 @@ class TestWelcomeToApi(ApiTestCase):
         session = Session(data={'auth_user_id': self.user._id})
         session.save()
         cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id)
-        self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
+        self.app.set_cookie(settings.COOKIE_NAME, cookie.decode())
 
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)

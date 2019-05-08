@@ -1109,7 +1109,7 @@ class TestPreprintUpdateLicense:
             auth=admin_contrib.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'year must be specified for this license'
+        assert res.json['errors'][0]['detail'] == "['year must be specified for this license']"
 
     #   test_update_preprint_license_without_required_copyright_holders_in_payload
         data = make_payload(
@@ -1123,7 +1123,7 @@ class TestPreprintUpdateLicense:
             auth=admin_contrib.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'copyrightHolders must be specified for this license'
+        assert res.json['errors'][0]['detail'] == "['copyrightHolders must be specified for this license']"
 
     def test_update_preprint_with_existing_license_year_attribute_only(
             self, admin_contrib, preprint, no_license, url, make_payload, make_request):

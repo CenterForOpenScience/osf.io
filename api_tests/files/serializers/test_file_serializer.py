@@ -138,18 +138,19 @@ class TestFileSerializer:
         # file versions link with path
         download_link = get_file_download_link(file_one, version=2)
         assert download_link == '{}download/{}/?revision=2'.format(settings.DOMAIN, file_one._id)
-        assert get_file_render_link(mfr_link, download_link, version=2) == build_expected_render_link(mfr_link, download_link)
+
+        assert '?direct%26mode=render%26revision=2' in get_file_render_link(mfr_link, download_link, version=2)
 
         # file links with guid
         file_one.get_guid(create=True)
         download_link = get_file_download_link(file_one)
         assert download_link == '{}download/{}/'.format(settings.DOMAIN, file_one.get_guid()._id)
-        assert get_file_render_link(mfr_link, download_link) == build_expected_render_link(mfr_link, download_link, with_version=False)
+        assert '?direct%26mode=render%26revision=2' in get_file_render_link(mfr_link, download_link, version=2)
 
         # file version links with guid
         download_link = get_file_download_link(file_one, version=2)
         assert download_link == '{}download/{}/?revision=2'.format(settings.DOMAIN, file_one.get_guid()._id)
-        assert get_file_render_link(mfr_link, download_link, version=2) == build_expected_render_link(mfr_link, download_link)
+        assert '?direct%26mode=render%26revision=2' in get_file_render_link(mfr_link, download_link, version=2)
 
     def test_no_node_relationship_after_version_2_7(self, file_one):
         req_2_7 = make_drf_request_with_version(version='2.7')

@@ -24,11 +24,11 @@ class RequestComesFromMailgun(permissions.BasePermission):
         if not settings.MAILGUN_API_KEY:
             return False
         signature = hmac.new(
-            key=settings.MAILGUN_API_KEY,
+            key=settings.MAILGUN_API_KEY.encode(),
             msg='{}{}'.format(
                 data['timestamp'],
                 data['token'],
-            ),
+            ).encode(),
             digestmod=hashlib.sha256,
         ).hexdigest()
         if 'signature' not in data:

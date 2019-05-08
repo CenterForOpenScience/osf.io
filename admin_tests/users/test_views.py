@@ -630,7 +630,7 @@ class TestUserWorkshopFormView(AdminTestCase):
             [None, '9/1/16', None, None, None, self.user.username, None],
         ]
 
-        uploaded = SimpleUploadedFile('test_name', bytes(csv.reader(data)), content_type='text/csv')
+        uploaded = SimpleUploadedFile('test_name', str(csv.reader(data)).encode(), content_type='text/csv')
 
         form = WorkshopForm(data={'document': uploaded})
         form.is_valid()

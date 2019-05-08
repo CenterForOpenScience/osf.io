@@ -66,5 +66,5 @@ class TestNodeLogAnalytics(OsfTestCase):
             }
         ]
 
-        assert_items_equal(expected, self.results)
+        assert_equals(expected, self.results)
 

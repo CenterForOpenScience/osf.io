@@ -464,7 +464,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['source']['pointer'] == '/data/attributes/registration_metadata'
-        assert errors['detail'] == 'Expected a dictionary of items but got type "unicode".'
+        assert errors['detail'] == 'Expected a dictionary of items but got type "str".'
 
     def test_registration_metadata_question_values_must_be_dictionaries(
             self, app, user, payload, url_draft_registrations):

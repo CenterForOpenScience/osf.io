@@ -154,7 +154,7 @@ class TestProvisionNode(ContextTestCase):
             'attachment-1': (self.attachment, 'attachment-1'),
             'X-Mailgun-Sscore': '0',
             'recipient': self.recipient,
-            'stripped-text': self.body,
+            'stripped-text': self.body.decode(),
         }
         data.update(kwargs.pop('data', {}))
         return super(TestProvisionNode, self).make_context(data=data, **kwargs)

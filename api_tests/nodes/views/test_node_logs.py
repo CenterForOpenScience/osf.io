@@ -91,7 +91,7 @@ class TestNodeLogList:
         assert public_project.logs.latest().action == 'tag_added'
         public_project.remove_tag('Rheisen', auth=user_auth)
         assert public_project.logs.latest().action == 'tag_removed'
-        res = app.get(public_url, auth=user)
+        res = app.get(public_url)
         assert res.status_code == 200
         assert len(res.json['data']) == public_project.logs.count()
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'tag_removed'
