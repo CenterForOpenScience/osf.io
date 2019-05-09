@@ -97,7 +97,7 @@ $(function () {
     });
 
     $(document).ready(function () {
-        timestampCommon.init();
+        timestampCommon.init(urls.taskStatusUrl);
         $('#btn-verify').on('click', btnVerify_onclick).focus();
         $('#btn-addtimestamp').on('click', btnAddtimestamp_onclick).focus();
         $('#btn-cancel').on('click', function () {
