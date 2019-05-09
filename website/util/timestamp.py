@@ -792,7 +792,7 @@ class AddTimestamp:
         verify_data.save()
 
         return TimeStampTokenVerifyCheck().timestamp_check(
-            guid, file_info, project_id, file_name, tmp_dir)
+            guid, file_info, project_id, file_name, tmp_dir, verify_data)
 
 class TimeStampTokenVerifyCheck:
     # get abstractNode
@@ -806,26 +806,12 @@ class TimeStampTokenVerifyCheck:
 
         return abstractNode
 
-    # get baseFileNode
-    def get_baseFileNode(self, file_id):
-        try:
-            baseFileNode = BaseFileNode.objects.get(_id=file_id)
-        except Exception as err:
-            logging.exception(err)
-            baseFileNode = None
-
-        return baseFileNode
-
     # get baseFileNode filepath
     def get_filenameStruct(self, fsnode, fname):
-        try:
-            if fsnode.parent is not None:
-                fname = self.get_filenameStruct(fsnode.parent, fname) + '/' + fsnode.name
-            else:
-                fname = fsnode.name
-        except Exception as err:
-            logging.exception(err)
-
+        if fsnode.parent is not None:
+            fname = self.get_filenameStruct(fsnode.parent, fname) + '/' + fsnode.name
+        else:
+            fname = fsnode.name
         return fname
 
     def create_rdm_filetimestamptokenverify(
@@ -843,22 +829,27 @@ class TimeStampTokenVerifyCheck:
         create_data.verify_date = timezone.now()
         return create_data
 
-    # timestamp token check
-    def timestamp_check(self, guid, file_info, project_id, file_name, tmp_dir):
-        userid = Guid.objects.get(_id=guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id
+    def timestamp_check_local(self, file_info, verify_result, project_id, userid):
+        """
+        Check the local database for the situation of the file.
+
+        It looks on the BaseFileNode and timestamp result table and tries
+        to set the current timestamp status if something can be concluded
+        from those values.
+        For example, if the file has been deleted, it can set the status
+        immediately.
+        """
+        ret = 0
+        baseFileNode = None
+        verify_result_title = None
+
         file_id = file_info['file_id']
         provider = file_info['provider']
         path = file_info['file_path']
 
-        # get verify result
-        verify_result = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_id).first()
-
-        ret = 0
-        verify_result_title = None
-
         # get file information, verifyresult table
         if provider == 'osfstorage':
-            baseFileNode = self.get_baseFileNode(file_id)
+            baseFileNode = BaseFileNode.objects.get(_id=file_id)
             if baseFileNode.is_deleted and not verify_result:
                 ret = api_settings.FILE_NOT_EXISTS
                 verify_result_title = api_settings.FILE_NOT_EXISTS_MSG  # 'FILE missing'
@@ -882,8 +873,7 @@ class TimeStampTokenVerifyCheck:
                 ret = api_settings.TIME_STAMP_TOKEN_NO_DATA
                 verify_result_title = api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG
 
-        else:
-            # storage other than osfstorage:
+        else:  # storage other than osfstorage:
             if not verify_result:
                 ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
                 verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG
@@ -898,6 +888,20 @@ class TimeStampTokenVerifyCheck:
                 else:
                     ret = verify_result.inspection_result_status
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG
+
+        return ret, baseFileNode, verify_result, verify_result_title
+
+    # timestamp token check
+    def timestamp_check(self, guid, file_info, project_id, file_name, tmp_dir, verify_result=None):
+        userid = Guid.objects.get(_id=guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id
+
+        # get verify result
+        if verify_result is None:
+            verify_result = RdmFileTimestamptokenVerifyResult.objects.filter(
+                file_id=file_info['file_id']).first()
+
+        ret, baseFileNode, verify_result, verify_result_title = \
+            self.timestamp_check_local(file_info, verify_result, project_id, userid)
 
         if ret == 0:
 
@@ -984,14 +988,14 @@ class TimeStampTokenVerifyCheck:
         verify_result.save()
 
         # RDMINFO: TimeStampVerify
-        if provider == 'osfstorage':
+        if file_info['provider'] == 'osfstorage':
             if not baseFileNode._path:
                 filename = self.get_filenameStruct(baseFileNode, '')
             else:
                 filename = baseFileNode._path
             filepath = baseFileNode.provider + filename
         else:
-            filepath = provider + path
+            filepath = file_info['provider'] + file_info['file_path']
 
         return {
             'verify_result': ret,
