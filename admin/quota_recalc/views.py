@@ -3,7 +3,6 @@ from django.http import JsonResponse
 from api.base import settings as api_settings
 from osf.models import OSFUser, UserQuota
 from website.util.quota import used_quota
-from pprint import pprint as pp
 
 
 def calculate_quota(user):
@@ -26,7 +25,6 @@ def calculate_quota(user):
 def all_users(request, **kwargs):
     for osf_user in OSFUser.objects.exclude(deleted__isnull=False):
         calculate_quota(osf_user)
-        print("I am hit")
     return JsonResponse({
         'status': 'OK',
         'message': 'All users\' quota successfully recalculated!'
