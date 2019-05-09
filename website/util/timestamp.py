@@ -405,10 +405,13 @@ def add_token(uid, node, data):
                 api_settings.FILE_NOT_EXISTS,
                 api_settings.TIME_STAMP_STORAGE_DISCONNECTED
             ]
-            file_data = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=data['file_id'])
-            if file_data.exists() and \
-                    file_data.get().inspection_result_status not in intentional_remove_status:
-                file_data.update(inspection_result_status=api_settings.defaults.FILE_NOT_FOUND)
+            try:
+                file_data = RdmFileTimestamptokenVerifyResult.objects.get(file_id=data['file_id'])
+                if file_data.inspection_result_status not in intentional_remove_status:
+                    file_data.inspection_result_status = api_settings.defaults.FILE_NOT_FOUND
+                    file_data.save()
+            except RdmFileTimestamptokenVerifyResult.DoesNotExist:
+                pass
             return None
         if not userkey_generation_check(user._id):
             userkey_generation(user._id)
@@ -480,17 +483,15 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     add_token(user_id, node, file_info)
 
     # Update created/modified user in timestamp result
-    verify_data = RdmFileTimestamptokenVerifyResult.objects.filter(
-        file_id=file_info['file_id']).first()
-    if verify_data:
-        if created_flag:
-            verify_data.upload_file_created_user = user_id
-        else:  # Updated
-            verify_data.upload_file_modified_user = user_id
-        verify_data.upload_file_created_at = file_info['created']
-        verify_data.upload_file_modified_at = file_info['modified']
-        verify_data.upload_file_size = file_info['size']
-        verify_data.save()
+    verify_data = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_info['file_id'])
+    if created_flag:
+        verify_data.upload_file_created_user = user_id
+    else:  # Updated
+        verify_data.upload_file_modified_user = user_id
+    verify_data.upload_file_created_at = file_info['created']
+    verify_data.upload_file_modified_at = file_info['modified']
+    verify_data.upload_file_size = file_info['size']
+    verify_data.save()
 
 def file_node_moved(project_id, provider, src_path, dest_path):
     src_path = src_path if src_path[0] == '/' else '/' + src_path
@@ -775,11 +776,10 @@ class AddTimestamp:
             logger.exception(err)
             tsa_response = None
 
-        verify_data = RdmFileTimestamptokenVerifyResult.objects.filter(
-            file_id=file_info['file_id'])
-        if verify_data.exists():
-            verify_data = verify_data.get()
-        else:
+        try:
+            verify_data = RdmFileTimestamptokenVerifyResult.objects.get(
+                file_id=file_info['file_id'])
+        except RdmFileTimestamptokenVerifyResult.DoesNotExist:
             verify_data = RdmFileTimestamptokenVerifyResult()
             verify_data.file_id = file_info['file_id']
             verify_data.project_id = project_id
@@ -805,20 +805,6 @@ class TimeStampTokenVerifyCheck:
             abstractNode = None
 
         return abstractNode
-
-    # get verify result
-    def get_verifyResult(self, file_id, project_id, provider, path):
-        try:
-            if RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_id).exists():
-                verifyResult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_id)
-            else:
-                verifyResult = None
-
-        except Exception as err:
-            logging.exception(err)
-            verifyResult = None
-
-        return verifyResult
 
     # get baseFileNode
     def get_baseFileNode(self, file_id):
@@ -865,172 +851,137 @@ class TimeStampTokenVerifyCheck:
         path = file_info['file_path']
 
         # get verify result
-        verify_result = self.get_verifyResult(file_id, project_id, provider, path)
+        verify_result = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_id).first()
 
         ret = 0
         verify_result_title = None
 
-        try:
-            # get file information, verifyresult table
-            if provider == 'osfstorage':
-                # 'osfstorage'
-                baseFileNode = self.get_baseFileNode(file_id)
-                if baseFileNode.is_deleted and not verify_result:
-                    # if file was deleted ,and verify result does not exist:
-                    # update verifyResult:'FILE missing'
-                    ret = api_settings.FILE_NOT_EXISTS
-                    verify_result_title = api_settings.FILE_NOT_EXISTS_MSG  # 'FILE missing'
-                    verify_result = self.create_rdm_filetimestamptokenverify(
-                        file_id, project_id, provider, path, ret, userid)
+        # get file information, verifyresult table
+        if provider == 'osfstorage':
+            baseFileNode = self.get_baseFileNode(file_id)
+            if baseFileNode.is_deleted and not verify_result:
+                ret = api_settings.FILE_NOT_EXISTS
+                verify_result_title = api_settings.FILE_NOT_EXISTS_MSG  # 'FILE missing'
+                verify_result = self.create_rdm_filetimestamptokenverify(
+                    file_id, project_id, provider, path, ret, userid)
 
-                elif baseFileNode.is_deleted and verify_result and not verify_result.timestamp_token:
-                    # if file does not exist ,and verify result does not exist in db:
-                    # update verifyResult 'FILE missing(Unverify)'
-                    verify_result.inspection_result_status = \
-                        api_settings.FILE_NOT_FOUND
-                    ret = api_settings.FILE_NOT_FOUND
-                    verify_result_title = \
-                        api_settings.FILE_NOT_FOUND_MSG
+            elif baseFileNode.is_deleted and verify_result:
+                verify_result.inspection_result_status = api_settings.FILE_NOT_FOUND
+                ret = api_settings.FILE_NOT_FOUND
+                verify_result_title = api_settings.FILE_NOT_FOUND_MSG
 
-                elif baseFileNode.is_deleted and verify_result:
-                    # if file was deleted, and verify result exists in db:
-                    # update verifyResult 'FILE missing(Unverify)'
-                    verify_result.inspection_result_status = \
-                        api_settings.FILE_NOT_FOUND
-                    ret = api_settings.FILE_NOT_FOUND_MSG
+            elif not baseFileNode.is_deleted and not verify_result:
+                ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
+                verify_result_title = \
+                    api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG
+                verify_result = self.create_rdm_filetimestamptokenverify(
+                    file_id, project_id, provider, path, ret, userid)
 
-                elif not baseFileNode.is_deleted and not verify_result:
-                    # if file was deleted, and verify result does not exist in db:
-                    # update verifyResult 'TST missing(Unverify)'
-                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
-                    verify_result_title = \
-                        api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG
-                    verify_result = self.create_rdm_filetimestamptokenverify(
-                        file_id, project_id, provider, path, ret, userid)
+            elif not baseFileNode.is_deleted and not verify_result.timestamp_token:
+                verify_result.inspection_result_status = api_settings.TIME_STAMP_TOKEN_NO_DATA
+                ret = api_settings.TIME_STAMP_TOKEN_NO_DATA
+                verify_result_title = api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG
 
-                elif not baseFileNode.is_deleted and not verify_result.timestamp_token:
-                    # if file exists and  verifyResult.timestamp_token does not exist:
-                    # update verifyResult 'TST missing(Retrieving Failed)'
+        else:
+            # storage other than osfstorage:
+            if not verify_result:
+                ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
+                verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG
+                verify_result = self.create_rdm_filetimestamptokenverify(
+                    file_id, project_id, provider, path, ret, userid)
+
+            elif not verify_result.timestamp_token:
+                if verify_result.inspection_result_status != api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND:
                     verify_result.inspection_result_status = api_settings.TIME_STAMP_TOKEN_NO_DATA
                     ret = api_settings.TIME_STAMP_TOKEN_NO_DATA
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG
-
-            else:
-                # storage other than osfstorage:
-                if not verify_result:
-                    # if file does not exist, and  verify result does not exist:
-                    # update verifyResult 'TST missing(Unverify)'
-                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
+                else:
+                    ret = verify_result.inspection_result_status
                     verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG
-                    verify_result = self.create_rdm_filetimestamptokenverify(
-                        file_id, project_id, provider, path, ret, userid)
 
-                elif not verify_result.timestamp_token:
-                    # if timestamptoken does not exist:
-                    # update verifyResult 'TST missing(Retrieving Failed)'
-                    if verify_result.inspection_result_status != api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND:
-                        verify_result.inspection_result_status = api_settings.TIME_STAMP_TOKEN_NO_DATA
-                        ret = api_settings.TIME_STAMP_TOKEN_NO_DATA
-                        verify_result_title = api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG
-                    else:
-                        ret = verify_result.inspection_result_status
-                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG
+        if ret == 0:
 
-            if ret == 0:
+            if not api_settings.USE_UPKI:
+                timestamptoken_file = guid + '.tsr'
+                timestamptoken_file_path = os.path.join(tmp_dir, timestamptoken_file)
+                with open(timestamptoken_file_path, 'wb') as fout:
+                    fout.write(verify_result.timestamp_token)
 
-                if not api_settings.USE_UPKI:
-                    timestamptoken_file = guid + '.tsr'
-                    timestamptoken_file_path = os.path.join(tmp_dir, timestamptoken_file)
-                    try:
-                        with open(timestamptoken_file_path, 'wb') as fout:
-                            fout.write(verify_result.timestamp_token)
+                # verify timestamptoken and rootCA (FreeTSA)
+                with open(timestamptoken_file_path, 'wb') as fout:
+                    fout.write(verify_result.timestamp_token)
 
-                    except Exception as err:
-                        raise err
-                    # verify timestamptoken and rootCA (FreeTSA)
-                    try:
-                        with open(timestamptoken_file_path, 'wb') as fout:
-                            fout.write(verify_result.timestamp_token)
+                cmd = api_settings.SSL_GET_TIMESTAMP_RESPONSE.format(
+                    file_name.encode('utf-8'),
+                    timestamptoken_file_path,
+                    os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
+                ).split(api_settings.TST_COMMAND_DELIMITER)
+                prc = subprocess.Popen(
+                    cmd, shell=False, stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                stdout_data, stderr_data = prc.communicate()
+                ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
 
-                    except Exception as err:
-                        raise err
-
-                    cmd = api_settings.SSL_GET_TIMESTAMP_RESPONSE.format(
-                        file_name.encode('utf-8'),
-                        timestamptoken_file_path,
-                        os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
-                    ).split(api_settings.TST_COMMAND_DELIMITER)
-                    prc = subprocess.Popen(
-                        cmd, shell=False, stdin=subprocess.PIPE,
-                        stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-                    stdout_data, stderr_data = prc.communicate()
-                    ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
-
-                    if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
-                        ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
-                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
-
-                    else:
-                        ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
-                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'NG'
+                if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
+                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
+                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
 
                 else:
-                    #verify timestamptoken (uPKI))
-                    try:
-                        with open(file_name + '.tst', 'wb') as fout:
-                            fout.write(verify_result.timestamp_token)
-                    except Exception as err:
-                        raise err
-                    cmd = api_settings.UPKI_VERIFY_TIMESTAMP.format(
-                        file_name.encode('utf-8'),
-                        file_name.encode('utf-8') + '.tst'
-                    ).split(api_settings.TST_COMMAND_DELIMITER)
-                    try:
-                        process = subprocess.Popen(
-                            cmd, shell=False, stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        stdout_data, stderr_data = process.communicate()
+                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
+                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'NG'
 
-                        if not stderr_data:
-                            ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
-                            verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
-                        elif stderr_data.__str__().find(api_settings.UPKI_VERIFY_INVALID_MSG) > -1:
-                            ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
-                            verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'OK'
-                        else:
-                            ret = api_settings.TIME_STAMP_VERIFICATION_ERR
-                            verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'FAIL'
-                            logger.error(
-                                'Trusted Timestamp Token Verification failed({}/{}{}):{}'.format(project_id,
-                                                                                          verify_result.provider,
-                                                                                          verify_result.path,
-                                                                                          stderr_data.__str__()))
-                    except Exception as err:
+            else:
+                #verify timestamptoken (uPKI))
+                with open(file_name + '.tst', 'wb') as fout:
+                    fout.write(verify_result.timestamp_token)
+                cmd = api_settings.UPKI_VERIFY_TIMESTAMP.format(
+                    file_name.encode('utf-8'),
+                    file_name.encode('utf-8') + '.tst'
+                ).split(api_settings.TST_COMMAND_DELIMITER)
+                try:
+                    process = subprocess.Popen(
+                        cmd, shell=False, stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    stdout_data, stderr_data = process.communicate()
+
+                    if not stderr_data:
+                        ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
+                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
+                    elif stderr_data.__str__().find(api_settings.UPKI_VERIFY_INVALID_MSG) > -1:
+                        ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
+                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'OK'
+                    else:
                         ret = api_settings.TIME_STAMP_VERIFICATION_ERR
                         verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'FAIL'
-                        logger.error('upki verify error({}):{}'.format(file_name.encode('utf-8'), err))
+                        logger.error(
+                            'Trusted Timestamp Token Verification failed({}/{}{}):{}'.format(project_id,
+                                                                                      verify_result.provider,
+                                                                                      verify_result.path,
+                                                                                      stderr_data.__str__()))
+                except Exception as err:
+                    ret = api_settings.TIME_STAMP_VERIFICATION_ERR
+                    verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'FAIL'
+                    logger.error('upki verify error({}):{}'.format(file_name.encode('utf-8'), err))
 
-                verify_result.inspection_result_status = ret
+            verify_result.inspection_result_status = ret
 
-            file_created_at = file_info.get('created')
-            file_modified_at = file_info.get('modified')
-            file_size = file_info.get('size')
+        file_created_at = file_info.get('created')
+        file_modified_at = file_info.get('modified')
+        file_size = file_info.get('size')
 
-            if not file_created_at:
-                file_created_at = None
-            if not file_modified_at:
-                file_modified_at = None
-            if not file_size:
-                file_size = None
+        if not file_created_at:
+            file_created_at = None
+        if not file_modified_at:
+            file_modified_at = None
+        if not file_size:
+            file_size = None
 
-            verify_result.verify_date = timezone.now()
-            verify_result.verify_user = userid
-            verify_result.verify_file_created_at = file_created_at
-            verify_result.verify_file_modified_at = file_modified_at
-            verify_result.verify_file_size = file_size
-            verify_result.save()
-        except Exception as err:
-            logging.exception(err)
+        verify_result.verify_date = timezone.now()
+        verify_result.verify_user = userid
+        verify_result.verify_file_created_at = file_created_at
+        verify_result.verify_file_modified_at = file_modified_at
+        verify_result.verify_file_size = file_size
+        verify_result.save()
 
         # RDMINFO: TimeStampVerify
         if provider == 'osfstorage':
