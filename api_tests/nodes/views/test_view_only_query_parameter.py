@@ -214,9 +214,8 @@ class TestNodeDetailViewOnlyLinks:
             'embed': 'contributors',
         })
         assert res.status_code == 200
-        contributors = res.json['data']['embeds']['contributors']['data']
-        for contributor in contributors:
-            assert contributor['id'] == ''
+        embeds = res.json['data'].get('embeds', None)
+        assert embeds is None or 'contributors' not in embeds
 
     #   test_private_node_with_link_non_anonymous_does_expose_contributor_id
         res = app.get(private_node_one_url, {
@@ -244,9 +243,8 @@ class TestNodeDetailViewOnlyLinks:
             'embed': 'contributors',
         })
         assert res.status_code == 200
-        contributors = res.json['data']['embeds']['contributors']['data']
-        for contributor in contributors:
-            assert contributor['id'] == ''
+        embeds = res.json['data'].get('embeds', None)
+        assert embeds is None or 'contributors' not in embeds
 
     #   test_public_node_with_link_non_anonymous_does_expose_contributor_id
         res = app.get(public_node_one_url, {
@@ -428,13 +426,9 @@ class TestNodeListViewOnlyLinks:
         nodes = res.json['data']
         assertions = 0
         for node in nodes:
-            contributors = node['embeds']['contributors']['data']
-            for contributor in contributors:
-                assertions += 1
-                assert contributor['id'] == ''
-                assert contributor['type'] == 'contributors'
-                assert contributor['links'] == {}
-                assert 'relationships' not in contributor
+            embeds = node.get('embeds', None)
+            assert embeds is None or 'contributors' not in embeds
+            assertions += 1
         assert assertions != 0
 
     #   test_non_anonymous_link_does_show_contributor_id_in_node_list
