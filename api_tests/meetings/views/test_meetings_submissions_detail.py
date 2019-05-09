@@ -33,6 +33,7 @@ class TestMeetingSubmissionsDetail:
     def meeting_submission_no_category(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=True, creator=user)
         submission.add_tag(meeting.endpoint, Auth(user))
+        api_utils.create_test_file(submission, user, create_guid=False)
         return submission
 
     @pytest.fixture()
@@ -74,7 +75,7 @@ class TestMeetingSubmissionsDetail:
         assert data['attributes']['meeting_category'] == 'poster'
         assert '/_/meetings/{}/submissions/{}'.format(meeting.endpoint, meeting_one_submission._id) in data['links']['self']
         assert data['relationships']['author']['data']['id'] == user._id
-        assert data['relationships']['submission_file']['data']['id'] == file._id
+        assert file._id in data['links']['download']
 
         # test_get_private_submission
         url = '{}{}/'.format(base_url, meeting_one_private_submission._id)

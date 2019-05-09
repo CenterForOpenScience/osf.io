@@ -109,7 +109,7 @@ class TestMeetingSubmissionsList:
         assert data[0]['type'] == 'meeting-submissions'
         assert data[0]['attributes']['title'] == meeting_one_submission.title
         assert data[0]['attributes']['author_name'] == user.family_name
-        assert 'submission_file' in data[0]['relationships']
+        assert 'download' in data[0]['links']
         assert 'author' in data[0]['relationships']
 
     def test_meeting_submissions_list_sorting_and_filtering(self, app, url_meeting_two, meeting_two,
@@ -172,19 +172,19 @@ class TestMeetingSubmissionsList:
         assert data[0]['type'] == 'meeting-submissions'
         assert data[0]['attributes']['title'] == meeting_two_submission.title
         assert data[0]['attributes']['download_count'] == 2
-        assert data[0]['relationships']['submission_file']['data']['id'] == file._id
+        assert file._id in data[0]['links']['download']
 
         assert data[1]['id'] == second
         assert data[1]['type'] == 'meeting-submissions'
         assert data[1]['attributes']['title'] == meeting_two_second_submission.title
         assert data[1]['attributes']['download_count'] == 1
-        assert data[1]['relationships']['submission_file']['data']['id'] == file_two._id
+        assert file_two._id in data[1]['links']['download']
 
         assert data[2]['id'] == third
         assert data[2]['type'] == 'meeting-submissions'
         assert data[2]['attributes']['title'] == meeting_two_third_submission.title
         assert data[2]['attributes']['download_count'] == 0
-        assert data[2]['relationships']['submission_file']['data']['id'] == file_three._id
+        assert file_three._id in data[2]['links']['download']
 
         # test reverse sort title
         res = app.get(url_meeting_two + '?sort=-title')

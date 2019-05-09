@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 
+from addons.osfstorage.models import OsfStorageFile
 from api.base.serializers import (
     IDField,
     JSONAPISerializer,
@@ -12,6 +13,7 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 from api.base.utils import absolute_reverse
+from api.files.serializers import get_file_download_link
 from api.nodes.serializers import NodeSerializer
 from osf.models import AbstractNode
 
@@ -83,13 +85,11 @@ class MeetingSubmissionSerializer(NodeSerializer):
         read_only=True,
     )
 
-    submission_file = RelationshipField(
-        related_view='files:file-detail',
-        related_view_kwargs={'file_id': 'get_meeting_submission_id'},
-        read_only=True,
-    )
-
-    links = LinksField({'self': 'get_absolute_url', 'html': 'get_absolute_html_url'})
+    links = LinksField({
+        'self': 'get_absolute_url',
+        'html': 'get_absolute_html_url',
+        'download': 'get_download_link',
+    })
 
     def get_author(self, obj):
         contrib_queryset = obj.contributor_set.filter(visible=True).order_by('_order')
@@ -161,16 +161,20 @@ class MeetingSubmissionSerializer(NodeSerializer):
                     return int(result[0])
                 return 0
 
-    def get_meeting_submission_id(self, obj):
+    def get_download_link(self, obj):
         """
         First osfstoragefile on a node - if the node was created for a meeting,
         assuming its first file is the meeting submission.
         """
         if getattr(obj, 'file_id', None):
-            return obj.file_id
+            submission_file = OsfStorageFile.objects.get(_id=obj.file_id)
         else:
             files = obj.files.order_by('created')
-            return files.first()._id if files else None
+            submission_file = files.first()
+
+        if submission_file:
+            return get_file_download_link(submission_file)
+        return None
 
     def get_absolute_url(self, obj):
         meeting_endpoint = self.context['meeting'].endpoint

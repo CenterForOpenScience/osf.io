@@ -2,6 +2,7 @@ import pytest
 import datetime
 from django.utils import timezone
 from framework.auth.core import Auth
+from api_tests import utils as api_utils
 
 from osf_tests.factories import ConferenceFactory, ProjectFactory, AuthUserFactory
 
@@ -11,6 +12,7 @@ def create_eligible_conference(active=True):
         project = ProjectFactory(is_public=True)
         project.add_tag(conference.endpoint, Auth(project.creator))
         project.save()
+        api_utils.create_test_file(project, project.creator, create_guid=False)
     return conference
 
 @pytest.mark.django_db

@@ -2,6 +2,7 @@ import pytest
 
 from framework.auth.core import Auth
 from osf_tests.factories import ConferenceFactory, ProjectFactory, AuthUserFactory
+from api_tests import utils as api_utils
 
 
 @pytest.mark.django_db
@@ -28,6 +29,7 @@ class TestMeetingDetail:
         submission = ProjectFactory(title='Submission One', is_public=True)
         submission.add_tag(meeting.endpoint, Auth(user))
         submission.add_tag('poster', Auth(user))
+        api_utils.create_test_file(submission, submission.creator, create_guid=False)
         return submission
 
     @pytest.fixture()
