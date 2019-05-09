@@ -23,11 +23,13 @@ def calculate_quota(user):
         )
 
 def all_users(request, **kwargs):
+    c = 0
     for osf_user in OSFUser.objects.exclude(deleted__isnull=False):
         calculate_quota(osf_user)
+        c += 1
     return JsonResponse({
         'status': 'OK',
-        'message': 'All users\' quota successfully recalculated!'
+        'message': str(c) + ' users\' quota successfully recalculated!'
     })
 
 def user(request, guid, **kwargs):
