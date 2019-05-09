@@ -1,0 +1,16 @@
+.caret {
+    color: rgb(0, 0, 165);
+    border-top: 8px dashed;
+}
+
+.dropup .caret {
+    border-bottom: 8px dashed;
+}
+
+.caret:hover {
+    color: rgb(0, 0, 165);
+}
+
+.tb-sort-inactive {
+    color: gray;
+}
