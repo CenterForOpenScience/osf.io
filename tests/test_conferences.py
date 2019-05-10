@@ -7,7 +7,6 @@ import hmac
 import hashlib
 from io import BytesIO
 
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 import furl
 
@@ -154,7 +153,7 @@ class TestProvisionNode(ContextTestCase):
             'attachment-1': (self.attachment, 'attachment-1'),
             'X-Mailgun-Sscore': '0',
             'recipient': self.recipient,
-            'stripped-text': self.body.decode(),
+            'stripped-text': self.body,
         }
         data.update(kwargs.pop('data', {}))
         return super(TestProvisionNode, self).make_context(data=data, **kwargs)

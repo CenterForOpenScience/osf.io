@@ -725,7 +725,7 @@ class TestProjectViews(OsfTestCase):
         self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
         assert_in("foo'ta#@%#%^&g?", self.project.tags.values_list('name', flat=True))
         url = self.project.api_url_for('project_remove_tag')
-        self.app.delete_json(url, {'tag': "foo'ta#@%#%^&g?"})
+        self.app.delete_json(url, {'tag': "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
         assert_not_in("foo'ta#@%#%^&g?", self.project.tags.values_list('name', flat=True))
         latest_log = self.project.logs.latest()
