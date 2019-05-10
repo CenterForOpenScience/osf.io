@@ -95,12 +95,6 @@ class TestMeetingSubmissionsList:
         return PageCounter.objects.create(_id='download:{}:{}'.format(project._id, file._id), total=download_count)
 
     def test_meeting_submissions_list(self, app, user, meeting, url, meeting_one_submission, meeting_one_private_submission):
-        res = app.get(url)
-        assert res.status_code == 200
-        data = res.json['data']
-        # meeting_one_submission does not have any associated files, so it's not included in the list
-        assert len(data) == 0
-
         api_utils.create_test_file(meeting_one_submission, user, create_guid=False)
         res = app.get(url)
         data = res.json['data']

@@ -85,9 +85,9 @@ class TestMeetingListFilter:
         return submission
 
     @pytest.fixture()
-    def meeting_three_submission_one(self, meeting_one, user):
+    def meeting_three_submission_one(self, meeting_three, user):
         submission = ProjectFactory(is_public=True, creator=user)
-        submission.add_tag(meeting_one.endpoint, Auth(user))
+        submission.add_tag(meeting_three.endpoint, Auth(user))
         submission.add_tag('poster', Auth(user))
         return submission
 
@@ -110,7 +110,8 @@ class TestMeetingListFilter:
     def sort_url(self):
         return '/_/meetings/?sort='
 
-    def test_meeting_list_filter(self, app, meeting_one, meeting_two, meeting_three, filter_url, sort_url):
+    def test_meeting_list_filter(self, app, meeting_one, meeting_two, meeting_three, filter_url, sort_url,
+            meeting_one_submission, meeting_three_submission_one, meeting_three_submission_two):
         # Filter on name
         res = app.get('{}{}'.format(filter_url, '[name]=Science'))
         assert len(res.json['data']) == 2
@@ -154,11 +155,11 @@ class TestMeetingListFilter:
         assert [meeting_one.endpoint, meeting_three.endpoint, meeting_two.endpoint] == [meeting['id'] for meeting in res.json['data']]
 
         # Sort on submissions count
-        res = app.get('{}{}'.format(sort_url, 'num_submissions'))
+        res = app.get('{}{}'.format(sort_url, 'submissions_count'))
         assert len(res.json['data']) == 3
         assert [meeting_two.endpoint, meeting_one.endpoint, meeting_three.endpoint] == [meeting['id'] for meeting in res.json['data']]
 
         # Reverse sort on submissions count
-        res = app.get('{}{}'.format(sort_url, '-num_submissions'))
+        res = app.get('{}{}'.format(sort_url, '-submissions_count'))
         assert len(res.json['data']) == 3
         assert [meeting_three.endpoint, meeting_one.endpoint, meeting_two.endpoint] == [meeting['id'] for meeting in res.json['data']]

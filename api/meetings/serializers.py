@@ -34,8 +34,7 @@ class MeetingSerializer(JSONAPISerializer):
     info_url = ser.URLField(read_only=True)
     logo_url = ser.URLField(read_only=True)
     field_names = ser.DictField(read_only=True)
-    # num_submissions is cached in the view - top level attribute for easy sorting
-    num_submissions = ser.IntegerField(read_only=True)
+    submissions_count = ser.SerializerMethodField()
     active = ser.BooleanField(read_only=True)
     submission_1_email = ser.SerializerMethodField()
     submission_2_email = ser.SerializerMethodField()
@@ -63,6 +62,12 @@ class MeetingSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return absolute_reverse('meetings:meeting-detail', kwargs={'meeting_id': obj.endpoint})
+
+    def get_submissions_count(self, obj):
+        if getattr(obj, 'submissions_count', None):
+            return obj.submissions_count
+        else:
+            return obj.submissions.count()
 
     class Meta:
         type_ = 'meetings'

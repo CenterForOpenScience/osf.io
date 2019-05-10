@@ -87,12 +87,7 @@ class Conference(ObjectIDMixin, BaseModel):
         Returns valid conference submissions with at least one file attached
         """
         tags = Tag.objects.filter(system=False, name__iexact=self.endpoint).values_list('pk', flat=True)
-        return AbstractNode.objects.filter(tags__in=tags, is_public=True, is_deleted=False).filter(
-            files__type='osf.osfstoragefile',
-            files__deleted_on__isnull=True,
-        ).annotate(
-            annotated_file_count=models.Count('files'),
-        ).filter(annotated_file_count__gte=1)
+        return AbstractNode.objects.filter(tags__in=tags, is_public=True, is_deleted=False)
 
     class Meta:
         # custom permissions for use in the OSF Admin App

@@ -1,7 +1,7 @@
 
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
-from django.db.models import Q, Count, Subquery, OuterRef, Case, When, Value, CharField, F
+from django.db.models import Q, Count, Subquery, OuterRef, Case, When, Value, CharField, F, IntegerField
 from django.db.models.functions import Length, Substr, Coalesce
 from django.contrib.contenttypes.models import ContentType
 
@@ -35,9 +35,6 @@ class MeetingMixin(object):
             self.request,
             display_name='meeting',
         )
-        # caching num_submissions on the Conference object
-        meeting.num_submissions = meeting.submissions.count()
-        meeting.save()
         return meeting
 
 
@@ -63,14 +60,23 @@ class MeetingList(BaseMeetingView, generics.ListAPIView, ListFilterMixin):
     view_name = 'meeting-list'
     ordering = ('-modified', )  # default ordering
 
+    ordering_fields = ('name', 'submissions_count', 'location', 'start_date',)
+
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        conferences = Conference.objects.filter(is_meeting=True)
-        for conference in conferences:
-            # caching num_submissions on the Conference objects
-            conference.num_submissions = conference.submissions.count()
-            conference.save()
-        return conferences.filter(num_submissions__gte=settings.CONFERENCE_MIN_COUNT)
+        tags = Tag.objects.filter(
+            abstractnode_tagged__is_public=True,
+            abstractnode_tagged__is_deleted=False,
+        ).annotate(
+            num_nodes=Count(F('abstractnode_tagged')),
+        ).filter(name=OuterRef('endpoint'))
+
+        conferences = Conference.objects.filter(is_meeting=True).annotate(
+            submissions_count=Subquery(
+                tags.values('num_nodes')[:1], output_field=IntegerField(),
+            ),
+        )
+        return conferences.filter(submissions_count__gte=settings.CONFERENCE_MIN_COUNT)
 
     # overrides ListAPIView
     def get_queryset(self):
