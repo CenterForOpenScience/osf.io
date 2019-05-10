@@ -308,6 +308,7 @@ INSTALLED_APPS += ('addons.nextcloud',)
 ADDONS_FOLDER_CONFIGURABLE.append('nextcloud')
 ADDONS_OAUTH.append('nextcloud')
 
+TST_COMMAND_DELIMITER = ' '
 # RSA key generation settings
 SSL_GENERATE_KEY = 'openssl genrsa -des3 -out {0}.key {1}'
 SSL_GENERATE_KEY_NOPASS = 'openssl rsa -in {0}.key -out {0}.key.nopass'
