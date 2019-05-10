@@ -9,6 +9,7 @@ def serialize_user(user):
         'name': user.fullname,
         'id': user._id,
         'nodes': list(map(serialize_simple_node, user.contributor_to)),
+        'preprints':list(map(serialize_simple_preprint, user.preprints.all())),
         'emails': user.emails.values_list('address', flat=True),
         'last_login': user.date_last_login,
         'confirmed': user.date_confirmed,
@@ -32,4 +33,13 @@ def serialize_simple_node(node):
         'spam_status': node.spam_status,
         'is_registration': node.is_registration,
         'deleted': node.is_deleted,
+    }
+
+def serialize_simple_preprint(preprint):
+    return {
+        'id': preprint._id,
+        'title':preprint.title,
+        'description':preprint.description,
+        'number_contributors' : len(preprint.contributors),
+        'deleted' : preprint.is_deleted,
     }
