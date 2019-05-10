@@ -495,12 +495,13 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
     userkey_info.key_kind = key_kind
     userkey_info.created_time = date
     return userkey_info
-
+def filename_formatter(file_name):
+    return file_name.encode('utf-8').replace(' ', '\\ ')
 
 class AddTimestamp:
     #1 create tsq (timestamp request) from file, and keyinfo
     def get_timestamp_request(self, file_name):
-        cmd = shlex.split(api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name.encode('utf-8').replace(' ','\ ')))
+        cmd = shlex.split(api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(filename_formatter(file_name)))
         process = subprocess.Popen(
             cmd, shell=False, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -534,7 +535,7 @@ class AddTimestamp:
 
     def get_timestamp_upki(self, file_name, tmp_dir):
         cmd = shlex.split(api_settings.UPKI_CREATE_TIMESTAMP.format(
-            file_name.encode('utf-8').replace(' ','\ '),
+            filename_formatter(file_name),
             '/dev/stdout'
         ))
         try:
@@ -744,7 +745,7 @@ class TimeStampTokenVerifyCheck:
                         raise err
 
                     cmd = shlex.split(api_settings.SSL_GET_TIMESTAMP_RESPONSE.format(
-                        file_name.encode('utf-8').replace(' ','\ '),
+                        filename_formatter(file_name),
                         timestamptoken_file_path,
                         os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
                     ))
@@ -759,11 +760,11 @@ class TimeStampTokenVerifyCheck:
                             ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
                             verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
                         else:
-                            logger.error('timestamp verification error occured.({}:{}) : {}'.format(verify_result.provider, verify_result.path, stderr_data))
+                            logger.error('timestamp verification error occured.({}:{}) : {}'.format(verify_result.provider, filename_formatter(file_name), stderr_data))
                             ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
                             verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'NG'
                     except Exception as err:
-                        logger.error('timestamp verification error occured.({}:{}) : {}'.format(verify_result.provider, verify_result.path, err))
+                        logger.error('timestamp verification error occured.({}:{}) : {}'.format(verify_result.provider, filename_formatter(file_name), err))
                         ret = api_settings.TIME_STAMP_VERIFICATION_ERR
                         verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'NG'
 
@@ -775,8 +776,8 @@ class TimeStampTokenVerifyCheck:
                     except Exception as err:
                         raise err
                     cmd = shlex.split(api_settings.UPKI_VERIFY_TIMESTAMP.format(
-                        file_name.encode('utf-8').replace(' ','\ '),
-                        file_name.encode('utf-8').replace(' ','\ ') + '.tst'
+                        filename_formatter(file_name),
+                        filename_formatter(file_name) + '.tst'
                     ))
                     try:
                         process = subprocess.Popen(
