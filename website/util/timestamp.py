@@ -6,6 +6,7 @@ import datetime
 import hashlib
 import logging
 import os
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -450,15 +451,15 @@ def userkey_generation(guid):
         generation_pub_key_name = api_settings.KEY_NAME_FORMAT.format(
             guid, generation_date_hash, api_settings.KEY_NAME_PUBLIC, api_settings.KEY_EXTENSION)
         # private key generation
-        pvt_key_generation_cmd = api_settings.SSL_PRIVATE_KEY_GENERATION.format(
+        pvt_key_generation_cmd = shlex.split(api_settings.SSL_PRIVATE_KEY_GENERATION.format(
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pvt_key_name),
             api_settings.KEY_BIT_VALUE
-        ).split(api_settings.TST_COMMAND_DELIMITER)
+        ))
 
-        pub_key_generation_cmd = api_settings.SSL_PUBLIC_KEY_GENERATION.format(
+        pub_key_generation_cmd = shlex.split(api_settings.SSL_PUBLIC_KEY_GENERATION.format(
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pvt_key_name),
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pub_key_name)
-        ).split(api_settings.TST_COMMAND_DELIMITER)
+        ))
 
         prc = subprocess.Popen(
             pvt_key_generation_cmd, shell=False, stdin=subprocess.PIPE,
@@ -499,7 +500,7 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
 class AddTimestamp:
     #1 create tsq (timestamp request) from file, and keyinfo
     def get_timestamp_request(self, file_name):
-        cmd = api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name.encode('utf-8')).split(api_settings.TST_COMMAND_DELIMITER)
+        cmd = shlex.split(api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name.encode('utf-8').replace(' ','\ ')))
         process = subprocess.Popen(
             cmd, shell=False, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -532,10 +533,10 @@ class AddTimestamp:
         return res_content
 
     def get_timestamp_upki(self, file_name, tmp_dir):
-        cmd = api_settings.UPKI_CREATE_TIMESTAMP.format(
-            file_name.encode('utf-8'),
+        cmd = shlex.split(api_settings.UPKI_CREATE_TIMESTAMP.format(
+            file_name.encode('utf-8').replace(' ','\ '),
             '/dev/stdout'
-        ).split(api_settings.TST_COMMAND_DELIMITER)
+        ))
         try:
             process = subprocess.Popen(
                 cmd, shell=False, stdin=subprocess.PIPE,
@@ -742,11 +743,11 @@ class TimeStampTokenVerifyCheck:
                     except Exception as err:
                         raise err
 
-                    cmd = api_settings.SSL_GET_TIMESTAMP_RESPONSE.format(
-                        file_name.encode('utf-8'),
+                    cmd = shlex.split(api_settings.SSL_GET_TIMESTAMP_RESPONSE.format(
+                        file_name.encode('utf-8').replace(' ','\ '),
                         timestamptoken_file_path,
                         os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
-                    ).split(api_settings.TST_COMMAND_DELIMITER)
+                    ))
                     # exec timestamptoken verification
                     try:
                         prc = subprocess.Popen(
@@ -773,10 +774,10 @@ class TimeStampTokenVerifyCheck:
                             fout.write(verify_result.timestamp_token)
                     except Exception as err:
                         raise err
-                    cmd = api_settings.UPKI_VERIFY_TIMESTAMP.format(
-                        file_name.encode('utf-8'),
-                        file_name.encode('utf-8') + '.tst'
-                    ).split(api_settings.TST_COMMAND_DELIMITER)
+                    cmd = shlex.split(api_settings.UPKI_VERIFY_TIMESTAMP.format(
+                        file_name.encode('utf-8').replace(' ','\ '),
+                        file_name.encode('utf-8').replace(' ','\ ') + '.tst'
+                    ))
                     try:
                         process = subprocess.Popen(
                             cmd, shell=False, stdin=subprocess.PIPE,
