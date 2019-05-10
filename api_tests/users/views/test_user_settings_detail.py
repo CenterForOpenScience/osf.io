@@ -211,7 +211,7 @@ class TestUserSettingsUpdateMailingList:
         res = app.patch_json_api(url, bad_payload, auth=user_one.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
+        assert res.json['errors'][0]['detail'] == '"22" is not a valid boolean.'
 
     def test_anonymous_patch_401(self, app, url, payload):
         res = app.patch_json_api(url, payload, expect_errors=True)

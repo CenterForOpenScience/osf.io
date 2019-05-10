@@ -387,7 +387,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
+        assert res.json['errors'][0]['detail'] == '"Dr.Strange" is not a valid boolean.'
 
     #   test_some_registration_fields_are_editable
         user.affiliated_institutions.add(institution_one)
