@@ -325,6 +325,7 @@
                             <tr>
                                 <th>GUID</th>
                                 <th>Name</th>
+                                <th>Public</th>
                                 <th># of Contributors</th>
                                 <th>Spam Status</th>
                                 <th>Actions</th>
@@ -339,6 +340,7 @@
                                     </a>
                                 </td>
                                 <td>{{ preprint.title | truncatechars:20 }}</td>
+                                <td>{{ preprint.public }}</td>
                                 <td>{{ preprint.number_contributors}}</td>
                                 <td>
                                     {% if preprint.spam_status == SPAM_STATUS.UNKNOWN %}

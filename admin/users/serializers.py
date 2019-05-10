@@ -42,4 +42,5 @@ def serialize_simple_preprint(preprint):
         'description':preprint.description,
         'number_contributors' : len(preprint.contributors),
         'deleted' : preprint.is_deleted,
+        'public' : preprint.is_public,
     }
