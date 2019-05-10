@@ -2,8 +2,6 @@
 import urlparse
 
 from django.db import models
-from django.contrib.contenttypes.models import ContentType
-from addons.osfstorage.models import OsfStorageFile
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models import Tag, AbstractNode
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -86,18 +84,15 @@ class Conference(ObjectIDMixin, BaseModel):
     @property
     def submissions(self):
         """
-        Returns the number of valid conference submissions with at least one file attached
+        Returns valid conference submissions with at least one file attached
         """
         tags = Tag.objects.filter(system=False, name__iexact=self.endpoint).values_list('pk', flat=True)
-        files = OsfStorageFile.objects.filter(
-            target_object_id=models.OuterRef('pk'),
-            target_content_type_id=ContentType.objects.get_for_model(AbstractNode).id,
-        )
-        return AbstractNode.objects.filter(tags__in=tags, is_public=True, is_deleted=False).annotate(
-            has_files=models.Exists(files)
-        ).filter(
-            has_files=True
-        )
+        return AbstractNode.objects.filter(tags__in=tags, is_public=True, is_deleted=False).filter(
+            files__type='osf.osfstoragefile',
+            files__deleted_on__isnull=True,
+        ).annotate(
+            annotated_file_count=models.Count('files'),
+        ).filter(annotated_file_count__gte=1)
 
     class Meta:
         # custom permissions for use in the OSF Admin App

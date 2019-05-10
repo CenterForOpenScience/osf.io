@@ -117,15 +117,8 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        # Returning public meeting submissions that have at least one file attached
         meeting = self.get_meeting()
-        queryset = meeting.submissions.filter(
-            files__type='osf.osfstoragefile',
-            files__deleted_on__isnull=True,
-        ).annotate(
-            annotated_file_count=Count('files'),
-        ).filter(annotated_file_count__gte=1)
-        return self.annotate_queryset_for_filtering_and_sorting(meeting, queryset)
+        return self.annotate_queryset_for_filtering_and_sorting(meeting, meeting.submissions)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -185,9 +178,7 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
 
         queryset = queryset.annotate(
             author_family_name=Subquery(contributors.values(('user__family_name'))[:1]),
-        ).annotate(
             author_full_name=Subquery(contributors.values(('user__fullname'))[:1]),
-        ).annotate(
             author_id=Subquery(contributors.values(('user__guids___id'))[:1]),
         ).annotate(
             author_name=Case(
@@ -201,6 +192,12 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
     def annotate_queryset_with_download_count(self, queryset):
         """
         Annotates queryset with download count of first osfstorage file
+
+        NOTE: This is a brittle way to do this.  PageCounter _ids are of the form
+        <file_action>:<node__id>:<file__id>:<sometimes version>.
+        - Assumes the "download" file action is the only action with that many letters
+        - Assumes node and file guids are a consistent length
+        - ENG-122 would get rid of this string matching behavior
         """
         pages = PageCounter.objects.annotate(
             node_id=Substr('_id', 10, 5),
@@ -235,6 +232,6 @@ class MeetingSubmissionDetail(BaseMeetingSubmission, generics.RetrieveAPIView, N
         meeting = self.get_meeting()
         node = self.get_node()
         # Submission must be associated with the Conference
-        if node._id not in meeting.submissions.values_list('guids___id', flat=True):
+        if meeting.endpoint not in node.tags.values_list('name', flat=True):
             raise NotFound('This is not a submission to {}.'.format(meeting.name))
         return node
