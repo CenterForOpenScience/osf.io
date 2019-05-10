@@ -191,69 +191,68 @@ class TestMeetingSubmissionsList:
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
-        assert set([first, second, third]) == set([meeting['id'] for meeting in data])
-        assert set(['Cantaloupe', 'Bananas', 'Apple Juice']) == set([meeting['attributes']['title'] for meeting in data])
+        assert [third, second, first] == [meeting['id'] for meeting in data]
+        assert ['Cantaloupe', 'Bananas', 'Apple Juice'] == [meeting['attributes']['title'] for meeting in data]
 
         # test sort author
         res = app.get(url_meeting_two + '?sort=author_name')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
-        assert set([second, third, first]) == set([meeting['id'] for meeting in data])
-        assert set(['Juice', 'Lemonade', 'McGee']) == set([meeting['attributes']['author_name'] for meeting in data])
+        assert [second, third, first] == [meeting['id'] for meeting in data]
+        assert ['Juice', 'Lemonade', 'McGee'] == [meeting['attributes']['author_name'] for meeting in data]
 
         # test reverse sort author
         res = app.get(url_meeting_two + '?sort=-author_name')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
-        assert set([first, third, second]) == set([meeting['id'] for meeting in data])
-        assert set(['McGee', 'Lemonade', 'Juice']) == set([meeting['attributes']['author_name'] for meeting in data])
+        assert [first, third, second] == [meeting['id'] for meeting in data]
+        assert ['McGee', 'Lemonade', 'Juice'] == [meeting['attributes']['author_name'] for meeting in data]
 
         # test sort meeting_category
         res = app.get(url_meeting_two + '?sort=meeting_category')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
-        assert set([second, third, first]) == set([meeting['id'] for meeting in data])
-        assert set(['poster', 'poster', 'talk']) == set([meeting['attributes']['meeting_category'] for meeting in data])
+        assert [second, third, first] == [meeting['id'] for meeting in data]
+        assert ['poster', 'poster', 'talk'] == [meeting['attributes']['meeting_category'] for meeting in data]
 
         # test reverse sort meeting_category
         res = app.get(url_meeting_two + '?sort=-meeting_category')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
-        assert set([first, third, second]) == set([meeting['id'] for meeting in data])
-        assert set(['talk', 'poster', 'poster']) == set([meeting['attributes']['meeting_category'] for meeting in data])
+        assert ['talk', 'poster', 'poster'] == [meeting['attributes']['meeting_category'] for meeting in data]
 
         # test sort created
-        res = app.get(url_meeting_two + '?sort=date_created')
+        res = app.get(url_meeting_two + '?sort=created')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
-        assert set([first, second, third]) == set([meeting['id'] for meeting in data])
+        assert [first, second, third] == [meeting['id'] for meeting in data]
         assert meeting_two_submission.created < meeting_two_second_submission.created
         assert meeting_two_second_submission.created < meeting_two_third_submission.created
 
         # test sort reverse created
-        res = app.get(url_meeting_two + '?sort=-date_created')
+        res = app.get(url_meeting_two + '?sort=-created')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
-        assert set([third, second, first]) == set([meeting['id'] for meeting in data])
+        assert [third, second, first] == [meeting['id'] for meeting in data]
 
         # test sort download count
         res = app.get(url_meeting_two + '?sort=download_count')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
-        assert set([third, second, first]) == set([meeting['id'] for meeting in data])
-        assert set([0, 1, 2]) == set([meeting['attributes']['download_count'] for meeting in data])
+        assert [third, second, first] == [meeting['id'] for meeting in data]
+        assert [0, 1, 2] == [meeting['attributes']['download_count'] for meeting in data]
 
         # test reverse sort download count
         res = app.get(url_meeting_two + '?sort=-download_count')
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 3
-        assert set([first, second, third]) == set([meeting['id'] for meeting in data])
-        assert set([2, 1, 0]) == set([meeting['attributes']['download_count'] for meeting in data])
+        assert [first, second, third] == [meeting['id'] for meeting in data]
+        assert [2, 1, 0] == [meeting['attributes']['download_count'] for meeting in data]

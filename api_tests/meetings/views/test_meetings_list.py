@@ -126,39 +126,39 @@ class TestMeetingListFilter:
         # Sort on name
         res = app.get('{}{}'.format(sort_url, 'name'))
         assert len(res.json['data']) == 3
-        assert set([meeting_three.endpoint, meeting_two.endpoint, meeting_one.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+        assert [meeting_three.endpoint, meeting_two.endpoint, meeting_one.endpoint] == [meeting['id'] for meeting in res.json['data']]
 
         # Reverse sort name
         res = app.get('{}{}'.format(sort_url, '-name'))
         assert len(res.json['data']) == 3
-        assert set([meeting_one.endpoint, meeting_two.endpoint, meeting_three.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+        assert [meeting_one.endpoint, meeting_two.endpoint, meeting_three.endpoint] == [meeting['id'] for meeting in res.json['data']]
 
         # Sort on location
         res = app.get('{}{}'.format(sort_url, 'location'))
         assert len(res.json['data']) == 3
-        assert set([meeting_three.endpoint, meeting_two.endpoint, meeting_one.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+        assert [meeting_three.endpoint, meeting_two.endpoint, meeting_one.endpoint] == [meeting['id'] for meeting in res.json['data']]
 
         # Reverse sort location
         res = app.get('{}{}'.format(sort_url, '-location'))
         assert len(res.json['data']) == 3
-        assert set([meeting_one.endpoint, meeting_two.endpoint, meeting_three.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+        assert [meeting_one.endpoint, meeting_two.endpoint, meeting_three.endpoint] == [meeting['id'] for meeting in res.json['data']]
 
         # Sort on start date
         res = app.get('{}{}'.format(sort_url, 'start_date'))
         assert len(res.json['data']) == 3
-        assert set([meeting_two.endpoint, meeting_three.endpoint, meeting_one.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+        assert [meeting_two.endpoint, meeting_three.endpoint, meeting_one.endpoint] == [meeting['id'] for meeting in res.json['data']]
 
         # Sort on reverse start date
         res = app.get('{}{}'.format(sort_url, '-start_date'))
         assert len(res.json['data']) == 3
-        assert set([meeting_one.endpoint, meeting_three.endpoint, meeting_two.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+        assert [meeting_one.endpoint, meeting_three.endpoint, meeting_two.endpoint] == [meeting['id'] for meeting in res.json['data']]
 
         # Sort on submissions count
         res = app.get('{}{}'.format(sort_url, 'num_submissions'))
         assert len(res.json['data']) == 3
-        assert set([meeting_two.endpoint, meeting_one.endpoint, meeting_three.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+        assert [meeting_two.endpoint, meeting_one.endpoint, meeting_three.endpoint] == [meeting['id'] for meeting in res.json['data']]
 
         # Reverse sort on submissions count
         res = app.get('{}{}'.format(sort_url, '-num_submissions'))
         assert len(res.json['data']) == 3
-        assert set([meeting_three.endpoint, meeting_one.endpoint, meeting_two.endpoint]) == set([meeting['id'] for meeting in res.json['data']])
+        assert [meeting_three.endpoint, meeting_one.endpoint, meeting_two.endpoint] == [meeting['id'] for meeting in res.json['data']]
