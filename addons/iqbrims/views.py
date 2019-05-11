@@ -10,7 +10,7 @@ from framework.exceptions import HTTPError
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 from osf.models import AbstractNode, RdmAddonOption
 from website.project.decorators import must_have_addon, must_be_addon_authorizer, must_have_permission
-from website.util import permissions
+from osf.utils import permissions
 
 from addons.base import generic_views, exceptions
 from addons.iqbrims.serializer import IQBRIMSSerializer
