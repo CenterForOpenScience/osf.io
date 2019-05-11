@@ -115,8 +115,14 @@ def _iqbrims_import_auth_from_management_node(node, node_addon, management_node)
     instead of copying external settings.
     """
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
+    if management_node_addon is None:
+        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
     management_user_addon = management_node_addon.user_settings
+    if management_user_addon is None:
+        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon is not authorized in management node')
     management_external_account = management_node_addon.external_account
+    if management_external_account is None:
+        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon is not authorized in management node')
 
     management_user_addon.grant_oauth_access(
         node=node,
@@ -131,6 +137,8 @@ def _iqbrims_import_auth_from_management_node(node, node_addon, management_node)
 
 def _iqbrims_init_folders(node, management_node, register_type, labo_name):
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
+    if management_node_addon is None:
+        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
     folder_id = management_node_addon.folder_id
 
     try:
