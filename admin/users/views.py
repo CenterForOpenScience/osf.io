@@ -435,6 +435,7 @@ class UserView(PermissionRequiredMixin, GuidView):
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
 
         user = OSFUser.load(self.kwargs.get('guid')) #Pull User for Node/Preprints
+        
         #Preprint pagination
         page_num=self.request.GET.get('page',1)
         preprints = user.preprints.all().order_by('title')
@@ -444,7 +445,10 @@ class UserView(PermissionRequiredMixin, GuidView):
         kwargs.setdefault('preprints', list(map(serialize_simple_preprint,queryset)))
         kwargs.setdefault('page', paginator.page(page_num))
 
-        #Node pagination
+        #Node pagination TODO:
+        #-----------------------
+
+
         return kwargs
 
     def get_object(self, queryset=None):
