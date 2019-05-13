@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import datetime
+
 import mock
 from mock import call
 import requests
@@ -148,7 +150,7 @@ fake_expected_create_import_xml_template = u"""
 <export>
     <repository_item item_id="1" item_no="1" revision_no="0" prev_revision_no="0" item_type_id="10001"
                      title="test_title" title_english="test_title" language="ja" review_status="0" review_date=""
-                     shown_status="1" shown_date="2019-05-10" reject_status="0" reject_date="" reject_reason=""
+                     shown_status="1" shown_date="{date}" reject_status="0" reject_date="" reject_reason=""
                      search_key="" search_key_english="" remark=""/>
     <repository_item_type item_type_id="10001" item_type_name="学術雑誌論文 / Journal Article"
                           item_type_short_name="学術雑誌論文 / Journal Article" mapping_info="Journal Article"
@@ -254,7 +256,7 @@ fake_expected_create_import_xml_template = u"""
                                junii2_mapping="fullTextURL" display_lang_type=""/>
     <repository_file item_type_id="10001" attribute_id="22" item_no="1" file_no="1" file_name="{file_name}"
                      display_name="{display_name}" display_type="0" mime_type="{mime_type}" extension="{extension}"
-                     license_id="0" license_notation="" pub_date="2019-05-10" item_id="1" browsing_flag="0"
+                     license_id="0" license_notation="" pub_date="{date}" item_id="1" browsing_flag="0"
                      cover_created_flag="0"/>
     <repository_license_master license_id="0" license_notation=""/>
     <repository_item_attr_type item_type_id="10001" attribute_id="23" show_order="23" attribute_name="見出し"
@@ -269,14 +271,23 @@ fake_expected_create_import_xml = fake_expected_create_import_xml_template.forma
     file_name='test_file.pdf',
     display_name='test_file',
     mime_type='application/pdf',
-    extension='pdf'
+    extension='pdf',
+    date=datetime.datetime.now().strftime('%Y-%m-%d')
 )
 fake_expected_create_import_xml2 = fake_expected_create_import_xml_template.format(
     file_name='test_file.PDF',
     display_name='test_file',
     mime_type='application/pdf',
-    extension='pdf'
+    extension='pdf',
+    date=datetime.datetime.now().strftime('%Y-%m-%d')
 )
+
+
+def etree_to_dict(t):
+    d = {t.tag: list(map(etree_to_dict, t.iterchildren()))}
+    d.update(('@' + k, v) for k, v in t.attrib.iteritems())
+    d['text'] = t.text
+    return d
 
 
 class MockResponse:
@@ -321,10 +332,10 @@ class TestWEKOClient(OsfTestCase):
         res = client.create_import_xml(fake_weko_item_item_type, fake_weko_item_internal_item_type_id,
                                        fake_weko_item_uploaded_filenames, fake_weko_item_title,
                                        fake_weko_item_title_en, fake_weko_item_contributors)
-        assert_equal(etree.tostring(res, encoding='unicode'), fake_expected_create_import_xml)
+        assert(etree_to_dict(res), etree_to_dict(etree.XML(fake_expected_create_import_xml)))
 
     def test_weko_create_import_xml_with_upper_ext(self):
         res = client.create_import_xml(fake_weko_item_item_type, fake_weko_item_internal_item_type_id,
                                        fake_weko_item_uploaded_filenames2, fake_weko_item_title,
                                        fake_weko_item_title_en, fake_weko_item_contributors)
-        assert_equal(etree.tostring(res, encoding='unicode'), fake_expected_create_import_xml2)
+        assert(etree_to_dict(res), etree_to_dict(etree.XML(fake_expected_create_import_xml2)))
