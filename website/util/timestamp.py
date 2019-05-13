@@ -233,8 +233,8 @@ def get_full_list(uid, pid, node):
                     node,
                     file_data['attributes']['path']
                 )
-                basefile_node.materialized_path = file_data['attributes']['path']
-                basefile_node.name = os.path.basename(file_data['attributes']['path'])
+                basefile_node.materialized_path = file_data['attributes']['materialized']
+                basefile_node.name = os.path.basename(file_data['attributes']['materialized'])
                 basefile_node.save()
                 file_info = {
                     'file_id': basefile_node._id,
@@ -626,8 +626,8 @@ def waterbutler_folder_file_info(pid, provider, path, node, cookies, headers):
                 node,
                 file_data['attributes']['path']
             )
-            basefile_node.materialized_path = file_data['attributes']['path']
-            basefile_node.name = os.path.basename(file_data['attributes']['path'])
+            basefile_node.materialized_path = file_data['attributes']['materialized']
+            basefile_node.name = os.path.basename(file_data['attributes']['materialized'])
             basefile_node.save()
             if provider == 'osfstorage':
                 file_info = {
