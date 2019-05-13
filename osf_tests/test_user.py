@@ -1632,6 +1632,7 @@ class TestUserMerging(OsfTestCase):
         )
         self.project_with_unreg_contrib.save()
 
+    @pytest.mark.enable_search
     @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merge(self, mock_get_mailchimp_api):
