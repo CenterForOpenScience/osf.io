@@ -83,8 +83,11 @@ def iqbrims_folder_list(node_addon, **kwargs):
 def iqbrims_get_status(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
+    status = iqbrims.get_status()
+    status['labo_list'] = ['{}:{}'.format(l['id'], l['text'])
+                           for l in settings.LABO_LIST]
     return {'data': {'id': node._id, 'type': 'iqbrims-status',
-                     'attributes': iqbrims.get_status()}}
+                     'attributes': status}}
 
 @must_be_valid_project
 @must_have_permission('admin')

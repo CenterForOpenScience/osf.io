@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 import json
 import requests
+import logging
 
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
 from addons.iqbrims import settings
+
+logger = logging.getLogger(__name__)
 
 
 class IQBRIMSAuthClient(BaseClient):
@@ -103,4 +106,5 @@ class IQBRIMSFlowableClient(object):
                                  headers=headers,
                                  auth=(settings.FLOWABLE_USER,
                                        settings.FLOWABLE_PASSWORD))
+        logger.info('flowable-rest: response={}'.format(response.content))
         response.raise_for_status()

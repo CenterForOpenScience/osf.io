@@ -6,7 +6,7 @@
                 <h3 class="panel-title">${addon_data['full_name']}</h3>
                 <div class="pull-right">
                     % if addon_data['has_page']:
-                        <a href="${node['url']}${addon_data['short_name']}/">  <i class="fa fa-external-link"></i> </a>
+                        <a href="${node['url']}${addon_data['short_name']}"><i class="fa fa-external-link"></i></a>
                     % endif
                     % if 'can_expand' in addon_data and addon_data['can_expand']:
                         <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
@@ -212,27 +212,29 @@
                       <div class="text-danger">Error occurred</div>
                       <!-- /ko -->
                       <!-- ko if: loadCompleted -->
-                        <!-- ko if: modeDeposit -->
-                        <div style="margin: 0.5em;">Processing</div>
+                        <!-- ko if: modeDeposit || modeCheck -->
+                        <div style="margin: 0.5em;">
+                            <div data-bind="foreach: formEntries">
+                                <div class="col-sm-4 col-md-3" style="font-weight: bold;" data-bind="text: title">
+                                </div>
+                                <div class="col-sm-8 col-md-9" data-bind="text: value">
+                                </div>
+                            </div>
+                        </div>
                         <!-- /ko -->
-                        <!-- ko ifnot: modeDeposit -->
-                          <!-- ko if: modeCheck -->
-                          <div style="margin: 0.5em;">Checking</div>
-                          <!-- /ko -->
-                          <!-- ko ifnot: modeCheck -->
-                          <div class="form-group">
-                            <button type="button" class="btn btn-primary"
-                                    data-bind="click: gotoDepositForm">Deposit Manuscript & Data</button>
-                            <small class="form-text text-muted" data-bind="text: depositHelp">
-                            </small>
-                          </div>
-                          <div class="form-group">
-                            <button type="button" class="btn btn-primary"
-                                    data-bind="click: gotoCheckForm">Image Scan Service</button>
-                            <small class="form-text text-muted" data-bind="text: checkHelp">
-                            </small>
-                          </div>
-                          <!-- /ko -->
+                        <!-- ko ifnot: modeDeposit || modeCheck -->
+                        <div class="form-group">
+                          <button type="button" class="btn btn-primary"
+                                  data-bind="click: gotoDepositForm">Deposit Manuscript & Data</button>
+                          <small class="form-text text-muted" data-bind="text: depositHelp">
+                          </small>
+                        </div>
+                        <div class="form-group">
+                          <button type="button" class="btn btn-primary"
+                                  data-bind="click: gotoCheckForm">Image Scan Service</button>
+                          <small class="form-text text-muted" data-bind="text: checkHelp">
+                          </small>
+                        </div>
                         <!-- /ko -->
                       <!-- /ko -->
                     </div>

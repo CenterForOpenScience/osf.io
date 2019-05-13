@@ -20,6 +20,38 @@ function IQBRIMSWidget() {
   self.modeCheck = ko.observable(false);
   self.depositHelp = ko.observable(language.depositHelp);
   self.checkHelp = ko.observable(language.checkHelp);
+  self.formEntries = ko.observableArray();
+
+  self.updateFormEntries = function(status) {
+    self.formEntries.removeAll();
+    var laboList = status['labo_list'].map(function(labo) {
+      return {'id': labo.substring(0, labo.indexOf(':')),
+              'text': labo.substring(labo.indexOf(':') + 1)};
+    }).filter(function(labo) {
+      return labo['id'] == status['labo_id'];
+    });
+    if (status['labo_id']) {
+      self.formEntries.push({'title': '研究分野', 'value': laboList[0]['text']});
+    }
+    if (status['accepted_date']) {
+      self.formEntries.push({'title': '論文受理日', 'value': new Date(status['accepted_date'])});
+    }
+    if (status['journal_name']) {
+      self.formEntries.push({'title': '雑誌名', 'value': status['journal_name']});
+    }
+    if (status['doi']) {
+      self.formEntries.push({'title': 'DOI', 'value': status['doi']});
+    }
+    if (status['publish_date']) {
+      self.formEntries.push({'title': '出版日', 'value': new Date(status['publish_date'])});
+    }
+    if (status['volume']) {
+      self.formEntries.push({'title': '巻', 'value': status['volume']});
+    }
+    if (status['page_number']) {
+      self.formEntries.push({'title': 'ページ番号', 'value': status['page_number']});
+    }
+  };
 
   self.loadConfig = function() {
     var url = self.baseUrl + 'status';
@@ -35,9 +67,11 @@ function IQBRIMSWidget() {
       if (status['state'] == 'deposit') {
         self.modeDeposit(true);
         self.modeCheck(false);
+        self.updateFormEntries(status);
       } else if (status['state'] == 'check') {
         self.modeDeposit(false);
         self.modeCheck(true);
+        self.updateFormEntries(status);
       } else {
         self.modeDeposit(false);
         self.modeCheck(false);
