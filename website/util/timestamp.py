@@ -70,8 +70,10 @@ def get_error_list(pid):
             verify_result_title = api_settings.FILE_NOT_FOUND_MSG
 
         # User and date of the verification
-        verify_user = OSFUser.objects.get(id=data.verify_user)
-        verify_date = data.verify_date.strftime('%Y/%m/%d %H:%M:%S')
+        if data.verify_date is not None:
+            verify_date = data.verify_date.strftime('%Y/%m/%d %H:%M:%S')
+        else:
+            verify_date = ''
 
         # Get file info
         base_file_data = BaseFileNode.objects.filter(_id=data.file_id)
@@ -122,11 +124,18 @@ def get_error_list(pid):
             'project_id': data.project_id,
             'organization_id': '',
             'organization_name': '',
-            'verify_user_id': verify_user._id,
-            'verify_user_name': verify_user.fullname,
+            'verify_user_id': '',
+            'verify_user_name': '',
             'verify_date': verify_date,
             'verify_result_title': verify_result_title,
         }
+
+        try:
+            verify_user = OSFUser.objects.get(id=data.verify_user)
+            error_info['verify_user_id'] = verify_user._id
+            error_info['verify_user_name'] = verify_user.fullname
+        except OSFUser.DoesNotExist:
+            logger.warning('Timestamp Control: verify_user not found.')
 
         if base_file_data_exists and provider == 'osfstorage':
             error_info['file_version'] = base_file_data.current_version_number
