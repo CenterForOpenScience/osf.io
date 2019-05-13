@@ -60,11 +60,13 @@ class TestViewsWithMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_dashboard')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
-    def test_dashboard(self, mock_sync):
+    @mock.patch('website.views.use_ember_app')
+    def test_dashboard(self, mock_sync, mock_ember):
         url = web_url_for('dashboard', _absolute=True)
         res = self.app.get(url, auth=self.me.auth)
         assert_equal(res.status_code, 200)
         assert_equal(mock_sync.call_count, 1)
+        assert_equal(mock_ember.call_count, 1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_my_projects')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
