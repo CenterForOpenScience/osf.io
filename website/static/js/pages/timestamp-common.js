@@ -58,7 +58,7 @@ var HEADER_NAMES = {
     tsVerificationStatus: 'Timestamp Verification Status',
     latestTsVerificationDate: 'Latest Timestamp Verification Date'
 };
-var RESOURCE_URL = 'rdf.rdm.nii.ac.jp';
+var RESOURCE_HOST = 'rdf.rdm.nii.ac.jp';
 
 var TIMESTAMP_LIST_OBJECT = new List('timestamp-form', {
     valueNames: [
@@ -308,29 +308,29 @@ var download = function () {
         var fileModificationDate = item.file_modify_date_on_verify ? item.file_modify_date_on_verify.replace(' ', '_').replace(/[/]/g, '-').replace(/:/g, '') : null;
 
         return {
-            timestampId: 'https://' + RESOURCE_URL + '/resource/ts/' + item.project_id + '/' + item.file_id + '/' + userId + '/' + tsDate,
-            fileGuidResource: 'https://' + RESOURCE_URL + '/resource/file/' + item.file_id,
+            timestampId: 'https://' + RESOURCE_HOST + '/resource/ts/' + item.project_id + '/' + item.file_id + '/' + userId + '/' + tsDate,
+            fileGuidResource: 'https://' + RESOURCE_HOST + '/resource/file/' + item.file_id,
             fileGuidLabel: {text: 'FILE:' + item.file_id, lang: 'en'},
-            fileGuid: 'https://' + RESOURCE_URL + '/' + item.file_id,
-            fileNameResource: 'https://' + RESOURCE_URL + '/resource/file/' + encodeURIComponent(fileName),
+            fileGuid: 'https://' + RESOURCE_HOST + '/' + item.file_id,
+            fileNameResource: 'https://' + RESOURCE_HOST + '/resource/file/' + encodeURIComponent(fileName),
             fileNameLabel: {text: fileName, lang: 'en'},
             fileCreationDate: fileCreationDate,
             fileModificationDate: fileModificationDate,
             fileByteSize: item.file_size_on_verify,
             fileVersion: item.file_version,
-            projectGuidResource: 'https://' + RESOURCE_URL + '/resource/project/' + item.project_id,
+            projectGuidResource: 'https://' + RESOURCE_HOST + '/resource/project/' + item.project_id,
             projectGuidLabel: {text: 'PROJ:' + item.project_id, lang: 'en'},
-            projectGuid: 'https://' + RESOURCE_URL + '/' + item.project_id,
-            userGuidResource: item.creator_id ? 'https://' + RESOURCE_URL + '/resource/user/' + item.creator_id : null,
+            projectGuid: 'https://' + RESOURCE_HOST + '/' + item.project_id,
+            userGuidResource: item.creator_id ? 'https://' + RESOURCE_HOST + '/resource/user/' + item.creator_id : null,
             userGuidLabel: item.creator_id ? {text: 'USER:' + item.creator_id, lang: 'en'} : null,
-            userNameResource: item.creator_name ? 'https://' + RESOURCE_URL + '/resource/user/' + encodeURIComponent(item.creator_name) : null,
+            userNameResource: item.creator_name ? 'https://' + RESOURCE_HOST + '/resource/user/' + encodeURIComponent(item.creator_name) : null,
             userNameLabel: item.creator_name ? {text: item.creator_name, lang: 'en'} : null,
             mail: item.creator_email,
-            orgIdResource: item.organization_id ? 'https://' + RESOURCE_URL + '/resource/org/' + item.organization_id : null,
+            orgIdResource: item.organization_id ? 'https://' + RESOURCE_HOST + '/resource/org/' + item.organization_id : null,
             orgIdLabel: item.organization_id ? {text: 'ORG:' + item.organization_id, lang: 'en'} : null,
-            orgNameResource: item.organization_name ? 'https://' + RESOURCE_URL + '/resource/org/' + encodeURIComponent(item.organization_name) : null,
+            orgNameResource: item.organization_name ? 'https://' + RESOURCE_HOST + '/resource/org/' + encodeURIComponent(item.organization_name) : null,
             orgNameLabel: item.organization_name ? {text: item.organization_name, lang: 'en'} : null,
-            userGuid: item.creator_id ? 'https://' + RESOURCE_URL + '/' + item.creator_id : null,
+            userGuid: item.creator_id ? 'https://' + RESOURCE_HOST + '/' + item.creator_id : null,
             tsIdLabel: {text: 'TS:' + item.project_id + '/' + item.file_id + '/' + userId + '/' + tsDate, lang: 'en'},
             tsVerificationStatus: item.verify_result_title,
             latestTsVerificationDate: tsDate
@@ -511,7 +511,7 @@ function generateJson(fileList) {
             'owl': 'http://www.w3.org/2002/07/owl#',
             'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
             'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
-            'rdmr': 'https://' + RESOURCE_URL + '/resource/',
+            'rdmr': 'https://' + RESOURCE_HOST + '/resource/',
             'schema': 'http://schema.org/',
             'sem': 'http://semanticweb.cs.vu.nl/2009/11/sem/',
             'sio': 'http://semanticscience.org/resource/',
@@ -563,7 +563,7 @@ function generateRdf (fileList) {
 
     var namespaces = [
         {schema: 'http://schema.org/'},
-        {rdmr: 'https://' + RESOURCE_URL + '/resource/'},
+        {rdmr: 'https://' + RESOURCE_HOST + '/resource/'},
         {owl: 'http://www.w3.org/2002/07/owl#'},
         {org: 'http://www.w3.org/ns/org#'},
         {frapo: 'http://purl.org/cerif/frapo/'},
