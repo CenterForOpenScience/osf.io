@@ -408,6 +408,7 @@ API_TESTS3 = [
 ]
 ADDON_TESTS = [
     'addons',
+    'nii_tests'
 ]
 ADMIN_TESTS = [
     'admin_tests',

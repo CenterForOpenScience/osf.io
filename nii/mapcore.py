@@ -48,9 +48,7 @@ if MAPCORE_DEBUG:
 
 
 def mapcore_is_enabled():
-    from website.settings import STATIC_URL_PATH
-    sys.stderr.write('mapcore_is_enabled: STATIC_URL_PATH={}\n'.format(STATIC_URL_PATH))
-    sys.stderr.write('mapcore_is_enabled: MAPCORE_CLIENTID={}\n'.format(MAPCORE_CLIENTID))
+    #sys.stderr.write('mapcore_is_enabled: MAPCORE_CLIENTID={}\n'.format(MAPCORE_CLIENTID))
     return True if MAPCORE_CLIENTID else False
 
 
@@ -578,7 +576,7 @@ def mapcore_get_extended_group_info(access_user, node, group_key, base_grp=None,
     return group_ext
 
 
-def mapcore_sync_map_new_group(user, title):
+def mapcore_sync_map_new_group0(user, title):
     '''
     create new mAP group and return its group_key
     :param user:OSFUser  project creator aka mAP admin
@@ -596,6 +594,10 @@ def mapcore_sync_map_new_group(user, title):
 
     return group_key
 
+def mapcore_sync_map_new_group(user, title):
+    # for mock.patch()
+    mapcore_sync_map_new_group0(user, title)
+    #TODO log
 
 def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
     '''
@@ -822,7 +824,7 @@ def _mapcore_sync_map_group(access_user, node, title_desc=True, contributors=Tru
     return True
 
 
-def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True):
+def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=True):
     try:
         ret = _mapcore_sync_map_group(access_user, node, title_desc=title_desc, contributors=contributors)
         pass
@@ -835,6 +837,10 @@ def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True
         mapcore_unset_standby_to_upload(node)
     return ret
 
+def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True):
+    # for mock.patch()
+    mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
+
 def mapcore_url_is_my_projects(request_url):
     pages = ['dashboard', 'my_projects']
 
@@ -843,7 +849,7 @@ def mapcore_url_is_my_projects(request_url):
             return True
     return False
 
-def mapcore_sync_rdm_my_projects(user):
+def mapcore_sync_rdm_my_projects0(user):
     '''
     RDMとmAPの両方にグループに所属:
        タイトルが変わっていない場合: なにもしない
@@ -956,6 +962,10 @@ def mapcore_sync_rdm_my_projects(user):
 
     logger.debug('mapcore_sync_rdm_my_projects finished.')
 
+def mapcore_sync_rdm_my_projects(user):
+    # for mock.patch()
+    mapcore_sync_rdm_my_projects0(user)
+    #TODO log
 
 SHARE_DIR = '/code_src/tmp'  # TODO do not use
 READY_SYNC_FILE_TMPL = SHARE_DIR + '/rdm_mapcore_ready_to_sync_{}'  # TODO do not use
@@ -1022,7 +1032,7 @@ def mapcore_is_sync_time_expired(node):
         pass
     return True
 
-def mapcore_sync_rdm_project_or_map_group(access_user, node):
+def mapcore_sync_rdm_project_or_map_group0(access_user, node):
     if node.is_deleted:
         return
     if not mapcore_is_sync_time_expired(node):
@@ -1042,6 +1052,10 @@ def mapcore_sync_rdm_project_or_map_group(access_user, node):
                                  title_desc=True, contributors=True)
     mapcore_set_sync_time(node)
 
+def mapcore_sync_rdm_project_or_map_group(access_user, node):
+    # for mock.patch()
+    mapcore_sync_rdm_project_or_map_group0(access_user, node)
+    #TODO log
 
 #
 # debugging utilities

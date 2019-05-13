@@ -160,7 +160,6 @@ def find_bookmark_collection(user):
 
 @must_be_logged_in
 def dashboard(auth):
-    logger.info('Views dashboard called')
     return use_ember_app()
 
 
