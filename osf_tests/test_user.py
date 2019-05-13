@@ -700,7 +700,7 @@ class TestCookieMethods:
         })
         session.save()
 
-        assert signer.unsign(user.get_or_create_cookie(super_secret_key)) == session._id
+        assert signer.unsign(user.get_or_create_cookie(super_secret_key)).decode() == session._id
 
     def test_user_get_cookie_no_session(self):
         user = UserFactory()
@@ -714,7 +714,7 @@ class TestCookieMethods:
 
         session = Session.objects.filter(data__auth_user_id=user._id).first()
 
-        assert session._id == signer.unsign(cookie)
+        assert session._id == signer.unsign(cookie).decode()
         assert session.data['auth_user_id'] == user._id
         assert session.data['auth_user_username'] == user.username
         assert session.data['auth_user_fullname'] == user.fullname
