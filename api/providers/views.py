@@ -253,7 +253,7 @@ class GenericProviderLicenseList(LicenseList):
         if provider.licenses_acceptable.count():
             licenses = provider.licenses_acceptable.get_queryset()
         else:
-            licenses = NodeLicense.objects.preprint_licenses()
+            licenses = NodeLicense.objects.all()
 
         if provider.default_license:
             licenses |= NodeLicense.objects.filter(id=provider.default_license.id)
