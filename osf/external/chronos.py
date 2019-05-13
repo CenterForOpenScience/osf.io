@@ -70,7 +70,13 @@ class ChronosSerializer(object):
             'CHRONOS_JOURNAL_ID': journal_id,
             'MANUSCRIPT_URL': preprint.url,
             'KEYWORDS': ','.join(preprint.tags.all().values_list('name', flat=True)),
-            'EXTRAVALUES': 'Provider:{}'.format(preprint.provider.name),
+            'ADDITIONAL_DATA': [
+                {
+                    'DATA_NAME': 'Provider',
+                    'DATA_TYPE': 'string',
+                    'DATA_VALUE': preprint.provider.name,
+                }
+            ],
         }
 
     @classmethod
