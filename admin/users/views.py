@@ -14,12 +14,14 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
+from django.core.paginator import Paginator
 
 from osf.exceptions import UserStateError
 from osf.models.base import Guid
 from osf.models.user import OSFUser
 from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
+from osf.models.preprint import Preprint
 from framework.auth import get_user
 from framework.auth.utils import impute_names
 from framework.auth.core import generate_verification_key
@@ -39,7 +41,7 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 
-from admin.users.serializers import serialize_user
+from admin.users.serializers import serialize_user, serialize_simple_preprint
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
@@ -407,7 +409,9 @@ class UserSearchList(PermissionRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         users = self.get_queryset()
         page_size = self.get_paginate_by(users)
+        print (page_size)
         paginator, page, query_set, is_paginated = self.paginate_queryset(users, page_size)
+        print (page)
         kwargs['page'] = page
         kwargs['users'] = [{
             'name': user.fullname,
@@ -422,12 +426,25 @@ class UserSearchList(PermissionRequiredMixin, ListView):
 class UserView(PermissionRequiredMixin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
+    paginate_by = 1
     permission_required = 'osf.view_osfuser'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
         kwargs = super(UserView, self).get_context_data(**kwargs)
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
+
+        user = OSFUser.load(self.kwargs.get('guid')) #Pull User for Node/Preprints
+        #Preprint pagination
+        page_num=self.request.GET.get('page',1)
+        preprints = user.preprints.all().order_by('title')
+        paginator= Paginator(preprints,1)
+        queryset = paginator.page(page_num)
+
+        kwargs.setdefault('preprints', list(map(serialize_simple_preprint,queryset)))
+        kwargs.setdefault('page', paginator.page(page_num))
+
+        #Node pagination
         return kwargs
 
     def get_object(self, queryset=None):

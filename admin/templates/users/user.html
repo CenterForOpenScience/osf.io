@@ -320,6 +320,7 @@
                 <tr>
                     <td>Preprints</td>
                     <td>
+                        {% include "util/pagination.html" with items=page status=status %}
                         <table class="table table-hover table-bordered">
                         <thead>
                             <tr>
@@ -332,7 +333,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for preprint in user.preprints %}
+                        {% for preprint in preprints %}
                             <tr>
                                 <td>
                                     <a href="{{ preprint.id | reverse_preprint }}">

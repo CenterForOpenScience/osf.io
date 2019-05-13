@@ -9,7 +9,7 @@ def serialize_user(user):
         'name': user.fullname,
         'id': user._id,
         'nodes': list(map(serialize_simple_node, user.contributor_to)),
-        'preprints':list(map(serialize_simple_preprint, user.preprints.all())),
+        #'preprints':list(map(serialize_simple_preprint, user.preprints.all())),
         'emails': user.emails.values_list('address', flat=True),
         'last_login': user.date_last_login,
         'confirmed': user.date_confirmed,
