@@ -7,6 +7,7 @@ import hashlib
 import logging
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -458,7 +459,11 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     if metadata['provider'] != 'osfstorage':
         file_node = BaseFileNode.resolve_class(
             metadata['provider'], BaseFileNode.FILE
-        ).get_or_create(node, metadata.get('materialized'))
+        ).get_or_create(node, '/' + metadata.get('path').lstrip('/'))
+        file_node.path = '/' + metadata.get('path').lstrip('/')
+        file_node.name = metadata.get('name')
+        file_node.materialized_path = metadata.get('materialized')
+
         file_node.save()
         metadata['path'] = file_node._id
     created_at = metadata.get('created_utc')
@@ -660,15 +665,15 @@ def userkey_generation(guid):
         generation_pub_key_name = api_settings.KEY_NAME_FORMAT.format(
             guid, generation_date_hash, api_settings.KEY_NAME_PUBLIC, api_settings.KEY_EXTENSION)
         # private key generation
-        pvt_key_generation_cmd = api_settings.SSL_PRIVATE_KEY_GENERATION.format(
+        pvt_key_generation_cmd = shlex.split(api_settings.SSL_PRIVATE_KEY_GENERATION.format(
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pvt_key_name),
             api_settings.KEY_BIT_VALUE
-        ).split(api_settings.TST_COMMAND_DELIMITER)
+        ))
 
-        pub_key_generation_cmd = api_settings.SSL_PUBLIC_KEY_GENERATION.format(
+        pub_key_generation_cmd = shlex.split(api_settings.SSL_PUBLIC_KEY_GENERATION.format(
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pvt_key_name),
             os.path.join(api_settings.KEY_SAVE_PATH, generation_pub_key_name)
-        ).split(api_settings.TST_COMMAND_DELIMITER)
+        ))
 
         prc = subprocess.Popen(
             pvt_key_generation_cmd, shell=False, stdin=subprocess.PIPE,
@@ -705,11 +710,13 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
     userkey_info.created_time = date
     return userkey_info
 
+def filename_formatter(file_name):
+    return file_name.encode('utf-8').replace(' ', '\\ ')
 
 class AddTimestamp:
     #1 create tsq (timestamp request) from file, and keyinfo
     def get_timestamp_request(self, file_name):
-        cmd = api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(file_name.encode('utf-8')).split(api_settings.TST_COMMAND_DELIMITER)
+        cmd = shlex.split(api_settings.SSL_CREATE_TIMESTAMP_REQUEST.format(filename_formatter(file_name)))
         process = subprocess.Popen(
             cmd, shell=False, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -742,10 +749,10 @@ class AddTimestamp:
         return res_content
 
     def get_timestamp_upki(self, file_name, tmp_dir):
-        cmd = api_settings.UPKI_CREATE_TIMESTAMP.format(
-            file_name.encode('utf-8'),
+        cmd = shlex.split(api_settings.UPKI_CREATE_TIMESTAMP.format(
+            filename_formatter(file_name),
             '/dev/stdout'
-        ).split(api_settings.TST_COMMAND_DELIMITER)
+        ))
         try:
             process = subprocess.Popen(
                 cmd, shell=False, stdin=subprocess.PIPE,
@@ -915,33 +922,38 @@ class TimeStampTokenVerifyCheck:
                 with open(timestamptoken_file_path, 'wb') as fout:
                     fout.write(verify_result.timestamp_token)
 
-                cmd = api_settings.SSL_GET_TIMESTAMP_RESPONSE.format(
-                    file_name.encode('utf-8'),
+                cmd = shlex.split(api_settings.SSL_GET_TIMESTAMP_RESPONSE.format(
+                    filename_formatter(file_name),
                     timestamptoken_file_path,
                     os.path.join(api_settings.KEY_SAVE_PATH, api_settings.VERIFY_ROOT_CERTIFICATE)
-                ).split(api_settings.TST_COMMAND_DELIMITER)
-                prc = subprocess.Popen(
-                    cmd, shell=False, stdin=subprocess.PIPE,
-                    stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-                stdout_data, stderr_data = prc.communicate()
-                ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
-
-                if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
-                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
-                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
-
-                else:
-                    ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
-                    verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'NG'
+                ))
+                # exec timestamptoken verification
+                try:
+                    prc = subprocess.Popen(
+                        cmd, shell=False, stdin=subprocess.PIPE,
+                        stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                    stdout_data, stderr_data = prc.communicate()
+                    ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
+                    if stdout_data.__str__().find(api_settings.OPENSSL_VERIFY_RESULT_OK) > -1:
+                        ret = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS
+                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG  # 'OK'
+                    else:
+                        logger.error('timestamp verification error occured.({}:{}) : {}'.format(verify_result.provider, filename_formatter(file_name), stderr_data))
+                        ret = api_settings.TIME_STAMP_TOKEN_CHECK_NG
+                        verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG  # 'NG'
+                except Exception as err:
+                    logger.error('timestamp verification error occured.({}:{}) : {}'.format(verify_result.provider, filename_formatter(file_name), err))
+                    ret = api_settings.TIME_STAMP_VERIFICATION_ERR
+                    verify_result_title = api_settings.TIME_STAMP_VERIFICATION_ERR_MSG  # 'NG'
 
             else:
                 #verify timestamptoken (uPKI))
                 with open(file_name + '.tst', 'wb') as fout:
                     fout.write(verify_result.timestamp_token)
-                cmd = api_settings.UPKI_VERIFY_TIMESTAMP.format(
-                    file_name.encode('utf-8'),
-                    file_name.encode('utf-8') + '.tst'
-                ).split(api_settings.TST_COMMAND_DELIMITER)
+                cmd = shlex.split(api_settings.UPKI_VERIFY_TIMESTAMP.format(
+                    filename_formatter(file_name),
+                    filename_formatter(file_name) + '.tst'
+                ))
                 try:
                     process = subprocess.Popen(
                         cmd, shell=False, stdin=subprocess.PIPE,
