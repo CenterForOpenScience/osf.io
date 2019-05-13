@@ -16,6 +16,7 @@ from osf_tests.factories import (
 )
 from tests.base import assert_datetime_equal
 from tests.utils import make_drf_request_with_version
+from api.base import settings as api_settings
 
 
 @pytest.fixture()
@@ -100,7 +101,7 @@ class TestNodeSerializer:
             user=user,
             storage_type=UserQuota.NII_STORAGE,
             max_quota=150,
-            used=75 * 1024 ** 3
+            used=75 * api_settings.DEFAULT_SIZE_UNIT ** 3
         )
         UserQuota.objects.create(
             user=user,
@@ -122,7 +123,7 @@ class TestNodeSerializer:
             user=user,
             storage_type=UserQuota.NII_STORAGE,
             max_quota=150,
-            used=75 * 1024 ** 3
+            used=75 * api_settings.DEFAULT_SIZE_UNIT ** 3
         )
         UserQuota.objects.create(
             user=user,
@@ -144,7 +145,7 @@ class TestNodeSerializer:
             user=user,
             storage_type=UserQuota.NII_STORAGE,
             max_quota=150,
-            used=75 * 1024 ** 3
+            used=75 * api_settings.DEFAULT_SIZE_UNIT ** 3
         )
         UserQuota.objects.create(
             user=user,

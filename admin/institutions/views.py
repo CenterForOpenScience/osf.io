@@ -20,6 +20,7 @@ from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
 from addons.osfstorage.models import Region
 from django.http import HttpResponseRedirect
+from api.base import settings as api_settings
 
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -268,14 +269,14 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
 
     def custom_size_abbreviation(self, size, abbr):
         if abbr == 'B':
-            return (size / 1024, 'KB')
+            return (size / api_settings.DEFAULT_SIZE_UNIT, 'KB')
         return size, abbr
 
     def get_queryset(self):
         user_list = []
         for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
             max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
-            max_quota_bytes = max_quota * 1024 ** 3
+            max_quota_bytes = max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3
             remaining_quota = max_quota_bytes - used_quota
             used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
             remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
@@ -337,7 +338,7 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, L
 
     def custom_size_abbreviation(self, size, abbr):
         if abbr == 'B':
-            return (size / 1024, 'KB')
+            return (size / api_settings.DEFAULT_SIZE_UNIT, 'KB')
         return size, abbr
 
     def get_queryset(self):
@@ -348,7 +349,7 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, L
 
             for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
                 max_quota, used_quota = quota.get_quota_info(user, UserQuota.CUSTOM_STORAGE)
-                max_quota_bytes = max_quota * 1024 ** 3
+                max_quota_bytes = max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3
                 remaining_quota = max_quota_bytes - used_quota
                 used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
                 remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))

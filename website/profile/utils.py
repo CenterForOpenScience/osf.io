@@ -12,6 +12,7 @@ from osf.utils.permissions import reduce_permissions
 from osf.utils import workflows
 from website.ember_osf_web.decorators import storage_i18n_flag_active
 from website.util import quota
+from api.base import settings as api_settings
 
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
@@ -106,7 +107,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             size_unit = used_quota_abbr[1]
             used_quota_abbr = '{:.1f}[{}]'.format(used_quota_abbr[0], size_unit)
 
-        used_rate = float(used_quota) / (max_quota * 1024 ** 3)
+        used_rate = float(used_quota) / (max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3)
         icon_name = None
         if used_rate < api_settings.WARNING_THRESHOLD:
             icon_name = 'storage_ok.png'

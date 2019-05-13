@@ -221,6 +221,7 @@ MIDDLEWARE = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'waffle.middleware.WaffleMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware'
 )
 
 TEMPLATES = [
@@ -429,3 +430,4 @@ TIME_STAMP_STORAGE_NOT_ACCESSIBLE_MSG = 'Error: storage service connection error
 # Quota settings
 DEFAULT_MAX_QUOTA = 100
 WARNING_THRESHOLD = 0.9
+DEFAULT_SIZE_UNIT = 1000

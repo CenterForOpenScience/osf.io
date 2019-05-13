@@ -44,6 +44,7 @@ from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from website.util import quota
 from osf.utils import permissions as osf_permissions
+from api.base import settings as api_settings
 
 
 def get_or_add_license_to_serializer_context(serializer, node):
@@ -476,7 +477,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         max_quota, used_quota = quota.get_quota_info(
             obj.creator, quota.get_project_storage_type(obj),
         )
-        return float(used_quota) / (max_quota * 1024 ** 3) * 100
+        return float(used_quota) / (max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3) * 100
 
     def get_quota_threshold(self, obj):
         return WARNING_THRESHOLD

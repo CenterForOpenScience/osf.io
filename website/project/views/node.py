@@ -59,6 +59,7 @@ from admin.rdm_addons.utils import validate_rdm_addons_allowed
 from api.base import settings as api_settings
 from website.util import quota
 from osf.models.project_storage_type import ProjectStorageType
+from api.base import settings as api_settings
 
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
@@ -795,7 +796,7 @@ def _view_project(node, auth, primary=False,
             'category': node.category_display,
             'category_short': node.category,
             'used_quota': used_quota,
-            'max_quota': max_quota * 1024 ** 3,
+            'max_quota': max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3,
             'threshold': api_settings.WARNING_THRESHOLD,
             'node_type': node.project_or_component,
             'description': node.description or '',
