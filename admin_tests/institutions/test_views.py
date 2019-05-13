@@ -23,7 +23,6 @@ from admin.institutions import views
 from admin.institutions.forms import InstitutionForm
 from admin.base.forms import ImportFileForm
 from addons.osfstorage.models import Region
-from api.base import settings as api_settings
 
 
 class TestInstitutionList(AdminTestCase):

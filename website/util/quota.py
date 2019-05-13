@@ -11,7 +11,6 @@ from osf.models import (
     AbstractNode, BaseFileNode, FileLog, FileInfo, Guid, OSFUser, UserQuota,
     ProjectStorageType
 )
-from api.base import settings as api_settings
 
 
 def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):

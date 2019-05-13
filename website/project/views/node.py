@@ -59,7 +59,6 @@ from admin.rdm_addons.utils import validate_rdm_addons_allowed
 from api.base import settings as api_settings
 from website.util import quota
 from osf.models.project_storage_type import ProjectStorageType
-from api.base import settings as api_settings
 
 
 r_strip_html = lambda collection: rapply(collection, strip_html)

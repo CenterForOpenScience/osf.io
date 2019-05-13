@@ -12,7 +12,6 @@ from osf.utils.permissions import reduce_permissions
 from osf.utils import workflows
 from website.ember_osf_web.decorators import storage_i18n_flag_active
 from website.util import quota
-from api.base import settings as api_settings
 
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
