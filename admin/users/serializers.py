@@ -1,15 +1,12 @@
 """
 Serialize user
 """
-from api.base import settings as api_settings
-from django.core.exceptions import ObjectDoesNotExist
+from osf.models import UserQuota
+from website.util import quota
 
 
 def serialize_user(user):
-    try:
-        max_quota = user.userquota.max_quota
-    except ObjectDoesNotExist:
-        max_quota = api_settings.DEFAULT_MAX_QUOTA
+    max_quota, _ = quota.get_quota_info(user, UserQuota.NII_STORAGE)
 
     return {
         'username': user.username,

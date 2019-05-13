@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from django.core.exceptions import ObjectDoesNotExist
 from framework import auth
 
 from api.base import settings as api_settings
 from website import settings
-from osf.models import Contributor
+from osf.models import Contributor, UserQuota
 from addons.osfstorage.models import Region
 from website.filters import profile_image_url
 from osf.models.contributor import get_contributor_permissions
@@ -94,13 +93,12 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         default_region = user.get_addon('osfstorage').default_region
         available_regions = [region for region in Region.objects.all().values('_id', 'name')]
 
-        try:
-            max_quota = user.userquota.max_quota
-            used_quota = user.userquota.used
-        except ObjectDoesNotExist:
-            max_quota = api_settings.DEFAULT_MAX_QUOTA
-            used_quota = quota.used_quota(user._id)
+        storage_type = UserQuota.NII_STORAGE
+        institution = user.affiliated_institutions.first()
+        if institution is not None and Region.objects.filter(_id=institution._id).exists():
+            storage_type = UserQuota.CUSTOM_STORAGE
 
+        max_quota, used_quota = quota.get_quota_info(user, storage_type)
         used_quota_abbr = quota.abbreviate_size(used_quota)
         if used_quota_abbr[1] == 'B':
             used_quota_abbr = '{:.0f}[{}]'.format(used_quota_abbr[0], used_quota_abbr[1])
@@ -129,7 +127,8 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
                 'max': max_quota,
                 'used': used_quota_abbr,
                 'rate': '{:.1f}'.format(used_rate * 100),
-                'icon_url': '{}static/img/{}'.format(settings.DOMAIN, icon_name)
+                'icon_url': '{}static/img/{}'.format(settings.DOMAIN, icon_name),
+                'storage_type': storage_type
             }
         })
         if include_node_counts:

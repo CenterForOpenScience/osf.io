@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+<title>{{ current_user.name }} - Statistical Status of Default Storage</title>
+{% endblock title %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 id="title">Statistical Status of Default Storage</h2>
+    <h3 id="sub-title">Default Storage > {{ current_user.name }}</h3>
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Projects</td>
+                        <td>
+                            <table class="table table-hover table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>GUID</th>
+                                        <th>Name</th>
+                                        <th>Public</th>
+                                        <th>Registration</th>
+                                        <th># of Contributors</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for node in current_user.nodes %}
+                                    <tr>
+                                        <td>{{ node.id }}</td>
+                                        <td>{{ node.title | truncatechars:20 }}</td>
+                                        <td>{{ node.public }}</td>
+                                        <td>{{ node.is_registration }}</td>
+                                        <td>{{ node.number_contributors }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Quota for Default Storage (GB)</td>
+                        <td>
+                            <form method="post" action="{% url 'users:institution_quota' current_user.id %}" class="row">
+                                {% csrf_token %}
+                                <div class="col-xs-2">
+                                    <input type="number" name="maxQuota" id="storageLimit" class="form-control" value="{{ current_user.quota }}" />
+                                </div>
+                                <input type="submit" id="applyMaxQuota" class="btn btn-success" value="Apply" />
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}
