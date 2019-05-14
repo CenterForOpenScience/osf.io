@@ -239,17 +239,30 @@ class GenericProviderLicenseList(LicenseList):
     ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
 
     def get_default_queryset(self):
-        return NodeLicense.objects.preprint_licenses()
+        """
+        Returns provider.acceptable_licenses if they exist, otherwise returns all licenses.
+        The provider's default_license is also included in the queryset if one exists.
+        """
+        provider = get_object_or_error(
+            self._model_class,
+            self.kwargs['provider_id'],
+            self.request,
+            display_name=self._model_class.__name__,
+        )
 
-    def get_queryset(self):
-        provider = get_object_or_error(self._model_class, self.kwargs['provider_id'], self.request, display_name=self._model_class.__name__)
-        if not provider.licenses_acceptable.count():
-            if not provider.default_license:
-                return super(GenericProviderLicenseList, self).get_queryset()
-            return [provider.default_license] + [license for license in super(GenericProviderLicenseList, self).get_queryset() if license != provider.default_license]
-        if not provider.default_license:
-            return provider.licenses_acceptable.get_queryset()
-        return [provider.default_license] + [license for license in provider.licenses_acceptable.all() if license != provider.default_license]
+        if provider.licenses_acceptable.count():
+            licenses = provider.licenses_acceptable.get_queryset()
+        else:
+            licenses = NodeLicense.objects.all()
+
+        if provider.default_license:
+            licenses |= NodeLicense.objects.filter(id=provider.default_license.id)
+
+        # Since default_license could also be in acceptable_licenses, filtering
+        # this way to avoid duplicates without .distinct() usage
+        return NodeLicense.objects.filter(
+            Q(id__in=licenses.values_list('id', flat=True)),
+        )
 
 
 class CollectionProviderLicenseList(GenericProviderLicenseList):

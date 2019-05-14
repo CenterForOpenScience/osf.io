@@ -935,7 +935,7 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
     def license_three(self, licenses):
         return licenses[2]
 
-    def test_provider_has_no_acceptable_licenses_and_no_default(self, app, provider, licenses, url):
+    def test_provider_has_no_acceptable_licenses_and_no_default(self, app, provider, licenses, url, license_one):
         provider.licenses_acceptable = []
         provider.default_license = None
         provider.save()
@@ -944,15 +944,24 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == len(licenses)
 
+        # test filter on name
+        res = app.get('{}?filter[name]={}'.format(url, license_one.name))
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == license_one._id
+
     def test_provider_has_a_default_license_but_no_acceptable_licenses(self, app, provider, licenses, license_two, url):
         provider.licenses_acceptable = []
         provider.default_license = license_two
         provider.save()
         res = app.get(url)
-
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == len(licenses)
-        assert license_two._id == res.json['data'][0]['id']
+        assert license_two._id in [item['id'] for item in res.json['data']]
+
+        # test filter on default_license name
+        res = app.get('{}?filter[name]={}'.format(url, license_two.name))
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == license_two._id
 
     def test_provider_has_acceptable_licenses_but_no_default(self, app, provider, licenses, license_one, license_two, license_three, url):
         provider.licenses_acceptable.add(license_one, license_two)
@@ -981,5 +990,3 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         assert license_one._id in license_ids
         assert license_three._id in license_ids
         assert license_two._id not in license_ids
-
-        assert license_three._id == license_ids[0]
