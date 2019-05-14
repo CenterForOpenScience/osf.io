@@ -33,7 +33,7 @@ from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
-from api_tests.utils import create_test_file
+from api_tests.utils import create_test_file, create_test_quickfile
 from api.caching.settings import STORAGE_USAGE_KEY
 
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
@@ -1163,6 +1163,53 @@ class TestMoveHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 200)
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_can_move_file_out_of_quickfiles_node(self):
+        file_node = create_test_quickfile(self.user, filename='slippery.mp3')
+        dest_folder = OsfStorageFolder.objects.get_root(target=self.root_node.target)
+
+        url = '/api/v1/{}/osfstorage/hooks/move/'.format(self.user._id)
+
+        payload = {
+            'source': file_node._id,
+            'target': self.user._id,
+            'user': self.user._id,
+            'destination': {
+                'parent': dest_folder._id,
+                'target': self.root_node.target._id,
+                'name': dest_folder.name,
+            }
+        }
+
+        res = self.app.post_json(url, signing.sign_data(signing.default_signer, payload), expect_errors=True)
+        assert res.status_code == 200
+        assert file_node in self.root_node.target.files.all()
+        assert file_node not in self.user.quickfiles.all()
+
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_can_rename_file_in_quickfiles_node_v1(self):
+        file_node = create_test_quickfile(self.user, filename='slippery.mp3')
+
+        new_name = 'JesseJames.mp3'
+
+        payload = {
+            'source': file_node._id,
+            'target': self.user._id,
+            'user': self.user._id,
+            'destination': {
+                'parent': self.user.quickfolder._id,
+                'target': self.user._id,
+                'name': new_name,
+            }
+        }
+        url = '/api/v1/{}/osfstorage/hooks/move/'.format(self.user._id)
+
+        res = self.app.post_json(url, signing.sign_data(signing.default_signer, payload), expect_errors=True)
+        assert res.status_code == 200
+        assert file_node in self.user.quickfiles.all()
+        assert file_node == self.user.quickfiles.get(name=new_name)
 
 
 @pytest.mark.django_db
