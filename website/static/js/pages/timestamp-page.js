@@ -7,7 +7,7 @@ timestampCommon.setWebOrAdmin('web');
 
 var $osf = require('../osfHelpers');
 
-function datesToUTC() {
+function datesToLocal() {
     var cells = document.querySelectorAll('td[class=verify_date]');
     for (var i = 0; i < cells.length; i++) {
         var cell = cells[i];
@@ -25,7 +25,7 @@ function datesToUTC() {
 
 $(document).ready(function () {
     timestampCommon.init();
-    datesToUTC();
+    datesToLocal();
 });
 
 $(function () {
