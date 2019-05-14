@@ -258,6 +258,8 @@ class GenericProviderLicenseList(LicenseList):
         if provider.default_license:
             licenses |= NodeLicense.objects.filter(id=provider.default_license.id)
 
+        # Since default_license could also be in acceptable_licenses, filtering
+        # this way to avoid duplicates without .distinct() usage
         return NodeLicense.objects.filter(
             Q(id__in=licenses.values_list('id', flat=True)),
         )
