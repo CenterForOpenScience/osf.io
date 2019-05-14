@@ -249,6 +249,7 @@
                 <tr>
                     <td>Nodes</td>
                     <td>
+                        {% include "util/node_preprint_pagination.html" with items=node_page resource_type="node" current_other_param=current_preprint %}
                         <table class="table table-hover table-bordered">
                         <thead>
                             <tr>
@@ -262,7 +263,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for node in user.nodes %}
+                        {% for node in nodes %}
                             <tr>
                                 <td>
                                     <a href="{{ node.id | reverse_node }}">
@@ -320,7 +321,7 @@
                 <tr>
                     <td>Preprints</td>
                     <td>
-                        {% include "util/pagination.html" with items=page status=status %}
+                        {% include "util/node_preprint_pagination.html" with items=preprint_page resource_type="preprint" current_other_param=current_node %}
                         <table class="table table-hover table-bordered">
                         <thead>
                             <tr>
@@ -356,7 +357,7 @@
                                 </td>
                                 {%  if perms.osf.delete_preprint %}
                                 <td>
-                                    {% if preprint.number_contributors < 2 and not preprint.is_registration %}
+                                    {% if preprint.number_contributors < 2 %}
                                         {% if preprint.deleted %}
                                             <form method="post"
                                                   action="{% url 'preprints:restore' guid=preprint.id %}">

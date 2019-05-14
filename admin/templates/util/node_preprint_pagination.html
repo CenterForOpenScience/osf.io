@@ -1,0 +1,47 @@
+{% block content %}
+
+    <div class="pagination pagination-lg">
+        <span>
+            {% if items.has_previous %}
+                <a href="?{{resource_type}}_page=1{{ current_other_param }}"
+                   class="btn btn-primary">
+                    |
+                </a>
+                <a href="?{{resource_type}}_page={{ items.previous_page_number }}{{ current_other_param }}"
+                   class="btn btn-primary">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+            {% else %}
+                <div class="btn btn-primary disabled">
+                    |
+                </div>
+                <div class="btn btn-primary disabled">
+                    <i class="fa fa-angle-left"></i>
+                </div>
+            {% endif %}
+
+            <span class="current">
+                Page {{ items.number }} of {{ items.paginator.num_pages }}
+            </span>
+            {% if items.has_next %}
+
+                <a href="?{{resource_type}}_page={{ items.next_page_number }}{{ current_other_param }}"
+                   class="btn btn-primary">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                <a href="?{{resource_type}}_page={{ items.paginator.num_pages }}{{ current_other_param }}"
+                   class="btn btn-primary">
+                    |
+                </a>
+            {% else %}
+                <div class="btn btn-primary disabled">
+                    <i class="fa fa-angle-right"></i>
+                </div>
+                <div class="btn btn-primary disabled">
+                    |
+                </div>
+            {% endif %}
+        </span>
+    </div>
+
+{% endblock content %}
