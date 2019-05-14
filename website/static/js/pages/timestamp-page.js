@@ -5,9 +5,27 @@ var nodeApiUrl = window.contextVars.node.urls.api;
 var timestampCommon = require('./timestamp-common.js');
 timestampCommon.setWebOrAdmin('web');
 
+var $osf = require('../osfHelpers');
+
+function datesToUTC() {
+    var cells = document.querySelectorAll('td[class=verify_date]');
+    for (var i = 0; i < cells.length; i++) {
+        var cell = cells[i];
+        var newDateText;
+        if (!(cell.textContent == 'Unknown')) {
+            newDateText = new $osf.FormattableDate(new Date(cell.textContent + ' UTC')).local;
+        }
+        else {
+            newDateText = cell.textContent;
+        }
+        cell.textContent = newDateText;
+        cell.style.color = 'inherit';
+    }
+}
 
 $(document).ready(function () {
     timestampCommon.init();
+    datesToUTC();
 });
 
 $(function () {
