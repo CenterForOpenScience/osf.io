@@ -88,6 +88,9 @@ var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
 var ENTER_KEY = 13;
 
+var MOVE_INTERVAL = true;
+var MILLISECONDS_PER_MOVE_REQUEST = 500;
+
 function findByTempID(parent, tmpID) {
     var child;
     var item;
@@ -473,9 +476,9 @@ function checkConflicts(items, folder){
 }
 
 function handleCancel(tb, provider, mode, item){
+    tb.modal.dismiss();
     if (mode === 'stop') {
         tb.syncFileMoveCache[provider].conflicts.length = 0;
-        tb.modal.dismiss();
     } else {
         addFileStatus(tb, item, false, '', '', 'skip');
         doSyncMove(tb, provider);
@@ -2540,9 +2543,13 @@ function _dropLogic(event, items, folder) {
                 tb.syncFileMoveCache[folder.data.provider].ready.push({'item' : item, 'folder' : folder});
             });
         } else {
-            toMove.ready.forEach(function(item) {
-                doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined, 'replace');
-            });
+            MOVE_INTERVAL = setInterval(function() {
+                if(toMove.ready.length > 0) {
+                    doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, toMove.ready.pop(), undefined, 'replace');
+                } else {
+                    MOVE_INTERVAL = clearInterval(MOVE_INTERVAL);
+                }
+            }, MILLISECONDS_PER_MOVE_REQUEST);
         }
     }
 
@@ -2605,13 +2612,16 @@ function displayMoveStats(tb) {
 function doSyncMove(tb, provider){
     var cache = tb.syncFileMoveCache && tb.syncFileMoveCache[provider];
     var itemData;
-    if (cache.conflicts && cache.conflicts.length > 0) {
-        itemData = cache.conflicts.pop();
-        displayConflict(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
-    } else if (cache.ready && cache.ready.length > 0) {
+    var filesReady = cache.ready && cache.ready.length > 0;
+    var anyConflicts = cache.conflicts && cache.conflicts.length > 0;
+
+    if (filesReady) {
         itemData = cache.ready.pop();
         doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined, 'replace');
-    } else {
+    } else if (anyConflicts && !MOVE_INTERVAL) {
+        itemData = cache.conflicts.pop();
+        displayConflict(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
+    } else if (!MOVE_INTERVAL && !filesReady && !anyConflicts) {
         displayMoveStats(tb);
     }
 }
