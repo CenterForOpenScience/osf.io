@@ -12,11 +12,11 @@ function datesToUTC() {
     for (var i = 0; i < cells.length; i++) {
         var cell = cells[i];
         var newDateText;
-        if (!(cell.textContent == 'Unknown')) {
-            newDateText = new $osf.FormattableDate(new Date(cell.textContent + ' UTC')).local;
+        if (cell.textContent === 'Unknown') {
+            newDateText = cell.textContent;
         }
         else {
-            newDateText = cell.textContent;
+            newDateText = new $osf.FormattableDate(new Date(cell.textContent + ' UTC')).local;
         }
         cell.textContent = newDateText;
         cell.style.color = 'inherit';
