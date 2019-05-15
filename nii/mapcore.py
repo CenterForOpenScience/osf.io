@@ -1107,16 +1107,15 @@ if __name__ == '__main__':
     if True:
         #TODO use argv
         # API呼び出しの権限テスト
-        me1 = OSFUser.objects.get(eppn='nagahara@openidp.nii.ac.jp')
+        me1 = OSFUser.objects.get(eppn=sys.argv[2])
         map1 = MAPCore(me1)
-        me2 = OSFUser.objects.get(eppn='hnagahara@openidp.nii.ac.jp')
+        me2 = OSFUser.objects.get(eppn=sys.argv[3])
         map2 = MAPCore(me2)
-        me3 = OSFUser.objects.get(eppn='nnagahara@openidp.nii.ac.jp')
+        me3 = OSFUser.objects.get(eppn=sys.argv[4])
         map3 = MAPCore(me3)
 
         try:
             res = map1.get_group_by_key(sys.argv[1])
-            # res = map1.get_group_by_name(sys.argv[1])
             grp1 = res['result']['groups'][0]
             gk1 = grp1['group_key']
             print('Title [' + grp1['group_name'] + '], Key [' + grp1['group_key'] + '], by user [' + me1.eppn + ']')
@@ -1128,7 +1127,6 @@ if __name__ == '__main__':
 
         try:
             res = map2.get_group_by_key(sys.argv[1])
-            # res = map2.get_group_by_name(sys.argv[1])
             grp2 = res['result']['groups'][0]
             gk2 = grp2['group_key']
             print('Title [' + grp2['group_name'] + '], Key [' + grp2['group_key'] + '], by user [' + me2.eppn + ']')
@@ -1140,7 +1138,6 @@ if __name__ == '__main__':
 
         try:
             res = map3.get_group_by_key(sys.argv[1])
-            # res = map3.get_group_by_name(sys.argv[1])
             grp3 = res['result']['groups'][0]
             gk3 = grp3['group_key']
             print('Title [' + grp3['group_name'] + '], Key [' + grp3['group_key'] + '], by user [' + me3.eppn + ']')
@@ -1202,18 +1199,12 @@ if __name__ == '__main__':
             gext = mapcore_get_extended_group_info(me, node, group_key)
             print(str(gext))
 
-    # manual add contributor
-    if False:
-        #TODO use argv
-        add_contributor_to_project('Nagahara Test 001', 'hnagahara@openidp.nii.ac.jp')
-        pass
-
     # RDM -> mAP project sync
     if False:
         print('RDM -> mAP sync test')
         #TODO use argv
-        user = OSFUser.objects.get(eppn='nagahara@openidp.nii.ac.jp')
         node = Node.objects.get(title=sys.argv[1])
+        user = OSFUser.objects.get(eppn=sys.argv[2])
         if node.map_group_key is None:
             group_key = mapcore_sync_map_new_group(user, node.title)
             node.map_group_key = group_key
