@@ -54,7 +54,7 @@ class Options:
                 self.user = OSFUser.objects.get(username=args.user)
             except Exception as e:
                 error_out(e.message)
-                raise e
+                raise
         # --key_file
         self.keys = None
         if args.key_file is not None:
@@ -63,7 +63,7 @@ class Options:
                 f = open(args.key_file, 'rt')
             except Exception as e:
                 error_out(e.message)
-                raise e
+                raise
             for k in f:
                 if k == '' or k == '\n' or k[:1] == '#':
                     continue
@@ -87,7 +87,7 @@ class Options:
                 self.user = OSFUser.objects.get(username=user)
             except Exception as e:
                 error_out(e.message)
-                raise e
+                raise
 
         # --key_file
         self.keys = None
@@ -97,7 +97,7 @@ class Options:
                 f = open(key_file, 'rt')
             except Exception as e:
                 error_out(e.message)
-                raise e
+                raise
             for k in f:
                 if k == '' or k == '\n' or k[:1] == '#':
                     continue
@@ -216,22 +216,26 @@ def remove_one_group(node, options):
             delete_rdm = True
 
     # do action
-    if delete_map and mapcore is not None:
+    map_deleted = False
+    if delete_map and mapcore is not None and group_key is not None:
         if options.dryrun:
             print('-->(dryrun) mAP group is deleted!')
+            print('-->(dryrun) group key in GRDM is deleted!')
+            map_deleted = True
         else:
             try:
                 mapcore.delete_group(group_key)
                 if options.verbose:
                     print('--> mAP group is deleted!')
-                if not delete_rdm:  # when remove only mAP, discard link on RDM
-                    node.map_group_key = None
-                    node.save()
-                    if options.verbose:
-                        print('--> group key in GRDM is deleted!')
+                node.map_group_key = None
+                node.save()
+                map_deleted = True
+                if options.verbose:
+                    print('--> group key in GRDM is deleted!')
             except MAPCoreException as e:
                 print('--> mAP group is not deleted by error: ' + e.message)
-    if delete_key:
+    if group_key is not None and \
+       not map_deleted and (delete_key or delete_rdm):
         if options.dryrun:
             print('-->(dryrun) group key in GRDM is deleted!')
         else:
@@ -243,7 +247,8 @@ def remove_one_group(node, options):
         if options.dryrun:
             print('-->(dryrun) GRDM group is deleted!')
         else:
-            node.delete()
+            from framework.auth import Auth
+            node.remove_node(Auth(user=node.creator))
             if options.verbose:
                 print('--> GRDM group is deleted!')
     return
