@@ -596,7 +596,7 @@ def mapcore_sync_map_new_group0(user, title):
 
 def mapcore_sync_map_new_group(user, title):
     # for mock.patch()
-    mapcore_sync_map_new_group0(user, title)
+    return mapcore_sync_map_new_group0(user, title)
     #TODO log
 
 def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
@@ -839,7 +839,7 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
 
 def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True):
     # for mock.patch()
-    mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
+    return mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
 
 def mapcore_url_is_my_projects(request_url):
     pages = ['dashboard', 'my_projects']
