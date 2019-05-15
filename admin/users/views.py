@@ -423,7 +423,7 @@ class UserSearchList(PermissionRequiredMixin, ListView):
 class UserView(PermissionRequiredMixin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
-    paginate_by = 1
+    paginate_by = 10
     permission_required = 'osf.view_osfuser'
     raise_exception = True
 
@@ -438,7 +438,7 @@ class UserView(PermissionRequiredMixin, GuidView):
         #Preprint pagination
         preprint_page_num = self.request.GET.get('preprint_page', 1)
         preprints = user.preprints.all().order_by('title')
-        preprint_paginator = Paginator(preprints, 1)
+        preprint_paginator = Paginator(preprints, self.paginate_by)
         preprint_queryset = preprint_paginator.page(preprint_page_num)
 
         kwargs.setdefault('preprints', list(map(serialize_simple_preprint, preprint_queryset)))
@@ -447,7 +447,7 @@ class UserView(PermissionRequiredMixin, GuidView):
         #Node pagination
         node_page_num = self.request.GET.get('node_page', 1)
         nodes = user.contributor_to.all().order_by('title')
-        node_paginator = Paginator(nodes, 1)
+        node_paginator = Paginator(nodes, self.paginate_by)
         node_queryset = node_paginator.page(node_page_num)
 
         kwargs.setdefault('nodes', list(map(serialize_simple_node, node_queryset)))
