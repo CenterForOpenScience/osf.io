@@ -2200,7 +2200,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         hierarchy = Node.objects.get_children(self, active=True, include_root=True)
 
         if (not auth or isinstance(auth.user, AnonymousUser)) or (
-                len(hierarchy) != (get_objects_for_user(auth.user, ADMIN_NODE, hierarchy, with_superuser=False)).count()):
+                len(hierarchy) != (Node.objects.get_nodes_for_user(auth.user, ADMIN_NODE, hierarchy)).count()):
             raise PermissionsError(
                 '{0!r} does not have permission to modify this {1}, or a component in its hierarchy.'.format(auth.user, self.category or 'node')
             )
