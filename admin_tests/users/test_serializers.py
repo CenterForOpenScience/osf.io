@@ -18,7 +18,6 @@ class TestUserSerializers(AdminTestCase):
         nt.assert_equal(info['id'], user._id)
         nt.assert_equal(list(info['emails']), list(user.emails.values_list('address', flat=True)))
         nt.assert_equal(info['last_login'], user.date_last_login)
-        nt.assert_equal(len(info['nodes']), 0)
 
     def test_serialize_two_factor(self):
         user = UserFactory()
@@ -30,7 +29,6 @@ class TestUserSerializers(AdminTestCase):
         nt.assert_equal(info['name'], user.fullname)
         nt.assert_equal(list(info['emails']), list(user.emails.values_list('address', flat=True)))
         nt.assert_equal(info['last_login'], user.date_last_login)
-        nt.assert_equal(len(info['nodes']), 0)
         nt.assert_true(info['two_factor'])
 
     def test_serialize_account_status(self):
