@@ -2197,8 +2197,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param datetime date: `datetime.datetime` or `None`
         """
         # TODO: rename "date" param - it's shadowing a global
-        hierarchy = Node.objects.get_children(self, active=True, include_root=True)
-
+        hierarchy = Node.objects.get_children(self, active=True, include_root=True).filter(is_deleted=False)
         if (not auth or isinstance(auth.user, AnonymousUser)) or (
                 len(hierarchy) != (Node.objects.get_nodes_for_user(auth.user, ADMIN_NODE, hierarchy)).count()):
             raise PermissionsError(
