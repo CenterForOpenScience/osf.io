@@ -2,12 +2,12 @@
 
     <div class="pagination pagination-lg">
         <span>
-            {% if items.has_previous %}
+            {% if items_paginator.has_previous %}
                 <a href="?{{resource_type}}_page=1{{ current_other_param }}"
                    class="btn btn-primary">
                     |
                 </a>
-                <a href="?{{resource_type}}_page={{ items.previous_page_number }}{{ current_other_param }}"
+                <a href="?{{resource_type}}_page={{ items_paginator.previous_page_number }}{{ current_other_param }}"
                    class="btn btn-primary">
                     <i class="fa fa-angle-left"></i>
                 </a>
@@ -21,15 +21,15 @@
             {% endif %}
 
             <span class="current">
-                Page {{ items.number }} of {{ items.paginator.num_pages }}
+                Page {{ items_paginator.number }} of {{ items_paginator.paginator.num_pages }}
             </span>
-            {% if items.has_next %}
+            {% if items_paginator.has_next %}
 
-                <a href="?{{resource_type}}_page={{ items.next_page_number }}{{ current_other_param }}"
+                <a href="?{{resource_type}}_page={{ items_paginator.next_page_number }}{{ current_other_param }}"
                    class="btn btn-primary">
                     <i class="fa fa-angle-right"></i>
                 </a>
-                <a href="?{{resource_type}}_page={{ items.paginator.num_pages }}{{ current_other_param }}"
+                <a href="?{{resource_type}}_page={{ items_paginator.paginator.num_pages }}{{ current_other_param }}"
                    class="btn btn-primary">
                     |
                 </a>
@@ -43,5 +43,101 @@
             {% endif %}
         </span>
     </div>
+    <table class="table table-hover table-bordered">
+        <thead>
+            <tr>
+                <th>GUID</th>
+                <th>Name</th>
+                <th>Public</th>
+                {% if resource_type == "node" %}
+                    <th>Registration</th>
+                {% endif %}
+                <th># of Contributors</th>
+                <th>SPAM Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+            <tr>
+                <td>
+                    {% if resource_type == "node" %}
+                        <a href="{{ item.id | reverse_node">
+                            {{ item.id }}
+                        </a>
+                    {% else %}
+                        <a href="{{ item.id | reverse_preprint">
+                            {{ item.id }}
+                        </a>
+                    {% endif %}
+                </td>
+                <td>{{ item.title | truncatechars:20 }}</td>
+                <td>{{ .public }}</td>
+                <td>{{ item.is_registration }}</td>
+                <td>{{ node.number_contributors }}</td>
+                <td>
+                    {% if item.spam_status == SPAM_STATUS.UNKNOWN %}
+                        <span class="label label-default">Unknown</span>
+                    {% elif item.spam_status == SPAM_STATUS.FLAGGED %}
+                        <span class="label label-warning">Flagged</span>
+                    {% elif item.spam_status == SPAM_STATUS.SPAM %}
+                        <span class="label label-danger">Spam</span>
+                    {% elif item.spam_status == SPAM_STATUS.HAM %}
+                        <span class="label label-success">Ham</span>
+                    {% endif %}
+                </td>
+                {%  if perms.osf.delete_node %}
+                <td>
+                    {% if resource_type == "node" and item.number_contributors < 2 and not node.is_registration %}
+                        {% if node.deleted %}
+                            <form method="post"
+                                  action="{% url 'nodes:restore' guid=item.id %}">
+                                {% csrf_token %}
+                                <input class="btn btn-success"
+                                       type="submit"
+                                       value="Restore Node" />
+                            </form>
+                        {% else %}
+                        <a href="{% url 'nodes:remove' guid=item.id %}"
+                           data-toggle="modal" data-target="#deleteModal{{ item.id }}"
+                           class="btn btn-danger">
+                            Delete Node
+                        </a>
+                        <div class="modal" id="deleteModal{{ item.id }}">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% elif item.number_contributors < 2 %}
+                        {% if preprint.deleted %}
+                            <form method="post"
+                                  action="{% url 'preprints:restore' guid=item.id %}">
+                                {% csrf_token %}
+                                <input class="btn btn-success"
+                                       type="submit"
+                                       value="Restore Preprint" />
+                            </form>
+                        {% else %}
+                        <a href="{% url 'preprints:remove' guid=item.id %}"
+                           data-toggle="modal" data-target="#deleteModal{{ item.id }}"
+                           class="btn btn-danger">
+                            Delete Preprint
+                        </a>
+                        <div class="modal" id="deleteModal{{ item.id }}">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 
 {% endblock content %}
