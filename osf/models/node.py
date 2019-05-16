@@ -1494,6 +1494,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 return True
         return False
 
+    def add_affiliations(self, user, new):
+        # add all of the user's affiliations to the forked or templated node
+        for affiliation in user.affiliated_institutions.all():
+            new.affiliated_institutions.add(affiliation)
+
     # TODO: Optimize me (e.g. use bulk create)
     def fork_node(self, auth, title=None, parent=None):
         """Recursively fork a node.
@@ -1575,6 +1580,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if len(forked.title) > 512:
             forked.title = forked.title[:512]
 
+        self.add_affiliations(user, forked)
         forked.add_contributor(
             contributor=user,
             permissions=CREATOR_PERMISSIONS,
@@ -1690,6 +1696,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.node_license = self.license.copy() if self.license else None
+
+        self.add_affiliations(auth.user, new)
 
         # If that title hasn't been changed, apply the default prefix (once)
         if (
