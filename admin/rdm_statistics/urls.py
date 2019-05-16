@@ -12,6 +12,5 @@ urlpatterns = [
     url(r'^report/(?P<institution_id>-?[0-9]+)/$', views.create_pdf, name='report'),
     url(r'^csv/(?P<institution_id>-?[0-9]+)/$', views.create_csv, name='csv'),
     url(r'^mail/(?P<institution_id>-?[0-9]+)/$', views.SendView.as_view(), name='mail'),
-    url(r'^dummy/(?P<institution_id>-?[0-9]+)/$', views.DummyCreateView.as_view(), name='dummy'),
     url(r'^test/mail/$', views.send_stat_mail, name='test'),
 ]
