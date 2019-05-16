@@ -3,9 +3,14 @@
 """
 import os
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
+
+from addons.iqbrims.utils import copy_node_auth, oauth_disconnect_following_other
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.external import ExternalProvider
@@ -16,7 +21,9 @@ from addons.googledrive.client import (GoogleAuthClient,
                                                GoogleDriveClient)
 from addons.googledrive.serializer import GoogleDriveSerializer
 from addons.googledrive.utils import to_hgrid
+from website import settings
 from website.util import api_v2_url
+from addons.iqbrims.apps import IQBRIMSAddonConfig
 
 # from website.files.models.ext import PathFollowingFileNode
 
@@ -242,3 +249,23 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def on_delete(self):
         self.deauthorize(add_log=False)
         self.save()
+
+
+@receiver(post_save, sender=UserSettings)
+def follow_googledrive_user_settings_to_iqbrims(sender, instance, created, **kwargs):
+    if IQBRIMSAddonConfig.short_name not in settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    user = instance.owner
+    if user.has_addon(IQBRIMSAddonConfig.short_name):
+        oauth_disconnect_following_other(user, instance)
+
+
+@receiver(post_save, sender=NodeSettings)
+def follow_googledrive_node_settings_to_iqbrims(sender, instance, created, **kwargs):
+    if IQBRIMSAddonConfig.short_name not in settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    node = instance.owner
+    if node.has_addon(IQBRIMSAddonConfig.short_name):
+        copy_node_auth(node, instance)

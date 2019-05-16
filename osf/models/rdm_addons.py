@@ -4,6 +4,8 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from addons.googledrive.apps import GoogleDriveAddonConfig
+from addons.iqbrims.utils import copy_node_auth
 from website import settings as website_settings
 from addons.iqbrims.apps import IQBRIMSAddonConfig
 from osf.models.base import BaseModel, Guid
@@ -63,3 +65,10 @@ def add_iqbrims_addon_to_affiliating_nodes(sender, instance, created, **kwargs):
         nodes = AbstractNode.find_by_institutions(instance.institution)
         for node in nodes:
             node.add_addon(addon_short_name, auth=None, log=False)
+
+            # copy auth if node has copy addon
+            if GoogleDriveAddonConfig.short_name not in website_settings.ADDONS_AVAILABLE_DICT:
+                return
+            copy_node_addon = node.get_addon(GoogleDriveAddonConfig.short_name)
+            if copy_node_addon is not None:
+                copy_node_auth(node, copy_node_addon)
