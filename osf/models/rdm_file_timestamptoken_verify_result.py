@@ -7,7 +7,7 @@ class RdmFileTimestamptokenVerifyResult(ObjectIDMixin, BaseModel):
 
     # object to which the identifier points
     key_file_name = models.CharField(max_length=255)
-    file_id = models.CharField(max_length=24)
+    file_id = models.CharField(max_length=24, unique=True)
     project_id = models.CharField(max_length=255)
     provider = models.CharField(max_length=25, null=True, blank=True)
     path = models.TextField(null=True, blank=True)
