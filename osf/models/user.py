@@ -24,7 +24,7 @@ from django.contrib.auth.models import PermissionsMixin
 from django.dispatch import receiver
 from django.db import models
 from django.db.models import Count
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, m2m_changed
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
 
@@ -1866,3 +1866,21 @@ def _create_quickfiles_project(instance):
 def create_quickfiles_project(sender, instance, created, **kwargs):
     if created:
         _create_quickfiles_project(instance)
+
+
+@receiver(m2m_changed, sender=OSFUser.external_accounts.through)
+def follow_googledrive_external_account_to_iqbrims(sender, instance, action, **kwargs):
+    from addons.iqbrims.apps import IQBRIMSAddonConfig
+    from addons.googledrive.apps import GoogleDriveAddonConfig
+    from addons.iqbrims.utils import oauth_disconnect_following_other
+
+    if not action.startswith('post'):
+        return
+    if IQBRIMSAddonConfig.short_name not in website_settings.ADDONS_AVAILABLE_DICT:
+        return
+    if not instance.has_addon(IQBRIMSAddonConfig.short_name):
+        return
+    if not instance.has_addon(GoogleDriveAddonConfig.short_name):
+        return
+
+    oauth_disconnect_following_other(instance, instance.get_addon(GoogleDriveAddonConfig.short_name))

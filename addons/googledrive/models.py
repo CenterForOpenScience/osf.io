@@ -251,16 +251,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.save()
 
 
-@receiver(post_save, sender=UserSettings)
-def follow_googledrive_user_settings_to_iqbrims(sender, instance, created, **kwargs):
-    if IQBRIMSAddonConfig.short_name not in settings.ADDONS_AVAILABLE_DICT:
-        return
-
-    user = instance.owner
-    if user.has_addon(IQBRIMSAddonConfig.short_name):
-        oauth_disconnect_following_other(user, instance)
-
-
 @receiver(post_save, sender=NodeSettings)
 def follow_googledrive_node_settings_to_iqbrims(sender, instance, created, **kwargs):
     if IQBRIMSAddonConfig.short_name not in settings.ADDONS_AVAILABLE_DICT:

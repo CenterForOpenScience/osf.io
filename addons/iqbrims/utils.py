@@ -59,11 +59,9 @@ def copy_node_auth(node, other_node_addon):
     if other_node_addon.external_account is None or other_node_addon.user_settings is None:
         node_addon.deauthorize()
         node_addon.save()
-        # TODO: oauth_disconnect if other_user_addon
         return
 
     user = other_node_addon.user_settings.owner
-    user_addon = user.get_or_add_addon(IQBRIMSAddonConfig.short_name)
 
     # copy external_account
     account = create_or_update_external_account_with_other(other_node_addon.external_account)
@@ -72,9 +70,6 @@ def copy_node_auth(node, other_node_addon):
     if not user.external_accounts.filter(id=account.id).exists():
         user.external_accounts.add(account)
         user.save()
-    if not user_addon.external_accounts.filter(id=account.id).exists():
-        user_addon.external_accounts.add(account)
-        user_addon.save()
 
     # set auth and folder to node_settings
     node_addon.set_auth(account, user)
