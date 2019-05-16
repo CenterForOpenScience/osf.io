@@ -430,31 +430,23 @@ class UserView(PermissionRequiredMixin, GuidView):
     def get_context_data(self, **kwargs):
         kwargs = super(UserView, self).get_context_data(**kwargs)
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
-
         user = OSFUser.load(self.kwargs.get('guid'))  # Pull User for Node/Preprints
 
-        #Build page URL
+        preprint_queryset = user.preprints.all().order_by('title')
+        node_queryset = user.contributor_to.order_by('title')
+        kwargs = self.get_paginated_queryset(preprint_queryset, 'preprint', serialize_simple_preprint, **kwargs)
+        kwargs = self.get_paginated_queryset(node_queryset, 'node', serialize_simple_node, **kwargs)
 
-        #Preprint pagination
-        preprint_page_num = self.request.GET.get('preprint_page', 1)
-        preprints = user.preprints.all().order_by('title')
-        preprint_paginator = Paginator(preprints, self.paginate_by)
-        preprint_queryset = preprint_paginator.page(preprint_page_num)
+        return kwargs
 
-        kwargs.setdefault('preprints', list(map(serialize_simple_preprint, preprint_queryset)))
-        kwargs.setdefault('preprint_page', preprint_paginator.page(preprint_page_num))
+    def get_paginated_queryset(self, queryset, resource_type, serializer, **kwargs):
+        page_num = self.request.GET.get('{}_page'.format(resource_type), 1)
+        paginator = Paginator(queryset, self.paginate_by)
+        page_queryset = paginator.page(page_num)
 
-        #Node pagination
-        node_page_num = self.request.GET.get('node_page', 1)
-        nodes = user.contributor_to.all().order_by('title')
-        node_paginator = Paginator(nodes, self.paginate_by)
-        node_queryset = node_paginator.page(node_page_num)
-
-        kwargs.setdefault('nodes', list(map(serialize_simple_node, node_queryset)))
-        kwargs.setdefault('node_page', node_paginator.page(node_page_num))
-
-        kwargs.setdefault('current_node', '&node_page=' + str(node_queryset.number))
-        kwargs.setdefault('current_preprint', '&preprint_page=' + str(preprint_queryset.number))
+        kwargs.setdefault('{}s'.format(resource_type), list(map(serializer, page_queryset)))
+        kwargs.setdefault('{}_page'.format(resource_type), paginator.page(page_num))
+        kwargs.setdefault('current_{}'.format(resource_type), '&{}_page='.format(resource_type) + str(page_queryset.number))
 
         return kwargs
 

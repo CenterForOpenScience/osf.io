@@ -49,7 +49,11 @@
             <tr>
                 <th>GUID</th>
                 <th>Name</th>
-                <th>Public</th>
+                {% if resource_type == "preprint" %}
+                    <th>Public*</th>
+                {% else %}
+                    <th>Public</th>
+                {% endif %}
                 {% if resource_type == "node" %}
                     <th>Registration</th>
                 {% endif %}
@@ -63,11 +67,11 @@
             <tr>
                 <td>
                     {% if resource_type == "node" %}
-                        <a href="{{ item.id | reverse_node}}">
+                        <a href="{% item.id | reverse_node %}">
                             {{ item.id }}
                         </a>
                     {% else %}
-                        <a href="{{ item.id | reverse_preprint}}">
+                        <a href="{{ item.id | reverse_preprint }}">
                             {{ item.id }}
                         </a>
                     {% endif %}
@@ -91,42 +95,20 @@
                 </td>
                 {%  if perms.osf.delete_node %}
                 <td>
-                    {% if resource_type == "node" and item.number_contributors < 2 and not item.is_registration %}
+                    {% if item.number_contributors < 2 and resource_type == "preprint" or not item.is_registration %}
                         {% if item.deleted %}
                             <form method="post"
-                                  action="{% url 'nodes:restore' guid=item.id %}">
+                                  action="{% url  resource_type|add:"s:restore" guid=item.id %}">
                                 {% csrf_token %}
                                 <input class="btn btn-success"
                                        type="submit"
-                                       value="Restore Node" />
+                                       value="Restore {{ resource_type|capfirst }}" />
                             </form>
                         {% else %}
-                        <a href="{% url 'nodes:remove' guid=item.id %}"
+                        <a href="{% url resource_type|add:"s:remove" guid=item.id %}"
                            data-toggle="modal" data-target="#deleteModal{{ item.id }}"
                            class="btn btn-danger">
-                            Delete Node
-                        </a>
-                        <div class="modal" id="deleteModal{{ item.id }}">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    {% elif item.number_contributors < 2 %}
-                        {% if item.deleted %}
-                            <form method="post"
-                                  action="{% url 'preprints:restore' guid=item.id %}">
-                                {% csrf_token %}
-                                <input class="btn btn-success"
-                                       type="submit"
-                                       value="Restore Preprint" />
-                            </form>
-                        {% else %}
-                        <a href="{% url 'preprints:remove' guid=item.id %}"
-                           data-toggle="modal" data-target="#deleteModal{{ item.id }}"
-                           class="btn btn-danger">
-                            Delete Preprint
+                            Delete {{ resource_type|capfirst }}
                         </a>
                         <div class="modal" id="deleteModal{{ item.id }}">
                             <div class="modal-dialog">

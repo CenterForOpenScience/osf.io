@@ -249,13 +249,14 @@
                 <tr>
                     <td>Nodes</td>
                     <td>
-                        {% include "util/node_preprint_pagination.html" with items=nodes items_paginator=node_page resource_type="node" current_other_param=current_preprint %}
+                        {% include "util/node_preprint_paginated_list.html" with items=nodes items_paginator=node_page resource_type="node" current_other_param=current_preprint %}
                     </td>
                 </tr>
                 <tr>
                     <td>Preprints</td>
                     <td>
-                        {% include "util/node_preprint_pagination.html" with items=preprints items_paginator=preprint_page resource_type="preprint" current_other_param=current_node %}
+                        {% include "util/node_preprint_paginated_list.html" with items=preprints items_paginator=preprint_page resource_type="preprint" current_other_param=current_node %}
+                        * In Preprints, public means Verified Publishable.
                     </td>
                 </tr>
             </tbody>
