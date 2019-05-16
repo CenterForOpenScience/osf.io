@@ -5,8 +5,6 @@
 # @COPYRIGHT@
 #
 
-import os
-import errno
 import time
 import json
 import logging
@@ -15,7 +13,9 @@ import requests
 import urllib
 
 from django.utils import timezone
+from django.db import transaction
 
+from osf.models.user import OSFUser
 from website import settings
 
 # TODO import
@@ -34,11 +34,27 @@ map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
 VERIFY = True  # for requests.{get,post}(verify=VERIFY)
 #VERIFY = False
 
-MAPCORE_DEBUG = True
-
 MAPCORE_API_MEMBER_LIST_BUG_WORKAROUND = True
 
+MAPCORE_DEBUG = True
+
 class MAPCoreLogger(object):
+    def __init__(self, logger):
+        self.logger = logger
+
+    def error(self, msg, *args, **kwargs):
+        self.logger.error('MAPCORE: ' + msg, *args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        self.logger.warning('MAPCORE: ' + msg, *args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        self.logger.info('MAPCORE:' + msg, *args, **kwargs)
+
+    def debug(self, msg, *args, **kwargs):
+        self.logger.debug('MAPCORE: ' + msg, *args, **kwargs)
+
+class MAPCoreLoggerDebug(object):
     def __init__(self, logger):
         self.logger = logger
 
@@ -46,18 +62,22 @@ class MAPCoreLogger(object):
         self.logger.error('MAPCORE_ERROR: ' + msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        self.logger.warning('MAPCORE_WARNING: ' + msg, *args, **kwargs)
+        self.logger.error('MAPCORE_WARNING: ' + msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        self.logger.info('MAPCORE_INFO:' + msg, *args, **kwargs)
+        self.logger.error('MAPCORE_INFO:' + msg, *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
-        self.logger.debug('MAPCORE_DEBUG: ' + msg, *args, **kwargs)
+        self.logger.error('MAPCORE_DEBUG: ' + msg, *args, **kwargs)
 
-logger = logging.getLogger(__name__)
-if MAPCORE_DEBUG:
-    logger = MAPCoreLogger(logger)
+def mapcore_logger(logger):
+    if MAPCORE_DEBUG:
+        logger = MAPCoreLoggerDebug(logger)
+    else:
+        logger = MAPCoreLogger(logger)
+    return logger
 
+logger = mapcore_logger(logging.getLogger(__name__))
 
 class MAPCoreException(Exception):
     def __init__(self, mapcore, ext_message):
@@ -120,11 +140,6 @@ class MAPCore(object):
     MODE_MEMBER = 0     # Ordinary member
     MODE_ADMIN = 2      # Administrator member
 
-    #TODO use DB instead of file
-    #(TODO rdm_mapcore_refresh_token_<user._id>)
-    #(TODO MAPCORE_LOCKDIR)
-    REFRESH_LOCK = '/var/run/lock/refresh.lck'
-
     user = False
     client_id = False
     client_secret = False
@@ -143,11 +158,8 @@ class MAPCore(object):
     #
     # Refresh access token.
     #
-    def refresh_token(self):
+    def refresh_token0(self):
         #logger.debug('MAPCore::refresh_token:')
-
-        self.lock_refresh()
-
         url = map_hostname + map_refresh_path
         basic_auth = (self.client_id, self.client_secret)
         headers = {
@@ -158,12 +170,11 @@ class MAPCore(object):
             'refresh_token': self.user.map_profile.oauth_refresh_token
         }
         params = urllib.urlencode(params)
-        logger.debug('  params=' + params)
+        logger.debug('MAPCore::refresh_token: params=' + params)
 
         r = requests.post(url, auth=basic_auth, headers=headers, data=params, verify=VERIFY)
         if r.status_code != requests.codes.ok:
             logger.info('MAPCore::refresh_token: Refreshing token failed: status_code=' + str(r.status_code) + ', user=' + str(self.user) + ', text=' + r.text)
-            self.unlock_refresh()
             return False
 
         j = r.json()
@@ -171,7 +182,6 @@ class MAPCore(object):
             logger.info('MAPCore::refresh_token: Refreshing token failed: ' + j['error'] + ', user=' + str(self.user))
             if 'error_description' in j:
                 logger.info('MAPCore::refresh_token: Refreshing token failed: ' + j['error_description'] + ', user=' + str(self.user))
-            self.unlock_refresh()
             return False
 
         logger.info('MAPCore::refresh_token: SUCCESS: user=' + str(self.user))
@@ -188,37 +198,43 @@ class MAPCore(object):
         self.user.map_profile.save()
         self.user.save()
 
-        self.unlock_refresh()
-
         return True
+
+    def refresh_token(self):
+        try:
+            self.lock_refresh()
+            return self.refresh_token0()
+        finally:
+            self.unlock_refresh()
 
     #
     # Lock refresh process.
     #
     def lock_refresh(self):
-
         while True:
-            try:
-                fd = os.open(self.REFRESH_LOCK, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o644)
-            except OSError as e:
-                if e.errno == errno.EEXIST:
-                    time.sleep(1)
-                    continue
-                else:
-                    raise
-            if fd >= 0:
-                os.close(fd)
-                return
+            #print('before transaction.atomic')
+            with transaction.atomic():
+                #print('transaction.atomic start')
+                u = OSFUser.objects.select_for_update().get(username=self.user.username)
+                if not u.mapcore_refresh_locked:
+                    #print('before lock')
+                    #time.sleep(5) # for debug
+                    u.mapcore_refresh_locked = True
+                    u.save()
+                    logger.debug('OSFUser(' + u.username + ').mapcore_refresh_locked=True')
+                    return
+            #print('cannot get lock, sleep 1')
+            time.sleep(1)
 
     #
     # Unlock refresh process.
     #
     def unlock_refresh(self):
-        try:
-            os.unlink(self.REFRESH_LOCK)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
+        with transaction.atomic():
+            u = OSFUser.objects.select_for_update().get(username=self.user.username)
+            u.mapcore_refresh_locked = False
+            u.save()
+            logger.debug('OSFUser(' + u.username + ').mapcore_refresh_locked=False')
 
     #
     # Get API version.

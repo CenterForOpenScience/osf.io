@@ -64,6 +64,7 @@ def server(ctx, host=None, port=5000, debug=True, gitlogs=False):
         os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
         app = init_app(set_backends=True, routes=True)
         settings.API_SERVER_PORT = port
+
     else:
         from framework.flask import app
 
@@ -921,6 +922,7 @@ def unset_maintenance(ctx):
 
 @task
 def mapcore_remove_token(ctx, username=None, eppn=None):
+    '''Remove OAuth token for mAP core'''
     from website.app import init_app
     init_app(routes=False, set_backends=False)
 
@@ -977,3 +979,13 @@ def mapcore_rmgroups(ctx, user=None, file=None, grdm=False, map=False, key_only=
 
     options = Options(user, file, grdm, map, key_only, interactive, verbose, dry_run)
     remove_multi_groups(options)
+
+
+@task
+def mapcore_unlock_all(ctx):
+    '''Remove all lock flags for mAP core'''
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
+
+    from nii import mapcore
+    mapcore.mapcore_unlock_all()

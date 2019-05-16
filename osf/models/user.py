@@ -400,6 +400,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # MAPProfile link.
     map_profile = models.OneToOneField(MAPProfile,
         on_delete=models.SET_NULL, blank=True, null=True)
+    mapcore_api_locked = models.BooleanField(default=False)
+    mapcore_refresh_locked = models.BooleanField(default=False)
 
     def __repr__(self):
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)

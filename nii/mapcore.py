@@ -6,7 +6,6 @@ import time
 import logging
 import os
 import sys
-import errno
 import requests
 import urllib
 from operator import attrgetter
@@ -14,6 +13,7 @@ from pprint import pformat as pp
 
 from urlparse import urlparse
 from django.utils import timezone
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +38,11 @@ from website.settings import (MAPCORE_HOSTNAME,
                               DOMAIN)
 
 from nii.mapcore_api import (MAPCore, MAPCoreException, VERIFY,
-                             MAPCORE_DEBUG, MAPCoreLogger,
+                             mapcore_logger,
                              mapcore_group_member_is_private)
 from django.core.exceptions import ObjectDoesNotExist
 
-
-if MAPCORE_DEBUG:
-    logger = MAPCoreLogger(logger)
-
+logger = mapcore_logger(logger)
 
 def mapcore_is_enabled():
     #sys.stderr.write('mapcore_is_enabled: MAPCORE_CLIENTID={}\n'.format(MAPCORE_CLIENTID))
@@ -68,84 +65,64 @@ def mapcore_log_error(msg):
 # lock node or user
 #
 class MAPCoreLocker():
-    #TODO use DB
-    MAPCORE_LOCKDIR = '/var/run/lock/rdmmapcore'
-    LOCK_PREFIX_USER = 'user.'  # OSFUsers.id
-    LOCK_PREFIX_NODE = 'node.'  # Node.group_key
-    OPEN_MODE = os.O_RDWR | os.O_CREAT | os.O_EXCL
-
-    def __init__(self):
-        if not os.path.isdir(MAPCoreLocker.MAPCORE_LOCKDIR):
-            os.mkdir(MAPCoreLocker.MAPCORE_LOCKDIR, 0o755)
-
     def lock_user(self, user):
-        '''
-        :param user: OSFuser
-        :return: nothing
-        '''
-
-        fname = '{}/{}{}'.format(MAPCoreLocker.MAPCORE_LOCKDIR,
-                                 MAPCoreLocker.LOCK_PREFIX_USER, user.id)
         while True:
-            try:
-                fd = os.open(fname, MAPCoreLocker.OPEN_MODE, 0o600)
-            except OSError as e:
-                if e.errno == errno.EEXIST:
-                    time.sleep(1)
-                    continue
-                else:
-                    raise
-            if fd >= 0:
-                os.close(fd)
-                logger.debug('OSFUser ' + user.eppn + ' is locked.')
-                return
+            #print('before transaction.atomic')
+            with transaction.atomic():
+                #print('transaction.atomic start')
+                u = OSFUser.objects.select_for_update().get(username=user.username)
+                if not u.mapcore_api_locked:
+                    #print('before lock')
+                    #time.sleep(5) # for debug
+                    u.mapcore_api_locked = True
+                    u.save()
+                    logger.debug('OSFUser(' + u.username + ').mapcore_api_locked=True')
+                    return
+            #print('cannot get lock, sleep 1')
+            time.sleep(1)
 
     def unlock_user(self, user):
-        fname = '{}/{}{}'.format(MAPCoreLocker.MAPCORE_LOCKDIR,
-                                 MAPCoreLocker.LOCK_PREFIX_USER, user.id)
-        try:
-            os.unlink(fname)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
-        logger.debug('OSFUser ' + user.eppn + ' is unlocked.')
-        return
+        with transaction.atomic():
+            u = OSFUser.objects.select_for_update().get(username=user.username)
+            u.mapcore_api_locked = False
+            u.save()
+            logger.debug('OSFUser(' + u.username + ').mapcore_api_locked=False')
 
     def lock_node(self, node):
-        '''
-        :param node: Node
-        :return: nothing
-        '''
-        fname = '{}/{}{}'.format(MAPCoreLocker.MAPCORE_LOCKDIR,
-                                 MAPCoreLocker.LOCK_PREFIX_NODE, node.map_group_key)
         while True:
-            try:
-                fd = os.open(fname, MAPCoreLocker.OPEN_MODE, 0o600)
-            except OSError as e:
-                if e.errno == errno.EEXIST:
-                    time.sleep(1)
-                    continue
-                else:
-                    raise
-            if fd >= 0:
-                os.close(fd)
-                logger.debug('Node \'' + node.title + '\' is locked.')
-                return
+            with transaction.atomic():
+                #print('transaction.atomic start')
+                n = Node.objects.select_for_update().get(guids___id=node._id)
+                if not n.mapcore_api_locked:
+                    n.mapcore_api_locked = True
+                    n.save()
+                    logger.debug('Node(' + n._id + ').mapcore_api_locked=True')
+                    return
+            #print('cannot get lock, sleep 1')
+            time.sleep(1)
 
     def unlock_node(self, node):
-        fname = '{}/{}{}'.format(MAPCoreLocker.MAPCORE_LOCKDIR,
-                                 MAPCoreLocker.LOCK_PREFIX_NODE, node.map_group_key)
-        try:
-            os.unlink(fname)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
-        logger.debug('Node \'' + node.title + '\' is unlocked.')
-        return
-
+        with transaction.atomic():
+            n = Node.objects.select_for_update().get(guids___id=node._id)
+            print('n.mapcore_api_locked={}'.format(n.mapcore_api_locked))
+            n.mapcore_api_locked = False
+            n.save()
+            logger.debug('Node(' + n._id + ').mapcore_api_locked=False')
 
 locker = MAPCoreLocker()
 
+def mapcore_unlock_all():
+    logger.info('mapcore_unlock_all() start')
+    with transaction.atomic():
+        for user in OSFUser.objects.all():
+            user.mapcore_api_locked = False
+            user.save()
+            logger.debug('mapcore_unlock_all(): User={}'.format(user.username))
+        for node in Node.objects.all():
+            node.mapcore_api_locked = False
+            node.save()
+            logger.debug('mapcore_unlock_all(): Node={}'.format(node._id))
+    logger.info('mapcore_unlock_all() done')
 
 def mapcore_request_authcode(**kwargs):
     '''
@@ -206,16 +183,17 @@ def mapcore_receive_authcode(user, params):
     (access_token, refresh_token) = mapcore_get_accesstoken(authcode, redirect_uri)
 
     # set mAP attribute into current user
-    map_user, created = MAPProfile.objects.get_or_create(eppn=user.eppn)
-    if created:
-        logger.info('MAPprofile new record created for ' + user.eppn)
-    map_user.oauth_access_token = access_token
-    map_user.oauth_refresh_token = refresh_token
-    map_user.oauth_refresh_time = timezone.now()
-    user.map_profile = map_user
-    map_user.save()
-    logger.info('User [' + user.eppn + '] get access_token [' + access_token + '] -> saved')
-    user.save()
+    with transaction.atomic():
+        map_user, created = MAPProfile.objects.get_or_create(eppn=user.eppn)
+        if created:
+            logger.info('MAPprofile new record created for ' + user.eppn)
+        map_user.oauth_access_token = access_token
+        map_user.oauth_refresh_token = refresh_token
+        map_user.oauth_refresh_time = timezone.now()
+        user.map_profile = map_user
+        map_user.save()
+        logger.info('User [' + user.eppn + '] get access_token [' + access_token + '] -> saved')
+        user.save()
 
     # DEBUG: read record and print
     """
@@ -263,7 +241,7 @@ def mapcore_refresh_accesstoken(user, force=False):
     refresh access token with refresh token
     :param user     OSFUser
     :param force    falg to avoid availablity check
-    :return resulut 0..success, 1..must be login again, -1..any error
+    :return result 0..success, 1..must be login again, -1..any error
     '''
 
     logger.info('refuresh token for [' + user.eppn + '].')
@@ -595,9 +573,14 @@ def mapcore_sync_map_new_group0(user, title):
     return group_key
 
 def mapcore_sync_map_new_group(user, title):
-    # for mock.patch()
-    return mapcore_sync_map_new_group0(user, title)
-    #TODO log
+    try:
+        # for mock.patch()
+        return mapcore_sync_map_new_group0(user, title)
+    except Exception as e:
+        logger.error('User(eppn={}) cannot create a new group(title=) on mAP, reason={}'.format(user.eppn, title, str(e)))
+        #TODO log
+        # Do not raise
+        return None
 
 def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
     '''
@@ -827,19 +810,23 @@ def _mapcore_sync_map_group(access_user, node, title_desc=True, contributors=Tru
 def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=True):
     try:
         ret = _mapcore_sync_map_group(access_user, node, title_desc=title_desc, contributors=contributors)
-        pass
     except Exception as e:
-        logger.warning('The project ({}) cannot synchronize to mAP. (retry later): reason={}'.format(node._id, str(e)))
+        logger.warning('The project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, str(e)))
         # TODO log
         mapcore_set_standby_to_upload(node)  # retry later
-        raise
+        return
     if ret:
         mapcore_unset_standby_to_upload(node)
     return ret
 
 def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True):
-    # for mock.patch()
-    return mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
+    try:
+        # for mock.patch()
+        return mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
+    except Exception:
+        # ignore error
+        # Do not raise
+        pass
 
 def mapcore_url_is_my_projects(request_url):
     pages = ['dashboard', 'my_projects']
@@ -963,46 +950,38 @@ def mapcore_sync_rdm_my_projects0(user):
     logger.debug('mapcore_sync_rdm_my_projects finished.')
 
 def mapcore_sync_rdm_my_projects(user):
-    # for mock.patch()
-    mapcore_sync_rdm_my_projects0(user)
-    #TODO log
+    try:
+        # for mock.patch()
+        mapcore_sync_rdm_my_projects0(user)
+    except Exception as e:
+        logger.error('User(eppn={}) cannot compare my RDM Projects and my mAP groups, reason={}'.format(user.eppn, str(e)))
+        #TODO log
+        # Do not raise
 
-SHARE_DIR = '/code_src/tmp'  # TODO do not use
-READY_SYNC_FILE_TMPL = SHARE_DIR + '/rdm_mapcore_ready_to_sync_{}'  # TODO do not use
 
 def mapcore_set_standby_to_upload(node):
-    # TODO node.mapcore_standby_to_upload = timezone.now()
-    # TODO node.save()
-    # TODO MAPCORE_STANDBY_TO_UPLOAD_TIMEOUT = 5 min.
-    filename = READY_SYNC_FILE_TMPL.format(node._id)  # use Guid
-    try:
-        with open(filename, 'w'):
-            pass
-    except OSError as e:
-        # raise MAPCoreException(None, str(e))
-        # TODO log
-        logger.error('The project ({}) cannot synchronize to mAP. reason={}'.format(node._id, str(e)))
+    with transaction.atomic():
+        n = Node.objects.select_for_update().get(guids___id=node._id)
+        n.mapcore_standby_to_upload = timezone.now()
+        n.save()
+        logger.info('Project({}) will be uploaded to mAP (next time).'.format(node._id))
+        logger.info('Project({}).mapcore_standby_to_upload={}'.format(node._id, n.mapcore_standby_to_upload))
 
 
 def mapcore_is_on_standby_to_upload(node):
-    filename = READY_SYNC_FILE_TMPL.format(node._id)  # use Guid
-    return os.path.exists(filename)
-
+    with transaction.atomic():
+        n = Node.objects.select_for_update().get(guids___id=node._id)
+        return n.mapcore_standby_to_upload is not None
 
 def mapcore_unset_standby_to_upload(node):
-    filename = READY_SYNC_FILE_TMPL.format(node._id)  # use Guid
-    try:
-        return os.remove(filename)
-    except OSError as e:
-        import errno
-        if e.errno != errno.ENOENT:
-            # raise MAPCoreException(None, str(e))
-            # TODO log
-            logger.error('FATAL: {} cannot be deleted.'.format(filename))
-            logger.error('The project ({}) cannot synchronize from mAP after this.'.format(node._id))
+    with transaction.atomic():
+        n = Node.objects.select_for_update().get(guids___id=node._id)
+        n.mapcore_standby_to_upload = None
+        n.save()
+        logger.debug('Project({}).mapcore_standby_to_upload=None'.format(node._id))
 
-
-SYNC_CACHE_TIME = 10  # sec.
+SHARE_DIR = '/code_src/tmp'  # TODO do not use
+SYNC_CACHE_TIME = 10  # sec. # TODO do not use
 SYNC_CACHE_FILE_TMPL = SHARE_DIR + '/rdm_mapcore_sync_cache_{}'  # TODO do not use
 
 # TODO use DB
@@ -1040,10 +1019,11 @@ def mapcore_sync_rdm_project_or_map_group0(access_user, node):
 
     if node.map_group_key is None:
         group_key = mapcore_sync_map_new_group(node.creator, node.title)
-        node.map_group_key = group_key
-        node.save()
-        mapcore_sync_map_group(access_user, node,
-                               title_desc=True, contributors=True)
+        if group_key:
+            node.map_group_key = group_key
+            node.save()
+            mapcore_sync_map_group(access_user, node,
+                                   title_desc=True, contributors=True)
     elif mapcore_is_on_standby_to_upload(node):
         mapcore_sync_map_group(access_user, node,
                                title_desc=True, contributors=True)
@@ -1091,21 +1071,44 @@ def add_contributor_to_project(node_name, eppn):
     return
 
 
+sleep_sec = 10
+
 def user_lock_test(user):
     try:
         locker.lock_user(user)
-        print('User ePPN: ' + user.eppn + 'is locked.')
-        time.sleep(300)
+        print('User ePPN: ' + user.eppn + ' is locked.')
+        print('locked: sleep {}'.format(sleep_sec))
+        time.sleep(sleep_sec)
+    except KeyboardInterrupt:
+        print('interrupted!')
+    except Exception:
+        pass
     finally:
         locker.unlock_user(user)
-    print('User ePPN: ' + user.eppn + 'is unlocked.')
+    print('User ePPN: ' + user.eppn + ' is unlocked.')
 
+def node_lock_test(node):
+    try:
+        locker.lock_node(node)
+        print('Node (GUID=' + node._id + ') is locked.')
+        print('locked: sleep {}'.format(sleep_sec))
+        #time.sleep(sleep_sec)
+        for i in range(sleep_sec):
+            print('mapcore_api_locked={}'.format(
+                Node.objects.get(guids___id=node._id).mapcore_api_locked))
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print('interrupted!')
+    except Exception:
+        pass
+    finally:
+        locker.unlock_node(node)
+    print('Node (GUID=' + node._id + ') is unlocked.')
 
 if __name__ == '__main__':
     print('In Main')
 
-    if True:
-        #TODO use argv
+    if False:
         # API呼び出しの権限テスト
         me1 = OSFUser.objects.get(eppn=sys.argv[2])
         map1 = MAPCore(me1)
@@ -1170,11 +1173,6 @@ if __name__ == '__main__':
 
     if False:
         me = OSFUser.objects.get(eppn=sys.argv[1])
-        user_lock_test(me)
-        pass
-
-    if False:
-        me = OSFUser.objects.get(eppn=sys.argv[1])
         print('mapcore_api_is_available=' + str(mapcore_api_is_available(me)))
 
     if False:
@@ -1202,7 +1200,6 @@ if __name__ == '__main__':
     # RDM -> mAP project sync
     if False:
         print('RDM -> mAP sync test')
-        #TODO use argv
         node = Node.objects.get(title=sys.argv[1])
         user = OSFUser.objects.get(eppn=sys.argv[2])
         if node.map_group_key is None:
@@ -1223,3 +1220,11 @@ if __name__ == '__main__':
         eppn = sys.argv[3]
         #eppn = user.eppn
         mapcore_add_to_group(user, node, node.map_group_key, eppn, MAPCore.MODE_MEMBER)
+
+    if True:
+        me = OSFUser.objects.get(eppn=sys.argv[1])
+        user_lock_test(me)
+
+    if False:
+        node = Node.objects.get(guids___id=sys.argv[1])
+        node_lock_test(node)
