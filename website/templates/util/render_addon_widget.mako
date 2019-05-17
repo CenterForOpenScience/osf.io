@@ -151,6 +151,9 @@
                                 <tr>
                                     <td>
                                       <a data-bind="attr: {href: base_url}, text: name" target="_blank"></a>
+                                      <a data-bind="attr: {href: import_url}" style="margin-left: 1em;" class="btn btn-default" target="_blank">
+                                          <i class="fa fa-external-link"></i> Launch
+                                      </a>
                                     </td>
                                 </tr>
                             </tbody>

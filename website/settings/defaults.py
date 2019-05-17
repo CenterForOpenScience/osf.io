@@ -479,7 +479,7 @@ class CeleryConfig:
 
         task_default_exchange_type = 'direct'
         task_routes = ('framework.celery_tasks.routers.CeleryRouter', )
-        task_ignore_result = True
+        task_ignore_result = False
         task_store_errors_even_if_ignored = True
 
     broker_url = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))

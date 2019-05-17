@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import datetime
 import mock
 import os
@@ -42,6 +43,7 @@ def create_rdmfiletimestamptokenverifyresult(self, filename='test_file_timestamp
     file_node.save()
     ## create tmp_dir
     tmp_dir = tempfile.mkdtemp()
+
     ## create tmp_file (file_node)
     tmp_file = os.path.join(tmp_dir, filename)
     with open(tmp_file, 'wb') as fout:
@@ -115,10 +117,7 @@ class TestAddTimestamp(ApiTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         download_file_path = os.path.join(tmp_dir, filename)
@@ -129,7 +128,7 @@ class TestAddTimestamp(ApiTestCase):
         addTimestamp = AddTimestamp()
         file_data = {
             'file_id': file_node._id,
-            'file_name': 'Hello.txt',
+            'file_name': 'Hello World.txt',
             'file_path': os.path.join('/', filename),
             'size': 1234,
             'created': None,
@@ -150,6 +149,83 @@ class TestAddTimestamp(ApiTestCase):
         nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
         nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
 
+    def test_add_timestamp_cjkname(self):
+        ## create file_node
+        filename = unicode('𩸽.txt', 'utf-8')
+        file_node = create_test_file(node=self.node, user=self.user, filename=filename)
+
+        ## create tmp_dir
+        tmp_dir = tempfile.mkdtemp()
+
+        ## create tmp_file (file_node)
+        download_file_path = os.path.join(tmp_dir, filename)
+        with open(download_file_path, 'wb') as fout:
+            fout.write('test_file_add_timestamp_context')
+        ## add timestamp
+        addTimestamp = AddTimestamp()
+        file_data = {
+            'file_id': file_node._id,
+            'file_name': '𩸽.txt',
+            'file_path': os.path.join('/', filename),
+            'size': 1234,
+            'created': None,
+            'modified': None,
+            'version': '',
+            'provider': 'osfstorage'
+        }
+        ret = addTimestamp.add_timestamp(self.user._id, file_data, self.node._id, download_file_path, tmp_dir)
+        shutil.rmtree(tmp_dir)
+
+        ## check add_timestamp func response
+        nt.assert_equal(ret['verify_result'], 1)
+        nt.assert_equal(ret['verify_result_title'], 'OK')
+
+        ## check rdmfiletimestamptokenverifyresult record
+        rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
+        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
+        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+
+    def test_add_timestamp_over2G(self):
+        ## create file_node
+        filename = 'test_file_add_timestamp'
+        file_node = create_test_file(node=self.node, user=self.user, filename=filename)
+
+        ## create tmp_dir
+        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
+        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
+        os.mkdir(tmp_dir)
+
+        ## create tmp_file (file_node)
+        download_file_path = os.path.join(tmp_dir, filename)
+        with open(download_file_path, 'wb') as fout:
+            fout.write('test_file_add_timestamp_context')
+
+        ## add timestamp
+        addTimestamp = AddTimestamp()
+        file_data = {
+            'file_id': file_node._id,
+            'file_name': 'Hello.txt',
+            'file_path': os.path.join('/', filename),
+            'size': 21474836480,
+            'created': None,
+            'modified': None,
+            'version': '',
+            'provider': 'osfstorage'
+        }
+        ret = addTimestamp.add_timestamp(self.user._id, file_data, self.node._id, download_file_path, tmp_dir)
+        shutil.rmtree(tmp_dir)
+
+        ## check add_timestamp func response
+        nt.assert_equal(ret['verify_result'], 1)
+        nt.assert_equal(ret['verify_result_title'], 'OK')
+
+        ## check rdmfiletimestamptokenverifyresult record
+        rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
+        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
+        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
 
 class TestTimeStampTokenVerifyCheck(ApiTestCase):
     def setUp(self):
@@ -195,10 +271,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
@@ -262,10 +335,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
@@ -333,10 +403,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
@@ -386,10 +453,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
@@ -440,10 +504,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node.delete()
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
@@ -492,10 +553,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         file_node.delete()
 
         ## create tmp_dir
-        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
-        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
-        os.mkdir(tmp_dir)
+        tmp_dir = tempfile.mkdtemp()
 
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
