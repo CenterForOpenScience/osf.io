@@ -2,18 +2,22 @@
 
 import sys
 import json
+import requests
 
 import mock
 import pytest
 from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth.core import Auth
-from osf.models import AbstractNode, NodeLog
+from osf.models import OSFUser, AbstractNode, NodeLog
 from api.base.settings.defaults import API_BASE
 from tests.base import fake, OsfTestCase
 from website.util import web_url_for
 from website.profile.utils import add_contributor_json
-from nii.mapcore import mapcore_is_enabled
+from nii.mapcore import (mapcore_is_enabled,
+                         mapcore_api_is_available,
+                         mapcore_receive_authcode)
+from nii.mapcore_api import (MAPCoreTokenExpired)
 
 from tests.utils import assert_latest_log
 from tests.json_api_test_app import JSONAPITestApp
@@ -24,13 +28,68 @@ from osf_tests.factories import (fake_email,
                                  BookmarkCollectionFactory,
                                  InstitutionFactory)
 
-MOCK_STATE = None
-
 ENABLE_DEBUG = True
 
 def DEBUG(msg):
     if ENABLE_DEBUG:
         sys.stderr.write('DEBUG: {}\n'.format(msg))
+
+@pytest.mark.django_db
+class TestOAuthForMAPCore(OsfTestCase):
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.me = AuthUserFactory()
+        self.me.eppn = fake_email()
+        self.me.save()
+
+    def test_no_map_profile(self):
+        with assert_raises(MAPCoreTokenExpired):
+            mapcore_api_is_available(self.me)
+
+    @mock.patch('nii.mapcore.mapcore_get_accesstoken')
+    @mock.patch('requests.get')
+    @mock.patch('requests.post')
+    def test_refresh_token(self, mock_post, mock_req, mock_token):
+        ACCESS_TOKEN = 'ABCDE'
+        REFRESH_TOKEN = '12345'
+        mock_token.return_value = (ACCESS_TOKEN, REFRESH_TOKEN)
+        state = 'def'
+        params = {'code': 'abc', 'state': state.encode('base64')}
+        ret = mapcore_receive_authcode(self.me, params)
+        assert_equal(state, ret)
+        self.me = OSFUser.objects.get(username=self.me.username)  # re-select
+        assert_equal(self.me.map_profile.oauth_access_token, ACCESS_TOKEN)
+        assert_equal(self.me.map_profile.oauth_refresh_token, REFRESH_TOKEN)
+
+        api_version = requests.Response()
+        api_version.status_code = requests.codes.ok
+        api_version._content = '{ "result": { "version": 2, "revision": 1, "author": "abcde" }, "status": { "error_code": 0 } }'
+        mock_req.return_value = api_version
+
+        ACCESS_TOKEN2 = ACCESS_TOKEN + '_2'
+        REFRESH_TOKEN2 = REFRESH_TOKEN + '_2'
+        refresh_token = requests.Response()
+        refresh_token.status_code = requests.codes.ok
+        refresh_token._content = '{ "access_token": "' + ACCESS_TOKEN2 + '", "refresh_token": "' + REFRESH_TOKEN2 + '" }'
+        mock_post.return_value = refresh_token
+
+        mapcore_api_is_available(self.me)
+        self.me = OSFUser.objects.get(username=self.me.username)  # re-select
+        # tokens are not updated (refresh_token() is not called)
+        assert_equal(self.me.map_profile.oauth_access_token, ACCESS_TOKEN)
+        assert_equal(self.me.map_profile.oauth_refresh_token, REFRESH_TOKEN)
+
+        api_version_e = requests.Response()
+        api_version_e.status_code = 401
+        api_version_e.headers = {'WWW-Authenticate': '[TEST] auth error'}
+        api_version_e._content = '{}'
+        mock_req.side_effect = [api_version_e, api_version]  # two times
+
+        mapcore_api_is_available(self.me)
+        self.me = OSFUser.objects.get(username=self.me.username)  # re-select
+        # tokens are updated (refresh_token() is called)
+        assert_equal(self.me.map_profile.oauth_access_token, ACCESS_TOKEN2)
+        assert_equal(self.me.map_profile.oauth_refresh_token, REFRESH_TOKEN2)
 
 @pytest.mark.django_db
 class TestViewsWithMAPCore(OsfTestCase):
@@ -89,7 +148,7 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_edit_node_title')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
     @mock.patch('nii.mapcore.mapcore_sync_map_group0')
-    def test_edit_node_title(self, mock_sync1, mock_sync2):
+    def test_edit_node_title(self, mock_sync2, mock_sync1):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
         # The title is changed though posting form data
         self.app.post_json(url, {'name': 'title', 'value': 'Bacon'},
@@ -106,7 +165,7 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_edit_description')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
     @mock.patch('nii.mapcore.mapcore_sync_map_group0')
-    def test_edit_description(self, mock_sync1, mock_sync2):
+    def test_edit_description(self, mock_sync2, mock_sync1):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
         self.app.post_json(url,
                            {'name': 'description', 'value': 'Deep-fried'},
@@ -120,7 +179,7 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_add_contributors')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
     @mock.patch('nii.mapcore.mapcore_sync_map_group0')
-    def test_add_contributors(self, mock_sync1, mock_sync2):
+    def test_add_contributors(self, mock_sync2, mock_sync1):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.me, is_public=True)
         user2 = UserFactory()
@@ -162,7 +221,7 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_contributor_manage_reorder')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
     @mock.patch('nii.mapcore.mapcore_sync_map_group0')
-    def test_contributor_manage_reorder(self, mock_sync1, mock_sync2):
+    def test_contributor_manage_reorder(self, mock_sync2, mock_sync1):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.me, is_public=True)
         reg_user1, reg_user2 = UserFactory(), UserFactory()
@@ -215,7 +274,7 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_remove_contributor')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
     @mock.patch('nii.mapcore.mapcore_sync_map_group0')
-    def test_remove_contributor(self, mock_sync1, mock_sync2):
+    def test_remove_contributor(self, mock_sync2, mock_sync1):
         url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
         payload = {'contributorID': self.user2._id,
