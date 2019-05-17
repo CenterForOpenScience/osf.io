@@ -258,37 +258,6 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
-class TestTimeStampTokenVerifyCheck(ApiTestCase):
-    def setUp(self):
-        super(TestTimeStampTokenVerifyCheck, self).setUp()
-
-        self.project = ProjectFactory()
-        self.node = self.project
-        self.user = self.project.creator
-        self.auth_obj = Auth(user=self.project.creator)
-        userkey_generation(self.user._id)
-
-        # Refresh records from database; necessary for comparing dates
-        self.project.reload()
-        self.user.reload()
-
-    def tearDown(self):
-        from osf.models import RdmUserKey
-
-        super(TestTimeStampTokenVerifyCheck, self).tearDown()
-        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        self.user.delete()
-
-        rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
-        pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
-        os.remove(pvt_key_path)
-        rdmuserkey_pvt_key.delete()
-
-        rdmuserkey_pub_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
-        pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
-        os.remove(pub_key_path)
-        rdmuserkey_pub_key.delete()
-
     def test_timestamp_check_return_status_1(self):
         """
         TIME_STAMP_TOKEN_CHECK_SUCCESS = 1
