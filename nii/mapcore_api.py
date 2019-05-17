@@ -402,6 +402,7 @@ class MAPCore(object):
     # Create new group, and make it public, active and open_member.
     #
     def create_group(self, group_name):
+        group_name = group_name.encode('utf-8')
 
         logger.debug('MAPCore::create_group (group_name=' + group_name + ')')
 
@@ -462,6 +463,8 @@ class MAPCore(object):
     # Change group properties.
     #
     def edit_group(self, group_key, group_name, introduction):
+        group_name = group_name.encode('utf-8')
+        introduction = introduction.encode('utf-8')
 
         logger.debug('MAPCore(user={})::edit_group(group_name={}, introduction={})'.format(self.user.username, group_name, introduction))
 
@@ -555,6 +558,14 @@ class MAPCore(object):
     # Get joined group list.
     #
     def get_my_groups(self):
+        j = self.get_my_groups0()
+        for grp in j['result']['groups']:
+            for k, v in grp.items():
+                if isinstance(grp[k], unicode):
+                    grp[k] = grp[k].encode('utf-8')
+        return j
+
+    def get_my_groups0(self):
 
         logger.debug('MAPCore(user={})::get_my_groups:'.format(self.user.username))
 
@@ -738,6 +749,7 @@ class MAPCore(object):
             logger.info('MAPCore(user={})::check_result: status_code={}, error_msg={}'.format(self.user.username, result.status_code, self.error_message))
             return False
 
+        #logger.debug('result.encoding={}'.format(result.encoding))
         j = result.json()
         if j['status']['error_code'] != 0:
             self.api_error_code = j['status']['error_code']

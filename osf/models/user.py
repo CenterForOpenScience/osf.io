@@ -42,7 +42,7 @@ from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
-from osf.models.map import MAPProfile
+from osf.models.mapcore import MAPProfile
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
@@ -399,7 +399,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # MAPProfile link.
     map_profile = models.OneToOneField(MAPProfile,
-        on_delete=models.SET_NULL, blank=True, null=True)
+                                       on_delete=models.SET_NULL,
+                                       blank=True, null=True,
+                                       related_name='osf_user')
     mapcore_api_locked = models.BooleanField(default=False)
     mapcore_refresh_locked = models.BooleanField(default=False)
 

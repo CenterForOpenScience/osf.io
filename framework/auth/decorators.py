@@ -67,7 +67,7 @@ def must_be_confirmed(func):
 # for GakuNin mAP Core (API v2)
 # If node is not None, mapcore_sync_rdm_project_or_map_group() is called.
 def mapcore_check_token(auth, node, use_mapcore=True):
-    from nii.mapcore_api import MAPCoreTokenExpired, MAPCoreException
+    from nii.mapcore_api import MAPCoreTokenExpired
     from nii.mapcore import (mapcore_is_enabled,
                              mapcore_api_is_available,
                              mapcore_request_authcode,
@@ -85,9 +85,9 @@ def mapcore_check_token(auth, node, use_mapcore=True):
         try:
             try:
                 if mapcore_url_is_my_projects(request.url):
-                    mapcore_sync_rdm_my_projects(auth.user)
+                    mapcore_sync_rdm_my_projects(auth.user, use_raise=True)
                 elif node:
-                    mapcore_sync_rdm_project_or_map_group(auth.user, node)
+                    mapcore_sync_rdm_project_or_map_group(auth.user, node, use_raise=True)
                 else:
                     # check available token only
                     mapcore_api_is_available(auth.user)
@@ -96,7 +96,7 @@ def mapcore_check_token(auth, node, use_mapcore=True):
                     raise
                 return redirect(mapcore_request_authcode(
                     next_url=request.url))
-        except MAPCoreException as e:
+        except Exception as e:
             if settings.DEBUG_MODE:
                 import traceback
                 emsg = '<pre>{}</pre>'.format(traceback.format_exc())

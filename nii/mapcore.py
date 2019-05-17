@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
 from osf.models.user import OSFUser
 from osf.models.node import Node
-from osf.models.map import MAPProfile
+from osf.models.mapcore import MAPProfile
 
 from website.util import web_url_for
 from website.settings import (MAPCORE_HOSTNAME,
@@ -160,11 +160,6 @@ def mapcore_receive_authcode(user, params):
     :param user  OSFUser object of current user
     :param params   dict of url parameters in request
     '''
-    if isinstance(user, OSFUser):
-        logger.info('in mapcore_receive_authcode, user is instance of OSFUser')
-    else:
-        logger.info('in mapcore_receive_authcode, user is NOT instance of OSFUser')
-
     logger.info('get an oatuh response:')
     s = ''
     for k, v in params.items():
@@ -184,16 +179,18 @@ def mapcore_receive_authcode(user, params):
 
     # set mAP attribute into current user
     with transaction.atomic():
-        map_user, created = MAPProfile.objects.get_or_create(eppn=user.eppn)
-        if created:
-            logger.info('MAPprofile new record created for ' + user.eppn)
-        map_user.oauth_access_token = access_token
-        map_user.oauth_refresh_token = refresh_token
-        map_user.oauth_refresh_time = timezone.now()
-        user.map_profile = map_user
-        map_user.save()
-        logger.info('User [' + user.eppn + '] get access_token [' + access_token + '] -> saved')
-        user.save()
+        u = OSFUser.objects.select_for_update().get(username=user.username)
+        if u.map_profile is None:
+            map_profile = MAPProfile.objects.create()
+            u.map_profile = map_profile
+            u.save()
+        else:
+            map_profile = u.map_profile
+        map_profile.oauth_access_token = access_token
+        map_profile.oauth_refresh_token = refresh_token
+        map_profile.oauth_refresh_time = timezone.now()
+        map_profile.save()
+        logger.info('User [' + u.eppn + '] get access_token [' + access_token + '] -> saved')
 
     # DEBUG: read record and print
     """
@@ -236,49 +233,49 @@ def mapcore_get_accesstoken(authcode, redirect):
     return (json['access_token'], json['refresh_token'])
 
 
-def mapcore_refresh_accesstoken(user, force=False):
-    '''
-    refresh access token with refresh token
-    :param user     OSFUser
-    :param force    falg to avoid availablity check
-    :return result 0..success, 1..must be login again, -1..any error
-    '''
-
-    logger.info('refuresh token for [' + user.eppn + '].')
-    url = MAPCORE_HOSTNAME + MAPCORE_TOKEN_PATH
-
-    # access token availability check
-    if not force:
-        param = {'access_token': user.map_profile.oauth_access_token}
-        headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
-        res = requests.post(url, data=param, headers=headers, verify=VERIFY)
-        if res.status_code == 200 and 'success' in res.json():
-            return 0  # notihng to do
-
-    # do refresh
-    basic_auth = (MAPCORE_CLIENTID, MAPCORE_SECRET)
-    param = {
-        'grant_type': 'refresh_token',
-        'refresh_token': user.map_profile.oauth_refresh_token
-    }
-    param = urllib.urlencode(param)
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
-    }
-    res = requests.post(url, data=param, headers=headers, auth=basic_auth, verify=VERIFY)
-    json = res.json()
-    if res.status_code != 200 or 'access_token' not in json:
-        return -1
-    logger.info('User [' + user.eppn + '] refresh access_token by [' + json['access_token'])
-
-    # update database
-    user.map_profile.oauth_access_token = json['access_token']
-    user.map_profile.oauth_refresh_token = json['refresh_token']
-    user.map_profile.oauth_refresh_time = timezone.now()
-    user.map_profile.save()
-    user.save()
-
-    return 0
+# def mapcore_refresh_accesstoken(user, force=False):
+#     '''
+#     refresh access token with refresh token
+#     :param user     OSFUser
+#     :param force    falg to avoid availablity check
+#     :return result 0..success, 1..must be login again, -1..any error
+#     '''
+#
+#     logger.info('refuresh token for [' + user.eppn + '].')
+#     url = MAPCORE_HOSTNAME + MAPCORE_TOKEN_PATH
+#
+#     # access token availability check
+#     if not force:
+#         param = {'access_token': user.map_profile.oauth_access_token}
+#         headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'}
+#         res = requests.post(url, data=param, headers=headers, verify=VERIFY)
+#         if res.status_code == 200 and 'success' in res.json():
+#             return 0  # notihng to do
+#
+#     # do refresh
+#     basic_auth = (MAPCORE_CLIENTID, MAPCORE_SECRET)
+#     param = {
+#         'grant_type': 'refresh_token',
+#         'refresh_token': user.map_profile.oauth_refresh_token
+#     }
+#     param = urllib.urlencode(param)
+#     headers = {
+#         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
+#     }
+#     res = requests.post(url, data=param, headers=headers, auth=basic_auth, verify=VERIFY)
+#     json = res.json()
+#     if res.status_code != 200 or 'access_token' not in json:
+#         return -1
+#     logger.info('User [' + user.eppn + '] refresh access_token by [' + json['access_token'])
+#
+#     # update database
+#     user.map_profile.oauth_access_token = json['access_token']
+#     user.map_profile.oauth_refresh_token = json['refresh_token']
+#     user.map_profile.oauth_refresh_time = timezone.now()
+#     user.map_profile.save()
+#     user.save()
+#
+#     return 0
 
 
 def mapcore_remove_token(user):
@@ -307,8 +304,8 @@ class RDMmember(object):
         self.user_id = user._id      # RDM internal user_id
         if node.has_permission(user, 'admin', check_parent=False):
             self.is_admin = True
-            self.access_token = user.map_profile.oauth_access_token
-            self.refresh_token = user.map_profile.oauth_refresh_token
+            # self.access_token = user.map_profile.oauth_access_token
+            # self.refresh_token = user.map_profile.oauth_refresh_token
         else:
             self.is_admin = False
 
@@ -414,6 +411,8 @@ def _mapcore_api_with_switching_token(access_user, node, group_key, func, **kwar
     # maintain the order and remove duplicated users
     first_e = None
     for candidate in sorted(set(candidates), key=candidates.index):
+        if candidate.map_profile is None:
+            continue
         try:
             mapcore = MAPCore(candidate)
             return func(mapcore, node, group_key, **kwargs)
@@ -422,6 +421,11 @@ def _mapcore_api_with_switching_token(access_user, node, group_key, func, **kwar
                 raise
             if first_e is None:
                 first_e = e
+        except Exception as e:
+            if first_e is None:
+                first_e = e
+    if first_e is None:
+        first_e = Exception('No user have mAP access token')
     raise first_e   # missing original traceback
 
 def _get_group_by_key(mapcore, node, group_key, **kwargs):
@@ -553,7 +557,6 @@ def mapcore_get_extended_group_info(access_user, node, group_key, base_grp=None,
 
     return group_ext
 
-
 def mapcore_sync_map_new_group0(user, title):
     '''
     create new mAP group and return its group_key
@@ -565,22 +568,25 @@ def mapcore_sync_map_new_group0(user, title):
     logger.debug('crete mAP group with ePPN id [' + user.eppn + '].')
 
     # create mAP group
-    map = MAPCore(user)
-    result = map.create_group(title)
+    mapcore = MAPCore(user)
+    result = mapcore.create_group(title)
     group_key = result['result']['groups'][0]['group_key']
     #logger.debug('mAP group created:\n' + pp(result))
 
     return group_key
 
-def mapcore_sync_map_new_group(user, title):
+def mapcore_sync_map_new_group(user, title, use_raise=False):
     try:
         # for mock.patch()
         return mapcore_sync_map_new_group0(user, title)
     except Exception as e:
         logger.error('User(eppn={}) cannot create a new group(title=) on mAP, reason={}'.format(user.eppn, title, str(e)))
         #TODO log
-        # Do not raise
-        return None
+        if use_raise:
+            raise
+        else:
+            return None
+
 
 def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
     '''
@@ -623,7 +629,7 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
     return node
 
 
-def _mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=False):
+def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=False):
     '''
     mAP coreグループの情報をRDM Nodeに同期する
     :param node: Node object
@@ -638,7 +644,7 @@ def _mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=
 
     from framework.auth import Auth
     from osf.utils.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
-    logger.debug('mapcore_sync_rdm_project(' + node.title + ') start')
+    logger.debug('mapcore_sync_rdm_project0(' + node.title + ') start')
 
     try:
         locker.lock_node(node)
@@ -708,15 +714,15 @@ def _mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=
         locker.unlock_node(node)
     return True
 
-def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=False):
+def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=False, use_raise=False):
     try:
-        _mapcore_sync_rdm_project(access_user, node, title_desc=title_desc, contributors=contributors)
+        mapcore_sync_rdm_project0(access_user, node, title_desc=title_desc, contributors=contributors)
     except MAPCoreException as e:
         if e.group_does_not_exist():
             logger.info('RDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(node.title, node._id))
             from framework.auth import Auth
             node.remove_node(Auth(user=node.creator))
-        else:
+        elif use_raise:
             raise
 
 def mapcore_resign_map_group(node, user):
@@ -730,7 +736,7 @@ def mapcore_resign_map_group(node, user):
     return mapcore.remove_from_group(node.map_group_key, user.eppn)
 
 
-def _mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True):
+def mapcore_sync_map_group1(access_user, node, title_desc=True, contributors=True):
     '''
     RDM Nodeの情報をmAPグループに同期する
     :param node: Node object
@@ -809,7 +815,7 @@ def _mapcore_sync_map_group(access_user, node, title_desc=True, contributors=Tru
 
 def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=True):
     try:
-        ret = _mapcore_sync_map_group(access_user, node, title_desc=title_desc, contributors=contributors)
+        ret = mapcore_sync_map_group1(access_user, node, title_desc=title_desc, contributors=contributors)
     except Exception as e:
         logger.warning('The project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, str(e)))
         # TODO log
@@ -819,14 +825,14 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
         mapcore_unset_standby_to_upload(node)
     return ret
 
-def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True):
+def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True, use_raise=False):
     try:
         # for mock.patch()
         return mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
     except Exception:
+        if use_raise:
+            raise
         # ignore error
-        # Do not raise
-        pass
 
 def mapcore_url_is_my_projects(request_url):
     pages = ['dashboard', 'my_projects']
@@ -846,8 +852,8 @@ def mapcore_sync_rdm_my_projects0(user):
       対応するRDMにプロジェクトが存在:
         つまりcontributors不整合状態
         RDM側に反映 (mAP側に反映すべき情報がある場合はmAP側へ反映)
-      対応するRDMにプロジェクトが無い:
-        RDMにプロジェクトを作成し、mAPグループから情報取得してRDM側に反映
+      対応するRプロジェクトがRDM側に無い:
+        RDM側にプロジェクトを作成し、mAPグループから情報取得してRDM側に反映
 
     RDMプロジェクトだけに所属:
       group_keyがセットされていない:
@@ -908,7 +914,8 @@ def mapcore_sync_rdm_my_projects0(user):
                     # copy info and members to RDM
                     mapcore_sync_rdm_project(user, node,
                                              title_desc=True,
-                                             contributors=True)
+                                             contributors=True,
+                                             use_raise=True)
                 except MAPCoreException as e:
                     if e.group_does_not_exist():
                         # This group is not linked to this RDM SP.
@@ -949,14 +956,14 @@ def mapcore_sync_rdm_my_projects0(user):
 
     logger.debug('mapcore_sync_rdm_my_projects finished.')
 
-def mapcore_sync_rdm_my_projects(user):
+def mapcore_sync_rdm_my_projects(user, use_raise=False):
     try:
         # for mock.patch()
         mapcore_sync_rdm_my_projects0(user)
     except Exception as e:
         logger.error('User(eppn={}) cannot compare my RDM Projects and my mAP groups, reason={}'.format(user.eppn, str(e)))
-        #TODO log
-        # Do not raise
+        if use_raise:
+            raise
 
 
 def mapcore_set_standby_to_upload(node):
@@ -1011,31 +1018,34 @@ def mapcore_is_sync_time_expired(node):
         pass
     return True
 
-def mapcore_sync_rdm_project_or_map_group0(access_user, node):
+def mapcore_sync_rdm_project_or_map_group0(access_user, node, use_raise=False):
     if node.is_deleted:
         return
     if not mapcore_is_sync_time_expired(node):
         return  # skipped
 
     if node.map_group_key is None:
-        group_key = mapcore_sync_map_new_group(node.creator, node.title)
+        group_key = mapcore_sync_map_new_group(node.creator, node.title,
+                                               use_raise=use_raise)
         if group_key:
             node.map_group_key = group_key
             node.save()
             mapcore_sync_map_group(access_user, node,
-                                   title_desc=True, contributors=True)
+                                   title_desc=True, contributors=True,
+                                   use_raise=use_raise)
     elif mapcore_is_on_standby_to_upload(node):
         mapcore_sync_map_group(access_user, node,
-                               title_desc=True, contributors=True)
+                               title_desc=True, contributors=True,
+                               use_raise=use_raise)
     else:
         mapcore_sync_rdm_project(access_user, node,
-                                 title_desc=True, contributors=True)
+                                 title_desc=True, contributors=True,
+                                 use_raise=use_raise)
     mapcore_set_sync_time(node)
 
-def mapcore_sync_rdm_project_or_map_group(access_user, node):
+def mapcore_sync_rdm_project_or_map_group(access_user, node, use_raise=False):
     # for mock.patch()
-    mapcore_sync_rdm_project_or_map_group0(access_user, node)
-    #TODO log
+    mapcore_sync_rdm_project_or_map_group0(access_user, node, use_raise=use_raise)
 
 #
 # debugging utilities
