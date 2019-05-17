@@ -3,6 +3,7 @@
 
 
 import time
+import datetime
 import logging
 import os
 import sys
@@ -987,36 +988,27 @@ def mapcore_unset_standby_to_upload(node):
         n.save()
         logger.debug('Project({}).mapcore_standby_to_upload=None'.format(node._id))
 
-SHARE_DIR = '/code_src/tmp'  # TODO do not use
-SYNC_CACHE_TIME = 10  # sec. # TODO do not use
-SYNC_CACHE_FILE_TMPL = SHARE_DIR + '/rdm_mapcore_sync_cache_{}'  # TODO do not use
+SYNC_CACHE_TIME = 10  # sec.
 
-# TODO use DB
 def mapcore_set_sync_time(node):
-    filename = SYNC_CACHE_FILE_TMPL.format(node._id)  # use Guid
-    with open(filename, 'w'):  # update mtime
-        pass
-    logger.debug('mapcore_set_sync_time: called: id={}'.format(id(node)))
-
-# TODO use DB
-def mapcore_is_sync_time_expired(node):
-    logger.debug('mapcore_is_sync_time_expired: called: id={}'.format(id(node)))
-    #import traceback
-    #logger.debug('mapcore_is_sync_time_expired: Trace={}'.format(''.join(traceback.format_stack())))  # TODO
-
-    filename = SYNC_CACHE_FILE_TMPL.format(node._id)  # use Guid
     try:
-        st = os.stat(filename)
-        mtime = st.st_mtime
-        now = time.time()
-        if now >= mtime + SYNC_CACHE_TIME:
-            return True
-        else:
-            logger.debug('mapcore_is_sync_time_expired: skip sync')
-            return False
-    except Exception:
-        pass
-    return True
+        with transaction.atomic():
+            n = Node.objects.select_for_update().get(guids___id=node._id)
+            n.mapcore_sync_time = timezone.now()
+            n.save()
+    except Exception as e:
+        logger.error('mapcore_set_sync_time: {}'.format(str(e)))
+        # ignore
+
+def mapcore_is_sync_time_expired(node):
+    if node.mapcore_sync_time is None:
+        return True
+    if timezone.now() >= node.mapcore_sync_time + datetime.timedelta(seconds=SYNC_CACHE_TIME):
+        logger.debug('mapcore_is_sync_time_expired: need sync')
+        return True
+    else:
+        logger.debug('mapcore_is_sync_time_expired: skip sync')
+        return False
 
 def mapcore_sync_rdm_project_or_map_group0(access_user, node, use_raise=False):
     if node.is_deleted:
