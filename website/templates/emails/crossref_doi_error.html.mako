@@ -1,4 +1,4 @@
-Hello OSF Support,<br>
+Hello GRDM Support,<br>
 <br>
 An error occurred while registering a DOI or updating the metadata for preprint(s) with CrossRef.<br>
 <br>
@@ -15,4 +15,4 @@ ${email_content}
 <br>
 Sincerely,<br>
 <br>
-Open Science Framework Robot
+GakuNin RDM Robot

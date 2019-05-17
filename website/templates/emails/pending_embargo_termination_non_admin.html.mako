@@ -11,7 +11,7 @@
     <br>
     Sincerely yours,<br>
     <br>
-    The OSF Robots<br>
+    The GRDM Robots<br>
 
 </tr>
 </%def>

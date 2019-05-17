@@ -1,0 +1,70 @@
+.table>thead>tr>th {
+    vertical-align: middle;
+}
+.form-group .input-group {
+    margin-bottom: 10px;
+}
+.caret {
+    cursor: pointer;
+}
+.table {
+    table-layout: fixed;
+}
+.table td {
+    word-wrap: break-word;
+}
+.table .sorter {
+    display: block;
+    float: left;
+    margin-left: -28px;
+}
+.table .header_text {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    float: left;
+    margin-right: 30px;
+    width: calc(100% - 30px);
+}
+
+@keyframes spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+@keyframes opacity {
+    0% {
+        opacity: 0.1;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.1;
+    }
+}
+.spinner-loading-wrapper {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 200;
+    padding: 20px;
+    border-radius: 4px;
+}
+.logo-spin.logo-lg {
+    width: 50px;
+    height: 50px;
+}
+.logo-spin {
+    -webkit-animation: spin 3s infinite linear, opacity 3s infinite linear;
+    animation: spin 3s infinite linear, opacity 3s infinite linear;
+    display: inline-block;
+    vertical-align: middle;
+    background: url(/static/img/logo_spin.png);
+    background-size: 100%;
+}

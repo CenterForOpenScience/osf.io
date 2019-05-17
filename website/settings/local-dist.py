@@ -111,7 +111,7 @@ SENDGRID_EMAIL_WHITELIST = []
 # support email
 OSF_SUPPORT_EMAIL = 'fake-support@osf.io'
 # contact email
-OSF_CONTACT_EMAIL = 'fake-contact@osf.io'
+OSF_CONTACT_EMAIL = 'fake-rcos-office@nii.ac.jp'
 
 #Email templates logo
 OSF_LOGO = 'osf_logo'
