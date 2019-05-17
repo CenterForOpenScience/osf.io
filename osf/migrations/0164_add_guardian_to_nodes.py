@@ -20,6 +20,46 @@ NODE MIGRATION
 
 increment = 100000
 
+repopulate_contributor_table = """
+    -- Resetting contributor table permissions to all false, so updates afterwards
+    -- only flip fields that should be TRUE
+    UPDATE osf_contributor
+    SET admin = FALSE, write = FALSE, read = FALSE;
+
+    -- Repopulate contributor table with read perms
+    UPDATE osf_contributor C
+    SET read = TRUE
+    FROM osf_osfuser_groups UG, osf_nodegroupobjectpermission NG, auth_permission AS PERM
+    WHERE UG.group_id = NG.group_id
+    AND C.node_id = NG.content_object_id
+    AND PERM.codename='read_node'
+    AND NG.permission_id = PERM.id
+    AND C.user_id = UG.osfuser_id
+    AND NG.content_object_id > {start} AND NG.content_object_id <= {end};
+
+    -- Repopulate contributor table with write perms
+    UPDATE osf_contributor C
+    SET write = TRUE
+    FROM osf_osfuser_groups UG, osf_nodegroupobjectpermission NG, auth_permission AS PERM
+    WHERE UG.group_id = NG.group_id
+    AND C.node_id = NG.content_object_id
+    AND PERM.codename='write_node'
+    AND NG.permission_id = PERM.id
+    AND C.user_id = UG.osfuser_id
+    AND NG.content_object_id > {start} AND NG.content_object_id <= {end};
+
+    -- Repopulate contributor table with admin perms
+    UPDATE osf_contributor C
+    SET admin = TRUE
+    FROM osf_osfuser_groups UG, osf_nodegroupobjectpermission NG, auth_permission AS PERM
+    WHERE UG.group_id = NG.group_id
+    AND C.node_id = NG.content_object_id
+    AND PERM.codename='admin_node'
+    AND NG.permission_id = PERM.id
+    AND C.user_id = UG.osfuser_id
+    AND NG.content_object_id > {start} AND NG.content_object_id <= {end};
+    """
+
 # Reverse migration - Drop NodeGroupObjectPermission table - table gives node django groups
 # permissions to node
 drop_node_group_object_permission_table = """
@@ -55,6 +95,7 @@ remove_node_django_groups = """
 
 def reverse_guardian_migration(state, schema):
     migrations = [
+        {'sql': repopulate_contributor_table, 'description': 'Repopulating Contributor table with admin, write, and read columns.'},
         {'sql': drop_node_group_object_permission_table, 'description': 'Deleting all records in NodeGroupObjectPermission table.'},
         {'sql': remove_users_from_node_django_groups, 'description': 'Removing users from Node Django Groups.'},
         {'sql': remove_node_django_groups, 'description': 'Deleting Node Django Groups.'}
@@ -188,6 +229,7 @@ def batch_node_migrations(state, migrations):
                     end=page_end
                 ))
             page_start = page_end
+
 
 class Migration(migrations.Migration):
 
