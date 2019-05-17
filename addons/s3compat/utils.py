@@ -40,14 +40,16 @@ def connect_s3compat(host=None, access_key=None, secret_key=None, node_settings=
         if node_settings.external_account is not None:
             host = node_settings.external_account.provider_id.split('\t')[0]
             access_key, secret_key = node_settings.external_account.oauth_key, node_settings.external_account.oauth_secret
-    if host.endswith(':80'):
-        conn = S3CompatConnection(access_key, secret_key, is_secure=False,
-                                  calling_format=OrdinaryCallingFormat(),
-                                  host=host.split(':')[0])
-        return conn
+    port = 443
+    m = re.match(r'^(.+)\:([0-9]+)$', host)
+    if m is not None:
+        host = m.group(1)
+        port = int(m.group(2))
     return S3CompatConnection(access_key, secret_key,
                               calling_format=OrdinaryCallingFormat(),
-                              host=host)
+                              host=host,
+                              port=port,
+                              is_secure=port == 443)
 
 
 def get_bucket_names(node_settings):
