@@ -20,12 +20,16 @@ NODE MIGRATION
 
 increment = 100000
 
-repopulate_contributor_table = """
+reset_contributor_perms = """
     -- Resetting contributor table permissions to all false, so updates afterwards
     -- only flip fields that should be TRUE
     UPDATE osf_contributor
-    SET admin = FALSE, write = FALSE, read = FALSE;
+    SET admin = FALSE, write = FALSE, read = FALSE
+    WHERE node_id > {start} AND node_id <= {end};
+    """
 
+# Reverse migration - Repopulate contributor table with read permissions
+repopulate_read_perms = """
     -- Repopulate contributor table with read perms
     UPDATE osf_contributor C
     SET read = TRUE
@@ -36,7 +40,10 @@ repopulate_contributor_table = """
     AND NG.permission_id = PERM.id
     AND C.user_id = UG.osfuser_id
     AND NG.content_object_id > {start} AND NG.content_object_id <= {end};
+    """
 
+# Reverse migration - Repopulate contributor table with write permissions
+repopulate_write_perms = """
     -- Repopulate contributor table with write perms
     UPDATE osf_contributor C
     SET write = TRUE
@@ -47,7 +54,10 @@ repopulate_contributor_table = """
     AND NG.permission_id = PERM.id
     AND C.user_id = UG.osfuser_id
     AND NG.content_object_id > {start} AND NG.content_object_id <= {end};
+    """
 
+# Reverse migration - Repopulate contributor table with admin permissions
+repopulate_admin_perms = """
     -- Repopulate contributor table with admin perms
     UPDATE osf_contributor C
     SET admin = TRUE
@@ -95,7 +105,10 @@ remove_node_django_groups = """
 
 def reverse_guardian_migration(state, schema):
     migrations = [
-        {'sql': repopulate_contributor_table, 'description': 'Repopulating Contributor table with admin, write, and read columns.'},
+        {'sql': reset_contributor_perms, 'description': 'Resetting contributor permissions.'},
+        {'sql': repopulate_read_perms, 'description': 'Repopulating read columns on Contributor table'},
+        {'sql': repopulate_write_perms, 'description': 'Repopulating write columns on Contributor table.'},
+        {'sql': repopulate_admin_perms, 'description': 'Repopulating admin columns on Contributor table.'},
         {'sql': drop_node_group_object_permission_table, 'description': 'Deleting all records in NodeGroupObjectPermission table.'},
         {'sql': remove_users_from_node_django_groups, 'description': 'Removing users from Node Django Groups.'},
         {'sql': remove_node_django_groups, 'description': 'Deleting Node Django Groups.'}
