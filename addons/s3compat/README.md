@@ -26,7 +26,8 @@ which is defined in `addons/s3compat/static/settings.json`.
 ## Enabling the addon
 
 ### Enable on OSF
-1. On osf, enable S3 as a provider
+1. On osf, enable S3 Compatible Storage as a provider
 2. Scroll down to Configure Add-ons
-3. Connect your account and enter your ID and secret
-4. Select a bucket to work from, or create a new one.
+3. Choose desired storage service
+4. Connect your account and enter your ID and secret
+5. Select a bucket to work from, or create a new one.
