@@ -1,4 +1,4 @@
-# OSF S3 Compatible Storage Addon
+# RDM S3 Compatible Storage Addon
 
 S3 Compatible Storage Addon enables to mount Cloud Storage which supports Amazon S3-like API on the project.
 
@@ -25,8 +25,8 @@ which is defined in `addons/s3compat/static/settings.json`.
 
 ## Enabling the addon
 
-### Enable on OSF
-1. On osf, enable S3 Compatible Storage as a provider
+### Enable on RDM
+1. On RDM, enable S3 Compatible Storage as a provider
 2. Scroll down to Configure Add-ons
 3. Choose desired storage service
 4. Connect your account and enter your ID and secret
