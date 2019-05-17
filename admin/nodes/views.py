@@ -349,9 +349,9 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
     template_name = 'nodes/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
-        if not request.user.has_perm('auth.mark_spam'):
+        if (('spam_confirm' in request.POST.keys() and not request.user.has_perm('auth.mark_spam')) or
+                ('ham_confirm' in request.POST.keys() and not request.user.has_perm('auth.mark_ham'))):
             raise PermissionDenied('You do not have permission to update a node flagged as spam.')
-        print (request.POST)
         node_ids = [
             nid for nid in request.POST.keys()
             if nid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
