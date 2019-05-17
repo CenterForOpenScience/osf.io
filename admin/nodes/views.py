@@ -351,21 +351,32 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
     def delete(self, request, *args, **kwargs):
         if not request.user.has_perm('auth.mark_spam'):
             raise PermissionDenied('You do not have permission to update a node flagged as spam.')
+        print (request.POST)
         node_ids = [
             nid for nid in request.POST.keys()
-            if nid != 'csrfmiddlewaretoken'
+            if nid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
         ]
         for nid in node_ids:
             node = Node.load(nid)
             osf_admin_change_status_identifier(node)
-            node.confirm_spam(save=True)
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=nid,
-                object_repr='Node',
-                message='Confirmed SPAM: {}'.format(nid),
-                action_flag=CONFIRM_SPAM
-            )
+            if ('spam_confirm' in request.POST.keys()):
+                node.confirm_spam(save=True)
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=nid,
+                    object_repr='Node',
+                    message='Confirmed SPAM: {}'.format(nid),
+                    action_flag=CONFIRM_SPAM
+                )
+            else:
+                node.confirm_ham(save=True)
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=nid,
+                    object_repr='Node',
+                    message='Confirmed HAM: {}'.format(nid),
+                    action_flag=CONFIRM_HAM
+                )
         return redirect('nodes:flagged-spam')
 
 
