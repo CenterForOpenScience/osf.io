@@ -2,7 +2,7 @@
 
 S3 Compatible Storage Addon enables to mount Cloud Storage which supports Amazon S3-like API on the project.
 
-## Configuring the addons
+## Configuring the addon
 
 Users can select storage from the S3 Compatible Storage List,
 which is defined in `addons/s3compat/static/settings.json`.
