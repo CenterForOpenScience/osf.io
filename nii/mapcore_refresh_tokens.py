@@ -18,19 +18,7 @@ if __name__ == '__main__':
     init_app(routes=False, set_backends=False)
 
 from osf.models.user import OSFUser
-from website import settings
-
 from nii.mapcore_api import MAPCore
-
-# TODO import
-map_hostname = settings.MAPCORE_HOSTNAME
-map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
-map_token_path = settings.MAPCORE_TOKEN_PATH
-map_refresh_path = settings.MAPCORE_REFRESH_PATH
-map_clientid = settings.MAPCORE_CLIENTID
-map_secret = settings.MAPCORE_SECRET
-map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
-my_home = settings.DOMAIN
 
 def mapcore_refresh_tokens(debug=False):
     for user in OSFUser.objects.all():

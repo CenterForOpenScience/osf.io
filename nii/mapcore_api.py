@@ -16,17 +16,11 @@ from django.utils import timezone
 from django.db import transaction
 
 from osf.models.user import OSFUser
-from website import settings
-
-# TODO import
-map_hostname = settings.MAPCORE_HOSTNAME
-map_authcode_path = settings.MAPCORE_AUTHCODE_PATH
-map_token_path = settings.MAPCORE_TOKEN_PATH
-map_refresh_path = settings.MAPCORE_REFRESH_PATH
-map_api_path = settings.MAPCORE_API_PATH
-map_clientid = settings.MAPCORE_CLIENTID
-map_secret = settings.MAPCORE_SECRET
-map_authcode_magic = settings.MAPCORE_AUTHCODE_MAGIC
+from website.settings import (MAPCORE_HOSTNAME,
+                              MAPCORE_REFRESH_PATH,
+                              MAPCORE_API_PATH,
+                              MAPCORE_CLIENTID,
+                              MAPCORE_SECRET)
 
 #
 # Global settings.
@@ -36,7 +30,7 @@ VERIFY = True  # for requests.{get,post}(verify=VERIFY)
 
 MAPCORE_API_MEMBER_LIST_BUG_WORKAROUND = True
 
-MAPCORE_DEBUG = True
+MAPCORE_DEBUG = False
 
 class MAPCoreLogger(object):
     def __init__(self, logger):
@@ -141,8 +135,6 @@ class MAPCore(object):
     MODE_ADMIN = 2      # Administrator member
 
     user = False
-    client_id = False
-    client_secret = False
     http_status_code = None
     api_error_code = None
     error_message = None
@@ -152,16 +144,14 @@ class MAPCore(object):
     #
     def __init__(self, user):
         self.user = user
-        self.client_id = settings.MAPCORE_CLIENTID
-        self.client_secret = settings.MAPCORE_SECRET
 
     #
     # Refresh access token.
     #
     def refresh_token0(self):
         #logger.debug('MAPCore::refresh_token:')
-        url = map_hostname + map_refresh_path
-        basic_auth = (self.client_id, self.client_secret)
+        url = MAPCORE_HOSTNAME + MAPCORE_REFRESH_PATH
+        basic_auth = (MAPCORE_CLIENTID, MAPCORE_SECRET)
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
         }
@@ -184,7 +174,7 @@ class MAPCore(object):
                 logger.info('MAPCore::refresh_token: Refreshing token failed: ' + j['error_description'] + ', user=' + str(self.user))
             return False
 
-        logger.info('MAPCore::refresh_token: SUCCESS: user=' + str(self.user))
+        logger.debug('MAPCore::refresh_token: SUCCESS: user=' + str(self.user))
         #logger.debug('  New access_token: ' + j['access_token'])
         #logger.debug('  New refresh_token: ' + j['refresh_token'])
 
@@ -251,7 +241,7 @@ class MAPCore(object):
         while count < 2:
             time_stamp, signature = self.calc_signature()
 
-            url = map_hostname + map_api_path + '/version'
+            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/version'
             payload = {'time_stamp': time_stamp, 'signature': signature}
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
@@ -288,7 +278,7 @@ class MAPCore(object):
         while count < 2:
             time_stamp, signature = self.calc_signature()
 
-            url = map_hostname + map_api_path + '/mygroup'
+            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/mygroup'
             payload = {
                 'time_stamp': time_stamp,
                 'signature': signature,
@@ -334,7 +324,7 @@ class MAPCore(object):
         while count < 2:
             time_stamp, signature = self.calc_signature()
 
-            url = map_hostname + map_api_path + '/group/' + group_key
+            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/group/' + group_key
             payload = {'time_stamp': time_stamp, 'signature': signature}
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
@@ -376,7 +366,7 @@ class MAPCore(object):
         while count < 2:
             time_stamp, signature = self.calc_signature()
 
-            url = map_hostname + map_api_path + '/group/' + group_key
+            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/group/' + group_key
             payload = {'time_stamp': time_stamp, 'signature': signature}
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
@@ -428,7 +418,7 @@ class MAPCore(object):
             }
             params = json.dumps(params).encode('utf-8')
 
-            url = map_hostname + map_api_path + '/group'
+            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/group'
             headers = {
                 'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token,
                 'Content-Type': 'application/json; charset=utf-8',
@@ -492,7 +482,7 @@ class MAPCore(object):
             }
             params = json.dumps(params).encode('utf-8')
 
-            url = map_hostname + map_api_path + '/group/' + group_key
+            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/group/' + group_key
             headers = {
                 'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token,
                 'Content-Type': 'application/json; charset=utf-8',
@@ -532,7 +522,7 @@ class MAPCore(object):
         while count < 2:
             time_stamp, signature = self.calc_signature()
 
-            url = map_hostname + map_api_path + '/member/' + group_key
+            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/member/' + group_key
             payload = {'time_stamp': time_stamp, 'signature': signature}
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
@@ -577,7 +567,7 @@ class MAPCore(object):
         while count < 2:
             time_stamp, signature = self.calc_signature()
 
-            url = map_hostname + map_api_path + '/mygroup'
+            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/mygroup'
             payload = {'time_stamp': time_stamp, 'signature': signature}
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
@@ -624,7 +614,7 @@ class MAPCore(object):
             }
             params = json.dumps(params).encode('utf-8')
 
-            url = map_hostname + map_api_path + '/member/' + group_key + '/' + eppn
+            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/member/' + group_key + '/' + eppn
             headers = {
                 'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token,
                 'Content-Type': 'application/json; charset=utf-8',
@@ -664,7 +654,7 @@ class MAPCore(object):
         while count < 2:
             time_stamp, signature = self.calc_signature()
 
-            url = map_hostname + map_api_path + '/member/' + group_key + '/' + eppn
+            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/member/' + group_key + '/' + eppn
             payload = {'time_stamp': time_stamp, 'signature': signature}
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
@@ -721,7 +711,7 @@ class MAPCore(object):
     def calc_signature(self):
 
         time_stamp = str(int(time.time()))
-        s = self.client_secret + self.user.map_profile.oauth_access_token + time_stamp
+        s = MAPCORE_SECRET + self.user.map_profile.oauth_access_token + time_stamp
 
         digest = hashlib.sha256(s.encode('utf-8')).hexdigest()
         return time_stamp, digest

@@ -37,7 +37,6 @@ from website.settings import (MAPCORE_HOSTNAME,
                               MAPCORE_SECRET,
                               MAPCORE_AUTHCODE_MAGIC,
                               DOMAIN)
-
 from nii.mapcore_api import (MAPCore, MAPCoreException, VERIFY,
                              mapcore_logger,
                              mapcore_group_member_is_private)
@@ -161,11 +160,11 @@ def mapcore_receive_authcode(user, params):
     :param user  OSFUser object of current user
     :param params   dict of url parameters in request
     '''
-    logger.info('get an oatuh response:')
+    logger.debug('get an oatuh response:')
     s = ''
     for k, v in params.items():
         s += '(' + k + ',' + v + ') '
-    logger.info('oauth returned parameters: ' + s)
+    logger.debug('oauth returned parameters: ' + s)
 
     # authorization code check
     if 'code' not in params or 'state' not in params:
@@ -191,7 +190,7 @@ def mapcore_receive_authcode(user, params):
         map_profile.oauth_refresh_token = refresh_token
         map_profile.oauth_refresh_time = timezone.now()
         map_profile.save()
-        logger.info('User [' + u.eppn + '] get access_token [' + access_token + '] -> saved')
+        logger.debug('User [' + u.eppn + '] get access_token [' + access_token + '] -> saved')
 
     # DEBUG: read record and print
     """
