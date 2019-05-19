@@ -435,6 +435,7 @@ class MAPCore(object):
                 # Change mode of group last created.
                 #
                 j = self.edit_group(group_key, group_name, group_name)
+                #TODO is necessary?
                 return j
 
             if self.is_token_expired(r):

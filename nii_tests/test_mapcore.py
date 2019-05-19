@@ -7,9 +7,11 @@ import requests
 import mock
 import pytest
 from nose.tools import *  # noqa PEP8 asserts
+from django.utils import timezone
 
 from framework.auth.core import Auth
 from osf.models import OSFUser, AbstractNode, NodeLog
+from osf.models.mapcore import MAPProfile
 from api.base.settings.defaults import API_BASE
 from tests.base import fake, OsfTestCase
 from website.util import web_url_for
@@ -35,7 +37,7 @@ def DEBUG(msg):
         sys.stderr.write('DEBUG: {}\n'.format(msg))
 
 @pytest.mark.django_db
-class TestOAuthForMAPCore(OsfTestCase):
+class TestOAuthOfMAPCore(OsfTestCase):
     def setUp(self):
         OsfTestCase.setUp(self)
         self.me = AuthUserFactory()
@@ -58,6 +60,8 @@ class TestOAuthForMAPCore(OsfTestCase):
         mock_token.return_value = (ACCESS_TOKEN, REFRESH_TOKEN)
         state = 'def'
         params = {'code': 'abc', 'state': state.encode('base64')}
+        assert_equal(self.me.map_profile, None)
+        # set self.me.map_profile
         ret = mapcore_receive_authcode(self.me, params)
         assert_equal(state, ret)
         self.me = OSFUser.objects.get(username=self.me.username)  # re-select
@@ -94,11 +98,88 @@ class TestOAuthForMAPCore(OsfTestCase):
         assert_equal(self.me.map_profile.oauth_access_token, ACCESS_TOKEN2)
         assert_equal(self.me.map_profile.oauth_refresh_token, REFRESH_TOKEN2)
 
+def fake_map_profile():
+    p = MAPProfile.objects.create()
+    p.oauth_access_token = 'fake_access_token'
+    p.oauth_refresh_token = 'fake_refresh_token'
+    p.oauth_refresh_time = timezone.now()
+    p.save()
+    return p
+
+@pytest.mark.django_db
+class TestFuncOfMAPCore(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.me = AuthUserFactory()
+        self.me.eppn = fake_email()
+        self.me.map_profile = fake_map_profile()
+        BookmarkCollectionFactory(creator=self.me)
+        self.project = ProjectFactory(
+            creator=self.me,
+            is_public=True,
+            title=fake.bs()
+        )
+        self.project_url = self.project.web_url_for('view_project')
+        self.user2 = AuthUserFactory()
+        self.project.add_contributor(self.user2, auth=Auth(self.me))
+        self.project.save()
+
+    def test_sync_rdm_project_or_map_group(self):
+        from nii.mapcore import mapcore_sync_rdm_project_or_map_group
+
+        assert_equal(self.project.map_group_key, None)
+        with mock.patch('nii.mapcore.mapcore_sync_map_new_group') as mock1, \
+             mock.patch('nii.mapcore.mapcore_sync_map_group') as mock2:
+            mock1.return_value = 'fake_group_key'
+            mapcore_sync_rdm_project_or_map_group(self.me, self.project)
+            assert_equal(mock1.call_count, 1)
+            assert_equal(mock2.call_count, 1)
+
+        self.project.map_group_key = 'fake_group_key'
+        self.project.save()
+        with mock.patch('nii.mapcore.mapcore_is_on_standby_to_upload') as mock1, \
+             mock.patch('nii.mapcore.mapcore_sync_map_group') as mock2:
+            mock1.return_value = True
+            mapcore_sync_rdm_project_or_map_group(self.me, self.project)
+            assert_equal(mock1.call_count, 1)
+            assert_equal(mock2.call_count, 1)
+
+        with mock.patch('nii.mapcore.mapcore_is_on_standby_to_upload') as mock1, \
+             mock.patch('nii.mapcore.mapcore_sync_rdm_project') as mock2:
+            mock1.return_value = False
+            mapcore_sync_rdm_project_or_map_group(self.me, self.project)
+            assert_equal(mock1.call_count, 1)
+            assert_equal(mock2.call_count, 1)
+
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('requests.post')
+    @mock.patch('nii.mapcore_api.MAPCore.edit_group')
+    def test_sync_map_new_group(self, mock_edit, mock_post):
+        from nii.mapcore import mapcore_sync_map_new_group
+
+        create_group = requests.Response()
+        create_group.status_code = requests.codes.ok
+        create_group._content = '{"result": {"groups": [{"group_key": "fake_group_key"}]}, "status": {"error_code": 0} }'
+        mock_post.return_value = create_group
+        mock_edit.return_value = create_group.json()
+
+        mapcore_sync_map_new_group(self.me, 'fake_title', use_raise=True)
+        args, kwargs = mock_post.call_args
+        assert_equal(args[0].endswith('/group'), True)
+
+    #TODO def test_sync_rdm_my_projects():
+    #TODO def test_sync_map_group():
+    #TODO def test_sync_rdm_group():
+
+
 @pytest.mark.django_db
 class TestViewsWithMAPCore(OsfTestCase):
     def setUp(self):
         OsfTestCase.setUp(self)
         self.me = AuthUserFactory()
+        self.me.eppn = fake_email()
         BookmarkCollectionFactory(creator=self.me)
         self.project = ProjectFactory(
             creator=self.me,
@@ -296,7 +377,7 @@ class TestViewsWithMAPCore(OsfTestCase):
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
-class TestAPIWithMAPCore:
+class TestOSFAPIWithMAPCore:
 
     @pytest.fixture(autouse=True, scope='class')
     def app_init(self):

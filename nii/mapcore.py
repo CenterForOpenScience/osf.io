@@ -580,7 +580,7 @@ def mapcore_sync_map_new_group(user, title, use_raise=False):
         # for mock.patch()
         return mapcore_sync_map_new_group0(user, title)
     except Exception as e:
-        logger.error('User(eppn={}) cannot create a new group(title=) on mAP, reason={}'.format(user.eppn, title, str(e)))
+        logger.error('User(eppn={}) cannot create a new group(title={}) on mAP, reason={}'.format(user.eppn, title, str(e)))
         #TODO log
         if use_raise:
             raise
