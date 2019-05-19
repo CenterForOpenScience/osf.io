@@ -51,6 +51,7 @@ class TestOAuthOfMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_refresh_token')
     @mock.patch('nii.mapcore.MAPCORE_SECRET', 'abcde')
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'abcde')
     @mock.patch('nii.mapcore.mapcore_get_accesstoken')
     @mock.patch('requests.get')
     @mock.patch('requests.post')
