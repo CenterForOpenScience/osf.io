@@ -5,8 +5,53 @@ from __future__ import unicode_literals
 import logging
 from django.db import migrations
 from django.core.management.sql import emit_post_migrate_signal
+from osf.utils.migrations import batch_node_migrations
 
 logger = logging.getLogger(__name__)
+
+# Reverse migration - Drop NodeGroupObjectPermission table - table gives node django groups
+# permissions to node
+drop_node_group_object_permission_table = """
+    DELETE FROM osf_nodegroupobjectpermission NGOP
+    WHERE NGOP.content_object_id > {start} AND NGOP.content_object_id <= {end};]
+    """
+
+# Reverse migration - Remove user membership in Node read/write/admin Django groups
+remove_users_from_node_django_groups = """
+    DELETE FROM osf_osfuser_groups
+    WHERE group_id IN (
+      SELECT id
+      FROM auth_group
+      WHERE name IN (
+        SELECT regexp_split_to_table('node_' || N.id || '_read,node_' || N.id || '_write,node_' || N.id || '_admin', ',')
+        FROM osf_abstractnode N
+        WHERE N.id > {start}
+        AND N.id <= {end}
+      )
+    );
+    """
+
+# Reverse migration - Remove admin/write/read node django groups
+remove_node_django_groups = """
+    DELETE FROM auth_group
+    WHERE name IN (
+        SELECT regexp_split_to_table('node_' || N.id || '_read,node_' || N.id || '_write,node_' || N.id || '_admin', ',')
+        FROM osf_abstractnode N
+        WHERE N.id > {start}
+        AND N.id <= {end}
+    );
+    """
+
+def reverse_node_guardian_migration(state, schema):
+    migrations = [
+        {'sql': drop_node_group_object_permission_table, 'description': 'Deleting all records in NodeGroupObjectPermission table.'},
+        {'sql': remove_users_from_node_django_groups, 'description': 'Removing users from Node Django Groups.'},
+        {'sql': remove_node_django_groups, 'description': 'Deleting Node Django Groups.'}
+    ]
+
+    batch_node_migrations(state, migrations)
+    logger.info('Finished reversing guardian migration.')
+    return
 
 
 def post_migrate_signal(state, schema):
@@ -22,5 +67,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(post_migrate_signal, migrations.RunPython.noop),
+        migrations.RunPython(post_migrate_signal, reverse_node_guardian_migration),
     ]
