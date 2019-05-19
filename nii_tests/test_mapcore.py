@@ -43,9 +43,12 @@ class TestOAuthForMAPCore(OsfTestCase):
         self.me.save()
 
     def test_no_map_profile(self):
+        assert_equal(self.me.map_profile, None)
         with assert_raises(MAPCoreTokenExpired):
             mapcore_api_is_available(self.me)
 
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_refresh_token')
+    @mock.patch('nii.mapcore.MAPCORE_SECRET', 'abcde')
     @mock.patch('nii.mapcore.mapcore_get_accesstoken')
     @mock.patch('requests.get')
     @mock.patch('requests.post')
