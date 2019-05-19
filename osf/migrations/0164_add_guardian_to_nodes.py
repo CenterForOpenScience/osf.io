@@ -79,7 +79,7 @@ def reverse_guardian_migration(state, schema):
     ]
 
     batch_node_migrations(state, migrations)
-    logger.info('Finished reversing guardian migration.')
+    logger.info('Finished restoring Contributor permissions.')
     return
 
 # Forward migration - for each node, create a read, write, and admin Django group

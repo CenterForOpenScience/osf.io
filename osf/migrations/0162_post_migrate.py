@@ -3,43 +3,39 @@
 from __future__ import unicode_literals
 
 import logging
-from django.db import migrations
+from django.db import migrations, connection
 from django.core.management.sql import emit_post_migrate_signal
 from osf.utils.migrations import batch_node_migrations
 
 logger = logging.getLogger(__name__)
 
+"""
+This file exists separately from 0164_add_guardian_to_nodes.py for optimization purposes.
+Half of the reverse guardian migration is contained in this file.
+"""
+
 # Reverse migration - Drop NodeGroupObjectPermission table - table gives node django groups
 # permissions to node
 drop_node_group_object_permission_table = """
-    DELETE FROM osf_nodegroupobjectpermission NGOP
-    WHERE NGOP.content_object_id > {start} AND NGOP.content_object_id <= {end};]
+    TRUNCATE TABLE osf_nodegroupobjectpermission;
+    COMMIT;
     """
 
 # Reverse migration - Remove user membership in Node read/write/admin Django groups
 remove_users_from_node_django_groups = """
     DELETE FROM osf_osfuser_groups
-    WHERE group_id IN (
-      SELECT id
-      FROM auth_group
-      WHERE name IN (
-        SELECT regexp_split_to_table('node_' || N.id || '_read,node_' || N.id || '_write,node_' || N.id || '_admin', ',')
-        FROM osf_abstractnode N
-        WHERE N.id > {start}
-        AND N.id <= {end}
-      )
-    );
+      WHERE group_id IN (
+        SELECT id FROM auth_group WHERE name LIKE '%node_%'
+      );
+    COMMIT;
     """
 
 # Reverse migration - Remove admin/write/read node django groups
 remove_node_django_groups = """
-    DELETE FROM auth_group
-    WHERE name IN (
-        SELECT regexp_split_to_table('node_' || N.id || '_read,node_' || N.id || '_write,node_' || N.id || '_admin', ',')
-        FROM osf_abstractnode N
-        WHERE N.id > {start}
-        AND N.id <= {end}
-    );
+    ALTER TABLE auth_group DISABLE TRIGGER ALL;
+    DELETE FROM auth_group WHERE name LIKE '%node_%';
+    ALTER TABLE auth_group ENABLE TRIGGER ALL;
+    COMMIT;
     """
 
 def reverse_node_guardian_migration(state, schema):
@@ -53,6 +49,14 @@ def reverse_node_guardian_migration(state, schema):
     logger.info('Finished reversing guardian migration.')
     return
 
+def finalize_reverse_node_guardian_migration(state, schema):
+    with connection.cursor() as cursor:
+        cursor.execute(drop_node_group_object_permission_table)
+        logger.info('Finished deleting NodeGroupObjectPermission table.')
+        cursor.execute(remove_users_from_node_django_groups)
+        logger.info('Finished removing users from guardian node django groups.')
+        cursor.execute(remove_node_django_groups)
+        logger.info('Finished removing guardian node django groups.')
 
 def post_migrate_signal(state, schema):
     # this is to make sure that the permissions created earlier exist!
@@ -67,5 +71,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(post_migrate_signal, reverse_node_guardian_migration),
+        migrations.RunPython(post_migrate_signal, finalize_reverse_node_guardian_migration),
     ]
