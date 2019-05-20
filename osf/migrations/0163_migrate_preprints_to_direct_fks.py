@@ -19,8 +19,14 @@ PreprintGroupObjectPermission table
 
 # Forward migration - moving preprints to dfks
 
+
 def reverse_migrate_preprints(state, schema):
     sql = """
+        DELETE FROM guardian_groupobjectpermission GO
+        USING django_content_type CT
+        WHERE CT.model = 'preprint' AND CT.app_label = 'osf'
+        AND GO.content_type_id = CT.id;
+
         -- Reverse migration - Repopulating out of the box guardian table
         INSERT INTO guardian_groupobjectpermission (object_pk, content_type_id, group_id, permission_id)
         SELECT CAST(PG.content_object_id AS INT), CAST(CT.id AS INT), CAST(PG.group_id AS INT), CAST(PG.permission_id AS INT)
