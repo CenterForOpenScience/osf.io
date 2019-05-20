@@ -333,9 +333,8 @@ def celery_verify_timestamp_token(self, uid, node_id):
                 continue
             # Do not let the task run too many requests
             # An sleep would stop the celery process (and all its tasks)
-            if provider_dict['provider'] != 'osfstorage':
-                while time.time() < last_run + secs_to_wait:
-                    pass
+            while time.time() < last_run + secs_to_wait:
+                pass
     if self.is_aborted():
         logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
     celery_app.current_task.update_state(state='SUCCESS', meta={'progress': 100})
@@ -357,9 +356,8 @@ def celery_add_timestamp_token(self, uid, node_id, request_data):
             continue
         # Do not let the task run too many requests
         # An sleep would stop the celery process (and all its tasks)
-        if data['provider'] != 'osfstorage':
-            while time.time() < last_run + secs_to_wait:
-                pass
+        while time.time() < last_run + secs_to_wait:
+            pass
     if self.is_aborted():
         logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
 
