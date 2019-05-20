@@ -6,6 +6,7 @@ var timestampCommon = require('./timestamp-common.js');
 timestampCommon.setWebOrAdmin('web');
 
 var $osf = require('../osfHelpers');
+var moment = require('moment');
 
 function datesToLocal() {
     var cells = document.querySelectorAll('td[class=verify_date]');
@@ -16,7 +17,7 @@ function datesToLocal() {
             newDateText = cell.textContent;
         }
         else {
-            newDateText = new $osf.FormattableDate(new Date(cell.textContent + ' UTC')).local;
+            newDateText = new $osf.FormattableDate(moment.utc(cell.textContent).format()).local;
         }
         cell.textContent = newDateText;
         cell.style.color = 'inherit';
