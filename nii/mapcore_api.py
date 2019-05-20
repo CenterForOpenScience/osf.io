@@ -32,6 +32,10 @@ MAPCORE_API_MEMBER_LIST_BUG_WORKAROUND = True
 
 MAPCORE_DEBUG = False
 
+# unicode to utf-8
+def utf8(s):
+    return s.encode('utf-8')
+
 class MAPCoreLogger(object):
     def __init__(self, logger):
         self.logger = logger
@@ -392,8 +396,6 @@ class MAPCore(object):
     # Create new group, and make it public, active and open_member.
     #
     def create_group(self, group_name):
-        group_name = group_name.encode('utf-8')
-
         logger.debug('MAPCore::create_group (group_name=' + group_name + ')')
 
         if self.user.map_profile is None:
@@ -454,10 +456,7 @@ class MAPCore(object):
     # Change group properties.
     #
     def edit_group(self, group_key, group_name, introduction):
-        group_name = group_name.encode('utf-8')
-        introduction = introduction.encode('utf-8')
-
-        logger.debug('MAPCore(user={})::edit_group(group_name={}, introduction={})'.format(self.user.username, group_name, introduction))
+        logger.debug('MAPCore(user={})::edit_group(group_name={}, introduction={})'.format(self.user.username, utf8(group_name), utf8(introduction)))
 
         if self.user.map_profile is None:
             # Access token is not issued yet.

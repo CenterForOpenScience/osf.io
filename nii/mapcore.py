@@ -44,6 +44,14 @@ from django.core.exceptions import ObjectDoesNotExist
 
 logger = mapcore_logger(logger)
 
+# unicode to utf-8
+def utf8(u):
+    return u.encode('utf-8')
+
+# utf-8 to unicode
+def utf8dec(s):
+    return s.decode('utf-8')
+
 def mapcore_is_enabled():
     #sys.stderr.write('mapcore_is_enabled: MAPCORE_CLIENTID={}\n'.format(MAPCORE_CLIENTID))
     return True if MAPCORE_CLIENTID else False
@@ -580,7 +588,7 @@ def mapcore_sync_map_new_group(user, title, use_raise=False):
         # for mock.patch()
         return mapcore_sync_map_new_group0(user, title)
     except Exception as e:
-        logger.error('User(eppn={}) cannot create a new group(title={}) on mAP, reason={}'.format(user.eppn, title, str(e)))
+        logger.error('User(eppn={}) cannot create a new group(title={}) on mAP, reason={}'.format(user.eppn, utf8(title), utf8(str(e))))
         #TODO log
         if use_raise:
             raise
@@ -619,10 +627,10 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
         return None
 
     # create new RDM group
-    node = Node(title=map_group['group_name'], creator=creator,
+    node = Node(title=utf8dec(map_group['group_name']), creator=creator,
                 is_public=True, category='project',
                 map_group_key=group_key,
-                description=group_info_ext['introduction'])
+                description=utf8dec(group_info_ext['introduction']))
     node.map_group_key = group_key
     node.save()
     logger.info('New node [' + node.title + '] owned by [' + creator.eppn + '] is created.')
@@ -719,7 +727,7 @@ def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=F
         mapcore_sync_rdm_project0(access_user, node, title_desc=title_desc, contributors=contributors)
     except MAPCoreException as e:
         if e.group_does_not_exist():
-            logger.info('RDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(node.title, node._id))
+            logger.info('RDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(utf8(node.title), node._id))
             from framework.auth import Auth
             node.remove_node(Auth(user=node.creator))
         elif use_raise:
@@ -817,7 +825,7 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
     try:
         ret = mapcore_sync_map_group1(access_user, node, title_desc=title_desc, contributors=contributors)
     except Exception as e:
-        logger.warning('The project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, str(e)))
+        logger.warning('The project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, stf8(str(e))))
         # TODO log
         mapcore_set_standby_to_upload(node)  # retry later
         return
@@ -924,25 +932,25 @@ def mapcore_sync_rdm_my_projects0(user):
                         logger.info('The mAP group({}, group_key={}) exists but it is not linked to this RDM service provider.'.format(grp['group_name'], group_key))
                         # TODO log?
                     else:
-                        logger.debug('MAPCoreException: {}'.format(str(e)))
+                        logger.debug('MAPCoreException: {}'.format(utf8(str(e))))
                         raise
 
             if project_exists:
                 # different contributors or title
                 if my_rdm_projects.get(group_key) is None \
-                   or node.title != grp['group_name']:
+                   or node.title != utf8dec(grp['group_name']):
                     logger.debug('different contributors or title')
                     mapcore_sync_rdm_project_or_map_group(user, node)
 
         for group_key, project in my_rdm_projects.items():
             if project.is_deleted:
                 logger.info('RDM project [{} ({})] was deleted. (skipped)'.format(
-                    project.title, project._id))
+                    utf8(project.title), project._id))
                 continue
 
             grp = my_map_groups.get(project.map_group_key)
             if grp:
-                if project.title == grp['group_name']:
+                if project.title == utf8dec(grp['group_name']):
                     # already synchronized project
                     continue
                 else:
@@ -961,7 +969,7 @@ def mapcore_sync_rdm_my_projects(user, use_raise=False):
         # for mock.patch()
         mapcore_sync_rdm_my_projects0(user)
     except Exception as e:
-        logger.error('User(eppn={}) cannot compare my RDM Projects and my mAP groups, reason={}'.format(user.eppn, str(e)))
+        logger.error('User(eppn={}) cannot compare my RDM Projects and my mAP groups, reason={}'.format(user.eppn, utf8(str(e))))
         if use_raise:
             raise
 
@@ -996,7 +1004,7 @@ def mapcore_set_sync_time(node):
             n.mapcore_sync_time = timezone.now()
             n.save()
     except Exception as e:
-        logger.error('mapcore_set_sync_time: {}'.format(str(e)))
+        logger.error('mapcore_set_sync_time: {}'.format(utf8(str(e))))
         # ignore
 
 def mapcore_is_sync_time_expired(node):
