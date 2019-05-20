@@ -14,12 +14,20 @@ from . import factories
 pytestmark = pytest.mark.django_db
 
 
+def create_quickfile_node(instance):
+    """
+    Old Quickfile node creation for tests only, delete after use.
+    :param instance:
+    :return:
+    """
+    QuickFilesNode.objects.create_for_user(instance)
+
+
 @pytest.fixture()
+@pytest.mark.enable_quickfiles_creation
+@mock.patch('osf.models.user._create_quickfiles', create_quickfile_node)
 def user():
-    user = factories.AuthUserFactory()
-    QuickFilesNode.objects.create_for_user(user)
-    user.save()
-    return user
+    return factories.AuthUserFactory()
 
 
 @pytest.fixture()
@@ -35,6 +43,8 @@ def auth(user):
 
 
 @pytest.mark.enable_quickfiles_creation
+@pytest.mark.skip(reason='QuickfilesNode is deprecated this should be removed after migrations are run.')
+@mock.patch('osf.models.user._create_quickfiles', create_quickfile_node)
 class TestQuickFilesNode:
 
     @pytest.fixture()
@@ -47,10 +57,6 @@ class TestQuickFilesNode:
 
     def test_quickfiles_is_public(self, quickfiles):
         assert quickfiles.is_public
-
-    def test_quickfiles_has_creator_as_contributor(self, quickfiles, user):
-        assert quickfiles.creator == user
-        assert quickfiles.is_contributor(user)
 
     def test_quickfiles_cannot_have_other_contributors(self, quickfiles, auth):
         another_user = factories.UserFactory()
@@ -85,9 +91,7 @@ class TestQuickFilesNode:
 
     def test_quickfiles_title_has_users_fullname(self):
         plain_user = factories.UserFactory(fullname='Kenny Omega')
-        QuickFilesNode.objects.create_for_user(plain_user)
         s_user = factories.UserFactory(fullname='Cody Runnels')
-        QuickFilesNode.objects.create_for_user(s_user)
 
         plain_user_quickfiles = QuickFilesNode.objects.get(creator=plain_user)
         s_user_quickfiles = QuickFilesNode.objects.get(creator=s_user)

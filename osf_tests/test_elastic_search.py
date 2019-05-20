@@ -1429,3 +1429,38 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(file_.path, path)
         assert_equal(find[0]['guid_url'], None)
         assert_equal(find[0]['deep_url'], deep_url)
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_quickfiles_files_appear_in_search(self):
+        user = factories.AuthUserFactory()
+        user.quickfolder.append_file('GreenLight.mp3')
+
+        find = query_file('GreenLight.mp3')['results']
+
+        assert len(find) == 1
+        assert find[0]['node_url'] == '/{}/quickfiles/'.format(user._id)
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_qatest_quickfiles_files_not_appear_in_search(self):
+        user = factories.AuthUserFactory()
+        file = user.quickfolder.append_file('GreenLight.mp3')
+        tag = Tag(name='qatest')
+        tag.save()
+        file.tags.add(tag)
+        file.save()
+
+        find = query_file('GreenLight.mp3')['results']
+
+        assert len(find) == 0
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
+        user = factories.AuthUserFactory()
+        user.disable_account()
+        user.add_system_tag('spam_confirmed')
+        user.save()
+        user.quickfolder.append_file('GreenLight.mp3')
+
+        find = query_file('GreenLight.mp3')['results']
+
+        assert len(find) == 0

@@ -53,6 +53,10 @@ class TestFileView:
         return api_utils.create_test_file(node, user, create_guid=False)
 
     @pytest.fixture()
+    def quickfile(self, user):
+        return api_utils.create_test_quickfile(user)
+
+    @pytest.fixture()
     def file_url(self, file):
         return '/{}files/{}/'.format(API_BASE, file._id)
 
@@ -85,6 +89,26 @@ class TestFileView:
         assert res.status_code == 410
 
         res = app.get(url_with_id, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_disabled_users_quickfiles_file_detail_gets_410(self, app, user, quickfile):
+
+        user.is_disabled = True
+        user.save()
+        url = '/{}files/{}/'.format(API_BASE, quickfile.get_guid(create=True)._id)
+
+        res = app.get(url, expect_errors=True)
+
+        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
+                                                  ' quickfiles are no longer available.'
+        assert res.status_code == 410
+
+        url = '/{}files/{}/'.format(API_BASE, quickfile._id)
+        res = app.get(url, expect_errors=True)
+        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
+                                                  ' quickfiles are no longer available.'
+        print(res.json)
         assert res.status_code == 410
 
     def test_file_guid_guid_status(self, app, user, file, file_url):

@@ -1182,7 +1182,7 @@ class TestMoveHook(HookTestCase):
             }
         }
 
-        res = self.app.post_json(url, signing.sign_data(signing.default_signer, payload), expect_errors=True)
+        res = self.app.post_json(url, signing.sign_data(signing.default_signer, payload))
         assert res.status_code == 200
         assert file_node in self.root_node.target.files.all()
         assert file_node not in self.user.quickfiles.all()
@@ -1329,6 +1329,29 @@ class TestCopyHook(HookTestCase):
         super(TestCopyHook, self).setUp()
         self.root_node = self.node_settings.get_root()
 
+    @pytest.mark.enable_quickfiles_creation
+    def test_can_copy_file_out_of_quickfiles_node(self):
+        file_node = create_test_quickfile(self.user, filename='slippery.mp3')
+        dest_folder = OsfStorageFolder.objects.get_root(target=self.root_node.target)
+
+        url = '/api/v1/{}/osfstorage/hooks/copy/'.format(self.user._id)
+
+        payload = {
+            'source': file_node._id,
+            'target': self.user._id,
+            'user': self.user._id,
+            'destination': {
+                'parent': dest_folder._id,
+                'target': self.root_node.target._id,
+                'name': dest_folder.name,
+            }
+        }
+        res = self.app.post_json(url, signing.sign_data(signing.default_signer, payload))
+        assert res.status_code == 201
+
+        assert file_node in self.user.quickfiles.all()
+        assert file_node.name == self.root_node.target.files.last().name
+
     @pytest.mark.enable_implicit_clean
     def test_copy_hook_updates_cache(self):
         """
@@ -1370,8 +1393,6 @@ class TestCopyHook(HookTestCase):
         assert storage_usage_cache.get(destination) == 123
 
         assert_equal(res.status_code, 201)
-
-
 
 @pytest.mark.django_db
 class TestFileTags(StorageTestCase):

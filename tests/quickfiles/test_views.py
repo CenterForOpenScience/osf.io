@@ -32,42 +32,12 @@ signing_expired = partial(signing.sign_data, signing.default_signer, ttl=0)
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
-class TestUserDetailView(V2ViewsCase):
-
-    def test_files_relationship_upload(self, app, user):
-        url = '/{}users/{}/'.format(API_BASE, user._id)
-        res = app.get(url, auth=user)
-        user_json = res.json['data']
-        upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
-        waterbutler_upload = waterbutler_api_url_for(
-            user._id, 'osfstorage')
-
-        assert upload_url == waterbutler_upload
-
-
-@pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestFileDetailView(V2ViewsCase):
     """ FileDetailView """
 
     @pytest.fixture(autouse=True)
     def file_node(self, user, project):
         return create_test_quickfile(user)
-
-    def test_disabled_users_quickfiles_file_detail_gets_410(self, app, user, file_node):
-        user.is_disabled = True
-        user.save()
-        url = self.get_url('files:file-detail', file_id=file_node.get_guid()._id)
-        res = app.get(url, expect_errors=True)
-        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
-                                                  ' quickfiles are no longer available.'
-        assert res.status_code == 410
-
-        url = self.get_url('files:file-detail', file_id=file_node._id)
-        res = app.get(url, expect_errors=True)
-        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
-                                                  ' quickfiles are no longer available.'
-        assert res.status_code == 410
 
     def test_get_files_detail_has_user_relationship(self, app, user, file_node):
         url = '/{}files/{}/'.format(API_BASE, file_node._id)

@@ -1,15 +1,27 @@
 import pytest
-from framework import utils
-
+from api.base.utils import waterbutler_api_url_for
 from addons.osfstorage.models import OsfStorageFile
+from osf_tests.factories import AuthUserFactory
 from api.base.settings.defaults import API_BASE
 from django.core.urlresolvers import reverse
+from tests.json_api_test_app import JSONAPITestApp
 
+@pytest.fixture()
+def django_app():
+    return JSONAPITestApp()
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
 class TestUserQuickFiles:
     """ UserQuickFiles """
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user2(self):
+        return AuthUserFactory()
 
     @pytest.fixture(autouse=True)
     def add_quickfiles(self, user):
@@ -46,7 +58,7 @@ class TestUserQuickFiles:
     def test_get_files_has_links(self, django_app, user, url):
         res = django_app.get(url, auth=user.auth)
         file_detail_json = res.json['data'][0]
-        waterbutler_url = utils.waterbutler_api_url_for(
+        waterbutler_url = waterbutler_api_url_for(
             user._id,
             'osfstorage',
             file_detail_json['attributes']['path']

@@ -448,7 +448,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def _serialize(self, **kwargs):
         return {
-            'id': self._id,
+            'id': str(self._id),
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
