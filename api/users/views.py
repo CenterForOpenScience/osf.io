@@ -895,7 +895,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
     def perform_destroy(self, instance):
         user = self.get_user()
         email = instance.address
-        if instance.confirmed:
+        if instance.confirmed and instance.verified:
             try:
                 user.remove_email(email)
             except PermissionsError as e:

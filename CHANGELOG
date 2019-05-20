@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.8.0 (2019-05-16)
+===================
+- APIv2: Don't throttle safe requests to UserEmailList
+- Modify payload sent to Chronos
+
 19.7.0 (2019-04-22)
 ===================
 - Update from jessie to stretch
