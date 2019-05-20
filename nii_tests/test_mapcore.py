@@ -50,8 +50,8 @@ class TestOAuthOfMAPCore(OsfTestCase):
             mapcore_api_is_available(self.me)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_refresh_token')
-    @mock.patch('nii.mapcore.MAPCORE_SECRET', 'abcde')
-    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'abcde')
+    @mock.patch('nii.mapcore.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore.mapcore_get_accesstoken')
     @mock.patch('requests.get')
     @mock.patch('requests.post')
@@ -153,6 +153,7 @@ class TestFuncOfMAPCore(OsfTestCase):
             assert_equal(mock1.call_count, 1)
             assert_equal(mock2.call_count, 1)
 
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
     @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
     @mock.patch('requests.post')
