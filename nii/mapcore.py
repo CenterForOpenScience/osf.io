@@ -825,7 +825,7 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
     try:
         ret = mapcore_sync_map_group1(access_user, node, title_desc=title_desc, contributors=contributors)
     except Exception as e:
-        logger.warning('The project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, stf8(str(e))))
+        logger.warning('The project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, utf8(str(e))))
         # TODO log
         mapcore_set_standby_to_upload(node)  # retry later
         return
