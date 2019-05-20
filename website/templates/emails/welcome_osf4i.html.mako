@@ -52,7 +52,7 @@ GakuNin RDM integrates with GitHub, Dropbox, Google Drive, Box, Dataverse, figsh
 Add your collaborators to have a shared environment for maintaining your research materials and data and never lose files again. <a href="http://help.osf.io/m/collaborating/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Start collaborating.</a><br>
 <br>
 
-Learn more about GakuNin RDM by reading the <a href="http://help.osf.io/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Guides</a>, or email <a href="mailto:${osf_support_email}">${osf_support_email}</a> for support.<br>
+Learn more about the GakuNin RDM at our <a href="https://meatwiki.nii.ac.jp/confluence/display/gakuninrdmusers/">Guides page</a>, or email <a href="mailto:rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> with questions for support.<br>
 <br>
 Sincerely,<br>
 <br>

@@ -7,7 +7,7 @@
     <br>
     ${reset_link}<br>
     <br>
-    Center for Open Science<br>
+    National Institute of Informatics<br>
 
 
 </tr>

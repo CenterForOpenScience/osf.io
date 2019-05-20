@@ -686,7 +686,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self.email_verifications[k] = v
         user.email_verifications = {}
 
-        self.affiliated_institutions.add(*user.affiliated_institutions.values_list('pk', flat=True))
+        # skip merging affiliated_institutions
+        # self.affiliated_institutions.add(*user.affiliated_institutions.values_list('pk', flat=True))
 
         for service in user.external_identity:
             for service_id in user.external_identity[service].iterkeys():

@@ -97,6 +97,7 @@ def get_globals():
 
     return {
         'embedded_ds': settings.to_bool('USE_EMBEDDED_DS', False),
+        'embedded_ds_url': settings.EMBEDDED_DS_URL,
         'nav_dropdown': settings.to_bool('NAV_DROPDOWN', True),
         'nav_quickfiles': settings.to_bool('NAV_QUICKFILES', True),
         'nav_search': settings.to_bool('NAV_SEARCH', True),
@@ -1446,8 +1447,8 @@ def make_url_map(app):
                 '/project/<pid>/timestamp/json/',
                 '/project/<pid>/node/<nid>/timestamp/json/',
             ],
-            ['get', 'post'],
-            project_views.timestamp.collect_timestamp_trees_to_json,
+            ['post'],
+            project_views.timestamp.verify_timestamp_token,
             json_renderer,
         )
     ])
@@ -1826,20 +1827,29 @@ def make_url_map(app):
         # Security
         Rule(
             [
-                '/project/<pid>/timestamp/timestamp_error_data/',
-                '/project/<pid>/node/<nid>/timestamp/timestamp_error_data/',
+                '/project/<pid>/timestamp/add_timestamp/',
+                '/project/<pid>/node/<nid>/timestamp/add_timestamp/',
             ],
-            ['get', 'post'],
-            project_views.timestamp.get_timestamp_error_data,
+            ['post'],
+            project_views.timestamp.add_timestamp_token,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/timestamp/add_timestamp/',
-                '/project/<pid>/node/<nid>/timestamp/add_timestamp/',
+                '/project/<pid>/timestamp/cancel_task/',
+                '/project/<pid>/node/<nid>/timestamp/cancel_task/',
             ],
-            ['get', 'post'],
-            project_views.timestamp.add_timestamp_token,
+            ['post'],
+            project_views.timestamp.cancel_task,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/timestamp/task_status/',
+                '/project/<pid>/node/<nid>/timestamp/task_status/',
+            ],
+            ['post'],
+            project_views.timestamp.task_status,
             json_renderer,
         ),
 

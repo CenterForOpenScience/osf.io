@@ -6,6 +6,7 @@
 
 {% block top_includes %}
   <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+  <link rel="stylesheet" type="text/css" href="/static/css/timestampadd.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tiny-date-picker/3.2.8/tiny-date-picker.min.css" rel="stylesheet" />
 {% endblock %}
 
@@ -50,11 +51,20 @@
             <div class="row">
                 <div class="col-sm-7">
                     <span>
-                        <button type="button" class="btn btn-success" id="btn-verify">Verify</button>
-                        <button type="button" class="btn btn-success" id="btn-addtimestamp">Request Trusted Timestamp</button>
+                        <button type="button" class="btn btn-success" id="btn-verify" {% if not async_task.ready %}disabled="disabled"{% endif %}>Verify</button>
+                        <button type="button" class="btn btn-success" id="btn-addtimestamp" {% if not async_task.ready %}disabled="disabled"{% endif %}>Request Trusted Timestamp</button>
+                        <button type="button" class="btn btn-default" id="btn-cancel" {% if async_task.ready %}disabled="disabled"{% endif %}>Cancel</button>
                     </span>
                 </div>
                 <div class="col-sm-5"></div>
+            </div>
+        </div>
+    </div>
+    <div class="row" id="loading-row" style="{% if async_task.ready %}display: none;{% endif %}">
+        <div class="col-xs-12">
+            <div class="spinner-loading-wrapper">
+                <p class="m-t-sm fg-load-message" id="loading-message">Processing, please wait...</p>
+                <div class="logo-spin logo-lg"></div>
             </div>
         </div>
     </div>
@@ -88,7 +98,7 @@
             </select>
         </div>
     </div>
-    <div class="row">
+    <div class="row" id="pagination-row" style="{% if not async_task.ready %}display: none;{% endif %}">
         <div class="col-sm-12">
             <div class="pagination pagination-lg">
                 <span>
@@ -106,10 +116,7 @@
             </div>
         </div>
     </div>
-    <div class="row">
-        <font color="red">
-            <h4 id="timestamp_errors_spinner"></h4>
-        </font>
+    <div class="row" id="timestamp-table-row" style="{% if not async_task.ready %}display: none;{% endif %}">
         <table id="datatables" class="table table-striped table-bordered" cellspacing="0" width="100%">
             <thead>
                 <tr>
@@ -201,7 +208,7 @@
             </tbody>
         </table>
     </div>
-    <div class="row">
+    <div class="row" id="download-row" style="{% if not async_task.ready %}display: none;{% endif %}">
         <div class="col-sm-3">
             <span>
                 <select id="fileFormat" class="form-control">
@@ -221,44 +228,12 @@
     {% csrf_token %}
 </div>
 
-<style type="text/css">
-.table>thead>tr>th {
-    vertical-align: middle;
-}
-.form-group .input-group {
-    margin-bottom: 10px;
-}
-.caret {
-    cursor: pointer;
-}
-.table {
-    table-layout: fixed;
-}
-.table td {
-    word-wrap: break-word;
-}
-.table .sorter {
-    display: block;
-    float: left;
-    margin-left: -28px;
-}
-.table .header_text {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    float: left;
-    margin-right: 30px;
-    width: calc(100% - 30px);
-}
-</style>
-
 <script charset="utf-8">
     window.timestampaddUrls = {
         verify: "{% url 'timestampadd:verify' institution_id=institution_id guid=guid %}",
-        verifyData: "{% url 'timestampadd:verify_data' institution_id=institution_id guid=guid %}",
         addTimestampData: "{% url 'timestampadd:add_timestamp_data' institution_id=institution_id guid=guid %}",
-        addtimestamp: "{% url 'timestampadd:addtimestamp' institution_id=institution_id guid=guid %}"
+        cancel: "{% url 'timestampadd:cancel_task' institution_id=institution_id guid=guid %}",
+        taskStatusUrl: "{% url 'timestampadd:task_status' institution_id=institution_id guid=guid %}"
     };
 </script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tiny-date-picker/3.2.8/tiny-date-picker.min.js"></script>

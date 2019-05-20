@@ -2,12 +2,14 @@ from admin.rdm_timestampadd import views
 from admin_tests.utilities import setup_user_view
 from api.base import settings as api_settings
 from django.test import RequestFactory
+from django.core.urlresolvers import reverse
 from nose import tools as nt
 from osf.models import RdmUserKey, RdmFileTimestamptokenVerifyResult, Guid, BaseFileNode
 from osf_tests.factories import UserFactory, AuthUserFactory, InstitutionFactory, ProjectFactory
 from tests.base import AdminTestCase
 from tests.test_timestamp import create_test_file, create_rdmfiletimestamptokenverifyresult
 from website.util.timestamp import userkey_generation
+import json
 import logging
 import os
 import mock
@@ -257,10 +259,12 @@ class TestAddTimestampData(AdminTestCase):
             os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
+    @mock.patch('celery.contrib.abortable.AbortableTask.is_aborted')
     @mock.patch('website.util.waterbutler.shutil')
     @mock.patch('requests.get')
-    def test_post(self, mock_get, mock_shutil, **kwargs):
+    def test_post(self, mock_get, mock_shutil, mock_aborted, **kwargs):
         mock_get.return_value.content = ''
+        mock_aborted.return_value = False
 
         res_timestampaddlist = self.view.get_context_data()
         nt.assert_is_instance(res_timestampaddlist, dict)
@@ -275,19 +279,25 @@ class TestAddTimestampData(AdminTestCase):
         ## AddTimestampData.post
         file_node = BaseFileNode.objects.get(name='osfstorage_test_file3.status_3')
         file_verify_result = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-        self.post_data = {
-            'provider': [file_verify_result.provider],
-            'file_id': [file_verify_result.file_id],
-            'file_path': [file_verify_result.path],
-            'file_name': [file_node.name],
-            'size': [2345],
-            'created': ['2018-12-17 00:00'],
-            'modified': ['2018-12-19 00:00'],
-            'version': [file_node.current_version_number]
-        }
-        self.request_url_addtimestamp = '/timestampadd/' + str(self.project_institution.id) + '/nodes/' + str(self.private_project1.id) + '/addtimestamp/add_timestamp_data/'
-        self.view_addtimestamp = views.AddTimestampData()
-        self.request_addtimestamp = RequestFactory().post(self.request_url_addtimestamp, data=self.post_data, format='json')
+        self.post_data = [{
+            'provider': file_verify_result.provider,
+            'file_id': file_verify_result.file_id,
+            'file_path': file_verify_result.path,
+            'file_name': file_node.name,
+            'size': 2345,
+            'created': '2018-12-17 00:00',
+            'modified': '2018-12-19 00:00',
+            'version': file_node.current_version_number
+        }]
+        self.view_addtimestamp = views.AddTimestamp()
+        self.request_addtimestamp = RequestFactory().post(
+            reverse('timestampadd:add_timestamp_data', kwargs={
+                'institution_id': self.project_institution.id,
+                'guid': self.private_project1.id
+            }),
+            json.dumps(self.post_data),
+            content_type='application/json'
+        )
         self.view_addtimestamp = setup_user_view(self.view_addtimestamp, self.request_addtimestamp, user=self.user)
         self.view_addtimestamp.kwargs['institution_id'] = self.project_institution.id
         self.view_addtimestamp.kwargs['guid'] = self.private_project1.id

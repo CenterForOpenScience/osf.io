@@ -1,10 +1,11 @@
 'use strict';
 
 var $ = require('jquery');
-var Raven = require('raven-js');
 var List = require('list.js');
 var $osf = require('js/osfHelpers');
 var vkbeautify = require('vkbeautify');
+var taskStatusUpdaterIntervalId = null;
+var taskStatusUrl = null;
 
 var dateString = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric',
@@ -58,6 +59,7 @@ var HEADER_NAMES = {
     tsVerificationStatus: 'Timestamp Verification Status',
     latestTsVerificationDate: 'Latest Timestamp Verification Date'
 };
+var RESOURCE_HOST = 'rdf.rdm.nii.ac.jp';
 
 var TIMESTAMP_LIST_OBJECT = new List('timestamp-form', {
     valueNames: [
@@ -133,7 +135,7 @@ $('#addTimestampAllCheck').on('change', function () {
     });
 });
 
-function newLine() {
+function newLine () {
     if (window.navigator.userAgent.indexOf('Windows NT') !== -1) {
         return '\r\n';
     }
@@ -142,97 +144,35 @@ function newLine() {
 
 var NEW_LINE = newLine();
 
-var verify = function (params) {
-    $('#btn-verify').attr('disabled', true);
-    $('#btn-addtimestamp').attr('disabled', true);
-    $('#timestamp_errors_spinner').text('Storage files list gathering ...');
-    $('#timestamp_errors_spinner').show();
+function loadingAnimation (activated) {
+    $('#loading-row').toggle(activated);
+    $('#pagination-row').toggle(!activated);
+    $('#timestamp-table-row').toggle(!activated);
+    $('#download-row').toggle(!activated);
 
-    var postData = {};
-    var i;
-    var count = {
-        total: null,
-        success: 0,
-        fail: 0
-    };
+    $('#btn-verify').attr('disabled', activated);
+    $('#btn-addtimestamp').attr('disabled', activated);
+    $('#btn-cancel').attr('disabled', !activated);
+}
+
+var verify = function (params) {
+    loadingAnimation(true);
 
     // Get files list
     $.ajax({
         url: params.urlVerify,
-        data: postData,
+        data: {},
         dataType: 'json',
-        method: params.method
-    }).done(function (data) {
-        var projectFileList = data.provider_list;
-
-        // Count the number of files
-        count.total = projectFileList.reduce(function (accumulator, current) {
-            return accumulator + current.provider_file_list.length;
-        }, 0);
-
-        // Verify files for each provider
-        for (i = 0; i < projectFileList.length; i++) {
-            verifyProviderFiles(params, projectFileList[i], count);
-        }
-    }).fail(function (xhr, textStatus, error) {
-        Raven.captureMessage('Timestamp Add Error', {
-            extra: {
-                url: params.urlVerify,
-                textStatus: textStatus,
-                error: error
-            }
-        });
-        $('#btn-verify').removeAttr('disabled');
-        $('#btn-addtimestamp').removeAttr('disabled');
-        $('#timestamp_errors_spinner').text('Error: Storage files list gathering failed');
+        method: 'POST'
+    }).done(function () {
+        $osf.growl('Timestamp', 'A verify request is being processed!', 'success');
+        taskStatusUpdaterIntervalId = setInterval(taskStatusUpdater, 1500);
+    }).fail(function () {
+        $osf.growl('Timestamp', 'Something went wrong with the Verify request.', 'danger');
     });
 };
 
-var verifyProviderFiles = function (params, providerInfo, count) {
-    var i, fileList;
-
-    fileList = providerInfo.provider_file_list;
-    for (i = 0; i < fileList.length; i++) {
-        var postData = {
-            'provider': providerInfo.provider,
-            'file_id': fileList[i].file_id,
-            'file_path': fileList[i].file_path,
-            'size': fileList[i].size,
-            'created': fileList[i].created,
-            'modified': fileList[i].modified,
-            'file_version': fileList[i].file_version
-        };
-        $.ajax({
-            url:  params.urlVerifyData,
-            data: postData,
-            dataType: 'json',
-            method: params.method
-        }).done(function () {
-            count.success++;
-            $('#timestamp_errors_spinner').text('Verification files : ' + count.success + ' / ' + count.total + ' ...');
-            if (count.total === count.success) {
-                $('#timestamp_errors_spinner').text('Verification (100%) and Refreshing...');
-                window.location.reload();
-            }
-        }).fail(function (xhr, status, error) {
-            count.fail++;
-            if (count.success + count.fail === count.total) {
-                Raven.captureMessage('Timestamp Add Error: ' + fileList[i].file_path, {
-                    extra: {
-                        url: params.urlVerifyData,
-                        status: status,
-                        error: error
-                    }
-                });
-                $('#btn-verify').removeAttr('disabled');
-                $('#btn-addtimestamp').removeAttr('disabled');
-                $('#timestamp_errors_spinner').text('Error: ' + fileList[i].file_path);
-            }
-        });
-    }
-};
-
-var add = function (params) {
+var add = function (param) {
     var fileList = TIMESTAMP_LIST_OBJECT.items.filter(function (item) {
         var checkbox = item.elm.querySelector('[type=checkbox]');
         if (checkbox) {
@@ -244,47 +184,51 @@ var add = function (params) {
     });
 
     if (fileList.length === 0) {
+        $osf.growl('Timestamp', 'Using the checkbox, please select the files to request timestamp.', 'danger');
         return false;
     }
 
-    $('#btn-verify').attr('disabled', true);
-    $('#btn-addtimestamp').attr('disabled', true);
-    $('#timestamp_errors_spinner').text('Addtimestamp loading ...');
-    $('#timestamp_errors_spinner').show();
+    loadingAnimation(true);
+    var postData = [];
 
-    var successCount = 0;
     for (var i = 0; i < fileList.length; i++) {
-        var post_data = {
+        postData.push({
             'provider': fileList[i].provider,
             'file_id': fileList[i].file_id,
             'file_path': fileList[i].file_path,
             'file_version': fileList[i].file_version
-        };
-        $.ajax({
-            url: params.url,
-            data: post_data,
-            dataType: 'json',
-            method: params.method
-        }).done(function () {
-            successCount++;
-            $('#timestamp_errors_spinner').text('Adding Timestamp files : ' + successCount + ' / ' + fileList.length + ' ...');
-            if (successCount === fileList.length) {
-                $('#timestamp_errors_spinner').text('Added Timestamp (100%) and Refreshing...');
-                window.location.reload();
-            }
-        }).fail(function (xhr, status, error) {
-            Raven.captureMessage('Timestamp Add Error: ' + fileList[i].file_path, {
-                extra: {
-                    url: params.url,
-                    status: status,
-                    error: error
-                }
-            });
-            $('#btn-verify').removeAttr('disabled');
-            $('#btn-addtimestamp').removeAttr('disabled');
-            $('#timestamp_errors_spinner').text('Error : Timestamp Add Failed');
         });
     }
+
+    $.ajax({
+        type: 'POST',
+        url: param.url,
+        data: JSON.stringify(postData),
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json'
+    }).done(function () {
+        $osf.growl('Timestamp', 'Timestamp is being added to the selected files!', 'success');
+        taskStatusUpdaterIntervalId = setInterval(taskStatusUpdater, 1500);
+    }).fail(function () {
+        $osf.growl('Timestamp', 'Something went wrong with the Request Trusted Timestamp request.', 'danger');
+    });
+};
+
+var cancel = function (url) {
+    $osf.growl('Timestamp', 'The task has been cancelled.', 'info');
+    $('#btn-cancel').attr('disabled', true);
+    $.ajax({
+        url: url,
+        method: 'POST'
+    }).done(function (result) {
+        if (result.success === true) {
+            $('#btn-cancel').attr('disabled', true);
+        } else {
+            $osf.growl('Timestamp', 'The task already finished.', 'info');
+        }
+    }).fail(function () {
+        $osf.growl('Timestamp', 'Something went wrong in the cancel request.', 'danger');
+    });
 };
 
 var download = function () {
@@ -301,35 +245,36 @@ var download = function () {
         var filePathArr = item.file_path.split('/');
         var fileName = filePathArr[filePathArr.length - 1];
 
-        var tsDate = item.verify_date.replace(' ', '_').replace(/[/]/g, '-').replace(/:/g, '');
+        var userId = item.verify_user_id ? item.verify_user_id : 'Unknown';
+        var tsDate = item.verify_date ? item.verify_date.replace(' ', '_').replace(/[/]/g, '-').replace(/:/g, '') : 'Unknown';
         var fileCreationDate = item.file_create_date_on_verify ? item.file_create_date_on_verify.replace(' ', '_').replace(/[/]/g, '-').replace(/:/g, '') : null;
         var fileModificationDate = item.file_modify_date_on_verify ? item.file_modify_date_on_verify.replace(' ', '_').replace(/[/]/g, '-').replace(/:/g, '') : null;
 
         return {
-            timestampId: 'https://rdf.rdm.nii.ac.jp/resource/ts/' + item.project_id + '/' + item.file_id + '/' + item.verify_user_id + '/' + tsDate,
-            fileGuidResource: 'https://rdf.rdm.nii.ac.jp/resource/file/' + item.file_id,
+            timestampId: 'https://' + RESOURCE_HOST + '/resource/ts/' + item.project_id + '/' + item.file_id + '/' + userId + '/' + tsDate,
+            fileGuidResource: 'https://' + RESOURCE_HOST + '/resource/file/' + item.file_id,
             fileGuidLabel: {text: 'FILE:' + item.file_id, lang: 'en'},
-            fileGuid: 'https://rdf.rdm.nii.ac.jp/' + item.file_id,
-            fileNameResource: 'https://rdf.rdm.nii.ac.jp/resource/file/' + fileName.replace(/ /g, '_'),
+            fileGuid: 'https://' + RESOURCE_HOST + '/' + item.file_id,
+            fileNameResource: 'https://' + RESOURCE_HOST + '/resource/file/' + encodeURIComponent(fileName),
             fileNameLabel: {text: fileName, lang: 'en'},
             fileCreationDate: fileCreationDate,
             fileModificationDate: fileModificationDate,
             fileByteSize: item.file_size_on_verify,
             fileVersion: item.file_version,
-            projectGuidResource: 'https://rdf.rdm.nii.ac.jp/resource/project/' + item.project_id,
+            projectGuidResource: 'https://' + RESOURCE_HOST + '/resource/project/' + item.project_id,
             projectGuidLabel: {text: 'PROJ:' + item.project_id, lang: 'en'},
-            projectGuid: 'https://rdf.rdm.nii.ac.jp/' + item.project_id,
-            userGuidResource: item.creator_id ? 'https://rdf.rdm.nii.ac.jp/resource/user/' + item.creator_id : null,
+            projectGuid: 'https://' + RESOURCE_HOST + '/' + item.project_id,
+            userGuidResource: item.creator_id ? 'https://' + RESOURCE_HOST + '/resource/user/' + item.creator_id : null,
             userGuidLabel: item.creator_id ? {text: 'USER:' + item.creator_id, lang: 'en'} : null,
-            userNameResource: item.creator_name ? 'https://rdf.rdm.nii.ac.jp/resource/user/' + item.creator_name.replace(/ /g, '_') : null,
+            userNameResource: item.creator_name ? 'https://' + RESOURCE_HOST + '/resource/user/' + encodeURIComponent(item.creator_name) : null,
             userNameLabel: item.creator_name ? {text: item.creator_name, lang: 'en'} : null,
             mail: item.creator_email,
-            orgIdResource: item.organization_id ? 'https://rdf.rdm.nii.ac.jp/resource/org/' + item.organization_id : null,
+            orgIdResource: item.organization_id ? 'https://' + RESOURCE_HOST + '/resource/org/' + item.organization_id : null,
             orgIdLabel: item.organization_id ? {text: 'ORG:' + item.organization_id, lang: 'en'} : null,
-            orgNameResource: item.organization_name ? 'https://rdf.rdm.nii.ac.jp/resource/org/' + item.organization_name.replace(/ /g, '_') : null,
+            orgNameResource: item.organization_name ? 'https://' + RESOURCE_HOST + '/resource/org/' + encodeURIComponent(item.organization_name) : null,
             orgNameLabel: item.organization_name ? {text: item.organization_name, lang: 'en'} : null,
-            userGuid: item.creator_id ? 'https://rdf.rdm.nii.ac.jp/' + item.creator_id : null,
-            tsIdLabel: {text: 'TS:' + item.project_id + '/' + item.file_id + '/' + item.verify_user_id + '/' + tsDate, lang: 'en'},
+            userGuid: item.creator_id ? 'https://' + RESOURCE_HOST + '/' + item.creator_id : null,
+            tsIdLabel: {text: 'TS:' + item.project_id + '/' + item.file_id + '/' + userId + '/' + tsDate, lang: 'en'},
             tsVerificationStatus: item.verify_result_title,
             latestTsVerificationDate: tsDate
         };
@@ -509,7 +454,7 @@ function generateJson(fileList) {
             'owl': 'http://www.w3.org/2002/07/owl#',
             'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
             'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
-            'rdmr': 'https://rdf.rdm.nii.ac.jp/resource/',
+            'rdmr': 'https://' + RESOURCE_HOST + '/resource/',
             'schema': 'http://schema.org/',
             'sem': 'http://semanticweb.cs.vu.nl/2009/11/sem/',
             'sio': 'http://semanticscience.org/resource/',
@@ -561,7 +506,7 @@ function generateRdf (fileList) {
 
     var namespaces = [
         {schema: 'http://schema.org/'},
-        {rdmr: 'https://rdf.rdm.nii.ac.jp/resource/'},
+        {rdmr: 'https://' + RESOURCE_HOST + '/resource/'},
         {owl: 'http://www.w3.org/2002/07/owl#'},
         {org: 'http://www.w3.org/ns/org#'},
         {frapo: 'http://purl.org/cerif/frapo/'},
@@ -905,14 +850,41 @@ function initDatePickers() {
 
 }
 
-function init() {
+function taskStatusUpdater () {
+    $.ajax({
+        url: taskStatusUrl,
+        method: 'POST'
+    }).done(function (taskStatus) {
+        if (taskStatus.ready) {
+            clearInterval(taskStatusUpdaterIntervalId);
+            taskStatusUpdaterIntervalId = null;
+            window.location.reload(true);
+        }
+    }).fail(function () {
+        $osf.growl('Timestamp', 'Failed to get the current task status.', 'danger');
+        clearInterval(taskStatusUpdaterIntervalId);
+        taskStatusUpdaterIntervalId = null;
+    });
+}
+
+function checkHasTaskRunning () {
+    var cancelBtnEnabled = $('#btn-cancel').attr('disabled');
+    if (!cancelBtnEnabled) {
+        taskStatusUpdaterIntervalId = setInterval(taskStatusUpdater, 1500);
+    }
+}
+
+function init(url) {
+    taskStatusUrl = url;
     initList();
     initDatePickers();
+    checkHasTaskRunning();
 }
 
 module.exports = {
     verify: verify,
     add: add,
+    cancel: cancel,
     init: init,
     download: download,
     setWebOrAdmin: setWebOrAdmin

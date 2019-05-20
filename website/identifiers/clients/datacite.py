@@ -41,7 +41,7 @@ class DataCiteClient(AbstractIdentifierClient):
             'titles': [
                 {'title': node.title}
             ],
-            'publisher': 'Open Science Framework',
+            'publisher': 'GakuNin RDM',
             'publicationYear': str(datetime.datetime.now().year),
             'resourceType': {
                 'resourceType': 'Project',

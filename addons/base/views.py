@@ -488,15 +488,25 @@ def create_waterbutler_log(payload, **kwargs):
                 raise HTTPError(httplib.BAD_REQUEST)
 
             metadata['path'] = metadata['path'].lstrip('/')
-
-            # Create/update timestamp record
-            if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
-                metadata = payload.get('metadata') or payload.get('destination')
-                if metadata['kind'] == 'file':
-                    created_flag = action == NodeLog.FILE_ADDED
-                    timestamp.file_created_or_updated(node, metadata, user.id, created_flag)
-
             node_addon.create_waterbutler_log(auth, action, metadata)
+
+        # Create/update timestamp record
+        if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
+            metadata = payload.get('metadata') or payload.get('destination')
+            if metadata['kind'] == 'file':
+                created_flag = action == NodeLog.FILE_ADDED
+                timestamp.file_created_or_updated(node, metadata, user.id, created_flag)
+        # Update moved, or renamed timestamp records
+        elif action in (NodeLog.FILE_MOVED, NodeLog.FILE_RENAMED):
+            src_path = payload['source']['materialized']
+            dest_path = payload['destination']['materialized']
+            provider = payload['source']['provider']
+            timestamp.file_node_moved(node._id, provider, src_path, dest_path)
+        # Update status of deleted timestamp records
+        elif action in (NodeLog.FILE_REMOVED):
+            src_path = metadata['materialized']
+            provider = payload['metadata']['provider']
+            timestamp.file_node_deleted(node._id, provider, src_path)
 
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
@@ -660,6 +670,10 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
             'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
             'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         })
+
+        # timestampVerifyResult Update(file was gone)
+        timestamp.file_node_gone(file_node.target._id, file_node.provider, file_node.materialized_path)
+
     else:
         # TODO - serialize deleted metadata for future types of deleted file targets
         ret = {'error': error_msg}
