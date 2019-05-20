@@ -433,11 +433,8 @@ class MAPCore(object):
                 group_key = j['result']['groups'][0]['group_key']
                 logger.debug('  New geoup has been created (group_key=' + group_key + ')')
 
-                #
-                # Change mode of group last created.
-                #
+                # to set description
                 j = self.edit_group(group_key, group_name, group_name)
-                #TODO is necessary?
                 return j
 
             if self.is_token_expired(r):
