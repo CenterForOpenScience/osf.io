@@ -616,13 +616,13 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
             user = OSFUser.objects.get(eppn=admin_eppn)
         except ObjectDoesNotExist:
             logger.info('mAP group [' + map_group['group_name'] + ']s admin [' + admin_eppn +
-                        '] is not registerd in RDM')
+                        '] is not registered in RDM')
             continue
         creator = user
         break
 
     if creator is None:
-        msg = 'maAP group [' + map_group['group_name'] + '] has no RDM registerd admin user.'
+        msg = 'maAP group [' + map_group['group_name'] + '] has no RDM registered admin user.'
         logger.error(msg)
         return None
 
@@ -696,13 +696,13 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
                 try:
                     rdmu = OSFUser.objects.get(eppn=mapu['eppn'])
                 except Exception:
-                    logger.info('mAP member [' + mapu['eppn'] + '] is not registed in RDM. (ignored)')
+                    logger.info('mAP member [' + mapu['eppn'] + '] is not registered in RDM. (ignored)')
                     continue
                 if mapu['is_admin']:
-                    logger.info('mAP member [' + mapu['eppn'] + '] is registed as contributor ADMIN.')
+                    logger.info('mAP member [' + mapu['eppn'] + '] is registered as contributor ADMIN.')
                     node.add_contributor(rdmu, log=True, save=False, permissions=CREATOR_PERMISSIONS)
                 else:
-                    logger.info('mAP member [' + mapu['eppn'] + '] is registed as contributor MEMBER.')
+                    logger.info('mAP member [' + mapu['eppn'] + '] is registered as contributor MEMBER.')
                     node.add_contributor(rdmu, log=True, save=False, permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS)
             for rdmu in delete:
                 auth = Auth(user=rdmu.user)
@@ -852,25 +852,27 @@ def mapcore_url_is_my_projects(request_url):
 
 def mapcore_sync_rdm_my_projects0(user):
     '''
+    自分が所属しているRDMプロジェクトとmAPグループを比較する。
+
     RDMとmAPの両方にグループに所属:
        タイトルが変わっていない場合: なにもしない
-       タイトルが変わっている場合: mAP側に反映またはRDM側に反映
+       タイトルが変わっている場合: RDM側に(またはmAP側に)タイトルを反映
 
     mAPグループだけに所属:
-      対応するRDMにプロジェクトが存在:
+      対応するプロジェクトがRDM側に存在:
         つまりcontributors不整合状態
         RDM側に反映 (mAP側に反映すべき情報がある場合はmAP側へ反映)
-      対応するRプロジェクトがRDM側に無い:
+      対応するプロジェクトがRDM側に無い:
         RDM側にプロジェクトを作成し、mAPグループから情報取得してRDM側に反映
 
     RDMプロジェクトだけに所属:
       group_keyがセットされていない:
-        つまりまだmAP側と関連付けられていない
-        プロジェクト画面遷移時にmAPグループを作成するので、何もしない
-      mAPにグループが存在:
-        つまりcontributors不整合状態
-        RDM側に反映 (mAP側に反映すべき情報がある場合はmAP側へ反映)
-      mAPにグループが無い:
+        つまりまだmAP側グループと関連付けられていない
+        プロジェクト画面遷移時にmAPグループを作成するので、ここでは何もしない
+      mAP側にグループが存在:
+        つまりcontributors不整合状態(所属状態が一致していないため)
+        RDM側に反映 (またはmAP側に反映すべき情報がある場合はmAP側へ反映)
+      mAP側にグループが無い:
         プロジェクトをis_deleted=Trueにする
 
     :param user: OSFUser
