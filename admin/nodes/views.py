@@ -368,7 +368,7 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
                     message='Confirmed SPAM: {}'.format(nid),
                     action_flag=CONFIRM_SPAM
                 )
-            else:
+            elif ('ham_confirm' in request.POST.keys()):
                 node.confirm_ham(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
