@@ -38,6 +38,8 @@ class MeetingSerializer(JSONAPISerializer):
     active = ser.BooleanField(read_only=True)
     submission_1_email = ser.SerializerMethodField()
     submission_2_email = ser.SerializerMethodField()
+    accept_type_one = ser.BooleanField(source='poster', read_only=True)
+    accept_type_two = ser.BooleanField(source='talk', read_only=True)
 
     submissions = RelationshipField(
         related_view='meetings:meeting-submissions',
