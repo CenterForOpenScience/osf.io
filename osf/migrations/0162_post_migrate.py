@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import logging
 from django.db import migrations, connection
 from django.core.management.sql import emit_post_migrate_signal
-from osf.utils.migrations import batch_node_migrations
 
 logger = logging.getLogger(__name__)
 
@@ -37,17 +36,6 @@ remove_node_django_groups = """
     ALTER TABLE auth_group ENABLE TRIGGER ALL;
     COMMIT;
     """
-
-def reverse_node_guardian_migration(state, schema):
-    migrations = [
-        {'sql': drop_node_group_object_permission_table, 'description': 'Deleting all records in NodeGroupObjectPermission table.'},
-        {'sql': remove_users_from_node_django_groups, 'description': 'Removing users from Node Django Groups.'},
-        {'sql': remove_node_django_groups, 'description': 'Deleting Node Django Groups.'}
-    ]
-
-    batch_node_migrations(state, migrations)
-    logger.info('Finished reversing guardian migration.')
-    return
 
 def finalize_reverse_node_guardian_migration(state, schema):
     with connection.cursor() as cursor:
