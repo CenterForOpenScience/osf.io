@@ -13,7 +13,9 @@ class TestMeetingDetail:
         return ConferenceFactory(
             name='OSF 2019',
             endpoint='osf2019',
-            location='Boulder, CO'
+            location='Boulder, CO',
+            poster=True,
+            talk=False,
         )
 
     @pytest.fixture()
@@ -53,6 +55,8 @@ class TestMeetingDetail:
         assert 'start_date' in data['attributes']
         assert 'end_date' in data['attributes']
         assert data['attributes']['active'] is True
+        assert data['attributes']['accept_type_one'] is True
+        assert data['attributes']['accept_type_two'] is False
         assert data['attributes']['field_names']['submission1'] == 'poster'
         assert data['attributes']['field_names']['submission2'] == 'talk'
         assert '_/meetings/{}/'.format(meeting.endpoint) in data['links']['self']
