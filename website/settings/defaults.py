@@ -1961,10 +1961,10 @@ USER_TIMEZONE = None
 USER_LOCALE = None
 
 # OSF projects synchronize groups on Cloud Gateway.
-CLOUD_GATAWAY_HOST = 'cg.gakunin.jp'
+CLOUD_GATEWAY_HOST = 'cg.gakunin.jp'
 
 # Prefix of isMemberOf attribute for groups.
-CLOUD_GATAWAY_ISMEMBEROF_PREFIX = 'https://cg.gakunin.jp/gr/'
+CLOUD_GATEWAY_ISMEMBEROF_PREFIX = 'https://cg.gakunin.jp/gr/'
 
 # Path of .cer and . key for GakuNin SP on the container of server.
 # (for API of Cloud Gateway)
@@ -1979,7 +1979,7 @@ PROJECT_SYNC_TIME_LENGTH   = 3600  # sec.
 ADMIN_URL='http://localhost:8001/'
 ADMIN_INTERNAL_DOCKER_URL='http://192.168.168.167:8001/'
 
-# mAP core paramters
+# mAP core parameters
 MAPCORE_HOSTNAME = 'https://sptest.cg.gakunin.jp'
 MAPCORE_AUTHCODE_PATH = '/oauth/shib/authrequest.php'
 MAPCORE_TOKEN_PATH = '/oauth/token.php'
@@ -1988,4 +1988,3 @@ MAPCORE_REFRESH_PATH = '/oauth/token.php'
 MAPCORE_AUTHCODE_MAGIC = 'GRDM_mAP_AuthCode'
 MAPCORE_CLIENTID = None
 MAPCORE_SECRET = None
-
