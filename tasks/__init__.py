@@ -956,7 +956,7 @@ def mapcore_remove_token(ctx, username=None, eppn=None):
         return
     mapcore_remove_token(user)
     if username:
-        print('token is REMOVED: username = ' + user.uesrname)
+        print('token is REMOVED: username = ' + user.username)
     elif eppn:
         print('token is REMOVED: ePPN = ' + user.eppn)
 
