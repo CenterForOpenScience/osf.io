@@ -68,7 +68,21 @@ def add_iqbrims_addon_to_affiliating_nodes(sender, instance, created, **kwargs):
 
             # copy auth if node has copy addon
             if GoogleDriveAddonConfig.short_name not in website_settings.ADDONS_AVAILABLE_DICT:
-                return
+                continue
             copy_node_addon = node.get_addon(GoogleDriveAddonConfig.short_name)
-            if copy_node_addon is not None:
+            if copy_node_addon is None:
+                continue
+
+            is_management_node = RdmAddonOption.objects.filter(
+                provider=IQBRIMSAddonConfig.short_name,
+                management_node=node,
+                is_allowed=True
+            ).exists()
+
+            if is_management_node:
                 copy_node_auth(node, copy_node_addon)
+    else:
+        nodes = AbstractNode.find_by_institutions(instance.institution)
+
+        for node in nodes:
+            node.delete_addon(addon_short_name, auth=None)

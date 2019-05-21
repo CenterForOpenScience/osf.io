@@ -10,9 +10,10 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 
-from addons.iqbrims.utils import copy_node_auth, oauth_disconnect_following_other
+from addons.iqbrims.utils import copy_node_auth
 from framework.auth import Auth
 from framework.exceptions import HTTPError
+from osf.models import RdmAddonOption
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
@@ -257,5 +258,11 @@ def follow_googledrive_node_settings_to_iqbrims(sender, instance, created, **kwa
         return
 
     node = instance.owner
-    if node.has_addon(IQBRIMSAddonConfig.short_name):
+    is_management_node = RdmAddonOption.objects.filter(
+        provider=IQBRIMSAddonConfig.short_name,
+        management_node=node,
+        is_allowed=True
+    ).exists()
+
+    if is_management_node and node.has_addon(IQBRIMSAddonConfig.short_name):
         copy_node_auth(node, instance)
