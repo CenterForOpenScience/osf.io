@@ -20,6 +20,17 @@ def transfer_logs(quickfiles_node):
         log.save()
 
 
+def reverse_transfer_logs(quickfiles_node):
+    """
+    Recasts logs and saves them, old logs will be deleted with all quickfilesnodes.
+    :param quickfiles_node: a QuickFilesNode
+    :return:
+    """
+    for log in quickfiles_node.logs.all():
+        log.__class__ = NodeLog
+        log.save()
+
+
 def create_quickfolders():
     """
     Bulk creates a Quickfolder for every user.
@@ -48,6 +59,25 @@ def create_quickfolders():
     logger.info('There are {} total quickfolders created'.format(total_created))
 
 
+def reverse_create_quickfolders():
+    """
+    Bulk creates a Quickfolder for every user.
+    :return:
+    """
+    users = OSFUser.objects.all()
+
+    paginated_users = Paginator(users, 1000)
+    logger.info('There are {} '.format(users.count()))
+
+    total_created = 0
+    for page_num in paginated_users.page_range:
+        for user in paginated_users.page(page_num).object_list:
+            QuickFilesNode.objects.create_for_user(user)
+            total_created += 1
+
+    logger.info('There are {} total quickfolders created'.format(total_created))
+
+
 def repoint_guids():
     """
     This takes Guids from Quickfilesnode and repoints them at Quickfolders
@@ -66,6 +96,28 @@ def repoint_guids():
             guid.object_id = guid.referent.target.quickfolder.id
             guid.content_type_id = quickfolder_content_type_id
             guid.save()
+            guids_repointed += 1
+
+    logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
+
+
+def reverse_repoint_guids():
+    """
+    This takes Guids from Quickfilesnode and repoints them at Quickfolders
+    :return:
+    """
+    guids_repointed = 0
+
+    users = OSFUser.objects.all()
+
+    paginated_users = Paginator(users, 1000)
+
+    for page_num in paginated_users.page_range:
+        for user in paginated_users.page(page_num).object_list:
+            guid = user.guids.last()
+            node = QuickFilesNode.objects.get_for_user(user)
+            node.guids.add(guid)
+            node.save()
             guids_repointed += 1
 
     logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
@@ -96,11 +148,31 @@ def migrate_quickfiles_to_quickfolders():
     QuickFilesNode.objects.all().delete()
 
 
-def main():
+def reverse_migrate_quickfiles_to_quickfolders():
+    """
+    This migrates the actual files from Quickfilesnode to Quickfolders
+    :return:
+    """
+    users = OSFUser.objects.all()
+    quickfiles_type_id = ContentType.objects.get_for_model(QuickFilesNode).id
+
+    for user in users:
+        qf_node = QuickFilesNode.objects.get_for_user(user)
+        user.quickfiles.update(parent_id=qf_node.files.last(),
+                        target_object_id=qf_node.id,
+                        target_content_type_id=quickfiles_type_id)
+        reverse_transfer_logs(QuickFilesNode.objects.get_for_user(user))
+
+    QuickFolder.objects.all().delete()
+
+
+def divorce_quickfiles(state, schema):
     create_quickfolders()
     repoint_guids()
     migrate_quickfiles_to_quickfolders()
 
-if __name__ == '__main__':
-    main()
 
+def reverse_divorce_quickfiles(state, schema):
+    reverse_create_quickfolders()
+    reverse_repoint_guids()
+    reverse_migrate_quickfiles_to_quickfolders()

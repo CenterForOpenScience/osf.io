@@ -11,8 +11,9 @@ from tests.base import test_app
 from webtest_plus import TestApp
 from website.app import init_app
 from tests.json_api_test_app import JSONAPITestApp
-from osf.models.legacy_quickfiles import QuickFilesNode
-from api_tests.utils import create_test_file
+from osf.models import QuickFilesNode, QuickFolder, OSFUser
+from osf_tests.factories import AuthUserFactory
+from api_tests.utils import create_test_file, create_test_quickfile
 
 import logging
 logger = logging.getLogger(__name__)
@@ -91,28 +92,43 @@ class MigrationTestCase:
 
     logger = logging.getLogger(__name__)
 
-    def sprinkle_quickfiles(self, num_of_files):
-        random_queryset = list(QuickFilesNode.objects.order_by('?'))
+    def sprinkle_quickfiles(self, model, num_of_files):
+        """
+        Randomly adds files to QuickfilesNodes or Quickfolders to test the divorce migration
+        :param model:
+        :param num_of_files:
+        :return:
+        """
+        random_queryset = list(OSFUser.objects.order_by('?'))
         import random
         for _ in range(0, num_of_files):
             random.shuffle(random_queryset)
-            node = random_queryset[0]
-            file_node = create_test_file(node, node.creator, filename=str(uuid.uuid4()))
+            instance = random_queryset[0]
+            if model == QuickFilesNode:
+                file_node = create_test_file(QuickFilesNode.objects.get_for_user(instance), instance, filename=str(uuid.uuid4()))
+            if model == QuickFolder:
+                file_node = create_test_quickfile(instance, filename=str(uuid.uuid4()))
+
             file_node.save()
 
-    def bulk_add(self, num, factory, **kwargs):
-        with_quickfiles_node = kwargs.pop('with_quickfiles_node')
-        objects = []
-        Model = factory._meta.model
+    def add_users(self, num, **kwargs):
+        """
+        Adds a large number of users for tests.
+        :param num:
+        :param kwargs:
+        :return:
+        """
+        with_quickfiles_node = kwargs.pop('with_quickfiles_node', False)
 
         for _ in range(0, num):
-            objects.append(factory.build(**kwargs))
+            user = AuthUserFactory()
+            user.save()
 
-        users = Model.objects.bulk_create(objects)
         from website import settings
         from osf.models.legacy_quickfiles import QuickFilesNode
 
-        if with_quickfiles_node:  # TODO this should be better
+        users = OSFUser.objects.all()
+        if with_quickfiles_node:
             for user in users:
                 for addon in settings.ADDONS_AVAILABLE:
                     if 'user' in addon.added_default:

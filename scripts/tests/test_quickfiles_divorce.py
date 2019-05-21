@@ -3,15 +3,19 @@ import time
 import pytest
 from scripts.remove_after_use.divorce_quickfiles import (
     create_quickfolders,
+    reverse_create_quickfolders,
     repoint_guids,
-    migrate_quickfiles_to_quickfolders
+    reverse_repoint_guids,
+    migrate_quickfiles_to_quickfolders,
+    reverse_migrate_quickfiles_to_quickfolders
 )
 
-from osf_tests.factories import AuthUserFactory, NodeLogFactory
+from osf_tests.factories import AuthUserFactory, NodeLogFactory, UserLogFactory
 from osf.models import OSFUser, QuickFolder, Guid
 from osf.utils.testing.pytest_utils import MigrationTestCase
 from osf.models.legacy_quickfiles import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
+from django.contrib.contenttypes.models import ContentType
 
 
 @pytest.mark.django_db
@@ -21,8 +25,8 @@ class TestQuickFilesMigration(MigrationTestCase):
     number_of_users = 10
 
     def test_quickfiles_divorce(self):
-        self.bulk_add(self.number_of_users, AuthUserFactory, with_quickfiles_node=True)
-        self.sprinkle_quickfiles(self.number_of_quickfiles)
+        self.add_users(self.number_of_users, with_quickfiles_node=True)
+        self.sprinkle_quickfiles(QuickFilesNode, self.number_of_quickfiles)
 
         # this is our canary user
         user = OSFUser.objects.last()
@@ -31,8 +35,6 @@ class TestQuickFilesMigration(MigrationTestCase):
         legacy_qf_node.logs.add(node_log)
         guid_values = set(QuickFilesNode.objects.all().values_list('guids___id', flat=True))
 
-        # sanity check
-        assert OSFUser.objects.all().count() == self.number_of_users
         create_quickfolders()
         user.refresh_from_db()
 
@@ -53,7 +55,7 @@ class TestQuickFilesMigration(MigrationTestCase):
 
         assert Guid.load(legacy_qf_node._id).referent == user.quickfolder
 
-        assert not OsfStorageFile.objects.filter(parent_id__type='osf.quickfilesnode').count()
+        assert not OsfStorageFile.objects.filter(target_content_type=ContentType.objects.get_for_model(QuickFilesNode)).count()
         assert OsfStorageFile.objects.filter(parent_id__type='osf.quickfolder').count() == self.number_of_quickfiles
 
         # QuickFilesNode will all be deleted
@@ -64,3 +66,44 @@ class TestQuickFilesMigration(MigrationTestCase):
         assert node_log.id == log.id
         assert node_log.params == log.params
         assert node_log.action == log.action
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_reverse_quickfiles_divorce(self):
+        self.add_users(self.number_of_users)
+        self.sprinkle_quickfiles(QuickFolder, self.number_of_quickfiles)
+
+        # this is our canary user
+        user = OSFUser.objects.last()
+        user_log = UserLogFactory(user=user)
+        user.user_logs.add(user_log)
+        guid_values = set(OSFUser.objects.all().values_list('guids___id', flat=True))
+
+        reverse_create_quickfolders()
+
+        assert self.number_of_users == QuickFilesNode.objects.all().count()
+        self.assert_joined(QuickFilesNode, 'creator', OSFUser, 'id')
+
+        reverse_repoint_guids()
+
+        # All Quickfilenodes point somewhere
+        assert not QuickFilesNode.objects.filter(guids___id=None)
+        # guid_values are a subset because new QuickFilesNode have their guids automatically generated on creation
+        assert guid_values.issubset(set(QuickFilesNode.objects.values_list('guids___id', flat=True)))
+
+        reverse_migrate_quickfiles_to_quickfolders()
+        user.refresh_from_db()
+        # assert Guid.load(user._id).referent == QuickFilesNode.objects.get_for_user(user)
+
+        assert OsfStorageFile.objects.filter(target_content_type=ContentType.objects.get_for_model(QuickFilesNode)).count()\
+               == self.number_of_quickfiles
+        assert QuickFilesNode.objects.all().count() == self.number_of_users
+
+        # Quickfolders will all be deleted
+        assert not QuickFolder.objects.all().count()
+
+        # Logs will be transferred unchanged
+        log = user.user_logs.first()
+        assert user_log.id == log.id
+        assert user_log.params == log.params
+        assert user_log.action == log.action
+

@@ -1276,6 +1276,18 @@ class TestMergingUsers:
         merge_dupe()
         assert not master.collection_set.filter(id=dashnode.id).exists()
 
+    # Note the files are merged, but the actual node stays with the dupe user
+    @pytest.mark.skip(reason='QuickfilesNode is deprecated this should be removed after migrations are run.')
+    def test_quickfiles_node_arent_merged(self, dupe, master, merge_dupe):
+        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
+        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
+
+        merge_dupe()
+        master.refresh_from_db()
+        dupe.refresh_from_db()
+        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
+        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
+
     def test_dupe_is_merged(self, dupe, master, merge_dupe):
         merge_dupe()
         assert dupe.is_merged

@@ -394,7 +394,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def quickfolder(self):
         """Helper to get user's quickfolder"""
         from osf.models.files import BaseFileNode
-        return BaseFileNode.objects.get(target_object_id=self.id, type='osf.quickfolder')
+        try:
+            return BaseFileNode.objects.get(target_object_id=self.id, type='osf.quickfolder')
+        except BaseFileNode.DoesNotExist:
+            raise UserStateError('User does not have a quickfolder.')
 
     @property
     def quickfiles(self):
