@@ -9,8 +9,9 @@ from django.core.management.sql import emit_post_migrate_signal
 logger = logging.getLogger(__name__)
 
 """
-This file exists separately from 0164_add_guardian_to_nodes.py for optimization purposes.
-Half of the reverse guardian migration is contained in this file.
+This file exists separately from 0164_add_guardian_to_nodes.py for optimization purposes on staging3
+Half of the reverse guardian migration is contained in this file, it should be moved
+back to 0164 if possible.
 """
 
 # Reverse migration - Drop NodeGroupObjectPermission table - table gives node django groups
@@ -31,9 +32,8 @@ remove_users_from_node_django_groups = """
 
 # Reverse migration - Remove admin/write/read node django groups
 remove_node_django_groups = """
-    ALTER TABLE auth_group DISABLE TRIGGER ALL;
+    SET CONSTRAINTS ALL DEFERRED;
     DELETE FROM auth_group WHERE name LIKE '%node_%';
-    ALTER TABLE auth_group ENABLE TRIGGER ALL;
     COMMIT;
     """
 
