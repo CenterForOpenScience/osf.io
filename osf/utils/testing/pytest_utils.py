@@ -1,10 +1,6 @@
 import uuid
 import pytest
 
-from website.search.util import build_query
-from website.search import elastic_search
-from website.search import search
-from website import settings
 from django.core.urlresolvers import reverse
 
 from tests.base import test_app
@@ -27,26 +23,6 @@ def flask_app():
 @pytest.fixture()
 def django_app():
     return JSONAPITestApp()
-
-
-@pytest.mark.enable_search
-class ElasticSearchTestCase:
-
-    @pytest.fixture(autouse=True)
-    def index(self):
-        settings.ELASTIC_INDEX = uuid.uuid4().hex
-        elastic_search.INDEX = settings.ELASTIC_INDEX
-
-        search.create_index(elastic_search.INDEX)
-        yield
-        search.delete_index(elastic_search.INDEX)
-
-    def query(self, term, raw=False):
-        return search.search(build_query(term), index=elastic_search.INDEX, raw=raw)
-
-    def query_file(self, name):
-        term = 'category:file AND "{}"'.format(name)
-        return self.query(term)
 
 
 class V1ViewsCase:
