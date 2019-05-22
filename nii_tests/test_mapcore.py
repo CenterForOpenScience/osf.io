@@ -170,9 +170,32 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_sync_map_new_group(self.me, 'fake_title', use_raise=True)
         args, kwargs = mock_post.call_args
         assert_equal(args[0].endswith('/group'), True)
+        assert_equal(mock_edit.call_count, 1)
+
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('requests.post')
+    def test_sync_map_group_title_desc(self, mock_post):
+        from nii.mapcore import mapcore_sync_map_group
+
+        edit_group = requests.Response()
+        edit_group.status_code = requests.codes.ok
+        edit_group._content = '{"result": {"groups": [{"group_key": "fake_group_key"}]}, "status": {"error_code": 0} }'
+        mock_post.return_value = edit_group
+
+        self.project.map_group_key = 'fake_group_key'
+        self.project.save()
+        mapcore_sync_map_group(self.me, self.project,
+                               title_desc=True, contributors=False,
+                               use_raise=True)
+        args, kwargs = mock_post.call_args
+        assert_equal(args[0].endswith('/group/' + self.project.map_group_key),
+                     True)
+
+    #def test_sync_map_group_contributors(self, mock_post):
 
     #TODO def test_sync_rdm_my_projects():
-    #TODO def test_sync_map_group():
     #TODO def test_sync_rdm_group():
 
 

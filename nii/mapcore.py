@@ -418,6 +418,7 @@ def _mapcore_api_with_switching_token(access_user, node, group_key, func, **kwar
 
     # maintain the order and remove duplicated users
     first_e = None
+    first_tb = None  # for sys.exc_info()
     for candidate in sorted(set(candidates), key=candidates.index):
         if candidate.map_profile is None:
             continue
@@ -429,12 +430,14 @@ def _mapcore_api_with_switching_token(access_user, node, group_key, func, **kwar
                 raise
             if first_e is None:
                 first_e = e
+                first_tb = sys.exc_info()
         except Exception as e:
             if first_e is None:
                 first_e = e
+                first_tb = sys.exc_info()
     if first_e is None:
-        first_e = Exception('No user have mAP access token')
-    raise first_e   # missing original traceback
+        raise Exception('No user have mAP access token')
+    raise first_e.__class__, first_e, first_tb[2]
 
 def _get_group_by_key(mapcore, node, group_key, **kwargs):
     return mapcore.get_group_by_key(group_key)
@@ -744,7 +747,7 @@ def mapcore_resign_map_group(node, user):
     return mapcore.remove_from_group(node.map_group_key, user.eppn)
 
 
-def mapcore_sync_map_group1(access_user, node, title_desc=True, contributors=True):
+def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=True):
     '''
     RDM Nodeの情報をmAPグループに同期する
     :param node: Node object
@@ -820,27 +823,29 @@ def mapcore_sync_map_group1(access_user, node, title_desc=True, contributors=Tru
 
     return True
 
-
-def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=True):
-    try:
-        ret = mapcore_sync_map_group1(access_user, node, title_desc=title_desc, contributors=contributors)
-    except Exception as e:
-        logger.warning('The project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, utf8(str(e))))
-        # TODO log
-        mapcore_set_standby_to_upload(node)  # retry later
-        return
-    if ret:
-        mapcore_unset_standby_to_upload(node)
-    return ret
-
 def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True, use_raise=False):
     try:
         # for mock.patch()
-        return mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
-    except Exception:
+        ret = mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
+    except Exception as e:
+        logger.warning('The project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, utf8(str(e))))
+        # TODO log
+        try:
+            mapcore_set_standby_to_upload(node)  # retry later
+        except Exception:
+            import traceback
+            logger.warning('mapcore_set_standby_to_upload error: {}'.format(traceback.format_exc()))
         if use_raise:
             raise
-        # ignore error
+        return False
+    if ret:
+        try:
+            mapcore_unset_standby_to_upload(node)
+        except Exception:
+            import traceback
+            logger.warning('mapcore_set_standby_to_upload error: {}'.format(traceback.format_exc()))
+    return ret
+
 
 def mapcore_url_is_my_projects(request_url):
     pages = ['dashboard', 'my_projects']
