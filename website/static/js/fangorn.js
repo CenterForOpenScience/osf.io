@@ -107,8 +107,8 @@ function findByTempID(parent, tmpID) {
 
 // Replace is the "default" conflict, when a user resolves a conflict by explicitly replacing it simply
 // executes a normal move and adds the conflicted file to the ready queue, because of this
-var replace = function(tb, cb) {
-    tb.pendingReadyFiles++;
+var replace = function(tb, cb, item) {
+    tb.pendingReadyFiles.push(item);
     return cb.bind(tb, 'replace');
 };
 
@@ -511,7 +511,7 @@ function displayConflict(tb, item, folder, cb) {
     ]);
     var mithrilButtons = [
         m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-        m('span.btn.btn-primary.btn-sm', {onclick: replace(tb, cb)}, 'Replace'),
+        m('span.btn.btn-primary.btn-sm', {onclick: replace(tb, cb, item)}, 'Replace'),
         m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip', item);}}, 'Skip'),
         m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'stop');}}, 'Stop')
     ];
@@ -546,7 +546,7 @@ function checkConflictsRename(tb, item, name, cb) {
                 m('', messageArray), [
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                    m('span.btn.btn-primary', {onclick: replace(tb, cb)}, 'Replace')
+                    m('span.btn.btn-primary', {onclick: replace(tb, cb, item)}, 'Replace')
                 ],
                 m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
             );
@@ -733,9 +733,10 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         orderFolder.call(tb, from.parent());
     }).always(function(){
-        tb.pendingReadyFiles--;
+
+        tb.pendingReadyFiles = tb.pendingReadyFiles.filter(function (file) { return file.data.id !== from.data.id; });
         from.inProgress = false;
-        if (notRenameOp && !tb.pendingReadyFiles){
+        if (notRenameOp && !tb.pendingReadyFiles.length){
             doSyncMove(tb, to.data.provider);
         }
     });
@@ -2544,9 +2545,9 @@ function _dropLogic(event, items, folder) {
     tb.moveStates = [];
 
 
-    // pendingReadyFiles is incremented/decremented after a ready request's response is received, syncFileMoveCache is
+    // pendingReadyFiles is popped/pushed after a ready request's response is received, syncFileMoveCache is
     // popped when a request is sent.
-    tb.pendingReadyFiles = toMove.ready.length;
+    tb.pendingReadyFiles = toMove.ready;
 
 
     if (toMove.ready.length > 0) {
@@ -2571,8 +2572,12 @@ function _dropLogic(event, items, folder) {
         toMove.conflicts.forEach(function(item) {
             tb.syncFileMoveCache[folder.data.provider].conflicts.push({'item' : item, 'folder' : folder});
         });
+        // Conflicts are usually handled after ready requests are made, but here we have only conflicts so we start handling
+        // them immediately.
+        if (toMove.ready.length === 0) {
+            doSyncMove(tb, folder.data.provider);
+        }
     }
-
 }
 
 function displayMoveStats(tb) {
