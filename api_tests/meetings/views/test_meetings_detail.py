@@ -13,7 +13,9 @@ class TestMeetingDetail:
         return ConferenceFactory(
             name='OSF 2019',
             endpoint='osf2019',
-            location='Boulder, CO'
+            location='Boulder, CO',
+            poster=True,
+            talk=False,
         )
 
     @pytest.fixture()
@@ -46,13 +48,15 @@ class TestMeetingDetail:
         assert data['id'] == meeting.endpoint
         assert data['type'] == 'meetings'
         assert data['attributes']['name'] == meeting.name
-        assert data['attributes']['submission_1_email'] == 'osf2019-poster@osf.io'
-        assert data['attributes']['submission_2_email'] == 'osf2019-talk@osf.io'
+        assert data['attributes']['type_one_submission_email'] == 'osf2019-poster@osf.io'
+        assert data['attributes']['type_two_submission_email'] == 'osf2019-talk@osf.io'
         assert data['attributes']['submissions_count'] == 1
         assert data['attributes']['location'] == 'Boulder, CO'
         assert 'start_date' in data['attributes']
         assert 'end_date' in data['attributes']
         assert data['attributes']['active'] is True
+        assert data['attributes']['is_accepting_type_one'] is True
+        assert data['attributes']['is_accepting_type_two'] is False
         assert data['attributes']['field_names']['submission1'] == 'poster'
         assert data['attributes']['field_names']['submission2'] == 'talk'
         assert '_/meetings/{}/'.format(meeting.endpoint) in data['links']['self']
@@ -64,6 +68,6 @@ class TestMeetingDetail:
 
         res = app.get(url)
         data = res.json['data']
-        assert data['attributes']['submission_1_email'] == ''
-        assert data['attributes']['submission_2_email'] == ''
+        assert data['attributes']['type_one_submission_email'] == ''
+        assert data['attributes']['type_two_submission_email'] == ''
         assert data['attributes']['active'] is False

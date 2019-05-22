@@ -36,8 +36,10 @@ class MeetingSerializer(JSONAPISerializer):
     field_names = ser.DictField(read_only=True)
     submissions_count = ser.SerializerMethodField()
     active = ser.BooleanField(read_only=True)
-    submission_1_email = ser.SerializerMethodField()
-    submission_2_email = ser.SerializerMethodField()
+    type_one_submission_email = ser.SerializerMethodField()
+    type_two_submission_email = ser.SerializerMethodField()
+    is_accepting_type_one = ser.BooleanField(source='poster', read_only=True)
+    is_accepting_type_two = ser.BooleanField(source='talk', read_only=True)
 
     submissions = RelationshipField(
         related_view='meetings:meeting-submissions',
@@ -54,10 +56,10 @@ class MeetingSerializer(JSONAPISerializer):
             return '{}-{}@osf.io'.format(obj.endpoint, obj.field_names.get(submission_field))
         return ''
 
-    def get_submission_1_email(self, obj):
+    def get_type_one_submission_email(self, obj):
         return self.format_submission_email(obj, 'submission1')
 
-    def get_submission_2_email(self, obj):
+    def get_type_two_submission_email(self, obj):
         return self.format_submission_email(obj, 'submission2')
 
     def get_absolute_url(self, obj):
