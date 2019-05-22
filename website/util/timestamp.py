@@ -11,6 +11,7 @@ import shlex
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 import traceback
 
@@ -314,6 +315,15 @@ def check_file_timestamp(uid, node, data):
         logger.exception(err)
         raise
 
+def sleep_raise_event(event, seconds):
+    time.sleep(seconds)
+    event.set()
+
+def lazy_sleep(seconds):
+    event = threading.Event()
+    threading.Thread(target=sleep_raise_event, args=(event, seconds)).start()
+    event.wait()
+
 @celery_app.task(bind=True, base=AbortableTask)
 def celery_verify_timestamp_token(self, uid, node_id):
     secs_to_wait = 60.0 / api_settings.TS_REQUESTS_PER_MIN
@@ -332,9 +342,8 @@ def celery_verify_timestamp_token(self, uid, node_id):
             if result is None:
                 continue
             # Do not let the task run too many requests
-            # An sleep would stop the celery process (and all its tasks)
             while time.time() < last_run + secs_to_wait:
-                pass
+                lazy_sleep(0.1)
     if self.is_aborted():
         logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
     celery_app.current_task.update_state(state='SUCCESS', meta={'progress': 100})
@@ -355,9 +364,8 @@ def celery_add_timestamp_token(self, uid, node_id, request_data):
         if result is None:
             continue
         # Do not let the task run too many requests
-        # An sleep would stop the celery process (and all its tasks)
         while time.time() < last_run + secs_to_wait:
-            pass
+            lazy_sleep(0.1)
     if self.is_aborted():
         logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
 
