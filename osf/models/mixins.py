@@ -34,6 +34,7 @@ from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, Re
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
 from website import settings, mails, language
+from rest_framework.exceptions import NotFound
 
 
 logger = logging.getLogger(__name__)
@@ -1642,7 +1643,10 @@ class FileTargetMixin(Loggable):
     def load_target_from_guid(cls, _id):
         valid_model_content_types = [subclass._meta.model_name for subclass in cls.__subclasses__()]
 
-        return Guid.objects.get(_id=_id, content_type__model__in=valid_model_content_types).referent
+        try:
+            return Guid.objects.get(_id=_id, content_type__model__in=valid_model_content_types).referent
+        except Guid.DoesNotExist:
+            raise NotFound('Unable to find specified guid.')
 
     @property
     def has_node_addon(self):
