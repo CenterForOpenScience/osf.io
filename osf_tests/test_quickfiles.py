@@ -1,196 +1,146 @@
 import mock
 import pytest
 
-from framework.auth.core import Auth
-from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
-from osf.exceptions import MaxRetriesError, NodeStateError
-from api_tests.utils import create_test_file
-from tests.utils import assert_items_equal
-from tests.base import get_default_metaschema
+from osf.exceptions import MaxRetriesError
+from api_tests.utils import create_test_quickfile, create_test_file, create_test_folder
 
-from . import factories
+from osf_tests.factories import ProjectFactory
+from django.contrib.contenttypes.models import ContentType
 
-pytestmark = pytest.mark.django_db
-
-
-def create_quickfile_node(instance):
-    """
-    Old Quickfile node creation for tests only, delete after use.
-    :param instance:
-    :return:
-    """
-    QuickFilesNode.objects.create_for_user(instance)
+from osf_tests.factories import AuthUserFactory
 
 
-@pytest.fixture()
+def bad_content_type():
+    return ContentType.objects.get_for_model(OsfStorageFile)
+
+
+def bad_file_node():
+    node = ProjectFactory()
+    return create_test_file(node, node.creator)
+
+
+def bad_node():
+    return ProjectFactory()
+
+
+@pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
-@mock.patch('osf.models.user._create_quickfiles', create_quickfile_node)
-def user():
-    return factories.AuthUserFactory()
-
-
-@pytest.fixture()
-def project(user, auth, fake):
-    ret = factories.ProjectFactory(creator=user)
-    ret.add_tag(fake.word(), auth=auth)
-    return ret
-
-
-@pytest.fixture()
-def auth(user):
-    return Auth(user)
-
-
-@pytest.mark.enable_quickfiles_creation
-@pytest.mark.skip(reason='QuickfilesNode is deprecated this should be removed after migrations are run.')
-@mock.patch('osf.models.user._create_quickfiles', create_quickfile_node)
-class TestQuickFilesNode:
+@pytest.mark.enable_implicit_clean
+class TestQuickFolder:
 
     @pytest.fixture()
-    def quickfiles(self, user):
-        return QuickFilesNode.objects.get(creator=user)
+    def file_node(self, user, project):
+        return create_test_file(project, user, 'test file')
 
-    def test_new_user_has_quickfiles(self, user):
-        quickfiles_node = QuickFilesNode.objects.filter(creator=user)
-        assert quickfiles_node.exists()
+    @pytest.fixture()
+    def folder_node(self, user, project):
+        return create_test_folder(project, 'test folder')
 
-    def test_quickfiles_is_public(self, quickfiles):
-        assert quickfiles.is_public
+    def test_new_user_has_quickfolder(self, user):
+        assert getattr(user, 'quickfolder', False)
+        assert user.quickfiles.count() == 0
 
-    def test_quickfiles_cannot_have_other_contributors(self, quickfiles, auth):
-        another_user = factories.UserFactory()
-        with pytest.raises(NodeStateError):
-            quickfiles.add_contributor(contributor=another_user, auth=auth)
+        # No QuickFolders in nodes
+        assert user.nodes.filter(type='osf.quickfolder').count() == 0
 
-    def test_quickfiles_cannot_be_private(self, quickfiles):
-        with pytest.raises(NodeStateError):
-            quickfiles.set_privacy('private')
-        assert quickfiles.is_public
-
-    def test_quickfiles_cannot_be_deleted(self, quickfiles, auth):
-        with pytest.raises(NodeStateError):
-            quickfiles.remove_node(auth=auth)
-        assert not quickfiles.is_deleted
-
-    def test_quickfiles_cannot_be_registered(self, quickfiles, auth):
-        with pytest.raises(NodeStateError):
-            quickfiles.register_node(get_default_metaschema(), auth, '', None)
-
-    def test_quickfiles_cannot_be_forked(self, quickfiles, auth):
-        with pytest.raises(NodeStateError):
-            quickfiles.fork_node(auth=auth)
-
-    def test_quickfiles_cannot_be_used_as_template(self, quickfiles, auth):
-        with pytest.raises(NodeStateError):
-            quickfiles.use_as_template(auth=auth)
-
-    def test_quickfiles_cannot_have_other_addons(self, quickfiles, auth):
-        with pytest.raises(NodeStateError):
-            quickfiles.add_addon('github', auth=auth)
+        # No old QuickFilesNode in nodes
+        assert user.nodes.filter(type='osf.quickfilesnode').count() == 0
 
     def test_quickfiles_title_has_users_fullname(self):
-        plain_user = factories.UserFactory(fullname='Kenny Omega')
-        s_user = factories.UserFactory(fullname='Cody Runnels')
+        plain_user = AuthUserFactory(fullname='Kenny Omega')
+        s_user = AuthUserFactory(fullname='Cody Runnels')
 
-        plain_user_quickfiles = QuickFilesNode.objects.get(creator=plain_user)
-        s_user_quickfiles = QuickFilesNode.objects.get(creator=s_user)
+        assert plain_user.quickfolder.title == "Kenny Omega's Quick Files"
+        assert s_user.quickfolder.title == "Cody Runnels' Quick Files"
 
-        assert plain_user_quickfiles.title == "Kenny Omega's Quick Files"
-        assert s_user_quickfiles.title == "Cody Runnels' Quick Files"
+    def test_quickfiles_add_file(self, user, file_node):
+        file = user.quickfolder.append_file('test')
+        assert user.quickfolder.children.count() == 1
+        assert user.quickfolder.children.get(name='test') == file
 
-    def test_quickfiles_title_updates_when_fullname_updated(self, quickfiles, user):
-        assert user.fullname in quickfiles.title
+        with pytest.raises(NotImplementedError):
+            user.quickfolder.append_folder('test')
 
+    def test_quickfiles_title_updates_when_fullname_updated(self, user):
         new_name = 'Hiroshi Tanahashi'
         user.fullname = new_name
         user.save()
 
-        quickfiles.refresh_from_db()
-        assert new_name in quickfiles.title
+        assert new_name in user.quickfolder.title
 
-    def test_quickfiles_moves_files_on_merge(self, user, quickfiles):
-        create_test_file(quickfiles, user, filename='Guerrillas_of_Destiny.pdf')
-        other_user = factories.UserFactory()
-        other_quickfiles = QuickFilesNode.objects.get(creator=other_user)
-        create_test_file(other_quickfiles, user, filename='Young_Bucks.pdf')
+    def test_quickfiles_moves_files_on_merge(self, user, user2):
+        create_test_quickfile(user, filename='Guerrillas_of_Destiny.pdf')
+        create_test_quickfile(user2, filename='Young_Bucks.pdf')
 
-        user.merge_user(other_user)
+        user.merge_user(user2)
         user.save()
 
         stored_files = OsfStorageFile.objects.all()
         assert stored_files.count() == 2
         for stored_file in stored_files:
-            assert stored_file.target == quickfiles
-            assert stored_file.parent.target == quickfiles
+            assert stored_file.target == user
+            assert stored_file.parent == user.quickfolder
 
-    def test_quickfiles_moves_files_on_triple_merge_with_name_conflict(self, user, quickfiles):
+    def test_quickfiles_moves_files_on_triple_merge_with_name_conflict(self, user, user2, user3):
         name = 'Woo.pdf'
-        other_user = factories.UserFactory()
-        third_user = factories.UserFactory()
 
-        create_test_file(quickfiles, user, filename=name)
-        create_test_file(QuickFilesNode.objects.get(creator=other_user), other_user, filename=name)
-        create_test_file(QuickFilesNode.objects.get(creator=third_user), third_user, filename=name)
+        create_test_quickfile(user, filename=name)
+        create_test_quickfile(user2, filename=name)
+        create_test_quickfile(user3, filename=name)
 
-        user.merge_user(other_user)
+        user.merge_user(user2)
         user.save()
 
-        user.merge_user(third_user)
+        user.merge_user(user3)
         user.save()
 
-        actual_filenames = list(OsfStorageFile.objects.all().values_list('name', flat=True))
-        expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf']
+        actual_filenames = set(OsfStorageFile.objects.all().values_list('name', flat=True))
+        expected_filenames = {'Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf'}
+        assert actual_filenames == expected_filenames
 
-        assert_items_equal(actual_filenames, expected_filenames)
-
-    def test_quickfiles_moves_files_on_triple_merge_with_name_conflict_with_digit(self, user, quickfiles):
+    def test_quickfiles_moves_files_on_triple_merge_with_name_conflict_with_digit(self, user, user2, user3):
         name = 'Woo (1).pdf'
-        other_user = factories.UserFactory()
-        third_user = factories.UserFactory()
 
-        create_test_file(quickfiles, user, filename=name)
-        create_test_file(QuickFilesNode.objects.get(creator=other_user), other_user, filename=name)
-        create_test_file(QuickFilesNode.objects.get(creator=third_user), third_user, filename=name)
+        create_test_quickfile(user, filename=name)
+        create_test_quickfile(user2, filename=name)
+        create_test_quickfile(user3, filename=name)
 
-        user.merge_user(other_user)
+        user.merge_user(user2)
         user.save()
 
-        user.merge_user(third_user)
+        user.merge_user(user3)
         user.save()
 
-        actual_filenames = list(OsfStorageFile.objects.all().values_list('name', flat=True))
-        expected_filenames = ['Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
-        assert_items_equal(actual_filenames, expected_filenames)
+        actual_filenames = set(OsfStorageFile.objects.all().values_list('name', flat=True))
+        expected_filenames = {'Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf'}
+        assert actual_filenames == expected_filenames
 
-    def test_quickfiles_moves_destination_quickfiles_has_weird_numbers(self, user, quickfiles):
-        other_user = factories.UserFactory()
-        third_user = factories.UserFactory()
+    def test_quickfiles_moves_destination_quickfiles_has_weird_numbers(self, user, user2, user3):
 
-        create_test_file(quickfiles, user, filename='Woo (1).pdf')
-        create_test_file(quickfiles, user, filename='Woo (3).pdf')
+        create_test_quickfile(user, filename='Woo (1).pdf')
+        create_test_quickfile(user, filename='Woo (3).pdf')
 
-        create_test_file(QuickFilesNode.objects.get(creator=other_user), other_user, filename='Woo.pdf')
-        create_test_file(QuickFilesNode.objects.get(creator=third_user), other_user, filename='Woo.pdf')
+        create_test_quickfile(user2, filename='Woo.pdf')
+        create_test_quickfile(user3, filename='Woo.pdf')
 
-        user.merge_user(other_user)
+        user.merge_user(user2)
         user.save()
 
-        user.merge_user(third_user)
+        user.merge_user(user3)
         user.save()
 
-        actual_filenames = list(quickfiles.files.all().values_list('name', flat=True))
-        expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
+        actual_filenames = set(user.quickfiles.all().values_list('name', flat=True))
+        expected_filenames = {'Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf'}
 
-        assert_items_equal(actual_filenames, expected_filenames)
+        assert actual_filenames == expected_filenames
 
     @mock.patch('osf.models.user.MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS', 1)
-    def test_quickfiles_moves_errors_after_max_renames(self, user, quickfiles):
-        create_test_file(quickfiles, user, filename='Woo (1).pdf')
-        create_test_file(quickfiles, user, filename='Woo (2).pdf')
+    def test_quickfiles_moves_errors_after_max_renames(self, user, user2):
+        create_test_quickfile(user, filename='Woo (1).pdf')
+        create_test_quickfile(user, filename='Woo (2).pdf')
 
-        other_user = factories.UserFactory()
-        create_test_file(QuickFilesNode.objects.get(creator=other_user), other_user, filename='Woo (1).pdf')
+        create_test_quickfile(user2, filename='Woo (1).pdf')
 
         with pytest.raises(MaxRetriesError):
-            user.merge_user(other_user)
+            user.merge_user(user2)
