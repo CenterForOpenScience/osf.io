@@ -756,7 +756,19 @@ class TestFuncOfMAPCore(OsfTestCase):
         assert_equal(project2a.is_deleted, True)
         project2a.delete()
 
-    #TODO test_mapcore_get_my_groups()
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
+    @mock.patch('requests.get')
+    def test_mapcore_get_my_groups(self, mock_get):
+        res = requests.Response()
+        res.status_code = requests.codes.ok
+        res._content = '{"result": {"groups": [ {"group_name": "fake_group_name1", "group_key": "fake_group_key1", "active": 1, "public": 1, "open_member": 1} ] }, "status": {"error_code": 0} }'
+        mock_get.return_value = res
+        mapcore = MAPCore(self.me)
+        mapcore.get_my_groups()
+        args, kwargs = mock_get.call_args
+        assert_equal(args[0].endswith('/mygroup'), True)
 
 @pytest.mark.django_db
 class TestViewsWithMAPCore(OsfTestCase):
