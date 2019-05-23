@@ -22,6 +22,7 @@ from addons.osfstorage.models import Region
 from django.http import HttpResponseRedirect
 from api.base import settings as api_settings
 
+
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'institutions/list.html'
