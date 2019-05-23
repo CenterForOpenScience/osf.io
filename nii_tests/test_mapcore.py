@@ -304,6 +304,32 @@ class TestFuncOfMAPCore(OsfTestCase):
         assert_equal(args[3], self.user2.eppn)
         assert_equal(args[4], MAPCore.MODE_MEMBER)
 
+        self.project.remove_contributor(self.user2, auth=Auth(self.me))
+        self.project.save()
+
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
+    @mock.patch('nii.mapcore.mapcore_get_extended_group_info')
+    @mock.patch('nii.mapcore.mapcore_add_to_group')
+    @mock.patch('nii.mapcore.mapcore_remove_from_group')
+    @mock.patch('nii.mapcore.mapcore_edit_member')
+    def test_sync_map_ignore_non_registered_osfuser(self, mock_edit, mock_remove, mock_add, mock_get_grinfo):
+        from nii.mapcore import mapcore_sync_map_group
+
+        mock_get_grinfo.return_value = {
+            'group_key': 'fake_group_key', 'group_name': 'fake_group_name',
+            'group_member_list': [
+                {'eppn': self.me.eppn, 'admin': MAPCore.MODE_ADMIN},
+                {'eppn': 'OTHER_USER+' + self.user2.eppn, 'admin': MAPCore.MODE_MEMBER}]}
+        mapcore_sync_map_group(self.me, self.project,
+                               title_desc=False, contributors=True,
+                               use_raise=True)
+        assert_equal(mock_get_grinfo.call_count, 1)
+        assert_equal(mock_add.call_count, 0)
+        assert_equal(mock_remove.call_count, 0)  # not called
+        assert_equal(mock_edit.call_count, 0)
+
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
     @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
@@ -383,8 +409,6 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_edit_member(self.me, self.project, group_key, self.me.eppn, MAPCore.MODE_ADMIN)
         assert_equal(mock_remove.call_count, 1)
         assert_equal(mock_add.call_count, 1)
-
-    #TODO test_mapcore_add_non_registered_osfuser()
 
     #TODO def test_sync_rdm_my_projects():
     #TODO def test_sync_rdm_group():
