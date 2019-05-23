@@ -141,7 +141,9 @@ class TestFuncOfMAPCore(OsfTestCase):
         self.project.save()
 
     def test_sync_rdm_project_or_map_group(self):
-        from nii.mapcore import mapcore_sync_rdm_project_or_map_group
+        from nii.mapcore import (mapcore_sync_rdm_project_or_map_group,
+                                 mapcore_is_sync_time_expired,
+                                 mapcore_clear_sync_time)
 
         assert_equal(self.project.map_group_key, None)
         with mock.patch('nii.mapcore.mapcore_sync_map_new_group') as mock1, \
@@ -160,12 +162,21 @@ class TestFuncOfMAPCore(OsfTestCase):
             assert_equal(mock1.call_count, 1)
             assert_equal(mock2.call_count, 1)
 
+        mapcore_clear_sync_time(self.project)
         with mock.patch('nii.mapcore.mapcore_is_on_standby_to_upload') as mock1, \
              mock.patch('nii.mapcore.mapcore_sync_rdm_project') as mock2:
+            assert_equal(mapcore_is_sync_time_expired(self.project), True)
             mock1.return_value = False
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
             assert_equal(mock1.call_count, 1)
             assert_equal(mock2.call_count, 1)
+            # reload
+            p2 = AbstractNode.objects.get(guids___id=self.project._id)
+            self.project = p2
+            assert_equal(mapcore_is_sync_time_expired(self.project), False)
+            mapcore_sync_rdm_project_or_map_group(self.me, self.project)
+            assert_equal(mock1.call_count, 1)  # not incremented
+            assert_equal(mock2.call_count, 1)  # not incremented
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -817,12 +828,11 @@ class TestViewsWithMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_view_project')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
-    #@mock.patch('framework.auth.decorators.mapcore_sync_rdm_project_or_map_group')  # not work
+    #@mock.patch('framework.auth.decorators.mapcore_sync_rdm_project_or_map_group')  # cannot hook
     def test_view_project(self, mock_sync):
         res = self.app.get(self.project_url, auth=self.me.auth)
         assert_equal(res.status_code, 200)
         assert_equal(mock_sync.call_count, 2)
-        # TODO mapcore_is_sync_time_expired, skip?
 
     ### from tests/test_views.py::test_edit_node_title
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_edit_node_title')

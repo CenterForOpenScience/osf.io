@@ -1016,6 +1016,16 @@ def mapcore_unset_standby_to_upload(node):
 
 SYNC_CACHE_TIME = 10  # sec.
 
+def mapcore_clear_sync_time(node):
+    try:
+        with transaction.atomic():
+            n = Node.objects.select_for_update().get(guids___id=node._id)
+            n.mapcore_sync_time = None
+            n.save()
+    except Exception as e:
+        logger.error('mapcore_clear_sync_time: {}'.format(utf8(str(e))))
+        # ignore
+
 def mapcore_set_sync_time(node):
     try:
         with transaction.atomic():
