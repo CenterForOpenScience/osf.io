@@ -30,7 +30,7 @@ def preprint_csl(preprint, node):
     csl = node.csl
 
     csl['id'] = preprint._id
-    csl['publisher'] = 'OSF Preprints' if preprint.provider.name == 'Open Science Framework' else preprint.provider.name
+    csl['publisher'] = 'OSF Preprints' if preprint.provider.name == 'GakuNin RDM' else preprint.provider.name
     csl['URL'] = display_absolute_url(preprint)
 
     if preprint.original_publication_date:

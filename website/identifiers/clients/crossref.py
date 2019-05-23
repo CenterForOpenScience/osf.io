@@ -21,7 +21,7 @@ CROSSREF_RELATIONS = 'http://www.crossref.org/relations.xsd'
 CROSSREF_SCHEMA_VERSION = '4.4.1'
 JATS_NAMESPACE = 'http://www.ncbi.nlm.nih.gov/JATS1'
 XSI = 'http://www.w3.org/2001/XMLSchema-instance'
-CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
+CROSSREF_DEPOSITOR_NAME = 'GakuNin RDM'
 
 CROSSREF_SUFFIX_LIMIT = 10
 CROSSREF_SURNAME_LIMIT = 60
@@ -69,7 +69,7 @@ class CrossRefClient(AbstractIdentifierClient):
                 element.depositor_name(CROSSREF_DEPOSITOR_NAME),
                 element.email_address(settings.CROSSREF_DEPOSITOR_EMAIL)
             ),
-            element.registrant('Center for Open Science')
+            element.registrant('National Institute of Informatics')
         )
         # if this is a batch update, let build_posted_content determine status for each preprint
         status = status if not is_batch else None

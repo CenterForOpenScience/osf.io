@@ -144,7 +144,7 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 # support email
 OSF_SUPPORT_EMAIL = 'nii-rdmp@meatmail.jp'
 # contact email
-OSF_CONTACT_EMAIL = 'contact@osf.io'
+OSF_CONTACT_EMAIL = 'rcos-office@nii.ac.jp'
 
 # prereg email
 PREREG_EMAIL = 'prereg@cos.io'
@@ -169,10 +169,10 @@ SENDGRID_EMAIL_WHITELIST = []
 MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
 ENABLE_EMAIL_SUBSCRIPTIONS = True
-MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
+MAILCHIMP_GENERAL_LIST = 'GakuNin RDM General'
 
 #Triggered emails
-OSF_HELP_LIST = 'Open Science Framework Help'
+OSF_HELP_LIST = 'GakuNin RDM Help'
 ENABLE_OSF_HELP = True
 PREREG_AGE_LIMIT = timedelta(weeks=12)
 PREREG_WAIT_TIME = timedelta(weeks=2)
@@ -1924,16 +1924,16 @@ FOOTER_LINKS = {
     'terms': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419',
     'privacyPolicy': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
     'cookies': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
-    'cos': 'https://cos.io',
+    'cos': 'https://www.nii.ac.jp/',
     'statusPage': 'https://status.cos.io/',
     'apiDocs': 'https://developer.osf.io/',
     'topGuidelines': 'http://cos.io/top/',
-    'rpp': 'https://osf.io/ezcuj/wiki/home/',
-    'rpcb': 'https://osf.io/e81xl/wiki/home/',
+    'rpp': 'https://rdm.nii.ac.jp/ezcuj/wiki/home/',
+    'rpcb': 'https://rdm.nii.ac.jp/e81xl/wiki/home/',
     'twitter': 'http://twitter.com/OSFramework',
     'facebook': 'https://www.facebook.com/CenterForOpenScience/',
     'googleGroup': 'https://groups.google.com/forum/#!forum/openscienceframework',
-    'github': 'https://www.github.com/centerforopenscience',
+    'github': 'https://github.com/RCOSDP',
 }
 
 
@@ -1944,6 +1944,8 @@ OSF_PAGE_NAME = 'OSF'
 
 # use ePPN (eduPersonPrincipalName) for login (OSFUser.eppn)
 LOGIN_BY_EPPN = False
+USE_EMBEDDED_DS = False
+EMBEDDED_DS_URL = 'https://test-ds.gakunin.nii.ac.jp/WAYF/embedded-wayf.js'
 
 #USER_TIMEZONE = 'Asia/Tokyo'
 #USER_LOCALE = 'ja'

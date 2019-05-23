@@ -1520,14 +1520,17 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 
 function _fangornTitleColumn(item, col) {
     var tb = this;
-    if(item.data.nodeRegion){
-        if(window.contextVars.isCustomStorageLocation){
+    if (item.data.nodeRegion && item.data.provider !== 'osfstorage') {
+        return _fangornTitleColumnHelper(tb, item, col, item.data.name + ' (' + item.data.nodeRegion + ')', '/', 'fg-file-links');
+    }
+    if (item.data.nodeRegion) {
+        if (window.contextVars.isCustomStorageLocation) {
             return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion, '/', 'fg-file-links');
         }
-        else if(item.data.nodeRegion===item.data.addonFullname){
+        else if (item.data.nodeRegion===item.data.addonFullname) {
             return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion, '/', 'fg-file-links');
         }
-        else{
+        else {
             return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');
         }
     }

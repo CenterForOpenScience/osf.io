@@ -12,9 +12,9 @@
     <br>
     Sincerely,<br>
     <br>
-    The OSF Team<br>
+    The GRDM Team<br>
     <br>
-    Want more information? Visit https://osf.io/ to learn about OSF, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
+    Want more information? Visit https://rdm.nii.ac.jp/ to learn about GRDM, or https://nii.ac.jp/ for information about its supporting organization, the National Institute of Informatics.<br>
     <br>
     Questions? Email ${osf_contact_email}<br>
 

@@ -21,7 +21,7 @@ from osf.models.institution import Institution
 from framework.auth import get_or_create_user
 from framework.auth.core import get_user
 from admin.base.settings import SHIB_EPPN_SCOPING_SEPARATOR
-from admin.base.settings import ENABLE_LOGIN_FORM, ENABLE_SHB_LOGIN
+from admin.base.settings import ENABLE_LOGIN_FORM, ENABLE_SHB_LOGIN, EMBEDDED_DS_URL
 from django.views.generic.base import RedirectView
 from api.institutions.authentication import login_by_eppn
 from website.views import userkey_generation_check, userkey_generation
@@ -64,6 +64,7 @@ class LoginView(FormView):
         context = super(LoginView, self).get_context_data(**kwargs)
         context['enable_form'] = ENABLE_LOGIN_FORM
         context['eneble_shib_login'] = ENABLE_SHB_LOGIN
+        context['embedded_ds_url'] = EMBEDDED_DS_URL
         return context
 
 class ShibLoginView(RedirectView):
@@ -84,12 +85,8 @@ class ShibLoginView(RedirectView):
             return redirect('auth:login')
         eppn_user = get_user(eppn=eppn)
         if eppn_user:
-            try:
-                others = eppn_user.affiliated_institutions.exclude(id=institution.id).get()
-            except Institution.DoesNotExist:
-                pass
-            else:
-                eppn_user.affiliated_institutions.remove(others)
+            for other in eppn_user.affiliated_institutions.exclude(id=institution.id):
+                eppn_user.affiliated_institutions.remove(other)
 
             eppn_user.affiliated_institutions.add(institution)
             if 'GakuNinRDMAdmin' in request.environ['HTTP_AUTH_ENTITLEMENT']:

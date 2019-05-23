@@ -210,11 +210,12 @@ CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
 )
 CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
     'confirm_moderation',
-    subject='Open Science Framework Account Verification, {}'.format(provider.name)
+    subject='GakuNin RDM Account Verification, {}'.format(provider.name)
 )
 
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
+REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your GakuNin RDM account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 
 
@@ -242,6 +243,10 @@ CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
     subject='You have been added as a moderator for {}'.format(provider.name)
+)
+PREPRINT_CONFIRMATION_DEFAULT = Mail(
+    'preprint_confirmation_default',
+    subject="You've shared a preprint on GakuNin RDM preprints"
 )
 CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',

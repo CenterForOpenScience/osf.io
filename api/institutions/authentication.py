@@ -4,7 +4,7 @@ import jwe
 import jwt
 import waffle
 
-from django.utils import timezone
+#from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -129,8 +129,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.suffix = suffix
             user.update_date_last_login()
 
-            # Relying on front-end validation until `accepted_tos` is added to the JWT payload
-            user.accepted_terms_of_service = timezone.now()
+            ## Relying on front-end validation until `accepted_tos` is added to the JWT payload
+            #user.accepted_terms_of_service = timezone.now()
             if settings.USER_TIMEZONE:
                 user.timezone = settings.USER_TIMEZONE
 
@@ -170,12 +170,8 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # update every login.
         if USE_EPPN:
-            try:
-                others = user.affiliated_institutions.exclude(id=institution.id).get()
-            except Institution.DoesNotExist:
-                pass
-            else:
-                user.affiliated_institutions.remove(others)
+            for other in user.affiliated_institutions.exclude(id=institution.id):
+                user.affiliated_institutions.remove(other)
         if not user.is_affiliated_with_institution(institution):
             user.affiliated_institutions.add(institution)
             user.save()

@@ -313,8 +313,9 @@ FCM_SETTINGS = {
 SHIB_EPPN_SCOPING_SEPARATOR = '@'
 
 # hide embededDS, login user form in Adoministrator login page
-ENABLE_SHB_LOGIN = True
-ENABLE_LOGIN_FORM = False
+ENABLE_LOGIN_FORM = True
+ENABLE_SHB_LOGIN = False
+EMBEDDED_DS_URL = osf_settings.EMBEDDED_DS_URL
 
 # mail address uses mail from rdm_announcement
 ANNOUNCEMENT_EMAIL_FROM = 'noreply@rdm.rcos.nii.ac.jp'

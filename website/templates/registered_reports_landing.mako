@@ -144,7 +144,7 @@
       </table>
     </div>
     <div class="text-center">
-        You can learn more about Registered Reports <a href="https://cos.io/rr"> here</a>. If you do not have IPA from a journal, you can still preregister your research. Learn more <a href="https://cos.io/prereg"> here</a>.
+        You can learn more about Registered Reports <a href="https://nii.ac.jp/rr"> here</a>. If you do not have IPA from a journal, you can still preregister your research. Learn more <a href="https://nii.ac.jp/prereg"> here</a>.
     </div>
 
 </div>
