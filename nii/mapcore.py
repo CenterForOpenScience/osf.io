@@ -874,11 +874,14 @@ def mapcore_sync_rdm_my_projects0(user):
       group_keyがセットされていない:
         つまりまだmAP側グループと関連付けられていない
         プロジェクト画面遷移時にmAPグループを作成するので、ここでは何もしない
-      mAP側にグループが存在:
-        つまりcontributors不整合状態(所属状態が一致していないため)
-        RDM側に反映 (またはmAP側に反映すべき情報がある場合はmAP側へ反映)
-      mAP側にグループが無い:
-        プロジェクトをis_deleted=Trueにする
+
+      group_keyがセットされている:
+        (以下、mapcore_sync_rdm_projectsで処理)
+        mAP側にグループが存在:
+          つまりcontributors不整合状態(所属状態が一致していないため)
+          RDM側に反映 (またはmAP側に反映すべき情報がある場合はmAP側へ反映)
+        mAP側にグループが無い:
+          プロジェクトをis_deleted=Trueにする
 
     :param user: OSFUser
     :return: なし。エラー時には例外投げる
@@ -891,6 +894,7 @@ def mapcore_sync_rdm_my_projects0(user):
         locker.lock_user(user)
 
         my_rdm_projects = {}
+        sync_id_list = []
         for project in Node.objects.filter(contributor__user__id=user.id):
             if project.map_group_key:
                 my_rdm_projects[project.map_group_key] = project
@@ -925,7 +929,7 @@ def mapcore_sync_rdm_my_projects0(user):
                         logger.error('cannot create RDM project for mAP group [' + grp['group_name'] + '].  skip.')
                         #TODO log?
                         continue
-                    logger.info('New node is created from mAP group [' + grp['group_name'] + '] (' + grp['group_key'] + ')')
+                    logger.info('New node is created from mAP group [' + grp['group_name'] + '] (' + group_key + ')')
                     # copy info and members to RDM
                     mapcore_sync_rdm_project(user, node,
                                              title_desc=True,
@@ -942,18 +946,26 @@ def mapcore_sync_rdm_my_projects0(user):
                         logger.debug('MAPCoreException: {}'.format(utf8(str(e))))
                         raise
 
-            if project_exists:
+            if project_exists and not node.is_deleted:
                 # different contributors or title
-                if my_rdm_projects.get(group_key) is None \
-                   or node.title != utf8dec(grp['group_name']):
-                    logger.debug('different contributors or title')
+                if my_rdm_projects.get(group_key) is None:
+                    logger.debug('different contributors: group_key={}'.format(node.map_group_key))
                     mapcore_sync_rdm_project_or_map_group(user, node)
+                    sync_id_list.append(node._id)
+                elif node.title != utf8dec(grp['group_name']):
+                    #logger.debug('node.title={}, grp[group_name]={}'.format(utf8(node.title), grp['group_name']))
+                    logger.debug('different title: group_key={}'.format(node.map_group_key))
+                    mapcore_sync_rdm_project_or_map_group(user, node)
+                    sync_id_list.append(node._id)
 
         for group_key, project in my_rdm_projects.items():
             if project.is_deleted:
-                logger.info('RDM project [{} ({})] was deleted. (skipped)'.format(
-                    utf8(project.title), project._id))
+                logger.info('RDM project [{} ({})] was deleted. (skipped)'.format(utf8(project.title), project._id))
                 continue
+            if project._id in sync_id_list:
+                continue
+            if project.map_group_key is None:
+                logger.info('RDM project [{} ({})] does not have map_group_key. (skipped, synchronized at the time of access)'.format(utf8(project.title), project._id))
 
             grp = my_map_groups.get(project.map_group_key)
             if grp:

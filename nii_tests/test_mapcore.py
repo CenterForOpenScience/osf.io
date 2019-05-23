@@ -126,19 +126,18 @@ class TestFuncOfMAPCore(OsfTestCase):
         self.me.map_profile = fake_map_profile()
         self.me.save()
         BookmarkCollectionFactory(creator=self.me)
-        self.project = ProjectFactory(
-            creator=self.me,
-            is_public=True,
-            title=fake.bs()
-        )
 
         self.user2 = AuthUserFactory()
         self.user2.eppn = 'USER2+' + fake_email()
         self.user2.map_profile = fake_map_profile()
         self.user2.save()
 
+        self.project = ProjectFactory(
+            creator=self.me,
+            is_public=True,
+            title=fake.bs()
+        )
         self.project_url = self.project.web_url_for('view_project')
-        # self.project.add_contributor(self.user2, auth=Auth(self.me))
         self.project.save()
 
     def test_sync_rdm_project_or_map_group(self):
@@ -604,7 +603,132 @@ class TestFuncOfMAPCore(OsfTestCase):
         assert_equal(mock_remove.call_count, 0)
         assert_equal(mock_edit.call_count, 0)
 
-    #TODO def test_sync_rdm_my_projects():
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
+    @mock.patch('nii.mapcore_api.MAPCore.get_my_groups')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_project')
+    def test_sync_rdm_my_projects(self, mock_sync_rdm, mock_or, mock_mygr):
+        from django.core.exceptions import ObjectDoesNotExist
+        from nii.mapcore import mapcore_sync_rdm_my_projects
+
+        # test #1 : same groups, same title
+        mock_mygr.return_value = {
+            'result': {'groups': [
+                {'group_name': 'fake_group_name1',
+                 'group_key': 'fake_group_key1',
+                 'active': 1, 'public': 1,
+                 'open_member': OPEN_MEMBER_PUBLIC}]}}
+        self.project.title = 'fake_group_name1'
+        self.project.map_group_key = 'fake_group_key1'
+        self.project.save()
+        mapcore_sync_rdm_my_projects(self.me, use_raise=True)
+        assert_equal(mock_mygr.call_count, 1)
+        assert_equal(mock_or.call_count, 0)
+        assert_equal(mock_sync_rdm.call_count, 0)
+        mock_mygr.call_count = 0
+
+        # test #2 : same groups, different title
+        self.project.title = 'fake_group_name1' + randstr(4)
+        self.project.save()
+        mapcore_sync_rdm_my_projects(self.me, use_raise=True)
+        assert_equal(mock_mygr.call_count, 1)
+        assert_equal(mock_or.call_count, 1)
+        assert_equal(mock_sync_rdm.call_count, 0)
+        mock_mygr.call_count = 0
+        mock_or.call_count = 0
+
+        # test #3 : mAP group only, RDM project exists
+        mock_mygr.return_value = {
+            'result': {'groups': [
+                {'group_name': 'fake_group_name1',
+                 'group_key': 'fake_group_key1',
+                 'active': 1, 'public': 1,
+                 'open_member': OPEN_MEMBER_PUBLIC},
+                {'group_name': 'fake_group_name2',
+                 'group_key': 'fake_group_key2',
+                 'active': 1, 'public': 1,
+                 'open_member': OPEN_MEMBER_PUBLIC}]}}
+        self.project.title = 'fake_group_name1'
+        self.project.save()
+        project2 = ProjectFactory(
+            creator=self.user2,
+            is_public=True,
+            title='fake_group_name2'
+        )
+        project2.map_group_key = 'fake_group_key2'
+        project2.save()  # self.me is not a member.
+        mapcore_sync_rdm_my_projects(self.me, use_raise=True)
+        assert_equal(mock_mygr.call_count, 1)
+        assert_equal(mock_or.call_count, 1)
+        assert_equal(mock_sync_rdm.call_count, 0)
+        mock_mygr.call_count = 0
+        mock_or.call_count = 0
+        project2.delete()
+
+        # test #4 : mAP group only, RDM project does not exist
+        mock_mygr.return_value = {
+            'result': {'groups': [
+                {'group_name': 'fake_group_name1',
+                 'group_key': 'fake_group_key1',
+                 'active': 1, 'public': 1,
+                 'open_member': OPEN_MEMBER_PUBLIC},
+                {'group_name': 'fake_group_name2',
+                 'group_key': 'fake_group_key2',
+                 'active': 1, 'public': 1,
+                 'open_member': OPEN_MEMBER_PUBLIC}]}}
+        # self.project.title = 'fake_group_name1'
+        # self.project.map_group_key = 'fake_group_key1'
+        # self.project.save()
+        with assert_raises(ObjectDoesNotExist):
+            AbstractNode.objects.get(map_group_key='fake_group_key2')
+        with mock.patch('nii.mapcore.mapcore_get_extended_group_info') as mock_gi:
+            mock_gi.return_value = {
+                'group_name': 'fake_group_name2',
+                'group_key': 'fake_group_key2',
+                'introduction': 'fake_introduction2',
+                'active': 1, 'public': 1, 'open_member': OPEN_MEMBER_PUBLIC,
+                'group_admin_eppn': [self.me.eppn],
+                'group_member_list': [
+                    {'eppn': self.me.eppn, 'admin': MAPCore.MODE_ADMIN,
+                     'is_admin': True},
+                    {'eppn': self.user2.eppn, 'admin': MAPCore.MODE_MEMBER,
+                     'is_admin': False}]}
+            mapcore_sync_rdm_my_projects(self.me, use_raise=True)
+            assert_equal(mock_gi.call_count, 1)
+            assert_equal(mock_mygr.call_count, 1)
+            assert_equal(mock_or.call_count, 0)
+            assert_equal(mock_sync_rdm.call_count, 1)
+        n = AbstractNode.objects.get(map_group_key='fake_group_key2')
+        n.delete()
+        mock_mygr.call_count = 0
+        mock_sync_rdm.call_count = 0
+
+        # test #5 : RDM project only, no map_group_key
+        mock_mygr.return_value = {'result': {'groups': []}}
+        self.project.title = 'fake_group_name1'
+        self.project.map_group_key = None
+        self.project.save()
+        mapcore_sync_rdm_my_projects(self.me, use_raise=True)
+        assert_equal(mock_mygr.call_count, 1)
+        assert_equal(mock_or.call_count, 0)  # not called
+        assert_equal(mock_sync_rdm.call_count, 0)
+        mock_mygr.call_count = 0
+
+        # test #6 : RDM project only, has map_group_key
+        mock_mygr.return_value = {'result': {'groups': []}}
+        self.project.title = 'fake_group_name1'
+        self.project.map_group_key = 'fake_group_key1'
+        self.project.save()
+        mapcore_sync_rdm_my_projects(self.me, use_raise=True)
+        assert_equal(mock_mygr.call_count, 1)
+        assert_equal(mock_or.call_count, 1)
+        assert_equal(mock_sync_rdm.call_count, 0)
+        mock_mygr.call_count = 0
+
+    #TODO test_mapcore_sync_rdm_project_no_map_group()
+    #TODO test_mapcore_get_my_groups()
 
 @pytest.mark.django_db
 class TestViewsWithMAPCore(OsfTestCase):
