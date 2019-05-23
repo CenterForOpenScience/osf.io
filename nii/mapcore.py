@@ -516,16 +516,16 @@ def mapcore_get_extended_group_info(access_user, node, group_key, base_grp=None,
     #      "管理者の名前",
     #      "管理者の名前"
     #  ],
-    #  "group_admin_eppn": [      <-- これが欲しい
+    #  "group_admin_eppn": [
     #      "管理者のeppn",
     #      "管理者のeppn"
     #  ],
-    #  "group_member_list": [     <-- メンバーのリスト(管理者を探す)
+    #  "group_member_list": [
     #   {
     #    "eppn": "test010@nii.ac.jp",
     #    "account_name": "hoge",
     #    "mail": "hoge@gmail.com",
-    #    "admin": 2,
+    #    "admin": 2,   # 2=管理者, 0=一般メンバー
     #    "org_name": "boo",
     #    "university": "foo",
     #    "created_at": "2018-05-16 18:30:17",

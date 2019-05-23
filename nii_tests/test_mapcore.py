@@ -12,6 +12,8 @@ from django.utils import timezone
 from framework.auth.core import Auth
 from osf.models import OSFUser, AbstractNode, NodeLog
 from osf.models.mapcore import MAPProfile
+from osf.utils.permissions import (CREATOR_PERMISSIONS,
+                                   DEFAULT_CONTRIBUTOR_PERMISSIONS)
 from api.base.settings.defaults import API_BASE
 from tests.base import fake, OsfTestCase
 from website.util import web_url_for
@@ -19,7 +21,7 @@ from website.profile.utils import add_contributor_json
 from nii.mapcore import (mapcore_is_enabled,
                          mapcore_api_is_available,
                          mapcore_receive_authcode)
-from nii.mapcore_api import (MAPCoreTokenExpired)
+from nii.mapcore_api import (MAPCore, MAPCoreTokenExpired)
 
 from tests.utils import assert_latest_log
 from tests.json_api_test_app import JSONAPITestApp
@@ -112,18 +114,25 @@ class TestFuncOfMAPCore(OsfTestCase):
 
     def setUp(self):
         OsfTestCase.setUp(self)
+
         self.me = AuthUserFactory()
-        self.me.eppn = fake_email()
+        self.me.eppn = 'ME-' + fake_email()
         self.me.map_profile = fake_map_profile()
+        self.me.save()
         BookmarkCollectionFactory(creator=self.me)
         self.project = ProjectFactory(
             creator=self.me,
             is_public=True,
             title=fake.bs()
         )
-        self.project_url = self.project.web_url_for('view_project')
+
         self.user2 = AuthUserFactory()
-        self.project.add_contributor(self.user2, auth=Auth(self.me))
+        self.user2.eppn = 'USER2' + fake_email()
+        self.user2.map_profile = fake_map_profile()
+        self.user2.save()
+
+        self.project_url = self.project.web_url_for('view_project')
+        # self.project.add_contributor(self.user2, auth=Auth(self.me))
         self.project.save()
 
     def test_sync_rdm_project_or_map_group(self):
@@ -193,11 +202,116 @@ class TestFuncOfMAPCore(OsfTestCase):
         assert_equal(args[0].endswith('/group/' + self.project.map_group_key),
                      True)
 
-    #def test_sync_map_group_contributors(self, mock_post):
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('nii.mapcore.mapcore_get_extended_group_info')
+    @mock.patch('nii.mapcore.mapcore_add_to_group')
+    @mock.patch('nii.mapcore.mapcore_remove_from_group')
+    @mock.patch('nii.mapcore.mapcore_edit_member')
+    def test_sync_map_group_contributors(self, mock_edit, mock_remove, mock_add, mock_get_grinfo):
+        from nii.mapcore import mapcore_sync_map_group
+
+        # test #1 : same member list
+        mock_get_grinfo.return_value = {
+            'group_key': 'fake_group_key', 'group_name': 'fake_group_name',
+            'group_member_list': [
+                {'eppn': self.me.eppn, 'admin': MAPCore.MODE_ADMIN},
+                {'eppn': self.user2.eppn, 'admin': MAPCore.MODE_MEMBER}]}
+        self.project.map_group_key = 'fake_group_key'
+        self.project.set_permissions(self.me, CREATOR_PERMISSIONS, save=False)
+        self.project.add_contributor(self.user2, DEFAULT_CONTRIBUTOR_PERMISSIONS, save=False)
+        self.project.save()
+        mapcore_sync_map_group(self.me, self.project,
+                               title_desc=False, contributors=True,
+                               use_raise=True)
+        assert_equal(mock_get_grinfo.call_count, 1)
+        assert_equal(mock_add.call_count, 0)
+        assert_equal(mock_remove.call_count, 0)
+        assert_equal(mock_edit.call_count, 0)
+        mock_get_grinfo.call_count = 0
+
+        # test #2 : add
+        mock_get_grinfo.return_value = {
+            'group_key': 'fake_group_key', 'group_name': 'fake_group_name',
+            'group_member_list': [
+                {'eppn': self.me.eppn, 'admin': MAPCore.MODE_ADMIN}]}
+        mapcore_sync_map_group(self.me, self.project,
+                               title_desc=False, contributors=True,
+                               use_raise=True)
+        assert_equal(mock_get_grinfo.call_count, 1)
+        assert_equal(mock_add.call_count, 1)
+        assert_equal(mock_remove.call_count, 0)
+        assert_equal(mock_edit.call_count, 0)
+        mock_get_grinfo.call_count = 0
+        mock_add.call_count = 0
+        self.project.remove_contributor(self.user2, auth=Auth(self.me))
+        self.project.save()
+
+        # test #3 : remove
+        mock_get_grinfo.return_value = {
+            'group_key': 'fake_group_key', 'group_name': 'fake_group_name',
+            'group_member_list': [
+                {'eppn': self.me.eppn, 'admin': MAPCore.MODE_ADMIN},
+                {'eppn': self.user2.eppn, 'admin': MAPCore.MODE_MEMBER}]}
+        mapcore_sync_map_group(self.me, self.project,
+                               title_desc=False, contributors=True,
+                               use_raise=True)
+        assert_equal(mock_get_grinfo.call_count, 1)
+        assert_equal(mock_add.call_count, 0)
+        assert_equal(mock_remove.call_count, 1)
+        assert_equal(mock_edit.call_count, 0)
+        mock_get_grinfo.call_count = 0
+        mock_remove.call_count = 0
+
+        # test #4 : set MODE_ADMIN
+        mock_get_grinfo.return_value = {
+            'group_key': 'fake_group_key', 'group_name': 'fake_group_name',
+            'group_member_list': [
+                {'eppn': self.me.eppn, 'admin': MAPCore.MODE_ADMIN},
+                {'eppn': self.user2.eppn, 'admin': MAPCore.MODE_MEMBER}]}
+        self.project.add_contributor(self.user2, CREATOR_PERMISSIONS, save=False)
+        self.project.save()
+        mapcore_sync_map_group(self.me, self.project,
+                               title_desc=False, contributors=True,
+                               use_raise=True)
+        assert_equal(mock_get_grinfo.call_count, 1)
+        assert_equal(mock_add.call_count, 0)
+        assert_equal(mock_remove.call_count, 0)
+        assert_equal(mock_edit.call_count, 1)
+        args, kwargs = mock_edit.call_args
+        assert_equal(args[3], self.user2.eppn)
+        assert_equal(args[4], MAPCore.MODE_ADMIN)
+        mock_get_grinfo.call_count = 0
+        mock_edit.call_count = 0
+
+        # test #5 : set MODE_MEMBER
+        mock_get_grinfo.return_value = {
+            'group_key': 'fake_group_key', 'group_name': 'fake_group_name',
+            'group_member_list': [
+                {'eppn': self.me.eppn, 'admin': MAPCore.MODE_ADMIN},
+                {'eppn': self.user2.eppn, 'admin': MAPCore.MODE_ADMIN}]}
+        self.project.set_permissions(self.user2, DEFAULT_CONTRIBUTOR_PERMISSIONS, save=False)
+        self.project.save()
+        mapcore_sync_map_group(self.me, self.project,
+                               title_desc=False, contributors=True,
+                               use_raise=True)
+        assert_equal(mock_get_grinfo.call_count, 1)
+        assert_equal(mock_add.call_count, 0)
+        assert_equal(mock_remove.call_count, 0)
+        assert_equal(mock_edit.call_count, 1)
+        args, kwargs = mock_edit.call_args
+        assert_equal(args[3], self.user2.eppn)
+        assert_equal(args[4], MAPCore.MODE_MEMBER)
+
+    #TODO test_mapcore_get_extended_group_info()
+    #TODO test_mapcore_add_to_group()
+    #TODO test_mapcore_remove_from_group()
+    #TODO test_mapcore_edit_member()
+    #TODO test_mapcore_add_non_registered_osfuser()
 
     #TODO def test_sync_rdm_my_projects():
     #TODO def test_sync_rdm_group():
-
 
 @pytest.mark.django_db
 class TestViewsWithMAPCore(OsfTestCase):
