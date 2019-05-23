@@ -238,7 +238,7 @@ def main(env):
             {
                 '_id': 'cwru',
                 'name': 'Case Western Reserve University',
-                'description': 'The Case Western Reserve University research community is pleased to hold partnerships with the <a href="https://case.edu/research/">Office of Research and Technology Management</a>, <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, and <a href="https://case.edu/utech/departments/research-computing">Research Computing</a>. Projects must abide by the <a href="https://case.edu/utech/services/information-security-office">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
+                'description': 'This site is provided as a partnership of the <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, <a href="https://case.edu/utech/">University Technology</a>, and the <a href="https://case.edu/research/">Office of Research and Technology Management</a> at <a href="https://case.edu/">Case Western Reserve University</a>. Projects must abide by the <a href="https://case.edu/utech/departments/information-security/policies">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
                 'banner_name': 'cwru-banner.png',
                 'logo_name': 'cwru-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:case.edu')),
@@ -543,7 +543,7 @@ def main(env):
             {
                 '_id': 'temple',
                 'name': 'Temple University',
-                'description': 'Projects must abide by the <a href="https://computerservices.temple.edu/classification-and-handling-protected-data">University Classification and Handling of Protected Data</a> and <a href="https://computerservices.temple.edu/guidelines-storing-and-using-personally-identifiable-information-non-production-environments">Guidelines for Storing and Using Personally Identifiable Information in Non-Production Environments</a>.',
+                'description': 'Projects must abide by Temple University\'s <a href="https://www.temple.edu/privacy-statement">Privacy Statement</a>, <a href="https://its.temple.edu/technology-usage-policy">Technology Usage Policy</a>, <a href="https://its.temple.edu/classification-and-handling-protected-data">University Classification and Handling of Protected Data</a>, and <a href="https://its.temple.edu/guidelines-storing-and-using-personally-identifiable-information-non-production-environments">Guidelines for Storing and Using Personally Identifiable Information in Non-Production Environments</a>.',
                 'banner_name': 'temple-banner.png',
                 'logo_name': 'temple-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fim.temple.edu/idp/shibboleth')),
@@ -1037,7 +1037,7 @@ def main(env):
             {
                 '_id': 'cwru',
                 'name': 'Case Western Reserve University [Test]',
-                'description': 'The Case Western Reserve University research community is pleased to hold partnerships with the <a href="https://case.edu/research/">Office of Research and Technology Management</a>, <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, and <a href="https://case.edu/utech/departments/research-computing">Research Computing</a>. Projects must abide by the <a href="https://case.edu/utech/services/information-security-office">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
+                'description': 'This site is provided as a partnership of the <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, <a href="https://case.edu/utech/">University Technology</a>, and the <a href="https://case.edu/research/">Office of Research and Technology Management</a> at <a href="https://case.edu/">Case Western Reserve University</a>. Projects must abide by the <a href="https://case.edu/utech/departments/information-security/policies">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
                 'banner_name': 'cwru-banner.png',
                 'logo_name': 'cwru-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:case.edu')),
