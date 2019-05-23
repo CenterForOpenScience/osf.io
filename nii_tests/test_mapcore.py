@@ -727,7 +727,35 @@ class TestFuncOfMAPCore(OsfTestCase):
         assert_equal(mock_sync_rdm.call_count, 0)
         mock_mygr.call_count = 0
 
-    #TODO test_mapcore_sync_rdm_project_no_map_group()
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_project0')
+    def test_mapcore_sync_rdm_project_no_map_group(self, mock_sync):
+        from nii.mapcore import mapcore_sync_rdm_project
+        from nii.mapcore_api import MAPCore, MAPCoreException
+
+        project2 = ProjectFactory(
+            creator=self.me,
+            is_public=True,
+            title='fake_group_name2'
+        )
+        project2.map_group_key = 'fake_group_key2'
+        project2.save()
+        assert_equal(project2.is_deleted, False)
+
+        m = MAPCore(self.me)
+        m.api_error_code = 208
+        m.error_message = 'You do not have access permission'
+        mock_sync.side_effect = MAPCoreException(m, None)
+        mapcore_sync_rdm_project(self.me, project2,
+                                 title_desc=True, contributors=True,
+                                 use_raise=True)
+        # reload
+        project2a = AbstractNode.objects.get(guids___id=project2._id)
+        assert_equal(project2a.is_deleted, True)
+        project2a.delete()
+
     #TODO test_mapcore_get_my_groups()
 
 @pytest.mark.django_db
