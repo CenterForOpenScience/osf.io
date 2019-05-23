@@ -304,7 +304,33 @@ class TestFuncOfMAPCore(OsfTestCase):
         assert_equal(args[3], self.user2.eppn)
         assert_equal(args[4], MAPCore.MODE_MEMBER)
 
-    #TODO test_mapcore_get_extended_group_info()
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('requests.get')
+    def test_mapcore_get_extended_group_info(self, mock_get):
+        from nii.mapcore import mapcore_get_extended_group_info
+
+        group_key = 'fake_group_key'
+
+        def func_get(url, **kwargs):
+            res = requests.Response()
+            res.status_code = requests.codes.ok
+            if url.endswith('/group/' + group_key):
+                res._content = '{"result": {"groups": [{"group_key": "' + group_key + '"}]}, "status": {"error_code": 0} }'
+            elif url.endswith('/member/' + group_key):
+                res._content = '{"result": {"accounts": [{"eppn": "' + self.me.eppn + '", "admin": 1 }]}, "status": {"error_code": 0} }'
+            return res
+
+        mock_get.side_effect = func_get
+
+        mapcore_get_extended_group_info(self.me, self.project, group_key, base_grp=None)
+        assert_equal(mock_get.call_count, 2)
+        args, kwargs = mock_get.call_args_list[0]
+        assert_equal(args[0].endswith('/group/' + group_key), True)
+        args, kwargs = mock_get.call_args_list[1]
+        assert_equal(args[0].endswith('/member/' + group_key), True)
+
     #TODO test_mapcore_add_to_group()
     #TODO test_mapcore_remove_from_group()
     #TODO test_mapcore_edit_member()
