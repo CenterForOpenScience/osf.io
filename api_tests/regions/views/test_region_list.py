@@ -27,18 +27,9 @@ class TestRegionList:
         return usr
 
     def test_region_list(self, app, region, regions_url, user):
-        # res = app.get(regions_url)
-        # data = res.json['data']
-        # assert res.status_code == 200
-        # assert res.content_type == 'application/vnd.api+json'
-        # assert len(data) == 1
-        # assert data[0]['attributes']['name'] == 'Frankfort'
-        # assert data[0]['id'] == 'eu-central-1'
-
         # test length and not auth
         res = app.get(regions_url, auth=user.auth)
         data = res.json['data']
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         assert len(data) == 1
-        #assert len(data) == 2

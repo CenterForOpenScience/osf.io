@@ -480,7 +480,6 @@ def configure_requests(node, **kwargs):
 @ember_flag_is_active('ember_project_detail_page')
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
-
     ret = _view_project(node, auth,
                         primary=primary,
                         embed_contributors=True,
@@ -507,6 +506,7 @@ def view_project(auth, node, **kwargs):
         'dataverse': None,
         'jupyterhub': None
     }
+
     if 'wiki' in ret['addons']:
         addons_widget_data['wiki'] = serialize_wiki_widget(node)
 
