@@ -116,7 +116,7 @@ class TestFuncOfMAPCore(OsfTestCase):
         OsfTestCase.setUp(self)
 
         self.me = AuthUserFactory()
-        self.me.eppn = 'ME-' + fake_email()
+        self.me.eppn = 'ME+' + fake_email()
         self.me.map_profile = fake_map_profile()
         self.me.save()
         BookmarkCollectionFactory(creator=self.me)
@@ -127,7 +127,7 @@ class TestFuncOfMAPCore(OsfTestCase):
         )
 
         self.user2 = AuthUserFactory()
-        self.user2.eppn = 'USER2' + fake_email()
+        self.user2.eppn = 'USER2+' + fake_email()
         self.user2.map_profile = fake_map_profile()
         self.user2.save()
 
@@ -164,7 +164,7 @@ class TestFuncOfMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
-    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
     @mock.patch('requests.post')
     @mock.patch('nii.mapcore_api.MAPCore.edit_group')
     def test_sync_map_new_group(self, mock_edit, mock_post):
@@ -183,7 +183,7 @@ class TestFuncOfMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
-    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
     @mock.patch('requests.post')
     def test_sync_map_group_title_desc(self, mock_post):
         from nii.mapcore import mapcore_sync_map_group
@@ -204,7 +204,7 @@ class TestFuncOfMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
-    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
     @mock.patch('nii.mapcore.mapcore_get_extended_group_info')
     @mock.patch('nii.mapcore.mapcore_add_to_group')
     @mock.patch('nii.mapcore.mapcore_remove_from_group')
@@ -306,7 +306,7 @@ class TestFuncOfMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
-    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
     @mock.patch('requests.get')
     def test_mapcore_get_extended_group_info(self, mock_get):
         from nii.mapcore import mapcore_get_extended_group_info
@@ -333,7 +333,7 @@ class TestFuncOfMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
-    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
     @mock.patch('requests.post')
     def test_mapcore_add_to_group(self, mock_post):
         from nii.mapcore import mapcore_add_to_group
@@ -353,7 +353,7 @@ class TestFuncOfMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
-    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
     @mock.patch('requests.delete')
     def test_mapcore_remove_from_group(self, mock_delete):
         from nii.mapcore import mapcore_remove_from_group
@@ -371,7 +371,19 @@ class TestFuncOfMAPCore(OsfTestCase):
         args, kwargs = mock_delete.call_args
         assert_equal(args[0].endswith('/member/' + self.project.map_group_key + '/' + self.me.eppn), True)
 
-    #TODO test_mapcore_edit_member()
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
+    @mock.patch('nii.mapcore_api.MAPCore.remove_from_group')
+    @mock.patch('nii.mapcore_api.MAPCore.add_to_group')
+    def test_mapcore_edit_member(self, mock_add, mock_remove):
+        from nii.mapcore import mapcore_edit_member
+
+        group_key = 'fake_group_key'
+        mapcore_edit_member(self.me, self.project, group_key, self.me.eppn, MAPCore.MODE_ADMIN)
+        assert_equal(mock_remove.call_count, 1)
+        assert_equal(mock_add.call_count, 1)
+
     #TODO test_mapcore_add_non_registered_osfuser()
 
     #TODO def test_sync_rdm_my_projects():
