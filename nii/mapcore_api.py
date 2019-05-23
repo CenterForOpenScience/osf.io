@@ -753,7 +753,7 @@ class MAPCore(object):
             #if s.find(self.MSG_ACCESS_TOKEN_EXPIRED) != -1 \
             #   or s.find(self.MSG_INVALID_ACCESS_TOKEN) != -1:
             if result.status_code == 401:  # Unauthorized
-                logger.info('MAPCore(user={})::check_result: status_code={}, {}={}'.format(self.user.username, result.status_code, self.WWW_AUTHENTICATE, self.error_message))
+                logger.debug('MAPCore(user={})::check_result: status_code={}, {}={}'.format(self.user.username, result.status_code, self.WWW_AUTHENTICATE, self.error_message))
                 return True
             else:
                 return False

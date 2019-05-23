@@ -618,7 +618,7 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
         try:
             user = OSFUser.objects.get(eppn=admin_eppn)
         except ObjectDoesNotExist:
-            logger.info('mAP group [' + map_group['group_name'] + ']s admin [' + admin_eppn +
+            logger.info('mAP group [' + map_group['group_name'] + '] admin [' + admin_eppn +
                         '] is not registered in RDM')
             continue
         creator = user
@@ -710,15 +710,15 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
             for rdmu in delete:
                 auth = Auth(user=rdmu.user)
                 node.remove_contributor(rdmu.user, auth, log=True)
-                logger.info('mAP member [' + rdmu.eppn + '] is remove from contributor')
+                logger.info('mAP member [' + rdmu.eppn + '] is removed from contributor')
             for rdmu in upg:
                 if not is_node_admin(node, rdmu.user):
                     node.set_permissions(rdmu.user, CREATOR_PERMISSIONS, save=False)
-                    logger.info('mAP member [' + rdmu.eppn + '] is upgrade to admin')
+                    logger.info('mAP member [' + rdmu.eppn + '] is upgraded to admin.')
             for rdmu in downg:
                 if is_node_admin(node, rdmu.user):
                     node.set_permissions(rdmu.user, DEFAULT_CONTRIBUTOR_PERMISSIONS, save=False)
-                    logger.info('mAP member [' + rdmu.eppn + '] is downgrade to contributor membe')
+                    logger.info('mAP member [' + rdmu.eppn + '] is downgraded to contributor member.')
 
         node.save()
     finally:
@@ -805,19 +805,19 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
                 try:
                     user = OSFUser.objects.get(eppn=eppn)
                 except Exception:
-                    logger.info('The user(eppn={}) does not exist in RDM. Do not remove the user from the mAP group({}).'.format(eppn, map_group['group_name']))
+                    logger.info('The user(eppn={}) does not exist in RDM. The user is not removed from the mAP group({}).'.format(eppn, map_group['group_name']))
                     # TODO log?
                     user = None
                 if user:
                     mapcore_remove_from_group(access_user, node, group_key, eppn)
-                    logger.info('mAP group [' + map_group['group_name'] + ']s member [' + eppn + '] is removed')
+                    logger.info('mAP group [' + map_group['group_name'] + '] member [' + eppn + '] is removed')
 
             for u in upgrade:
                 mapcore_edit_member(access_user, node, group_key, u['eppn'], MAPCore.MODE_ADMIN)
-                logger.info('mAP group [' + map_group['group_name'] + ']s admin [' + u['eppn'] + '] is a new member')
+                logger.info('mAP group [' + map_group['group_name'] + '] admin [' + u['eppn'] + '] is a new member')
             for u in downgrade:
                 mapcore_edit_member(access_user, node, group_key, u['eppn'], MAPCore.MODE_MEMBER)
-                logger.info('mAP group [' + map_group['group_name'] + ']s member [' + u['eppn'] + '] is a new admin')
+                logger.info('mAP group [' + map_group['group_name'] + '] member [' + u['eppn'] + '] is a new admin')
     finally:
         locker.unlock_node(node)
 
