@@ -30,7 +30,7 @@ VERIFY = True  # for requests.{get,post}(verify=VERIFY)
 
 MAPCORE_API_MEMBER_LIST_BUG_WORKAROUND = True
 
-MAPCORE_DEBUG = True
+MAPCORE_DEBUG = False
 
 # unicode to utf-8
 def utf8(s):
