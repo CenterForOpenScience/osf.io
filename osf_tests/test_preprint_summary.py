@@ -41,7 +41,7 @@ class TestPreprintCount:
 
         requests.post = mock.MagicMock()
         resp = requests.Response()
-        resp._content = '{"hits" : {"total" : 1}}'
+        resp._content = b'{"hits" : {"total" : 1}}'
         requests.post.return_value = resp
 
         field = Preprint._meta.get_field('created')

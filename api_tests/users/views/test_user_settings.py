@@ -552,7 +552,7 @@ class TestUserEmailDetail:
         assert res.status_code == 204
 
         user_one.reload()
-        confirmed_tokens = [key for key, value in user_one.email_verifications.iteritems() if value['confirmed']]
+        confirmed_tokens = [key for key, value in user_one.email_verifications.items() if value['confirmed']]
         assert unconfirmed_token not in confirmed_tokens
 
     @pytest.mark.enable_quickfiles_creation
