@@ -331,7 +331,26 @@ class TestFuncOfMAPCore(OsfTestCase):
         args, kwargs = mock_get.call_args_list[1]
         assert_equal(args[0].endswith('/member/' + group_key), True)
 
-    #TODO test_mapcore_add_to_group()
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', 'fake_api_path')
+    @mock.patch('requests.post')
+    def test_mapcore_add_to_group(self, mock_post):
+        from nii.mapcore import mapcore_add_to_group
+
+        group_key = 'fake_group_key'
+        add_to_group = requests.Response()
+        add_to_group.status_code = requests.codes.ok
+        add_to_group._content = '{"result": {"groups": [{"group_key": "' + group_key + '"}]}, "status": {"error_code": 0} }'
+        mock_post.return_value = add_to_group
+
+        self.project.map_group_key = 'fake_group_key'
+        self.project.save()
+
+        mapcore_add_to_group(self.me, self.project, group_key, self.me.eppn, MAPCore.MODE_ADMIN)
+        args, kwargs = mock_post.call_args
+        assert_equal(args[0].endswith('/member/' + self.project.map_group_key + '/' + self.me.eppn), True)
+
     #TODO test_mapcore_remove_from_group()
     #TODO test_mapcore_edit_member()
     #TODO test_mapcore_add_non_registered_osfuser()
