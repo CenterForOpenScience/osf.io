@@ -955,14 +955,11 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     var parent = file.treebeardParent, item,revisedItem, child;
 
     for (var i = 0; i < parent.children.length; i++) {
-
         child = parent.children[i];
-
         if (!child.data.tmpID){
             continue;
         }
         if (child.data.tmpID === file.tmpID) {
-
             item = child;
         }
     }
@@ -991,11 +988,9 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         });
     }
     var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
-
     addFileStatus(treebeard, file, true, '', url);
 
     if (item.data.provider === 'dataverse') {
-
         item.parent().data.datasetDraftModified = true;
     }
 

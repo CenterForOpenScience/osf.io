@@ -415,10 +415,12 @@ def legacy_share_v1_search(**kwargs):
 def get_storage_region_list(user, node=False):
     if not user:  # Preserves legacy frontend test behavior
         return []
+
     if node:
         default_region = node.osfstorage_region
     else:
         default_region = user.get_addon('osfstorage').default_region
+
     default_region = {'name': default_region.name, '_id': default_region._id}
     available_regions = [default_region]
     institution_id = user.affiliated_institutions.first()

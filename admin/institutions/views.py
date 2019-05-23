@@ -114,8 +114,6 @@ class InstitutionDefaultStorageDisplay(RdmPermissionMixin, TemplateView):
         kwargs['region'].waterbutler_settings = json.dumps(kwargs['region'].waterbutler_settings)
         return kwargs
 
-#from django.contrib.admin.views.decorators import staff_member_required
-#@staff_member_required
 class InstitutionDefaultStorageDetail(RdmPermissionMixin, View):
     permission_required = None
     raise_exception = False

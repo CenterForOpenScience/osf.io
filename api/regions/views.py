@@ -68,12 +68,8 @@ class RegionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             region_queryset = Region.objects.filter(_id=institution_id._id)
             if region_queryset.count() > 0:
                 return region_queryset
-            else:
-                return available_regions
-            #available_regions = region_queryset
-        else:
             return available_regions
-        #return available_regions
+        return available_regions
 
     # overrides ListAPIView
     def get_queryset(self):

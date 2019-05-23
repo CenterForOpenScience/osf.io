@@ -5376,6 +5376,5 @@ def test_get_storage_region_list_with_own_institution():
     assert_equal(website_view.get_storage_region_list(user)[0]['name'], new_region.name)
 
 
-
 if __name__ == '__main__':
     unittest.main()
