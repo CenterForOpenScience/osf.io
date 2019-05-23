@@ -771,7 +771,7 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
         # sync group info
         if title_desc:
             mapcore_update_group(access_user, node, group_key)
-            logger.info('Node title [' + node.title + '] and desctiption is sync to mAP group [' + group_key + '].')
+            logger.info('Node title [' + node.title + '] and desctiption is synchronized to mAP group [' + group_key + '].')
 
         # sync members
         if contributors:
@@ -814,10 +814,10 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
 
             for u in upgrade:
                 mapcore_edit_member(access_user, node, group_key, u['eppn'], MAPCore.MODE_ADMIN)
-                logger.info('mAP group [' + map_group['group_name'] + ']s admin [' + u['eppn'] + '] is now a member')
+                logger.info('mAP group [' + map_group['group_name'] + ']s admin [' + u['eppn'] + '] is a new member')
             for u in downgrade:
                 mapcore_edit_member(access_user, node, group_key, u['eppn'], MAPCore.MODE_MEMBER)
-                logger.info('mAP group [' + map_group['group_name'] + ']s member [' + u['eppn'] + '] is now an admin')
+                logger.info('mAP group [' + map_group['group_name'] + ']s member [' + u['eppn'] + '] is a new admin')
     finally:
         locker.unlock_node(node)
 
@@ -888,7 +888,7 @@ def mapcore_sync_rdm_my_projects0(user):
 
     '''
 
-    logger.info('starting mapcore_sync_rdm_my_projects(\'' + user.eppn + '\').')
+    logger.debug('starting mapcore_sync_rdm_my_projects(\'' + user.eppn + '\').')
 
     try:
         locker.lock_user(user)
