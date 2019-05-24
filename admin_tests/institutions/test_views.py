@@ -466,6 +466,13 @@ class TestStatisticalStatusDefaultStorage(AdminTestCase):
             institution_id=self.institution.id
         )
 
+    def test_admin_login(self):
+        self.request.user.is_active = True
+        self.request.user.is_registered = True
+        self.request.user.is_superuser = False
+        self.request.user.is_staff = True
+        nt.assert_true(self.view.test_func())
+
     @mock.patch('website.util.quota.used_quota')
     def test_default_quota(self, mock_usedquota):
         mock_usedquota.return_value = 0
@@ -511,11 +518,122 @@ class TestStatisticalStatusDefaultStorage(AdminTestCase):
 
         nt.assert_equal(round(user_quota['ratio'], 1), 5.2)
 
+class TestStatisticalStatusDefaultStorageSorted(AdminTestCase):
+    def setUp(self):
+        self.institution = InstitutionFactory()
+
+        self.us = RegionFactory()
+        self.us._id = self.institution._id
+        self.us.save()
+
+        self.users = []
+        self.users.append(self.add_user(100, 80 * api_settings.DEFAULT_SIZE_UNIT ** 3))
+        self.users.append(self.add_user(200, 90 * api_settings.DEFAULT_SIZE_UNIT ** 3))
+        self.users.append(self.add_user(10, 10 * api_settings.DEFAULT_SIZE_UNIT ** 3))
+
+    def add_user(self, max_quota, used):
+        user = AuthUserFactory()
+        user.affiliated_institutions.add(self.institution)
+        user.save()
+        UserQuota.objects.create(
+            user=user,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            max_quota=max_quota,
+            used=used
+        )
+        return user
+
+    def view_get(self, url_params):
+        request = RequestFactory().get('/fake_path?{}'.format(url_params))
+        view = setup_user_view(
+            views.StatisticalStatusDefaultStorage(),
+            request,
+            user=self.users[0],
+            institution_id=self.institution.id
+        )
+        return view.get(request)
+
+    def test_sort_username_asc(self):
+        expected = sorted(map(lambda u: u.username, self.users), reverse=False)
+        response = self.view_get('order_by=username&status=asc')
+        result = map(itemgetter('username'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_username_desc(self):
+        expected = sorted(map(lambda u: u.username, self.users), reverse=True)
+        response = self.view_get('order_by=username&status=desc')
+        result = map(itemgetter('username'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_fullname_asc(self):
+        expected = sorted(map(lambda u: u.fullname, self.users), reverse=False)
+        response = self.view_get('order_by=fullname&status=asc')
+        result = map(itemgetter('fullname'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_fullname_desc(self):
+        expected = sorted(map(lambda u: u.fullname, self.users), reverse=True)
+        response = self.view_get('order_by=fullname&status=desc')
+        result = map(itemgetter('fullname'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_ratio_asc(self):
+        expected = [45.0, 80.0, 100.0]
+        response = self.view_get('order_by=ratio&status=asc')
+        result = map(itemgetter('ratio'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_ratio_desc(self):
+        expected = [100.0, 80.0, 45.0]
+        response = self.view_get('order_by=ratio&status=desc')
+        result = map(itemgetter('ratio'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_usage_asc(self):
+        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [10, 80, 90])
+        response = self.view_get('order_by=usage&status=asc')
+        result = map(itemgetter('usage'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_usage_desc(self):
+        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [90, 80, 10])
+        response = self.view_get('order_by=usage&status=desc')
+        result = map(itemgetter('usage'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_remaining_asc(self):
+        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [0, 20, 110])
+        response = self.view_get('order_by=remaining&status=asc')
+        result = map(itemgetter('remaining'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_remaining_desc(self):
+        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [110, 20, 0])
+        response = self.view_get('order_by=remaining&status=desc')
+        result = map(itemgetter('remaining'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_quota_asc(self):
+        expected = [10, 100, 200]
+        response = self.view_get('order_by=quota&status=asc')
+        result = map(itemgetter('quota'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_quota_desc(self):
+        expected = [200, 100, 10]
+        response = self.view_get('order_by=quota&status=desc')
+        result = map(itemgetter('quota'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
+    def test_sort_invalid(self):
+        expected = [100.0, 80.0, 45.0]
+        response = self.view_get('order_by=invalid&status=hello')
+        result = map(itemgetter('ratio'), response.context_data['users'])
+        nt.assert_equal(result, expected)
+
 class InstitutionDefaultStorageDisplay(AdminTestCase):
     def setUp(self):
         super(InstitutionDefaultStorageDisplay, self).setUp()
-        import logging
-        self.logger = logging.getLogger(__name__)
         self.user = AuthUserFactory()
         self.institution = InstitutionFactory()
         self.user.affiliated_institutions.add(self.institution)
@@ -595,9 +713,20 @@ class InstitutionDefaultStorageDisplay(AdminTestCase):
         self.us = RegionFactory()
         self.us._id = self.institution._id
         self.us.save()
+        self.view = views.InstitutionDefaultStorageDetail()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
         res = self.view.get(self.request, *args, **kwargs)
         nt.assert_is_instance(res.context_data['region'], Region)
         nt.assert_equal(res.context_data['institution'], self.institution._id)
         nt.assert_equal((res.context_data['region']).name, self.us.name)
         nt.assert_equal((res.context_data['region'])._id, self.us._id)
         nt.assert_equal(res.status_code, 200)
+
+    def test_admin_login(self):
+        self.request.user.is_active = True
+        self.request.user.is_registered = True
+        self.request.user.is_superuser = False
+        self.request.user.is_staff = True
+        self.view = views.InstitutionDefaultStorageDetail()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+        nt.assert_true(self.view.test_func())

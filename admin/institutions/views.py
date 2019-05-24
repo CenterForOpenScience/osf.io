@@ -115,24 +115,19 @@ class InstitutionDefaultStorageDisplay(RdmPermissionMixin, TemplateView):
         kwargs['region'].waterbutler_settings = json.dumps(kwargs['region'].waterbutler_settings)
         return kwargs
 
-class InstitutionDefaultStorageDetail(RdmPermissionMixin, View):
+class InstitutionDefaultStorageDetail(RdmPermissionMixin, UserPassesTestMixin, View):
     permission_required = None
     raise_exception = False
     template_name = 'institutions/default_storage.html'
 
     def test_func(self):
         """check user permissions"""
-        if not self.is_super_admin and self.is_admin and self.request.user.affiliated_institutions.all().count() > 0:
-            return True
-        else:
-            return False
+        return not self.is_super_admin and self.is_admin and \
+            self.request.user.affiliated_institutions.all().count() > 0
 
     def get(self, request, *args, **kwargs):
-        if not self.is_super_admin and self.is_admin and self.request.user.affiliated_institutions.all().count() > 0:
-            view = InstitutionDefaultStorageDisplay.as_view()
-            return view(request, *args, **kwargs)
-        else:
-            raise PermissionDenied
+        view = InstitutionDefaultStorageDisplay.as_view()
+        return view(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         post_data = request.POST

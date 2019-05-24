@@ -1466,6 +1466,18 @@ class TestAddonFileViews(OsfTestCase):
         assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
+    def test_delete_action_no_file_node(self):
+        file_node = self.get_test_file()
+        payload = {
+            'provider': file_node.provider,
+            'metadata': {
+                'path': '/test/FileThatDoesNotExists',
+                'materialized': '/test/FileThatDoesNotExists'
+            }
+        }
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
+        assert_false(TrashedFileNode.load(file_node._id))
+
     def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
         file_node = self.get_test_file()
         subfolder = GithubFolder(
