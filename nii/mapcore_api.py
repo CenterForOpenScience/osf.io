@@ -26,9 +26,8 @@ from website.settings import (MAPCORE_HOSTNAME,
 # Global settings.
 #
 VERIFY = True  # for requests.{get,post}(verify=VERIFY)
-#VERIFY = False
 
-MAPCORE_API_MEMBER_LIST_BUG_WORKAROUND = True
+MAPCORE_API_MEMBER_LIST_BUG_WORKAROUND = False  # 2019/5/24 fixed
 
 MAPCORE_DEBUG = False
 
