@@ -665,15 +665,13 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
 
         # check conditions to sync
         if not map_group['active']:
-            logger.info('mAP group [' + map_group['group_name'] + '] is not active, no sync')
+            logger.info('mAP group [' + map_group['group_name'] + '] is not active (not synchronized)')
             return False
         if not map_group['public']:
-            logger.info('mAP group [' + map_group['group_name'] + '] is not public  no sync')
+            logger.info('mAP group [' + map_group['group_name'] + '] is not public (not synchronized')
             return False
         if mapcore_group_member_is_private(map_group):
-            # logger.error('mAP group [' + map_group['group_name'] + '] member list is not public  no sync')
-            # return False
-            logger.warning('mAP group({}) member list is private.'.format(map_group['group_name']))
+            logger.warning('mAP group({}) member list is private. (may not be synchronized)'.format(map_group['group_name']))
             # TODO warning log
 
         # copy group info to rdm
