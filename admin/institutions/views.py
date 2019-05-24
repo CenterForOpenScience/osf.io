@@ -11,7 +11,6 @@ from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from admin.rdm.utils import RdmPermissionMixin
-from django.core.exceptions import PermissionDenied
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
