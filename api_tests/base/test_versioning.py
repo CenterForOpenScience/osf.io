@@ -107,7 +107,7 @@ class TestBaseVersioning:
         assert res.json['meta']['version'] == LATEST_VERSIONS[2]
 
     def test_header_version_latest(self, app):
-        headers = {'accept': 'application/vnd.api+json;version=latest'}
+        headers = {'accept': 'version=latest;'}
         res = app.get(valid_url_path_version_url, headers=headers)
         assert res.status_code == 200
         assert res.json['meta']['version'] == LATEST_VERSIONS[2]
@@ -118,13 +118,13 @@ class TestBaseVersioning:
         assert res.status_code == 200
         assert '&quot;version&quot;: &quot;{}&quot'.format(
             LATEST_VERSIONS[2]
-        ) in res.body
+        ) in res.body.decode()
 
     def test_browsable_api_query_version(self, app):
         url = '/v2/?format=api&version=2.5'
         res = app.get(url)
         assert res.status_code == 200
-        assert '&quot;version&quot;: &quot;2.5&quot' in res.body
+        assert '&quot;version&quot;: &quot;2.5&quot' in res.body.decode()
 
     def test_json_defaults_to_default(self, app):
         url = '/v2/?format=json'

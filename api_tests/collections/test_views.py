@@ -1961,12 +1961,12 @@ class TestCollectionBulkUpdate:
         assert res.status_code == 400
         assert len(res.json['errors']) == 2
         errors = res.json['errors']
-        assert_equals([errors[0]['source'], errors[1]['source']], [
+        assert [errors[0]['source'],
+                errors[1]['source']] == [
             {'pointer': '/data/0/attributes/title'},
             {'pointer': '/data/1/attributes/title'}
-        ])
-        assert_equals([errors[0]['detail'], errors[1]['detail']],
-                      ['This field may not be blank.'] * 2)
+        ]
+        assert [errors[0]['detail'], errors[1]['detail']] == ['This field may not be blank.'] * 2
 
         # test_bulk_update_id_not_supplied
         res = app.put_json_api(
