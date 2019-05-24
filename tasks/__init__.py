@@ -337,7 +337,25 @@ API_TESTS2 = [
     'api_tests/wb',
 ]
 API_TESTS3 = [
+    'api_tests/addons_tests',
+    'api_tests/alerts',
+    'api_tests/applications',
+    'api_tests/banners',
+    'api_tests/base',
+    'api_tests/collections',
+    'api_tests/comments',
+    'api_tests/crossref',
     'api_tests/files',
+    'api_tests/guids',
+    'api_tests/reviews',
+    'api_tests/regions',
+    'api_tests/search',
+    'api_tests/scopes',
+    'api_tests/taxonomies',
+    'api_tests/test',
+    'api_tests/tokens',
+    'api_tests/view_only_links',
+    'api_tests/wikis',
 ]
 ADDON_TESTS = [
     'addons',
@@ -376,9 +394,9 @@ def test_api2(ctx, numprocesses=None, coverage=False):
 @task
 def test_api3(ctx, numprocesses=None, coverage=False):
     """Run the API test suite."""
-    print('Testing modules "{}"'.format(API_TESTS3))
+    print('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS))
     # NOTE: There may be some concurrency issues with ES
-    test_module(ctx, module=API_TESTS3, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
 
 
 @task
