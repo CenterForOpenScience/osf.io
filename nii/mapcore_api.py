@@ -545,14 +545,6 @@ class MAPCore(object):
     # Get joined group list.
     #
     def get_my_groups(self):
-        j = self.get_my_groups0()
-        for grp in j['result']['groups']:
-            for k, v in grp.items():
-                if isinstance(grp[k], unicode):
-                    grp[k] = grp[k].encode('utf-8')
-        return j
-
-    def get_my_groups0(self):
 
         logger.debug('MAPCore(user={})::get_my_groups:'.format(self.user.username))
 
@@ -738,6 +730,7 @@ class MAPCore(object):
 
         #logger.debug('result.encoding={}'.format(result.encoding))
         j = result.json()
+        j = encode_recursive(j)
         if j['status']['error_code'] != 0:
             self.api_error_code = j['status']['error_code']
             self.error_message = j['status']['error_msg']
@@ -758,3 +751,13 @@ class MAPCore(object):
             else:
                 return False
         return False
+
+def encode_recursive(o, encoding='utf-8'):
+    if isinstance(o, dict):
+        return {encode_recursive(key): encode_recursive(val) for key, val in o.iteritems()}
+    elif isinstance(o, list):
+        return [encode_recursive(elem) for elem in o]
+    elif isinstance(o, unicode):
+        return o.encode(encoding)
+    else:
+        return o
