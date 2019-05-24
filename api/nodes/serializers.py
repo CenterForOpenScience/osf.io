@@ -646,6 +646,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         tag_instances = []
         affiliated_institutions = None
         region_id = None
+        license_details = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
         if 'region_id' in validated_data:
@@ -711,7 +712,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 auth=get_user_auth(request),
                 save=True,
             )
-            node.save()
 
         if not region_id:
             region_id = self.context.get('region_id')
