@@ -650,6 +650,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             affiliated_institutions = validated_data.pop('affiliated_institutions')
         if 'region_id' in validated_data:
             region_id = validated_data.pop('region_id')
+        if 'license_type' in validated_data or 'license' in validated_data:
+            license_details = validated_data.pop('license')
         if 'tag_names' in validated_data:
             tags = validated_data.pop('tag_names')
             for tag in tags:
@@ -697,6 +699,18 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, 'write'):
             parent = validated_data['parent']
             node.subjects.add(parent.subjects.all())
+            node.save()
+
+        if license_details:
+            node.set_node_license(
+                {
+                    'id': license_details.get('id') if license_details.get('id') else 'NONE',
+                    'year': license_details.get('year'),
+                    'copyrightHolders': license_details.get('copyrightHolders') or license_details.get('copyright_holders', []),
+                },
+                auth=get_user_auth(request),
+                save=True,
+            )
             node.save()
 
         if not region_id:
