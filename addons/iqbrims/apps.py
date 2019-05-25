@@ -13,6 +13,7 @@ class IQBRIMSAddonConfig(BaseAddonAppConfig):
     configs = ['accounts', 'node']
     categories = ['storage']
     has_hgrid_files = True
+    has_page_icon = False
 
     @property
     def get_hgrid_data(self):
