@@ -23,6 +23,7 @@ from addons.iqbrims import settings
 from addons.base import generic_views, exceptions
 from addons.iqbrims.serializer import IQBRIMSSerializer
 from addons.iqbrims.models import NodeSettings as IQBRIMSNodeSettings
+from addons.iqbrims.utils import must_have_valid_hash
 
 logger = logging.getLogger(__name__)
 
@@ -109,14 +110,10 @@ def iqbrims_set_status(**kwargs):
         labo_name = all_status['labo_id']
 
         if last_status['state'] != register_type:
-            app_id = None
-            if register_type == 'deposit':
-                app_id = settings.FLOWABLE_RESEARCH_APP_ID
-            elif register_type == 'check':
-                app_id = settings.FLOWABLE_SCAN_APP_ID
+            app_id = iqbrims.get_process_definition_id(register_type)
             flowable = IQBRIMSFlowableClient(app_id)
             logger.info('Starting...: app_id={} project_id={}'.format(app_id, node._id))
-            flowable.start_workflow(node._id, node.title)
+            flowable.start_workflow(node._id, node.title, iqbrims.get_secret())
 
         inst_ids = node.affiliated_institutions.values('id')
         try:
@@ -145,6 +142,7 @@ def iqbrims_set_status(**kwargs):
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
+@must_have_valid_hash()
 def iqbrims_post_notify(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
@@ -153,6 +151,7 @@ def iqbrims_post_notify(**kwargs):
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
+@must_have_valid_hash()
 def iqbrims_get_storage(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')

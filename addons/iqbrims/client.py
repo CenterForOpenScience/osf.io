@@ -91,7 +91,7 @@ class IQBRIMSFlowableClient(object):
     def __init__(self, app_id):
         self.app_id = app_id
 
-    def start_workflow(self, project_id, project_title):
+    def start_workflow(self, project_id, project_title, secret):
         url = '{}service/runtime/process-instances'.format(settings.FLOWABLE_HOST)
         payload = { 'processDefinitionId': self.app_id,
                     'variables': [ { 'name': 'projectId',
@@ -99,7 +99,10 @@ class IQBRIMSFlowableClient(object):
                                      'value': '{}'.format(project_id) },
                                    { 'name': 'paperTitle',
                                      'type': 'string',
-                                     'value': project_title } ] }
+                                     'value': project_title },
+                                   { 'name': 'secret',
+                                     'type': 'string',
+                                     'value': secret } ] }
         headers = { 'Content-Type': 'application/json',
                     'Accept': 'application/json' }
         response = requests.post(url, data=json.dumps(payload),

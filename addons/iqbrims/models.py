@@ -3,6 +3,8 @@
 """
 import os
 import json
+import random
+import string
 
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
@@ -84,6 +86,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     serializer = IQBRIMSSerializer
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
     status = models.TextField(blank=True, null=True)
+    secret = models.TextField(blank=True, null=True)
+    process_definition_id = models.TextField(blank=True, null=True)
 
     _api = None
 
@@ -249,3 +253,27 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         assert 'state' in status
         self.status = json.dumps(status)
         self.save()
+
+    def get_process_definition_id(self, register_type=None):
+        if register_type is None:
+            return self.process_definition_id
+        app_id = None
+        if register_type == 'deposit':
+            app_id = drive_settings.FLOWABLE_RESEARCH_APP_ID
+        elif register_type == 'check':
+            app_id = drive_settings.FLOWABLE_SCAN_APP_ID
+        else:
+            return None
+        if self.process_definition_id is None:
+            self.process_definition_id = app_id
+            self.save()
+        return app_id
+
+    def get_secret(self):
+        if self.secret is not None:
+            return self.secret
+        self.secret = ''.join([random.choice(string.ascii_letters +
+                                             string.digits)
+                               for i in range(0, 16)])
+        self.save()
+        return self.secret

@@ -1,11 +1,21 @@
 # -*- coding: utf-8 -*-
 """Utility functions for the IQB-RIMS add-on.
 """
+import functools
+import hashlib
+import httplib as http
+import logging
 import os
 
+from flask import request
+
 from addons.iqbrims.apps import IQBRIMSAddonConfig
+from framework.exceptions import HTTPError
 from osf.models import ExternalAccount
 from website.util import api_v2_url
+
+logger = logging.getLogger(__name__)
+
 
 def build_iqbrims_urls(item, node, path):
     return {
@@ -102,3 +112,35 @@ def create_or_update_external_account_with_other(other_external_account):
     external_account.save()
 
     return external_account
+
+
+def must_have_valid_hash():
+    """Decorator factory that ensures that a request have valid X-RDM-Token header.
+
+    :returns: Decorator function
+
+    """
+    def wrapper(func):
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            owner = kwargs['node']
+            addon = owner.get_addon(IQBRIMSAddonConfig.short_name)
+            if addon is None:
+                raise HTTPError(http.BAD_REQUEST)
+            secret = addon.get_secret()
+            process_def_id = addon.get_process_definition_id()
+            valid_hash = hashlib.sha256((secret + process_def_id + owner._id).encode('utf8')).hexdigest()
+            request_hash = request.headers.get('X-RDM-Token', None)
+            logger.debug('must_have_valid_hash: request_hash={}'.format(request_hash))
+            logger.debug('must_have_valid_hash: valid_hash={}'.format(valid_hash))
+            if request_hash != valid_hash:
+                raise HTTPError(
+                    http.FORBIDDEN,
+                    data={'message_long': ('User has restricted access to this page.')}
+                )
+            return func(*args, **kwargs)
+
+        return wrapped
+
+    return wrapper
