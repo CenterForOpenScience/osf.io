@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import json
 import logging
 
 from django.db.models import Subquery
@@ -151,6 +152,18 @@ def iqbrims_post_notify(**kwargs):
     iqbrims = node.get_addon('iqbrims')
     # TODO
     logger.info('Notified: {}'.format(request.data))
+
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_valid_hash()
+def iqbrims_post_workflow_state(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    iqbrims = node.get_addon('iqbrims')
+    part = kwargs['part']
+    logger.info('Workflow State: {}, {}'.format(part, request.data))
+    status = iqbrims.get_status()
+    status['workflow_' + part + '_state'] = json.loads(request.data)['state']
+    iqbrims.set_status(status)
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')

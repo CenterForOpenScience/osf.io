@@ -51,6 +51,9 @@ function IQBRIMSWidget() {
     if (status['page_number']) {
       self.formEntries.push({'title': 'ページ番号', 'value': status['page_number']});
     }
+    if (status['workflow_overall_state']) {
+      self.formEntries.push({'title': '審査状況', 'value': status['workflow_overall_state']});
+    }
   };
 
   self.loadConfig = function() {

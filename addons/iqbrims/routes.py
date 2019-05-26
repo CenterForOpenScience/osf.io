@@ -109,6 +109,11 @@ api_routes = {
         ], 'post', views.iqbrims_post_notify, json_renderer),
 
         Rule([
+            '/project/<pid>/iqbrims/workflow/<part>/state',
+            '/project/<pid>/node/<nid>/iqbrims/workflow/<part>/state',
+        ], 'post', views.iqbrims_post_workflow_state, json_renderer),
+
+        Rule([
             '/project/<pid>/iqbrims/storage/<folder>',
             '/project/<pid>/node/<nid>/iqbrims/storage/<folder>',
         ], 'get', views.iqbrims_get_storage, json_renderer),
