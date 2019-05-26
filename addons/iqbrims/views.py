@@ -31,7 +31,10 @@ SHORT_NAME = 'iqbrims'
 FULL_NAME = 'IQB-RIMS'
 
 REGISTER_TYPE_LIST = ['check', 'deposit']
-INITED_FOLDER_TITLE_LIST = [u'最終原稿・組図', u'生データ', u'チェックリスト', u'スキャン結果']
+REVIEW_FOLDERS = {'paper': u'最終原稿・組図',
+                  'raw': u'生データ',
+                  'checklist': u'チェックリスト',
+                  'scan': u'スキャン結果'}
 
 iqbrims_account_list = generic_views.account_list(
     SHORT_NAME,
@@ -156,9 +159,27 @@ def iqbrims_get_storage(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
     folder = kwargs['folder']
-    # TODO
-    logger.info('Checking Storage: {}'.format(folder))
-    return {'status': 'complete'}
+    folder_name = None
+    file_name = None
+    if folder == 'index':
+        folder_name = REVIEW_FOLDERS['raw']
+    else:
+        folder_name = REVIEW_FOLDERS[folder]
+    try:
+        access_token = iqbrims.fetch_access_token()
+    except exceptions.InvalidAuthError:
+        raise HTTPError(403)
+    client = IQBRIMSClient(access_token)
+    folders = client.folders(folder_id=iqbrims.folder_id)
+    folders = [f for f in folders if f['title'] == folder_name]
+    assert len(folders) > 0
+    logger.info(u'Checking Storage: {}, {}, {}'.format(folder, folder_name,
+                                                       folders[0]['id']))
+    files = client.files(folder_id=folders[0]['id'])
+    logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
+    if file_name is not None:
+        files = [f for f in files if f['title'] == file_name]
+    return {'status': 'complete' if len(files) > 0 else 'processing'}
 
 @must_have_addon(SHORT_NAME, 'node')
 @must_have_permission(permissions.WRITE)
@@ -249,7 +270,7 @@ def _iqbrims_init_folders(node, management_node, register_type, labo_name):
     root_folder_title = u'{0}-{1}'.format(node.title, node._id)
     _, res = client.create_folder_if_not_exists(res['id'], root_folder_title)
     root_folder_id = res['id']
-    for title in INITED_FOLDER_TITLE_LIST:
+    for title in REVIEW_FOLDERS.values():
         client.create_folder_if_not_exists(root_folder_id, title)
 
     return {
