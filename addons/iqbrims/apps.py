@@ -14,6 +14,10 @@ class IQBRIMSAddonConfig(BaseAddonAppConfig):
     categories = ['storage']
     has_hgrid_files = True
     has_page_icon = False
+    include_css = {
+        'widget': ['iqbrims.css'],
+        'page': [],
+    }
 
     @property
     def get_hgrid_data(self):

@@ -91,6 +91,7 @@ def iqbrims_get_status(**kwargs):
     status = iqbrims.get_status()
     status['labo_list'] = ['{}:{}'.format(l['id'], l['text'])
                            for l in settings.LABO_LIST]
+    status['review_folders'] = REVIEW_FOLDERS
     return {'data': {'id': node._id, 'type': 'iqbrims-status',
                      'attributes': status}}
 
