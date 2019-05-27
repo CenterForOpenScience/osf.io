@@ -486,7 +486,7 @@ class TestExternalUtil(OsfTestCase):
         assert len(rea)==1
 
     def test_set_new_access_token(self):
-        new_access_token = 'New access token'
+        new_access_token = 'New access token test'
         set_new_access_token(self.region.id, new_access_token)
         region_from_db = Region.objects.get(pk=self.region.id)
         assert new_access_token == region_from_db.waterbutler_credentials['storage']['token']
