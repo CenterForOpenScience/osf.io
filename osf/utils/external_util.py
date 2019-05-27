@@ -11,3 +11,8 @@ def set_region_external_account(institution_id, account):
         region=region,
         defaults={'external_account': account},
     )
+
+def set_new_access_token(region_id, access_token):
+    region = Region.objects.get(pk=region_id)
+    region.waterbutler_credentials['storage']['token'] = access_token
+    region.save()
