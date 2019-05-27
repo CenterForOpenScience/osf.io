@@ -305,7 +305,7 @@ class ExternalProvider(object):
 
         #following imports are essential here to avoid conflict with base.
         from osf.utils import external_util
-        institution_id = session.data['oauth_states'][self.short_name]['institution_id']
+        institution_id = session.data['oauth_states'][self.short_name].get('institution_id')
         if institution_id is not None:
             if self.account.provider == 'googledrive':
                 external_util.set_region_external_account(institution_id, self.account)
