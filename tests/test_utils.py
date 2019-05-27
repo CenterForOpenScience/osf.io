@@ -458,6 +458,7 @@ class TestUserFactoryConflict:
         user_two_create = UserFactory()
         assert user_one_create.username != user_two_create.username
 
+
 class TestExternalUtil(OsfTestCase):
 
     def setUp(self, *args, **kwargs):
@@ -489,29 +490,3 @@ class TestExternalUtil(OsfTestCase):
         set_new_access_token(self.region.id, new_access_token)
         region_from_db = Region.objects.get(pk=self.region.id)
         assert new_access_token == region_from_db.waterbutler_credentials['storage']['token']
-
-
-
-
-    
-    # def test_encode(self):
-    #     assert_equal(encode(self.payload), self.encoded_token)
-
-    # def test_decode(self):
-    #     assert_equal(decode(self.encoded_token), self.payload)
-
-    # def test_from_string(self):
-    #     token = TokenHandler.from_string(self.encoded_token)
-    #     assert_equal(token.encoded_token, self.encoded_token)
-    #     assert_equal(token.payload, self.payload)
-
-    # def test_from_payload(self):
-    #     token = TokenHandler.from_payload(self.payload)
-    #     assert_equal(token.encoded_token, self.encoded_token)
-    #     assert_equal(token.payload, self.payload)
-
-    # def test_token_process_for_invalid_action_raises_TokenHandlerNotFound(self):
-    #     self.payload['action'] = 'not a handler'
-    #     token = TokenHandler.from_payload(self.payload)
-    #     with assert_raises(TokenHandlerNotFound):
-    #         token.to_response()

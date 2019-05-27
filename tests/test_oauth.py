@@ -1299,4 +1299,3 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
         with assert_raises(OAuth2Error):
             self.provider.refresh_oauth_key(force=True)
-
