@@ -93,7 +93,7 @@ REGIONAL_NODE_SIZE_SUM_SQL = """
         left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
         left join osf_fileversion version on obfnv.fileversion_id = version.id
         left join addons_osfstorage_region region on version.region_id = region.id
-        where file.provider = 'osfstorage' and file.target_content_type_id = %s 
+        where file.provider = 'osfstorage' and file.target_content_type_id = %s
         and obfnv.id >= %s and obfnv.id <= %s
         group by region.name
     """
@@ -191,7 +191,7 @@ REGIONAL_PREPRINT_SIZE_SUM_SQL = """
         left join osf_preprint preprint on preprint.id = file.target_object_id
         where file.provider like 'osfstorage' and file.target_content_type_id = %s
           and obfnv.id > %s and obfnv.id <= %s
-        group by region.name    
+        group by region.name
     """
 
 logger = logging.getLogger(__name__)
@@ -446,7 +446,7 @@ def process_usages(
             )
         )
         start = end + 1
-        end = min(end+page_size, last_item)
+        end = min(end + page_size, last_item)
         keep_going = (start <= end) and (not sample_only)
     logger.debug(summary_totals)
 
