@@ -224,7 +224,7 @@ def convert_value(value):
 def combine_summary_data(*args):
     combined_summary_data = {}
     for summary_data_item in args:
-        logger.info(summary_data_item)
+        logger.debug(summary_data_item)
         if isinstance(summary_data_item, dict):
             for key in summary_data_item.keys():
                 combined_summary_data[key] = combined_summary_data.get(key, 0) + convert_value(
@@ -256,7 +256,6 @@ def gather_usage_data(start, end, dry_run):
         preprint_content_type = content_types['osf.preprint']
 
         logger.info('Gathering node usage at {}'.format(datetime.datetime.now()))
-        logger.info('Dry run: {}'.format(dry_run))
         filename = './data-usage-raw-nodes-{}-{}.csv'.format(start, end)
         cursor.execute(
             NODE_LIST_SQL,
@@ -272,7 +271,7 @@ def gather_usage_data(start, end, dry_run):
             logger.info('Writing {}'.format(filename))
             write_raw_data(data=cursor.fetchall(), filename=filename)
 
-        logger.info('Gathering abstractnode summary at {}'.format(datetime.datetime.now()))
+        logger.debug('Gathering abstractnode summary at {}'.format(datetime.datetime.now()))
         summary_data = combine_summary_data(summarize(
             sql=ABSTRACT_NODE_SIZE_SUM_SQL,
             content_type=abstractnode_content_type,
@@ -280,7 +279,7 @@ def gather_usage_data(start, end, dry_run):
             end=end,
             cursor=cursor,
         ))
-        logger.info('Gathering regional node summary at {}'.format(datetime.datetime.now()))
+        logger.debug('Gathering regional node summary at {}'.format(datetime.datetime.now()))
         summary_data = combine_summary_data(summary_data, summarize(
             sql=REGIONAL_NODE_SIZE_SUM_SQL,
             content_type=abstractnode_content_type,
@@ -290,7 +289,7 @@ def gather_usage_data(start, end, dry_run):
         ))
 
         # TODO: Move the next when Quick Folders is done
-        logger.info('Gathering quickfile summary at {}'.format(datetime.datetime.now()))
+        logger.debug('Gathering quickfile summary at {}'.format(datetime.datetime.now()))
         summary_data = combine_summary_data(summary_data, summarize(
             sql=ND_QUICK_FILE_SIZE_SUM_SQL,
             content_type=abstractnode_content_type,
@@ -299,7 +298,7 @@ def gather_usage_data(start, end, dry_run):
             cursor=cursor,
         ))
 
-        logger.info('Gathering supplement summary at {}'.format(datetime.datetime.now()))
+        logger.debug('Gathering supplement summary at {}'.format(datetime.datetime.now()))
         summary_data = combine_summary_data(summary_data, summarize(
             sql=ND_PREPRINT_SUPPLEMENT_SIZE_SUM_SQL,
             content_type=abstractnode_content_type,
@@ -307,7 +306,7 @@ def gather_usage_data(start, end, dry_run):
             end=end,
             cursor=cursor,
         ))
-        logger.info('Gathering deleted file summary at {}'.format(datetime.datetime.now()))
+        logger.debug('Gathering deleted file summary at {}'.format(datetime.datetime.now()))
         cursor.execute(
             DELETED_FILE_SIZE_SUM_SQL,
             [
@@ -316,7 +315,7 @@ def gather_usage_data(start, end, dry_run):
             ]
         )
         summary_data = combine_summary_data(summary_data, cursor.fetchall())
-        logger.info('Gathering total file summary at {}'.format(datetime.datetime.now()))
+        logger.debug('Gathering total file summary at {}'.format(datetime.datetime.now()))
         cursor.execute(
             TOTAL_FILE_SIZE_SUM_SQL,
             [
@@ -326,7 +325,7 @@ def gather_usage_data(start, end, dry_run):
         )
         summary_data = combine_summary_data(summary_data, cursor.fetchall())
 
-        logger.info('Gathering preprint usage at {}'.format(datetime.datetime.now()))
+        logger.debug('Gathering preprint usage at {}'.format(datetime.datetime.now()))
         filename = './data-usage-raw-preprints-{}-{}.csv'.format(start, end)
 
         cursor.execute(
@@ -342,7 +341,7 @@ def gather_usage_data(start, end, dry_run):
             logger.info('Writing {}'.format(filename))
             write_raw_data(data=cursor.fetchall(), filename=filename)
 
-        logger.info('Gathering preprint summary at {}'.format(datetime.datetime.now()))
+        logger.debug('Gathering preprint summary at {}'.format(datetime.datetime.now()))
         summary_data = combine_summary_data(summary_data, summarize(
             sql=ND_PREPRINT_SIZE_SUM_SQL,
             content_type=preprint_content_type,
@@ -350,7 +349,7 @@ def gather_usage_data(start, end, dry_run):
             end=end,
             cursor=cursor,
         ))
-        logger.info('Gathering regional preprint summary at {}'.format(datetime.datetime.now()))
+        logger.debug('Gathering regional preprint summary at {}'.format(datetime.datetime.now()))
         summary_data = combine_summary_data(summary_data, summarize(
             sql=REGIONAL_PREPRINT_SIZE_SUM_SQL,
             content_type=preprint_content_type,
@@ -412,11 +411,11 @@ def process_usages(
     # This is why we can't just append whatever storage regions we add to the system automatically,
     # because then they'd likely be out of order when they were added.
 
-    logger.info('Getting last item - {}'.format(datetime.datetime.now()))
+    logger.debug('Getting last item - {}'.format(datetime.datetime.now()))
     with connection.cursor() as cursor:
         cursor.execute(LAST_ROW_SQL)
         last_item = cursor.fetchone()[0]
-    logger.info('Last item: {}'.format(last_item))
+    logger.debug('Last item: {}'.format(last_item))
     summary_data = OrderedDict([
         ('date', date.today().isoformat()),
         ('total', 0),
@@ -449,7 +448,7 @@ def process_usages(
         start = end + 1
         end = min(end+page_size, last_item)
         keep_going = (start <= end) and (not sample_only)
-    logger.info(summary_totals)
+    logger.debug(summary_totals)
 
     summary_data['total'] = summary_totals.get('total', 0)
     summary_data['deleted'] = summary_totals.get('deleted', 0)
@@ -493,7 +492,6 @@ class Command(BaseCommand):
 
     # Management command handler
     def handle(self, *args, **options):
-        # gc.set_debug(gc.DEBUG_STATS)
         script_start_time = datetime.datetime.now()
         logging.info('Script started time: {}'.format(script_start_time))
         logging.info(options)
@@ -502,7 +500,7 @@ class Command(BaseCommand):
         page_size = options['page_size']
         sample_only = options['sample_only']
 
-        logger.info('Dry run: {}, page size: {}, sample only: {}'.format(
+        logger.debug('Dry run: {}, page size: {}, sample only: {}'.format(
             dry_run,
             page_size,
             sample_only,
