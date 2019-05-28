@@ -918,7 +918,6 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         region._id = institution._id
         region.save()
         user.affiliated_institutions.add(institution)
-        
 
         # Fake a request context for the callback
         with self.app.app.test_request_context(
@@ -932,7 +931,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
             session.data['oauth_states'] = {
                 self.provider.short_name: {
                     'state': 'mock_state',
-                    'institution_id': self.institution.id
+                    'institution_id': institution.id
                 },
             }
             session.save()
