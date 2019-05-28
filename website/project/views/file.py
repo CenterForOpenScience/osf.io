@@ -27,19 +27,12 @@ def grid_data(auth, node, **kwargs):
     """
     data = request.args.to_dict()
     ret = rubeus.to_hgrid(node, auth, **data)
-    try:
-        nodeSettinglist = NodeSettings.objects.filter(owner_id=node.id)
-        if nodeSettinglist.count() > 0:
-            if len(ret[0]['children']) > 0:
-                i = 0
-                while i < len(ret[0]['children']):
-                    if ret[0]['children'][i]['provider'] == 'osfstorage':
-                        if 'nodeRegion' in ret[0]['children'][i]:
-                            if ret[0]['children'][i]['nodeRegion'] not in ['NII Storage', 'United States']:
-                                ret[0]['children'][i]['iconUrl'] = '/static/addons/osfstorage/comicon_custom_storage.png'
-                                ret[0]['children'][i]['addonFullname'] = ret[0]['children'][i]['nodeRegion']
-                    i += 1
-    except Exception:
-        pass
-
+    nodeSettinglist = NodeSettings.objects.filter(owner_id=node.id)
+    if nodeSettinglist and ret[0]['children']:
+        for _, child in enumerate(ret[0]['children']):
+            if child['provider'] == 'osfstorage' and \
+                    'nodeRegion' in child and \
+                    child['nodeRegion'] not in ['NII Storage', 'United States']:
+                child['iconUrl'] = '/static/addons/osfstorage/comicon_custom_storage.png'
+                child['addonFullname'] = child['nodeRegion']
     return {'data': ret}
