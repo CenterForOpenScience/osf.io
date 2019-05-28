@@ -897,7 +897,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             normalized_item = six.u(item)
         except TypeError:
             normalized_item = item
-        normalized_item = unicodedata.normalize('NFKD', normalized_item).encode('ascii', 'ignore')
+        normalized_item = unicodedata.normalize('NFKD', normalized_item)
         normalized_items.append(normalized_item)
     items = normalized_items
 
