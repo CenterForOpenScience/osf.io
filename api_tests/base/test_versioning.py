@@ -107,7 +107,7 @@ class TestBaseVersioning:
         assert res.json['meta']['version'] == LATEST_VERSIONS[2]
 
     def test_header_version_latest(self, app):
-        headers = {'accept': 'version=latest;'}
+        headers = {'accept': 'application/vnd.api+json;version=latest'}
         res = app.get(valid_url_path_version_url, headers=headers)
         assert res.status_code == 200
         assert res.json['meta']['version'] == LATEST_VERSIONS[2]

@@ -2259,6 +2259,9 @@ class Node(AbstractNode):
             ('view_node', 'Can view node details'),
         )
 
+    def __repr__(self):
+        return '{self.title!r}, with guid {self._id!r}'.format(self=self)
+
 
 def remove_addons(auth, resource_object_list):
     for config in AbstractNode.ADDONS_AVAILABLE:

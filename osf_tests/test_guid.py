@@ -244,7 +244,7 @@ class TestResolveGuid(OsfTestCase):
 
         res = self.app.get('{}download'.format(pp.url), auth=submitter.auth)
         assert res.status_code == 302
-        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&direct&version=1'.format(WATERBUTLER_URL, pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get('{}download'.format(pp_branded.url), auth=submitter.auth)
         assert res.status_code == 302
@@ -256,7 +256,7 @@ class TestResolveGuid(OsfTestCase):
 
         res = self.app.get('{}download'.format(pp.url), auth=super_user.auth)
         assert res.status_code == 302
-        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&direct&version=1'.format(WATERBUTLER_URL, pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get('{}download'.format(pp_branded.url), auth=super_user.auth)
         assert res.status_code == 302
@@ -268,7 +268,7 @@ class TestResolveGuid(OsfTestCase):
 
         res = self.app.get('{}download'.format(pp.url), auth=moderator.auth)
         assert res.status_code == 302
-        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&direct&version=1'.format(WATERBUTLER_URL, pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         branded_provider.add_to_group(moderator, 'moderator')
         branded_provider.save()
@@ -283,7 +283,7 @@ class TestResolveGuid(OsfTestCase):
 
         res = self.app.get('{}download'.format(pp.url), auth=admin.auth)
         assert res.status_code == 302
-        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&direct&version=1'.format(WATERBUTLER_URL, pp._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         branded_provider.add_to_group(admin, 'admin')
         branded_provider.save()

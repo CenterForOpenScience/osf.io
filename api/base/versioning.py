@@ -51,9 +51,9 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         version = media_type.params.get(self.version_param)
         if not version:
             return None
+        version = unicode_http_header(version)
         if version == 'latest':
             return get_latest_sub_version(major_version)
-        version = unicode_http_header(version)
         if not self.is_allowed_version(version):
             raise drf_exceptions.NotAcceptable(invalid_version_message)
         return version

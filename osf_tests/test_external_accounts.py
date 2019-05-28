@@ -89,14 +89,14 @@ class TestEncryptedTextField:
         assert isinstance(my_value_encrypted, str)
 
         my_value_decrypted = field.from_db_value(my_value_encrypted, None, None, None)
-        assert my_value_decrypted == ensure_bytes(my_value)
+        assert my_value_decrypted == ensure_bytes(my_value).decode()
 
         my_value = '찦차КЛМНО💁◕‿◕｡)╱i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤  ǝɹol'
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
         my_value_decrypted = field.from_db_value(my_value_encrypted, None, None, None)
-        assert isinstance(my_value_decrypted, bytes)
-        assert my_value_decrypted == ensure_bytes(my_value)
+        assert isinstance(my_value_decrypted, str)
+        assert my_value_decrypted == ensure_bytes(my_value).decode()
 
     def test_encrypt_and_decrypt_no_unicode_in_string_type_unicode(self, field):
         my_value = u'hello'
@@ -115,11 +115,11 @@ class TestEncryptedTextField:
         assert isinstance(my_value_encrypted, str)
 
         my_value_decrypted = field.from_db_value(my_value_encrypted, None, None, None)
-        assert my_value_decrypted == ensure_bytes(my_value)
+        assert my_value_decrypted == ensure_bytes(my_value).decode()
 
         my_value = u'찦차КЛМНО💁◕‿◕｡)╱i̲̬͇̪͙n̝̗͕v̟̜̘̦͟o̶̙̰̠kè͚̮̺̪̹̱̤  ǝɹol'
         assert isinstance(my_value, str)
         my_value_encrypted = field.get_db_prep_value(my_value)
         my_value_decrypted = field.from_db_value(my_value_encrypted, None, None, None)
-        assert isinstance(my_value_decrypted, bytes)
-        assert my_value_decrypted == ensure_bytes(my_value)
+        assert isinstance(my_value_decrypted, str)
+        assert my_value_decrypted == ensure_bytes(my_value).decode()
