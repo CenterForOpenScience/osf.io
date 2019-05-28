@@ -19,41 +19,9 @@ NODE MIGRATION
 
 increment = 100000
 
-# Reverse migration - Drop NodeGroupObjectPermission table - table gives node django groups
-# permissions to node
-drop_node_group_object_permission_table = """
-    TRUNCATE TABLE osf_nodegroupobjectpermission;
-    """
-
-# Reverse migration - Remove user membership in Node read/write/admin Django groups
-remove_users_from_node_django_groups = """
-    DELETE FROM osf_osfuser_groups
-      WHERE group_id IN (
-        SELECT id FROM auth_group WHERE name LIKE '%node_%'
-      );
-    """
-
-# Reverse migration - Remove admin/write/read node django groups
-remove_node_django_groups = """
-    SET CONSTRAINTS ALL DEFERRED;
-    DELETE FROM auth_group WHERE name LIKE '%node_%';
-   """
-
-# Reverse migration
-def finalize_reverse_node_guardian_migration():
-    """
-    After restoring contributor permissions, this runs to finalize removing rows to tables
-    that were added for guardian.
-    """
-    with connection.cursor() as cursor:
-        cursor.execute(drop_node_group_object_permission_table)
-        logger.info('Finished deleting NodeGroupObjectPermission table.')
-        cursor.execute(remove_users_from_node_django_groups)
-        logger.info('Finished removing users from guardian node django groups.')
-        cursor.execute(remove_node_django_groups)
-        logger.info('Finished removing guardian node django groups.')
-
-# Reverse migration
+# Reverse migration - contributor read/write/admin columns preserved during forward migration.
+# If reversing data that's been sitting for awhile, the old contributor columns could differ
+# from what's being repopulated
 reset_contributor_perms = """
     -- Resetting contributor table permissions to all false, so updates afterwards
     -- only flip fields that should be TRUE
@@ -104,6 +72,130 @@ repopulate_admin_perms = """
     AND NG.content_object_id > {start} AND NG.content_object_id <= {end};
     """
 
+# Reverse migration - Remove all rows from NodeGroupObjectPermission table - table gives node django groups
+# permissions to node
+drop_node_group_object_permission_table = """
+    DELETE FROM osf_nodegroupobjectpermission;
+    """
+
+# Reverse migration - Remove user membership in Node read/write/admin Django groups
+remove_users_from_node_django_groups = """
+    DELETE FROM osf_osfuser_groups
+      WHERE group_id IN (
+        SELECT id FROM auth_group WHERE name LIKE '%node_%'
+      );
+    """
+
+# Reverse migration - creates new auth_group table, we're going to swap the new with the old
+# Removing the majority of the rows in the auth_group table is a very time-consuming operation
+# due to the large number of foreign keys pointing to this, so we're doing this for speed.  We
+# are just going to create a new auth_group table with only the rows that we want to keep.
+create_temporary_auth_group_table = """
+    CREATE TABLE auth_group_copy (LIKE auth_group INCLUDING ALL);
+    INSERT INTO auth_group_copy
+    SELECT * FROM auth_group
+    WHERE name NOT LIKE '%node_%';
+    """
+
+# Reverse migration create group id column
+create_group_id_column = """
+    ALTER TABLE {table}
+    ADD column group_id_copy INTEGER;
+"""
+
+# Reverse migration create group id column
+create_group_id_column_with_constraint = """
+    ALTER TABLE {table}
+    ADD column group_id_copy INTEGER
+    REFERENCES auth_group_copy(id);
+"""
+
+# Reverse migration - repoints tables with FK's to auth_group to the new auth_group table
+repoint_auth_group_foreign_keys = """
+    UPDATE {table}
+    SET group_id_copy = group_id;
+
+    ALTER TABLE {table} DROP COLUMN group_id;
+
+    ALTER TABLE {table} RENAME group_id_copy TO group_id;
+"""
+
+set_not_null_constraint = """
+    ALTER TABLE {table} ALTER COLUMN group_id SET NOT NULL;
+"""
+
+create_index_on_group_id = """
+    CREATE INDEX {table}_group_id ON {table} (group_id);
+"""
+
+
+# List of tables that have foreign keys to auth_group
+related_auth_group_tables = [
+    'auth_group_permissions',
+    'osf_osfuser_groups',
+    'guardian_groupobjectpermission',
+    'waffle_flag_groups',
+    'osf_collectiongroupobjectpermission',
+    'osf_abstractprovidergroupobjectpermission',
+    'osf_nodegroupobjectpermission',
+    'osf_preprintgroupobjectpermission',
+]
+
+group_id_constraints = [
+    'auth_group_permissions',
+    'osf_osfuser_groups',
+    'osf_collectiongroupobjectpermission',
+    'osf_nodegroupobjectpermission',
+    'osf_preprintgroupobjectpermission',
+]
+
+# Reverse migration - replaces old auth_group table with new auth_group table
+swap_old_auth_group_table_with_new_auth_group_table = """
+    ALTER TABLE auth_group RENAME TO auth_group_deleted;
+    ALTER TABLE auth_group_copy RENAME TO auth_group;
+    ALTER SEQUENCE auth_group_id_seq OWNED BY NONE;
+    DROP TABLE auth_group_deleted;
+    ALTER SEQUENCE auth_group_id_seq OWNED BY auth_group.id;
+
+    ALTER TABLE auth_group_permissions ADD CONSTRAINT auth_group_permissions_group_id_permission_id UNIQUE ("group_id", "permission_id");
+    ALTER TABLE osf_nodegroupobjectpermission ADD CONSTRAINT unique_node_group_object_permission UNIQUE ("group_id", "permission_id", "content_object_id");
+    ALTER TABLE osf_preprintgroupobjectpermission ADD CONSTRAINT unique_preprint_group_object_permission UNIQUE ("group_id", "permission_id", "content_object_id");
+"""
+
+
+# Reverse migration
+def finalize_reverse_node_guardian_migration():
+    """
+    After restoring contributor permissions, this runs to finalize removing rows to tables
+    that were added for guardian.
+
+    Creates new auth_group table that only contains groups not added with node guardian work
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(drop_node_group_object_permission_table)
+        logger.info('Finished deleting records from NodeGroupObjectPermission table.')
+        cursor.execute(remove_users_from_node_django_groups)
+        logger.info('Finished removing users from guardian node django groups.')
+        cursor.execute(create_temporary_auth_group_table)
+        logger.info('Created new auth_group_table.')
+
+        # Treating some of the tables that point to auth_group differently
+        for table_name in related_auth_group_tables:
+            if table_name in group_id_constraints:
+                cursor.execute(create_group_id_column_with_constraint.format(table=table_name))
+            else:
+                cursor.execute(create_group_id_column.format(table=table_name))
+
+            cursor.execute(repoint_auth_group_foreign_keys.format(table=table_name))
+
+            if table_name == 'auth_group_permissions':
+                cursor.execute(set_not_null_constraint.format(table=table_name))
+                cursor.execute(create_index_on_group_id.format(table=table_name))
+
+        logger.info('Repointed foreign keys to new auth_group_table.')
+
+        cursor.execute(swap_old_auth_group_table_with_new_auth_group_table)
+        logger.info('Swapped old auth_group table with new auth_group table.')
 
 def reverse_guardian_migration(state, schema):
     migrations = [
