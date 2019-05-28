@@ -17,9 +17,8 @@ PREPRINT MIGRATION (we were already using guardian for preprints, but weren't us
 PreprintGroupObjectPermission table
 """
 
-# Forward migration - moving preprints to dfks
-
-
+# DELETE FROM guardian_groupobjectpermission present in both forward and reverse migrations because forward migration had already been
+# completed on staging environment and reverse migration needed to delete old rows before restoring out of the box guardian rows
 def reverse_migrate_preprints(state, schema):
     sql = """
         DELETE FROM guardian_groupobjectpermission GO
@@ -40,7 +39,7 @@ def reverse_migrate_preprints(state, schema):
     with connection.cursor() as cursor:
         cursor.execute(sql)
 
-
+# Forward migration - moving preprints to dfks
 def migrate_preprints_to_direct_fks(state, schema):
     GroupObjectPermission = state.get_model('guardian', 'groupobjectpermission')
     Preprint = state.get_model('osf', 'preprint')

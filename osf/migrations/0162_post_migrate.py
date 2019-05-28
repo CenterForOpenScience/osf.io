@@ -3,48 +3,10 @@
 from __future__ import unicode_literals
 
 import logging
-from django.db import migrations, connection
+from django.db import migrations
 from django.core.management.sql import emit_post_migrate_signal
 
 logger = logging.getLogger(__name__)
-
-"""
-This file exists separately from 0164_add_guardian_to_nodes.py for optimization purposes on staging3
-Half of the reverse guardian migration is contained in this file, it should be moved
-back to 0164 if possible.
-"""
-
-# Reverse migration - Drop NodeGroupObjectPermission table - table gives node django groups
-# permissions to node
-drop_node_group_object_permission_table = """
-    TRUNCATE TABLE osf_nodegroupobjectpermission;
-    COMMIT;
-    """
-
-# Reverse migration - Remove user membership in Node read/write/admin Django groups
-remove_users_from_node_django_groups = """
-    DELETE FROM osf_osfuser_groups
-      WHERE group_id IN (
-        SELECT id FROM auth_group WHERE name LIKE '%node_%'
-      );
-    COMMIT;
-    """
-
-# Reverse migration - Remove admin/write/read node django groups
-remove_node_django_groups = """
-    SET CONSTRAINTS ALL DEFERRED;
-    DELETE FROM auth_group WHERE name LIKE '%node_%';
-    COMMIT;
-    """
-
-def finalize_reverse_node_guardian_migration(state, schema):
-    with connection.cursor() as cursor:
-        cursor.execute(drop_node_group_object_permission_table)
-        logger.info('Finished deleting NodeGroupObjectPermission table.')
-        cursor.execute(remove_users_from_node_django_groups)
-        logger.info('Finished removing users from guardian node django groups.')
-        cursor.execute(remove_node_django_groups)
-        logger.info('Finished removing guardian node django groups.')
 
 def post_migrate_signal(state, schema):
     # this is to make sure that the permissions created earlier exist!
@@ -59,5 +21,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(post_migrate_signal, finalize_reverse_node_guardian_migration),
+        migrations.RunPython(post_migrate_signal, migrations.RunPython.noop),
     ]

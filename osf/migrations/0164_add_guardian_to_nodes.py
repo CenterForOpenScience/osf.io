@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 import logging
-from django.db import migrations
+from django.db import migrations, connection
 from osf.utils.migrations import batch_node_migrations
 
 logger = logging.getLogger(__name__)
@@ -19,6 +19,41 @@ NODE MIGRATION
 
 increment = 100000
 
+# Reverse migration - Drop NodeGroupObjectPermission table - table gives node django groups
+# permissions to node
+drop_node_group_object_permission_table = """
+    TRUNCATE TABLE osf_nodegroupobjectpermission;
+    """
+
+# Reverse migration - Remove user membership in Node read/write/admin Django groups
+remove_users_from_node_django_groups = """
+    DELETE FROM osf_osfuser_groups
+      WHERE group_id IN (
+        SELECT id FROM auth_group WHERE name LIKE '%node_%'
+      );
+    """
+
+# Reverse migration - Remove admin/write/read node django groups
+remove_node_django_groups = """
+    SET CONSTRAINTS ALL DEFERRED;
+    DELETE FROM auth_group WHERE name LIKE '%node_%';
+   """
+
+# Reverse migration
+def finalize_reverse_node_guardian_migration():
+    """
+    After restoring contributor permissions, this runs to finalize removing rows to tables
+    that were added for guardian.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(drop_node_group_object_permission_table)
+        logger.info('Finished deleting NodeGroupObjectPermission table.')
+        cursor.execute(remove_users_from_node_django_groups)
+        logger.info('Finished removing users from guardian node django groups.')
+        cursor.execute(remove_node_django_groups)
+        logger.info('Finished removing guardian node django groups.')
+
+# Reverse migration
 reset_contributor_perms = """
     -- Resetting contributor table permissions to all false, so updates afterwards
     -- only flip fields that should be TRUE
@@ -80,6 +115,7 @@ def reverse_guardian_migration(state, schema):
 
     batch_node_migrations(state, migrations)
     logger.info('Finished restoring Contributor permissions.')
+    finalize_reverse_node_guardian_migration()
     return
 
 # Forward migration - for each node, create a read, write, and admin Django group
