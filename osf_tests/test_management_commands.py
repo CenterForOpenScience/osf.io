@@ -18,7 +18,6 @@ from osf_tests.factories import (
 )
 from tests.base import DbTestCase
 from osf.management.commands.data_storage_usage import (
-    PRIVATE_SIZE_THRESHOLD,
     process_usages,
 )
 
@@ -26,23 +25,11 @@ from osf.management.commands.data_storage_usage import (
 # Using powers of two so that any combination of file sizes will give a unique total
 # If a summary value is incorrect, subtract out the values that are correct and convert
 # to binary. Each of the 1s will correspond something that wasn't handled properly.
-def next_power_of_2(x):
-    # https://stackoverflow.com/a/14267825/3579517
-    return 1 if x == 0 else 1 << (x - 1).bit_length()
-
-
 def next_file_size():
     size = 1
-    while size < PRIVATE_SIZE_THRESHOLD:
+    while True:
         yield size
         size *= 2
-
-
-def next_big_file_size():
-    big_size = next_power_of_2(PRIVATE_SIZE_THRESHOLD)
-    while True:
-        yield big_size
-        big_size *= 2
 
 
 class TestDataStorageUsage(DbTestCase):
@@ -111,8 +98,6 @@ class TestDataStorageUsage(DbTestCase):
             ('registrations', 0),
             ('nd_quick_files', 0),
             ('nd_public_nodes', 0),
-            ('nd_private_nodes_under5', 0),
-            ('nd_private_nodes_over5', 0),
             ('nd_preprints', 0),
             ('nd_supp_nodes', 0),
             ('canada_montreal', 0),
@@ -129,7 +114,6 @@ class TestDataStorageUsage(DbTestCase):
 
         project_public_us = self.project(creator=user, is_public=True)
         small_size = next_file_size()
-        big_size = next_big_file_size()
         file_size = next(small_size)
         project_public_us_test_file = create_test_file(
             target=project_public_us,
@@ -150,32 +134,6 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_public_nodes'] += file_size
         expected_summary_data['united_states'] += file_size
-
-        project_private_small_ca = self.project(creator=user, is_public=False, region=region_ca)
-        file_size = next(small_size)
-        create_test_file(
-            target=project_private_small_ca,
-            user=user,
-            size=file_size
-        )
-        logger.debug(u'Private project (small), CA: {}'.format(file_size))
-
-        expected_summary_data['total'] += file_size
-        expected_summary_data['nd_private_nodes_under5'] += file_size
-        expected_summary_data['canada_montreal'] += file_size
-
-        project_private_large_au = self.project(creator=user, is_public=False, region=region_au)
-        file_size = next(big_size)
-        create_test_file(
-            target=project_private_large_au,
-            user=user,
-            size=file_size
-        )
-        logger.debug(u'Private project (large), AU: {}'.format(file_size))
-
-        expected_summary_data['total'] += file_size
-        expected_summary_data['nd_private_nodes_over5'] += file_size
-        expected_summary_data['australia_syndey'] += file_size
 
         component_private_small_deleted_de = self.project(
             creator=user,
@@ -218,12 +176,12 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['canada_montreal'] += file_size
         user_addon.default_region_id = self.region_us
         user_addon.save()
-        supplementary_node_public_us = self.project(creator=user, is_public=True, region=self.region_us)
-        preprint_with_supplement_ca.node = supplementary_node_public_us
+        supplementary_node_public_au = self.project(creator=user, is_public=True, region=region_au)
+        preprint_with_supplement_ca.node = supplementary_node_public_au
         preprint_with_supplement_ca.save()
         file_size = next(small_size)
         create_test_file(
-            target=supplementary_node_public_us,
+            target=supplementary_node_public_au,
             user=user,
             size=file_size
         )
@@ -232,7 +190,7 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_supp_nodes'] += file_size
         expected_summary_data['nd_public_nodes'] += file_size
-        expected_summary_data['united_states'] += file_size
+        expected_summary_data['australia_syndey'] += file_size
 
         file_size = next(small_size)
         withdrawn_preprint_us = PreprintFactory(creator=user, file_size=file_size)
@@ -296,11 +254,14 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['united_states'] += file_size
         expected_summary_data['registrations'] += file_size
 
-        actual_summary_data = process_usages(write_detail=False, write_summary=False)
+        actual_summary_data = process_usages(dry_run=True)
 
         actual_keys = actual_summary_data.keys()
+        for key in actual_summary_data:
+            logger.info('Actual field: {}'.format(key))
         expected_keys = expected_summary_data.keys()
-
+        for key in expected_summary_data:
+            logger.info('Expected field: {}'.format(key))
         assert actual_keys == expected_keys
         assert len(actual_keys) != 0
 
