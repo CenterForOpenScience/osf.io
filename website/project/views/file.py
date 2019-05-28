@@ -27,8 +27,7 @@ def grid_data(auth, node, **kwargs):
     """
     data = request.args.to_dict()
     ret = rubeus.to_hgrid(node, auth, **data)
-    nodeSettinglist = NodeSettings.objects.filter(owner_id=node.id)
-    if nodeSettinglist and ret[0]['children']:
+    if NodeSettings.objects.filter(owner_id=node.id).exists() and ret[0]['children']:
         for _, child in enumerate(ret[0]['children']):
             if child['provider'] == 'osfstorage' and \
                     'nodeRegion' in child and \
