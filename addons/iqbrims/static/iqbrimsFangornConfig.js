@@ -98,9 +98,11 @@ function _iqbrimsTitle(item, col) {
             }).filter(function(e) {
                 return e[1] == item.data.name;
             });
-            var key = 'workflow_' + folderTypes[0][0] + '_state';
-            if (latestState[key]) {
-                state = latestState[key];
+            if (folderTypes.length > 0) {
+                var key = 'workflow_' + folderTypes[0][0] + '_state';
+                if (latestState[key]) {
+                    state = latestState[key];
+                }
             }
         }
         if (state) {
