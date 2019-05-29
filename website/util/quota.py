@@ -150,13 +150,11 @@ def file_modified(target, user, payload, file_node, storage_type):
     file_info.save()
 
 def update_default_storage(user):
-    try:
-        if user is not None:
-            user_settings = user.get_addon('osfstorage')
-            instId = user.affiliated_institutions.first()._id
-            user_settings.set_region(Region.objects.get(_id=instId)._id)
-    except Exception:
-            pass
+    if user is not None:
+        user_settings = user.get_addon('osfstorage')
+        institution = user.affiliated_institutions.first()
+        if institution is not None:
+            user_settings.set_region(Region.objects.get(_id=institution._id)._id)
 
 def get_node_file_list(file_node):
     if 'file' in file_node.type:
