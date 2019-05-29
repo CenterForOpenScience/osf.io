@@ -20,6 +20,7 @@ from addons.box.models import Provider as Box
 from addons.googledrive.models import GoogleDriveProvider
 from addons.mendeley.models import Mendeley
 from osf.models import ExternalAccount
+from osf.utils.external_util import get_all_custome_googledrive_external_account, set_new_access_token, is_custome_googledrive, get_region_id_by_external_id
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -45,8 +46,6 @@ def get_targets(delta, addon_short_name):
 def main(delta, Provider, rate_limit, dry_run):
     allowance = rate_limit[0]
     last_call = time.time()
-    from osf.utils.external_util import get_all_custome_googledrive_external_account, set_new_access_token
-    custom_google_extenal_id_dict = get_all_custome_googledrive_external_account()
     for record in get_targets(delta, Provider.short_name):
         if Provider(record).has_expired_credentials:
             logger.info(
@@ -73,8 +72,8 @@ def main(delta, Provider, rate_limit, dry_run):
             success = False
             try:
                 success = Provider(record).refresh_oauth_key(force=True)
-                if success and record.id in custom_google_extenal_id_dict:
-                    set_new_access_token(custom_google_extenal_id_dict[record.id], get_oauth_key_by_external_id(record.id))
+                if success and is_custome_googledrive(record.id):
+                    set_new_access_token(get_region_id_by_external_id(record.id), get_oauth_key_by_external_id(record.id))
             except OAuth2Error as e:
                 logger.error(e)
             except Exception as exception:

@@ -23,10 +23,13 @@ def get_oauth_key_by_external_id(external_account_id):
 
 
 def is_custome_googledrive(external_account_id):
-    external_account = RegionExternalAccount.objects.filter(pk=external_account_id)
+    external_account = RegionExternalAccount.objects.filter(external_account_id=external_account_id)
     if not external_account.exists():
         return False
     return True
+
+def get_region_id_by_external_id(external_account_id):
+    return RegionExternalAccount.objects.get(external_account_id__exact=external_account_id).region_id
 
 def get_all_custome_googledrive_external_account():
     data = {}
