@@ -840,7 +840,7 @@ def register_user(**kwargs):
                 )
             )
         )
-    except BlacklistedEmailError as e:
+    except BlacklistedEmailError:
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long=language.BLACKLISTED_EMAIL)

@@ -1989,8 +1989,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         related_doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
         assert related_doi['creative_work'] == related_work
 
-        workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
-        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/')]
+        workidentifiers = [nodes.pop(k)['uri'] for k, v in list(nodes.items()) if v['@type'] == 'workidentifier']
+        assert workidentifiers == [urljoin(settings.DOMAIN, self.preprint._id + '/')]
 
         relation = nodes.pop(list(nodes.keys())[0])
         assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
@@ -2086,11 +2086,9 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             self.preprint.creator.profile_image_url(),
         ]) | set(user.absolute_url for user in self.preprint.contributors)
 
-        workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
+        workidentifiers = {nodes.get(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
-        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
-
-        assert nodes == {}
+        assert workidentifiers == set([urljoin(settings.DOMAIN, self.preprint._id) + '/', 'https://doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
 
     def test_format_preprint_is_deleted(self):
         self.file = OsfStorageFile.create(

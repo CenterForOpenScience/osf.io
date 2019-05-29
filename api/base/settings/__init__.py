@@ -15,7 +15,7 @@ from .defaults import *  # noqa
 
 try:
     from .local import *  # noqa
-except ImportError as error:
+except ImportError:
     warnings.warn(
         'No api/base/settings/local.py settings file found. Did you remember to '
         'copy local-dist.py to local.py?', ImportWarning,
