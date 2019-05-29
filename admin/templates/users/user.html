@@ -253,6 +253,10 @@
                     </td>
                 </tr>
                 <tr>
+                    <td>SPAM Status</td>
+                    <td>{% include "nodes/spam_status.html" with resource=user %}</td>
+                </tr>
+                <tr>
                     <td>Profile content checked for spam</td>
                     <td>{{ user.potential_spam_profile_content }}</td>
                 </tr>
@@ -283,17 +287,7 @@
                                 <td>{{ node.public }}</td>
                                 <td>{{ node.is_registration }}</td>
                                 <td>{{ node.number_contributors }}</td>
-                                <td>
-                                    {% if node.spam_status == SPAM_STATUS.UNKNOWN %}
-                                        <span class="label label-default">Unknown</span>
-                                    {% elif node.spam_status == SPAM_STATUS.FLAGGED %}
-                                        <span class="label label-warning">Flagged</span>
-                                    {% elif node.spam_status == SPAM_STATUS.SPAM %}
-                                        <span class="label label-danger">Spam</span>
-                                    {% elif node.spam_status == SPAM_STATUS.HAM %}
-                                        <span class="label label-success">Ham</span>
-                                    {% endif %}
-                                </td>
+                                <td>{% include "nodes/spam_status.html" with resource=node %}</td>
                                 {%  if perms.osf.delete_node %}
                                 <td>
                                     {% if node.number_contributors < 2 and not node.is_registration %}
