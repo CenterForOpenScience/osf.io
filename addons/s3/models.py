@@ -85,7 +85,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         # as that's all we want to be linkable on a node.
         try:
             buckets = get_bucket_names(self)
-        except:
+        except Exception:
             raise exceptions.InvalidAuthError()
 
         return [

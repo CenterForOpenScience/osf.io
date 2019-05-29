@@ -29,7 +29,4 @@ handler.setFormatter(formatter)
 
 logger = logging.getLogger()
 logger.addHandler(handler)
-if settings.DEBUG_MODE:
-    logger.setLevel(logging.DEBUG)
-else:
-    logger.setLevel(settings.LOG_LEVEL)
+logger.setLevel(settings.LOG_LEVEL)

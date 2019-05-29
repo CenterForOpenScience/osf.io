@@ -1,5 +1,5 @@
 from api.base.serializers import (
-    JSONAPISerializer
+    JSONAPISerializer,
 )
 from api.base.utils import absolute_reverse
 from api.files.serializers import FileSerializer
@@ -7,14 +7,15 @@ from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
-from osf.models import AbstractNode
+from api.collections.serializers import CollectionSubmissionSerializer
 
-from osf.models import OSFUser
-
-from osf.models import BaseFileNode
-
-from osf.models import Institution
-
+from osf.models import (
+    AbstractNode,
+    OSFUser,
+    BaseFileNode,
+    Institution,
+    CollectionSubmission,
+)
 
 class SearchSerializer(JSONAPISerializer):
 
@@ -39,14 +40,18 @@ class SearchSerializer(JSONAPISerializer):
             serializer = InstitutionSerializer(data, context=self.context)
             return InstitutionSerializer.to_representation(serializer, data)
 
+        if isinstance(data, CollectionSubmission):
+            serializer = CollectionSubmissionSerializer(data, context=self.context)
+            return CollectionSubmissionSerializer.to_representation(serializer, data)
+
         return None
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
             view_name='search:search-search',
             kwargs={
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
         )
 
     class Meta:

@@ -275,14 +275,14 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
         error.message = 'This should work'
         mock_make.side_effect = error
 
-        url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
+        url = '/api/v1/project/{0}/s3/newbucket/'.format(self.project._id)
         ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
         assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to S3"}')
 
     @mock.patch('addons.s3.views.utils.create_bucket')
     def test_bad_location_fails(self, mock_make):
-        url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
+        url = '/api/v1/project/{0}/s3/newbucket/'.format(self.project._id)
         ret = self.app.post_json(
             url,
             {

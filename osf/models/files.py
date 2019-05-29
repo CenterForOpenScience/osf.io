@@ -5,10 +5,13 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
-from django.db import models
+from django.apps import apps
+from django.db import models, IntegrityError
 from django.db.models import Manager
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
@@ -23,7 +26,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from api.base.utils import waterbutler_api_url_for
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
-from website.util import api_v2_url
+from website.util import api_v2_url, web_url_for, api_url_for
 
 __all__ = (
     'File',
@@ -63,10 +66,6 @@ class UnableToResolveFileClass(Exception):
     pass
 
 
-class DeprecatedException(Exception):
-    pass
-
-
 class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
     """Base class for all provider-specific file models and the trashed file model.
     This class should generally not be used or created manually. Use the provider-specific
@@ -92,7 +91,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
-    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files', on_delete=models.CASCADE)
+    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    target_object_id = models.PositiveIntegerField()
+    target = GenericForeignKey('target_content_type', 'target_object_id')
+
     parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children', on_delete=models.CASCADE)
     copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of', on_delete=models.CASCADE)
 
@@ -111,6 +113,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     class Meta:
         base_manager_name = 'objects'
+        index_together = (
+            ('target_content_type', 'target_object_id', )
+        )
 
     @property
     def history(self):
@@ -149,9 +154,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """
         # Files are inaccessible if a node is retracted, so just show
         # the retraction detail page for files on retractions
-        if self.node.is_registration and self.node.is_retracted:
-            return self.node.web_url_for('view_project')
-        return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
+        from osf.models import AbstractNode
+        if isinstance(self.target, AbstractNode):
+            if self.target.is_registration and self.target.is_retracted:
+                return self.target.web_url_for('view_project')
+        return web_url_for('addon_view_or_download_file', guid=self.target._id, provider=self.provider, path=self.path.strip('/'))
 
     @property
     def absolute_api_v2_url(self):
@@ -181,20 +188,22 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return cls(**kwargs)
 
     @classmethod
-    def get_or_create(cls, node, path):
+    def get_or_create(cls, target, path):
+        content_type = ContentType.objects.get_for_model(target)
         try:
-            obj = cls.objects.get(node=node, _path='/' + path.lstrip('/'))
+            obj = cls.objects.get(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
         except cls.DoesNotExist:
-            obj = cls(node=node, _path='/' + path.lstrip('/'))
+            obj = cls(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
         return obj
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, node):
+    def get_file_guids(cls, materialized_path, provider, target):
+        content_type = ContentType.objects.get_for_model(target)
         guids = []
         materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
             # it's a folder
-            folder_children = cls.objects.filter(provider=provider, node=node, _materialized_path__startswith=materialized_path)
+            folder_children = cls.objects.filter(provider=provider, target_object_id=target.id, target_content_type=content_type, _materialized_path__startswith=materialized_path)
             for item in folder_children:
                 if item.kind == 'file':
                     guid = item.get_guid()
@@ -204,7 +213,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             # it's a file
             try:
                 file_obj = cls.objects.get(
-                    node=node, _materialized_path=materialized_path
+                    target_object_id=target.id, target_content_type=content_type, _materialized_path=materialized_path
                 )
             except cls.DoesNotExist:
                 return guids
@@ -213,6 +222,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                 guids.append(guid._id)
 
         return guids
+
+    def has_permission(self, user, perm):
+        return self.node and self.node.has_permission(user, perm)
 
     def to_storage(self, **kwargs):
         storage = super(BaseFileNode, self).to_storage(**kwargs)
@@ -268,10 +280,14 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             return None
 
     def generate_waterbutler_url(self, **kwargs):
+        base_url = None
+        if hasattr(self.target, 'osfstorage_region'):
+            base_url = self.target.osfstorage_region.waterbutler_url
         return waterbutler_api_url_for(
-            self.node._id,
+            self.target._id,
             self.provider,
             self.path,
+            base_url=base_url,
             **kwargs
         )
 
@@ -319,12 +335,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def get_download_count(self, version=None):
-        """Pull the download count from the pagecounter collection
-        Limit to version if specified.
-        Currently only useful for OsfStorage
+    def get_page_counter_count(self, count_type, version=None):
+        """Assembles a string to retrieve the correct file data from the pagecounter collection,
+        then calls get_basic_counters to retrieve the total count. Limit to version if specified.
         """
-        parts = ['download', self.node._id, self._id]
+        parts = [count_type, self.target._id, self._id]
         if version is not None:
             parts.append(version)
         page = ':'.join([format(part) for part in parts])
@@ -332,8 +347,16 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return count or 0
 
+    def get_download_count(self, version=None):
+        """Pull the download count from the pagecounter collection"""
+        return self.get_page_counter_count('download', version=version)
+
+    def get_view_count(self, version=None):
+        """Pull the mfr view count from the pagecounter collection"""
+        return self.get_page_counter_count('view', version=version)
+
     def copy_under(self, destination_parent, name=None):
-        return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
+        return utils.copy_files(self, destination_parent.target, destination_parent, name=name)
 
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
@@ -342,9 +365,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return self
 
-    def belongs_to_node(self, node_id):
+    def belongs_to_node(self, target_id):
         """Check whether the file is attached to the specified node."""
-        return self.node._id == node_id
+        return self.target._id == target_id
 
     def get_extra_log_params(self, comment):
         return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
@@ -361,7 +384,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def _update_node(self, recursive=True, save=True):
         if self.parent is not None:
-            self.node = self.parent.node
+            self.target = self.parent.target
         if save:
             self.save()
         if recursive and not self.is_file:
@@ -390,6 +413,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         else:
             self.recast(TrashedFile._typedmodels_type)
 
+            guid = self.guids.first()
+            if guid:
+                Comment = apps.get_model('osf.Comment')
+                Comment.objects.filter(root_target=guid).update(root_target=None)
+
         if save:
             self.save()
 
@@ -409,10 +437,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         super(BaseFileNode, self).save(*args, **kwargs)
 
     def __repr__(self):
-        return '<{}(name={!r}, node={!r})>'.format(
+        return '<{}(name={!r}, target={!r})>'.format(
             self.__class__.__name__,
             self.name,
-            self.node
+            self.target
         )
 
 class UnableToRestore(Exception):
@@ -551,14 +579,24 @@ class Folder(models.Model):
         if not self.pk:
             logger.warn('BaseFileNode._create_child caused an implicit save because you just created a child with an unsaved parent.')
             self.save()
-        child = self._resolve_class(kind)(
+
+        target_content_type = ContentType.objects.get_for_model(self.target)
+        if self._resolve_class(kind).objects.filter(
             name=name,
-            node=self.node,
-            path=path or '/' + name,
-            parent=self,
-            materialized_path=materialized_path or
-            os.path.join(self.materialized_path, name) + '/' if kind is Folder else ''
-        )
+            target_object_id=self.target.id,
+            target_content_type=target_content_type,
+            parent=self
+        ).exists():
+            raise IntegrityError('Child by that name already, exists, update instead')
+        else:
+            child = self._resolve_class(kind)(
+                name=name,
+                target=self.target,
+                path=path or '/' + name,
+                parent=self,
+                materialized_path=materialized_path or
+                os.path.join(self.materialized_path, name) + '/' if kind is Folder else ''
+            )
         if save:
             child.save()
         return child
@@ -599,7 +637,7 @@ class TrashedFileNode(BaseFileNode):
         self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
         if save:
-            self.save(update_modified=False)
+            self.save()
 
         return self
 
@@ -665,6 +703,14 @@ class TrashedFolder(TrashedFileNode):
         return tf
 
 
+class FileVersionUserMetadata(BaseModel):
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
+    file_version = models.ForeignKey('FileVersion', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'file_version')
+
+
 class FileVersion(ObjectIDMixin, BaseModel):
     """A version of an OsfStorageFileNode. contains information
     about where the file is located, hashes and datetimes
@@ -688,6 +734,8 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
+    seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
+    region = models.ForeignKey('addons_osfstorage.Region', null=True, blank=True, on_delete=models.CASCADE)
 
     includable_objects = IncludeManager()
 
@@ -743,6 +791,18 @@ class FileVersion(ObjectIDMixin, BaseModel):
         if save:
             self.save()
         return True
+
+    def serialize_waterbutler_settings(self, node_id, root_id):
+        return dict(self.region.waterbutler_settings, **{
+            'nid': node_id,
+            'rootId': root_id,
+            'baseUrl': api_url_for(
+                'osfstorage_get_metadata',
+                guid=node_id,
+                _absolute=True,
+                _internal=True
+            ),
+        })
 
     class Meta:
         ordering = ('-created',)

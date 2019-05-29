@@ -9,8 +9,8 @@ from django.db import connection, migrations
 from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 from bulk_update.helper import bulk_update
-from addons.wiki.models import WikiPage, NodeWikiPage, WikiVersion
-from osf.models import Comment, Guid, AbstractNode
+from addons.wiki.models import WikiPage, WikiVersion
+from osf.models import Comment, Guid
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +20,16 @@ def reverse_func(state, schema):
     Reverses NodeWikiPage migration. Repoints guids back to each NodeWikiPage,
     repoints comment_targets, comments_viewed_timestamps, and deletes all WikiVersions and WikiPages
     """
+    NodeWikiPage = state.get_model('addons_wiki', 'nodewikipage')
+    AbstractNode = state.get_model('osf', 'AbstractNode')
+
     nwp_content_type_id = ContentType.objects.get_for_model(NodeWikiPage).id
 
     nodes = AbstractNode.objects.exclude(wiki_pages_versions={})
     progress_bar = progressbar.ProgressBar(maxval=nodes.count() or 100).start()
     for i, node in enumerate(nodes, 1):
         progress_bar.update(i)
-        for wiki_key, version_list in node.wiki_pages_versions.iteritems():
+        for wiki_key, version_list in node.wiki_pages_versions.items():
             if version_list:
                 for index, version in enumerate(version_list):
                     nwp = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
@@ -88,6 +91,8 @@ def migrate_node_wiki_pages(state, schema):
     migrate_guid_referent_sql(state, schema)
 
 def create_wiki_pages_sql(state, schema):
+    NodeWikiPage = state.get_model('addons_wiki', 'nodewikipage')
+
     then = time.time()
     logger.info('Starting migration of WikiPages [SQL]:')
     wikipage_content_type_id = ContentType.objects.get_for_model(WikiPage).id
@@ -193,6 +198,8 @@ def create_guids(state, schema):
     return
 
 def create_wiki_versions_and_repoint_comments_sql(state, schema):
+    NodeWikiPage = state.get_model('addons_wiki', 'nodewikipage')
+
     then = time.time()
     logger.info('Starting migration of WikiVersions [SQL]:')
     nodewikipage_content_type_id = ContentType.objects.get_for_model(NodeWikiPage).id
@@ -417,6 +424,8 @@ def migrate_comments_viewed_timestamp_sql(state, schema):
     logger.info('Finished migration of comments_viewed_timestamp [SQL]: {:.5} seconds'.format(now - then))
 
 def migrate_guid_referent_sql(state, schema):
+    NodeWikiPage = state.get_model('addons_wiki', 'nodewikipage')
+
     then = time.time()
     logger.info('Starting migration of Node Wiki Page guids, repointing them to Wiki Page guids [SQL]:')
     wikipage_content_type_id = ContentType.objects.get_for_model(WikiPage).id

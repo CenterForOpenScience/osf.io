@@ -9,6 +9,7 @@
                 % for each in nodes:
                     ${ render_node.render_node(each, show_path=show_path) }
                 % endfor
+                <%include file="../project/nodes_delete.mako"/>
             </span>
         </ul>
         % if sortable and 'write' in user['permissions'] and not node['is_registration']:

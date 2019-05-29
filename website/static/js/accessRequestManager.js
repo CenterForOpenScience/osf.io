@@ -60,13 +60,13 @@ var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isPa
     self.respondToAccessRequest = function(trigger, data, event) {
         $osf.trackClick('button', 'click', trigger + '-project-access');
         $osf.block();
-        var requestUrl = $osf.apiV2Url('actions/requests/');
+        var requestUrl = $osf.apiV2Url('actions/requests/nodes/');
         var payload = self.requestAccessPayload(trigger, self.permission(), self.visible());
         var request = $osf.ajaxJSON(
             'POST',
             requestUrl,
             {
-                'is_cors': true,
+                'isCors': true,
                 'data': payload,
                 'fields': {
                     xhrFields: {withCredentials: true}

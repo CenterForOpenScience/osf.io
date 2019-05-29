@@ -39,11 +39,17 @@ a {
 /* Footer
 -------------------------------------------------- */
 .footer {
-    text-shadow: 0 1px 0 #fff;
-    border-top: 1px solid #e5e5e5;
-    border-bottom: 1px solid #e5e5e5;
+    padding-top: 10px;
+    margin-top: 20px;
+    text-shadow: 0 1px 0 #FFF;
     width: 100%;
-    color: #555;
+    color: #515151;
+    text-align: center;
+    background-color: #efefef;
+}
+
+.footer a {
+    color: #2d6a9f;
 }
 
 
@@ -51,6 +57,47 @@ a {
     padding: 0;
     margin: 0;
     list-style-type: none;
+}
+
+/* Warning Banner for cookies and browser depreciation goes on bottom of page */
+.warningBanner {
+    margin-bottom: 0px;
+    background-color: #263947;
+    color:white;
+    text-align: left;
+    border-width: 1px;
+    border-color: white;
+    display: none;
+    align-items: center;
+}
+
+.footBanners {
+    width: 100%;
+    z-index: 10;
+    bottom:0;
+    left:0;
+}
+
+.warningBannerText {
+    margin-left: 10%;
+    margin-right: 75px;
+}
+
+.warningBannerAcceptBtn {
+   margin-right: 10%
+}
+
+.warningBanner a {
+    color: white;
+    text-decoration: underline;
+}
+
+.warningBanner a:hover {
+    color: #ADCCE6;
+}
+
+.warningBanner a:visited {
+    color: #ADCCE6;
 }
 
 /* Footer slide-in */
@@ -813,4 +860,67 @@ table.add-links {
 /* Prevents comment from overlapping with counter*/
 .comment-box {
     padding-bottom: 25px;
+}
+
+/* Collection list */
+
+.collections-container {
+    margin-bottom: 20px;
+}
+
+.fa.bk-toggle-icon {
+    border: 2px solid #FFFFFF;
+    color: #000000;
+}
+
+.subject-preview {
+    display: inline-block;
+    background-color: #F8F8F8;
+    border-radius: 3px;
+    border: 1px solid #EEE;
+    padding: 1px 7px;
+    margin-bottom: 4px;
+    margin-right: 5px;
+}
+
+.dl-subjects dt {
+    width: 10px;
+    overflow: visible;
+    font-weight: normal;
+}
+
+.dl-subjects dd {
+    margin-left: 65px;
+}
+
+@media (max-width: 767px) {
+    .dl-subjects dd {
+        margin-left: 0px;
+    }
+
+    .dl-subjects dt {
+        padding-bottom: 5px;
+    }
+}
+
+/* Override jumbotron to be a bit smaller.
+   Used for the updated terms of service banner on all pages. */
+.jumbotron {
+    padding: 10px 40px 10px 40px;
+    margin-bottom: 0;
+}
+
+#nodesDeleteTreebeard #tb-tbody {
+    height: 350px;
+    max-height: 500px;
+}
+
+/* Make links in alert-info more readable*/
+
+.alert-info .alert-link {
+    color: #245269;
+}
+
+.alert-link {
+    font-weight: 700;
 }

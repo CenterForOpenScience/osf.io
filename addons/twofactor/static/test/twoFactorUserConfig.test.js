@@ -75,10 +75,10 @@ describe('Two-factor User Config', () => {
                 assert.equal(DISABLED.secret, vm.secret());
                 assert.deepEqual(DISABLED.urls, vm.urls);
             });
-           
+
             /*
-             TODO: it would be nice to have a sinon.spy on the $() method here, 
-             but this is proving problematc in practice. 
+             TODO: it would be nice to have a sinon.spy on the $() method here,
+             but this is proving problematc in practice.
              */
             var qrcodeStub;
             before(() => {
@@ -92,7 +92,7 @@ describe('Two-factor User Config', () => {
                 vm.updateFromData(DISABLED);
                 vm.updateFromData(ENABLED_AND_UNCONFIRMED);
                 assert.calledWith(qrcodeStub, ENABLED_AND_UNCONFIRMED.urls.otpauth);
-            });            
+            });
         });
         describe('#fetchFromServer', () => {
             var endpoints = [
@@ -161,8 +161,8 @@ describe('Two-factor User Config', () => {
             var server;
             var callback;
             before(() => {
-                server = sinon.fakeServer.create();                    
-                server.respondWith('PUT', settingsUrl, function(xhr) { 
+                server = sinon.fakeServer.create();
+                server.respondWith('PUT', settingsUrl, function(xhr) {
                     // An echo endpoint
                     xhr.respond(200, {'Content-Type': 'application/json'}, xhr.requestBody);
                 });
@@ -183,7 +183,7 @@ describe('Two-factor User Config', () => {
                         done();
                     });
                 server.respond();
-            });               
+            });
         });
         describe('#disableTwofactorConfirm', () => {
             var server;
@@ -191,12 +191,12 @@ describe('Two-factor User Config', () => {
             before(() => {
                 serverSpy = sinon.spy();
                 server = sinon.fakeServer.create();
-                server.respondWith('DELETE', 
-                                   ENABLED_AND_UNCONFIRMED.urls.disable, 
+                server.respondWith('DELETE',
+                                   ENABLED_AND_UNCONFIRMED.urls.disable,
                                    function(xhr) {
                                        serverSpy();
                                        xhr.respond(200, {'Content-Type': 'application/json'}, '{}');
-                                   });                
+                                   });
             });
             after(() => {
                 server.restore();
@@ -220,7 +220,7 @@ describe('Two-factor User Config', () => {
             before(() => {
                 vm.updateFromData(DISABLED);
                 serverSpy = sinon.spy();
-                server = sinon.fakeServer.create();                
+                server = sinon.fakeServer.create();
                 server.respondWith('POST', DISABLED.urls.enable, function(xhr) {
                     serverSpy();
                     xhr.respond(200, {'Content-Type': 'application/json'}, JSON.stringify({result: ENABLED_AND_UNCONFIRMED}));

@@ -5,7 +5,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import NodeLog
 from api.logs.permissions import (
-    ContributorOrPublicForLogs
+    ContributorOrPublicForLogs,
 )
 
 from api.base import permissions as base_permissions
@@ -22,7 +22,7 @@ class LogMixin(object):
         log = NodeLog.load(self.kwargs.get('log_id'))
         if not log:
             raise NotFound(
-                detail='No log matching that log_id could be found.'
+                detail='No log matching that log_id could be found.',
             )
 
         self.check_object_permissions(self.request, log)
@@ -35,7 +35,7 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ContributorOrPublicForLogs
+        ContributorOrPublicForLogs,
     )
 
     required_read_scopes = [CoreScopes.NODE_LOG_READ]

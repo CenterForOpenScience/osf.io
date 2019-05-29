@@ -3,7 +3,7 @@ import logging
 from email.mime.text import MIMEText
 
 from framework.celery_tasks import app
-from framework.sentry import sentry
+from framework import sentry
 from website import settings
 import sendgrid
 
@@ -54,8 +54,9 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
             ttls=ttls,
             login=login,
             username=username,
-            password=password
+            password=password,
         )
+
 
 def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True, username=None, password=None):
     username = username or settings.MAIL_USERNAME
@@ -85,6 +86,7 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
     s.quit()
     return True
 
+
 def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, attachment_name=None, attachment_content=None, client=None):
     if (settings.SENDGRID_WHITELIST_MODE and to_addr in settings.SENDGRID_EMAIL_WHITELIST) or settings.SENDGRID_WHITELIST_MODE is False:
         client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
@@ -94,14 +96,24 @@ def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', c
         mail.set_subject(subject)
         if mimetype == 'html':
             mail.set_html(message)
-        else:
-            mail.set_text(message)
+
         if categories:
             mail.set_categories(categories)
         if attachment_name and attachment_content:
             mail.add_attachment_stream(attachment_name, attachment_content)
 
         status, msg = client.send(mail)
+        if status >= 400:
+            sentry.log_message(
+                '{} error response from sendgrid.'.format(status) +
+                'from_addr:  {}\n'.format(from_addr) +
+                'to_addr:  {}\n'.format(to_addr) +
+                'subject:  {}\n'.format(subject) +
+                'mimetype:  {}\n'.format(mimetype) +
+                'message:  {}\n'.format(message[:30]) +
+                'categories:  {}\n'.format(categories) +
+                'attachment_name:  {}\n'.format(attachment_name)
+            )
         return status < 400
     else:
         sentry.log_message(

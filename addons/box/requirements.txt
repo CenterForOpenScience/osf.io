@@ -1,1 +1,1 @@
-box.py
+boxsdk==1.5.5

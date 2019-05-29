@@ -82,6 +82,26 @@
                         </table>
                     </div>
                 </div>
+                % if storage_flag_is_active:
+                    <div class="panel panel-default">
+                        <div class="panel-heading clearfix"><h3 class="panel-title">Default Storage Location</h3></div>
+                        <div class="panel-body">
+                            <form id="updateDefaultStorageLocation" data-bind="submit: $root.updateDefaultStorageLocation.bind($root)" role="form">
+                                <div class="form-group">
+                                    <select class="form-control" data-bind="options: locations, value: locationSelected, optionsText: function(item) { return item.name }">
+                                    </select>
+                                    <div class="help-block">
+                                        <p>
+                                            This location will be applied to new projects and components. It will not affect existing projects and components.
+                                        </p>
+                                    </div>
+                                </div>
+                                <p class="text-muted"></p>
+                                <button class="btn btn-primary" type="submit">Update location</button>
+                            </form>
+                        </div>
+                    </div>
+                % endif
                 <div id="externalIdentity" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Connected Identities</h3></div>
                     <div class="panel-body">
@@ -108,7 +128,7 @@
                                 <td>
                                     <a data-bind="click: $root.removeIdentity.bind($root, '${id}')"><i class="fa fa-times text-danger pull-right"></i></a>
                                 </td>
-                            </tr></div>                    
+                            </tr></div>
                             % if not loop.last:
                             <hr />
                             % endif

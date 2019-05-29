@@ -59,6 +59,9 @@ var socialRules = {
 
 var cleanByRule = function(rule) {
     return function(value) {
+        if (typeof(value) === 'object') {
+            value = value[0];
+        }
         var match = value.match(rule);
         if (match) {
             return match[1];
@@ -739,8 +742,19 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
+var ARRAY_IN_DB_KEYS = ['twitter', 'linkedIn', 'github'];
+
 SocialViewModel.prototype.serialize = function() {
     var serializedData = ko.toJS(this);
+    // Do some extra work to store these as arrays in the DB
+    ARRAY_IN_DB_KEYS.forEach(function(key) {
+        var value = serializedData[key];
+        if (value === '') {
+            serializedData[key] = [];
+        } else {
+            serializedData[key] = [value];
+        }
+    });
     var profileWebsites = serializedData.profileWebsites;
     serializedData.profileWebsites = profileWebsites.filter(
         function (value) {
@@ -758,6 +772,8 @@ SocialViewModel.prototype.unserialize = function(data) {
             value = value.map(function(website) {
                 return $osf.decodeText(website);
             });
+        } else if ($.inArray(key, ARRAY_IN_DB_KEYS) !== -1) {
+            value = $osf.decodeText(value[0]);
         } else {
             value = $osf.decodeText(value);
         }

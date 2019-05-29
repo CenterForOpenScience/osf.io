@@ -10,17 +10,19 @@ from django.db.models import Q
 from django.utils import timezone
 from flask import request, redirect
 import pytz
+import waffle
 
 from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
+from osf import features
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
-from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
-from api.base.utils import rapply
+from osf.utils.functional import rapply
+from osf.models import NodeLog, RegistrationSchema, DraftRegistration, Sanction
+from osf.exceptions import NodeStateError
 
-from website.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
@@ -34,7 +36,7 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_O
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 
-get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
+get_schema_or_fail = lambda query: get_or_http_error(RegistrationSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
 
 def must_be_branched_from_node(func):
@@ -120,13 +122,25 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     :rtype: dict
     :raises: HTTPError if embargo end date is invalid
     """
-    data = request.get_json()
+    if waffle.switch_is_active(features.OSF_PREREGISTRATION):
+        raise HTTPError(http.GONE, data={
+            'message_short': 'The Prereg Challenge has ended',
+            'message_long': 'The Prereg Challenge has ended. No new submissions are accepted at this time.'
+        })
+
+    json_data = request.get_json()
+    if 'data' not in json_data:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Payload must include "data".'))
+    data = json_data['data']
+    if 'attributes' not in data:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Payload must include "data/attributes".'))
+    attributes = data['attributes']
     meta = {}
-    registration_choice = data.get('registrationChoice', 'immediate')
+    registration_choice = attributes['registration_choice']
     validate_registration_choice(registration_choice)
     if registration_choice == 'embargo':
         # Initiate embargo
-        end_date_string = data['embargoEndDate']
+        end_date_string = attributes['lift_embargo']
         validate_embargo_end_date(end_date_string, node)
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
@@ -158,12 +172,15 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
 
     push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,
                         kind='info',
-                        trust=False)
+                        trust=False,
+                        id='registration_submitted')
     return {
+        'data': {
+            'links': {
+                'html': node.web_url_for('node_registrations', _guid=True)
+            }
+        },
         'status': 'initiated',
-        'urls': {
-            'registrations': node.web_url_for('node_registrations')
-        }
     }, http.ACCEPTED
 
 @must_have_permission(ADMIN)
@@ -189,8 +206,14 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     :return: success message; url to registrations page
     :rtype: dict
     """
-    data = request.get_json()
-    registration_choice = data.get('registrationChoice', 'immediate')
+    json_data = request.get_json()
+    if 'data' not in json_data:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Payload must include "data".'))
+    data = json_data['data']
+    if 'attributes' not in data:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Payload must include "data/attributes".'))
+    attributes = data['attributes']
+    registration_choice = attributes['registration_choice']
     validate_registration_choice(registration_choice)
 
     # Don't allow resubmission unless submission was rejected
@@ -202,7 +225,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
 
     if registration_choice == 'embargo':
         # Initiate embargo
-        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
+        embargo_end_date = parse_date(attributes['lift_embargo'], ignoretz=True).replace(tzinfo=pytz.utc)
         try:
             register.embargo_registration(auth.user, embargo_end_date)
         except ValidationError as err:
@@ -211,16 +234,17 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
         try:
             register.require_approval(auth.user)
         except NodeStateError as err:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=str(err)))
 
     register.save()
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
-                        trust=False)
+                        trust=False,
+                        id='registration_archiving')
     return {
         'status': 'initiated',
         'urls': {
-            'registrations': node.web_url_for('node_registrations')
+            'registrations': node.web_url_for('node_registrations', _guid=True)
         }
     }, http.ACCEPTED
 
@@ -253,7 +277,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
-@ember_flag_is_active('ember_create_draft_registration_page')
+@ember_flag_is_active(features.EMBER_CREATE_DRAFT_REGISTRATION)
 def new_draft_registration(auth, node, *args, **kwargs):
     """Create a new draft registration for the node
 
@@ -287,11 +311,11 @@ def new_draft_registration(auth, node, *args, **kwargs):
         schema=meta_schema,
         data={}
     )
-    return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id))
+    return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id, _guid=True))
 
 
 @must_have_permission(ADMIN)
-@ember_flag_is_active('ember_edit_draft_registration_page')
+@ember_flag_is_active(features.EMBER_EDIT_DRAFT_REGISTRATION)
 @must_be_branched_from_node
 def edit_draft_registration_page(auth, node, draft, **kwargs):
     """Draft registration editor
@@ -361,7 +385,7 @@ def get_metaschemas(*args, **kwargs):
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
-    meta_schemas = MetaSchema.objects.filter(active=True)
+    meta_schemas = RegistrationSchema.objects.filter(active=True)
     if include == 'latest':
         meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
 

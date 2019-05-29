@@ -20,9 +20,16 @@ USER_REMOVED = 40
 USER_RESTORED = 41
 USER_2_FACTOR = 42
 USER_EMAILED = 43
+USER_GDPR_DELETED = 44
 
 REINDEX_SHARE = 50
 REINDEX_ELASTIC = 51
+
+APPROVE_WITHDRAWAL = 60
+REJECT_WITHDRAWAL = 61
+
+PREPRINT_REMOVED = 70
+PREPRINT_RESTORED = 71
 
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     AdminLogEntry.objects.log_action(

@@ -143,6 +143,7 @@ class TestApplicationDetail:
         user_app.reload()
         assert not user_app.is_active
 
+    @pytest.mark.enable_implicit_clean
     def test_update_application(
             self, app, user, user_app, user_app_url, make_payload):
 
@@ -256,6 +257,17 @@ class TestApplicationDetail:
                 'name': 'The instance formerly known as Prince'
             }
         }
+        res = app.patch_json_api(
+            user_app_url,
+            payload,
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 200
+
+    #   test home url is too long
+        payload = make_payload()
+        payload['data']['attributes']['home_url'] = 'http://osf.io/' + 'A' * 200
         res = app.patch_json_api(
             user_app_url,
             payload,

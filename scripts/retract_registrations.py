@@ -1,5 +1,5 @@
 """Script for retracting pending retractions that are more than 48 hours old."""
-
+import sys
 import logging
 
 import django
@@ -12,7 +12,7 @@ from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website import settings
-from osf.models import NodeLog, Retraction
+from osf.models import NodeLog, Retraction, Registration
 
 from scripts import utils as scripts_utils
 
@@ -73,3 +73,7 @@ def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
+
+
+if __name__ == '__main__':
+    run_main(dry_run='--dry' in sys.argv)

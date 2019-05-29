@@ -1,3 +1,4 @@
+from rest_framework import permissions
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, SimpleRateThrottle
 import logging
 
@@ -95,3 +96,25 @@ class TestUserRateThrottle(BaseThrottle, UserRateThrottle):
 class TestAnonRateThrottle(BaseThrottle, AnonRateThrottle):
 
     scope = 'test-anon'
+
+
+class SendEmailThrottle(BaseThrottle, UserRateThrottle):
+
+    scope = 'send-email'
+
+    def allow_request(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        return super(SendEmailThrottle, self).allow_request(request, view)
+
+class SendEmailDeactivationThrottle(SendEmailThrottle):
+
+    def allow_request(self, request, view):
+        """
+        Throttle deactivation requests on the UserSettings endpoint
+        """
+        if not request.data.get('deactivation_requested'):
+            return True
+
+        return super(SendEmailDeactivationThrottle, self).allow_request(request, view)

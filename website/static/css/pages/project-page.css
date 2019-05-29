@@ -92,6 +92,13 @@
     .osf-project-navbar a.project-title {
         max-width: 190px;
     }
+    .remove-or-reject {
+        padding-top: 4px;
+        color: #333333;
+        cursor: pointer;
+        float: right;
+        font-size: 1.5em;
+    }
 }
 
 @media (min-width: 992px) {

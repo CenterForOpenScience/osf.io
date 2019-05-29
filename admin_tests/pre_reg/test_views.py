@@ -330,16 +330,16 @@ class TestPreregFiles(AdminTestCase):
 
         prereg_schema = get_prereg_schema()
         self.d_of_qs = {
-            'q7': OsfStorageFileNode(node=self.node, name='7'),
-            'q11': OsfStorageFileNode(node=self.node, name='11'),
-            'q16': OsfStorageFileNode(node=self.node, name='16'),
-            'q12': OsfStorageFileNode(node=self.node, name='12'),
-            'q13': OsfStorageFileNode(node=self.node, name='13'),
-            'q19': OsfStorageFileNode(node=self.node, name='19'),
-            'q26': OsfStorageFileNode(node=self.node, name='26')
+            'q7': OsfStorageFile(target=self.node, name='7'),
+            'q11': OsfStorageFile(target=self.node, name='11'),
+            'q16': OsfStorageFile(target=self.node, name='16'),
+            'q12': OsfStorageFile(target=self.node, name='12'),
+            'q13': OsfStorageFile(target=self.node, name='13'),
+            'q19': OsfStorageFile(target=self.node, name='19'),
+            'q26': OsfStorageFile(target=self.node, name='26')
         }
         data = {}
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             guid = f.get_guid(create=True)._id
             f.save()
             if q == 'q26':
@@ -395,7 +395,7 @@ class TestPreregFiles(AdminTestCase):
         view = setup_user_view(view, request, self.admin_user,
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(self.admin_user, f.checkout)
 
@@ -410,7 +410,7 @@ class TestPreregFiles(AdminTestCase):
         view2 = setup_view(view2, request, draft_pk=self.draft._id)
         view2.checkin_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
@@ -427,7 +427,7 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
@@ -441,7 +441,7 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
@@ -456,7 +456,7 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
 
-        for q, f in self.d_of_qs.iteritems():
+        for q, f in self.d_of_qs.items():
             f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 

@@ -37,7 +37,8 @@ def create_mock_gitlab(user='osfio', private=False):
     :return: An autospecced GitLab Mock object
     """
     gitlab_mock = mock.create_autospec(GitLabClient)
-    gitlab_mock.repo.return_value = {
+
+    gitlab_mock.repo = mock.Mock(**{
         u'approvals_before_merge': 0,
         u'archived': False,
         u'avatar_url': None,
@@ -86,8 +87,9 @@ def create_mock_gitlab(user='osfio', private=False):
         u'visibility_level': 0,
         u'web_url': u'https://gitlab.com/{}/mock-repo'.format(user),
         u'wiki_enabled': True
-    }
-    gitlab_mock.branches.return_value = [{
+    })
+
+    branch = mock.Mock(**{
         u'commit': {u'author_email': u'{}@gmail.com'.format(user),
             u'author_name': u''.format(user),
             u'authored_date': u'2017-07-05T16:43:04.000+00:00',
@@ -103,7 +105,12 @@ def create_mock_gitlab(user='osfio', private=False):
         u'developers_can_merge': False,
         u'developers_can_push': False,
         u'merged': False,
-        u'name': u'master',
         u'protected': True
-    }]
+    })
+
+    # Hack because 'name' is a reserved keyword in a Mock object
+    type(branch).name = 'master'
+
+    gitlab_mock.branches.return_value = [branch]
+
     return gitlab_mock

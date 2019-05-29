@@ -2,7 +2,7 @@
 import furl
 import responses
 import mock
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from nose.tools import *  # noqa: F403
 import unittest
 
 from framework.auth import cas
@@ -68,7 +68,7 @@ def generate_external_user_with_resp(service_url, user=True, release=True):
         user = {
             'external_id_provider': validated_credentials['provider'],
             'external_id': validated_credentials['id'],
-            'fullname': validated_credentials['id'],
+            'fullname': '',
             'access_token': cas_resp.attributes['accessToken'],
             'service_url': service_url,
         }

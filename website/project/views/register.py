@@ -3,6 +3,7 @@ import httplib as http
 import itertools
 
 from flask import request
+import waffle
 
 from framework import status
 from framework.exceptions import HTTPError
@@ -14,15 +15,15 @@ from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
 from addons.base.views import DOWNLOAD_ACTIONS
 from website import settings
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission,
     must_not_be_registration, must_be_registration,
     must_not_be_retracted_registration
 )
-from website.identifiers.utils import build_ezid_metadata
-from osf.models import Identifier, MetaSchema
+from osf import features
+from osf.models import Identifier, RegistrationSchema
 from website.project.utils import serialize_node
 from osf.utils.permissions import ADMIN
 from website import language
@@ -33,8 +34,6 @@ from website import util
 from website.project.metadata.utils import serialize_meta_schema
 from website.project.model import has_anonymous_link
 from website.archiver.decorators import fail_archive_on_error
-
-from website.identifiers.client import EzidClient
 
 from .node import _view_project
 
@@ -52,8 +51,10 @@ def node_register_page(auth, node, **kwargs):
     else:
         status.push_status_message(
             'You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process',
-            trust=False)
-        return redirect(node.web_url_for('node_registrations', view='draft'))
+            trust=False,
+            id='redirected_to_registrations',
+        )
+        return redirect(node.web_url_for('node_registrations', view='draft', _guid=True))
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -114,21 +115,24 @@ def node_registration_retraction_post(auth, node, **kwargs):
         node.save()
         node.retraction.ask(node.get_active_contributors_recursive(unique_users=True))
     except NodeStateError as err:
-        raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
+        raise HTTPError(http.FORBIDDEN, data=dict(message_long=str(err)))
 
     return {'redirectUrl': node.web_url_for('view_project')}
 
 @must_be_valid_project
 @must_not_be_retracted_registration
 @must_be_contributor_or_public
-@ember_flag_is_active('ember_registration_form_detail_page')
+@ember_flag_is_active(features.EMBER_REGISTRATION_FORM_DETAIL)
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
+    if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE) and not auth.private_link:
+        # Registration meta page obviated during redesign
+        return redirect(node.url)
     if node.is_registration and bool(node.registered_schema):
         try:
-            meta_schema = MetaSchema.objects.get(_id=metaschema_id)
-        except MetaSchema.DoesNotExist:
+            meta_schema = RegistrationSchema.objects.get(_id=metaschema_id)
+        except RegistrationSchema.DoesNotExist:
             # backwards compatability for old urls, lookup by name
-            meta_schema = MetaSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
+            meta_schema = RegistrationSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
             if not meta_schema:
                 raise HTTPError(http.NOT_FOUND, data={
                     'message_short': 'Invalid schema name',
@@ -152,9 +156,10 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
     else:
         status.push_status_message(
             'You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process',
-            trust=False
+            trust=False,
+            id='redirected_to_registrations',
         )
-        return redirect(node.web_url_for('node_registrations', view=kwargs.get('template')))
+        return redirect(node.web_url_for('node_registrations', view=kwargs.get('template'), _guid=True))
 
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)
@@ -214,11 +219,9 @@ def project_before_register(auth, node, **kwargs):
     }
 
 
-def osf_admin_change_status_identifier(node, status):
-    if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
-        doi, metadata = build_ezid_metadata(node)
-        client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
-        client.change_status_identifier(status, doi, metadata)
+def osf_admin_change_status_identifier(node):
+    if node.get_identifier_value('doi'):
+        node.request_identifier_update(category='doi')
 
 
 def get_referent_by_identifier(category, value):

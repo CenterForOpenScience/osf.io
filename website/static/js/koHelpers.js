@@ -474,6 +474,11 @@ ko.bindingHandlers.editableHTML = {
         $element.on('change input paste keyup blur', function() {
             options.observable($element.html());
         });
+        $element.on('keypress', function(e){
+            if (e.keyCode === 13){
+                e.preventDefault();
+            }
+        });
     },
     update: function(element, valueAccessor, allBindings, viewModel) {
         var $element = $(element);
@@ -481,7 +486,7 @@ ko.bindingHandlers.editableHTML = {
         var initialValue = options.observable();
         options.onUpdate.call(viewModel, element);
         if (initialValue === '') {
-            $(element).html(initialValue);
+            $element.html(initialValue);
         }
     }
 };

@@ -24,7 +24,7 @@ class TestFixRegistrationUnclaimedRecords:
     @pytest.fixture()
     def project(self, user, auth):
         return ProjectFactory(creator=user)
-    
+
     @pytest.fixture()
     def contributor_unregistered(self, user, auth, project):
         ret = project.add_unregistered_contributor(fullname='Johnny Git Gud', email='ford.prefect@hitchhikers.com', auth=auth)
@@ -45,7 +45,7 @@ class TestFixRegistrationUnclaimedRecords:
     def test_migrate_bad_data(self, user, project, registration, contributor_unregistered, contributor_unregistered_no_email):
         contributor_unregistered.refresh_from_db()
         contributor_unregistered_no_email.refresh_from_db()
- 
+
         # confirm data exists
         assert contributor_unregistered.unclaimed_records.get(registration._id, None)
         assert contributor_unregistered_no_email.unclaimed_records.get(registration._id, None)
@@ -79,6 +79,6 @@ class TestFixRegistrationUnclaimedRecords:
         assert record_one == contributor_unregistered.unclaimed_records.get(project._id)
 
         record_two = contributor_unregistered_no_email.unclaimed_records.get(registration._id)
-        assert record_two 
+        assert record_two
         assert record_two['name'] == 'Shenanigans'
         assert record_two['email'] is None

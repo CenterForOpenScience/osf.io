@@ -20,6 +20,7 @@ from website import settings
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestUsers:
 
     @pytest.fixture()
@@ -172,7 +173,6 @@ class TestUsers:
             project = project_list[x]
             project.reload()
             project.remove_node(auth=Auth(user=user_one))
-            project.save()
         url = '/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true'.format(
             API_BASE, user_two._id)
         res = app.get(url, auth=user_two.auth)

@@ -5,7 +5,16 @@ from rest_framework import status
 from rest_framework.exceptions import APIException, AuthenticationFailed
 
 
-def dict_error_formatting(errors, index=None):
+def get_resource_object_member(error_key, context):
+    from api.base.serializers import RelationshipField
+    field = context['view'].serializer_class._declared_fields.get(error_key, None)
+    if field:
+        return 'relationships' if isinstance(field, RelationshipField) else 'attributes'
+    # If field cannot be found (where read/write operations have different serializers,
+    # assume error was in 'attributes' by default
+    return 'attributes'
+
+def dict_error_formatting(errors, context, index=None):
     """
     Formats all dictionary error messages for both single and bulk requests
     """
@@ -23,7 +32,7 @@ def dict_error_formatting(errors, index=None):
     else:
         index = str(index) + '/'
 
-    for error_key, error_description in errors.iteritems():
+    for error_key, error_description in errors.items():
         if isinstance(error_description, basestring):
             error_description = [error_description]
 
@@ -34,10 +43,9 @@ def dict_error_formatting(errors, index=None):
         elif error_key == 'non_field_errors':
             formatted_error_list.extend([{'detail': description for description in error_description}])
         else:
-            formatted_error_list.extend([{'source': {'pointer': '/data/{}attributes/'.format(index) + error_key}, 'detail': reason} for reason in error_description])
+            formatted_error_list.extend([{'source': {'pointer': '/data/{}{}/'.format(index, get_resource_object_member(error_key, context)) + error_key}, 'detail': reason} for reason in error_description])
 
     return formatted_error_list
-
 
 def json_api_exception_handler(exc, context):
     """
@@ -68,19 +76,26 @@ def json_api_exception_handler(exc, context):
         if isinstance(exc, JSONAPIException):
             errors.extend([{'source': exc.source or {}, 'detail': exc.detail, 'meta': exc.meta or {}}])
         elif isinstance(message, dict):
-            errors.extend(dict_error_formatting(message, None))
+            errors.extend(dict_error_formatting(message, context, index=None))
         else:
             if isinstance(message, basestring):
                 message = [message]
             for index, error in enumerate(message):
                 if isinstance(error, dict):
-                    errors.extend(dict_error_formatting(error, index))
+                    errors.extend(dict_error_formatting(error, context, index=index))
                 else:
                     errors.append({'detail': error})
 
         response.data = {'errors': errors}
 
     return response
+
+
+def format_validation_error(e):
+    error_list = []
+    for key, value in e.message_dict.items():
+        error_list.append('There was an issue with the {} field. {}'.format(key, value[0]))
+    return error_list
 
 
 class EndpointNotImplementedError(APIException):
@@ -117,9 +132,13 @@ class Gone(JSONAPIException):
 
 
 def UserGone(user):
-    return Gone(detail='The requested user is no longer available.',
-            meta={'full_name': user.fullname, 'family_name': user.family_name, 'given_name': user.given_name,
-                    'middle_names': user.middle_names, 'profile_image': user.profile_image_url()})
+    return Gone(
+        detail='The requested user is no longer available.',
+        meta={
+            'full_name': user.fullname, 'family_name': user.family_name, 'given_name': user.given_name,
+            'middle_names': user.middle_names, 'profile_image': user.profile_image_url(),
+        },
+    )
 
 class Conflict(JSONAPIException):
     status_code = status.HTTP_409_CONFLICT
@@ -129,7 +148,7 @@ class Conflict(JSONAPIException):
 class JSONAPIParameterException(JSONAPIException):
     def __init__(self, detail=None, parameter=None):
         source = {
-            'parameter': parameter
+            'parameter': parameter,
         }
         super(JSONAPIParameterException, self).__init__(detail=detail, source=source)
 
@@ -137,7 +156,7 @@ class JSONAPIParameterException(JSONAPIException):
 class JSONAPIAttributeException(JSONAPIException):
     def __init__(self, detail=None, attribute=None):
         source = {
-            'pointer': '/data/attributes/{}'.format(attribute)
+            'pointer': '/data/attributes/{}'.format(attribute),
         }
         super(JSONAPIAttributeException, self).__init__(detail=detail, source=source)
 
@@ -157,7 +176,7 @@ class InvalidFilterOperator(JSONAPIParameterException):
             valid_operators = ', '.join(valid_operators)
             detail = "Value '{0}' is not a supported filter operator; use one of {1}.".format(
                 value,
-                valid_operators
+                valid_operators,
             )
         super(InvalidFilterOperator, self).__init__(detail=detail, parameter='filter')
 
@@ -171,7 +190,7 @@ class InvalidFilterValue(JSONAPIParameterException):
             detail = "Value '{0}' is not valid".format(value)
             if field_type:
                 detail += ' for a filter on type {0}'.format(
-                    field_type
+                    field_type,
                 )
             detail += '.'
         super(InvalidFilterValue, self).__init__(detail=detail, parameter='filter')

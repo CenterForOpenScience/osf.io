@@ -31,7 +31,7 @@ describe.skip('SaveManager', () => {
             assert.equal(server.requests.length, 2);
             done();
         });
-    });    
+    });
     it('queues the last made save request if more than one is made while blocking', (done) => {
         var firstSave = sm.save({first: true});
         var secondSave = sm.save({second: true});
@@ -50,6 +50,6 @@ describe.skip('SaveManager', () => {
             assert.equal(server.requests.length, 2);
             done();
         });
-    });    
-    
+    });
+
 });

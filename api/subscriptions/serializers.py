@@ -6,7 +6,7 @@ from api.base.serializers import JSONAPISerializer, LinksField
 NOTIFICATION_TYPES = {
     'none': 'none',
     'instant': 'email_transactional',
-    'daily': 'email_digest'
+    'daily': 'email_digest',
 }
 
 
@@ -35,7 +35,7 @@ class SubscriptionSerializer(JSONAPISerializer):
     event_name = ser.CharField(read_only=True)
     frequency = FrequencyField(source='*', required=True)
     links = LinksField({
-        'self': 'get_absolute_url'
+        'self': 'get_absolute_url',
     })
 
     class Meta:

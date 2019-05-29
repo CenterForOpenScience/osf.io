@@ -4,6 +4,7 @@ from rest_framework_bulk import generics as bulk_generics
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q
 
+from api.base.serializers import get_meta_type
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException, Gone
 from api.base.utils import is_bulk_request
@@ -133,11 +134,13 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
 
         if num_items > bulk_limit:
-            raise JSONAPIException(source={'pointer': '/data'},
-                                   detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items))
+            raise JSONAPIException(
+                source={'pointer': '/data'},
+                detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items),
+            )
 
         user = self.request.user
-        object_type = self.serializer_class.Meta.type_
+        object_type = get_meta_type(self.serializer_class, self.request)
 
         resource_object_list = self.get_requested_resources(request=request, request_data=data)
 

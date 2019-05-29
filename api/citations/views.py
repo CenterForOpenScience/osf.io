@@ -15,7 +15,7 @@ class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
@@ -35,11 +35,11 @@ class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         return self.get_queryset_from_request()
 
 class CitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    '''The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/citations_styles_read).
-    '''
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/citations_styles_read).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]

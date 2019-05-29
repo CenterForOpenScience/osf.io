@@ -332,7 +332,15 @@ $(document).ready(function () {
             url: ctx.urls.wikiContent
         });
         request.done(function(resp) {
-            var rawText = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
+            var rawText;
+            if(resp.wiki_content){
+                rawText = resp.wiki_content;
+            } else if(window.contextVars.currentUser.canEdit) {
+                rawText = '*Add important information, links, or images here to describe your project.*';
+            } else {
+                rawText = '*No wiki content.*';
+            }
+
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
             // don't truncate the text when length = 400
             var truncatedText = $.truncate(renderedText, {length: 401});
@@ -347,6 +355,20 @@ $(document).ready(function () {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
+        });
+    }
+
+    // Show or hide collection details
+    if ($('.collection-details').length) {
+        $('.collection-details').each( function() {
+            var caret = '#' + $(this).attr('id') + '-toggle';
+            $(this).on('hidden.bs.collapse', function(e) {
+                $(caret).removeClass('fa-angle-up')
+                       .addClass('fa-angle-down');
+            }).on('shown.bs.collapse', function(e) {
+                $(caret).removeClass('fa-angle-down')
+                        .addClass('fa-angle-up');
+            });
         });
     }
 });

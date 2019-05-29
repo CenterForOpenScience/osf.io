@@ -231,7 +231,8 @@
     <layout>
         <group>
             <names variable="author" suffix=", "/>
-            <text variable="title" font-style="italic" suffix=", Open Science Framework"/>
+            <text variable="title" font-style="italic" suffix=", "/>
+            <text variable="publisher" font-style="italic"/>
             <date variable="issued" prefix=" (" suffix="), ">
                 <date-part name="month" form="short"/>
                 <date-part name="day" suffix=", "/>

@@ -28,10 +28,6 @@ class ZoteroCitationsProvider(CitationsProvider):
         })
         return ret
 
-    def library_list(self, node_addon, user, limit, start):
-        """Returns a list of zotero group libraries"""
-        return node_addon.api._fetch_libraries(limit, start)
-
     def set_config(self, node_addon, user, external_list_id, external_list_name, auth, external_library_id=None, external_library_name=None):
         """ Changes folder associated with addon and logs event"""
         # Ensure request has all required information
@@ -81,8 +77,7 @@ class ZoteroCitationsProvider(CitationsProvider):
         """Returns a list of citations"""
         attached_list_id = self._folder_id(node_addon)
         attached_library_id = getattr(node_addon, 'library_id', None)
-        account_folders = node_addon.api.citation_lists(self._extract_folder, attached_library_id)
-
+        account_folders = node_addon.get_folders(path=attached_library_id)
         # Folders with 'parent_list_id'==None are children of 'All Documents'
         for folder in account_folders:
             if not folder.get('parent_list_id'):

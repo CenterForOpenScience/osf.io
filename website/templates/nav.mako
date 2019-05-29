@@ -21,6 +21,9 @@
                 <li><a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">OSF<b>PREPRINTS</b></a></li>
                 <li><a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">OSF<b>REGISTRIES</b></a></li>
                 <li><a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">OSF<b>MEETINGS</b></a></li>
+                % if institutional_landing_flag:
+                    <li><a data-bind="click: trackClick.bind($data, 'Institutions')" href="${domain}institutions/">OSF<b>INSTITUTIONS</b></a></li>
+                % endif
             </ul>
         </div>
         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#secondary-navigation" aria-label="Toggle secondary navigation"}}>
@@ -80,7 +83,7 @@
                 %else :
                 <li class="dropdown sign-in">
                     <div class="col-sm-12">
-                        <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${web_url_for('auth_register')}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
+                        <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${sign_up_url}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
                         <a data-bind="click: trackClick.bind($data, 'SignIn')" href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign In</a>
                     </div>
                 </li>

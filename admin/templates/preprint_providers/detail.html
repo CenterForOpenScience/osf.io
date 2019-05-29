@@ -27,7 +27,7 @@
         </div>
         <div class="row">
             <div class="col-md-12 text-center">
-                <img class="institution-logo" src="{{logohost}}{{preprint_provider.lower_name}}/square_color_no_transparent.png">
+                <img class="institution-logo" src="{{logo}}">
                 <h2>{{ preprint_provider.name }}</h2>
             </div>
         </div>
@@ -37,6 +37,9 @@
                 <button id="show-modify-form" class="btn btn-link" type="button">
                     Modify Preprint Provider
                 </button>
+            </div>
+            <div class="col-md-12">
+                <a class="btn btn-link" href={% url 'preprint_providers:register_moderator_admin' preprint_provider.id %}>Register Moderator/Admin</a>
             </div>
         </div>
         {% endif %}

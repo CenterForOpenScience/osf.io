@@ -1,35 +1,47 @@
 from guardian.core import ObjectPermissionChecker
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
-
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.views import BaseLinkedList
 from api.base.views import LinkedNodesRelationship
-from api.base.views import LinkedRegistrationsRelationship
+from api.nodes.utils import NodeOptimizationMixin
 
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.collections.permissions import (
     CollectionWriteOrPublic,
     CollectionWriteOrPublicForPointers,
     CollectionWriteOrPublicForRelationshipPointers,
+    CanSubmitToCollectionOrPublic,
+    CanUpdateDeleteCGMOrPublic,
     ReadOnlyIfCollectedRegistration,
 )
 from api.collections.serializers import (
+    CollectionSubmissionSerializer,
+    CollectionSubmissionCreateSerializer,
     CollectionSerializer,
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
     CollectedNodeRelationshipSerializer,
+    CollectedPreprintsRelationshipSerializer,
     CollectedRegistrationsRelationshipSerializer,
 )
 from api.nodes.serializers import NodeSerializer
+from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
-
-from osf.models import AbstractNode, CollectedGuidMetadata, Collection, Node, Registration
+from osf.models import (
+    AbstractNode,
+    CollectionSubmission,
+    Collection,
+    Node,
+    Registration,
+    Preprint,
+)
 
 
 class CollectionMixin(object):
@@ -45,15 +57,22 @@ class CollectionMixin(object):
             Collection,
             self.kwargs[self.obj_lookup_url_kwarg],
             self.request,
-            display_name='collection'
+            display_name='collection',
         )
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, collection)
         return collection
 
+    def collection_preprints(self, collection, user):
+        return Preprint.objects.can_view(
+            Preprint.objects.filter(
+                guids__in=collection.guid_links.all(), deleted__isnull=True,
+            ), user=user,
+        )
 
-class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
+
+class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, CollectionMixin):
     """Organizer Collections organize projects and components. *Writeable*.
 
     Paginated list of Project Organizer Collections ordered by their `modified`.
@@ -277,7 +296,73 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
         collection = self.get_object()
         collection.delete()
 
-class LinkedNodesList(BaseLinkedList, CollectionMixin):
+class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanSubmitToCollectionOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    model_class = CollectionSubmission
+    serializer_class = CollectionSubmissionSerializer
+    view_category = 'collected-metadata'
+    view_name = 'collected-metadata-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CollectionSubmissionCreateSerializer
+        else:
+            return CollectionSubmissionSerializer
+
+    def get_default_queryset(self):
+        return self.get_collection().collectionsubmission_set.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        collection = self.get_collection()
+        serializer.save(creator=user, collection=collection)
+
+
+class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanUpdateDeleteCGMOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    serializer_class = CollectionSubmissionSerializer
+    view_category = 'collected-metadata'
+    view_name = 'collected-metadata-detail'
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        cgm = get_object_or_error(
+            CollectionSubmission,
+            self.kwargs['cgm_id'],
+            self.request,
+            'submission',
+        )
+        # May raise a permission denied
+        self.check_object_permissions(self.request, cgm)
+        return cgm
+
+    def perform_destroy(self, instance):
+        # Skip collection permission check -- perms class checks when getting CGM
+        collection = self.get_collection(check_object_permissions=False)
+        collection.remove_object(instance)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+
+class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
     """List of nodes linked to this node. *Read-only*.
 
     Linked nodes are the project/component nodes pointed to by node links. This view will probably replace node_links in the near future.
@@ -338,7 +423,9 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return Node.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        node_ids = self.get_collection().guid_links.filter(content_type_id=ContentType.objects.get_for_model(Node).id).values_list('object_id', flat=True)
+        nodes = Node.objects.filter(id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        return self.optimize_node_queryset(nodes)
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -440,6 +527,34 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
         return res
 
 
+class LinkedPreprintsList(BaseLinkedList, CollectionMixin):
+    """List of preprints linked to this collection. *Read-only*.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CollectionWriteOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    serializer_class = PreprintSerializer
+    view_category = 'collections'
+    view_name = 'linked-preprints'
+
+    ordering = ('-modified',)
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        return self.collection_preprints(self.get_collection(), auth.user)
+
+    # overrides APIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(LinkedPreprintsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
+
 class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, CollectionMixin):
     """Node Links to other nodes. *Writeable*.
 
@@ -504,12 +619,12 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     serializer_class = CollectionNodeLinkSerializer
     view_category = 'collections'
     view_name = 'node-pointers'
-    model_class = CollectedGuidMetadata
+    model_class = CollectionSubmission
 
     ordering = ('-modified',)
 
     def get_queryset(self):
-        return self.get_collection().collectedguidmetadata_set.filter(guid___id__in=AbstractNode.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).values_list('guids___id', flat=True))
+        return self.get_collection().collectionsubmission_set.filter(guid___id__in=AbstractNode.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).values_list('guids___id', flat=True))
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -517,7 +632,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         try:
             collection.remove_object(instance)
         except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
@@ -581,10 +696,10 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
     def get_object(self):
         node_link_lookup_url_kwarg = 'node_link_id'
         node_link = get_object_or_error(
-            CollectedGuidMetadata,
+            CollectionSubmission,
             self.kwargs[node_link_lookup_url_kwarg],
             self.request,
-            'node link'
+            'node link',
         )
         # May raise a permission denied
         self.kwargs['node_id'] = self.kwargs['collection_id']
@@ -598,7 +713,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         try:
             collection.remove_object(pointer.guid.referent)
         except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(err.message)
+            raise ValidationError(str(err))
         collection.save()
 
 
@@ -617,7 +732,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -635,7 +750,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -656,7 +771,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -679,14 +794,16 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
     def get_object(self):
         collection = self.get_collection(check_object_permissions=False)
         auth = get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            Node.objects.filter(
-                guids__in=collection.guid_links.all(), is_deleted=False
-            ).can_view(
-                user=auth.user, private_link=auth.private_link
-            ).order_by('-modified')
-        ], 'self': collection}
+        obj = {
+            'data': [
+                pointer for pointer in
+                Node.objects.filter(
+                    guids__in=collection.guid_links.all(), is_deleted=False,
+                ).can_view(
+                    user=auth.user, private_link=auth.private_link,
+                ).order_by('-modified')
+            ], 'self': collection,
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -699,7 +816,32 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
                 collection.remove_object(current_pointers[val['id']])
 
 
-class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, CollectionMixin):
+class CollectionLinkedPreprintsRelationship(CollectionLinkedNodesRelationship):
+    """ Relationship Endpoint for Collection -> Linked Preprints relationships
+    """
+    permission_classes = (
+        CollectionWriteOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    serializer_class = CollectedPreprintsRelationshipSerializer
+
+    view_category = 'collections'
+    view_name = 'collection-preprint-pointer-relationship'
+
+    def get_object(self):
+        collection = self.get_collection(check_object_permissions=False)
+        auth = get_user_auth(self.request)
+        obj = {
+            'data': [
+                pointer for pointer in self.collection_preprints(collection, auth.user)
+            ], 'self': collection,
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class CollectionLinkedRegistrationsRelationship(CollectionLinkedNodesRelationship):
     """ Relationship Endpoint for Collection -> Linked Registration relationships
 
     Used to set, remove, update and retrieve the ids of the linked registrations attached to this collection. For each id, there
@@ -714,7 +856,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -732,7 +874,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_regisrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -753,7 +895,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -770,19 +912,20 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
     )
 
     serializer_class = CollectedRegistrationsRelationshipSerializer
-    view_category = 'collections'
     view_name = 'collection-registration-pointer-relationship'
 
     def get_object(self):
         collection = self.get_collection(check_object_permissions=False)
         auth = get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            Registration.objects.filter(
-                guids__in=collection.guid_links.all(), is_deleted=False
-            ).can_view(
-                user=auth.user, private_link=auth.private_link
-            ).order_by('-modified')
-        ], 'self': collection}
+        obj = {
+            'data': [
+                pointer for pointer in
+                Registration.objects.filter(
+                    guids__in=collection.guid_links.all(), is_deleted=False,
+                ).can_view(
+                    user=auth.user, private_link=auth.private_link,
+                ).order_by('-modified')
+            ], 'self': collection,
+        }
         self.check_object_permissions(self.request, obj)
         return obj

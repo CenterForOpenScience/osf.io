@@ -2,7 +2,7 @@
 """NodeLogger tests for the Dataverse addon."""
 import pytest
 
-from addons.base.testing.logger import StorageAddonNodeLoggerTestSuiteMixin
+from addons.base.tests.logger import StorageAddonNodeLoggerTestSuiteMixin
 from addons.dataverse.utils import DataverseNodeLogger
 
 from tests.base import OsfTestCase

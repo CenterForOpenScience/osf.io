@@ -86,7 +86,13 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
                 request.done(function (resp) {
                     if(self.visible()) {
                         var $markdownElement = $('#wikiViewRender');
-                        var rawContent = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
+                        if (resp.wiki_content){
+                            var rawContent = resp.wiki_content
+                        } else if(window.contextVars.currentUser.canEdit) {
+                            var rawContent = '*Add important information, links, or images here to describe your project.*';
+                        } else {
+                            var rawContent = '*No wiki content.*';
+                        }
                         if (resp.rendered_before_update) {
                             // Use old md renderer. Don't mathjaxify
                             self.allowMathjaxification(false);

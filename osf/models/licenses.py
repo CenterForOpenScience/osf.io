@@ -39,6 +39,7 @@ class NodeLicense(ObjectIDMixin, BaseModel):
     license_id = models.CharField(max_length=128, null=False, unique=True)
     name = models.CharField(max_length=256, null=False, unique=True)
     text = models.TextField(null=False)
+    url = models.URLField(blank=True)
     properties = ArrayField(models.CharField(max_length=128), default=list, blank=True)
 
     objects = NodeLicenseManager()
@@ -74,6 +75,10 @@ class NodeLicenseRecord(ObjectIDMixin, BaseModel):
     @property
     def license_id(self):
         return self.node_license.license_id if self.node_license else None
+
+    @property
+    def url(self):
+        return self.node_license.url if self.node_license else None
 
     def to_json(self):
         return serialize_node_license_record(self)

@@ -8,7 +8,7 @@ require('jquery-tagsinput');
 
 m.mount(document.getElementsByClassName('file-view-panels')[0], FileViewPage(window.contextVars));
 
-var tagUrl = '/api/v1/project/' + window.contextVars.node.id + '/osfstorage' + window.contextVars.file.path + '/tags/';
+var tagUrl = '/api/v1/' + window.contextVars.node.id + '/osfstorage' + window.contextVars.file.path + '/tags/';
 
 $(function() {
     // Tag input

@@ -12,7 +12,9 @@ ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APP
 
 routes = [
     '/quickfiles/',
-    '/<uid>/quickfiles/'
+    '/<uid>/quickfiles/',
+    '/institutions/',
+    '/support/',
 ]
 
 def use_ember_app(**kwargs):

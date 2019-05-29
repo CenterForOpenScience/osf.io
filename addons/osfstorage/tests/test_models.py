@@ -8,20 +8,22 @@ import pytz
 from django.utils import timezone
 from nose.tools import *  # noqa
 
+from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
-from osf.models import Contributor
-from osf_tests.factories import ProjectFactory
+from osf.utils.fields import EncryptedJSONField
+from osf_tests.factories import ProjectFactory, UserFactory, PreprintFactory, RegionFactory, NodeFactory
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
+from addons.osfstorage.listeners import delete_files_task
 
 import datetime
 
 from osf import models
 from addons.osfstorage import utils
 from addons.osfstorage import settings
-from website.files.exceptions import FileNodeCheckedOutError
+from website.files.exceptions import FileNodeCheckedOutError, FileNodeIsPrimaryFile
 
 
 @pytest.mark.django_db
@@ -33,7 +35,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_true(self.node_settings.root_node.parent is None)
 
     def test_node_reference(self):
-        assert_equal(self.project, self.node_settings.root_node.node)
+        assert_equal(self.project, self.node_settings.root_node.target)
 
     # def test_get_folder(self):
     #     file = models.OsfStorageFile(name='MOAR PYLONS', node=self.node)
@@ -58,7 +60,7 @@ class TestOsfstorageFileNode(StorageTestCase):
     #     assert_equal(file, models.OsfStorageFileNode.get_file(_id, self.node_settings))
 
     def test_serialize(self):
-        file = OsfStorageFile(name='MOAR PYLONS', node=self.node_settings.owner)
+        file = OsfStorageFile(name='MOAR PYLONS', target=self.node_settings.owner)
         file.save()
 
         assert_equals(file.serialize(), {
@@ -140,7 +142,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(self.node_settings.get_root().path, path)
 
     def test_file_path(self):
-        file = OsfStorageFile(name='MOAR PYLONS', node=self.node)
+        file = OsfStorageFile(name='MOAR PYLONS', target=self.node)
         file.save()
         assert_equal(file.name, 'MOAR PYLONS')
         assert_equal(file.path, '/{}'.format(file._id))
@@ -167,7 +169,7 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_children(self):
         kids = [
             self.node_settings.get_root().append_file('Foo{}Bar'.format(x))
-            for x in xrange(100)
+            for x in range(100)
         ]
 
         assert_equals(sorted(kids, key=lambda kid: kid.name), list(self.node_settings.get_root().children.order_by('name')))
@@ -235,9 +237,51 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(trashed.path, '/' + child._id)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
                                f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type', 'modified']]
-        for f, value in child_data.iteritems():
+        for f, value in child_data.items():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
+
+    def test_delete_preprint_primary_file(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        file = preprint.files.all()[0]
+
+        with assert_raises(FileNodeIsPrimaryFile):
+            file.delete()
+
+    def test_delete_file_no_guid(self):
+        child = self.node_settings.get_root().append_file('Test')
+
+        assert_is(OsfStorageFileNode.load(child._id).guids.first(), None)
+
+        with mock.patch('osf.models.files.apps.get_model') as get_model:
+            child.delete()
+
+            assert_is(get_model.called, False)
+
+        assert_is(OsfStorageFileNode.load(child._id), None)
+
+    def test_delete_file_guids(self):
+        child = self.node_settings.get_root().append_file('Test')
+        guid = child.get_guid(create=True)
+
+        assert_is_not(OsfStorageFileNode.load(child._id).guids.first(), None)
+
+        with mock.patch('osf.models.files.apps.get_model') as get_model:
+            child.delete()
+
+            assert_is(get_model.called, True)
+            assert_is(get_model('osf.Comment').objects.filter.called, True)
+
+        assert_is(OsfStorageFileNode.load(child._id), None)
+
+    @mock.patch('addons.osfstorage.listeners.enqueue_postcommit_task')
+    def test_file_deleted_when_node_deleted(self, mock_enqueue):
+        child = self.node_settings.get_root().append_file('Test')
+        self.node.remove_node(auth=Auth(self.user))
+
+        mock_enqueue.assert_called_with(delete_files_task, (self.node._id, ), {}, celery=True)
 
     def test_materialized_path(self):
         child = self.node_settings.get_root().append_file('Test')
@@ -261,6 +305,18 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(copied.parent, copy_to)
         assert_equal(to_copy.parent, self.node_settings.get_root())
 
+    def test_copy_node_file_to_preprint(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+
+        to_copy = self.node_settings.get_root().append_file('Carp')
+        copy_to = preprint.root_folder
+
+        copied = to_copy.copy_under(copy_to)
+        assert_equal(copied.parent, copy_to)
+        assert_equal(copied.target, preprint)
+
     def test_move_nested(self):
         new_project = ProjectFactory()
         other_node_settings = new_project.get_addon('osfstorage')
@@ -273,9 +329,9 @@ class TestOsfstorageFileNode(StorageTestCase):
         child.reload()
 
         assert_equal(moved, to_move)
-        assert_equal(new_project, to_move.node)
-        assert_equal(new_project, move_to.node)
-        assert_equal(new_project, child.node)
+        assert_equal(new_project, to_move.target)
+        assert_equal(new_project, move_to.target)
+        assert_equal(new_project, child.target)
 
     def test_copy_rename(self):
         to_copy = self.node_settings.get_root().append_file('Carp')
@@ -307,6 +363,32 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(to_move, moved)
         assert_equal(to_move.name, 'Tuna')
         assert_equal(moved.parent, move_to)
+
+    def test_move_preprint_primary_file_to_node(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        to_move = preprint.files.all()[0]
+        assert_true(to_move.is_preprint_primary)
+
+        move_to = self.node_settings.get_root().append_folder('Cloud')
+        with assert_raises(FileNodeIsPrimaryFile):
+            moved = to_move.move_under(move_to, name='Tuna')
+
+    def test_move_preprint_primary_file_within_preprint(self):
+        user = UserFactory()
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+        folder = OsfStorageFolder(name='foofolder', target=preprint)
+        folder.save()
+
+        to_move = preprint.files.all()[0]
+        assert_true(to_move.is_preprint_primary)
+
+        moved = to_move.move_under(folder, name='Tuna')
+        assert preprint.primary_file == to_move
+        assert to_move.parent == folder
+        assert folder.target == preprint
 
     @unittest.skip
     def test_move_folder(self):
@@ -342,7 +424,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_get_file_guids_for_live_file(self):
         node = self.node_settings.owner
-        file = OsfStorageFile(name='foo', node=node)
+        file = OsfStorageFile(name='foo', target=node)
         file.save()
 
         file.get_guid(create=True)
@@ -350,11 +432,11 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         assert guid is not None
         assert guid in OsfStorageFileNode.get_file_guids(
-            '/' + file._id, provider='osfstorage', node=node)
+            '/' + file._id, provider='osfstorage', target=node)
 
     def test_get_file_guids_for_live_folder(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -366,12 +448,12 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert len(guids) == len(files)
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert sorted(guids) == sorted(all_guids)
 
     def test_get_file_guids_for_trashed_file(self):
         node = self.node_settings.owner
-        file = OsfStorageFile(name='foo', node=node)
+        file = OsfStorageFile(name='foo', target=node)
         file.save()
 
         file.get_guid(create=True)
@@ -380,11 +462,11 @@ class TestOsfstorageFileNode(StorageTestCase):
         file.delete()
         assert guid is not None
         assert guid in OsfStorageFileNode.get_file_guids(
-            '/' + file._id, provider='osfstorage', node=node)
+            '/' + file._id, provider='osfstorage', target=node)
 
     def test_get_file_guids_for_trashed_folder(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -398,19 +480,19 @@ class TestOsfstorageFileNode(StorageTestCase):
         folder.delete()
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert sorted(guids) == sorted(all_guids)
 
     def test_get_file_guids_live_file_wo_guid(self):
         node = self.node_settings.owner
-        file = OsfStorageFile(name='foo', node=node)
+        file = OsfStorageFile(name='foo', target=node)
         file.save()
         assert [] == OsfStorageFileNode.get_file_guids(
-            '/' + file._id, provider='osfstorage', node=node)
+            '/' + file._id, provider='osfstorage', target=node)
 
     def test_get_file_guids_for_live_folder_wo_guids(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -418,20 +500,20 @@ class TestOsfstorageFileNode(StorageTestCase):
             files.append(folder.append_file('foo.{}'.format(i)))
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert [] == all_guids
 
     def test_get_file_guids_trashed_file_wo_guid(self):
         node = self.node_settings.owner
-        file = OsfStorageFile(name='foo', node=node)
+        file = OsfStorageFile(name='foo', target=node)
         file.save()
         file.delete()
         assert [] == OsfStorageFileNode.get_file_guids(
-            '/' + file._id, provider='osfstorage', node=node)
+            '/' + file._id, provider='osfstorage', target=node)
 
     def test_get_file_guids_for_trashed_folder_wo_guids(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -441,12 +523,12 @@ class TestOsfstorageFileNode(StorageTestCase):
         folder.delete()
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert [] == all_guids
 
     def test_get_file_guids_for_live_folder_recursive(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -463,12 +545,12 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert len(guids) == len(files)
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert sorted(guids) == sorted(all_guids)
 
     def test_get_file_guids_for_trashed_folder_recursive(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -487,12 +569,12 @@ class TestOsfstorageFileNode(StorageTestCase):
         folder.delete()
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert sorted(guids) == sorted(all_guids)
 
     def test_get_file_guids_for_live_folder_recursive_wo_guids(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -504,12 +586,12 @@ class TestOsfstorageFileNode(StorageTestCase):
             files.append(subfolder.append_file('subfoo.{}'.format(i)))
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert [] == all_guids
 
     def test_get_file_guids_for_trashed_folder_recursive_wo_guids(self):
         node = self.node_settings.owner
-        folder = OsfStorageFolder(name='foofolder', node=node)
+        folder = OsfStorageFolder(name='foofolder', target=node)
         folder.save()
 
         files = []
@@ -523,7 +605,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         folder.delete()
 
         all_guids = OsfStorageFileNode.get_file_guids(
-            '/' + folder._id, provider='osfstorage', node=node)
+            '/' + folder._id, provider='osfstorage', target=node)
         assert [] == all_guids
 
 
@@ -552,8 +634,66 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_equal(list(cloned_record.versions.all()), list(record.versions.all()))
         assert_true(fork_node_settings.root_node)
 
+    def test_fork_reverts_to_using_user_storage_default(self):
+        user = UserFactory()
+        user2 = UserFactory()
+        us = RegionFactory()
+        canada = RegionFactory()
+
+        user_settings = user.get_addon('osfstorage')
+        user_settings.default_region = us
+        user_settings.save()
+        user2_settings = user2.get_addon('osfstorage')
+        user2_settings.default_region = canada
+        user2_settings.save()
+
+        project = ProjectFactory(creator=user, is_public=True)
+        child = NodeFactory(parent=project, creator=user, is_public=True)
+        child_settings = child.get_addon('osfstorage')
+        child_settings.region_id = canada.id
+        child_settings.save()
+
+        fork = project.fork_node(Auth(user))
+        child_fork = models.Node.objects.get_children(fork).first()
+        assert fork.get_addon('osfstorage').region_id == us.id
+        assert fork.get_addon('osfstorage').user_settings == user.get_addon('osfstorage')
+        assert child_fork.get_addon('osfstorage').region_id == us.id
+
+        fork = project.fork_node(Auth(user2))
+        child_fork = models.Node.objects.get_children(fork).first()
+        assert fork.get_addon('osfstorage').region_id == canada.id
+        assert fork.get_addon('osfstorage').user_settings == user2.get_addon('osfstorage')
+        assert child_fork.get_addon('osfstorage').region_id == canada.id
+
+    def test_region_wb_url_from_creators_defaults(self):
+        user = UserFactory()
+        region = RegionFactory()
+
+        user_settings = user.get_addon('osfstorage')
+        user_settings.default_region = region
+        user_settings.save()
+
+        project = ProjectFactory(creator=user)
+        node_settings = project.get_addon('osfstorage')
+
+        assert node_settings.region_id == region.id
+
+    def test_encrypted_json_field(self):
+        new_test_creds = {
+            'storage': {
+                'go': 'science',
+                'hey': ['woo', 'yeah', 'great']
+            }
+        }
+        region = RegionFactory()
+        region.waterbutler_credentials = new_test_creds
+        region.save()
+
+        assert region.waterbutler_credentials == new_test_creds
+
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
 class TestOsfStorageFileVersion(StorageTestCase):
     def setUp(self):
         super(TestOsfStorageFileVersion, self).setUp()
@@ -571,7 +711,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_true(retrieved.location)
         assert_true(retrieved.size)
         # sometimes identifiers are strings, so this always has to be a string, sql is funny about that.
-        assert_equal(retrieved.identifier, u"0")
+        assert_equal(retrieved.identifier, u'0')
         assert_true(retrieved.content_type)
         assert_true(retrieved.modified)
 
@@ -689,6 +829,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestOsfStorageCheckout(StorageTestCase):
     def setUp(self):
         super(TestOsfStorageCheckout, self).setUp()
@@ -769,7 +910,7 @@ class TestOsfStorageCheckout(StorageTestCase):
 
     def test_remove_contributor_with_checked_file(self):
         user = factories.AuthUserFactory()
-        Contributor.objects.create(
+        models.Contributor.objects.create(
             node=self.node,
             user=user,
             admin=True,
@@ -780,6 +921,6 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         assert_equal(self.file.checkout, self.user)
-        self.file.node.remove_contributors([self.user], save=True)
+        self.file.target.remove_contributors([self.user], save=True)
         self.file.reload()
         assert_equal(self.file.checkout, None)

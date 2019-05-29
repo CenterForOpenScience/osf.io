@@ -63,6 +63,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
     FILE_TAG_ADDED = 'file_tag_added'
     FILE_TAG_REMOVED = 'file_tag_removed'
 
+    FILE_METADATA_UPDATED = 'file_metadata_updated'
+
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
     CHANGED_LICENSE = 'license_changed'
@@ -87,9 +89,9 @@ class NodeLog(ObjectIDMixin, BaseModel):
     COMMENT_UPDATED = 'comment_updated'
     COMMENT_RESTORED = 'comment_restored'
 
-    CITATION_ADDED = 'citation_added'
-    CITATION_EDITED = 'citation_edited'
-    CITATION_REMOVED = 'citation_removed'
+    CUSTOM_CITATION_ADDED = 'custom_citation_added'
+    CUSTOM_CITATION_EDITED = 'custom_citation_edited'
+    CUSTOM_CITATION_REMOVED = 'custom_citation_removed'
 
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
@@ -130,7 +132,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC,
                 MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
                 PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE,
-                EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED,
+                EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FILE_METADATA_UPDATED,
                 FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED,
                 ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, COMMENT_RESTORED,
                 MADE_CONTRIBUTOR_VISIBLE,
@@ -139,7 +141,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED,
                 REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
                 PREREG_REGISTRATION_INITIATED,
-                CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
                 PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')

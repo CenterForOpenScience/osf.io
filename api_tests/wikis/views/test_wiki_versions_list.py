@@ -1,6 +1,7 @@
 import mock
 import pytest
 
+from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
 from api_tests.wikis.views.test_wiki_detail import WikiCRUDTestCase
@@ -75,7 +76,7 @@ class TestWikiVersionList:
 
     @pytest.fixture()
     def public_registration_url(self, public_registration):
-        return '/{}wikis/{}/versions/'.format(API_BASE, public_registration.get_wiki_page('home')._id)
+        return '/{}wikis/{}/versions/'.format(API_BASE, WikiPage.objects.get_for_node(public_registration, 'home')._id)
 
     @pytest.fixture()
     def private_registration(self, user, private_project, private_wiki):
@@ -84,7 +85,7 @@ class TestWikiVersionList:
 
     @pytest.fixture()
     def private_registration_url(self, private_registration):
-        return '/{}wikis/{}/versions/'.format(API_BASE, private_registration.get_wiki_page('home')._id)
+        return '/{}wikis/{}/versions/'.format(API_BASE, WikiPage.objects.get_for_node(private_registration, 'home')._id)
 
     def test_return_wiki_versions(self, app, user, non_contrib, private_registration, public_wiki, private_wiki, public_url, private_url, private_registration_url):
         # test_return_public_node_wiki_versions_logged_out_user
@@ -135,7 +136,7 @@ class TestWikiVersionList:
         res = app.get(private_registration_url, auth=user.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert str(private_registration.get_wiki_version('home').identifier) in wiki_ids
+        assert str(WikiVersion.objects.get_for_node(private_registration, 'home').identifier) in wiki_ids
 
     def test_wiki_versions_not_returned_for_withdrawn_registration(self, app, user, private_registration, private_registration_url):
         private_registration.is_public = True
@@ -167,14 +168,14 @@ class TestWikiVersionList:
 
         #   test_public_registration_wiki_versions_relationship_links
         res = app.get(public_registration_url)
-        expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, public_registration.get_wiki_page('home')._id)
+        expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, WikiPage.objects.get_for_node(public_registration, 'home')._id)
         expected_user_relationship_url = '{}users/{}/'.format(API_BASE, user._id)
         assert expected_wiki_page_relationship_url in res.json['data'][0]['relationships']['wiki_page']['links']['related']['href']
         assert expected_user_relationship_url in res.json['data'][0]['relationships']['user']['links']['related']['href']
 
         #   test_private_registration_wiki_versions_relationship_links
         res = app.get(private_registration_url, auth=user.auth)
-        expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, private_registration.get_wiki_page('home')._id)
+        expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, WikiPage.objects.get_for_node(private_registration, 'home')._id)
         expected_user_relationship_url = '{}users/{}/'.format(API_BASE, user._id)
         assert expected_wiki_page_relationship_url in res.json['data'][0]['relationships']['wiki_page']['links']['related']['href']
         assert expected_user_relationship_url in res.json['data'][0]['relationships']['user']['links']['related']['href']
@@ -199,7 +200,7 @@ class TestWikiVersionList:
         ]
         assert res.status_code == 200
         assert len(node_relationships) == 1
-        assert public_registration.get_wiki_page('home')._id in node_relationships[0]
+        assert WikiPage.objects.get_for_node(public_registration, 'home')._id in node_relationships[0]
 
     def test_do_not_return_disabled_wiki(self, app, user, public_url, public_project):
         public_project.delete_addon('wiki', auth=Auth(user))

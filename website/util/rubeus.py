@@ -4,7 +4,6 @@ formatted hgrid list/folders.
 """
 import logging
 
-import hurry.filesize
 from django.utils import timezone
 
 from framework import sentry
@@ -31,10 +30,6 @@ DEFAULT_PERMISSIONS = {
     'view': True,
     'edit': False,
 }
-
-def format_filesize(size):
-    return hurry.filesize.size(size, system=hurry.filesize.alternative)
-
 
 def default_urls(node_api, short_name):
     return {
@@ -121,6 +116,11 @@ def build_addon_root(node_settings, name, permissions=None,
         'nodeApiUrl': node_settings.owner.api_url,
     }
     ret.update(kwargs)
+
+    if hasattr(node_settings, 'region'):
+        ret.update({'nodeRegion': node_settings.region.name})
+        ret.update({'waterbutlerURL': node_settings.region.waterbutler_url})
+
     return ret
 
 

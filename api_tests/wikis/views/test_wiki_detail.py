@@ -4,9 +4,9 @@ import furl
 import pytz
 import datetime
 from urlparse import urlparse
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 
-from addons.wiki.models import WikiVersion
+from addons.wiki.models import WikiPage
 from addons.wiki.tests.factories import (
     WikiFactory,
     WikiVersionFactory,
@@ -55,7 +55,7 @@ class WikiCRUDTestCase:
             creator=user_creator
         )
         wiki_page = WikiFactory(node=project_public, user=user_creator)
-        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return project_public
 
     @pytest.fixture()
@@ -65,7 +65,7 @@ class WikiCRUDTestCase:
             creator=user_creator
         )
         wiki_page = WikiFactory(node=project_private, user=user_creator)
-        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return project_private
 
     @pytest.fixture()
@@ -89,13 +89,13 @@ class WikiCRUDTestCase:
     @pytest.fixture()
     def wiki_public(self, project_public, user_creator):
         wiki_page = WikiFactory(node=project_public, user=user_creator, page_name=fake.word())
-        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
     @pytest.fixture()
     def wiki_private(self, project_private, user_creator):
         wiki_page = WikiFactory(node=project_private, user=user_creator, page_name=fake.word())
-        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
     @pytest.fixture()
@@ -106,14 +106,14 @@ class WikiCRUDTestCase:
     def wiki_registration_public(self, project_public, user_creator):
         registration = RegistrationFactory(project=project_public, is_public=True)
         wiki_page = WikiFactory(node=registration, user=user_creator, page_name=fake.word())
-        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
     @pytest.fixture()
     def wiki_registration_private(self, project_public, user_creator):
         registration = RegistrationFactory(project=project_public, is_public=False)
         wiki_page = WikiFactory(node=registration, user=user_creator, page_name=fake.word())
-        wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
+        WikiVersionFactory(wiki_page=wiki_page, user=user_creator)
         return wiki_page
 
     @pytest.fixture()
@@ -166,7 +166,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         self._set_up_public_project_with_wiki_page()
         self.public_registration = RegistrationFactory(
             project=self.public_project, user=self.user, is_public=True)
-        self.public_registration_wiki_id = self.public_registration.get_wiki_page('home')._id
+        self.public_registration_wiki_id = WikiPage.objects.get_for_node(self.public_registration, 'home')._id
         self.public_registration.save()
         self.public_registration_url = '/{}wikis/{}/'.format(
             API_BASE, self.public_registration_wiki_id)
@@ -175,7 +175,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         self._set_up_private_project_with_wiki_page()
         self.private_registration = RegistrationFactory(
             project=self.private_project, user=self.user)
-        self.private_registration_wiki_id = self.private_registration.get_wiki_page('home')._id
+        self.private_registration_wiki_id = WikiPage.objects.get_for_node(self.private_registration, 'home')._id
         self.private_registration.save()
         self.private_registration_url = '/{}wikis/{}/'.format(
             API_BASE, self.private_registration_wiki_id)
@@ -334,7 +334,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         url = res.json['data']['relationships']['comments']['links']['related']['href']
-        comment = CommentFactory(
+        CommentFactory(
             node=self.public_project,
             target=Guid.load(
                 self.public_wiki_page._id),
@@ -397,7 +397,6 @@ class TestWikiDetailView(ApiWikiTestCase):
 
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 410)
-
 
     def test_public_node_wiki_relationship_links(self):
         self._set_up_public_project_with_wiki_page()

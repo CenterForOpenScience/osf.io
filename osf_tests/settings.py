@@ -1,5 +1,5 @@
 # Use API settings.
-from api.base.settings import *  # noqa
+from api.base.settings import *  # noqa: F401,F403
 
 DEBUG_PROPAGATE_EXCEPTIONS = True
 #DATABASES = {
@@ -18,5 +18,6 @@ SITE_ID = 1
 # SECRET_KEY = 'not very secret in tests'
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
 )
+
+TEST_ENV = True

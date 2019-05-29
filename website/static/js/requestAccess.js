@@ -48,7 +48,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
             'POST',
             self.updateUrl,
             {
-                'is_cors': true,
+                'isCors': true,
                 'data': payload,
                 'fields': {
                     xhrFields: {withCredentials: true}
@@ -67,7 +67,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
             );
             Raven.captureMessage('Error requesting project access', {
                 extra: {
-                    url: this.urls.update,
+                    url: self.updateUrl,
                     status: status,
                     error: error
                 }

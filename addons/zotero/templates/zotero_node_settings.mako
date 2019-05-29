@@ -71,9 +71,9 @@
                     </div>
                     <div class="tb-tbody" style="border-left: 1px solid #EEE;border-right: 1px solid #EEE;" data-bind="foreach: libraries">
                         <div class="tb-row" style="display:block; width:100%;">
-                            <div class="tb-td" style="width: 75%" data-bind="text: data['name']"></div>
+                            <div class="tb-td" style="width: 75%" data-bind="text: name"></div>
                             <div style="width:10%;" class="tb-td">
-                                <input data-bind="attr: {value: id + ',' + data['name']}, checked: $root.selectedLibrary, event: { click: $root.onLibraryChange()}" name="library-group" type="radio">
+                                <input data-bind="attr: {value: id + ',' + name}, checked: $root.selectedLibrary, event: { click: $root.onLibraryChange()}" name="library-group" type="radio">
                             </div>
                         </div>
                     </div>

@@ -1,4 +1,5 @@
 from addons.base.apps import BaseAddonAppConfig
+from addons.figshare.settings import MAX_UPLOAD_SIZE
 
 from website.util import rubeus
 
@@ -33,7 +34,7 @@ class FigshareAddonAppConfig(BaseAddonAppConfig):
     configs = ['accounts', 'node']
     categories = ['storage']
     has_hgrid_files = True
-    max_file_size = 50  # MB
+    max_file_size = MAX_UPLOAD_SIZE
 
     @property
     def get_hgrid_data(self):

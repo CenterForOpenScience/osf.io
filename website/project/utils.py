@@ -94,7 +94,7 @@ def activity():
                 break
 
     # New and Noteworthy projects are updated manually
-    new_and_noteworthy_projects = list(Node.objects.get(guids___id=settings.NEW_AND_NOTEWORTHY_LINKS_NODE).nodes_pointer)
+    new_and_noteworthy_projects = list(Node.objects.get(guids___id=settings.NEW_AND_NOTEWORTHY_LINKS_NODE, guids___id__isnull=False).nodes_pointer)
 
     return {
         'new_and_noteworthy_projects': new_and_noteworthy_projects,
@@ -102,3 +102,12 @@ def activity():
         'popular_public_projects': popular_public_projects,
         'popular_public_registrations': popular_public_registrations
     }
+
+
+# Credit to https://gist.github.com/cizixs/be41bbede49a772791c08491801c396f
+def sizeof_fmt(num, suffix='B'):
+    for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
+        if abs(num) < 1000.0:
+            return '%3.1f%s%s' % (num, unit, suffix)
+        num /= 1000.0
+    return '%.1f%s%s' % (num, 'Y', suffix)

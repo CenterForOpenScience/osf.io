@@ -40,7 +40,7 @@ class DataverseFile(DataverseFileNode, File):
         version.identifier = revision
 
         user = user or _get_current_user()
-        if not user or not self.node.can_edit(user=user):
+        if not user or not self.target.has_permission(user, 'write'):
             try:
                 # Users without edit permission can only see published files
                 if not data['extra']['hasPublishedVersion']:

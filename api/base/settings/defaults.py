@@ -28,7 +28,10 @@ DATABASES = {
         'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
         'PORT': os.environ.get('OSF_DB_PORT', '5432'),
         'ATOMIC_REQUESTS': True,
-    }
+        'TEST': {
+            'SERIALIZE': False,
+        },
+    },
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
@@ -63,7 +66,7 @@ CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
 CSRF_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
 
 ALLOWED_HOSTS = [
-    '.osf.io'
+    '.osf.io',
 ]
 
 
@@ -79,12 +82,15 @@ INSTALLED_APPS = (
 
     # 3rd party
     'django_celery_beat',
+    'django_celery_results',
     'rest_framework',
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
+    'storages',
     'waffle',
+    'elasticsearch_metrics',
 
     # OSF
     'osf',
@@ -121,7 +127,7 @@ RAVEN_CONFIG = {
 }
 
 BULK_SETTINGS = {
-    'DEFAULT_BULK_LIMIT': 100
+    'DEFAULT_BULK_LIMIT': 100,
 }
 
 MAX_PAGE_SIZE = 100
@@ -137,7 +143,7 @@ REST_FRAMEWORK = {
         'api.base.parsers.JSONAPIParser',
         'api.base.parsers.JSONAPIParserForRegularJSON',
         'rest_framework.parsers.FormParser',
-        'rest_framework.parsers.MultiPartParser'
+        'rest_framework.parsers.MultiPartParser',
     ),
     'EXCEPTION_HANDLER': 'api.base.exceptions.json_api_exception_handler',
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.JSONAPIContentNegotiation',
@@ -153,6 +159,12 @@ REST_FRAMEWORK = {
         '2.6',
         '2.7',
         '2.8',
+        '2.9',
+        '2.10',
+        '2.11',
+        '2.12',
+        '2.13',
+        '2.14',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -161,7 +173,7 @@ REST_FRAMEWORK = {
         # Custom auth classes
         'api.base.authentication.drf.OSFBasicAuthentication',
         'api.base.authentication.drf.OSFSessionAuthentication',
-        'api.base.authentication.drf.OSFCASAuthentication'
+        'api.base.authentication.drf.OSFCASAuthentication',
     ),
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.UserRateThrottle',
@@ -175,22 +187,24 @@ REST_FRAMEWORK = {
         'root-anon-throttle': '1000/hour',
         'test-user': '2/hour',
         'test-anon': '1/hour',
-    }
+        'send-email': '2/minute',
+    },
 }
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
-                         osf_settings.DOMAIN,
-                         )
+CORS_ORIGIN_WHITELIST = (
+    urlparse(osf_settings.DOMAIN).netloc,
+    osf_settings.DOMAIN,
+)
 # This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
 # Set dynamically on app init
 ORIGINS_WHITELIST = ()
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
@@ -214,8 +228,9 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True
-    }]
+        'APP_DIRS': True,
+    },
+]
 
 
 ROOT_URLCONF = 'api.base.urls'
@@ -224,9 +239,7 @@ WSGI_APPLICATION = 'api.base.wsgi.application'
 
 LANGUAGE_CODE = 'en-us'
 
-# Disabled to make a test work (TestNodeLog.test_formatted_date)
-# TODO Try to understand what's happening to cause the test to break when that line is active.
-# TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -234,12 +247,21 @@ USE_L10N = True
 
 USE_TZ = True
 
+# https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
+if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
+    # Required to interact with Google Cloud Storage
+    DEFAULT_FILE_STORAGE = 'api.base.storage.RequestlessURLGoogleCloudStorage'
+    GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-cdn-us')
+    GS_FILE_OVERWRITE = os.environ.get('GS_FILE_OVERWRITE', False)
+elif osf_settings.DEV_MODE or osf_settings.DEBUG_MODE:
+    DEFAULT_FILE_STORAGE = 'api.base.storage.DevFileSystemStorage'
 
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
 API_BASE = 'v2/'
+API_PRIVATE_BASE = '_/'
 STATIC_URL = '/static/'
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
@@ -271,3 +293,33 @@ ANONYMOUS_USER_NAME = None
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+
+# salt used for generating hashids
+HASHIDS_SALT = 'pinkhimalayan'
+
+# django-elasticsearch-metrics
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': os.environ.get('ELASTIC6_URI', '127.0.0.1:9201'),
+        'retry_on_timeout': True,
+    },
+}
+# Store yearly indices for time-series metrics
+ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
+
+WAFFLE_CACHE_NAME = 'waffle_cache'
+STORAGE_USAGE_CACHE_NAME = 'storage_usage'
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+    STORAGE_USAGE_CACHE_NAME: {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'osf_cache_table',
+    },
+    WAFFLE_CACHE_NAME: {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+}

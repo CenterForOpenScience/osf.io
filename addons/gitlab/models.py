@@ -4,10 +4,12 @@ import urlparse
 
 from django.db import models
 import markupsafe
+import gitlab
 
 from addons.base import exceptions
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
+
 from addons.gitlab import utils
 from addons.gitlab.api import GitLabClient
 from addons.gitlab.serializer import GitLabSerializer
@@ -152,7 +154,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def is_private(self):
         connection = GitLabClient(external_account=self.external_account)
-        return not connection.repo(repo_id=self.repo_id)['public']
+        return connection.repo(self.repo_id).visibility == 'private'
 
     def to_json(self, user):
 
@@ -165,14 +167,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         if self.user_settings and self.user_settings.has_auth:
 
-            valid_credentials = False
             owner = self.user_settings.owner
             connection = GitLabClient(external_account=self.external_account)
 
             valid_credentials = True
             try:
-                repos = connection.repos()
-
+                repos = [repo.attributes for repo in connection.repos()]
             except GitLabError:
                 valid_credentials = False
 
@@ -207,7 +207,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if not self.complete:
             raise exceptions.AddonError('Repo is not configured')
         return {
-            'host': 'https://{}'.format(self.external_account.oauth_secret),
+            'host': self.external_account.oauth_secret,
             'owner': self.user,
             'repo': self.repo,
             'repo_id': self.repo_id
@@ -276,21 +276,27 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             repo = connect.repo(self.repo_id)
         except (ApiError, GitLabError):
             return
+        except gitlab.exceptions.GitlabError as exc:
+            if exc.response_code == 403 and 'must accept the Terms of Service' in exc.error_message:
+                return [('Your gitlab account does not have proper authentication. Ensure you have agreed to Gitlab\'s '
+                         'current Terms of Service by disabling and re-enabling your account.')]
+            else:
+                raise exc
 
+        # GitLab has visibility types: public, private, internal.
         node_permissions = 'public' if node.is_public else 'private'
-        repo_permissions = 'private' if not repo['public'] else 'public'
-        if repo_permissions != node_permissions:
+        if repo.visibility != node_permissions:
             message = (
                 'Warning: This OSF {category} is {node_perm}, but the GitLab '
-                'repo {user} / {repo} is {repo_perm}.'.format(
+                'repo {user} / {repo} has {repo_perm} visibility.'.format(
                     category=markupsafe.escape(node.project_or_component),
                     node_perm=markupsafe.escape(node_permissions),
-                    repo_perm=markupsafe.escape(repo_permissions),
+                    repo_perm=markupsafe.escape(repo.visibility),
                     user=markupsafe.escape(self.user),
                     repo=markupsafe.escape(self.repo),
                 )
             )
-            if repo_permissions == 'private':
+            if repo.visibility == 'private':
                 message += (
                     ' Users can view the contents of this private GitLab '
                     'repository through this public project.'
@@ -299,7 +305,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 message += (
                     ' The files in this GitLab repo can be viewed on GitLab '
                     '<u><a href="{url}">here</a></u>.'
-                ).format(url=repo['http_url_to_repo'])
+                ).format(url=repo.http_url_to_repo)
             messages.append(message)
             return messages
 

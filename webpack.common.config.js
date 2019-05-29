@@ -24,20 +24,16 @@ var addonsPath = function(dir) {
 var entry = {
     // JS
     'base-page': staticPath('js/pages/base-page.js'),
-    'home-page': staticPath('js/pages/home-page.js'),
-    'landing-page': staticPath('js/pages/landing-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
     'profile-page': staticPath('js/pages/profile-page.js'),
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'project-addons-page': staticPath('js/pages/project-addons-page.js'),
-    'project-registrations-page': staticPath('js/pages/project-registrations-page.js'),
     'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'registration-edit-page': staticPath('js/pages/registration-edit-page.js'),
     'register-page': staticPath('js/pages/register-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
-    'statistics-page': staticPath('js/pages/statistics-page.js'),
     'request-access-page': staticPath('js/pages/request-access-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
@@ -168,7 +164,6 @@ var resolve = {
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
         'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
-        'keen-dataset' : nodePath('keen-dataviz/lib/dataset/'),
     }
 };
 
@@ -215,7 +210,7 @@ module.exports = {
             {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
             {test: /\.css$/, use: [{loader: 'style-loader'}, {loader: 'css-loader'}]},
             // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
+            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
             {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?mimetype=application/font-woff'},

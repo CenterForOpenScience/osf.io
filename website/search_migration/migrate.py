@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Migration script for Search-enabled Models.'''
+"""Migration script for Search-enabled Models."""
 from __future__ import absolute_import
 from math import ceil
-
+import functools
 import logging
 
 from django.db import connection
-from elasticsearch import helpers
+from django.core.paginator import Paginator
+from elasticsearch2 import helpers
 
 import website.search.search as search
 from website.search.elastic_search import client
@@ -16,11 +17,13 @@ from website.search_migration import (
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
     JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
 from scripts import utils as script_utils
-from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode
+from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, CollectionSubmission
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
-from website.search.search import update_institution
+from website.search.elastic_search import bulk_update_cgm
+from website.search.search import update_institution, bulk_update_collected_metadata
+
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +91,25 @@ def migrate_nodes(index, delete, increment=10000):
             spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
         logger.info('{} nodes marked deleted'.format(total_nodes))
 
+def migrate_preprints(index, delete):
+    logger.info('Migrating preprints to index: {}'.format(index))
+    preprints = Preprint.objects.all()
+    increment = 100
+    paginator = Paginator(preprints, increment)
+    for page_number in paginator.page_range:
+        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        Preprint.bulk_update_search(paginator.page(page_number).object_list, index=index)
+
+def migrate_preprint_files(index, delete):
+    logger.info('Migrating preprint files to index: {}'.format(index))
+    valid_preprints = Preprint.objects.all()
+    valid_preprint_files = BaseFileNode.objects.filter(preprint__in=valid_preprints)
+    paginator = Paginator(valid_preprint_files, 500)
+    serialize = functools.partial(search.update_file, index=index)
+    for page_number in paginator.page_range:
+        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        search.bulk_update_nodes(serialize, paginator.page(page_number).object_list, index=index, category='file')
+
 def migrate_files(index, delete, increment=10000):
     logger.info('Migrating files to index: {}'.format(index))
     max_fid = BaseFileNode.objects.last().id
@@ -130,6 +152,31 @@ def migrate_users(index, delete, increment=10000):
             es_args={'raise_on_error': False})  # ignore 404s
         logger.info('{} users marked deleted'.format(total_users))
 
+def migrate_collected_metadata(index, delete):
+    cgms = CollectionSubmission.objects.filter(
+        collection__provider__isnull=False,
+        collection__is_public=True,
+        collection__deleted__isnull=True,
+        collection__is_bookmark_collection=False)
+
+    docs = helpers.scan(es_client(), query={
+        'query': {'match': {'_type': 'collectionSubmission'}}
+    }, index=index)
+
+    actions = ({
+        '_op_type': 'delete',
+        '_index': index,
+        '_id': doc['_source']['id'],
+        '_type': 'collectionSubmission',
+        'doc': doc['_source'],
+        'doc_as_upsert': True,
+    } for doc in list(docs))
+
+    bulk_update_cgm(None, actions=actions, op='delete', index=index)
+
+    bulk_update_collected_metadata(cgms, index=index)
+    logger.info('{} collection submissions migrated'.format(cgms.count()))
+
 def migrate_institutions(index):
     for inst in Institution.objects.filter(is_deleted=False):
         update_institution(inst, index)
@@ -159,6 +206,9 @@ def migrate(delete, remove=False, index=None, app=None):
     migrate_nodes(new_index, delete=delete)
     migrate_files(new_index, delete=delete)
     migrate_users(new_index, delete=delete)
+    migrate_preprints(new_index, delete=delete)
+    migrate_preprint_files(new_index, delete=delete)
+    migrate_collected_metadata(new_index, delete=delete)
 
     set_up_alias(index, new_index)
 

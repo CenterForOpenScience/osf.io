@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 import mock  # noqa
 import unittest
 
@@ -40,6 +40,13 @@ class TestIsDeprecated(unittest.TestCase):
         is_deprecated = api_utils.is_deprecated(
             request_version, self.min_version, self.max_version)
         assert_equal(is_deprecated, False)
+
+    def test_is_deprecated_larger_versions(self):
+        request_version = '2.10'
+        is_deprecated = api_utils.is_deprecated(
+            request_version, self.min_version, self.max_version
+        )
+        assert is_deprecated is True
 
 
 class TestFlaskDjangoIntegration:

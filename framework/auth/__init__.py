@@ -75,7 +75,7 @@ def logout():
     return True
 
 
-def register_unconfirmed(username, password, fullname, campaign=None):
+def register_unconfirmed(username, password, fullname, campaign=None, accepted_terms_of_service=None):
     from osf.models import OSFUser
     user = get_user(email=username)
     if not user:
@@ -84,6 +84,7 @@ def register_unconfirmed(username, password, fullname, campaign=None):
             password=password,
             fullname=fullname,
             campaign=campaign,
+            accepted_terms_of_service=accepted_terms_of_service
         )
         user.save()
         signals.unconfirmed_user_created.send(user)

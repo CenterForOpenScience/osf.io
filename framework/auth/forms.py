@@ -15,7 +15,9 @@ from framework.forms import (
     BootstrapTextInput,
     BootstrapPasswordInput,
     stripped,
-    lowerstripped
+    lowerstripped,
+    BooleanField,
+    CheckboxInput
 )
 from website import language
 
@@ -56,6 +58,15 @@ name_field = TextField(
     'Full Name',
     [
         validators.Required(message=u'Full name is required'),
+        NoHtmlCharacters(),
+    ],
+    filters=[stripped],
+    widget=BootstrapTextInput(),
+)
+
+name_field_not_required = TextField(
+    'Full Name',
+    [
         NoHtmlCharacters(),
     ],
     filters=[stripped],
@@ -144,6 +155,11 @@ class ResetPasswordForm(Form):
 
 class SetEmailAndPasswordForm(ResetPasswordForm):
     token = HiddenField()
+    accepted_terms_of_service = BooleanField(
+        [
+            validators.Required(message=u'This field is required'),
+        ]
+    )
 
 
 class SignInForm(Form):
@@ -152,7 +168,14 @@ class SignInForm(Form):
 
 
 class ResendConfirmationForm(Form):
+    name = name_field_not_required  # If the user's auth already has a fullname this won't appear.
     email = email_field
+    accepted_terms_of_service = BooleanField(
+        [
+            validators.Required(message=u'This field is required'),
+        ],
+        widget=CheckboxInput()
+    )
 
 
 class PasswordForm(Form):

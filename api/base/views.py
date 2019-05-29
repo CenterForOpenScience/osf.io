@@ -1,9 +1,12 @@
 from collections import defaultdict
+from distutils.version import StrictVersion
 
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
+from django.db.models import F, Q
 from django.http import JsonResponse
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework import status
@@ -14,15 +17,16 @@ from rest_framework.response import Response
 
 from api.base import permissions as base_permissions
 from api.base import utils
-from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.exceptions import RelationshipPostMakesNoChanges, InvalidFilterValue, InvalidFilterOperator
 from api.base.filters import ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
 from api.base.serializers import (
+    get_meta_type,
     MaintenanceStateSerializer,
     LinkedNodesRelationshipSerializer,
-    LinkedRegistrationsRelationshipSerializer
+    LinkedRegistrationsRelationshipSerializer,
 )
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base.utils import is_bulk_request, get_user_auth
@@ -33,7 +37,9 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
-
+from osf.utils.permissions import PERMISSIONS
+from waffle.models import Flag, Switch, Sample
+from waffle import flag_is_active, sample_is_active
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -60,14 +66,11 @@ class JSONAPIBaseView(generics.GenericAPIView):
             if not v:
                 return None
 
-            if isinstance(self.request, EmbeddedRequest):
-                request = EmbeddedRequest(self.request._request)
-            else:
-                request = EmbeddedRequest(self.request)
+            request = EmbeddedRequest(self.request)
 
-            if not hasattr(request._request._request, '_embed_cache'):
-                request._request._request._embed_cache = {}
-            cache = request._request._request._embed_cache
+            if not hasattr(request._request, '_embed_cache'):
+                request._request._embed_cache = {}
+            cache = request._request._embed_cache
 
             request.parents.setdefault(type(item), {})[item._id] = item
 
@@ -146,9 +149,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds = self.request.query_params.getlist('embed') or self.request.query_params.getlist('embed[]')
 
         fields_check = self.get_serializer_class()._declared_fields.copy()
-        if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
+        serializer_class_type = get_meta_type(self.serializer_class, self.request)
+        if 'fields[{}]'.format(serializer_class_type) in self.request.query_params:
             # Check only requested and mandatory fields
-            sparse_fields = self.request.query_params['fields[{}]'.format(self.serializer_class.Meta.type_)]
+            sparse_fields = self.request.query_params['fields[{}]'.format(serializer_class_type)]
             for field in fields_check.copy().keys():
                 if field not in ('type', 'id', 'links') and field not in sparse_fields:
                     fields_check.pop(field)
@@ -193,7 +197,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -211,7 +215,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -232,7 +236,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -257,11 +261,13 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
         auth = utils.get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            object.linked_nodes.filter(is_deleted=False, type='osf.node')
-            if pointer.can_view(auth)
-        ], 'self': object}
+        obj = {
+            'data': [
+                pointer for pointer in
+                object.linked_nodes.filter(is_deleted=False, type='osf.node')
+                if pointer.can_view(auth)
+            ], 'self': object,
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -297,7 +303,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -315,7 +321,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -336,7 +342,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -361,11 +367,13 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
         auth = utils.get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            object.linked_nodes.filter(is_deleted=False, type='osf.registration')
-            if pointer.can_view(auth)
-        ], 'self': object}
+        obj = {
+            'data': [
+                pointer for pointer in
+                object.linked_nodes.filter(is_deleted=False, type='osf.registration')
+                if pointer.can_view(auth)
+            ], 'self': object,
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -393,18 +401,25 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 def root(request, format=None, **kwargs):
     """
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
+    The contents of this endpoint are variable and subject to change without notification.
     """
     if request.user and not request.user.is_anonymous:
         user = request.user
         current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
+
+    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request, name)]
+    samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
+    switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
+
     kwargs = request.parser_context['kwargs']
     return_val = {
         'meta': {
             'message': 'Welcome to the OSF API.',
             'version': request.version,
             'current_user': current_user,
+            'active_flags': flags + samples + switches,
         },
         'links': {
             'nodes': utils.absolute_reverse('nodes:node-list', kwargs=kwargs),
@@ -413,9 +428,9 @@ def root(request, format=None, **kwargs):
             'registrations': utils.absolute_reverse('registrations:registration-list', kwargs=kwargs),
             'institutions': utils.absolute_reverse('institutions:institution-list', kwargs=kwargs),
             'licenses': utils.absolute_reverse('licenses:license-list', kwargs=kwargs),
-            'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list', kwargs=kwargs),
+            'schemas': utils.absolute_reverse('schemas:registration-schema-list', kwargs=kwargs),
             'addons': utils.absolute_reverse('addons:addon-list', kwargs=kwargs),
-        }
+        },
     }
 
     if utils.has_admin_scope(request):
@@ -428,7 +443,7 @@ def root(request, format=None, **kwargs):
 def status_check(request, format=None, **kwargs):
     maintenance = MaintenanceState.objects.all().first()
     return Response({
-        'maintenance': MaintenanceStateSerializer(maintenance).data if maintenance else None
+        'maintenance': MaintenanceStateSerializer(maintenance).data if maintenance else None,
     })
 
 
@@ -436,7 +451,7 @@ def error_404(request, format=None, *args, **kwargs):
     return JsonResponse(
         {'errors': [{'detail': 'Not found.'}]},
         status=404,
-        content_type='application/vnd.api+json; application/json'
+        content_type='application/vnd.api+json; application/json',
     )
 
 
@@ -478,6 +493,21 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
             queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
         return queryset
 
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'bibliographic':
+            operation['source_field_name'] = 'visible'
+
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'permission':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            # operation['value'] should be 'admin', 'write', or 'read'
+            if operation['value'].lower().strip() not in PERMISSIONS:
+                raise InvalidFilterValue(value=operation['value'])
+            return Q(**{operation['value'].lower().strip(): True})
+        return super(BaseContributorList, self).build_query_from_field(field_name, operation)
+
 
 class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     pass
@@ -493,10 +523,12 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
                 .node_relations.select_related('child')\
                 .filter(is_node_link=True, child__is_deleted=False)\
                 .exclude(child__type='osf.collection')
-        return sorted([
-            node_link for node_link in query
-            if node_link.child.can_view(auth) and not node_link.child.is_retracted
-        ], key=lambda node_link: node_link.child.modified, reverse=True)
+        return sorted(
+            [
+                node_link for node_link in query
+                if node_link.child.can_view(auth) and not node_link.child.is_retracted
+            ], key=lambda node_link: node_link.child.modified, reverse=True,
+        )
 
 
 class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
@@ -524,7 +556,15 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         auth = get_user_auth(self.request)
 
-        return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        return (
+            self.get_node().linked_nodes
+            .filter(is_deleted=False)
+            .annotate(region=F('addons_osfstorage_node_settings__region___id'))
+            .exclude(region=None)
+            .exclude(type='osf.collection', region=None)
+            .can_view(user=auth.user, private_link=auth.private_link)
+            .order_by('-modified')
+        )
 
 
 class WaterButlerMixin(object):
@@ -539,6 +579,7 @@ class WaterButlerMixin(object):
         done here where needed
         """
         node = self.get_node(check_object_permissions=False)
+        content_type = ContentType.objects.get_for_model(node)
 
         objs_to_create = defaultdict(lambda: [])
         file_objs = []
@@ -548,15 +589,15 @@ class WaterButlerMixin(object):
             base_class = BaseFileNode.resolve_class(
                 attrs['provider'],
                 BaseFileNode.FOLDER if attrs['kind'] == 'folder'
-                else BaseFileNode.FILE
+                else BaseFileNode.FILE,
             )
 
             # mirrors BaseFileNode get_or_create
             try:
-                file_obj = base_class.objects.get(node=node, _path='/' + attrs['path'].lstrip('/'))
+                file_obj = base_class.objects.get(target_object_id=node.id, target_content_type=content_type, _path='/' + attrs['path'].lstrip('/'))
             except base_class.DoesNotExist:
                 # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
-                file_obj = base_class(node=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
+                file_obj = base_class(target=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
                 objs_to_create[base_class].append(file_obj)
             else:
                 file_objs.append(file_obj)
@@ -577,21 +618,66 @@ class WaterButlerMixin(object):
         file_node = BaseFileNode.resolve_class(
             attrs['provider'],
             BaseFileNode.FOLDER if attrs['kind'] == 'folder'
-            else BaseFileNode.FILE
+            else BaseFileNode.FILE,
         ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
 
         file_node.update(None, attrs, user=self.request.user)
         return file_node
 
     def fetch_from_waterbutler(self):
-        node = self.get_node(check_object_permissions=False)
+        node = self.get_resource(check_object_permissions=False)
         path = self.kwargs[self.path_lookup_url_kwarg]
         provider = self.kwargs[self.provider_lookup_url_kwarg]
         return self.get_file_object(node, path, provider)
 
-    def get_file_object(self, node, path, provider, check_object_permissions=True):
-        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
+    def get_resource(self, check_object_permissions):
+        """
+        Overwrite on view if your file is not on a node.
+        """
+        return self.get_node(check_object_permissions=check_object_permissions)
+
+    def get_file_object(self, target, path, provider, check_object_permissions=True):
+        obj = get_file_object(target=target, path=path, provider=provider, request=self.request)
         if provider == 'osfstorage':
             if check_object_permissions:
                 self.check_object_permissions(self.request, obj)
         return obj
+
+
+class DeprecatedView(JSONAPIBaseView):
+    """ Mixin for deprecating old views
+    Subclasses must define `max_version`
+    """
+
+    @property
+    def max_version(self):
+        raise NotImplementedError()
+
+    def __init__(self, *args, **kwargs):
+        super(DeprecatedView, self).__init__(*args, **kwargs)
+        self.is_deprecated = False
+
+    def determine_version(self, request, *args, **kwargs):
+        version, scheme = super(DeprecatedView, self).determine_version(request, *args, **kwargs)
+        if StrictVersion(version) > StrictVersion(self.max_version):
+            self.is_deprecated = True
+            raise NotFound(detail='This route has been deprecated. It was last available in version {}'.format(self.max_version))
+        return version, scheme
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super(DeprecatedView, self).finalize_response(request, response, *args, **kwargs)
+        if self.is_deprecated:
+            # Already has the error message
+            return response
+        if response.status_code == 204:
+            response.status_code = 200
+            response.data = {}
+        deprecation_warning = 'This route is deprecated and will be unavailable after version {}'.format(self.max_version)
+        if response.data.get('meta', False):
+            if response.data['meta'].get('warnings', False):
+                response.data['meta']['warnings'].append(deprecation_warning)
+            else:
+                response.data['meta']['warnings'] = [deprecation_warning]
+        else:
+            response.data['meta'] = {'warnings': [deprecation_warning]}
+        return response

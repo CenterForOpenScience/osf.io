@@ -77,7 +77,7 @@ class AddonSnapshot(SnapshotAnalytics):
         counts = []
         addons_available = {k: v for k, v in [(addon.short_name, addon) for addon in ADDONS_AVAILABLE]}
 
-        for short_name, addon in addons_available.iteritems():
+        for short_name, addon in addons_available.items():
 
             has_external_account = hasattr(addon.models.get('nodesettings'), 'external_account')
 

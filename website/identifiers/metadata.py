@@ -12,7 +12,6 @@ E = lxml.builder.ElementMaker(nsmap={
     None: NAMESPACE,
     'xsi': XSI},
 )
-DOI_URL_PREFIX = 'https://dx.doi.org/'
 
 CREATOR = E.creator
 CREATOR_NAME = E.creatorName
@@ -72,7 +71,7 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
 
 def format_creators(preprint):
     creators = []
-    for contributor in preprint.node.visible_contributors:
+    for contributor in preprint.visible_contributors:
         creator = CREATOR(E.creatorName(format_contributor(contributor)))
         creator.append(E.givenName(remove_control_characters(contributor.given_name)))
         creator.append(E.familyName(remove_control_characters(contributor.family_name)))
@@ -110,19 +109,19 @@ def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
         E.identifier(doi, identifierType='DOI'),
         E.subjects(*format_subjects(preprint)),
         E.creators(*format_creators(preprint)),
-        E.titles(E.title(remove_control_characters(preprint.node.title))),
+        E.titles(E.title(remove_control_characters(preprint.title))),
         E.publisher(preprint.provider.name),
         E.publicationYear(str(getattr(preprint.date_published, 'year'))),
         E.dates(E.date(preprint.modified.isoformat(), dateType='Updated')),
         E.alternateIdentifiers(E.alternateIdentifier(settings.DOMAIN + preprint._id, alternateIdentifierType='URL')),
-        E.descriptions(E.description(remove_control_characters(preprint.node.description), descriptionType='Abstract')),
+        E.descriptions(E.description(remove_control_characters(preprint.description), descriptionType='Abstract')),
     )
 
     if preprint.license:
         root.append(E.rightsList(E.rights(preprint.license.name)))
 
     if preprint.article_doi:
-        root.append(E.relatedIdentifiers(E.relatedIdentifier(DOI_URL_PREFIX + preprint.article_doi, relatedIdentifierType='URL', relationType='IsPreviousVersionOf'))),
+        root.append(E.relatedIdentifiers(E.relatedIdentifier(settings.DOI_URL_PREFIX + preprint.article_doi, relatedIdentifierType='URL', relationType='IsPreviousVersionOf'))),
     # set xsi:schemaLocation
     root.attrib['{%s}schemaLocation' % XSI] = SCHEMA_LOCATION
     return lxml.etree.tostring(root, pretty_print=pretty_print)

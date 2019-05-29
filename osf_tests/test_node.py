@@ -11,31 +11,38 @@ from framework.exceptions import PermissionsError
 from framework.sessions import set_session
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from osf.utils import permissions
 from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
-from website.project.tasks import on_node_updated
+from website.project.tasks import on_node_updated, format_registration
+from website.project.views.node import serialize_collections
+from website.views import find_bookmark_collection
+
 from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 from osf.models import (
     AbstractNode,
+    Email,
     Node,
     Tag,
     NodeLog,
     Contributor,
-    MetaSchema,
+    RegistrationSchema,
     Sanction,
     NodeRelation,
     Registration,
     DraftRegistration,
     DraftRegistrationApproval,
 )
+
+from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
-from osf.exceptions import ValidationError, ValidationValueError
+from osf.exceptions import ValidationError, ValidationValueError, UserStateError
+from osf.utils.workflows import DefaultStates
 from framework.auth.core import Auth
 
 from osf_tests.factories import (
@@ -46,9 +53,9 @@ from osf_tests.factories import (
     NodeLogFactory,
     UserFactory,
     UnregUserFactory,
+    PreprintFactory,
     RegistrationFactory,
     DraftRegistrationFactory,
-    PreprintFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     NodeRelationFactory,
@@ -56,6 +63,8 @@ from osf_tests.factories import (
     SessionFactory,
     SubjectFactory,
     TagFactory,
+    CollectionFactory,
+    CollectionProviderFactory,
 )
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
@@ -82,6 +91,10 @@ def auth(user):
 @pytest.fixture()
 def subject():
     return SubjectFactory()
+
+@pytest.fixture()
+def preprint(user):
+    return PreprintFactory(creator=user)
 
 
 class TestParentNode:
@@ -207,11 +220,17 @@ class TestParentNode:
         assert greatgrandchild_1 in Node.objects.get_children(root).all()
         assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
 
+        assert 21 == Node.objects.get_children(root, include_root=True).count()
+        assert root in Node.objects.get_children(root, include_root=True)
+
     def test_get_children_root_with_no_children(self):
         root = ProjectFactory()
 
         assert 0 == len(Node.objects.get_children(root))
         assert isinstance(Node.objects.get_children(root), AbstractNodeQuerySet)
+
+        assert 1 == Node.objects.get_children(root, include_root=True).count()
+        assert root in Node.objects.get_children(root, include_root=True)
 
     def test_get_children_child_with_no_children(self):
         root = ProjectFactory()
@@ -220,6 +239,9 @@ class TestParentNode:
         assert 0 == Node.objects.get_children(child).count()
         assert isinstance(Node.objects.get_children(child), AbstractNodeQuerySet)
 
+        assert 1 == Node.objects.get_children(child, include_root=True).count()
+        assert child in Node.objects.get_children(child, include_root=True)
+
     def test_get_children_with_nested_projects(self):
         root = ProjectFactory()
         child = NodeFactory(parent=root)
@@ -227,6 +249,9 @@ class TestParentNode:
         result = Node.objects.get_children(child)
         assert result.count() == 1
         assert grandchild in result
+
+        assert 2 == Node.objects.get_children(child, include_root=True).count()
+        assert child in Node.objects.get_children(child, include_root=True)
 
     def test_get_children_with_links(self):
         root = ProjectFactory()
@@ -254,6 +279,7 @@ class TestParentNode:
         greatgrandchild_1.add_node_link(child, auth=Auth(child.creator))
 
         assert 20 == len(Node.objects.get_children(root))
+        assert 21 == len(Node.objects.get_children(root, include_root=True))
 
     def test_get_roots(self):
         top_level1 = ProjectFactory(is_public=True)
@@ -517,6 +543,7 @@ class TestRoot:
                 assert p.parent_node._id in parent_list
 
 
+@pytest.mark.enable_implicit_clean
 class TestNodeMODMCompat:
 
     def test_basic_querying(self):
@@ -541,16 +568,16 @@ class TestNodeMODMCompat:
             node.save()
         assert excinfo.value.message_dict == {'title': ['This field cannot be blank.']}
 
-        too_long = 'a' * 201
+        too_long = 'a' * 513
         node = NodeFactory.build(title=too_long)
         with pytest.raises(ValidationError) as excinfo:
             node.save()
-        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
+        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 512 characters.']}
 
     def test_querying_on_guid_id(self):
         node = NodeFactory()
         assert len(node._id) == 5
-        assert node in Node.objects.filter(guids___id=node._id)
+        assert node in Node.objects.filter(guids___id=node._id, guids___id__isnull=False)
 
 
 # copied from tests/test_models.py
@@ -854,6 +881,18 @@ class TestContributorMethods:
             [user1._id, user2._id]
         )
 
+    def test_add_contributor_unreg_user_without_unclaimed_records(self, user, node):
+        unregistered_user = UnregUserFactory()
+
+        assert unregistered_user.is_registered is False
+        assert unregistered_user.unclaimed_records == {}
+
+        with pytest.raises(UserStateError) as excinfo:
+            node.add_contributor(unregistered_user, auth=Auth(user))
+        assert excinfo.value.message == 'This contributor cannot be added. ' \
+                                        'If the problem persists please report it to please report it to' \
+                                        ' <a href="mailto:support@osf.io">support@osf.io</a>.'
+
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
         node.save()
@@ -1114,6 +1153,7 @@ class TestContributorMethods:
 
 
 # Copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
 class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, node):
@@ -1122,6 +1162,16 @@ class TestNodeAddContributorRegisteredOrNot:
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
+
+    def test_add_contributor_registered_or_not_unreg_user_without_unclaimed_records(self, user, node):
+        unregistered_user = UnregUserFactory()
+        unregistered_user.save()
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
+
+        contributor = contributor_obj.user
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+        assert contributor.unclaimed_records != {}
 
     def test_add_contributor_user_id_already_contributor(self, user, node):
         with pytest.raises(ValidationError) as excinfo:
@@ -1151,6 +1201,26 @@ class TestNodeAddContributorRegisteredOrNot:
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
+
+    def test_add_contributor_fullname_email_exists_as_secondary(self, user, node):
+        registered_user = UserFactory()
+        secondary_email = 'secondary@test.test'
+        Email.objects.create(address=secondary_email, user=registered_user)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
+        contributor = contributor_obj.user
+        assert contributor == registered_user
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
+
+    def test_add_contributor_unregistered(self, user, node):
+        unregistered_user = UnregUserFactory()
+        unregistered_user.save()
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
+        contributor = contributor_obj.user
+        assert contributor == unregistered_user
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+        assert contributor.unclaimed_records[node._id]['name'] == contributor.fullname
 
 class TestContributorProperties:
 
@@ -1251,6 +1321,7 @@ class TestContributorVisibility:
             project.set_visible(UserFactory(), True)
 
 
+@pytest.mark.enable_implicit_clean
 class TestPermissionMethods:
 
     @pytest.fixture()
@@ -1708,7 +1779,7 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        meta_schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=1)
+        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
 
         data = {'some': 'data'}
         reg = root.register_node(
@@ -1724,6 +1795,7 @@ class TestRegisterNode:
 
 
 # Copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
 class TestAddUnregisteredContributor:
 
     def test_add_unregistered_contributor(self, node, user, auth):
@@ -1945,7 +2017,7 @@ class TestNodeSpam:
                 project.set_privacy('private')
                 assert project.check_spam(user, None, None) is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail, project, user):
@@ -1973,7 +2045,7 @@ class TestNodeSpam:
                 project3.reload()
                 assert project3.is_public is True
 
-    @mock.patch('osf.models.node.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail, project, user):
@@ -2078,7 +2150,7 @@ class TestPrivateLinks:
     def test_create_from_node(self):
         proj = ProjectFactory()
         user = proj.creator
-        schema = MetaSchema.objects.first()
+        schema = RegistrationSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,
@@ -2268,10 +2340,12 @@ class TestManageContributors:
 
     def test_manage_contributors_no_registered_admins(self, node, auth):
         unregistered = UnregUserFactory()
-        node.add_contributor(
-            unregistered,
+        node.add_unregistered_contributor(
+            unregistered.fullname,
+            unregistered.email,
+            auth=Auth(node.creator),
             permissions=['read', 'write', 'admin'],
-            save=True
+            existing_user=unregistered
         )
         users = [
             {'id': node.creator._id, 'permission': READ, 'visible': True},
@@ -2851,7 +2925,7 @@ class TestForkNode:
     def test_fork_project_with_no_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user)
         fork = project.fork_node(auth)
-        assert fork.get_wiki_pages_latest().exists() is False
+        assert WikiPage.objects.get_wiki_pages_latest(fork).exists() is False
         assert fork.wikis.all().exists() is False
         assert fork.wiki_private_uuids == {}
 
@@ -2870,12 +2944,12 @@ class TestForkNode:
         fork = project.fork_node(auth)
         assert fork.wiki_private_uuids == {}
 
-        fork_wiki_current = fork.get_wiki_version(current_wiki.wiki_page.page_name)
+        fork_wiki_current = WikiVersion.objects.get_for_node(fork, current_wiki.wiki_page.page_name)
         assert fork_wiki_current.wiki_page.node == fork
         assert fork_wiki_current._id != current_wiki._id
         assert fork_wiki_current.identifier == 2
 
-        fork_wiki_version = fork.get_wiki_version(wiki.wiki_page.page_name, version=1)
+        fork_wiki_version = WikiVersion.objects.get_for_node(fork, wiki.wiki_page.page_name, version=1)
         assert fork_wiki_version.wiki_page.node == fork
         assert fork_wiki_version._id != wiki._id
         assert fork_wiki_version.identifier == 1
@@ -3007,23 +3081,6 @@ def test_querying_on_contributors(node, user, auth):
     assert deleted not in result2
 
 
-class TestDOIValidation:
-
-    def test_validate_bad_doi(self):
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='nope').save()
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
-        with pytest.raises(ValidationError):
-            Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
-
-    def test_validate_good_doi(self, node):
-        doi = '10.11038/nwooo1170'
-        node.preprint_article_doi = doi
-        node.save()
-        assert node.preprint_article_doi == doi
-
-
 class TestLogMethods:
 
     @pytest.fixture()
@@ -3152,7 +3209,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [{
                     'given': node.creator.given_name,
                     'family': node.creator.family_name,
@@ -3174,7 +3231,7 @@ class TestCitationsProperties:
         assert (
             node.csl ==
             {
-                'publisher': 'Open Science Framework',
+                'publisher': 'OSF',
                 'author': [
                     {
                         'given': node.creator.given_name,
@@ -3209,6 +3266,7 @@ class TestCitationsProperties:
 
 
 # copied from tests/test_models.py
+@pytest.mark.enable_implicit_clean
 class TestNodeUpdate:
 
     def test_update_title(self, fake, auth, node):
@@ -3272,7 +3330,7 @@ class TestNodeUpdate:
 
     def test_set_title_fails_if_too_long(self, user, auth):
         proj = ProjectFactory(title='That Was Then', creator=user)
-        long_title = ''.join('a' for _ in range(201))
+        long_title = ''.join('a' for _ in range(513))
         with pytest.raises(ValidationValueError):
             proj.set_title(long_title, auth=auth)
 
@@ -3286,6 +3344,22 @@ class TestNodeUpdate:
         assert latest_log.action, NodeLog.EDITED_DESCRIPTION
         assert latest_log.params['description_original'], old_desc
         assert latest_log.params['description_new'], 'new description'
+
+    def test_set_access_requests(self, node, auth):
+        assert node.access_requests_enabled is True
+        node.set_access_requests_enabled(False, auth=auth, save=True)
+        assert node.access_requests_enabled is False
+        assert node.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_DISABLED
+
+        node.set_access_requests_enabled(True, auth=auth, save=True)
+        assert node.access_requests_enabled is True
+        assert node.logs.latest().action == NodeLog.NODE_ACCESS_REQUESTS_ENABLED
+
+    def test_set_access_requests_non_admin(self, node, auth):
+        contrib = AuthUserFactory()
+        Contributor.objects.create(user=contrib, node=node, write=True, read=True, visible=True)
+        with pytest.raises(PermissionsError):
+            node.set_access_requests_enabled(True, auth=Auth(contrib))
 
     def test_validate_categories(self):
         with pytest.raises(ValidationError):
@@ -3359,6 +3433,7 @@ class TestNodeUpdate:
     # TODO: test permissions, non-writable fields
 
 
+@pytest.mark.enable_enqueue_task
 class TestOnNodeUpdate:
 
     @pytest.fixture(autouse=True)
@@ -3375,21 +3450,60 @@ class TestOnNodeUpdate:
     def registration(self, node):
         return RegistrationFactory(is_public=True)
 
+    @pytest.fixture()
+    def component_registration(self, node):
+        NodeFactory(
+            creator=node.creator,
+            parent=node,
+            title='Title1',
+        )
+        registration = RegistrationFactory(project=node)
+        registration.refresh_from_db()
+        return registration.get_nodes()[0]
+
     def teardown_method(self, method):
         handlers.celery_before_request()
 
-    @mock.patch('osf.models.node.enqueue_task')
-    def test_enqueue_called(self, enqueue_task, node, user, request_context):
+    def test_on_node_updated_called(self, node, user, request_context):
         node.title = 'A new title'
         node.save()
 
-        (task, ) = enqueue_task.call_args[0]
+        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
 
         assert task.task == 'website.project.tasks.on_node_updated'
-        assert task.args[0] == node._id
-        assert task.args[1] == user._id
-        assert task.args[2] is False
-        assert 'title' in task.args[3]
+        assert task.kwargs['node_id'] == node._id
+        assert task.kwargs['user_id'] == user._id
+        assert task.kwargs['first_save'] is False
+        assert 'title' in task.kwargs['saved_fields']
+
+    def test_queueing_on_node_updated(self, node, user):
+        node.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id))
+        node.title = 'Something New'
+        node.save()
+
+        # make sure on_node_updated is in the queue
+        assert handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+
+        # adding a contributor to the node will also trigger on_node_updated
+        new_person = UserFactory()
+        node.add_contributor(new_person)
+
+        # so will updating a license
+        new_license = NodeLicenseRecordFactory()
+        node.set_node_license(
+            {
+                'id': new_license.license_id,
+                'year': '2018',
+                'copyrightHolders': ['LeBron', 'Ladron']
+            },
+            Auth(node.creator),
+        )
+        node.save()
+
+        # Make sure there's just one on_node_updated task, and that is has contributors and node_license in the kwargs
+        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+        assert 'contributors' in task.kwargs['saved_fields']
+        assert 'node_license' in task.kwargs['saved_fields']
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
@@ -3462,8 +3576,23 @@ class TestOnNodeUpdate:
             assert registration.is_registration
             kwargs = requests.post.call_args[1]
             graph = kwargs['json']['data']['attributes']['data']['@graph']
-            payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+            payload = next((item for item in graph if 'is_deleted' in item.keys()))
             assert payload['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_format_registration_gets_parent_hierarchy_for_component_registrations(self, requests, project, component_registration, user, request_context):
+
+        graph = format_registration(component_registration)
+
+        parent_relation = [i for i in graph if i['@type'] == 'ispartof'][0]
+        parent_work_identifier = [i for i in graph if 'creative_work' in i and i['creative_work']['@id'] == parent_relation['subject']['@id']][0]
+
+        # Both must exist to be valid
+        assert parent_relation
+        assert parent_work_identifier
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
@@ -3473,14 +3602,14 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         node.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3492,14 +3621,14 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3511,7 +3640,7 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         node.title = 'Not a qa title'
@@ -3520,7 +3649,7 @@ class TestOnNodeUpdate:
         on_node_updated(node._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
@@ -3533,7 +3662,7 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is True
 
         registration.title = 'Not a qa title'
@@ -3542,7 +3671,7 @@ class TestOnNodeUpdate:
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        payload = next((item for item in graph if 'is_deleted' in item.keys()))
         assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', None)
@@ -3585,7 +3714,7 @@ class TestRemoveNode:
 
     def test_remove_project_without_children(self, parent_project, project, auth):
         project.remove_node(auth=auth)
-
+        project.reload()
         assert project.is_deleted
         # parent node should have a log of the event
         assert (
@@ -3596,20 +3725,30 @@ class TestRemoveNode:
     def test_delete_project_log_present(self, project, parent_project, auth):
         project.remove_node(auth=auth)
         parent_project.remove_node(auth=auth)
-
+        parent_project.reload()
         assert parent_project.is_deleted
         # parent node should have a log of the event
         assert parent_project.logs.latest().action == 'project_deleted'
 
-    def test_remove_project_with_project_child_fails(self, parent_project, project, auth):
-        with pytest.raises(NodeStateError):
-            parent_project.remove_node(auth)
+    def test_remove_project_with_project_child_deletes_all_in_hierarchy(self, parent_project, project, auth):
+        parent_project.remove_node(auth=auth)
+        parent_project.reload()
+        project.reload()
 
-    def test_remove_project_with_component_child_fails(self, user, project, parent_project, auth):
-        NodeFactory(creator=user, parent=project)
+        assert parent_project.is_deleted
+        assert project.is_deleted
 
-        with pytest.raises(NodeStateError):
-            parent_project.remove_node(auth)
+    def test_remove_project_with_component_child_deletes_all_in_hierarchy(self, user, project, parent_project, auth):
+        component = NodeFactory(creator=user, parent=project)
+
+        parent_project.remove_node(auth)
+        parent_project.reload()
+        project.reload()
+        component.reload()
+
+        assert parent_project.is_deleted
+        assert project.is_deleted
+        assert component.is_deleted
 
     def test_remove_project_with_pointer_child(self, auth, user, project, parent_project):
         target = ProjectFactory(creator=user)
@@ -3618,13 +3757,40 @@ class TestRemoveNode:
         assert project.linked_nodes.count() == 1
 
         project.remove_node(auth=auth)
-
+        project.reload()
         assert (project.is_deleted)
         # parent node should have a log of the event
         assert parent_project.logs.latest().action == 'node_removed'
 
         # target node shouldn't be deleted
+        target.reload()
         assert target.is_deleted is False
+
+    def test_remove_project_missing_perms_in_hierarchy(self, user, project, parent_project, auth):
+        user_two = AuthUserFactory()
+        component = NodeFactory(creator=user_two, parent=project)
+
+        with pytest.raises(PermissionsError):
+            project.remove_node(auth=auth)
+
+        project.reload()
+        parent_project.reload()
+        component.reload()
+
+        assert not project.is_deleted
+        assert not parent_project.is_deleted
+        assert not component.is_deleted
+
+    def test_remove_supplemental_project_for_preprints(self, auth, user, project, preprint):
+        preprint.node = project
+        preprint.save()
+
+        project.remove_node(auth=auth)
+        preprint.reload()
+        project.reload()
+
+        assert project.is_deleted is True
+        assert preprint.node is None
 
 
 class TestTemplateNode:
@@ -3787,20 +3953,17 @@ class TestTemplateNode:
                 )
 
     def test_template_wiki_pages_not_copied(self, project, auth):
-        project.update_node_wiki(
-            'template', 'lol',
-            auth=auth
-        )
+        WikiPage.objects.create_for_node(project, 'template', 'lol', auth)
         new = project.use_as_template(
             auth=auth
         )
-        assert project.get_wiki_page('template').page_name == 'template'
-        latest_version = project.get_wiki_version('template')
+        assert WikiPage.objects.get_for_node(project, 'template').page_name == 'template'
+        latest_version = WikiVersion.objects.get_for_node(project, 'template')
         assert latest_version.identifier == 1
         assert latest_version.is_current is True
 
-        assert new.get_wiki_page('template') is None
-        assert new.get_wiki_version('template') is None
+        assert WikiPage.objects.get_for_node(new, 'template') is None
+        assert WikiVersion.objects.get_for_node(new, 'template') is None
 
     def test_user_who_makes_node_from_template_has_creator_permission(self):
         project = ProjectFactory(is_public=True)
@@ -3839,10 +4002,7 @@ class TestTemplateNode:
         admin.save()
 
         # filter down self.nodes to only include projects the user can see
-        visible_nodes = filter(
-            lambda x: x.can_view(other_user_auth),
-            project.nodes
-        )
+        visible_nodes = [x for x in project.nodes if x.can_view(other_user_auth)]
 
         # create templated node
         new = project.use_as_template(auth=other_user_auth)
@@ -4026,7 +4186,7 @@ class TestAddonCallbacks:
         # Mock addon callbacks
         for addon in node.addons:
             mock_settings = mock.create_autospec(addon.__class__)
-            for callback, return_value in self.callbacks.iteritems():
+            for callback, return_value in self.callbacks.items():
                 mock_callback = getattr(mock_settings, callback)
                 mock_callback.return_value = return_value
                 patch = mock.patch.object(
@@ -4170,10 +4330,162 @@ class TestAdminImplicitRead(object):
         assert project not in qs
 
 
-class TestPreprintProperties:
+class TestNodeProperties:
+    def test_has_linked_published_preprints(self, project, preprint, user):
+        # If no preprints, is False
+        assert project.has_linked_published_preprints is False
 
-    def test_preprint_url_does_not_return_unpublished_preprint_url(self):
-        node = ProjectFactory(is_public=True)
-        published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
-        PreprintFactory(project=node, is_published=False, filename='file2.txt')
-        assert node.preprint_url == published.url
+        # A published preprint attached to a project is True
+        preprint.node = project
+        preprint.save()
+        assert project.has_linked_published_preprints is True
+
+        # Abandoned preprint is False
+        preprint.machine_state = DefaultStates.INITIAL.value
+        preprint.save()
+        assert project.has_linked_published_preprints is False
+
+        # Unpublished preprint is False
+        preprint.machine_state = DefaultStates.ACCEPTED.value
+        preprint.is_published = False
+        preprint.save()
+        assert project.has_linked_published_preprints is False
+
+
+@pytest.mark.enable_bookmark_creation
+class TestCollectionProperties:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def collector(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider(self):
+        return CollectionProviderFactory()
+
+    @pytest.fixture()
+    def collection_one(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider)
+
+    @pytest.fixture()
+    def collection_two(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider)
+
+    @pytest.fixture()
+    def collection_public(self, provider, collector):
+        return CollectionFactory(creator=collector, provider=provider, is_public=True,
+                                 status_choices=['', 'Complete'], collected_type_choices=['', 'Dataset'])
+
+    @pytest.fixture()
+    def public_non_provided_collection(self, collector):
+        return CollectionFactory(creator=collector, is_public=True)
+
+    @pytest.fixture()
+    def private_non_provided_collection(self, collector):
+        return CollectionFactory(creator=collector, is_public=False)
+
+    @pytest.fixture()
+    def bookmark_collection(self, user):
+        return find_bookmark_collection(user)
+
+    @pytest.fixture()
+    def subjects(self):
+        return [[SubjectFactory()._id] for i in range(0, 5)]
+
+    def _collection_url(self, collection):
+        try:
+            return '/collections/{}/'.format(collection.provider._id)
+        except AttributeError:
+            # Non-provided collection
+            pass
+
+    def test_collection_project_views(
+            self, user, node, collection_one, collection_two, collection_public,
+            public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
+
+        # test_collection_properties
+        assert not node.is_collected
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_public.collect_object(node, collector)
+
+        assert node.is_collected
+        assert len(node.collecting_metadata_list) == 3
+
+        ids_actual = {cgm.collection._id for cgm in node.collecting_metadata_list}
+        ids_expected = {collection_one._id, collection_two._id, collection_public._id}
+        ids_not_expected = {bookmark_collection._id, public_non_provided_collection._id, private_non_provided_collection._id}
+
+        assert ids_not_expected.isdisjoint(ids_actual)
+        assert ids_actual == ids_expected
+
+    def test_permissions_collection_project_views(
+            self, user, node, contrib, subjects, collection_one, collection_two,
+            collection_public, public_non_provided_collection, private_non_provided_collection,
+            bookmark_collection, collector):
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        cgm = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
+        cgm.set_subjects(subjects, Auth(collector))
+
+        ## test_not_logged_in_user_only_sees_public_collection_info
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
+
+        # test_subjects_are_serialized
+        assert len(collection_summary[0]['subjects'])
+        assert len(collection_summary[0]['subjects']) == len(subjects)
+
+        assert len(collection_summary) == 1
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
+
+        ## test_node_contrib_or_admin_no_collections_permissions_only_sees_public_collection_info
+        node.add_contributor(contributor=contrib, auth=Auth(user))
+        node.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
+        assert len(collection_summary) == 1
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
+        assert len(collection_summary) == 1
+        assert self._collection_url(collection_public) == collection_summary[0]['url']
+
+        ## test_node_contrib_with_collection_permissions_sees_private_and_public_collection_info
+        node.add_contributor(contributor=collector, auth=Auth(user))
+        node.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        assert len(collection_summary) == 3
+        urls_actual = {summary['url'] for summary in collection_summary}
+        urls_expected = {
+            self._collection_url(collection_public),
+            self._collection_url(collection_one),
+            self._collection_url(collection_two),
+        }
+        assert urls_actual == urls_expected
+
+        ## test_node_contrib_cannot_see_public_bookmark_collections
+        bookmark_collection_public = bookmark_collection
+        bookmark_collection_public.is_public = True
+        bookmark_collection_public.save()
+
+        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        assert len(collection_summary) == 3
+        urls_actual = {summary['url'] for summary in collection_summary}
+        assert self._collection_url(bookmark_collection_public) not in urls_actual

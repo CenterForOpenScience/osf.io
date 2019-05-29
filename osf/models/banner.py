@@ -33,6 +33,7 @@ class ScheduledBanner(models.Model):
     end_date = NonNaiveDateTimeField()
     color = models.CharField(max_length=7)
     license = models.CharField(blank=True, null=True, max_length=256)
+    link = models.URLField(blank=True, default='https://www.crowdrise.com/centerforopenscience')
 
     default_photo = models.FileField(storage=BannerImageStorage())
     default_alt_text = models.TextField()

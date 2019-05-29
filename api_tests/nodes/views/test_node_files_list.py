@@ -4,7 +4,7 @@ import json
 import furl
 import responses
 from django.utils import timezone
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 
 from framework.auth.core import Auth
 
@@ -28,8 +28,7 @@ def prepare_mock_wb_response(
         folder=True,
         path='/',
         method=responses.GET,
-        status_code=200
-    ):
+        status_code=200):
     """Prepare a mock Waterbutler response with responses library.
 
     :param Node node: Target node.
@@ -43,7 +42,7 @@ def prepare_mock_wb_response(
     """
     node = node
     files = files or []
-    wb_url = waterbutler_api_url_for(node._id, provider=provider, _internal=True, path=path, meta=True, view_only=None)
+    wb_url = waterbutler_api_url_for(node._id, provider=provider, _internal=True, path=path, meta=True, view_only=None, base_url=node.osfstorage_region.waterbutler_url)
 
     default_file = {
         u'contentType': None,
@@ -290,7 +289,7 @@ class TestNodeFilesList(ApiTestCase):
     def test_returns_folder_metadata_not_children(self):
         folder = GithubFolder(
             name='Folder',
-            node=self.project,
+            target=self.project,
             path='/Folder/'
         )
         folder.save()
@@ -367,7 +366,7 @@ class TestNodeFilesList(ApiTestCase):
 
     @responses.activate
     def test_waterbutler_invalid_data_returns_503(self):
-        wb_url = waterbutler_api_url_for(self.project._id, _internal=True, provider='github', path='/', meta=True)
+        wb_url = waterbutler_api_url_for(self.project._id, _internal=True, provider='github', path='/', meta=True, base_url=self.project.osfstorage_region.waterbutler_url)
         self.add_github()
         responses.add(
             responses.Response(
@@ -414,12 +413,12 @@ class TestNodeFilesList(ApiTestCase):
 
     @responses.activate
     def test_handles_bad_waterbutler_request(self):
-        wb_url = waterbutler_api_url_for(self.project._id, _internal=True, provider='github', path='/', meta=True)
+        wb_url = waterbutler_api_url_for(self.project._id, _internal=True, provider='github', path='/', meta=True, base_url=self.project.osfstorage_region.waterbutler_url)
         responses.add(
             responses.Response(
                 responses.GET,
                 wb_url,
-                json={'bad' : 'json'},
+                json={'bad': 'json'},
                 status=418
             )
         )
@@ -647,10 +646,10 @@ class TestNodeFilesListPagination(ApiTestCase):
         self.check_file_order(res)
 
 
-class TestNodeProviderDetail(ApiTestCase):
+class TestNodeStorageProviderDetail(ApiTestCase):
 
     def setUp(self):
-        super(TestNodeProviderDetail, self).setUp()
+        super(TestNodeStorageProviderDetail, self).setUp()
         self.user = AuthUserFactory()
         self.public_project = ProjectFactory(is_public=True)
         self.private_project = ProjectFactory(creator=self.user)

@@ -12811,7 +12811,7 @@ CSL.Output.Formats.prototype.html = {
         return "<a href=\"" + str + "\">" + str + "</a>";
     },
     "@DOI/true": function (state, str) {
-        return "<a href=\"http://dx.doi.org/" + str + "\">" + str + "</a>";
+        return "<a href=\"https://doi.org/" + str + "\">" + str + "</a>";
     }
 };
 CSL.Output.Formats.prototype.text = {

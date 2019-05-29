@@ -20,7 +20,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     model_class = NotificationSubscription
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.SUBSCRIPTIONS_READ]
@@ -41,7 +41,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
-        IsSubscriptionOwner
+        IsSubscriptionOwner,
     )
 
     required_read_scopes = [CoreScopes.SUBSCRIPTIONS_READ]

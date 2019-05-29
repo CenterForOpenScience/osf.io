@@ -3,37 +3,11 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from django.contrib.auth.models import Permission, Group
 
-
-def fix_osfuser_view_permissions(*args):
-    view_osfuser_permission = Permission.objects.get(codename='view_osfuser')
-    wrong_osfuser_permission = Permission.objects.filter(codename='view_user')
-    if wrong_osfuser_permission.exists():
-        wrong_osfuser_permission.delete()
-
-    read_only = Group.objects.get(name='read_only')
-    osf_admin = Group.objects.get(name='osf_admin')
-
-    read_only.permissions.add(view_osfuser_permission)
-    osf_admin.permissions.add(view_osfuser_permission)
-
-    read_only.save()
-    osf_admin.save()
-
-
-def revert_osfuser_view_permissions(*args):
-    view_osfuser_permission = Permission.objects.get(codename='view_osfuser')
-
-    osf_admin = Group.objects.get(name='osf_admin')
-    read_only = Group.objects.get(name='read_only')
-
-    read_only.permissions.remove(view_osfuser_permission)
-    osf_admin.permissions.remove(view_osfuser_permission)
-
-    osf_admin.save()
-    read_only.save()
-
+def noop(*args):
+    # This migration used to handle admin permissions
+    # This is now handled by the post_migrate signal
+    pass
 
 class Migration(migrations.Migration):
 
@@ -42,5 +16,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(fix_osfuser_view_permissions, revert_osfuser_view_permissions),
+        migrations.RunPython(noop, noop),
     ]

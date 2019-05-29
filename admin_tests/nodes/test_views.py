@@ -1,3 +1,5 @@
+import datetime as dt
+import pytest
 import mock
 
 from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
@@ -11,11 +13,14 @@ from admin.nodes.views import (
     NodeKnownSpamList,
     NodeKnownHamList,
     NodeConfirmHamView,
-    AdminNodeLogView
+    AdminNodeLogView,
+    RestartStuckRegistrationsView,
+    RemoveStuckRegistrationsView
 )
 from admin_tests.utilities import setup_log_view, setup_view
-
+from website import settings
 from nose import tools as nt
+from django.utils import timezone
 from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
@@ -23,7 +28,7 @@ from django.contrib.auth.models import Permission
 from framework.auth.core import Auth
 
 from tests.base import AdminTestCase
-from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
+from osf_tests.factories import UserFactory, AuthUserFactory, ProjectFactory, RegistrationFactory
 
 
 class TestNodeView(AdminTestCase):
@@ -181,10 +186,10 @@ class TestRemoveContributor(AdminTestCase):
         self.node.save()
         self.view = NodeRemoveContributorView
         self.request = RequestFactory().post('/fake_path')
-        self.url = reverse('nodes:remove_user', kwargs={'node_id': self.node._id, 'user_id': self.user._id})
+        self.url = reverse('nodes:remove_user', kwargs={'guid': self.node._id, 'user_id': self.user._id})
 
     def test_get_object(self):
-        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, guid=self.node._id,
                               user_id=self.user._id)
         node, user = view.get_object()
         nt.assert_is_instance(node, Node)
@@ -194,14 +199,14 @@ class TestRemoveContributor(AdminTestCase):
     def test_remove_contributor(self, mock_remove_contributor):
         user_id = self.user_2._id
         node_id = self.node._id
-        view = setup_log_view(self.view(), self.request, node_id=node_id,
+        view = setup_log_view(self.view(), self.request, guid=node_id,
                               user_id=user_id)
         view.delete(self.request)
         mock_remove_contributor.assert_called_with(self.user_2, None, log=False)
 
     def test_integration_remove_contributor(self):
         nt.assert_in(self.user_2, self.node.contributors)
-        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, guid=self.node._id,
                               user_id=self.user_2._id)
         count = AdminLogEntry.objects.count()
         view.delete(self.request)
@@ -213,7 +218,7 @@ class TestRemoveContributor(AdminTestCase):
             len(list(self.node.get_admin_contributors(self.node.contributors))),
             1
         )
-        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, guid=self.node._id,
                               user_id=self.user._id)
         count = AdminLogEntry.objects.count()
         view.delete(self.request)
@@ -226,7 +231,7 @@ class TestRemoveContributor(AdminTestCase):
         nt.assert_equal(AdminLogEntry.objects.count(), count)
 
     def test_no_log(self):
-        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, guid=self.node._id,
                               user_id=self.user_2._id)
         view.delete(self.request)
         nt.assert_not_equal(self.node.logs.latest().action, NodeLog.CONTRIB_REMOVED)
@@ -237,7 +242,7 @@ class TestRemoveContributor(AdminTestCase):
         request.user = self.user
 
         with nt.assert_raises(PermissionDenied):
-            self.view.as_view()(request, node_id=guid, user_id=self.user)
+            self.view.as_view()(request, guid=guid, user_id=self.user)
 
     def test_correct_view_permissions(self):
         change_permission = Permission.objects.get(codename='change_node')
@@ -249,10 +254,13 @@ class TestRemoveContributor(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        response = self.view.as_view()(request, node_id=self.node._id, user_id=self.user._id)
+        response = self.view.as_view()(request, guid=self.node._id, user_id=self.user._id)
         nt.assert_equal(response.status_code, 200)
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+@pytest.mark.enable_implicit_clean
 class TestNodeReindex(AdminTestCase):
     def setUp(self):
         super(TestNodeReindex, self).setUp()
@@ -295,27 +303,23 @@ class TestNodeReindex(AdminTestCase):
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     @mock.patch('website.search.search.update_node')
-    @mock.patch('website.search.elastic_search.bulk_update_nodes')
-    def test_reindex_node_elastic(self, mock_update_search, mock_bulk_update_nodes):
+    def test_reindex_node_elastic(self, mock_update_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.delete(self.request)
 
-        nt.assert_true(mock_update_search.called)
-        nt.assert_true(mock_bulk_update_nodes.called)
+        nt.assert_true(mock_update_node.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     @mock.patch('website.search.search.update_node')
-    @mock.patch('website.search.elastic_search.bulk_update_nodes')
-    def test_reindex_registration_elastic(self, mock_update_search, mock_bulk_update_nodes):
+    def test_reindex_registration_elastic(self, mock_update_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
 
-        nt.assert_true(mock_update_search.called)
-        nt.assert_true(mock_bulk_update_nodes.called)
+        nt.assert_true(mock_update_node.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
 class TestNodeConfirmHamView(AdminTestCase):
@@ -409,3 +413,89 @@ class TestAdminNodeLogView(AdminTestCase):
         nt.assert_true(log_entry.action == NodeLog.PROJECT_CREATED)
         nt.assert_true(log_entry.node._id == component._id)
         nt.assert_true(('node', component._id) in log_params)
+
+
+class TestRestartStuckRegistrationsView(AdminTestCase):
+    def setUp(self):
+        super(TestRestartStuckRegistrationsView, self).setUp()
+        self.user = AuthUserFactory()
+        self.registration = RegistrationFactory(creator=self.user)
+        self.registration.save()
+        self.view = RestartStuckRegistrationsView
+        self.request = RequestFactory().post('/fake_path')
+
+    def test_get_object(self):
+        view = RestartStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+
+        nt.assert_true(self.registration, view.get_object())
+
+    def test_restart_stuck_registration(self):
+        # Prevents circular import that prevents admin app from starting up
+        from django.contrib.messages.storage.fallback import FallbackStorage
+
+        view = RestartStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        nt.assert_equal(self.registration.archive_job.status, u'INITIATED')
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+
+        view.post(self.request)
+
+        nt.assert_equal(self.registration.archive_job.status, u'SUCCESS')
+
+
+class TestRemoveStuckRegistrationsView(AdminTestCase):
+    def setUp(self):
+        super(TestRemoveStuckRegistrationsView, self).setUp()
+        self.user = UserFactory()
+        self.registration = RegistrationFactory(creator=self.user)
+        # Make the registration "stuck"
+        archive_job = self.registration.archive_job
+        archive_job.datetime_initiated = (
+            timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA - dt.timedelta(hours=1)
+        )
+        archive_job.save()
+        self.registration.save()
+        self.view = RemoveStuckRegistrationsView
+        self.request = RequestFactory().post('/fake_path')
+
+    def test_get_object(self):
+        view = RemoveStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+
+        nt.assert_true(self.registration, view.get_object())
+
+    def test_remove_stuck_registration(self):
+        # Prevents circular import that prevents admin app from starting up
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        view = RemoveStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+
+        view.post(self.request)
+
+        self.registration.refresh_from_db()
+        nt.assert_true(self.registration.is_deleted)
+
+    def test_remove_stuck_registration_with_an_addon(self):
+        # Prevents circular import that prevents admin app from starting up
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        self.registration.add_addon('github', auth=Auth(self.user))
+        view = RemoveStuckRegistrationsView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+        view.post(self.request)
+        self.registration.refresh_from_db()
+        nt.assert_true(self.registration.is_deleted)

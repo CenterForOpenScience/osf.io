@@ -18,9 +18,10 @@ from django.test import override_settings
 from faker import Factory
 from framework.auth.core import Auth
 from framework.celery_tasks.handlers import celery_before_request
+from framework.celery_tasks.handlers import handlers as celery_handlers
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from website import settings
 from website.app import init_app
 from website.notifications.listeners import (subscribe_contributor,
@@ -39,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return MetaSchema.objects.first()
+    return RegistrationSchema.objects.first()
 
 try:
     test_app = init_app(routes=True, set_backends=False)
@@ -47,6 +48,7 @@ except AssertionError:  # Routes have already been set up
     test_app = init_app(routes=False, set_backends=False)
 
 rm_handlers(test_app, django_handlers)
+rm_handlers(test_app, celery_handlers)
 
 test_app.testing = True
 
@@ -149,7 +151,7 @@ class ApiAppTestCase(unittest.TestCase):
 class SearchTestCase(unittest.TestCase):
 
     def setUp(self):
-        settings.ELASTIC_INDEX = uuid.uuid4().hex
+        settings.ELASTIC_INDEX = uuid.uuid1().hex
         settings.ELASTIC_TIMEOUT = 60
 
         from website.search import elastic_search

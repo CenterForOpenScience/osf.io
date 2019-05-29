@@ -63,15 +63,16 @@ def notify_global_event(event, sender_user, node, timestamp, recipients, templat
 
     for recipient in recipients:
         subscriptions = get_user_subscriptions(recipient, event_type)
+        context['is_creator'] = recipient == node.creator
         for notification_type in subscriptions:
             if (notification_type != 'none' and subscriptions[notification_type] and recipient._id in subscriptions[notification_type]):
-                store_emails([recipient._id], notification_type, event, sender_user, node, timestamp, template, **context)
+                store_emails([recipient._id], notification_type, event, sender_user, node, timestamp, template=template, **context)
                 sent_users.append(recipient._id)
 
     return sent_users
 
 
-def store_emails(recipient_ids, notification_type, event, user, node, timestamp, template=None, **context):
+def store_emails(recipient_ids, notification_type, event, user, node, timestamp, abstract_provider=None, template=None, **context):
     """Store notification emails
 
     Emails are sent via celery beat as digests
@@ -84,7 +85,6 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     :param context:
     :return: --
     """
-
     if notification_type == 'none':
         return
 
@@ -104,14 +104,14 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         context['recipient'] = recipient
         message = mails.render_message(template, **context)
-
         digest = NotificationDigest(
             timestamp=timestamp,
             send_type=notification_type,
             event=event,
             user=recipient,
             message=message,
-            node_lineage=node_lineage_ids
+            node_lineage=node_lineage_ids,
+            provider=abstract_provider
         )
         digest.save()
 
@@ -129,7 +129,7 @@ def compile_subscriptions(node, event_type, event=None, level=0):
     if event:
         subscriptions = check_node(node, event)  # Gets particular event subscriptions
         parent_subscriptions = compile_subscriptions(node, event_type, level=level + 1)  # get node and parent subs
-    elif node.parent_id:
+    elif getattr(node, 'parent_id', False):
         parent_subscriptions = \
             compile_subscriptions(AbstractNode.load(node.parent_id), event_type, level=level + 1)
     else:
@@ -174,7 +174,10 @@ def get_node_lineage(node):
     """ Get a list of node ids in order from the node to top most project
         e.g. [parent._id, node._id]
     """
+    from osf.models import Preprint
     lineage = [node._id]
+    if isinstance(node, Preprint):
+        return lineage
 
     while node.parent_id:
         node = node.parent_node

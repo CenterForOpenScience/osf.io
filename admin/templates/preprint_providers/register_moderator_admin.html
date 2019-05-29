@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="register-box">
+    <div class="register-box-body">
+        <h4>Add or Update Moderator/Admin for {{ provider_name }}</h4>
+        <div>
+            {% if messages %}
+                <ul class="login_page_messages">
+                    {% for message in messages %}
+                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        <form action="" method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <ul>
+            {% for error in form.non_field_errors %}
+            <li class="errorclass">{{ error }}</li>
+            {% endfor %}
+            </ul>
+            {% endif %}
+            <div class="form-group">
+                <label for="email">OSF ID:</label>
+                <p>{{ form.user_id }}</p>
+                {% if form.user_id.errors %}<span class="text-danger"> {{ form.user_id.errors }}</span>{% endif %}
+            </div>
+            <div class="form-group">
+                <p>{{ form.group_perms }}</p>
+                {% if form.group_perms.errors %}<span class="text-danger"> {{ form.group_perms.errors }}</span>{% endif %}
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <button type="submit" class="btn btn-primary btn-block btn-flat">Register</button>
+                </div><!-- /.col -->
+            </div>
+        </form>
+    </div><!-- /.form-box -->
+</div><!-- /.register-box -->
+{% endblock %}

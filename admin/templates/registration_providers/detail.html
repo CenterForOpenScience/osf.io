@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <script src="https://cloud.tinymce.com/stable/tinymce.min.js?apiKey={{ tinymce_apikey }}"></script>
+    <script>
+        window.templateVars = {
+            'importUrl': '{% url 'registration_providers:import' %}',
+            'processCustomTaxonomyUrl': '{% url 'registration_providers:process_custom_taxonomy' %}',
+        }
+    </script>
+{% endblock %}
+{% load render_bundle from webpack_loader %}
+{% block title %}
+    <title>Registration Provider</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href={% url 'registration_providers:export' registration_provider.id %}>Export registration provider metadata</a>
+                <a class="btn btn-danger" href={% url 'registration_providers:delete' registration_provider.id %}>Delete registration provider</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h2>{{ registration_provider.name }}</h2>
+            </div>
+        </div>
+        {% if perms.osf.change_registrationprovider %}
+        <div class="row">
+            <div class="col-md-12">
+                <button id="show-modify-form" class="btn btn-link" type="button">
+                    Modify Registration Provider
+                </button>
+            </div>
+        </div>
+        {% endif %}
+        <div class="row" id="table-view">
+            <div class="col-md-12">
+                <table class="table table-striped">
+                    {% for field, value in registration_provider.items %}
+                        <tr>
+                            <th>{{ field }}</th>
+                            <td>{{ value | safe }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        <div id="form-view" style="display:none">
+            {% include 'registration_providers/update_registration_provider_form.html' %}
+            {% if show_taxonomies %}
+            {% include 'registration_providers/enter_custom_taxonomy.html' %}
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}
+{% block bottom_js %}
+    {% render_bundle 'registration-provider-page' %}
+{% endblock %}

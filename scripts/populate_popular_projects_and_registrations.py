@@ -39,7 +39,7 @@ def main(dry_run=True):
     popular_activity = activity()
 
     popular_nodes = popular_activity['popular_public_projects']
-    popular_links_node = AbstractNode.objects.get(guids___id=POPULAR_LINKS_NODE)
+    popular_links_node = AbstractNode.objects.get(guids___id=POPULAR_LINKS_NODE, guids___id__isnull=False)
     popular_registrations = popular_activity['popular_public_registrations']
     popular_links_registrations = AbstractNode.objects.get(guids___id=POPULAR_LINKS_REGISTRATIONS)
 
@@ -70,6 +70,6 @@ def run_main(dry_run=True):
     with transaction.atomic():
         main(dry_run=dry_run)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     dry_run = '--dry' in sys.argv
     run_main(dry_run=dry_run)

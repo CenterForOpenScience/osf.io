@@ -2,6 +2,8 @@ import logging
 
 from dateutil import parser
 from django.db import models, transaction
+from django.db.models import Sum
+from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from framework.sessions import session
@@ -63,6 +65,26 @@ class PageCounter(BaseModel):
     total = models.PositiveIntegerField(default=0)
     unique = models.PositiveIntegerField(default=0)
 
+    DOWNLOAD_ALL_VERSIONS_ID_PATTERN = r'^download:[^:]*:{1}[^:]*$'
+
+    @classmethod
+    def get_all_downloads_on_date(cls, date):
+        """
+        Queries the total number of downloads on a date
+        :param str date: must be formatted the same as a page counter key so 'yyyy/mm/dd'
+        :return: long sum:
+        """
+        formatted_date = date.strftime('%Y/%m/%d')
+        # Get all PageCounters with data for the date made for all versions downloads,
+        # regex insures one colon so all versions are queried.
+        page_counters = cls.objects.filter(date__has_key=formatted_date, _id__regex=cls.DOWNLOAD_ALL_VERSIONS_ID_PATTERN)
+
+        # Get the total download numbers from the nested dict on the PageCounter by annotating it as daily_total then
+        # aggregating the sum.
+        daily_total = page_counters.annotate(daily_total=RawSQL("((date->%s->>'total')::int)", (formatted_date,))).aggregate(sum=Sum('daily_total'))['sum']
+
+        return daily_total
+
     @staticmethod
     def clean_page(page):
         return page.replace(
@@ -119,7 +141,7 @@ class PageCounter(BaseModel):
             # if a download counter is being updated, only perform the update
             # if the user who is downloading isn't a contributor to the project
             page_type = cleaned_page.split(':')[0]
-            if page_type == 'download' and node_info:
+            if page_type in ('download', 'view') and node_info:
                 if node_info['contributors'].filter(guids___id__isnull=False, guids___id=session.data.get('auth_user_id')).exists():
                     model_instance.save()
                     return

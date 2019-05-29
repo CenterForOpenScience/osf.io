@@ -1,19 +1,26 @@
 import bleach
 
 from django import forms
+from django.contrib.auth.models import Group
 
 from osf.models import PreprintProvider, Subject
-from admin.base.utils import get_subject_rules, get_toplevel_subjects, get_nodelicense_choices, get_defaultlicense_choices
+from admin.base.utils import (get_subject_rules, get_toplevel_subjects,
+    get_nodelicense_choices, get_defaultlicense_choices, validate_slug)
 
 
 class PreprintProviderForm(forms.ModelForm):
     toplevel_subjects = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(), required=False)
     subjects_chosen = forms.CharField(widget=forms.HiddenInput(), required=False)
+    _id = forms.SlugField(
+        required=True,
+        help_text='URL Slug',
+        validators=[validate_slug]
+    )
 
     class Meta:
         model = PreprintProvider
 
-        exclude = ['primary_identifier_name']
+        exclude = ['primary_identifier_name', 'primary_collection', 'type']
 
         widgets = {
             'licenses_acceptable': forms.CheckboxSelectMultiple(),
@@ -30,7 +37,7 @@ class PreprintProviderForm(forms.ModelForm):
         self.fields['default_license'].choices = defaultlicense_choices
 
     def clean_subjects_acceptable(self, *args, **kwargs):
-        subject_ids = filter(None, self.data['subjects_chosen'].split(', '))
+        subject_ids = [_f for _f in self.data['subjects_chosen'].split(', ') if _f]
         subjects_selected = Subject.objects.filter(id__in=subject_ids)
         rules = get_subject_rules(subjects_selected)
         return rules
@@ -85,7 +92,23 @@ class PreprintProviderCustomTaxonomyForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(PreprintProviderCustomTaxonomyForm, self).__init__(*args, **kwargs)
         subject_choices = [(x, x) for x in Subject.objects.filter(bepress_subject__isnull=True).values_list('text', flat=True)]
-        for name, field in self.fields.iteritems():
+        for name, field in self.fields.items():
             if hasattr(field, 'choices'):
                 if field.choices == []:
                     field.choices = subject_choices
+
+
+class PreprintProviderRegisterModeratorOrAdminForm(forms.Form):
+    """ A form that finds an existing OSF User, and grants permissions to that
+        user so that they can use the admin app"""
+
+    def __init__(self, *args, **kwargs):
+        provider_id = kwargs.pop('provider_id')
+        super(PreprintProviderRegisterModeratorOrAdminForm, self).__init__(*args, **kwargs)
+        self.fields['group_perms'] = forms.ModelMultipleChoiceField(
+            queryset=Group.objects.filter(name__startswith='reviews_preprint_{}'.format(provider_id)),
+            required=False,
+            widget=forms.CheckboxSelectMultiple
+        )
+
+    user_id = forms.CharField(required=True, max_length=5, min_length=5)

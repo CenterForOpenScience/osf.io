@@ -14,17 +14,18 @@ from website.prereg import utils as prereg_utils
 from framework.auth import Auth
 from framework.exceptions import HTTPError, PermissionsError
 from website import settings as osf_settings
-from website import tokens, mails
-from website.exceptions import (
+from website import mails
+from osf.exceptions import (
     InvalidSanctionRejectionToken,
     InvalidSanctionApprovalToken,
     NodeStateError,
 )
 from website.project import tasks as project_tasks
 
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils import tokens
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
@@ -301,7 +302,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
         return None
 
     def _send_approval_request_email(self, user, template, context):
-        mails.send_mail(user.username, template, user=user, **context)
+        mails.send_mail(user.username, template, user=user, can_change_preferences=False, **context)
 
     def _email_template_context(self, user, node, is_authorizer=False):
         return {}
@@ -350,7 +351,7 @@ class PreregCallbackMixin(object):
         DraftRegistration = apps.get_model('osf.DraftRegistration')
 
         registration = self._get_registration()
-        prereg_schema = MetaSchema.get_prereg_schema()
+        prereg_schema = RegistrationSchema.get_prereg_schema()
         draft = DraftRegistration.objects.get(registered_node=registration)
 
         if registration.registered_schema.filter(id=prereg_schema.id).exists():
@@ -360,20 +361,12 @@ class PreregCallbackMixin(object):
                             registration_url=registration.absolute_url,
                             mimetype='html')
 
-    def _email_template_context(self,
+    def _email_template_context(self,  # TODO: remove after prereg challenge
                                 user,
                                 node,
                                 is_authorizer=False,
                                 urls=None):
-        registration = self._get_registration()
-        prereg_schema = MetaSchema.get_prereg_schema()
-        if registration.registered_schema.filter(pk=prereg_schema.pk).exists():
-            return {
-                'custom_message':
-                    ' as part of the Preregistration Challenge (https://cos.io/prereg)'
-            }
-        else:
-            return {}
+        return {}
 
 
 class Embargo(PreregCallbackMixin, EmailApprovableSanction):
@@ -385,8 +378,8 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
 
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     for_existing_registration = models.BooleanField(default=False)
@@ -575,8 +568,8 @@ class Retraction(EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
 
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     justification = models.CharField(max_length=2048, null=True, blank=True)
@@ -608,7 +601,7 @@ class Retraction(EmailApprovableSanction):
             registration = Registration.objects.select_related(
                 'registered_from'
             ).get(
-                guids___id=node_id
+                guids___id=node_id, guids___id__isnull=False
             ) if node_id else self.registrations.first()
 
             return {
@@ -711,8 +704,8 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
 
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
 
@@ -861,7 +854,9 @@ class DraftRegistrationApproval(Sanction):
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
                 user=user,
-                draft_url=draft.absolute_url
+                draft_url=draft.absolute_url,
+                can_change_preferences=False,
+                logo=osf_settings.OSF_PREREG_LOGO
             )
         else:
             raise NotImplementedError(
@@ -928,8 +923,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
 
     embargoed_registration = models.ForeignKey('Registration', null=True, blank=True, on_delete=models.CASCADE)
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)

@@ -13,19 +13,21 @@ from flask import request
 from framework.auth import Auth
 from framework.sessions import get_session
 from framework.exceptions import HTTPError
-from framework.auth.decorators import must_be_signed
+from framework.auth.decorators import must_be_signed, must_be_logged_in
 
+from api.caching.tasks import update_storage_usage
 from osf.exceptions import InvalidTagError, TagNotFoundError
 from osf.models import FileVersion, OSFUser
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
-    must_not_be_registration, must_have_addon, must_have_permission
+    must_not_be_registration, must_have_permission
 )
 from website.project.model import has_anonymous_link
 
 from website.files import exceptions
 from addons.osfstorage import utils
 from addons.osfstorage import decorators
+from addons.osfstorage.models import OsfStorageFolder
 from addons.osfstorage import settings as osf_storage_settings
 
 
@@ -42,8 +44,7 @@ def make_error(code, message_short=None, message_long=None):
 
 
 @must_be_signed
-@must_have_addon('osfstorage', 'node')
-def osfstorage_update_metadata(node_addon, payload, **kwargs):
+def osfstorage_update_metadata(payload, **kwargs):
     """Metadata received from WaterButler, is built incrementally via latent task calls to this endpoint.
 
     The basic metadata response looks like::
@@ -58,10 +59,11 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
                 "version": "2",
                 "downloads": "1",
                 "checkout": "...",
+                "latestVersionSeen": {"userId": "abc12", "seen": true},
                 "modified": "a date",
                 "modified_utc": "a date in utc",
 
-                # glacier vault
+                # glacier vault (optional)
                 "archive": "glacier_key",
                 "vault": "glacier_vault_name",
 
@@ -96,11 +98,11 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
-def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
+def osfstorage_get_revisions(file_node, payload, target, **kwargs):
     from osf.models import PageCounter, FileVersion  # TODO Fix me onces django works
-    is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=request.args.get('view_only')))
+    is_anon = has_anonymous_link(target, Auth(private_key=request.args.get('view_only')))
 
-    counter_prefix = 'download:{}:{}:'.format(file_node.node._id, file_node._id)
+    counter_prefix = 'download:{}:{}:'.format(file_node.target._id, file_node._id)
 
     version_count = file_node.versions.count()
     # Don't worry. The only % at the end of the LIKE clause, the index is still used
@@ -113,7 +115,7 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(node_addon.owner, file_node, version, index=version_count - idx - 1, anon=is_anon)
+            utils.serialize_revision(target, file_node, version, index=version_count - idx - 1, anon=is_anon)
             for idx, version in enumerate(qs)
         ]
     }
@@ -121,13 +123,16 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
-    return source.copy_under(destination, name=name).serialize(), httplib.CREATED
-
+    ret = source.copy_under(destination, name=name).serialize(), httplib.CREATED
+    update_storage_usage(destination.target)
+    return ret
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
+    source_target = source.target
+
     try:
-        return source.move_under(destination, name=name).serialize(), httplib.OK
+        ret = source.move_under(destination, name=name).serialize(), httplib.OK
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
             'message_long': 'Cannot move file as it is checked out.'
@@ -137,10 +142,16 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
             'message_long': 'Cannot move file as it is the primary file of preprint.'
         })
 
+    # once the move is complete recalculate storage for both targets if it's a inter-target move.
+    if source_target != destination.target:
+        update_storage_usage(destination.target)
+        update_storage_usage(source_target)
+
+    return ret
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
-def osfstorage_get_lineage(file_node, node_addon, **kwargs):
+def osfstorage_get_lineage(file_node, **kwargs):
     lineage = []
 
     while file_node:
@@ -165,9 +176,12 @@ def osfstorage_get_metadata(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
     from django.contrib.contenttypes.models import ContentType
+    user_id = request.args.get('user_id')
+    user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
+    user_pk = OSFUser.objects.filter(guids___id=user_id, guids___id__isnull=False).values_list('pk', flat=True).first()
     with connection.cursor() as cursor:
         # Read the documentation on FileVersion's fields before reading this code
-        cursor.execute('''
+        cursor.execute("""
             SELECT json_agg(CASE
                 WHEN F.type = 'osf.osfstoragefile' THEN
                     json_build_object(
@@ -184,6 +198,7 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'checkout', CHECKOUT_GUID
                         , 'md5', LATEST_VERSION.metadata ->> 'md5'
                         , 'sha256', LATEST_VERSION.metadata ->> 'sha256'
+                        , 'latestVersionSeen', SEEN_LATEST_VERSION.case
                     )
                 ELSE
                     json_build_object(
@@ -220,26 +235,69 @@ def osfstorage_get_children(file_node, **kwargs):
                 WHERE P._id = 'download:' || %s || ':' || F._id
                 LIMIT 1
             ) DOWNLOAD_COUNT ON TRUE
+            LEFT JOIN LATERAL (
+              SELECT EXISTS(
+                SELECT (1) FROM osf_fileversionusermetadata
+                  INNER JOIN osf_fileversion ON osf_fileversionusermetadata.file_version_id = osf_fileversion.id
+                  INNER JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
+                  WHERE osf_fileversionusermetadata.user_id = %s
+                  AND osf_basefilenode_versions.basefilenode_id = F.id
+                LIMIT 1
+              )
+            ) SEEN_FILE ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT CASE WHEN SEEN_FILE.exists
+                THEN
+                    CASE WHEN EXISTS(
+                      SELECT (1) FROM osf_fileversionusermetadata
+                      WHERE osf_fileversionusermetadata.file_version_id = LATEST_VERSION.fileversion_id
+                      AND osf_fileversionusermetadata.user_id = %s
+                      LIMIT 1
+                    )
+                    THEN
+                      json_build_object('user', %s, 'seen', TRUE)
+                    ELSE
+                      json_build_object('user', %s, 'seen', FALSE)
+                    END
+                ELSE
+                  NULL
+                END
+            ) SEEN_LATEST_VERSION ON TRUE
             WHERE parent_id = %s
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
-        ''', [ContentType.objects.get_for_model(OSFUser).id, file_node.node._id, file_node.id])
-
+        """, [
+            user_content_type_id,
+            file_node.target._id,
+            user_pk,
+            user_pk,
+            user_id,
+            user_id,
+            file_node.id
+        ])
         return cursor.fetchone()[0] or []
 
 
 @must_be_signed
-@must_not_be_registration
 @decorators.autoload_filenode(must_be='folder')
-def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
+def osfstorage_create_child(file_node, payload, **kwargs):
     parent = file_node  # Just for clarity
     name = payload.get('name')
     user = OSFUser.load(payload.get('user'))
     is_folder = payload.get('kind') == 'folder'
 
+    if getattr(file_node.target, 'is_registration', False) and not getattr(file_node.target, 'archiving', False):
+        raise HTTPError(
+            httplib.BAD_REQUEST,
+            data={
+                'message_short': 'Registered Nodes are immutable',
+                'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
+            }
+        )
+
     if not (name or user) or '/' in name:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if file_node.node.is_quickfiles and is_folder:
+    if getattr(file_node.target, 'is_quickfiles', False) and is_folder:
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'You may not create a folder for QuickFiles'})
 
     try:
@@ -261,27 +319,30 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
             )
         })
 
+    if file_node.checkout and file_node.checkout._id != user._id:
+        raise HTTPError(httplib.FORBIDDEN, data={
+            'message_long': 'File cannot be updated due to checkout status.'
+        })
+
     if not is_folder:
         try:
-            if file_node.checkout is None or file_node.checkout._id == user._id:
-                version = file_node.create_version(
-                    user,
-                    dict(payload['settings'], **dict(
-                        payload['worker'], **{
-                            'object': payload['metadata']['name'],
-                            'service': payload['metadata']['provider'],
-                        })
-                    ),
-                    dict(payload['metadata'], **payload['hashes'])
-                )
-                version_id = version._id
-                archive_exists = version.archive is not None
-            else:
-                raise HTTPError(httplib.FORBIDDEN, data={
-                    'message_long': 'File cannot be updated due to checkout status.'
-                })
+            metadata = dict(payload['metadata'], **payload['hashes'])
+            location = dict(payload['settings'], **dict(
+                payload['worker'], **{
+                    'object': payload['metadata']['name'],
+                    'service': payload['metadata']['provider'],
+                }
+            ))
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
+        current_version = file_node.get_version()
+        new_version = file_node.create_version(user, location, metadata)
+
+        if not current_version or not current_version.is_duplicate(new_version):
+            update_storage_usage(file_node.target)
+
+        version_id = new_version._id
+        archive_exists = new_version.archive is not None
     else:
         version_id = None
         archive_exists = False
@@ -297,16 +358,15 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 @must_be_signed
 @must_not_be_registration
 @decorators.autoload_filenode()
-def osfstorage_delete(file_node, payload, node_addon, **kwargs):
+def osfstorage_delete(file_node, payload, target, **kwargs):
     user = OSFUser.load(payload['user'])
     auth = Auth(user)
 
     #TODO Auth check?
     if not auth:
         raise HTTPError(httplib.BAD_REQUEST)
-
-    if file_node == node_addon.get_root():
-        raise HTTPError(httplib.BAD_REQUEST)
+    if file_node == OsfStorageFolder.objects.get_root(target=target):
+            raise HTTPError(httplib.BAD_REQUEST)
 
     try:
         file_node.delete(user=user)
@@ -318,12 +378,13 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
             'message_long': 'Cannot delete file as it is the primary file of preprint.'
         })
 
+    update_storage_usage(file_node.target)
     return {'status': 'success'}
 
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
-def osfstorage_download(file_node, payload, node_addon, **kwargs):
+def osfstorage_download(file_node, payload, **kwargs):
     # Set user ID in session data for checking if user is contributor
     # to project.
     user_id = payload.get('user')
@@ -341,10 +402,6 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
             raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
-
-    if request.args.get('mode') not in ('render', ):
-        utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier) - 1)
-
     return {
         'data': {
             'name': file_node.name,
@@ -376,3 +433,22 @@ def osfstorage_remove_tag(file_node, **kwargs):
         return {'status': 'failure'}, httplib.BAD_REQUEST
     else:
         return {'status': 'success'}, httplib.OK
+
+
+@must_be_logged_in
+def update_region(auth, **kwargs):
+    user = auth.user
+    user_settings = user.get_addon('osfstorage')
+
+    data = request.get_json()
+    try:
+        region_id = data['region_id']
+    except KeyError:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    try:
+        user_settings.set_region(region_id)
+    except ValueError:
+        raise HTTPError(404, data=dict(message_short='Region not found',
+                                    message_long='A storage region with this id does not exist'))
+    return {'message': 'User region updated.'}

@@ -1,0 +1,38 @@
+<doi_batch xmlns="http://www.crossref.org/schema/4.4.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="4.4.1" xsi:schemaLocation="http://www.crossref.org/schema/4.4.1 http://www.crossref.org/schemas/crossref4.4.1.xsd">
+   <head>
+      <doi_batch_id>k2enr</doi_batch_id>
+      <timestamp>1525879178</timestamp>
+      <depositor>
+         <depositor_name>Open Science Framework</depositor_name>
+         <email_address>john@cos.io</email_address>
+      </depositor>
+      <registrant>Weaver and Sons</registrant>
+   </head>
+   <body>
+      <posted_content type="preprint">
+         <group_title>Weaver and Sons</group_title>
+         <contributors>
+            <person_name contributor_role="author" sequence="first">
+               <given_name>Freddie</given_name>
+               <surname>Mercury1</surname>
+            </person_name>
+         </contributors>
+         <titles>
+            <title>Face-to-face disintermediate Local Area Network</title>
+         </titles>
+         <posted_date>
+            <month>05</month>
+            <day>09</day>
+            <year>2018</year>
+         </posted_date>
+         <item_number>osf.io/k2enr</item_number>
+         <abstract xmlns="http://www.ncbi.nlm.nih.gov/JATS1">
+            <p>Method radio pressure very type off.</p>
+         </abstract>
+         <doi_data>
+            <doi>10.31219/FK2osf.io/k2enr</doi>
+            <resource>http://localhost:5000/k2enr</resource>
+         </doi_data>
+      </posted_content>
+   </body>
+</doi_batch>

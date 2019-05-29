@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 
+from addons.osfstorage.models import Region
 from framework import forms, sentry, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
@@ -27,10 +28,12 @@ from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
+from website.ember_osf_web.decorators import storage_i18n_flag_active, ember_flag_is_active
 from website.util import web_url_for
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, BlacklistedEmailError
 from osf.models.provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
+from osf import features
 
 @block_bing_preview
 @collect_auth
@@ -180,7 +183,8 @@ def forgot_password_post():
                 mails.send_mail(
                     to_addr=email,
                     mail=mails.FORGOT_PASSWORD,
-                    reset_link=reset_link
+                    reset_link=reset_link,
+                    can_change_preferences=False,
                 )
 
         status.push_status_message(status_message, kind=kind, trust=False)
@@ -259,6 +263,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             )
     # login or register with next parameter
     elif next_url:
+        # TODO - logout is no longer used by claim_user_registered, see [#PLAT-1151]
         if logout:
             # handle `claim_user_registered`
             data['next_url'] = next_url
@@ -317,6 +322,7 @@ def auth_login(auth):
 
 
 @collect_auth
+@ember_flag_is_active(features.EMBER_AUTH_REGISTER)
 def auth_register(auth):
     """
     View for OSF register. Land on the register page, redirect or go to `auth_logout`
@@ -341,7 +347,7 @@ def auth_register(auth):
     campaign = request.args.get('campaign')
     # the service url for CAS login or redirect url for OSF
     next_url = request.args.get('next')
-    # used only for `claim_user_registered`
+    # TODO: no longer used for `claim_user_registered`, see [#PLAT-1151]
     logout = request.args.get('logout')
 
     # logout must have next_url
@@ -364,7 +370,7 @@ def auth_register(auth):
         context['preprint_campaigns'] = {k._id + '-preprints': {
             'id': k._id,
             'name': k.name,
-            'logo_path': settings.PREPRINTS_ASSETS + k._id + '/square_color_no_transparent.png'
+            'logo_path': k.get_asset_url('square_color_no_transparent')
         } for k in PreprintProvider.objects.all() if k._id != 'osf'}
         context['campaign'] = data['campaign']
         return context, http.OK
@@ -546,7 +552,9 @@ def external_login_confirm_email_get(auth, uid, token):
             mail=mails.WELCOME,
             mimetype='html',
             user=user,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL
+            domain=settings.DOMAIN,
+            osf_support_email=settings.OSF_SUPPORT_EMAIL,
+            storage_flag_is_active=storage_i18n_flag_active(),
         )
         service_url += '&{}'.format(urllib.urlencode({'new': 'true'}))
     elif external_status == 'LINK':
@@ -555,6 +563,7 @@ def external_login_confirm_email_get(auth, uid, token):
             to_addr=user.username,
             mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
             external_id_provider=provider,
+            can_change_preferences=False,
         )
 
     # redirect to CAS and authenticate the user with the verification key
@@ -578,9 +587,9 @@ def confirm_email_get(token, auth=None, **kwargs):
 
     try:
         if not is_merge or not check_select_for_update():
-            user = OSFUser.objects.get(guids___id=kwargs['uid'])
+            user = OSFUser.objects.get(guids___id=kwargs['uid'], guids___id__isnull=False)
         else:
-            user = OSFUser.objects.filter(guids___id=kwargs['uid']).select_for_update().get()
+            user = OSFUser.objects.filter(guids___id=kwargs['uid'], guids___id__isnull=False).select_for_update().get()
     except OSFUser.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
 
@@ -626,7 +635,9 @@ def confirm_email_get(token, auth=None, **kwargs):
             mail=mails.WELCOME,
             mimetype='html',
             user=user,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL
+            domain=settings.DOMAIN,
+            osf_support_email=settings.OSF_SUPPORT_EMAIL,
+            storage_flag_is_active=storage_i18n_flag_active(),
         )
 
     # new random verification key, allows CAS to authenticate the user w/o password one-time only.
@@ -730,7 +741,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
 
     campaign = campaigns.campaign_for_user(user)
     branded_preprints_provider = None
-
+    logo = None
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
     if external_id_provider and external_id:
         # First time login through external identity provider, link or create an OSF account confirmation
@@ -751,6 +762,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         mail_template = campaigns.email_template_for_campaign(campaign)
         if campaigns.is_proxy_login(campaign) and campaigns.get_service_provider(campaign) != 'OSF':
             branded_preprints_provider = campaigns.get_service_provider(campaign)
+        logo = campaigns.get_campaign_logo(campaign)
     else:
         # Account creation confirmation: from OSF
         mail_template = mails.INITIAL_CONFIRM_EMAIL
@@ -758,14 +770,16 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     mails.send_mail(
         email,
         mail_template,
-        'plain',
+        'html',
         user=user,
         confirmation_url=confirmation_url,
         email=email,
         merge_target=merge_target,
         external_id_provider=external_id_provider,
         branded_preprints_provider=branded_preprints_provider,
-        osf_support_email=settings.OSF_SUPPORT_EMAIL
+        osf_support_email=settings.OSF_SUPPORT_EMAIL,
+        can_change_preferences=False,
+        logo=logo if logo else settings.OSF_LOGO
     )
 
 
@@ -808,21 +822,28 @@ def register_user(**kwargs):
         if campaign and campaign not in campaigns.get_campaigns():
             campaign = None
 
+        accepted_terms_of_service = timezone.now() if json_data.get('acceptedTermsOfService') else None
         user = framework_auth.register_unconfirmed(
             request.json['email1'],
             request.json['password'],
             full_name,
             campaign=campaign,
+            accepted_terms_of_service=accepted_terms_of_service
         )
         framework_auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(
-            http.BAD_REQUEST,
+            http.CONFLICT,
             data=dict(
                 message_long=language.ALREADY_REGISTERED.format(
                     email=markupsafe.escape(request.json['email1'])
                 )
             )
+        )
+    except BlacklistedEmailError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=language.BLACKLISTED_EMAIL)
         )
     except ValidationError as e:
         raise HTTPError(
@@ -909,10 +930,12 @@ def external_login_email_get():
         raise HTTPError(http.UNAUTHORIZED)
 
     external_id_provider = session.data['auth_user_external_id_provider']
+    auth_user_fullname = session.data.get('auth_user_fullname')
 
     return {
         'form': form,
-        'external_id_provider': external_id_provider
+        'external_id_provider': external_id_provider,
+        'auth_user_fullname': auth_user_fullname,
     }
 
 
@@ -929,7 +952,7 @@ def external_login_email_post():
 
     external_id_provider = session.data['auth_user_external_id_provider']
     external_id = session.data['auth_user_external_id']
-    fullname = session.data['auth_user_fullname']
+    fullname = session.data.get('auth_user_fullname') or form.name.data
     service_url = session.data['service_url']
 
     # TODO: @cslzchen use user tags instead of destination
@@ -973,6 +996,8 @@ def external_login_email_post():
                 user.external_identity[external_id_provider].update(external_identity[external_id_provider])
             else:
                 user.external_identity.update(external_identity)
+            if not user.accepted_terms_of_service and form.accepted_terms_of_service.data:
+                user.accepted_terms_of_service = timezone.now()
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
             user.save()
@@ -994,12 +1019,14 @@ def external_login_email_post():
         else:
             # 1. create unconfirmed user with pending status
             external_identity[external_id_provider][external_id] = 'CREATE'
+            accepted_terms_of_service = timezone.now() if form.accepted_terms_of_service.data else None
             user = OSFUser.create_unconfirmed(
                 username=clean_email,
                 password=None,
                 fullname=fullname,
                 external_identity=external_identity,
-                campaign=None
+                campaign=None,
+                accepted_terms_of_service=accepted_terms_of_service
             )
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
@@ -1026,7 +1053,8 @@ def external_login_email_post():
     # Don't go anywhere
     return {
         'form': form,
-        'external_id_provider': external_id_provider
+        'external_id_provider': external_id_provider,
+        'auth_user_fullname': fullname
     }
 
 
@@ -1063,6 +1091,9 @@ def validate_next_url(next_url):
     if next_url.startswith(settings.CAS_SERVER_URL) or next_url.startswith(settings.MFR_SERVER_URL):
         # CAS or MFR
         return True
+    for url in Region.objects.values_list('mfr_url', flat=True):
+        if next_url.startswith(url):
+            return True
     for url in campaigns.get_external_domains():
         # Branded Preprints Phase 2
         if next_url.startswith(url):

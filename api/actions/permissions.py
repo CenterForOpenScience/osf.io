@@ -6,15 +6,16 @@ from rest_framework import permissions as drf_permissions
 from api.base.utils import get_user_auth
 from osf.models.action import ReviewAction
 from osf.models.mixins import ReviewableMixin, ReviewProviderMixin
-from osf.utils.workflows import DefaultTriggers
+from osf.utils.workflows import ReviewTriggers
 from osf.utils import permissions as osf_permissions
 
 # Required permission to perform each action. `None` means no permissions required.
 TRIGGER_PERMISSIONS = {
-    DefaultTriggers.SUBMIT.value: None,
-    DefaultTriggers.ACCEPT.value: 'accept_submissions',
-    DefaultTriggers.REJECT.value: 'reject_submissions',
-    DefaultTriggers.EDIT_COMMENT.value: 'edit_review_comments',
+    ReviewTriggers.SUBMIT.value: None,
+    ReviewTriggers.ACCEPT.value: 'accept_submissions',
+    ReviewTriggers.REJECT.value: 'reject_submissions',
+    ReviewTriggers.WITHDRAW.value: 'withdraw_submissions',
+    ReviewTriggers.EDIT_COMMENT.value: 'edit_review_comments',
 }
 
 
@@ -41,11 +42,11 @@ class ReviewActionPermission(drf_permissions.BasePermission):
 
         if request.method in drf_permissions.SAFE_METHODS:
             # Moderators and node contributors can view actions
-            is_node_contributor = target is not None and target.node.has_permission(auth.user, osf_permissions.READ)
+            is_node_contributor = target is not None and target.has_permission(auth.user, osf_permissions.READ)
             return is_node_contributor or auth.user.has_perm('view_actions', provider)
         else:
             # Moderators and node admins can trigger state changes.
-            is_node_admin = target is not None and target.node.has_permission(auth.user, osf_permissions.ADMIN)
+            is_node_admin = target is not None and target.has_permission(auth.user, osf_permissions.ADMIN)
             if not (is_node_admin or auth.user.has_perm('view_submissions', provider)):
                 return False
 

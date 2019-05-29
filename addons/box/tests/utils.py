@@ -62,30 +62,30 @@ mock_responses = {
         'thumb_exists': False
     },
     'metadata_list': {
-        "size": "0 bytes",
-        "hash": "37eb1ba1849d4b0fb0b28caf7ef3af52",
-        "bytes": 0,
-        "thumb_exists": False,
-        "rev": "714f029684fe",
-        "modified": "Wed, 27 Apr 2011 22:18:51 +0000",
-        "path": "/Public",
-        "is_dir": True,
-        "icon": "folder_public",
-        "root": "box",
-        "contents": [
+        'size': '0 bytes',
+        'hash': '37eb1ba1849d4b0fb0b28caf7ef3af52',
+        'bytes': 0,
+        'thumb_exists': False,
+        'rev': '714f029684fe',
+        'modified': 'Wed, 27 Apr 2011 22:18:51 +0000',
+        'path': '/Public',
+        'is_dir': True,
+        'icon': 'folder_public',
+        'root': 'box',
+        'contents': [
             {
-                "size": "0 bytes",
-                "rev": "35c1f029684fe",
-                "thumb_exists": False,
-                "bytes": 0,
-                "modified": "Mon, 18 Jul 2011 20:13:43 +0000",
-                "client_mtime": "Wed, 20 Apr 2011 16:20:19 +0000",
-                "path": "/Public/latest.txt",
-                "is_dir": False,
-                "icon": "page_white_text",
-                "root": "box",
-                "mime_type": "text/plain",
-                "revision": 220191
+                'size': '0 bytes',
+                'rev': '35c1f029684fe',
+                'thumb_exists': False,
+                'bytes': 0,
+                'modified': 'Mon, 18 Jul 2011 20:13:43 +0000',
+                'client_mtime': 'Wed, 20 Apr 2011 16:20:19 +0000',
+                'path': '/Public/latest.txt',
+                'is_dir': False,
+                'icon': 'page_white_text',
+                'root': 'box',
+                'mime_type': 'text/plain',
+                'revision': 220191
             },
             {
                 u'bytes': 0,
@@ -100,7 +100,7 @@ mock_responses = {
                 u'thumb_exists': False
             }
         ],
-        "revision": 29007
+        'revision': 29007
     },
     'metadata_single': {
         u'id': 'id',
@@ -159,7 +159,7 @@ class MockBox(object):
             ret['path'] = path
         return ret
 
-    def get_folder(*args, **kwargs):
+    def folder(*args, **kwargs):
         return mock_responses['folder']
 
     def get_file_and_metadata(*args, **kwargs):
@@ -174,18 +174,18 @@ class MockBox(object):
             each['path'] = path
         return ret
 
-    def get_user_info(self):
+    def user(self):
         return {'display_name': 'Mr. Box'}
 
 
 @contextmanager
 def patch_client(target, mock_client=None):
-    """Patches a function that returns a BoxClient, returning an instance
+    """Patches a function that returns a Box Client, returning an instance
     of MockBox instead.
 
     Usage: ::
 
-        with patch_client('addons.box.views.BoxClient') as client:
+        with patch_client('addons.box.views.Client') as client:
             # test view that uses the box client.
     """
     with mock.patch(target) as client_getter:

@@ -13,7 +13,8 @@ from website.notifications.tasks import get_users_emails, send_users_email, grou
 from website.notifications import constants
 from website.notifications import emails
 from website.notifications import utils
-from website import mails, settings
+from website import mails
+from website.profile.utils import get_profile_image_url
 from website.project.signals import contributor_removed, node_deleted
 from website.reviews import listeners
 from website.util import api_url_for
@@ -387,10 +388,16 @@ class TestNotificationsModels(OsfTestCase):
         assert_equal(comments_subscription.email_transactional.count(), 1)
 
     def test_unregistered_contributor_not_subscribed_when_added_to_project(self):
-        user = factories.UserFactory()
+        user = factories.AuthUserFactory()
         unregistered_contributor = factories.UnregUserFactory()
         project = factories.ProjectFactory(creator=user)
-        project.add_contributor(contributor=unregistered_contributor)
+        project.add_unregistered_contributor(
+            unregistered_contributor.fullname,
+            unregistered_contributor.email,
+            Auth(user),
+            existing_user=unregistered_contributor
+        )
+
         contributor_subscriptions = list(utils.get_all_user_subscriptions(unregistered_contributor))
         assert_equal(len(contributor_subscriptions), 0)
 
@@ -545,20 +552,34 @@ class TestRemoveNodeSignal(OsfTestCase):
 
     def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
         project = factories.ProjectFactory()
+        component = factories.NodeFactory(parent=project, creator=project.creator)
 
         s = NotificationSubscription.objects.filter(email_transactional=project.creator)
         assert_equal(s.count(), 2)
 
+        s = NotificationSubscription.objects.filter(email_transactional=component.creator)
+        assert_equal(s.count(), 2)
+
         with capture_signals() as mock_signals:
             project.remove_node(auth=Auth(project.creator))
+        project.reload()
+        component.reload()
+
         assert_true(project.is_deleted)
+        assert_true(component.is_deleted)
         assert_equal(mock_signals.signals_sent(), set([node_deleted]))
 
         s = NotificationSubscription.objects.filter(email_transactional=project.creator)
         assert_equal(s.count(), 0)
 
+        s = NotificationSubscription.objects.filter(email_transactional=component.creator)
+        assert_equal(s.count(), 0)
+
         with assert_raises(NotificationSubscription.DoesNotExist):
             NotificationSubscription.objects.get(node=project)
+
+        with assert_raises(NotificationSubscription.DoesNotExist):
+            NotificationSubscription.objects.get(node=component)
 
 
 def list_or_dict(data):
@@ -580,7 +601,7 @@ def has(data, sub_data):
     # :param sub_data: subset being checked for
     # :return: True or False
     try:
-        (item for item in data if item == sub_data).next()
+        next((item for item in data if item == sub_data))
         return True
     except StopIteration:
         lists_and_dicts = list_or_dict(data)
@@ -602,9 +623,9 @@ def subscription_schema(project, structure, level=0):
 
     node_schema = {
         'node': {
-            'id': Use(type(project._id), error="node_id{}".format(level)),
-            'title': Use(type(project.title), error="node_title{}".format(level)),
-            'url': Use(type(project.url), error="node_{}".format(level))
+            'id': Use(type(project._id), error='node_id{}'.format(level)),
+            'title': Use(type(project.title), error='node_title{}'.format(level)),
+            'url': Use(type(project.url), error='node_{}'.format(level))
         },
         'kind': And(str, Use(lambda s: s in ('node', 'folder'),
                              error="kind didn't match node or folder {}".format(level))),
@@ -623,12 +644,12 @@ def subscription_schema(project, structure, level=0):
 def event_schema(level=None):
     return {
         'event': {
-            'title': And(Use(str, error="event_title{} not a string".format(level)),
+            'title': And(Use(str, error='event_title{} not a string'.format(level)),
                          Use(lambda s: s in constants.NOTIFICATION_TYPES,
-                             error="event_title{} not in list".format(level))),
-            'description': And(Use(str, error="event_desc{} not a string".format(level)),
+                             error='event_title{} not in list'.format(level))),
+            'description': And(Use(str, error='event_desc{} not a string'.format(level)),
                                Use(lambda s: s in constants.NODE_SUBSCRIPTIONS_AVAILABLE,
-                                   error="event_desc{} not in list".format(level))),
+                                   error='event_desc{} not in list'.format(level))),
             'notificationType': And(str, Or('adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)),
             'parent_notification_type': Or(None, 'adopt_parent', lambda s: s in constants.NOTIFICATION_TYPES)
         },
@@ -1477,7 +1498,7 @@ class TestSendEmails(NotificationTestCase):
         emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
         assert_true(mock_store.called)
         mock_store.assert_called_with([node.creator._id], 'email_transactional', 'global_mentions', user,
-                                      node, time_now, None, new_mentions=[node.creator._id])
+                                      node, time_now, template=None, new_mentions=[node.creator._id], is_creator=(user == node.creator))
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_store):
@@ -1878,3 +1899,110 @@ class TestNotificationsReviews(OsfTestCase):
     def test_reviews_notification(self, mock_notify):
         listeners.reviews_notification(self, creator=self.sender, context=self.context_info, action=self.action, template='test.html.mako')
         assert_true(mock_notify.called)
+
+
+class QuerySetMatcher(object):
+    def __init__(self, some_obj):
+        self.some_obj = some_obj
+
+    def __eq__(self, other):
+        return list(self.some_obj) == list(other)
+
+
+class TestNotificationsReviewsModerator(OsfTestCase):
+
+    def setUp(self):
+        super(TestNotificationsReviewsModerator, self).setUp()
+        self.provider = factories.PreprintProviderFactory(_id='engrxiv')
+        self.preprint = factories.PreprintFactory(provider=self.provider)
+        self.submitter = factories.UserFactory()
+        self.moderator_transacitonal = factories.UserFactory()
+        self.moderator_digest= factories.UserFactory()
+
+        self.context_info_submission = {
+            'referrer': self.submitter,
+            'domain': 'osf.io',
+            'reviewable': self.preprint,
+            'workflow': 'pre-moderation',
+            'provider_contact_email': settings.OSF_CONTACT_EMAIL,
+            'provider_support_email': settings.OSF_SUPPORT_EMAIL,
+        }
+
+        self.context_info_request = {
+            'requester': self.submitter,
+            'domain': 'osf.io',
+            'reviewable': self.preprint,
+            'workflow': 'pre-moderation',
+            'provider_contact_email': settings.OSF_CONTACT_EMAIL,
+            'provider_support_email': settings.OSF_SUPPORT_EMAIL,
+        }
+
+        self.action = factories.ReviewActionFactory()
+        self.subscription = NotificationSubscription.load(self.provider._id+'_new_pending_submissions')
+        self.subscription.add_user_to_subscription(self.moderator_transacitonal, 'email_transactional')
+        self.subscription.add_user_to_subscription(self.moderator_digest, 'email_digest')
+
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_reviews_submit_notification(self, mock_store):
+        time_now = timezone.now()
+        self.context_info_submission['message'] = u'submitted {}.'.format(self.context_info_submission['reviewable'].title)
+        self.context_info_submission['profile_image_url'] = get_profile_image_url(self.context_info_submission['referrer'])
+        self.context_info_submission['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
+                                                                                         self.context_info_submission[
+                                                                                             'reviewable'].provider._id,
+                                                                                         self.context_info_submission[
+                                                                                             'reviewable']._id)
+        listeners.reviews_submit_notification_moderators(self, time_now, self.context_info_submission)
+        subscription = NotificationSubscription.load(self.provider._id + '_new_pending_submissions')
+        digest_subscriber_ids = subscription.email_digest.all().values_list('guids___id', flat=True)
+        instant_subscriber_ids = subscription.email_transactional.all().values_list('guids___id', flat=True)
+        mock_store.assert_any_call(QuerySetMatcher(digest_subscriber_ids),
+                                      'email_digest',
+                                      'new_pending_submissions',
+                                      self.context_info_submission['referrer'],
+                                      self.context_info_submission['reviewable'],
+                                      time_now,
+                                      abstract_provider=self.context_info_submission['reviewable'].provider,
+                                      **self.context_info_submission)
+
+        mock_store.assert_any_call(QuerySetMatcher(instant_subscriber_ids),
+                                   'email_transactional',
+                                   'new_pending_submissions',
+                                   self.context_info_submission['referrer'],
+                                   self.context_info_submission['reviewable'],
+                                   time_now,
+                                   abstract_provider=self.context_info_request['reviewable'].provider,
+                                   **self.context_info_submission)
+
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_reviews_request_notification(self, mock_store):
+        time_now = timezone.now()
+        self.context_info_request['message'] = u'has requested withdrawal of {} "{}".'.format(self.context_info_request['reviewable'].provider.preprint_word,
+                                                                                                 self.context_info_request['reviewable'].title)
+        self.context_info_request['profile_image_url'] = get_profile_image_url(self.context_info_request['requester'])
+        self.context_info_request['reviews_submission_url'] = '{}reviews/preprints/{}/{}'.format(settings.DOMAIN,
+                                                                                         self.context_info_request[
+                                                                                             'reviewable'].provider._id,
+                                                                                         self.context_info_request[
+                                                                                             'reviewable']._id)
+        listeners.reviews_withdrawal_requests_notification(self, time_now, self.context_info_request)
+        subscription = NotificationSubscription.load(self.provider._id + '_new_pending_submissions')
+        digest_subscriber_ids = subscription.email_digest.all().values_list('guids___id', flat=True)
+        instant_subscriber_ids = subscription.email_transactional.all().values_list('guids___id', flat=True)
+        mock_store.assert_any_call(QuerySetMatcher(digest_subscriber_ids),
+                                      'email_digest',
+                                      'new_pending_submissions',
+                                      self.context_info_request['requester'],
+                                      self.context_info_request['reviewable'],
+                                      time_now,
+                                      abstract_provider=self.context_info_request['reviewable'].provider,
+                                      **self.context_info_request)
+
+        mock_store.assert_any_call(QuerySetMatcher(instant_subscriber_ids),
+                                   'email_transactional',
+                                   'new_pending_submissions',
+                                   self.context_info_request['requester'],
+                                   self.context_info_request['reviewable'],
+                                   time_now,
+                                   abstract_provider=self.context_info_request['reviewable'].provider,
+                                   **self.context_info_request)

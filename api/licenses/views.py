@@ -33,7 +33,7 @@ class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             NodeLicense,
             self.kwargs[self.lookup_url_kwarg],
             self.request,
-            display_name='license'
+            display_name='license',
         )
         self.check_object_permissions(self.request, license)
         return license

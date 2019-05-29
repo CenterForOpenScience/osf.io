@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from nose.tools import *  # noqa PEP8 asserts
+import pytest
+from nose.tools import *  # noqa: F403
 
 from osf_tests import factories
 from tests.base import OsfTestCase
@@ -9,6 +10,8 @@ from website.util import api_url_for
 from website.views import find_bookmark_collection
 
 
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
 class TestSearchViews(OsfTestCase):
 
     def setUp(self):
@@ -203,6 +206,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(res.json['results'][0]['social']['scholar'], 'http://scholar.google.com/citations?user={}'.format(user_two.given_name))
 
 
+@pytest.mark.enable_bookmark_creation
 class TestODMTitleSearch(OsfTestCase):
     """ Docs from original method:
     :arg term: The substring of the title.

@@ -43,7 +43,7 @@ var RegistrationRetractionViewModel = oop.extend(
         JUSTIFICATON_ERROR_MESSAGE: 'Your justification is too long, please enter a justification with no more ' +
             'than 2048 characters long.',
         MESSAGE_ERROR_CLASS: 'text-danger',
-        onSubmitSuccess: function(response) {            
+        onSubmitSuccess: function(response) {
             window.location = response.redirectUrl;
         },
         onSubmitError: function(xhr, status, errorThrown) {

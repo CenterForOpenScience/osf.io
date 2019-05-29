@@ -11,21 +11,63 @@ from website import settings
 
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
-WELCOME_MESSAGE = '''
+WELCOME_MESSAGE = """
 <h1>Welcome to the OSF!</h1>
 <p>Visit our <a href="http://help.osf.io/" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
-'''
+"""
 
-REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
+TERMS_OF_SERVICE = """
+<div style="text-align: center">
+    <div>
+        <h4>We've updated our <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> and <a target="_blank" href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>. Please read them carefully.</h4>
+        <h5><input type="checkbox" id="accept" style="margin-right: 5px">I have read and agree to these terms.</input></h5>
+    </div>
+    <button class="btn btn-primary" data-dismiss="alert" id="continue" disabled>Continue</button>
+</div>
+<script>
+    $('#accept').on('change', function() {{
+        $('#continue').prop('disabled', !$('#accept').prop('checked'));
+    }});
 
-EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS = '''A new OSF account has been created with your {external_id_provider} profile. Please check {email} to confirm your email address.'''
+    $('#continue').on('click', function() {{
+        var accepted = $('#accept').prop('checked');
+        $.ajax({{
+            url: '{api_domain}v2/users/me/',
+            type: 'PATCH',
+            contentType: 'application/json',
+            xhrFields: {{
+                withCredentials: true
+            }},
+            headers: {{
+                'X-CSRFToken': {csrf_token}
+            }},
+            data: JSON.stringify({{
+                'data': {{
+                    'id': '{user_id}',
+                    'type': 'users',
+                    'attributes': {{
+                        'accepted_terms_of_service': accepted
+                    }}
+                }}
+            }})
+        }});
+    }});
 
-EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS = '''Your OSF account has been linked with your {external_id_provider}. Please check {email} to confirm this action.'''
+</script>
+"""
+
+REGISTRATION_SUCCESS = """Registration successful. Please check {email} to confirm your email address."""
+
+EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS = """A new OSF account has been created with your {external_id_provider} profile. Please check {email} to confirm your email address."""
+
+EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS = """Your OSF account has been linked with your {external_id_provider}. Please check {email} to confirm this action."""
 
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
 ALREADY_REGISTERED = u'The email {email} has already been registered.'
+
+BLACKLISTED_EMAIL = 'Invalid email address. If this should not have occurred, please report this to {}.'.format(settings.OSF_SUPPORT_EMAIL)
 
 AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within two business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
@@ -34,28 +76,28 @@ UNCONFIRMED = ('This login email has been registered but not confirmed. Please c
                ' <a href="/resend/">Click here</a> to resend your confirmation email.')
 
 # Shown if the user's account is disabled
-DISABLED = '''
+DISABLED = """
 Log-in failed: Deactivated account.
-'''
+"""
 
 # Shown on incorrect password attempt
-LOGIN_FAILED = '''
+LOGIN_FAILED = """
 Log-in failed. Please try again or reset your password.
-'''
+"""
 
 # Shown at login page if user tries to access a resource that requires auth
-MUST_LOGIN = '''
+MUST_LOGIN = """
 You must log in or create a new account to claim the contributor-ship.
-'''
+"""
 
 # Shown on logout
-LOGOUT = '''
+LOGOUT = """
 You have successfully logged out.
-'''
+"""
 
-EMAIL_NOT_FOUND = u'''
+EMAIL_NOT_FOUND = u"""
 {email} was not found in our records.
-'''
+"""
 
 # Shown after an unregistered user claims an account and is redirected to the
 # settings page
@@ -102,10 +144,11 @@ AFTER_REGISTER_ARCHIVING = (
 )
 
 BEFORE_REGISTER_HAS_POINTERS = (
-    u'This {category} contains links to other projects. Links will be copied '
-    u'into your registration, but the projects that they link to will not be '
-    u'registered. If you wish to register the linked projects, you must fork '
-    u'them from the original project before registering.'
+    u'This {category} contains links to other projects. These links will be '
+    u'copied into your registration, but the projects that they link to will '
+    u'not be registered. If you wish to register the linked projects, they '
+    u'must be registered separately. Learn more about <a href="http://help.osf.io'
+    u'/m/links_forks/l/524112-link-to-a-project">links</a>.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (
@@ -115,32 +158,7 @@ BEFORE_FORK_HAS_POINTERS = (
     u'original project.'
 )
 
-REGISTRATION_INFO = '''
-<p>Registration creates a frozen version of the project that can never be
-edited or deleted but can be withdrawn. You can register your project by
-selecting a registration form, entering information about your project, and
-then confirming. You will be able to continue editing the original project,
-however, and the frozen version with timestamps will always be linked to
-the original. Withdrawing a registration will leave behind metadata about
-when the registration was created and withdrawn but removes the contents
-of the registration.</p>
-
-<ul>
-    <li>A registration can be made public immediately or entered into
-    an embargo period of up to four years. At the end of the embargo period,
-    the registration will automatically become public.</li>
-
-    <li>Before initiating a registration, make sure that the project is
-    in the state that you wish to freeze. Consider turning links into
-    forks.</li>
-
-    <li>Start by selecting a registration form from the list below. You can hit
-    your browser's back button if the selected form is not appropriate for
-    your use.</li>
-</ul>
-'''
-
-REGISTRATION_EMBARGO_INFO = '''
+REGISTRATION_EMBARGO_INFO = """
 You can choose whether to make your registration public immediately or
 embargo it for up to four years. At the end of the embargo period the registration
 is automatically made public. After becoming public, the only way to remove a
@@ -153,13 +171,13 @@ all other project contributors. Other administrators will have 48 hours to
 approve or cancel creating the registration. If any other administrator rejects the
 registration, it will be canceled. If all other administrators approve or do
 nothing, the registration will be confirmed and enter its embargo period.
-'''
+"""
 
-BEFORE_REGISTRATION_INFO = '''
+BEFORE_REGISTRATION_INFO = """
 Registration cannot be undone, and the archived content and files cannot be
 deleted after registration. Please be sure the project is complete and
 comprehensive for what you wish to register.
-'''
+"""
 
 # Nodes: forking, templating, linking
 
@@ -190,7 +208,7 @@ TEMPLATED_FROM_PREFIX = 'Templated from '
 
 # MFR Error handling
 ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."
-SUPPORT = u"Contact " + settings.OSF_SUPPORT_EMAIL + u"for further assistance."
+SUPPORT = u'Contact ' + settings.OSF_SUPPORT_EMAIL + u'for further assistance.'
 
 SUPPORT_LINK = 'please report it to <a href="mailto:' + settings.OSF_SUPPORT_EMAIL + '">' + settings.OSF_SUPPORT_EMAIL + '</a>.'
 

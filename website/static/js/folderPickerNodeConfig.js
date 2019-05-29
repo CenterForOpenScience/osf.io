@@ -415,7 +415,9 @@ var FolderPickerViewModel = oop.defclass({
             self.totalLibraries(response.pop());
             self.numberLibrariesLoaded(loaded + response.length);
             if (self.libraryFirstLoad()) {
-                response.unshift({'id': 'personal', 'data': {'name': 'My Library'}});
+                // On first load, the personal library was automatically appended to the
+                // response on our end.  We need to remove this from the count.
+                self.numberLibrariesLoaded(self.numberLibrariesLoaded() - 1);
                 self.libraryFirstLoad(false);
             }
         }
@@ -466,7 +468,9 @@ var FolderPickerViewModel = oop.defclass({
             }
             var metadata = {
                 'limit': 5,
-                'start': self.numberLibrariesLoaded()
+                'start': self.numberLibrariesLoaded(),
+                'return_count': true,
+                'append_personal': self.libraryFirstLoad()
             };
             self.pendingLibraryRequest(true);
             return $.getJSON(self.urls().libraries, metadata)
@@ -632,6 +636,16 @@ var FolderPickerViewModel = oop.defclass({
             },
             multiselect: false,
             allowMove: false,
+            ondataloaderror: function(xhr) {
+                self.loading(false);
+                self.changeMessage(self.messages.connectError(), 'text-danger');
+                Raven.captureMessage('Could not GET get ' + self.addonName + ' contents.', {
+                    extra: {
+                        textStatus: xhr.statusText,
+                        error: xhr.status
+                    }
+                });
+            },
             ajaxOptions: {
                 error: function(xhr, textStatus, error) {
                     self.loading(false);

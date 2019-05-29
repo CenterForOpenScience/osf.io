@@ -3,27 +3,23 @@
 Unit tests for analytics logic in framework/analytics/__init__.py
 """
 
-import unittest
-
+import mock
+import re
 import pytest
 from django.utils import timezone
-from nose.tools import *  # flake8: noqa  (PEP8 asserts)
-from flask import Flask
+from nose.tools import *  # noqa: F403
 
 from datetime import datetime
 
-from framework import analytics, sessions
-from framework.sessions import session
-from osf.models import PageCounter, Session
+from addons.osfstorage.models import OsfStorageFile
+from framework import analytics
+from osf.models import PageCounter
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, ProjectFactory
 
-pytestmark = pytest.mark.django_db
 
 class TestAnalytics(OsfTestCase):
-
-
 
     def test_get_total_activity_count(self):
         user = UserFactory()
@@ -46,151 +42,129 @@ class TestAnalytics(OsfTestCase):
         assert_equal(user.get_activity_points(), 1)
 
 
-class UpdateCountersTestCase(OsfTestCase):
+@pytest.fixture()
+def user():
+    return UserFactory()
 
-    def setUp(self):
-        decoratorapp = Flask('decorators')
-        self.ctx = decoratorapp.test_request_context()
-        self.ctx.push()
-        # TODO: Think of something better @sloria @jmcarp
-        sessions.set_session(Session())
+@pytest.fixture()
+def project(user):
+    return ProjectFactory(creator=user)
 
-    def tearDown(self):
-        self.ctx.pop()
+@pytest.fixture()
+def file_node(project):
+    file_node = OsfStorageFile(name='test', target=project)
+    file_node.save()
+    return file_node
+
+@pytest.fixture()
+def file_node2(project):
+    file_node2 = OsfStorageFile(name='test2', target=project)
+    file_node2.save()
+    return file_node2
+
+@pytest.fixture()
+def file_node3(project):
+    file_node3 = OsfStorageFile(name='test3', target=project)
+    file_node3.save()
+    return file_node3
+
+@pytest.fixture()
+def page_counter(project, file_node):
+    page_counter_id = 'download:{}:{}'.format(project._id, file_node.id)
+    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, date={u'2018/02/04': {u'total': 41, u'unique': 33}})
+    return page_counter
+
+@pytest.fixture()
+def page_counter2(project, file_node2):
+    page_counter_id = 'download:{}:{}'.format(project._id, file_node2.id)
+    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, date={u'2018/02/04': {u'total': 4, u'unique': 26}})
+    return page_counter
+
+@pytest.fixture()
+def page_counter_for_individual_version(project, file_node3):
+    page_counter_id = 'download:{}:{}:0'.format(project._id, file_node3.id)
+    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, date={u'2018/02/04': {u'total': 1, u'unique': 1}})
+    return page_counter
 
 
-class TestUpdateCounters(UpdateCountersTestCase):
+@pytest.mark.django_db
+class TestPageCounter:
 
-    def setUp(self):
-        super(TestUpdateCounters, self).setUp()
-        self.node = ProjectFactory()
-        self.user = self.node.creator
-        self.user2 = UserFactory()
-        self.node.add_contributor(self.user2, save=True)
-        self.fid = 'foo'
-        self.vid = 1
-        self.userid = self.user._id
-        self.node_info = {
-            'contributors': self.node.contributors
-        }
+    @mock.patch('osf.models.analytics.session')
+    def test_download_update_counter(self, mock_session, project, file_node):
+        mock_session.data = {}
+        page_counter_id = 'download:{}:{}'.format(project._id, file_node.id)
 
-    def test_update_counters_file(self):
-        @analytics.update_counters('download:{target_id}:{fid}')
-        def download_file_(**kwargs):
-            return kwargs.get('node') or kwargs.get('project')
+        PageCounter.update_counter(page_counter_id, {})
 
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, self.fid))
-        assert_equal(count, (None, None))
+        page_counter = PageCounter.objects.get(_id=page_counter_id)
+        assert page_counter.total == 1
+        assert page_counter.unique == 1
 
-        download_file_(node=self.node, fid=self.fid)
+        PageCounter.update_counter(page_counter_id, {})
 
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, self.fid))
-        assert_equal(count, (1, 1))
+        page_counter.refresh_from_db()
+        assert page_counter.total == 2
+        assert page_counter.unique == 1
 
-        page = 'download:{0}:{1}'.format(self.node._id, self.fid)
+    @mock.patch('osf.models.analytics.session')
+    def test_download_update_counter_contributor(self, mock_session, user, project, file_node):
+        mock_session.data = {'auth_user_id': user._id}
+        page_counter_id = 'download:{}:{}'.format(project._id, file_node.id)
 
-        session.data['visited'].append(page)
-        download_file_(node=self.node, fid=self.fid)
+        PageCounter.update_counter(page_counter_id, {'contributors': project.contributors})
+        page_counter = PageCounter.objects.get(_id=page_counter_id)
+        assert page_counter.total == 0
+        assert page_counter.unique == 0
 
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, self.fid))
-        assert_equal(count, (1, 2))
+        PageCounter.update_counter(page_counter_id, {'contributors': project.contributors})
 
-    def test_update_counters_file_user_is_contributor(self):
-        @analytics.update_counters('download:{target_id}:{fid}', node_info=self.node_info)
-        def download_file_(**kwargs):
-            return kwargs.get('node') or kwargs.get('project')
+        page_counter.refresh_from_db()
+        assert page_counter.total == 0
+        assert page_counter.unique == 0
 
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, self.fid))
-        assert_equal(count, (None, None))
+    def test_get_all_downloads_on_date(self, page_counter, page_counter2):
+        """
+        This method tests that multiple pagecounter objects have their download totals summed properly.
 
-        download_file_(node=self.node, fid=self.fid)
+        :param page_counter: represents a page_counter for a file node being downloaded
+        :param page_counter2: represents a page_counter for another file node being downloaded
+        """
 
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, self.fid))
-        assert_equal(count, (1, 1))
+        date = datetime(2018, 2, 4)
 
-        page = 'download:{0}:{1}'.format(self.node._id, self.fid)
+        total_downloads = PageCounter.get_all_downloads_on_date(date)
 
-        session.data['visited'].append(page)
-        session.data['auth_user_id'] = self.userid
-        download_file_(node=self.node, fid=self.fid)
+        assert total_downloads == 45
 
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, self.fid))
-        assert_equal(count, (1, 1))
+    def test_get_all_downloads_on_date_exclude_versions(self, page_counter, page_counter2, page_counter_for_individual_version):
+        """
+        This method tests that individual version counts for file node's aren't "double counted" in the totals
+        for a page counter. We don't add the file node's total to the versions total.
 
-    def test_update_counters_file_user_is_not_contributor(self):
-        @analytics.update_counters('download:{target_id}:{fid}', node_info=self.node_info)
-        def download_file_(**kwargs):
-            return kwargs.get('node') or kwargs.get('project')
+        :param page_counter: represents a page_counter for a file node being downloaded
+        :param page_counter2: represents a page_counter for another file node being downloaded
+        """
+        date = datetime(2018, 2, 4)
 
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, self.fid))
-        assert_equal(count, (None, None))
+        total_downloads = PageCounter.get_all_downloads_on_date(date)
 
-        download_file_(node=self.node, fid=self.fid)
+        assert total_downloads == 45
 
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, self.fid))
-        assert_equal(count, (1, 1))
 
-        page = 'download:{0}:{1}'.format(self.node._id, self.fid)
+class TestPageCounterRegex:
 
-        session.data['visited'].append(page)
-        session.data['auth_user_id'] = "asv12uey821vavshl"
-        download_file_(node=self.node, fid=self.fid)
+    def test_download_all_versions_regex(self):
+        # Checks regex to ensure we don't double count versions totals for that file node.
 
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, self.fid))
-        assert_equal(count, (1, 2))
+        match = re.match(PageCounter.DOWNLOAD_ALL_VERSIONS_ID_PATTERN, 'bad id')
+        assert not match
 
-    def test_update_counters_file_version(self):
-        @analytics.update_counters('download:{target_id}:{fid}:{vid}')
-        def download_file_version_(**kwargs):
-            return kwargs.get('node') or kwargs.get('project')
+        match = re.match(PageCounter.DOWNLOAD_ALL_VERSIONS_ID_PATTERN, 'views:guid1:fileid')
+        assert not match
 
-        count = analytics.get_basic_counters('download:{0}:{1}:{2}'.format(self.node._id, self.fid, self.vid))
-        assert_equal(count, (None, None))
+        match = re.match(PageCounter.DOWNLOAD_ALL_VERSIONS_ID_PATTERN, 'download:guid1:fileid:0')
+        assert not match
 
-        download_file_version_(node=self.node, fid=self.fid, vid=self.vid)
-
-        count = analytics.get_basic_counters('download:{0}:{1}:{2}'.format(self.node._id, self.fid, self.vid))
-        assert_equal(count, (1, 1))
-
-        page = 'download:{0}:{1}:{2}'.format(self.node._id, self.fid, self.vid)
-
-        session.data['visited'].append(page)
-        download_file_version_(node=self.node, fid=self.fid, vid=self.vid)
-
-        count = analytics.get_basic_counters('download:{0}:{1}:{2}'.format(self.node._id, self.fid, self.vid))
-        assert_equal(count, (1, 2))
-
-    def test_get_basic_counters(self):
-        page = 'node:' + str(self.node._id)
-        PageCounter.objects.create(_id=page, total=5, unique=3)
-
-        count = analytics.get_basic_counters(page)
-        assert_equal(count, (3, 5))
-
-    @unittest.skip('Reverted the fix for #2281. Unskip this once we use GUIDs for keys in the download counts collection')
-    def test_update_counters_different_files(self):
-        # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2281
-        @analytics.update_counters('download:{target_id}:{fid}')
-        def download_file_(**kwargs):
-            return kwargs.get('node') or kwargs.get('project')
-
-        fid1 = 'test.analytics.py'
-        fid2 = 'test_analytics.py'
-
-        download_file_(node=self.node, fid=fid1)
-
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, fid1))
-        assert_equal(count, (1, 1))
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, fid2))
-        assert_equal(count, (None, None))
-
-        page = 'download:{0}:{1}'.format(self.node._id, fid1)
-
-        session.data['visited'].append(page)
-        download_file_(node=self.node, fid=fid1)
-        download_file_(node=self.node, fid=fid2)
-
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, fid1))
-        assert_equal(count, (1, 2))
-        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node._id, fid2))
-        assert_equal(count, (1, 1))
+        match = re.match(PageCounter.DOWNLOAD_ALL_VERSIONS_ID_PATTERN, 'download:guid1:fileid')
+        assert match

@@ -23,6 +23,7 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeForksList:
 
     @pytest.fixture()
@@ -204,6 +205,7 @@ class TestNodeForksList:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeForkCreate:
 
     @pytest.fixture()
@@ -271,10 +273,12 @@ class TestNodeForkCreate:
             public_project_url,
             fork_data,
             auth=non_contrib.auth)
+        fork = public_project.forks.first()
         assert res.status_code == 201
-        assert res.json['data']['id'] == public_project.forks.first()._id
+        assert res.json['data']['id'] == fork._id
         assert res.json['data']['attributes']['title'] == 'Fork of ' + \
             public_project.title
+        assert public_project.logs.latest().date and fork.last_logged
 
     def test_cannot_fork_errors(
             self, app, fork_data, public_project_url,

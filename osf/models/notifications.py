@@ -93,6 +93,7 @@ class NotificationSubscription(BaseModel):
 
 class NotificationDigest(ObjectIDMixin, BaseModel):
     user = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.CASCADE)
+    provider = models.ForeignKey('AbstractProvider', null=True, blank=True, on_delete=models.CASCADE)
     timestamp = NonNaiveDateTimeField()
     send_type = models.CharField(max_length=50, db_index=True, validators=[validate_subscription_type, ])
     event = models.CharField(max_length=50)

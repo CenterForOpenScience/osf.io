@@ -35,6 +35,11 @@
             <div class="clearfix visible-md-block"></div>
             <div class="col-lg-4">
                 <div class="btn-toolbar node-control pull-right">
+                    % if node.get('storage_usage'):
+                    <div class="btn-group">
+                        <button style="pointer-events: auto;" class="btn disabled" data-toggle="tooltip" data-placement="bottom" title="This is the amount of OSF Storage used for this project.">${node['storage_usage']}</button>
+                    </div>
+                    % endif
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>
@@ -293,50 +298,110 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):
-<div class="row">
-    <div class="col-xs-12">
-        <div class="pp-notice m-b-md p-md clearfix">
-            % if node['has_moderated_preprint']:
-                This project represents ${'an ' if node['preprint_state'] == 'accepted' else 'a '}
-                ${node['preprint_state']} ${node['preprint_word']} submitted to ${node['preprint_provider']['name']}
-                <% icon_tooltip = ''%>
-                % if node['preprint_state'] == 'pending':
-                    % if node['preprint_provider']['workflow'] == 'post-moderation':
-                        <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
-                        ' removal by a moderator.'.format(preprint_word=node['preprint_word'])%>
-                    % else:
-                        <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
-                        'by a moderator.'.format(preprint_word=node['preprint_word'])%>
-                    % endif
-                % elif node['preprint_state'] == 'accepted':
-                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=node['preprint_word'])%>
-                % else:
-                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
+% if node['is_collected']:
+    <div class="collections-container">
+    % for i, collection in enumerate(node['collections'][:5]):
+    <div class="row">
+        <div class="col-xs-12">
+            <div style="margin-top: 5px;">
+                Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
+                <img style="margin: 0px 0px 2px 5px;" height="16", width="16" src="${collection['logo']}">
+                % if 'admin' in user['permissions']:
+                  <a href="${collection['url']}${node['id']}/edit"><i class="fa fa-edit" aria-label="Edit in Collection"></i></a>
                 % endif
-                <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>.
-            % else:
-                This project represents a ${node['preprint_word']}.
-            % endif
-            <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with ${node['preprint_word']} files.
-            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View ${node['preprint_word']}</a>
-            % if user['is_admin']:
-                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit ${node['preprint_word']}</a>
-            % endif
+            &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
+            </div>
+            <div id="metadata${i}" class="collection-details collapse">
+                <ul style="margin-left: 30px; padding: 0; margin-bottom: 0;" class="list-unstyled">
+
+                    % if collection['type']:
+                      <li>Type:&nbsp;&nbsp;<b>${collection['type']}</b></li>
+                    % endif
+
+                    % if collection['status']:
+                      <li>Status:&nbsp;&nbsp;<b>${collection['status']}</b></li>
+                    % endif
+
+                    % if collection['volume']:
+                      <li>Volume:&nbsp;&nbsp;<b>${collection['volume']}</b></li>
+                    % endif
+
+                    % if collection['issue']:
+                      <li>Issue:&nbsp;&nbsp;<b>${collection['issue']}</b></li>
+                    % endif
+
+                    % if collection['program_area']:
+                      <li>Program Area:&nbsp;&nbsp;<b>${collection['program_area']}</b></li>
+                    % endif
+
+                    % if collection['subjects']:
+                      <li>
+                        <dl class="dl-horizontal dl-subjects">
+                          <dt>Subjects:&nbsp;&nbsp;</dt>
+                          <dd>
+                          % for subject in collection['subjects']:
+                            <span class='subject-preview'>
+                              <small> ${subject} </small>
+                            </span>
+                          % endfor
+                          </dd>
+                        </dl>
+                      </li>
+                    % endif
+                </ul>
+            </div>
         </div>
     </div>
-</div>
+    % endfor
+    </div>
 % endif
 
-% if node['is_preprint_orphan'] and user['is_admin']:
+% for i, preprint in enumerate(node['visible_preprints']):
 <div class="row">
-    <div class="col-xs-12">
-        <div class="pp-notice pp-warning m-b-md p-md clearfix">
-            This project used to represent a preprint, but the primary preprint file has been moved or deleted. <a href="/preprints/submit/" class="btn btn-default btn-sm m-r-xs pull-right">Create a new preprint</a>
-        </div>
-    </div>
+   <div class="col-xs-12 col-md-6" style="margin-bottom:5px;">
+       <div style="margin-top: 5px; margin-bottom: 5px;">
+           Has supplemental materials for <a href="${preprint['url']}" target="_blank">${preprint['title']}</a>
+           on ${preprint['provider']['name']}
+         % if user['is_admin_parent'] or user['is_contributor']:
+            &nbsp;<span id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}"></span>
+        % endif
+       </div>
+       % if user['is_admin_parent'] or user['is_contributor']:
+           <div id="metadatapreprint${i}" class="collection-details collapse">
+               <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
+                    <li>
+                        Status:&nbsp;&nbsp;
+                            <b>
+                                % if preprint['is_withdrawn']:
+                                    Withdrawn
+                                % else:
+                                    ${preprint['state'].capitalize()}
+                                % endif
+                            </b>
+                        % if preprint['is_moderated'] and not preprint['is_withdrawn']:
+                            <% icon_tooltip = ''%>
+                            % if preprint['state'] == 'pending':
+                                % if preprint['provider']['workflow'] == 'post-moderation':
+                                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
+                                    ' removal by a moderator.'.format(preprint_word=preprint['word'])%>
+                                % else:
+                                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
+                                    'by a moderator.'.format(preprint_word=preprint['word'])%>
+                                % endif
+                            % elif preprint['state'] == 'accepted':
+                                <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>
+                            % else:
+                                <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>
+                            % endif
+                            <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
+                        % endif
+                    </li>
+               </ul>
+           </div>
+         % endif
+   </div>
 </div>
-% endif
+% endfor
 
 
 <div class="row">
@@ -400,29 +465,80 @@
         % if not node['anonymous']:
 
          <div class="citations panel panel-default">
-            <div class="panel-heading clearfix">
+             <div class="panel-heading clearfix">
                 <h3 class="panel-title"  style="padding-top: 3px">Citation</h3>
                 <div class="pull-right">
-                    <span class="permalink">${node['display_absolute_url']}</span><button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
+                    <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
                 </div>
-            </div>
-            <div class="panel-body" style="display:none">
-                <div id="citationList" class="m-b-md">
-                    <div class="citation-list">
-                        <div class="f-w-xl">APA</div>
-                            <span data-bind="text: apa"></span>
-                        <div class="f-w-xl m-t-md">MLA</div>
-                            <span data-bind="text: mla"></span>
-                        <div class="f-w-xl m-t-md">Chicago</div>
-                            <span data-bind="text: chicago"></span>
-                    </div>
-                </div>
-                <p><strong>Get more citations</strong></p>
-                <div id="citationStylePanel" class="citation-picker">
-                    <input id="citationStyleInput" type="hidden" />
-                </div>
-                <pre id="citationText" class="formatted-citation"></pre>
-            </div>
+             </div>
+             <div id="citationList">
+                 <div class="panel-body" style="display: none;">
+                     <div data-bind="visible: page() == 'loading'">
+                        <div class="spinner-loading-wrapper">
+                            <div class="ball-scale ball-scale-blue">
+                                <div></div>
+                            </div>
+                            <p class="m-t-sm fg-load-message"> Loading citations...  </p>
+                        </div>
+                     </div>
+                     <div data-bind="visible: page() == 'standard'" style="display: none;">
+                         % if not node['anonymous'] and 'admin' in user['permissions']:
+                             <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Customize</a>
+                         % endif
+                         <div class="m-b-md">
+                             <div class="citation-list">
+                                 <div class="f-w-xl">APA</div>
+                                 <span data-bind="text: apa"></span>
+                                 <div class="f-w-xl m-t-md">MLA</div>
+                                 <span data-bind="text: mla"></span>
+                                 <div class="f-w-xl m-t-md">Chicago</div>
+                                 <span data-bind="text: chicago"></span>
+                             </div>
+                         </div>
+                         <p><strong>Get more citations</strong></p>
+                         <div id="citationStylePanel" class="citation-picker">
+                             <input id="citationStyleInput" type="hidden" />
+                         </div>
+                         <pre id="citationText" class="formatted-citation"></pre>
+                     </div>
+                     <div data-bind="visible: page() == 'custom'" style="display: none;">
+                         % if not node['anonymous'] and 'admin' in user['permissions']:
+                            <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Edit</a>
+                         % endif
+
+                         <div class="m-b-md">
+                             <div class="citation-list">
+                                 <div class="row">
+                                     <div class="col-xs-1">
+                                         <span id="custom-citation-copy-button" type="button" data-bind="attr: {'data-clipboard-text': customCitation}" class="btn btn-sm btn-default"><i class="fa fa-copy"></i></span>
+                                     </div>
+                                     <div class="col-xs-9 m-l-sm">
+                                         <div class="f-w-xl">Cite as:</div>
+                                         <span data-bind="text: customCitation"></span>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                     <div data-bind="visible: page() == 'edit'" style="display: none;">
+                         <div class="row">
+                             <div class="col-md-12 form-group">
+                                 <textarea class="form-control"
+                                           placeholder="Enter custom citation"
+                                           data-bind="value: customCitation, valueUpdate: 'afterkeydown'"
+                                           type="text">
+
+                                 </textarea>
+                             </div>
+                         </div>
+                         <div class=" pull-right" role="group">
+                             <button type="button" data-bind="click: cancelCitation" class="btn btn-sm btn-default">Cancel</button>
+                             <button type="button" data-bind="click: clearCitation, disable: disableRemove" class="btn btn-sm btn-danger">Remove</button>
+                             <button type="button" data-bind="click: saveCitation, disable: disableSave" class="btn btn-sm btn-success">Save</button>
+                         </div>
+                     </div>
+                 </div>
+             </div>
          </div>
         % endif
 
@@ -529,6 +645,8 @@ ${parent.javascript_bottom()}
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
         },
+        storageRegions: ${ storage_regions | sjson, n },
+        storageFlagIsActive: ${ storage_flag_is_active | sjson, n },
         nodeCategories: ${ node_categories | sjson, n },
         analyticsMeta: {
             pageMeta: {
