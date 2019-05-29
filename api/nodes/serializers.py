@@ -31,7 +31,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.osfstorage.models import Region
-from osf.exceptions import NodeStateError
+from osf.exceptions import NodeStateError, BlacklistedEmailError
 from osf.models import (
     Comment, DraftRegistration, Institution,
     RegistrationSchema, AbstractNode, PrivateLink,
@@ -40,6 +40,7 @@ from osf.models import (
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
 from osf.models.preprint import Preprint
+from osf.models.validators import validate_email
 from website.project import new_private_link
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
@@ -1094,6 +1095,11 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
         if user_id and email:
             raise exceptions.ValidationError(detail='Do not provide an email when providing this user_id.')
+        if email:
+            try:
+                validate_email(email)
+            except BlacklistedEmailError:
+                raise exceptions.ValidationError(detail='Invalid email for unregistered contributor')
         if index > len(node.contributors):
             raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
 
