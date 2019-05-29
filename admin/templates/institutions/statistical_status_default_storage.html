@@ -1,8 +1,14 @@
 {% extends 'base.html' %}
 {% load static %}
+
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/carets.css" />
+{% endblock %}
+
 {% block title %}
 <title>{{ institution_name }} User List - Statistical Status of Default Storage</title>
 {% endblock title %}
+
 {% block content %}
   {% include 'institutions/statistical_status_default_storage_user.html' %}
     {% if not users|length %}

@@ -480,7 +480,6 @@ def configure_requests(node, **kwargs):
 @ember_flag_is_active('ember_project_detail_page')
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
-
     ret = _view_project(node, auth,
                         primary=primary,
                         embed_contributors=True,
@@ -507,6 +506,7 @@ def view_project(auth, node, **kwargs):
         'dataverse': None,
         'jupyterhub': None
     }
+
     if 'wiki' in ret['addons']:
         addons_widget_data['wiki'] = serialize_wiki_widget(node)
 
@@ -795,7 +795,7 @@ def _view_project(node, auth, primary=False,
             'category': node.category_display,
             'category_short': node.category,
             'used_quota': used_quota,
-            'max_quota': max_quota * 1024 ** 3,
+            'max_quota': max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3,
             'threshold': api_settings.WARNING_THRESHOLD,
             'node_type': node.project_or_component,
             'description': node.description or '',

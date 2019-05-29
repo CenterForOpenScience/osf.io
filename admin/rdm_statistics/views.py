@@ -43,7 +43,6 @@ import pdfkit
 from admin.base import settings
 from admin.rdm.utils import RdmPermissionMixin, get_dummy_institution
 from admin.rdm_addons import utils
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -61,12 +60,7 @@ class InstitutionListViewStat(RdmPermissionMixin, UserPassesTestMixin, TemplateV
 
     def test_func(self):
         """check user permissions"""
-        if not self.is_authenticated:
-            return False
-        # allow superuser and institution_administrator
-        if self.is_super_admin or self.is_admin:
-            return True
-        return False
+        return self.is_authenticated and (self.is_super_admin or self.is_admin)
 
     def get(self, request, *args, **kwargs):
         """get contexts"""
@@ -328,8 +322,6 @@ def create_pdf(request, is_pdf=True, **kwargs):
             return response
         except OSError as e:
             response = HttpResponse(str(e), content_type='text/html', status=501)
-        except Exception as e:
-            response = HttpResponse(str(e), content_type='text/html', status=501)
     else:
         response = HttpResponse(html_string, content_type='text/html')
     return response
@@ -346,7 +338,6 @@ def convert_to_pdf(html_string, file=False):
         'margin-left': '0.60in'
     }
     current_date = get_current_date()
-    # if file
     if file:
         pdf_file_name = 'statistics.' + current_date.strftime('%Y%m%d') + '.pdf'
         converted_pdf = pdf_file_name
@@ -402,22 +393,17 @@ class ImageView(RdmPermissionMixin, UserPassesTestMixin, View):
 
     def test_func(self):
         """check user permissions"""
-        institution_id = int(self.kwargs.get('institution_id'))
-        if not self.is_authenticated:
+        if not self.is_authenticated or not (self.is_super_admin or self.is_admin):
             return False
-        if self.is_super_admin or self.is_admin:
-            return self.has_auth(institution_id)
-        return False
+        institution_id = int(self.kwargs.get('institution_id'))
+        return self.has_auth(institution_id)
 
     def get(self, request, *args, **kwargs):
         """get context data"""
         graph_type = self.kwargs.get('graph_type')
         provider = self.kwargs.get('provider')
         institution_id = int(self.kwargs.get('institution_id'))
-        if Institution.objects.filter(pk=institution_id).exists():
-            institution = Institution.objects.get(pk=institution_id)
-        else:
-            institution = get_dummy_institution()
+        institution = Institution.objects.get(pk=institution_id)
 
         # create provider data
         provider_data = self.__get_data(provider=provider, institution=institution)
@@ -631,12 +617,12 @@ def send_stat_mail(request, **kwargs):
         attachment_file_data = get_pdf_data(institution=institution)
         mail_data = {
             'subject': '[[GakuNin RDM]] [[' + institution.name + ']] statistic information at ' + current_date.strftime('%Y/%m/%d'),
-            'content': 'statistic information of storage in ' + institution.name + ' at ' + current_date.strftime('%Y/%m/%d') + '\r\n\r\n' +
-            'This mail is automatically delivered from GakuNin RDM.\r\n*Please do not reply to this email.\r\n',
+            'content': 'statistic information of storage in ' + institution.name + ' at ' + current_date.strftime('%Y/%m/%d') + '\r\n\r\n'
+            + 'This mail is automatically delivered from GakuNin RDM.\r\n*Please do not reply to this email.\r\n',
             'attach_file': attachment_file_name,
             'attach_data': attachment_file_data
         }
-        response_hash[institution.name] = send_email(to_list=to_list, cc_list=cc_list, data=mail_data, user=user)
+        response_hash[institution.name] = send_email(to_list=to_list, cc_list=cc_list, data=mail_data)
     response_json = json.dumps(response_hash)
     response = HttpResponse(response_json, content_type='application/json')
     return response
@@ -651,13 +637,13 @@ def send_error_mail(err):
         'subject': '[[GakuNin RDM]] ERROR in statistic information collection at ' + current_date.strftime('%Y/%m/%d'),
         'content': 'ERROR OCCURED at ' + current_date.strftime('%Y/%m/%d') + '.\r\nERROR: \r\n' + str(err),
     }
-    send_email(to_list=to_list, cc_list=None, user=None, data=mail_data)
+    send_email(to_list=to_list, cc_list=None, data=mail_data)
     response_hash = {'state': 'fail', 'error': str(err)}
     response_json = json.dumps(response_hash)
     response = HttpResponse(response_json, content_type='application/json')
     return response
 
-def send_email(to_list, cc_list, data, user, backend='smtp'):
+def send_email(to_list, cc_list, data, backend='smtp'):
     """send email to administrator"""
     ret = {'is_success': True, 'error': ''}
     try:
@@ -668,7 +654,7 @@ def send_email(to_list, cc_list, data, user, backend='smtp'):
         message = EmailMessage(
             data['subject'],
             data['content'],
-            from_email=SUPPORT_EMAIL or user.username,
+            from_email=SUPPORT_EMAIL,
             to=to_list,
             cc=cc_list
         )
@@ -714,12 +700,10 @@ class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
 
     def test_func(self):
         """check user permissions"""
-        institution_id = int(self.kwargs.get('institution_id'))
-        if not self.is_authenticated:
+        if not self.is_authenticated or not (self.is_super_admin or self.is_admin):
             return False
-        if self.is_super_admin or self.is_admin:
-            return self.has_auth(institution_id)
-        return False
+        institution_id = int(self.kwargs.get('institution_id'))
+        return self.has_auth(institution_id)
 
     def get_context_data(self, **kwargs):
         """get contexts"""
@@ -748,7 +732,7 @@ class SendView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
             'attach_file': attachment_file_name,
             'attach_data': attachment_file_data
         }
-        ret = send_email(to_list=to_list, cc_list=cc_list, data=mail_data, user=user)
+        ret = send_email(to_list=to_list, cc_list=cc_list, data=mail_data)
         data = {
             'ret': ret,
             'mail_data': mail_data
@@ -822,67 +806,6 @@ class IndexView(TemplateView):
         }
 
         return self.render_to_response(ctx)
-
-
-class DummyCreateView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
-    """simulate data collecting."""
-    template_name = 'rdm_statistics/index.html'
-    raise_exception = True
-
-    def test_func(self):
-        """check user permissions"""
-        institution_id = int(self.kwargs.get('institution_id'))
-        return self.has_auth(institution_id)
-
-    def get_context_data(self, **kwargs):
-        """get contexts"""
-        ctx = super(DummyCreateView, self).get_context_data(**kwargs)
-        user = self.request.user
-        institution_id = int(kwargs['institution_id'])
-        institution = Institution.objects.get(pk=institution_id)
-        current_date = get_current_date()
-        result = self.insert_data(user=user, institution=institution)
-        data = {
-            'current date': current_date,
-            'data': result
-        }
-        ctx['data'] = data
-        return ctx
-
-    def insert_data(self, **kwargs):
-        """get data"""
-        user = kwargs['user']
-        institution = kwargs['institution']
-        user = kwargs['user']
-        # for test data
-        accounts_addons = [addon for addon in website_settings.ADDONS_AVAILABLE
-                           if 'accounts' in addon.configs]
-        addon_list = [addon.short_name for addon in accounts_addons]
-        provider_list = np.random.choice(addon_list, 3, replace=False)
-        TEST_TIMES = 2
-        TEST_RANGE = RANGE_STATISTICS * TEST_TIMES
-        RdmStatistics.objects.filter(institution=institution).delete()
-        for provider in provider_list:
-            current_date = get_current_date()
-            ext_list = ['jpg', 'png', 'docx', 'xlsx']
-            for ext_type in ext_list:
-                x = np.random.randint(1000 * TEST_RANGE / 10, size=TEST_RANGE)
-                y = np.random.randint(100 * TEST_RANGE / 10, size=TEST_RANGE)
-                count_list = np.sort(y)
-                size_list = np.sort(x)
-                for i in range(TEST_RANGE):
-                    date = current_date - datetime.timedelta(weeks=(TEST_RANGE - 1 - i))
-                    RdmStatistics.objects.create(project_id=7,
-                                                 owner=user,
-                                                 institution=institution,
-                                                 provider=provider,
-                                                 storage_account_id='aaa',
-                                                 project_root_path='/',
-                                                 sextention_type=ext_type,
-                                                 subtotal_file_number=count_list[i],
-                                                 subtotal_file_size=size_list[i],
-                                                 date_acquired=date)
-        return RdmStatistics.objects.all()
 
 def test_mail(request, status=None):
     """send email test """

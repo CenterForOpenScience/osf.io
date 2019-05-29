@@ -186,6 +186,47 @@ class TestAddTimestamp(ApiTestCase):
         nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
         nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
 
+    def test_add_timestamp_over2G(self):
+        ## create file_node
+        filename = 'test_file_add_timestamp'
+        file_node = create_test_file(node=self.node, user=self.user, filename=filename)
+
+        ## create tmp_dir
+        current_datetime = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
+        current_datetime_str = current_datetime.strftime('%Y%m%d%H%M%S%f')
+        tmp_dir = 'tmp_{}_{}_{}'.format(self.user._id, file_node._id, current_datetime_str)
+        os.mkdir(tmp_dir)
+
+        ## create tmp_file (file_node)
+        download_file_path = os.path.join(tmp_dir, filename)
+        with open(download_file_path, 'wb') as fout:
+            fout.write('test_file_add_timestamp_context')
+
+        ## add timestamp
+        addTimestamp = AddTimestamp()
+        file_data = {
+            'file_id': file_node._id,
+            'file_name': 'Hello.txt',
+            'file_path': os.path.join('/', filename),
+            'size': 21474836480,
+            'created': None,
+            'modified': None,
+            'version': '',
+            'provider': 'osfstorage'
+        }
+        ret = addTimestamp.add_timestamp(self.user._id, file_data, self.node._id, download_file_path, tmp_dir)
+        shutil.rmtree(tmp_dir)
+
+        ## check add_timestamp func response
+        nt.assert_equal(ret['verify_result'], 1)
+        nt.assert_equal(ret['verify_result_title'], 'OK')
+
+        ## check rdmfiletimestamptokenverifyresult record
+        rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
+        osfuser_id = Guid.objects.get(_id=self.user._id).object_id
+        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
+        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+
 class TestTimeStampTokenVerifyCheck(ApiTestCase):
     def setUp(self):
         super(TestTimeStampTokenVerifyCheck, self).setUp()

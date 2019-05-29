@@ -8,11 +8,11 @@
     %>
     Hello ${user.fullname},<br>
     <br>
-    Congratulations on sharing your preprint "${node.title}" on OSF Preprints: ${preprint.absolute_url}<br>
+    Congratulations on sharing your preprint "${node.title}" on GRDM Preprints: ${preprint.absolute_url}<br>
     <br>
-    Now that you've shared your preprint, take advantage of more OSF features:<br>
+    Now that you've shared your preprint, take advantage of more GRDM features:<br>
     <br>
-    *Upload supplemental, materials, data, and code to the OSF project associated with your preprint: ${node.absolute_url} Learn how: http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint<br>
+    *Upload supplemental, materials, data, and code to the GRDM project associated with your preprint: ${node.absolute_url} Learn how: http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint<br>
     <br>
     *Preregister your next study and become eligible for a $1000 prize: osf.io/prereg<br>
     <br>
@@ -23,9 +23,9 @@
     <br>
     Sincerely,<br>
     <br>
-    Your OSF Team<br>
+    Your GRDM Team<br>
     <br>
-    Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
+    Want more information? Visit https://rdm.nii.ac.jp/ to learn about the GakuNin RDM, or https://nii.ac.jp/ for information about its supporting organization, the National Institute of Informatics.<br>
     <br>
     Questions? Email ${osf_contact_email}<br>
 

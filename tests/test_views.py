@@ -5155,6 +5155,21 @@ class TestTimestampView(OsfTestCase):
         assert 'class="creator_name" value="Freddie Mercury' in res
         assert 'class="creator_email" value="freddiemercury' in res
 
+    @mock.patch('website.project.views.node.find_bookmark_collection')
+    def test_timestamp_no_verify_user(self, mock_collection):
+        ts_list = RdmFileTimestamptokenVerifyResult.objects.filter(
+            project_id=self.project._id,
+            path='/osfstorage_test_file2.status_3'
+        ).update(
+            verify_user=None,
+            verify_date=None
+        )
+        res = self.app.get(self.project.url + 'timestamp/', auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        assert 'osfstorage_test_file2.status_3' in res
+        assert 'Unknown' in res
+
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult.ready')
     @mock.patch('celery.contrib.abortable.AbortableTask.is_aborted')
     @mock.patch('website.project.views.node.find_bookmark_collection')
@@ -5374,7 +5389,6 @@ def test_get_storage_region_list_with_own_institution():
     new_region._id = institution._id
     new_region.save()
     assert_equal(website_view.get_storage_region_list(user)[0]['name'], new_region.name)
-
 
 
 if __name__ == '__main__':

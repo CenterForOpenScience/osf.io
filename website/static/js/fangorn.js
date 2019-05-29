@@ -940,58 +940,6 @@ function _fangornComplete(treebeard, file) {
  * @this Dropzone
  * @private
  */
-
-function test_fangornDropzoneSuccess(treebeard, file, response) {
-    treebeard.options.uploadInProgress = false;
-    var parent = file.treebeardParent,
-        item,
-        revisedItem,
-        child;
-    for (var i = 0; i < parent.children.length; i++) {
-        child = parent.children[i];
-        if (!child.data.tmpID){
-            continue;
-        }
-        if (child.data.tmpID === file.tmpID) {
-            item = child;
-        }
-    }
-    // RESPONSES
-    // OSF : Object with actionTake : "file_added"
-    // DROPBOX : Object; addon : 'dropbox'
-    // S3 : Nothing
-    // GITHUB : Object; addon : 'github'
-    // Dataverse : Object, actionTaken : file_uploaded
-    revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
-    if (!revisedItem && response) {
-        item.data = treebeard.options.lazyLoadPreprocess.call(this, response).data;
-        inheritFromParent(item, item.parent());
-    }
-    if (item.data.tmpID) {
-        item.data.tmpID = null;
-        item.data.uploadState('completed');
-    }
-    // Remove duplicates if file was updated
-    var status = file.xhr.status;
-    if (status === 200) {
-        parent.children.forEach(function(child) {
-            if (child.data.name === item.data.name && child.id !== item.id) {
-                child.removeSelf();
-            }
-        });
-    }
-    var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
-    addFileStatus(treebeard, file, true, '', url);
-
-    if (item.data.provider === 'dataverse') {
-        item.parent().data.datasetDraftModified = true;
-    }
-
-   treebeard.redraw();
-
-}
-
-
 function _fangornDropzoneSuccess(treebeard, file, response) {
     treebeard.options.uploadInProgress = false;
 
@@ -1007,14 +955,11 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     var parent = file.treebeardParent, item,revisedItem, child;
 
     for (var i = 0; i < parent.children.length; i++) {
-
         child = parent.children[i];
-
         if (!child.data.tmpID){
             continue;
         }
         if (child.data.tmpID === file.tmpID) {
-
             item = child;
         }
     }
@@ -1043,19 +988,14 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         });
     }
     var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
-
     addFileStatus(treebeard, file, true, '', url);
 
     if (item.data.provider === 'dataverse') {
-
         item.parent().data.datasetDraftModified = true;
     }
 
     treebeard.redraw();
 }
-
-
-
 
 function _fangornDropzoneRemovedFile(treebeard, file, message, xhr) {
     addFileStatus(treebeard, file, false, 'Upload Canceled.', '');
@@ -1580,14 +1520,17 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 
 function _fangornTitleColumn(item, col) {
     var tb = this;
-    if(item.data.nodeRegion){
-        if(window.contextVars.isCustomStorageLocation){
+    if (item.data.nodeRegion && item.data.provider !== 'osfstorage') {
+        return _fangornTitleColumnHelper(tb, item, col, item.data.name + ' (' + item.data.nodeRegion + ')', '/', 'fg-file-links');
+    }
+    if (item.data.nodeRegion) {
+        if (window.contextVars.isCustomStorageLocation) {
             return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion, '/', 'fg-file-links');
         }
-        else if(item.data.nodeRegion===item.data.addonFullname){
+        else if (item.data.nodeRegion===item.data.addonFullname) {
             return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion, '/', 'fg-file-links');
         }
-        else{
+        else {
             return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');
         }
     }

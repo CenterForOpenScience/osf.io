@@ -103,10 +103,10 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         if used_quota_abbr[1] == 'B':
             used_quota_abbr = '{:.0f}[{}]'.format(used_quota_abbr[0], used_quota_abbr[1])
         else:
-            size_unit = used_quota_abbr[1].replace('B', 'iB', 1)
+            size_unit = used_quota_abbr[1]
             used_quota_abbr = '{:.1f}[{}]'.format(used_quota_abbr[0], size_unit)
 
-        used_rate = float(used_quota) / (max_quota * 1024 ** 3)
+        used_rate = float(used_quota) / (max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3)
         icon_name = None
         if used_rate < api_settings.WARNING_THRESHOLD:
             icon_name = 'storage_ok.png'

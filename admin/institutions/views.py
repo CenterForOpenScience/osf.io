@@ -11,7 +11,6 @@ from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from admin.rdm.utils import RdmPermissionMixin
-from django.core.exceptions import PermissionDenied
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
@@ -20,6 +19,8 @@ from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
 from addons.osfstorage.models import Region
 from django.http import HttpResponseRedirect
+from api.base import settings as api_settings
+
 
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -113,26 +114,19 @@ class InstitutionDefaultStorageDisplay(RdmPermissionMixin, TemplateView):
         kwargs['region'].waterbutler_settings = json.dumps(kwargs['region'].waterbutler_settings)
         return kwargs
 
-#from django.contrib.admin.views.decorators import staff_member_required
-#@staff_member_required
-class InstitutionDefaultStorageDetail(RdmPermissionMixin, View):
+class InstitutionDefaultStorageDetail(RdmPermissionMixin, UserPassesTestMixin, View):
     permission_required = None
     raise_exception = False
     template_name = 'institutions/default_storage.html'
 
     def test_func(self):
         """check user permissions"""
-        if not self.is_super_admin and self.is_admin and self.request.user.affiliated_institutions.all().count() > 0:
-            return True
-        else:
-            return False
+        return not self.is_super_admin and self.is_admin and \
+            self.request.user.affiliated_institutions.all().count() > 0
 
     def get(self, request, *args, **kwargs):
-        if not self.is_super_admin and self.is_admin and self.request.user.affiliated_institutions.all().count() > 0:
-            view = InstitutionDefaultStorageDisplay.as_view()
-            return view(request, *args, **kwargs)
-        else:
-            raise PermissionDenied
+        view = InstitutionDefaultStorageDisplay.as_view()
+        return view(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         post_data = request.POST
@@ -268,14 +262,14 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
 
     def custom_size_abbreviation(self, size, abbr):
         if abbr == 'B':
-            return (size / 1024, 'KiB')
-        return size, abbr.replace('B', 'iB')
+            return (size / api_settings.DEFAULT_SIZE_UNIT, 'KB')
+        return size, abbr
 
     def get_queryset(self):
         user_list = []
         for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
             max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
-            max_quota_bytes = max_quota * 1024 ** 3
+            max_quota_bytes = max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3
             remaining_quota = max_quota_bytes - used_quota
             used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
             remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
@@ -337,8 +331,8 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, L
 
     def custom_size_abbreviation(self, size, abbr):
         if abbr == 'B':
-            return (size / 1024, 'KiB')
-        return size, abbr.replace('B', 'iB')
+            return (size / api_settings.DEFAULT_SIZE_UNIT, 'KB')
+        return size, abbr
 
     def get_queryset(self):
         user_list = []
@@ -348,7 +342,7 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, L
 
             for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
                 max_quota, used_quota = quota.get_quota_info(user, UserQuota.CUSTOM_STORAGE)
-                max_quota_bytes = max_quota * 1024 ** 3
+                max_quota_bytes = max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3
                 remaining_quota = max_quota_bytes - used_quota
                 used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
                 remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))

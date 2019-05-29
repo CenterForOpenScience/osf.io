@@ -311,10 +311,7 @@ INSTALLED_APPS += ('addons.nextcloud',)
 ADDONS_FOLDER_CONFIGURABLE.append('nextcloud')
 ADDONS_OAUTH.append('nextcloud')
 
-
-#TST commands delmiter
-TST_COMMAND_DELIMITER = '\0'
-
+TST_COMMAND_DELIMITER = ' '
 # RSA key generation settings
 SSL_GENERATE_KEY = 'openssl' + TST_COMMAND_DELIMITER + \
                    'genrsa' + TST_COMMAND_DELIMITER + \
@@ -429,3 +426,4 @@ TIME_STAMP_STORAGE_NOT_ACCESSIBLE_MSG = 'Error: storage service connection error
 # Quota settings
 DEFAULT_MAX_QUOTA = 100
 WARNING_THRESHOLD = 0.9
+DEFAULT_SIZE_UNIT = 1000

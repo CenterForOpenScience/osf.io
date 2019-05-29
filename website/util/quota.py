@@ -41,8 +41,8 @@ def abbreviate_size(size):
     abbr_dict = {0: 'B', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
 
     power = 0
-    while size > 1024 and power < 4:
-        size /= 1024
+    while size > api_settings.DEFAULT_SIZE_UNIT and power < 4:
+        size /= api_settings.DEFAULT_SIZE_UNIT
         power += 1
 
     return (size, abbr_dict[power])

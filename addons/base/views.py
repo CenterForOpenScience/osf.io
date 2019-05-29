@@ -488,15 +488,6 @@ def create_waterbutler_log(payload, **kwargs):
                 raise HTTPError(httplib.BAD_REQUEST)
 
             metadata['path'] = metadata['path'].lstrip('/')
-
-            # Create/update timestamp record
-            if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
-                metadata = payload.get('metadata') or payload.get('destination')
-
-                if metadata['kind'] == 'file':
-                    created_flag = action == NodeLog.FILE_ADDED
-                    timestamp.file_created_or_updated(node, metadata, user.id, created_flag)
-
             node_addon.create_waterbutler_log(auth, action, metadata)
 
         # Create/update timestamp record

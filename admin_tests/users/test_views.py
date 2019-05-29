@@ -877,8 +877,20 @@ class TestGetUserInstitutionQuota(AdminTestCase):
     def setUp(self):
         super(TestGetUserInstitutionQuota, self).setUp()
 
+        self.institution = InstitutionFactory()
         self.user = UserFactory()
+        self.user.affiliated_institutions.add(self.institution)
         self.view = views.UserDetailsView()
+
+    def test_admin_login(self):
+        request = RequestFactory().get(reverse('users:user_details', kwargs={'guid': self.user._id}))
+        request.user = self.user
+        request.user.is_active = True
+        request.user.is_registered = True
+        request.user.is_superuser = False
+        request.user.is_staff = True
+        view = setup_view(self.view, request, guid=self.user._id)
+        nt.assert_true(view.test_func())
 
     def test_get_default_quota(self):
         response = setup_view(

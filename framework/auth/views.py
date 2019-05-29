@@ -732,7 +732,6 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         external_id_provider=external_id_provider,
         destination=destination
     )
-    print('Confirmation URL:', confirmation_url)
 
     try:
         merge_target = OSFUser.objects.get(emails__address=email)
@@ -854,7 +853,6 @@ def register_user(**kwargs):
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=user.username)
         message = language.REGISTRATION_SUCCESS.format(email=user.username)
-        print(message)
         return {'message': message}
     else:
         return {'message': 'You may now log in.'}
