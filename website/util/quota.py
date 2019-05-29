@@ -154,7 +154,12 @@ def update_default_storage(user):
         user_settings = user.get_addon('osfstorage')
         institution = user.affiliated_institutions.first()
         if institution is not None:
-            user_settings.set_region(Region.objects.get(_id=institution._id)._id)
+            try:
+                region = Region.objects.get(_id=institution._id)
+            except Region.DoesNotExist:
+                pass
+            else:
+                user_settings.set_region(region._id)
 
 def get_node_file_list(file_node):
     if 'file' in file_node.type:
