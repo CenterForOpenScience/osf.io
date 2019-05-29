@@ -88,10 +88,24 @@ def iqbrims_folder_list(node_addon, **kwargs):
 def iqbrims_get_status(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
+    inst_ids = node.affiliated_institutions.values('id')
+    try:
+        opt = RdmAddonOption.objects.filter(
+            provider=SHORT_NAME,
+            institution_id__in=Subquery(inst_ids),
+            management_node__isnull=False,
+            is_allowed=True
+        ).first()
+    except RdmAddonOption.DoesNotExist:
+        raise HTTPError(http.FORBIDDEN)
     status = iqbrims.get_status()
     status['labo_list'] = ['{}:{}'.format(l['id'], l['text'])
                            for l in settings.LABO_LIST]
     status['review_folders'] = REVIEW_FOLDERS
+    is_admin = opt.management_node._id == node._id
+    status['is_admin'] = is_admin
+    if is_admin:
+        status['task_url'] = settings.FLOWABLE_TASK_URL
     return {'data': {'id': node._id, 'type': 'iqbrims-status',
                      'attributes': status}}
 

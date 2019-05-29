@@ -20,6 +20,7 @@ FLOWABLE_HOST = 'http://localhost:9977/flowable-rest/'
 FLOWABLE_RESEARCH_APP_ID = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
 FLOWABLE_USER = 'testuser'
 FLOWABLE_PASSWORD = 'testpass'
+FLOWABLE_TASK_URL = 'http://localhost:9999/flowable-task/'
 
 LABO_LIST = [{ 'id': 'rna', 'text': 'RNA分野' },
              { 'id': 'xxx', 'text': 'XXX分野' },

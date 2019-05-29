@@ -18,6 +18,8 @@ function IQBRIMSWidget() {
   self.loadCompleted = ko.observable(false);
   self.modeDeposit = ko.observable(false);
   self.modeCheck = ko.observable(false);
+  self.modeAdmin = ko.observable(false);
+  self.flowableTaskUrl = ko.observable(undefined);
   self.depositHelp = ko.observable(language.depositHelp);
   self.checkHelp = ko.observable(language.checkHelp);
   self.formEntries = ko.observableArray();
@@ -67,6 +69,8 @@ function IQBRIMSWidget() {
     }).done(function (data) {
       console.log(logPrefix, 'loaded: ', data);
       var status = data['data']['attributes'];
+      self.modeAdmin(status['is_admin']);
+      self.flowableTaskUrl(status['task_url']);
       if (status['state'] == 'deposit') {
         self.modeDeposit(true);
         self.modeCheck(false);

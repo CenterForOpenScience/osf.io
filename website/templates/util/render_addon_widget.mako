@@ -212,29 +212,37 @@
                       <div class="text-danger">Error occurred</div>
                       <!-- /ko -->
                       <!-- ko if: loadCompleted -->
-                        <!-- ko if: modeDeposit || modeCheck -->
-                        <div style="margin: 0.5em;">
-                            <div data-bind="foreach: formEntries">
-                                <div class="col-sm-4 col-md-3" style="font-weight: bold;" data-bind="text: title">
-                                </div>
-                                <div class="col-sm-8 col-md-9" data-bind="text: value">
-                                </div>
-                            </div>
-                        </div>
+                        <!-- ko if: modeAdmin -->
+                          <i>Management Project</i>
+                          <div>
+                            <a data-bind="attr: {href: flowableTaskUrl}" target="_blank">Flowable Task Service</a>
+                          </div>
                         <!-- /ko -->
-                        <!-- ko ifnot: modeDeposit || modeCheck -->
-                        <div class="form-group">
-                          <button type="button" class="btn btn-primary"
-                                  data-bind="click: gotoDepositForm">Deposit Manuscript & Data</button>
-                          <small class="form-text text-muted" data-bind="text: depositHelp">
-                          </small>
-                        </div>
-                        <div class="form-group">
-                          <button type="button" class="btn btn-primary"
-                                  data-bind="click: gotoCheckForm">Image Scan Service</button>
-                          <small class="form-text text-muted" data-bind="text: checkHelp">
-                          </small>
-                        </div>
+                        <!-- ko ifnot: modeAdmin -->
+                          <!-- ko if: modeDeposit || modeCheck -->
+                          <div style="margin: 0.5em;">
+                              <div data-bind="foreach: formEntries">
+                                  <div class="col-sm-4 col-md-3" style="font-weight: bold;" data-bind="text: title">
+                                  </div>
+                                  <div class="col-sm-8 col-md-9" data-bind="text: value">
+                                  </div>
+                              </div>
+                          </div>
+                          <!-- /ko -->
+                          <!-- ko ifnot: modeDeposit || modeCheck -->
+                          <div class="form-group">
+                            <button type="button" class="btn btn-primary"
+                                    data-bind="click: gotoDepositForm">Deposit Manuscript & Data</button>
+                            <small class="form-text text-muted" data-bind="text: depositHelp">
+                            </small>
+                          </div>
+                          <div class="form-group">
+                            <button type="button" class="btn btn-primary"
+                                    data-bind="click: gotoCheckForm">Image Scan Service</button>
+                            <small class="form-text text-muted" data-bind="text: checkHelp">
+                            </small>
+                          </div>
+                          <!-- /ko -->
                         <!-- /ko -->
                       <!-- /ko -->
                     </div>
