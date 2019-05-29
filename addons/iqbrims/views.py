@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from functools import reduce
 import httplib as http
 import json
 import logging
@@ -7,6 +8,8 @@ from django.db.models import Subquery
 from flask import request
 
 from addons.iqbrims.client import IQBRIMSClient, IQBRIMSFlowableClient
+from framework.auth import Auth
+from website.mails import Mail, send_mail
 from framework.exceptions import HTTPError
 
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
@@ -165,8 +168,42 @@ def iqbrims_set_status(**kwargs):
 def iqbrims_post_notify(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
-    # TODO
     logger.info('Notified: {}'.format(request.data))
+    data = json.loads(request.data)
+    notify_type = data['notify_type']
+    to = data['to']
+    nodes = []
+    if 'user' in to:
+        nodes.append((node, 'iqbrims_user'))
+    if 'admin' in to:
+        inst_ids = node.affiliated_institutions.values('id')
+        try:
+            opt = RdmAddonOption.objects.filter(
+                provider=SHORT_NAME,
+                institution_id__in=Subquery(inst_ids),
+                management_node__isnull=False,
+                is_allowed=True
+            ).first()
+        except RdmAddonOption.DoesNotExist:
+            raise HTTPError(http.FORBIDDEN)
+        nodes.append((opt.management_node, 'iqbrims_management'))
+    for n, email_template in nodes:
+        action = 'iqbrims_{}'.format(notify_type)
+        n.add_log(
+            action=action,
+            params={
+                'project': n.parent_id,
+                'node': node._id,
+            },
+            auth=Auth(user=node.creator),
+        )
+        emails = reduce(lambda x, y: x + y,
+                        [[e.address for e in u.emails.all()]
+                         for u in n.contributors])
+        for email in emails:
+            send_mail(email, Mail(email_template, action),
+                      title=n.title, guid=n._id, author=node.creator,
+                      notify_type=notify_type, mimetype='html')
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
