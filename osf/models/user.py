@@ -863,7 +863,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # The user can log in if they have set a password OR
         # have a verified external ID, e.g an ORCID
         can_login = self.has_usable_password() or (
-            'VERIFIED' in sum([each.values() for each in self.external_identity.values()], [])
+            'VERIFIED' in sum([list(each.values()) for each in list(self.external_identity.values())], [])
         )
         self.is_active = (
             self.is_registered and

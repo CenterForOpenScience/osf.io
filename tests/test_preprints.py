@@ -1902,20 +1902,20 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint', 'workrelation', 'creativework'}
 
         nodes = dict(enumerate(res))
-        preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
+        preprint = nodes.pop(next(k for k, v in iter(nodes.items()) if v['@type'] == 'preprint'))
         assert preprint['title'] == self.preprint.title
         assert preprint['description'] == self.preprint.description
         assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.is_public or self.preprint.is_preprint_orphan)
         assert preprint['date_updated'] == self.preprint.modified.isoformat()
         assert preprint['date_published'] == self.preprint.date_published.isoformat()
 
-        tags = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'tag']
-        through_tags = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughtags']
+        tags = [nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'tag']
+        through_tags = [nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'throughtags']
         assert sorted(tag['@id'] for tag in tags) == sorted(tt['tag']['@id'] for tt in through_tags)
         assert sorted(tag['name'] for tag in tags) == ['preprint', 'spoderman']
 
-        subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'subject']
-        through_subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughsubjects']
+        subjects = [nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'subject']
+        through_subjects = [nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'throughsubjects']
         s_ids = [s['@id'] for s in subjects]
         ts_ids = [ts['subject']['@id'] for ts in through_subjects]
         cs_ids = [i for i in set(s.get('central_synonym', {}).get('@id') for s in subjects) if i]
@@ -1927,7 +1927,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             assert s['uri'].endswith('v2/taxonomies/{}/'.format(subject._id))  # This cannot change
         assert set(subject['name'] for subject in subjects) == set([s.text for s in self.preprint.subjects.all()] + [s.bepress_subject.text for s in self.preprint.subjects.filter(bepress_subject__isnull=False)])
 
-        people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
+        people = sorted([nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'person'], key=lambda x: x['given_name'])
         expected_people = sorted([{
             '@type': 'person',
             'given_name': u'BoJack',
@@ -1946,7 +1946,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         assert people == expected_people
 
-        creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
+        creators = sorted([nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
         assert creators == [{
             '@id': creators[0]['@id'],
             '@type': 'creator',
@@ -1963,7 +1963,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
-        contributors = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'contributor']
+        contributors = [nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'contributor']
         assert contributors == [{
             '@id': contributors[0]['@id'],
             '@type': 'contributor',
@@ -1972,7 +1972,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
-        agentidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'agentidentifier'}
+        agentidentifiers = {nodes.pop(k)['uri'] for k, v in list(nodes.items()) if v['@type'] == 'agentidentifier'}
         assert agentidentifiers == set([
             'mailto:' + self.user.username,
             'mailto:' + self.preprint.creator.username,
@@ -1992,7 +1992,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
         assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/')]
 
-        relation = nodes.pop(nodes.keys()[0])
+        relation = nodes.pop(list(nodes.keys())[0])
         assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
 
         assert nodes == {}
@@ -2437,7 +2437,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         options.update(kwargs)
         options = {
             key: value
-            for key, value in options.iteritems()
+            for key, value in options.items()
             if value is not None
         }
         message, signature = signing.default_signer.sign_payload(options)

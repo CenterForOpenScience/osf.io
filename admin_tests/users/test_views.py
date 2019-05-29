@@ -735,7 +735,7 @@ class TestGetLinkView(AdminTestCase):
         view = views.GetUserConfirmationLink()
         view = setup_view(view, request, guid=user._id)
 
-        user_token = user.email_verifications.keys()[0]
+        user_token = list(user.email_verifications.keys())[0]
         ideal_link_path = '/confirm/{}/{}/'.format(user._id, user_token)
         link = view.get_link(user)
         link_path = str(furl.furl(link).path)
@@ -748,12 +748,12 @@ class TestGetLinkView(AdminTestCase):
         view = views.GetUserConfirmationLink()
         view = setup_view(view, request, guid=user._id)
 
-        old_user_token = user.email_verifications.keys()[0]
+        old_user_token = list(user.email_verifications.keys())[0]
         user.email_verifications[old_user_token]['expiration'] = datetime.utcnow().replace(tzinfo=pytz.utc) - timedelta(hours=24)
         user.save()
 
         link = view.get_link(user)
-        new_user_token = user.email_verifications.keys()[0]
+        new_user_token = list(user.email_verifications.keys())[0]
 
         link_path = str(furl.furl(link).path)
         ideal_link_path = '/confirm/{}/{}/'.format(user._id, new_user_token)

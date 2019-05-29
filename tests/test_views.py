@@ -4142,7 +4142,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
     def test_get_notifications(self):
         user = AuthUserFactory()
-        mailing_lists = dict(user.osf_mailing_lists.items() + user.mailchimp_mailing_lists.items())
+        mailing_lists = dict(list(user.osf_mailing_lists.items()) + list(user.mailchimp_mailing_lists.items()))
         url = api_url_for('user_notifications')
         res = self.app.get(url, auth=user.auth)
         assert_equal(mailing_lists, res.json['mailing_lists'])

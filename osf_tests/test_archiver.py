@@ -261,7 +261,7 @@ def generate_schema_from_data(data):
                 'type': 'object',
                 'properties': [
                     from_property(pid, sp)
-                    for pid, sp in prop['value'].items()
+                    for pid, sp in list(prop['value'].items())
                 ]
             }
         else:
@@ -282,7 +282,7 @@ def generate_schema_from_data(data):
                 'type': 'object',
                 'properties': [
                     from_property(id, value)
-                    for id, value in question.get('value').items()
+                    for id, value in list(question.get('value').items())
                 ]
             }
         else:
@@ -770,7 +770,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
     def test_archive_success_same_file_in_component(self):
         file_tree = file_tree_factory(3, 3, 3)
-        selected = select_files_from_tree(file_tree).values()[0]
+        selected = list(select_files_from_tree(file_tree).values())[0]
 
         child_file_tree = file_tree_factory(0, 0, 0)
         child_file_tree['children'] = [selected]

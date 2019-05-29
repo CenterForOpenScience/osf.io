@@ -134,7 +134,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
             'read': []
         }
         for i in range(0, 25):
-            perm = random.choice(users.keys())
+            perm = random.choice(list(users.keys()))
             perms = []
             if perm == 'admin':
                 perms = ['read', 'write', 'admin', ]
