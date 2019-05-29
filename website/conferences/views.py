@@ -300,6 +300,11 @@ def conference_results(meeting):
         'settings': settings,
     }
 
+
+def redirect_to_conference_results(meeting):
+    return redirect('/meetings/{}'.format(meeting))
+
+
 def conference_submissions(**kwargs):
     """Return data for all OSF4M submissions.
 
