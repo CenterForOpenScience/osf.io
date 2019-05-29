@@ -101,14 +101,14 @@ create_temporary_auth_group_table = """
 create_group_id_column = """
     ALTER TABLE {table}
     ADD column group_id_copy INTEGER;
-"""
+    """
 
 # Reverse migration create group id column
 create_group_id_column_with_constraint = """
     ALTER TABLE {table}
     ADD column group_id_copy INTEGER
     REFERENCES auth_group_copy(id);
-"""
+    """
 
 # Reverse migration - repoints tables with FK's to auth_group to the new auth_group table
 repoint_auth_group_foreign_keys = """
@@ -120,14 +120,29 @@ repoint_auth_group_foreign_keys = """
     ALTER TABLE {table} RENAME group_id_copy TO group_id;
 """
 
+# Reverse migration -
 set_not_null_constraint = """
     ALTER TABLE {table} ALTER COLUMN group_id SET NOT NULL;
 """
 
+# Reverse migration -
 create_index_on_group_id = """
     CREATE INDEX {table}_group_id ON {table} (group_id);
 """
 
+select_auth_group_permissions_auth_group_constraint = """
+    SELECT conname
+    FROM pg_constraint
+    WHERE conrelid = 'auth_group_permissions'::regclass::oid
+    AND confrelid = 'auth_group'::regclass::oid;
+"""
+
+# Reverse migration - _
+set_deferred_initially_deferred = """
+    ALTER TABLE auth_group_permissions
+    ALTER CONSTRAINT {}
+    DEFERRABLE INITIALLY DEFERRED;
+"""
 
 # List of tables that have foreign keys to auth_group
 related_auth_group_tables = [
@@ -162,6 +177,11 @@ swap_old_auth_group_table_with_new_auth_group_table = """
     ALTER TABLE osf_preprintgroupobjectpermission ADD CONSTRAINT unique_preprint_group_object_permission UNIQUE ("group_id", "permission_id", "content_object_id");
 """
 
+def get_constraint_name():
+    with connection.cursor() as cursor:
+        cursor.execute(select_auth_group_permissions_auth_group_constraint)
+        constraint_name = cursor.fetchone()[0]
+        return constraint_name
 
 # Reverse migration
 def finalize_reverse_node_guardian_migration():
@@ -171,6 +191,7 @@ def finalize_reverse_node_guardian_migration():
 
     Creates new auth_group table that only contains groups not added with node guardian work
     """
+
     with connection.cursor() as cursor:
         cursor.execute(drop_node_group_object_permission_table)
         logger.info('Finished deleting records from NodeGroupObjectPermission table.')
@@ -196,6 +217,12 @@ def finalize_reverse_node_guardian_migration():
 
         cursor.execute(swap_old_auth_group_table_with_new_auth_group_table)
         logger.info('Swapped old auth_group table with new auth_group table.')
+
+    # Altering foreign key constraint on auth_group_permission table to match existing configuration
+    constraint_name = get_constraint_name()
+    with connection.cursor() as cursor:
+        cursor.execute(set_deferred_initially_deferred.format(constraint_name))
+
 
 def reverse_guardian_migration(state, schema):
     migrations = [
