@@ -577,6 +577,24 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             expect_errors=True)
         assert res.status_code == 409
 
+    def test_unregistered_contributor_invalid_email(
+            self, app, user, url_public):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'permission': 'admin',
+                    'email': 'jdoe@example.com',
+                    'full_name': 'John Doe'
+                }
+            }
+        }
+        res = app.post_json_api(
+            url_public, data, auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Invalid email for unregistered contributor'
+
     def test_contributor_create_invalid_data(
             self, app, user_three, url_public):
         res = app.post_json_api(
