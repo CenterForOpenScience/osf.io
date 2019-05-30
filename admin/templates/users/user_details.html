@@ -2,13 +2,13 @@
 {% load static %}
 {% load node_extras %}
 {% block title %}
-<title>{{ current_user.name }} - Statistical Status of Default Storage</title>
+<title>{{ current_user.name }} - Statistical Status of Institutional Storage</title>
 {% endblock title %}
 
 {% block content %}
 <div class="container-fluid">
-    <h2 id="title">Statistical Status of Default Storage</h2>
-    <h3 id="sub-title">Default Storage > {{ current_user.name }}</h3>
+    <h2 id="title">Statistical Status of Institutional Storage</h2>
+    <h3 id="sub-title">Institutional Storage > {{ current_user.name }}</h3>
     <div class="row">
         <div class="col-md-12">
             <table class="table table-striped">
@@ -47,7 +47,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>Quota for Default Storage (GB)</td>
+                        <td>Quota for Institutional Storage (GB)</td>
                         <td>
                             <form method="post" action="{% url 'users:institution_quota' current_user.id %}" class="row">
                                 {% csrf_token %}

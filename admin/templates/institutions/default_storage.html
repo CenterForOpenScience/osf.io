@@ -1,8 +1,19 @@
-{% extends "base.html" %} {% load static %} {% block top_includes %}
-<link rel="stylesheet" type="text/css" href="/static/css/institutions.css" /> {% endblock %} {% load user_extras %} {% load spam_extras %} {% block title %}
-<title>Institution</title>
-{% endblock title %} {% block content %}
-<h1>Default Storage</h1>
+{% extends "base.html" %}
+{% load static %}
+
+{% block top_includes %}
+<link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+
+{% load user_extras %}
+{% load spam_extras %}
+
+{% block title %}
+<title>Institutional Storage</title>
+{% endblock title %}
+
+{% block content %}
+<h1>Institutional Storage</h1>
 <div id="content-main">
     <form enctype="multipart/form-data" action="" method="post" id="region_form" novalidate="">{% csrf_token %}
         <div class="row" style="margin-bottom: 15px;">
@@ -70,4 +81,5 @@
     </form>
 </div>
 
-<br class="clear"> {% endblock content %}
+<br class="clear">
+{% endblock content %}
