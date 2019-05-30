@@ -1890,3 +1890,6 @@ CHRONOS_HOST = os_env.get('CHRONOS_HOST', 'https://sandbox.api.chronos-oa.com')
 VERIFY_CHRONOS_SSL_CERT = not DEV_MODE
 # Maximum minutes we allow ChronosSubmission status to be stale (only update when user is requesting it)
 CHRONOS_SUBMISSION_UPDATE_TIME = timedelta(minutes=5)
+
+DS_METRICS_OSF_TOKEN = None
+DS_METRICS_BASE_FOLDER = None

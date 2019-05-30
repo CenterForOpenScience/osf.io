@@ -2,14 +2,26 @@
 import csv
 import datetime
 import logging
-import os
+import requests
+import tempfile
+import zipfile
 
 from collections import OrderedDict
 from datetime import date
 from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import connection
+from requests_oauthlib import OAuth2
 
+try:
+    from StringIO import StringIO  # Python2
+except ImportError:
+    from io import StringIO  # Python 3
+
+from website.settings import DS_METRICS_BASE_FOLDER, DS_METRICS_OSF_TOKEN
+
+DEFAULT_API_VERSION = '2.14'
+TEMP_FOLDER = tempfile.mkdtemp(suffix='/')
 VALUES = (
     'file_version_id',
     'file_id',
@@ -248,7 +260,7 @@ def summarize(sql, content_type, start, end, cursor):
     return cursor.fetchall()
 
 
-def gather_usage_data(start, end, dry_run):
+def gather_usage_data(start, end, dry_run, zip_file):
     logger.info('Start: {}, end: {}, dry run: {}'.format(start, end, dry_run))
     with connection.cursor() as cursor:
         content_types = get_content_types(cursor)
@@ -268,8 +280,8 @@ def gather_usage_data(start, end, dry_run):
             ]
         )
         if not dry_run:
-            logger.info('Writing {}'.format(filename))
-            write_raw_data(data=cursor.fetchall(), filename=filename)
+            logger.info('Writing {} to zip'.format(filename))
+            write_raw_data(cursor=cursor, zip_file=zip_file, filename=filename)
 
         logger.debug('Gathering abstractnode summary at {}'.format(datetime.datetime.now()))
         summary_data = combine_summary_data(summarize(
@@ -338,8 +350,8 @@ def gather_usage_data(start, end, dry_run):
             ]
         )
         if not dry_run:
-            logger.info('Writing {}'.format(filename))
-            write_raw_data(data=cursor.fetchall(), filename=filename)
+            logger.info('Writing {} to zip.'.format(filename))
+            write_raw_data(cursor=cursor, zip_file=zip_file, filename=filename)
 
         logger.debug('Gathering preprint summary at {}'.format(datetime.datetime.now()))
         summary_data = combine_summary_data(summary_data, summarize(
@@ -361,51 +373,83 @@ def gather_usage_data(start, end, dry_run):
     return summary_data
 
 
-def write_summary_data(filename, summary_data):
+def write_summary_data(filename, summary_data, remote_base_folder):
     header_row = []
     summary_row = []
     for key in summary_data:
         header_row += [key]
         summary_row += [summary_data[key]]
+    file_path = '{}{}'.format(TEMP_FOLDER, filename)
+    old_remote = requests.get(
+        url=remote_base_folder['files'],
+        auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
+        params={'filter[name]': filename},
+    ).json()
+    try:
+        old_remote_data = old_remote['data'][0]
+        upload = old_remote_data['links']['upload']
+        params = {'kind': 'file'}
+        old_file_path = old_remote_data['links']['upload']  # Yes, upload is correct here.
 
-    if os.path.isfile(filename):
-        with open(filename) as old_file:
-            reader = csv.reader(old_file, delimiter=',', lineterminator='\n')
-            header_skipped = False
-            with open('{}-temp'.format(filename), 'w') as new_file:
-                writer = csv.writer(new_file, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
-                writer.writerow(header_row)
+        header_skipped = False
+        with open(file_path, 'w') as new_file:
+            writer = csv.writer(new_file, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
+            writer.writerow(header_row)
+            with requests.get(
+                    url=old_file_path,
+                    auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
+                    stream=True,
+            ) as old_file:
+                reader = csv.reader(old_file.iter_lines(), delimiter=',', lineterminator='\n')
                 for row in reader:
                     if header_skipped:
                         writer.writerow(row)
                     header_skipped = True
-                writer.writerow(summary_row)
-        os.remove(filename)
-        os.rename('{}-temp'.format(filename), filename)
+            writer.writerow(summary_row)
 
-    else:
-        with open(filename, 'w') as new_file:
+    except IndexError:
+        upload = remote_base_folder['upload']
+        params = {
+            'kind': 'file',
+            'name': filename,
+        }
+        with open(file_path, 'w') as new_file:
             writer = csv.writer(new_file, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
             writer.writerow(header_row)
             writer.writerow(summary_row)
 
+    upload_to_storage(file_path=file_path, upload_url=upload, params=params)
 
-def write_raw_data(data, filename):
-    with open(filename, 'wb') as fp:
-        writer = csv.writer(fp, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
-        writer.writerow(list(VALUES))
-        for row in data:
-            row_to_write = []
-            for s in row:
-                item = s.encode('utf-8') if isinstance(s, (str, unicode)) else s
-                row_to_write.append(item)
-            writer.writerow(row_to_write)
+
+def write_raw_data(cursor, zip_file, filename):
+    data_buffer = StringIO()
+    writer = csv.writer(data_buffer, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
+    writer.writerow(list(VALUES))
+    for row in cursor.fetchall():
+        row_to_write = []
+        for s in row:
+            item = s.encode('utf-8') if isinstance(s, (str, unicode)) else s
+            row_to_write.append(item)
+        writer.writerow(row_to_write)
+    zip_file.writestr(filename, data_buffer.getvalue())
+
+
+def upload_to_storage(file_path, upload_url, params):
+    logger.debug('Uploading {} to {}'.format(file_path, upload_url))
+    with open(file_path, 'r') as summary_file:
+        requests.put(
+            url=upload_url,
+            params=params,
+            data=summary_file,
+            auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
+        )
 
 
 def process_usages(
         dry_run=False,
-        page_size=1000,
+        page_size=10000,
         sample_only=False,
+        remote_base_folder=None,
 ):
     # We can't re-order these columns after they are released, only add columns to the end
     # This is why we can't just append whatever storage regions we add to the system automatically,
@@ -435,20 +479,36 @@ def process_usages(
     start = 0
     end = min(page_size, last_item)
     keep_going = True
-
-    while keep_going:
-        summary_totals = combine_summary_data(
-            summary_totals,
-            gather_usage_data(
-                start=start,
-                end=end,
-                dry_run=dry_run
+    now = datetime.datetime.now()
+    zip_file_name = 'data_storage_raw_{}.zip'.format(now)
+    zip_file_path = '{}{}'.format(TEMP_FOLDER, zip_file_name)
+    with zipfile.ZipFile(
+            zip_file_path, mode='w', compression=zipfile.ZIP_DEFLATED
+    ) as zip_file:
+        while keep_going:
+            summary_totals = combine_summary_data(
+                summary_totals,
+                gather_usage_data(
+                    start=start,
+                    end=end,
+                    dry_run=dry_run,
+                    zip_file=zip_file,
+                )
             )
-        )
-        start = end + 1
-        end = min(end + page_size, last_item)
-        keep_going = (start <= end) and (not sample_only)
+            start = end + 1
+            end = min(end + page_size, last_item)
+            keep_going = (start <= end) and (not sample_only)
     logger.debug(summary_totals)
+
+    if not dry_run:
+        upload_to_storage(
+            file_path=zip_file_path,
+            upload_url=remote_base_folder['upload'],
+            params={
+                'kind': 'file',
+                'name': zip_file_name,
+            }
+        )
 
     summary_data['total'] = summary_totals.get('total', 0)
     summary_data['deleted'] = summary_totals.get('deleted', 0)
@@ -462,13 +522,27 @@ def process_usages(
     summary_data['germany_frankfurt'] = summary_totals.get('Germany - Frankfurt', 0)
     summary_data['united_states'] = summary_totals.get('United States', 0)
     if not dry_run:
-        write_summary_data(filename='./osf_storage_metrics.csv', summary_data=summary_data)
+        write_summary_data(
+            filename='osf_storage_metrics.csv',
+            summary_data=summary_data,
+            remote_base_folder=remote_base_folder
+        )
 
     return summary_data
 
 
+def bearer_token_auth(token):
+    token_dict = {
+        'token_type': 'Bearer',
+        'access_token': token
+    }
+    return OAuth2(token=token_dict)
+
+
 class Command(BaseCommand):
-    help = 'Get raw and summary data of storage usage for Product and Metascience'
+    help = '''Get raw and summary data of storage usage for Product and Metascience.
+    For remote upload, add a setting for DS_METRICS_API_TOKEN that has write access to a waterbutler info URL
+    for a folder on an OSF project stored in the DS_METRICS_BASE_FOLDER setting.'''
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -480,7 +554,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--page_size',
             type=int,
-            default=1000,
+            default=10000,
             help='How many items at a time to include for each query',
         )
         parser.add_argument(
@@ -494,21 +568,43 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
         logging.info('Script started time: {}'.format(script_start_time))
-        logging.info(options)
+        logging.debug(options)
 
         dry_run = options['dry_run']
         page_size = options['page_size']
         sample_only = options['sample_only']
 
-        logger.debug('Dry run: {}, page size: {}, sample only: {}'.format(
+        remote_base_folder = None
+
+        if not dry_run:
+            if DS_METRICS_BASE_FOLDER is not None and DS_METRICS_OSF_TOKEN is not None:
+                json = requests.get(
+                    url=DS_METRICS_BASE_FOLDER,
+                    headers={'Accept-Header': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
+                    auth=bearer_token_auth(DS_METRICS_OSF_TOKEN)
+                ).json()['data']
+
+                remote_base_folder = {
+                    'files': json['relationships']['files']['links']['related']['href'],
+                    'new_folder': json['links']['new_folder'],
+                    'upload': json['links']['upload'],
+                }
+            else:
+                raise RuntimeError(
+                    'DS_METRICS_BASE_FOLDER and DS_METRICS_OSF_TOKEN settings are required if dry_run==False.'
+                )
+
+        logger.debug('Dry run: {}, page size: {}, sample only: {}, temp folder: {}'.format(
             dry_run,
             page_size,
             sample_only,
+            TEMP_FOLDER
         ))
         process_usages(
             dry_run=dry_run,
             page_size=page_size,
             sample_only=sample_only,
+            remote_base_folder=remote_base_folder,
         )
         script_finish_time = datetime.datetime.now()
         logging.info('Script finished time: {}'.format(script_finish_time))
