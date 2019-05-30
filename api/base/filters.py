@@ -20,7 +20,7 @@ from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, Preprint
 from osf.models.base import GuidMixin
-
+from functools import cmp_to_key
 
 def lowercase(lower):
     if hasattr(lower, '__call__'):
@@ -61,7 +61,7 @@ class OSFOrderingFilter(OrderingFilter):
             return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
         if ordering:
             if isinstance(ordering, (list, tuple)):
-                sorted_list = sorted(queryset, cmp=sort_multiple(ordering))
+                sorted_list = sorted(queryset, key=cmp_to_key(sort_multiple(ordering)))
                 return sorted_list
             return queryset.sort(*ordering)
         return queryset

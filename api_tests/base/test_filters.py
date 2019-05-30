@@ -25,6 +25,7 @@ from api.base.exceptions import (
 
 from api.base.serializers import RelationshipField
 
+from functools import cmp_to_key
 
 class FakeSerializer(ser.Serializer):
 
@@ -421,7 +422,7 @@ class TestOSFOrderingFilter(ApiTestCase):
             self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
         sorted_query = sorted(
             query_to_be_sorted,
-            cmp=filters.sort_multiple(['title'])
+            key=cmp_to_key(filters.sort_multiple(['title']))
         )
         sorted_output = [str(i) for i in sorted_query]
         assert_equal(sorted_output, ['Activity', 'NewProj', 'Proj', 'Zip'])
@@ -431,7 +432,7 @@ class TestOSFOrderingFilter(ApiTestCase):
             self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
         sorted_query = sorted(
             query_to_be_sorted,
-            cmp=filters.sort_multiple(['title'])
+            key=cmp_to_key(filters.sort_multiple(['title']))
         )
         sorted_output = [str(i) for i in sorted_query]
         assert_equal(sorted_output, ['Activity', 'Activity', 'NewProj', 'Zip'])
@@ -441,7 +442,7 @@ class TestOSFOrderingFilter(ApiTestCase):
             self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
         sorted_query = sorted(
             query_to_be_sorted,
-            cmp=filters.sort_multiple(['-title'])
+            key=cmp_to_key(filters.sort_multiple(['-title']))
         )
         sorted_output = [str(i) for i in sorted_query]
         assert_equal(sorted_output, ['Zip', 'Proj', 'NewProj', 'Activity'])
@@ -451,7 +452,7 @@ class TestOSFOrderingFilter(ApiTestCase):
             self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
         sorted_query = sorted(
             query_to_be_sorted,
-            cmp=filters.sort_multiple(['-title'])
+            key=cmp_to_key(filters.sort_multiple(['-title']))
         )
         sorted_output = [str(i) for i in sorted_query]
         assert_equal(sorted_output, ['Zip', 'NewProj', 'Activity', 'Activity'])
@@ -463,7 +464,7 @@ class TestOSFOrderingFilter(ApiTestCase):
                 self.query_with_num(title='Activity', number=40)]
         actual = [
             x.number for x in sorted(
-                objs, cmp=filters.sort_multiple(['title', '-number'])
+                objs, key=cmp_to_key(filters.sort_multiple(['title', '-number']))
             )]
         assert_equal(actual, [40, 30, 10, 20])
 
