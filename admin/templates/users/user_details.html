@@ -27,8 +27,8 @@
                                     <tr>
                                         <th>GUID</th>
                                         <th>Name</th>
-                                        <th>Public</th>
-                                        <th>Registration</th>
+                                        {% comment %}<th>Public</th>{% endcomment %}
+                                        {% comment %}<th>Registration</th>{% endcomment %}
                                         <th># of Contributors</th>
                                     </tr>
                                 </thead>
@@ -37,8 +37,8 @@
                                     <tr>
                                         <td>{{ node.id }}</td>
                                         <td>{{ node.title | truncatechars:20 }}</td>
-                                        <td>{{ node.public }}</td>
-                                        <td>{{ node.is_registration }}</td>
+                                        {% comment %}<td>{{ node.public }}</td>{% endcomment %}
+                                        {% comment %}<td>{{ node.is_registration }}</td>{% endcomment %}
                                         <td>{{ node.number_contributors }}</td>
                                     </tr>
                                     {% endfor %}
