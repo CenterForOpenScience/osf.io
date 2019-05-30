@@ -1209,7 +1209,7 @@ class TestArchiverDecorators(ArchiverTestCase):
         func(node=self.dst)
         mock_fail.assert_called_with(
             self.dst,
-            errors=[e.message]
+            errors=[str(e)]
         )
 
 class TestArchiverBehavior(OsfTestCase):

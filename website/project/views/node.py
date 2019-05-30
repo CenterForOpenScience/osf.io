@@ -77,7 +77,7 @@ def edit_node(auth, node, **kwargs):
         except ValidationError as e:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
-                data=dict(message_long=e.message)
+                data=dict(message_long=str(e))
             )
         new_val = node.title
     elif edited_field == 'description':
@@ -91,7 +91,7 @@ def edit_node(auth, node, **kwargs):
     except ValidationError as e:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
-            data=dict(message_long=e.message)
+            data=dict(message_long=str(e))
         )
     return {
         'status': 'success',
@@ -144,7 +144,7 @@ def project_new_post(auth, **kwargs):
         except ValidationError as e:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
-                data=dict(message_long=e.message)
+                data=dict(message_long=str(e))
             )
         new_project = _view_project(project, auth)
     return {
@@ -184,7 +184,7 @@ def project_new_node(auth, node, **kwargs):
         except ValidationError as e:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
-                data=dict(message_long=e.message)
+                data=dict(message_long=str(e))
             )
         redirect_url = node.url
         message = (
@@ -1126,7 +1126,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
     except ValidationError as e:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
-            data=dict(message_long=e.message)
+            data=dict(message_long=str(e))
         )
 
     return new_link

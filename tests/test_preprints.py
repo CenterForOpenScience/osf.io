@@ -461,7 +461,7 @@ class TestContributorMethods:
     def test_set_visible_contributor_with_only_one_contributor(self, preprint, user):
         with pytest.raises(ValueError) as excinfo:
             preprint.set_visible(user=user, visible=False, auth=None)
-        assert excinfo.value.message == 'Must have at least one visible contributor'
+        assert str(excinfo.value) == 'Must have at least one visible contributor'
 
     def test_set_visible_missing(self, preprint):
         with pytest.raises(ValueError):
@@ -601,7 +601,7 @@ class TestPreprintAddContributorRegisteredOrNot:
     def test_add_contributor_invalid_user_id(self, user, preprint):
         with pytest.raises(ValueError) as excinfo:
             preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
-        assert 'was not found' in excinfo.value.message
+        assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, preprint):
         contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
@@ -1594,7 +1594,7 @@ class TestPreprintPermissions(OsfTestCase):
         with assert_raises(ValueError) as e:
             self.preprint.set_published(False, auth=Auth(self.user), save=True)
 
-        assert_in('Cannot unpublish', e.exception.message)
+        assert_in('Cannot unpublish', str(e.exception))
 
     def test_set_title_permissions(self):
         original_title = self.preprint.title
