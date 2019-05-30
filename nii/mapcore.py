@@ -44,13 +44,21 @@ from django.core.exceptions import ObjectDoesNotExist
 
 logger = mapcore_logger(logger)
 
+
+### Node.{title,description} : unicode
+### from MAPCore methods : utf-8
+
 # unicode to utf-8
 def utf8(u):
-    return u.encode('utf-8')
+    if isinstance(u, unicode):
+        return u.encode('utf-8')
+    return u
 
 # utf-8 to unicode
 def utf8dec(s):
-    return s.decode('utf-8')
+    if isinstance(s, str):
+        return s.decode('utf-8')
+    return s
 
 def mapcore_is_enabled():
     #sys.stderr.write('mapcore_is_enabled: MAPCORE_CLIENTID={}\n'.format(MAPCORE_CLIENTID))
@@ -638,7 +646,7 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
                 description=utf8dec(group_info_ext['introduction']))
     node.map_group_key = group_key
     node.save()
-    logger.info('New node [' + node.title + '] owned by [' + creator.eppn + '] is created.')
+    logger.info('New node [' + utf8(node.title) + '] owned by [' + utf8(creator.eppn) + '] is created.')
     return node
 
 
@@ -657,7 +665,7 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
 
     from framework.auth import Auth
     from osf.utils.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
-    logger.debug('mapcore_sync_rdm_project0(' + node.title + ') start')
+    logger.debug('mapcore_sync_rdm_project0(' + utf8(node.title) + ') start')
 
     try:
         locker.lock_node(node)
@@ -678,8 +686,8 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
 
         # copy group info to rdm
         if title_desc:
-            node.title = map_group['group_name']
-            node.description = map_group['introduction']
+            node.title = utf8dec(map_group['group_name'])
+            node.description = utf8dec(map_group['introduction'])
 
         # sync members to rdm
         if contributors:
@@ -689,9 +697,9 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
                 rdm_member_list.append(RDMmember(node, rdm_user))
             map_member_list = map_group['group_member_list']
             add, delete, upg, downg = compare_members(rdm_member_list, map_member_list, False)
-            #  add: map_member
-            #  delete: RDMmember
-            #  upg: RDMmember,
+            #  add: map_member (utf-8)
+            #  delete: RDMmember (unicode)
+            #  upg: RDMmember
             #  downg: RDMmember
 
             # apply members to RDM
@@ -757,7 +765,7 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
     :return: True on success, False on sync skip condition
     '''
 
-    logger.debug('mapcore_sync_map_group(\'' + node.title + '\') started.')
+    logger.debug('mapcore_sync_map_group(\'' + utf8(node.title) + '\') started.')
 
     # check Node attribute
     if node.is_deleted:
@@ -771,7 +779,7 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
         # sync group info
         if title_desc:
             mapcore_update_group(access_user, node, group_key)
-            logger.info('Node title [' + node.title + '] and desctiption is synchronized to mAP group [' + group_key + '].')
+            logger.info('Node title [' + utf8(node.title) + '] and desctiption is synchronized to mAP group [' + utf8(group_key) + '].')
 
         # sync members
         if contributors:
@@ -787,8 +795,8 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
             #logger.debug('mAP group members: ' + pp(map_members))
 
             add, delete, upgrade, downgrade = compare_members(rdm_members, map_members, True)
-            #  add: RDMmember,
-            #  delete: map_member
+            #  add: RDMmember (unicode),
+            #  delete: map_member (utf-8)
             #  upgrade: map_member
             #  downgrade: map_member
 
@@ -799,7 +807,7 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
                 else:
                     admin = MAPCore.MODE_MEMBER
                 mapcore_add_to_group(access_user, node, group_key, u.eppn, admin)
-                logger.info('mAP group [' + map_group['group_name'] + '] get new member [' + u.eppn + ']')
+                logger.info('mAP group [' + map_group['group_name'] + '] get new member [' + utf8(u.eppn) + ']')
             for u in delete:
                 eppn = u['eppn']
                 try:
@@ -929,7 +937,7 @@ def mapcore_sync_rdm_my_projects0(user):
                         logger.error('cannot create RDM project for mAP group [' + grp['group_name'] + '].  skip.')
                         #TODO log?
                         continue
-                    logger.info('New node is created from mAP group [' + grp['group_name'] + '] (' + group_key + ')')
+                    #logger.info('New node is created from mAP group [' + grp['group_name'] + '] (' + group_key + ')')
                     # copy info and members to RDM
                     mapcore_sync_rdm_project(user, node,
                                              title_desc=True,
