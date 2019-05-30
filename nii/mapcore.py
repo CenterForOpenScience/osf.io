@@ -123,13 +123,15 @@ def mapcore_unlock_all():
     logger.info('mapcore_unlock_all() start')
     with transaction.atomic():
         for user in OSFUser.objects.all():
-            user.mapcore_api_locked = False
-            user.save()
-            logger.debug('mapcore_unlock_all(): User={}'.format(user.username))
+            if user.mapcore_api_locked:
+                user.mapcore_api_locked = False
+                user.save()
+                logger.info('mapcore_unlock_all(): unlocked: User={}'.format(user.username))
         for node in Node.objects.all():
-            node.mapcore_api_locked = False
-            node.save()
-            logger.debug('mapcore_unlock_all(): Node={}'.format(node._id))
+            if node.mapcore_api_locked:
+                node.mapcore_api_locked = False
+                node.save()
+                logger.info('mapcore_unlock_all(): unlocked: Node={}'.format(node._id))
     logger.info('mapcore_unlock_all() done')
 
 def mapcore_request_authcode(**kwargs):
