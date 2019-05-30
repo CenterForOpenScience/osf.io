@@ -1,9 +1,9 @@
 from datetime import datetime
-import httplib as http
+from rest_framework import status as http_status
 import logging
 import json
 import time
-import urlparse
+from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
 import responses
 from nose.tools import *  # noqa
@@ -126,7 +126,7 @@ class TestExternalAccount(OsfTestCase):
         # Request succeeded
         assert_equal(
             response.status_code,
-            http.OK,
+            http_status.HTTP_200_OK,
         )
 
         self.user.reload()
@@ -164,7 +164,7 @@ class TestExternalAccount(OsfTestCase):
         # Request succeeded
         assert_equal(
             response.status_code,
-            http.OK,
+            http_status.HTTP_200_OK,
         )
 
         self.user.reload()
@@ -357,8 +357,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
             assert_in('state', creds)
 
             # The URL to which the user would be redirected
-            parsed = urlparse.urlparse(url)
-            params = urlparse.parse_qs(parsed.query)
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
 
             # check parameters
             assert_equal(

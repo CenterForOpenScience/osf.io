@@ -7,7 +7,7 @@
     'v2/'
 """
 import os
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 import warnings
 import itertools
 

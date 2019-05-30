@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import urlparse
+from future.moves.urllib.parse import urljoin
 
 from django.db import models
 import markupsafe
@@ -413,7 +413,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 self.user, self.repo,
                 'web',
                 {
-                    'url': urlparse.urljoin(
+                    'url': urljoin(
                         hook_domain,
                         os.path.join(
                             self.owner.api_url, 'gitlab', 'hook/'

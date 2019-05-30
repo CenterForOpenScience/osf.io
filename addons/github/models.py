@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import urlparse
+from future.moves.urllib.parse import urljoin
 
 import markupsafe
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
@@ -450,7 +450,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 self.user, self.repo,
                 'web',
                 {
-                    'url': urlparse.urljoin(
+                    'url': urljoin(
                         hook_domain,
                         os.path.join(
                             self.owner.api_url, 'github', 'hook/'

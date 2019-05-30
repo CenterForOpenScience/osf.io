@@ -1,7 +1,7 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
 from dateutil.parser import parse as dateparse
-import httplib as http
+from rest_framework import status as http_status
 import logging
 import gitlab
 
@@ -83,7 +83,7 @@ def gitlab_user_config_get(auth, **kwargs):
             },
             'hosts': DEFAULT_HOSTS,
         },
-    }, http.OK
+    }, http_status.HTTP_200_OK
 
 @must_be_logged_in
 def gitlab_add_user_account(auth, **kwargs):
@@ -144,7 +144,7 @@ def gitlab_set_config(auth, **kwargs):
         if not user_settings:
             user_settings = node_settings.user_settings
     except AttributeError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Parse request
     gitlab_user_name = request.json.get('gitlab_user', '')
@@ -152,7 +152,7 @@ def gitlab_set_config(auth, **kwargs):
     gitlab_repo_id = request.json.get('gitlab_repo_id', '')
 
     if not gitlab_user_name or not gitlab_repo_name or not gitlab_repo_id:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Verify that repo exists and that user can access
     connection = GitLabClient(external_account=node_settings.external_account)
@@ -162,7 +162,7 @@ def gitlab_set_config(auth, **kwargs):
     except gitlab.exceptions.GitlabError as exc:
         if exc.response_code == 403 and 'must accept the Terms of Service' in exc.error_message:
             return {'message': 'Your gitlab account does not have proper authentication. Ensure you have agreed to Gitlab\'s '
-                     'current Terms of Service by disabling and re-enabling your account.'}, http.BAD_REQUEST
+                     'current Terms of Service by disabling and re-enabling your account.'}, http_status.HTTP_400_BAD_REQUEST
 
     if repo is None:
         if user_settings:
@@ -174,7 +174,7 @@ def gitlab_set_config(auth, **kwargs):
             message = (
                 'Cannot access repo.'
             )
-        return {'message': message}, http.BAD_REQUEST
+        return {'message': message}, http_status.HTTP_400_BAD_REQUEST
 
     changed = (
         gitlab_user_name != node_settings.user or

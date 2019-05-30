@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 import importlib
 import pkgutil
 
 import pytest
 from pytz import utc
 from datetime import datetime
-import urllib
+from future.moves.urllib.parse import quote
 
 from nose.tools import *  # noqa:
 import re
@@ -277,7 +277,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'fish'},
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_invalid_embed_value_raise_bad_request(self):
         res = self.app.get(
@@ -285,7 +285,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'embed': 'foo'},
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
             'The following fields are not embeddable: foo'
@@ -363,7 +363,7 @@ class TestApiBaseSerializers(ApiTestCase):
             params={'related_counts': 'title'},
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
             "Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got 'title'"
@@ -496,11 +496,11 @@ class TestRelationshipField:
         ).data['data']
         field = data['relationships']['field_with_filters']['links']
         assert_in(
-            urllib.quote('filter[target]=hello', safe='?='),
+            quote('filter[target]=hello', safe='?='),
             field['related']['href']
         )
         assert_in(
-            urllib.quote('filter[woop]=yea', safe='?='),
+            quote('filter[woop]=yea', safe='?='),
             field['related']['href']
         )
 
