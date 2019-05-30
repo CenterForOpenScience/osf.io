@@ -246,7 +246,7 @@ if DEBUG:
     INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
     MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', 'nplusone.ext.django.NPlusOneMiddleware',)
     DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda(_): True,
+        'SHOW_TOOLBAR_CALLBACK': lambda _: True,
         'DISABLE_PANELS': {
             'debug_toolbar.panels.templates.TemplatesPanel',
             'debug_toolbar.panels.redirects.RedirectsPanel'
