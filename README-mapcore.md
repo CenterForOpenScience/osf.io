@@ -104,3 +104,57 @@ curlコマンドの場合は、以下のように実行する。
 * クラウドゲートウェイで設定された一般(管理者ではない)メンバーは、GRDM側ではRead+WriteのPermissionsとなる。GRDM側でReadのPermissionsに変えた場合は、クラウドゲートウェイ側では一般メンバーのままとなる。
 
 * GRDM は自動的にmAP core API利用のリフレッシュトークンを更新することで、各ユーザーがクラウドゲートウェイへログインと同意をおこなう頻度を減らしている。しかし、その更新が停止した場合、またはリフレッシュトークン自動更新が失敗した場合に、再ログインと同意が必要になる。
+
+## mAP core連携機能管理ツール
+
+以下のコマンドを server コンテナのシェル上で実行できる。
+
+### OAuthアクセストークンの消去
+
+  # cd /code
+  # inv -h mapcore_remove_token
+  Usage: inv[oke] [--core-opts] mapcore_remove_token [--options] [other tasks here ...]
+  
+  Docstring:
+      Remove OAuth token for mAP core
+  
+  Options:
+    -e STRING, --eppn=STRING
+    -u STRING, --username=STRING
+
+### GRDMプロジェクト・mAPグループ削除コマンド
+
+開発用、または連携するmAP(CloudGateway)を変更する場合を想定したコマン
+ド。各プロジェクトの group key をクリアすれば、再度mAP側グループを作成
+し、連携しなおすことができる。
+
+  # cd /code
+  # # inv -h mapcore_rmgroups
+  Usage: inv[oke] [--core-opts] mapcore_rmgroups [--options] [other tasks here ...]
+  
+  Docstring:
+    GRDM/mAP group maintanance utility for bulk deletion
+  
+  Options:
+    -d, --dry-run              dry-run
+    -f STRING, --file=STRING   file name contains group_key list
+    -g, --grdm                 remove groups from GRDM
+    -i, --interactive          select delete groups interactively
+    -k, --key-only             remove link (group_key) only
+    -m, --map                  remove groups from mAP
+    -u STRING, --user=STRING   filter with creator's mail address
+    -v, --verbose              show more group information
+
+### ユーザーとプロジェクトごとのロック用フラグをクリア
+
+通常は操作不要。(finally節でアンロックしているため。)
+異常終了した場合にロックされたままになる可能性があるため。
+(主に開発用)
+
+  Usage: inv[oke] [--core-opts] mapcore_unlock_all [other tasks here ...]
+  
+  Docstring:
+    Remove all lock flags for mAP core
+
+  Options:
+    none
