@@ -61,6 +61,7 @@ class TestMeetingDetail:
         assert data['attributes']['field_names']['submission2'] == 'talk'
         assert '_/meetings/{}/'.format(meeting.endpoint) in data['links']['self']
         assert '_/meetings/{}/submissions'.format(meeting.endpoint) in data['relationships']['submissions']['links']['related']['href']
+        assert data['relationships']['submissions']['links']['related']['meta']['count'] == 1
 
         # Inactive meetings do not serialize submission emails
         meeting.active = False

@@ -44,6 +44,7 @@ class MeetingSerializer(JSONAPISerializer):
     submissions = RelationshipField(
         related_view='meetings:meeting-submissions',
         related_view_kwargs={'meeting_id': '<endpoint>'},
+        related_meta={'count': 'get_submissions_count'},
     )
 
     links = LinksField({
