@@ -16,7 +16,7 @@ from osf_tests.factories import (
 )
 from osf.models import Collection
 from osf.utils.sanitize import strip_html
-from tests.utils import assert_items_equal
+from tests.utils import assert_equals
 from website.project.signals import contributor_removed
 from api_tests.utils import disconnected_from_listeners
 from website.views import find_bookmark_collection
@@ -905,7 +905,7 @@ class TestCollectionNodeLinksList:
         # node_links end point does not handle registrations correctly
         third_embedded = res_json[2]['embeds']['target_node']['errors'][0]['detail']
         fourth_embedded = res_json[3]['embeds']['target_node']['errors'][0]['detail']
-        assert_items_equal(
+        assert_equals(
             [first_embedded, second_embedded, third_embedded, fourth_embedded],
             [project_private._id, project_public._id, 'Not found.', 'Not found.'])
 
@@ -1690,12 +1690,10 @@ class TestCollectionBulkCreate:
         assert res.status_code == 400
         assert len(res.json['errors']) == 2
         errors = res.json['errors']
-        assert_items_equal(
-            [errors[0]['source'], errors[1]['source']],
-            [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
-        assert_items_equal(
-            [errors[0]['detail'], errors[1]['detail']],
-            ['This field may not be blank.', 'This field may not be blank.'])
+        assert [errors[0]['source'], errors[1]['source']] == \
+               [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}]
+        assert [errors[0]['detail'], errors[1]['detail']] ==\
+               ['This field may not be blank.', 'This field may not be blank.']
 
     def test_non_mutational_collection_bulk_create_tests(
             self, app, bookmark_user_one, url_collections, collection_one,
@@ -1963,10 +1961,12 @@ class TestCollectionBulkUpdate:
         assert res.status_code == 400
         assert len(res.json['errors']) == 2
         errors = res.json['errors']
-        assert_items_equal([errors[0]['source'], errors[1]['source']], [
-                           {'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
-        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
-                           ['This field may not be blank.'] * 2)
+        assert [errors[0]['source'],
+                errors[1]['source']] == [
+            {'pointer': '/data/0/attributes/title'},
+            {'pointer': '/data/1/attributes/title'}
+        ]
+        assert [errors[0]['detail'], errors[1]['detail']] == ['This field may not be blank.'] * 2
 
         # test_bulk_update_id_not_supplied
         res = app.put_json_api(

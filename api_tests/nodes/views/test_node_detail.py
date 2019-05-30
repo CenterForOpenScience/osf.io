@@ -29,7 +29,7 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import fake
-from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
+from tests.utils import assert_equals, assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
 
 
@@ -100,7 +100,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is False
-        assert_items_equal(
+        assert_equals(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_read)
 
@@ -112,7 +112,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
+        assert_equals(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_admin)
 
@@ -124,7 +124,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is False
-        assert_items_equal(
+        assert_equals(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_read)
 
@@ -136,7 +136,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
+        assert_equals(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_admin)
 
@@ -161,7 +161,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
         assert res.json['data']['attributes']['current_user_is_contributor'] is True
-        assert_items_equal(
+        assert_equals(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write)
 

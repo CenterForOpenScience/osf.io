@@ -98,7 +98,7 @@ def assert_not_logs(log_action, node_key, index=-1):
         return wrapper
     return outer_wrapper
 
-def assert_items_equal(item_one, item_two):
+def assert_equals(item_one, item_two):
     item_one.sort()
     item_two.sort()
     assert item_one == item_two
