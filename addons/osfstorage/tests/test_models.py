@@ -98,7 +98,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
-            u'size': 1234L,
+            u'size': 1234,
             u'modified': version.created.isoformat(),
             u'contentType': u'text/plain',
             u'checkout': None,
@@ -119,7 +119,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
-            u'size': 1234L,
+            u'size': 1234,
             # modified date is the creation date of latest version
             # see https://github.com/CenterForOpenScience/osf.io/pull/7155
             u'modified': version.created.isoformat(),
