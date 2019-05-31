@@ -83,8 +83,7 @@ def get_error_list(pid):
 
     for data in data_list:
         if data.inspection_result_status == api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS:
-            # continue
-            data.inspection_result_status = api_settings.TIME_STAMP_TOKEN_CHECK_NG
+            continue
 
         if not provider:
             provider = data.provider
