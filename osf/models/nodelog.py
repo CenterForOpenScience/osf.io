@@ -159,7 +159,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     original_node = models.ForeignKey('AbstractNode', db_index=True,
                                       null=True, blank=True, on_delete=models.CASCADE)
 
-    def __unicode__(self):
+    def __repr__(self):
         return ('({self.action!r}, user={self.user!r},, node={self.node!r}, params={self.params!r}) '
                 'with id {self.id!r}').format(self=self)
 

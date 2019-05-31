@@ -4,7 +4,6 @@ import logging
 from rest_framework import status as http_status
 import math
 from collections import defaultdict
-from itertools import islice
 
 from flask import request
 from django.apps import apps
@@ -1225,7 +1224,7 @@ def search_node(auth, **kwargs):
     return {
         'nodes': [
             _serialize_node_search(each)
-            for each in islice(nodes, start, start + size)
+            for each in nodes[start: start + size]
             if each.contributors
         ],
         'total': count,

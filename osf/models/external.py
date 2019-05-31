@@ -85,6 +85,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
             ('provider', 'provider_id',)
         ]
 
+from future.utils import with_metaclass
 
 class ExternalProviderMeta(abc.ABCMeta):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""
@@ -95,7 +96,7 @@ class ExternalProviderMeta(abc.ABCMeta):
             PROVIDER_LOOKUP[cls.short_name] = cls
 
 
-class ExternalProvider(object):
+class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
     """A connection to an external service (ex: GitHub).
 
     This object contains no credentials, and is not saved in the database.
@@ -107,8 +108,6 @@ class ExternalProvider(object):
     It's a separate object because this must be subclassed for each provider,
     and ``ExternalAccount`` instances are stored within a single collection.
     """
-
-    __metaclass__ = ExternalProviderMeta
 
     # Default to OAuth v2.0.
     _oauth_version = OAUTH2
