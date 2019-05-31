@@ -225,7 +225,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 mine = connection.repos()
                 ours = connection.team_repos()
                 repo_names = [
-                    repo['full_name']
+                    repo['full_name'].replace('/', ' / ')
                     for repo in mine + ours
                 ]
             except Exception:
