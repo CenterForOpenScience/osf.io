@@ -329,9 +329,17 @@ class NodeLinkMixin(models.Model):
         # Fail if node already in nodes / pointers. Note: cast node and node
         # to primary keys to test for conflicts with both nodes and pointers
         # contained in `self.nodes`.
+        if (self._id == node._id):
+            raise ValueError(
+                'Cannot link node \'{}\' to itself.'.format(self._id)
+            )
         if NodeRelation.objects.filter(parent=self, child=node, is_node_link=True).exists():
             raise ValueError(
-                'Link to node {0} already exists'.format(node._id)
+                'Target Node \'{}\' already pointed to by \'{}\'.'.format(self._id, node._id)
+            )
+        if NodeRelation.objects.filter(parent=self, child=node, is_node_link=False).exists():
+            raise ValueError(
+                'Target Node \'{}\' is already a child of \'{}\'.'.format(self._id, node._id)
             )
 
         if self.is_registration:
