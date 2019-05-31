@@ -3964,14 +3964,14 @@ class TestExternalAuthViews(OsfTestCase):
 
     def test_external_login_confirm_email_get_without_destination(self):
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid')
-        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 400, 'bad request')
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         assert_false(self.user.is_registered)
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url, auth=self.auth)
+        res = self.app.get(url)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
         assert_in('new=true', res.location)
@@ -3989,7 +3989,7 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.save()
         assert_false(self.user.is_registered)
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url, auth=self.auth)
+        res = self.app.get(url)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
         assert_not_in('new=true', res.location)
@@ -4006,7 +4006,7 @@ class TestExternalAuthViews(OsfTestCase):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert_equal(dupe_user.external_identity, self.user.external_identity)
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url, auth=self.auth)
+        res = self.app.get(url)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
 
@@ -4022,7 +4022,7 @@ class TestExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 403, 'only allows one user to link an id')
 
         assert_equal(mock_confirm.call_count, 0)

@@ -335,7 +335,6 @@ class TestNodeChildCreate:
             permissions=[
                 permissions.READ,
                 permissions.WRITE],
-            auth=Auth(user),
             save=True)
 
         res = app.post_json_api(url, child, auth=write_contrib.auth)

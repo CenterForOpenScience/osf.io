@@ -160,7 +160,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
             url_public, url_private, make_contrib_id):
 
         #   test_return_public_contributor_list_logged_in
-        res = app.get(url_public, auth=user_two.auth)
+        res = app.get(url_public)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         assert len(res.json['data']) == 1
@@ -281,7 +281,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         project_two.add_unregistered_contributor(
             'Bob Jackson', 'robert@gmail.com', auth=Auth(user), save=True)
         url = '/{}nodes/{}/contributors/'.format(API_BASE, project_two._id)
-        res = app.get(url, auth=user.auth, expect_errors=True)
+        res = app.get(url, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 2
 
@@ -309,12 +309,8 @@ class TestNodeContributorList(NodeCRUDTestCase):
                 auth=Auth(project_public.creator),
                 save=True
             )
-        req_one = app.get(
-            '{}?page=2'.format(url_public),
-            auth=Auth(project_public.creator))
-        req_two = app.get(
-            '{}?page=2'.format(url_public),
-            auth=Auth(project_public.creator))
+        req_one = app.get('{}?page=2'.format(url_public))
+        req_two = app.get('{}?page=2'.format(url_public))
         id_one = [item['id'] for item in req_one.json['data']]
         id_two = [item['id'] for item in req_two.json['data']]
         for a, b in zip(id_one, id_two):

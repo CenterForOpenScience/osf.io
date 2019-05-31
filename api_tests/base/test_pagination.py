@@ -28,7 +28,7 @@ class TestJSONAPIPagination(ApiTestCase):
             factories.ProjectFactory(creator=self.user)
 
     def test_pagination_links_v2(self):
-        res = self.app.get(self.url_version_2_0, auth=self.user)
+        res = self.app.get(self.url_version_2_0)
         assert_equal(res.status_code, 200)
         links = res.json['links']
         meta = res.json['links']['meta']
@@ -42,7 +42,7 @@ class TestJSONAPIPagination(ApiTestCase):
         assert_in('per_page', meta)
 
     def test_pagination_links_updated_version(self):
-        res = self.app.get(self.url_version_2_1, auth=self.user)
+        res = self.app.get(self.url_version_2_1)
         assert_equal(res.status_code, 200)
         links = res.json['links']
         meta = res.json['meta']

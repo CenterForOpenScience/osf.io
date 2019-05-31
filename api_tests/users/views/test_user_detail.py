@@ -97,7 +97,7 @@ class TestUserDetail:
 
     def test_files_relationship_upload(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
-        res = app.get(url, auth=user_one)
+        res = app.get(url)
         quickfiles = QuickFilesNode.objects.get(creator=user_one)
         user_json = res.json['data']
         upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
@@ -109,7 +109,7 @@ class TestUserDetail:
     def test_preprint_relationship(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         preprint_url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
-        res = app.get(url, auth=user_one)
+        res = app.get(url)
         user_json = res.json['data']
         href_url = user_json['relationships']['preprints']['links']['related']['href']
         assert preprint_url in href_url
@@ -118,14 +118,14 @@ class TestUserDetail:
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         registration_url = '/{}users/{}/registrations/'.format(
             API_BASE, user_one._id)
-        res = app.get(url, auth=user_one)
+        res = app.get(url)
         user_json = res.json['data']
         href_url = user_json['relationships']['registrations']['links']['related']['href']
         assert registration_url in href_url
 
     def test_nodes_relationship_is_absent(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
-        res = app.get(url, auth=user_one)
+        res = app.get(url)
         assert 'node' not in res.json['data']['relationships'].keys()
 
     def test_emails_relationship(self, app, user_one):
@@ -159,7 +159,7 @@ class TestUserDetail:
         user_one.social = {'twitter': [socialname], 'github': []}
         user_one.save()
         url = '/{}users/{}/?version=2.9'.format(API_BASE, user_one._id)
-        res = app.get(url, auth=user_one)
+        res = app.get(url)
         user_social_json = res.json['data']['attributes']['social']
 
         assert user_social_json['twitter'] == socialname
@@ -167,7 +167,7 @@ class TestUserDetail:
         assert 'linkedIn' not in user_social_json.keys()
 
         url = '/{}users/{}/?version=2.10'.format(API_BASE, user_one._id)
-        res = app.get(url, auth=user_one)
+        res = app.get(url)
         user_social_json = res.json['data']['attributes']['social']
 
         assert user_social_json['twitter'] == [socialname]

@@ -128,7 +128,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
             url_published, url_unpublished, make_contrib_id):
 
         #   test_return_published_contributor_list_logged_in
-        res = app.get(url_published, auth=user_two.auth)
+        res = app.get(url_published)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         assert len(res.json['data']) == 1
@@ -372,12 +372,8 @@ class TestPreprintContributorList(NodeCRUDTestCase):
                 auth=Auth(preprint_published.creator),
                 save=True
             )
-        req_one = app.get(
-            '{}?page=2'.format(url_published),
-            auth=Auth(preprint_published.creator))
-        req_two = app.get(
-            '{}?page=2'.format(url_published),
-            auth=Auth(preprint_published.creator))
+        req_one = app.get('{}?page=2'.format(url_published))
+        req_two = app.get('{}?page=2'.format(url_published))
         id_one = [item['id'] for item in req_one.json['data']]
         id_two = [item['id'] for item in req_two.json['data']]
         for a, b in zip(id_one, id_two):
