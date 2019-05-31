@@ -2,7 +2,6 @@ import urllib
 
 from addons.bitbucket import settings
 
-from framework import sentry
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
@@ -78,35 +77,18 @@ class BitbucketClient(BaseClient):
         :rtype:
         :return: list of repository objects
         """
+        query_params = {
+            'pagelen': 100,
+            'fields': 'values.full_name'
+        }
         res = self._make_request(
             'GET',
             self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', self.username),
             expects=(200, ),
             throws=HTTPError(401),
-            params={'pagelen': 100}
+            params=query_params
         )
         repo_list = res.json()['values']
-
-        # GDPR docs: https://developer.atlassian.com/cloud/bitbucket/bitbucket-api-changes-gdpr/
-        #
-        # The GDPR guide is quite ambiguous on "removal of username".  It mentions that this change
-        # should only affect the ``/2.0/users/`` endpoint but also says that the ``username`` field
-        # will be removed from the ``User`` object.  Without an explicit exception statement, we are
-        # not quite certain that each repository object in the response will continue to provide the
-        # ``owner.username``.  This attribute is used to 1) Set the ``user`` field for the addon's
-        # ``node_settings`` and 2) to build the repo URL during addon configuration.  The config
-        # would break if ``username`` is gone.  If it happened, we can apply a few fixes including
-        # 1) replacing ``owner.username`` with ``owner.account_id``, 2) using the ``display_name``
-        # of the ``ExternalAccount`` model, and 3) using one of the repo URL links in the response.
-        #
-        # Added the following check and sentry log to make sure that we would be informed of the
-        # failure if it happened after the GDPR update.  Checking the first itme should be good.
-        for repo in repo_list:
-            username = repo['owner'].get('username', None)
-            if not username:
-                sentry.log_message('WARNING: Bitbucket V2 "repositories/user" no '
-                                   'longer returns required field "owner.username".')
-            break
 
         return repo_list
 
@@ -123,22 +105,28 @@ class BitbucketClient(BaseClient):
         :return: a list of repository objects
         """
 
+        query_params = {
+            'role': 'member',
+            'pagelen': 100,
+            'fields': 'values.links.repositories.href'
+        }
         res = self._make_request(
             'GET',
-            self._build_url(settings.BITBUCKET_V2_API_URL, 'teams') + '?role=member',
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'teams'),
             expects=(200, ),
             throws=HTTPError(401),
-            params={'pagelen': 100}
+            params=query_params
         )
-        teams = [x['username'] for x in res.json()['values']]
+        team_repos_url_list = [x['links']['repositories']['href'] for x in res.json()['values']]
 
         team_repos = []
-        for team in teams:
+        for team_repos_url in team_repos_url_list:
             res = self._make_request(
                 'GET',
-                self._build_url(settings.BITBUCKET_V2_API_URL, 'teams', team, 'repositories'),
+                team_repos_url,
                 expects=(200, ),
-                throws=HTTPError(401)
+                throws=HTTPError(401),
+                params={'fields': 'values.full_name'}
             )
             team_repos.extend(res.json()['values'])
 
