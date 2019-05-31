@@ -485,11 +485,8 @@ class TestNodeLinkCreate:
                 public_url,
                 point_to_itself_payload,
                 auth=user.auth)
-            res_json = res.json['data']
-            assert res.status_code == 201
+            assert res.status_code == 400
             assert res.content_type == 'application/vnd.api+json'
-            embedded = res_json['embeds']['target_node']['data']['id']
-            assert embedded == public_project._id
 
     def test_create_node_pointer_errors(
             self, app, user, user_two, public_project,
@@ -972,11 +969,8 @@ class TestNodeLinksBulkCreate:
             res = app.post_json_api(
                 public_url, point_to_itself_payload,
                 auth=user.auth, bulk=True)
-            assert res.status_code == 201
+            assert res.status_code == 400
             assert res.content_type == 'application/vnd.api+json'
-            res_json = res.json['data']
-            embedded = res_json[0]['embeds']['target_node']['data']['id']
-            assert embedded == public_project._id
 
     def test_bulk_creates_node_pointer_already_connected(
             self, app, user, public_project,
