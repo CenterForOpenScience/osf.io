@@ -17,7 +17,7 @@ function datesToLocal() {
             newDateText = cell.textContent;
         }
         else {
-            newDateText = new $osf.FormattableDate(moment.utc(cell.textContent).format()).local;
+            newDateText = new $osf.FormattableDate(new Date(cell.textContent)).local;
         }
         cell.textContent = newDateText;
         cell.style.color = 'inherit';

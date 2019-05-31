@@ -83,7 +83,8 @@ def get_error_list(pid):
 
     for data in data_list:
         if data.inspection_result_status == api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS:
-            continue
+            # continue
+            data.inspection_result_status = api_settings.TIME_STAMP_TOKEN_CHECK_NG
 
         if not provider:
             provider = data.provider
@@ -99,7 +100,7 @@ def get_error_list(pid):
 
         # User and date of the verification
         if data.verify_date is not None:
-            verify_date = data.verify_date.strftime('%Y/%m/%d %H:%M:%S')
+            verify_date = data.verify_date.strftime('%Y/%m/%d %H:%M:%S z')
         else:
             verify_date = ''
 
