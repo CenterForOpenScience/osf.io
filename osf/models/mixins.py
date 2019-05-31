@@ -335,7 +335,7 @@ class NodeLinkMixin(models.Model):
             )
         if NodeRelation.objects.filter(parent=self, child=node, is_node_link=True).exists():
             raise ValueError(
-                'Target Node \'{}\' already pointed to by \'{}\'.'.format(self._id, node._id)
+                'Target Node \'{}\' already pointed to by \'{}\'.'.format(node._id, self._id)
             )
         if NodeRelation.objects.filter(parent=self, child=node, is_node_link=False).exists():
             raise ValueError(
