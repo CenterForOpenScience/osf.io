@@ -26,3 +26,5 @@ class Command(BaseCommand):
 
         if created:
             logger.info('Added schema {} to the database'.format(egap_registration_schema['name']))
+        else:
+            logger.info('updated existing schema {}'.format(egap_registration_schema['name']))
