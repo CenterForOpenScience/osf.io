@@ -339,7 +339,7 @@ class NodeLinkMixin(models.Model):
             )
         if NodeRelation.objects.filter(parent=self, child=node, is_node_link=False).exists():
             raise ValueError(
-                'Target Node \'{}\' is already a child of \'{}\'.'.format(self._id, node._id)
+                'Target Node \'{}\' is already a child of \'{}\'.'.format(node._id, self._id)
             )
 
         if self.is_registration:
