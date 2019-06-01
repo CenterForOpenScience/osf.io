@@ -121,7 +121,7 @@ def iqbrims_set_status(**kwargs):
     try:
         status = request.json['data']['attributes']
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http.BAD_REQUEST)
     all_status = iqbrims.get_status()
     last_status = all_status.copy()
     all_status.update(status)
@@ -167,7 +167,6 @@ def iqbrims_set_status(**kwargs):
 @must_have_valid_hash()
 def iqbrims_post_notify(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    iqbrims = node.get_addon('iqbrims')
     logger.info('Notified: {}'.format(request.data))
     data = json.loads(request.data)
     notify_type = data['notify_type']
