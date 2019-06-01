@@ -18,6 +18,6 @@ window.testIQBRIMSRegisterPaper = function (registerType, laboName) {
     ).done(function (data) {
         console.log('done', {'data': data});
     }).fail(function (xhr, status, error) {
-        console.error('fail', {xhr, status, error});
+        console.error('fail', {'xhr': xhr, 'status': status, 'error': error});
     });
 };
