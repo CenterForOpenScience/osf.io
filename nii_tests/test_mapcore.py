@@ -192,7 +192,7 @@ class TestFuncOfMAPCore(OsfTestCase):
         mock_post.return_value = create_group
         mock_edit.return_value = create_group.json()
 
-        mapcore_sync_map_new_group(self.me, 'fake_title', use_raise=True)
+        mapcore_sync_map_new_group(self.me, self.project, use_raise=True)
         args, kwargs = mock_post.call_args
         assert_equal(args[0].endswith('/group'), True)
         assert_equal(mock_edit.call_count, 1)
@@ -322,6 +322,17 @@ class TestFuncOfMAPCore(OsfTestCase):
         self.project.remove_contributor(self.user2, auth=Auth(self.me))
         self.project.save()
 
+    @mock.patch('nii.mapcore.mapcore_sync_map_group0')
+    def test_sync_map_group_error(self, mock_sync):
+        from nii.mapcore import mapcore_sync_map_group
+
+        mock_sync.side_effect = Exception('fake error message')
+        mapcore_sync_map_group(self.me, self.project, use_raise=False)
+        assert_equal(mock_sync.call_count, 1)
+        node_copy = AbstractNode.objects.get(guids___id=self.project._id)
+        assert_equal(node_copy.logs.latest().action,
+                     NodeLog.MAPCORE_MAP_GROUP_NOT_UPDATED)
+
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
     @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
@@ -329,7 +340,7 @@ class TestFuncOfMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.mapcore_add_to_group')
     @mock.patch('nii.mapcore.mapcore_remove_from_group')
     @mock.patch('nii.mapcore.mapcore_edit_member')
-    def test_sync_map_ignore_non_registered_osfuser(self, mock_edit, mock_remove, mock_add, mock_get_grinfo):
+    def test_sync_map_ignore_unregistered_osfuser(self, mock_edit, mock_remove, mock_add, mock_get_grinfo):
         from nii.mapcore import mapcore_sync_map_group
 
         mock_get_grinfo.return_value = {
@@ -344,6 +355,9 @@ class TestFuncOfMAPCore(OsfTestCase):
         assert_equal(mock_add.call_count, 0)
         assert_equal(mock_remove.call_count, 0)  # not called
         assert_equal(mock_edit.call_count, 0)
+        node_copy = AbstractNode.objects.get(guids___id=self.project._id)
+        assert_equal(node_copy.logs.latest().action,
+                     NodeLog.MAPCORE_RDM_UNKNOWN_USER)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -588,6 +602,17 @@ class TestFuncOfMAPCore(OsfTestCase):
         self.project.remove_contributor(self.user2, auth=Auth(self.me))
         self.project.save()
 
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_project0')
+    def test_sync_rdm_project_error(self, mock_sync):
+        from nii.mapcore import mapcore_sync_rdm_project
+
+        mock_sync.side_effect = Exception('fake error message')
+        mapcore_sync_rdm_project(self.me, self.project, use_raise=False)
+        assert_equal(mock_sync.call_count, 1)
+        node_copy = AbstractNode.objects.get(guids___id=self.project._id)
+        assert_equal(node_copy.logs.latest().action,
+                     NodeLog.MAPCORE_RDM_PROJECT_NOT_UPDATED)
+
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
     @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
@@ -595,7 +620,7 @@ class TestFuncOfMAPCore(OsfTestCase):
     @mock.patch('osf.models.node.AbstractNode.add_contributor')
     @mock.patch('osf.models.node.AbstractNode.remove_contributor')
     @mock.patch('osf.models.node.AbstractNode.set_permissions')
-    def test_sync_rdm_ignore_non_registered_osfuser(self, mock_edit, mock_remove, mock_add, mock_get_grinfo):
+    def test_sync_rdm_ignore_unregistered_osfuser(self, mock_edit, mock_remove, mock_add, mock_get_grinfo):
         from nii.mapcore import mapcore_sync_rdm_project
 
         mock_get_grinfo.return_value = {
@@ -613,6 +638,9 @@ class TestFuncOfMAPCore(OsfTestCase):
         assert_equal(mock_add.call_count, 0)  # not called
         assert_equal(mock_remove.call_count, 0)
         assert_equal(mock_edit.call_count, 0)
+        node_copy = AbstractNode.objects.get(guids___id=self.project._id)
+        assert_equal(node_copy.logs.latest().action,
+                     NodeLog.MAPCORE_RDM_UNKNOWN_USER)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -1069,6 +1097,24 @@ class TestOSFAPIWithMAPCore:
         pid = res.json['data']['id']
         project = AbstractNode.load(pid)
         assert project.logs.latest().action == NodeLog.PROJECT_CREATED
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_create_project_error')
+    @mock.patch('nii.mapcore.mapcore_sync_map_new_group0')
+    def test_create_project_error(
+            self, mock_sync, app, user_one, private_project_json, nodes_url):
+        mock_sync.side_effect = Exception('fake error message')
+        res = app.post_json_api(nodes_url, private_project_json, auth=user_one.auth)
+        # Node creation: no error
+        assert_equal(mock_sync.call_count, 1)
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == private_project_json['data']['attributes']['title']
+        assert res.json['data']['attributes']['description'] == private_project_json['data']['attributes']['description']
+        assert res.json['data']['attributes']['category'] == private_project_json['data']['attributes']['category']
+        pid = res.json['data']['id']
+        project = AbstractNode.load(pid)
+        # mAP core group creation: error
+        assert project.logs.latest().action == NodeLog.MAPCORE_MAP_GROUP_NOT_CREATED
 
     ### from api_tests/nodes/views/test_node_detail.py::
     ###      test_partial_update_private_project_logged_in_contributor

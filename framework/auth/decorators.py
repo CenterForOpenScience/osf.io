@@ -64,6 +64,8 @@ def must_be_confirmed(func):
     return wrapped
 
 
+MAPCORE_SYNC_IGNORE_ERROR = False
+
 # for GakuNin mAP Core (API v2)
 # If node is not None, mapcore_sync_rdm_project_or_map_group() is called.
 def mapcore_check_token(auth, node, use_mapcore=True):
@@ -97,6 +99,8 @@ def mapcore_check_token(auth, node, use_mapcore=True):
                 return redirect(mapcore_request_authcode(
                     next_url=request.url))
         except Exception as e:
+            if MAPCORE_SYNC_IGNORE_ERROR:
+                return None
             if settings.DEBUG_MODE:
                 import traceback
                 emsg = '<pre>{}</pre>'.format(traceback.format_exc())

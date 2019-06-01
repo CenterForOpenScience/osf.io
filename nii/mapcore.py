@@ -28,7 +28,8 @@ if __name__ == '__main__':
 from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.mapcore import MAPProfile
-
+from osf.models.nodelog import NodeLog
+from framework.auth import Auth
 from website.util import web_url_for
 from website.settings import (MAPCORE_HOSTNAME,
                               MAPCORE_AUTHCODE_PATH,
@@ -59,6 +60,20 @@ def utf8dec(s):
     if isinstance(s, str):
         return s.decode('utf-8')
     return s
+
+def add_log(action, node, user, exc, save=False):
+    if node.logs.count() >= 1:
+        latest = node.logs.latest()
+        if latest.user == user and latest.action == action:
+            return  # skip same log
+    node.add_log(
+        action=action,
+        params={
+            'node': node._primary_key,
+        },
+        auth=Auth(user=user),
+        save=save,
+    )
 
 def mapcore_is_enabled():
     #sys.stderr.write('mapcore_is_enabled: MAPCORE_CLIENTID={}\n'.format(MAPCORE_CLIENTID))
@@ -578,11 +593,11 @@ def mapcore_get_extended_group_info(access_user, node, group_key, base_grp=None,
 
     return group_ext
 
-def mapcore_sync_map_new_group0(user, title):
+def mapcore_sync_map_new_group0(user, node):
     '''
     create new mAP group and return its group_key
     :param user:OSFUser  project creator aka mAP admin
-    :param title:str group_name in mAP group
+    :param node:AbstractNode
     :return: str: group_key
     '''
 
@@ -590,19 +605,20 @@ def mapcore_sync_map_new_group0(user, title):
 
     # create mAP group
     mapcore = MAPCore(user)
-    result = mapcore.create_group(title)
+    result = mapcore.create_group(node.title)
     group_key = result['result']['groups'][0]['group_key']
     #logger.debug('mAP group created:\n' + pp(result))
 
     return group_key
 
-def mapcore_sync_map_new_group(user, title, use_raise=False):
+def mapcore_sync_map_new_group(user, node, use_raise=False):
     try:
-        # for mock.patch()
-        return mapcore_sync_map_new_group0(user, title)
+        #raise Exception('test-error map_new') #TOD
+        return mapcore_sync_map_new_group0(user, node)
     except Exception as e:
-        logger.error('User(eppn={}) cannot create a new group(title={}) on mAP, reason={}'.format(user.eppn, utf8(title), utf8(str(e))))
-        #TODO log
+        logger.error('User(eppn={}) cannot create a new group(title={}) on mAP, reason={}'.format(user.eppn, utf8(node.title), utf8(str(e))))
+        add_log(NodeLog.MAPCORE_MAP_GROUP_NOT_CREATED, node, user, e,
+                save=True)
         if use_raise:
             raise
         else:
@@ -629,13 +645,13 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
             user = OSFUser.objects.get(eppn=admin_eppn)
         except ObjectDoesNotExist:
             logger.info('mAP group [' + map_group['group_name'] + '] admin [' + admin_eppn +
-                        '] is not registered in RDM')
+                        '] is not registered in GRDM')
             continue
         creator = user
         break
 
     if creator is None:
-        msg = 'maAP group [' + map_group['group_name'] + '] has no RDM registered admin user.'
+        msg = 'maAP group [' + map_group['group_name'] + '] has no GRDM registered admin user.'
         logger.error(msg)
         return None
 
@@ -663,7 +679,6 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
     if node.is_deleted:
         return
 
-    from framework.auth import Auth
     from osf.utils.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
     logger.debug('mapcore_sync_rdm_project0(' + utf8(node.title) + ') start')
 
@@ -681,8 +696,7 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
             logger.info('mAP group [' + map_group['group_name'] + '] is not public (not synchronized')
             return False
         if mapcore_group_member_is_private(map_group):
-            logger.warning('mAP group({}) member list is private. (may not be synchronized)'.format(map_group['group_name']))
-            # TODO warning log
+            logger.warning('mAP group({}) member list is private. (possibility of sync-error)'.format(map_group['group_name']))
 
         # copy group info to rdm
         if title_desc:
@@ -706,8 +720,10 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
             for mapu in add:
                 try:
                     rdmu = OSFUser.objects.get(eppn=mapu['eppn'])
-                except Exception:
-                    logger.info('mAP member [' + mapu['eppn'] + '] is not registered in RDM. (ignored)')
+                except Exception as e:
+                    logger.info('mAP member [' + mapu['eppn'] + '] is not registered in GRDM. (ignored)')
+                    add_log(NodeLog.MAPCORE_RDM_UNKNOWN_USER, node,
+                            access_user, e, save=False)
                     continue
                 if mapu['is_admin']:
                     logger.info('mAP member [' + mapu['eppn'] + '] is registered as contributor ADMIN.')
@@ -734,15 +750,26 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
     return True
 
 def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=False, use_raise=False):
+    error = None
     try:
         mapcore_sync_rdm_project0(access_user, node, title_desc=title_desc, contributors=contributors)
     except MAPCoreException as e:
         if e.group_does_not_exist():
-            logger.info('RDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(utf8(node.title), node._id))
-            from framework.auth import Auth
             node.remove_node(Auth(user=node.creator))
-        elif use_raise:
+            logger.info('GRDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(utf8(node.title), node._id))
+            return
+        error = e
+        if use_raise:
             raise
+    except Exception as e:
+        error = e
+        if use_raise:
+            raise
+    finally:
+        if error:
+            logger.error('GRDM project [{} ({})] cannot be updated with mAP group, reason={}'.format(utf8(node.title), node._id, utf8(str(error))))
+            add_log(NodeLog.MAPCORE_RDM_PROJECT_NOT_UPDATED, node, access_user,
+                    error, save=True)
 
 def mapcore_resign_map_group(node, user):
     '''
@@ -808,14 +835,16 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
                     admin = MAPCore.MODE_MEMBER
                 mapcore_add_to_group(access_user, node, group_key, u.eppn, admin)
                 logger.info('mAP group [' + map_group['group_name'] + '] get new member [' + utf8(u.eppn) + ']')
+
             for u in delete:
                 eppn = u['eppn']
                 try:
                     user = OSFUser.objects.get(eppn=eppn)
-                except Exception:
-                    logger.info('The user(eppn={}) does not exist in RDM. The user is not removed from the mAP group({}).'.format(eppn, map_group['group_name']))
-                    # TODO log?
+                except Exception as e:
                     user = None
+                    logger.info('User(eppn={}) does not exist in GRDM. The user is not removed from the mAP group({}).'.format(eppn, map_group['group_name']))
+                    add_log(NodeLog.MAPCORE_RDM_UNKNOWN_USER,
+                            node, access_user, e, save=True)
                 if user:
                     mapcore_remove_from_group(access_user, node, group_key, eppn)
                     logger.info('mAP group [' + map_group['group_name'] + '] member [' + eppn + '] is removed')
@@ -823,6 +852,7 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
             for u in upgrade:
                 mapcore_edit_member(access_user, node, group_key, u['eppn'], MAPCore.MODE_ADMIN)
                 logger.info('mAP group [' + map_group['group_name'] + '] admin [' + u['eppn'] + '] is a new member')
+
             for u in downgrade:
                 mapcore_edit_member(access_user, node, group_key, u['eppn'], MAPCore.MODE_MEMBER)
                 logger.info('mAP group [' + map_group['group_name'] + '] member [' + u['eppn'] + '] is a new admin')
@@ -833,11 +863,11 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
 
 def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True, use_raise=False):
     try:
-        # for mock.patch()
         ret = mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
     except Exception as e:
-        logger.warning('The project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, utf8(str(e))))
-        # TODO log
+        logger.warning('GRDM project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, utf8(str(e))))
+        add_log(NodeLog.MAPCORE_MAP_GROUP_NOT_UPDATED, node, access_user, e,
+                save=True)
         try:
             mapcore_set_standby_to_upload(node)  # retry later
         except Exception:
@@ -884,7 +914,7 @@ def mapcore_sync_rdm_my_projects0(user):
         プロジェクト画面遷移時にmAPグループを作成するので、ここでは何もしない
 
       group_keyがセットされている:
-        (以下、mapcore_sync_rdm_projectsで処理)
+        (以下、mapcore_sync_rdm_projectで処理)
         mAP側にグループが存在:
           つまりcontributors不整合状態(所属状態が一致していないため)
           RDM側に反映 (またはmAP側に反映すべき情報がある場合はmAP側へ反映)
@@ -934,8 +964,7 @@ def mapcore_sync_rdm_my_projects0(user):
                 try:
                     node = mapcore_create_new_node_from_mapgroup(mapcore, grp)
                     if node is None:
-                        logger.error('cannot create RDM project for mAP group [' + grp['group_name'] + '].  skip.')
-                        #TODO log?
+                        logger.error('cannot create GRDM project for mAP group [' + grp['group_name'] + '].  skip.')
                         continue
                     #logger.info('New node is created from mAP group [' + grp['group_name'] + '] (' + group_key + ')')
                     # copy info and members to RDM
@@ -948,8 +977,7 @@ def mapcore_sync_rdm_my_projects0(user):
                         # This group is not linked to this RDM SP.
                         # Other SPs may have the group.
                         del my_map_groups[group_key]
-                        logger.info('The mAP group({}, group_key={}) exists but it is not linked to this RDM service provider.'.format(grp['group_name'], group_key))
-                        # TODO log?
+                        logger.info('mAP group({}, group_key={}) exists but it is not linked to this GRDM service provider.'.format(grp['group_name'], group_key))
                     else:
                         logger.debug('MAPCoreException: {}'.format(utf8(str(e))))
                         raise
@@ -968,12 +996,12 @@ def mapcore_sync_rdm_my_projects0(user):
 
         for group_key, project in my_rdm_projects.items():
             if project.is_deleted:
-                logger.info('RDM project [{} ({})] was deleted. (skipped)'.format(utf8(project.title), project._id))
+                logger.info('GRDM project [{} ({})] was deleted. (skipped)'.format(utf8(project.title), project._id))
                 continue
             if project._id in sync_id_list:
                 continue
             if project.map_group_key is None:
-                logger.info('RDM project [{} ({})] does not have map_group_key. (skipped, synchronized at the time of access)'.format(utf8(project.title), project._id))
+                logger.info('GRDM project [{} ({})] does not have map_group_key. (skipped, synchronized at the time of access)'.format(utf8(project.title), project._id))
 
             grp = my_map_groups.get(project.map_group_key)
             if grp:
@@ -993,10 +1021,9 @@ def mapcore_sync_rdm_my_projects0(user):
 
 def mapcore_sync_rdm_my_projects(user, use_raise=False):
     try:
-        # for mock.patch()
         mapcore_sync_rdm_my_projects0(user)
     except Exception as e:
-        logger.error('User(eppn={}) cannot compare my RDM Projects and my mAP groups, reason={}'.format(user.eppn, utf8(str(e))))
+        logger.error('User(eppn={}) cannot compare my GRDM Projects and my mAP groups, reason={}'.format(user.eppn, utf8(str(e))))
         if use_raise:
             raise
 
@@ -1061,7 +1088,7 @@ def mapcore_sync_rdm_project_or_map_group0(access_user, node, use_raise=False):
         return  # skipped
 
     if node.map_group_key is None:
-        group_key = mapcore_sync_map_new_group(node.creator, node.title,
+        group_key = mapcore_sync_map_new_group(node.creator, node,
                                                use_raise=use_raise)
         if group_key:
             node.map_group_key = group_key
@@ -1080,7 +1107,6 @@ def mapcore_sync_rdm_project_or_map_group0(access_user, node, use_raise=False):
     mapcore_set_sync_time(node)
 
 def mapcore_sync_rdm_project_or_map_group(access_user, node, use_raise=False):
-    # for mock.patch()
     mapcore_sync_rdm_project_or_map_group0(access_user, node, use_raise=use_raise)
 
 #
@@ -1249,7 +1275,7 @@ if __name__ == '__main__':
         node = Node.objects.get(title=sys.argv[1])
         user = OSFUser.objects.get(eppn=sys.argv[2])
         if node.map_group_key is None:
-            group_key = mapcore_sync_map_new_group(user, node.title)
+            group_key = mapcore_sync_map_new_group(user, node)
             node.map_group_key = group_key
             node.save()
         try:

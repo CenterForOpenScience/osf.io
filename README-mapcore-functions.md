@@ -57,12 +57,12 @@
 
 1. mAPに新しいグループを作成する
     ```
-    def mapcore_sync_map_new_group(user, title):
+    def mapcore_sync_map_new_group(user, node):
     ```
     - user
     mAPを操作するユーザーを指定するOSFUserオブジェクト。このユーザーは、mAPグループの管理者となる
-    - title
-    作成するmAPグループのタイトルを指定する文字列
+    - node
+    Nodeオブジェクトを指定する。node.titleが作成するmAPグループのタイトルとなる。
 
 1. mAPグループに対応するGRDM Projectを新規に作成する
     ```

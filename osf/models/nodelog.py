@@ -123,6 +123,11 @@ class NodeLog(ObjectIDMixin, BaseModel):
     VIEW_ONLY_LINK_ADDED = 'view_only_link_added'
     VIEW_ONLY_LINK_REMOVED = 'view_only_link_removed'
 
+    MAPCORE_MAP_GROUP_NOT_CREATED = 'mapcore_map_group_not_created'
+    MAPCORE_MAP_GROUP_NOT_UPDATED = 'mapcore_map_group_not_updated'
+    MAPCORE_RDM_PROJECT_NOT_UPDATED = 'mapcore_rdm_project_not_updated'
+    MAPCORE_RDM_UNKNOWN_USER = 'mapcore_rdm_unknown_user'
+
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
                 PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
                 NODE_ACCESS_REQUESTS_ENABLED, NODE_ACCESS_REQUESTS_DISABLED,
@@ -140,7 +145,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
                 PREREG_REGISTRATION_INITIATED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
-                PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED] + list(sum([
+                PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED,
+                MAPCORE_MAP_GROUP_NOT_CREATED, MAPCORE_MAP_GROUP_NOT_UPDATED, MAPCORE_RDM_PROJECT_NOT_UPDATED, MAPCORE_RDM_UNKNOWN_USER] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]

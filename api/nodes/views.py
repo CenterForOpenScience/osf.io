@@ -281,7 +281,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         user = self.request.user
         node = serializer.save(creator=user)
         if mapcore_is_enabled():
-            group_key = mapcore_sync_map_new_group(node.creator, node.title)
+            group_key = mapcore_sync_map_new_group(node.creator, node)
             if group_key:
                 node.map_group_key = group_key
                 node.save()
