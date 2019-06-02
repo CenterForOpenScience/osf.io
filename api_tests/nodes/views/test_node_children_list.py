@@ -230,6 +230,8 @@ class TestNodeChildrenList:
         assert res.status_code == 200
         assert component._id in ids
         assert 'contributors' in res.json['data'][0]['relationships']
+        assert 'implicit_contributors' in res.json['data'][0]['relationships']
+        assert 'bibliographic_contributors' in res.json['data'][0]['relationships']
 
         # get node related_counts with vol once vol is attached to components
         res = app.get(node_url)
@@ -240,6 +242,8 @@ class TestNodeChildrenList:
         view_only_link.save()
         res = app.get(view_only_link_url)
         assert 'contributors' not in res.json['data'][0]['relationships']
+        assert 'implicit_contributors' not in res.json['data'][0]['relationships']
+        assert 'bibliographic_contributors' not in res.json['data'][0]['relationships']
 
         # delete vol
         view_only_link.is_deleted = True
