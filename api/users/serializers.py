@@ -204,7 +204,7 @@ class UserSerializer(JSONAPISerializer):
     def get_node_count(self, obj):
         auth = get_user_auth(self.context['request'])
         if obj != auth.user:
-            return default_node_list_permission_queryset(user=auth.user, model_cls=Node).filter(contributor__user__id=obj.id).count()
+            return default_node_list_permission_queryset(auth=auth, model_cls=Node).filter(contributor__user__id=obj.id).count()
 
         return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=obj.id).count()
 

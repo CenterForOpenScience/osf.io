@@ -15,7 +15,6 @@ from api.base.parsers import (
 )
 from api.base.serializers import get_meta_type, AddonAccountSerializer
 from api.base.utils import (
-    default_node_list_queryset,
     default_node_list_permission_queryset,
     get_object_or_error,
     get_user_auth,
@@ -316,9 +315,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
-        if user != self.request.user:
-            return default_node_list_permission_queryset(user=self.request.user, model_cls=Node).filter(contributor__user__id=user.id)
-        return self.optimize_node_queryset(default_node_list_queryset(model_cls=Node).filter(contributor__user__id=user.id))
+        auth = get_user_auth(self.request)
+        return default_node_list_permission_queryset(auth=auth, model_cls=Node).filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -442,8 +440,8 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
-        current_user = self.request.user
-        qs = default_node_list_permission_queryset(user=current_user, model_cls=Registration)
+        auth = get_user_auth(self.request)
+        qs = default_node_list_permission_queryset(auth=auth, model_cls=Registration)
         return qs.filter(contributor__user__id=user.id)
 
     # overrides ListAPIView

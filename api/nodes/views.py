@@ -38,7 +38,7 @@ from api.base.throttling import (
     NonCookieAuthThrottle,
     AddContributorThrottle,
 )
-from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
+from api.base.utils import default_node_list_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.views import JSONAPIBaseView
 from api.base.views import (
@@ -100,7 +100,7 @@ from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeCitationStyleSerializer,
 )
-from api.nodes.utils import NodeOptimizationMixin, enforce_no_children
+from api.nodes.utils import enforce_no_children
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
 from api.requests.permissions import NodeRequestPermission
@@ -191,7 +191,7 @@ class DraftMixin(object):
         return draft
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin, NodeOptimizationMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_list).
     """
     permission_classes = (
@@ -212,7 +212,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return self.optimize_node_queryset(default_node_list_permission_queryset(user=self.request.user, model_cls=Node))
+        auth = get_user_auth(self.request)
+        return default_node_list_permission_queryset(auth=auth, model_cls=Node)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -665,15 +666,15 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     ordering = ('-modified',)
 
     def get_default_queryset(self):
-        return default_node_list_queryset(model_cls=Node)
+        auth = get_user_auth(self.request)
+        return default_node_list_permission_queryset(auth=auth, model_cls=Node)
 
     # overrides ListBulkCreateJSONAPIView
     def get_queryset(self):
         node = self.get_node()
-        auth = get_user_auth(self.request)
         node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
                 .values_list('child__pk', flat=True)
-        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user).order_by('-modified')
+        return self.get_queryset_from_request().filter(pk__in=node_pks).order_by('-modified')
 
     def get_serializer_context(self):
         context = super(NodeChildrenList, self).get_serializer_context()

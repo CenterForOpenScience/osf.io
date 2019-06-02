@@ -11,6 +11,7 @@ from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContribut
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
+
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIMultipleRelationshipsParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMultipleRelationshipsParserForRegularJSON
 from api.base.utils import get_user_auth, default_node_list_permission_queryset, is_bulk_request, is_truthy
@@ -110,7 +111,8 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return default_node_list_permission_queryset(user=self.request.user, model_cls=Registration)
+        auth = get_user_auth(self.request)
+        return default_node_list_permission_queryset(auth=auth, model_cls=Registration)
 
     def is_blacklisted(self):
         query_params = self.parse_query_params(self.request.query_params)
@@ -289,12 +291,13 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilter
     ordering = ('-modified',)
 
     def get_default_queryset(self):
-        return default_node_list_permission_queryset(user=self.request.user, model_cls=Registration)
+        auth = get_user_auth(self.request)
+        return default_node_list_permission_queryset(auth=auth, model_cls=Registration)
 
     def get_queryset(self):
         registration = self.get_node()
         registration_pks = registration.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
-        return self.get_queryset_from_request().filter(pk__in=registration_pks).can_view(self.request.user).order_by('-modified')
+        return self.get_queryset_from_request().filter(pk__in=registration_pks).order_by('-modified')
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
