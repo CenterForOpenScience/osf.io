@@ -86,10 +86,14 @@ def copy_node_auth(node, other_node_addon):
     node_addon.save()
 
 def create_or_update_external_account_with_other(other_external_account):
-    external_account = ExternalAccount.objects.get(
-        provider=IQBRIMSAddonConfig.short_name,
-        provider_id=other_external_account.provider_id
-    )
+    try:
+        external_account = ExternalAccount.objects.get(
+            provider=IQBRIMSAddonConfig.short_name,
+            provider_id=other_external_account.provider_id
+        )
+    except:
+        logger.exception('Unexpected error')
+        external_account = None
 
     if external_account is None:
         external_account = ExternalAccount(
