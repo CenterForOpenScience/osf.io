@@ -130,12 +130,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         qs = self.filter(is_public=True)
 
         if private_link is not None:
-            if isinstance(private_link, PrivateLink):
-                private_link = private_link.key
-            if not isinstance(private_link, basestring):
-                raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
-
-            qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
+            qs |= self.can_view_through_private_link(private_link)
 
         if user is not None and not isinstance(user, AnonymousUser):
             if isinstance(user, OSFUser):
@@ -163,6 +158,14 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
         return qs
 
+    def can_view_through_private_link(self, private_link):
+        if isinstance(private_link, PrivateLink):
+            private_link = private_link.key
+        if not isinstance(private_link, basestring):
+            raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
+
+        return self.filter(private_links__is_deleted=False, private_links__key=private_link)
+
 
 class AbstractNodeManager(TypedModelManager, IncludeManager):
 
@@ -181,6 +184,9 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
 
     def can_view(self, user=None, private_link=None):
         return self.get_queryset().can_view(user=user, private_link=private_link)
+
+    def can_view_through_private_link(self, private_link):
+        return self.get_queryset().can_view_through_private_link(self, private_link)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,

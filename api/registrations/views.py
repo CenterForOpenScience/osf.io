@@ -6,7 +6,15 @@ from osf.models import AbstractNode, Registration, OSFUser
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
 from api.base.filters import ListFilterMixin
-from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, WaterButlerMixin
+from api.base.views import (
+    JSONAPIBaseView,
+    BaseChildrenList,
+    BaseContributorDetail,
+    BaseContributorList,
+    BaseNodeLinksDetail,
+    BaseNodeLinksList,
+    WaterButlerMixin,
+)
 
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
@@ -270,34 +278,17 @@ class RegistrationImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView
         return queryset
 
 
-class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
+class RegistrationChildrenList(BaseChildrenList, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_children_list).
     """
     view_category = 'registrations'
     view_name = 'registration-children'
     serializer_class = RegistrationSerializer
 
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
-        ExcludeWithdrawals,
-    )
-
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    ordering = ('-modified',)
-
-    def get_default_queryset(self):
-        auth = get_user_auth(self.request)
-        return default_node_list_permission_queryset(auth=auth, model_cls=Registration)
-
-    def get_queryset(self):
-        registration = self.get_node()
-        registration_pks = registration.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
-        return self.get_queryset_from_request().filter(pk__in=registration_pks).order_by('-modified')
+    model_class = Registration
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):

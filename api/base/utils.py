@@ -7,7 +7,7 @@ from hashids import Hashids
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import QuerySet, F
+from django.db.models import OuterRef, Exists, Q, QuerySet, F
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -17,7 +17,7 @@ from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser, Node, Registration
+from osf.models import OSFUser, Contributor, Node, Registration
 from osf.models.base import GuidMixin
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
@@ -148,8 +148,25 @@ def default_node_list_queryset(model_cls):
     return model_cls.objects.filter(is_deleted=False).annotate(region=F('addons_osfstorage_node_settings__region___id'))
 
 def default_node_permission_queryset(auth, model_cls):
+    """
+    Using this instead of model_cls.objects.can_view(), because the querysets using this
+    typically don't factor in implicit admin perms. For example, NodeList/UserNodes (Dashboard)
+    doesn't return implicit admin.
+
+    Return nodes that are either 1) public 2) you can view through a private link or 3) you're a contributor
+    """
     assert model_cls in {Node, Registration}
-    return model_cls.objects.can_view(auth.user, auth.private_link)
+    qs = model_cls.objects.filter(is_public=True)
+
+    if auth.private_link:
+        qs |= model_cls.objects.can_view_through_private_link(auth.private_link)
+
+    if auth.user is None or auth.user.is_anonymous:
+        return qs
+
+    sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=auth.user.id, read=True)
+    qs |= model_cls.objects.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True))
+    return qs
 
 def default_node_list_permission_queryset(auth, model_cls):
     # **DO NOT** change the order of the querysets below.

@@ -42,6 +42,7 @@ from api.base.utils import default_node_list_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.views import JSONAPIBaseView
 from api.base.views import (
+    BaseChildrenList,
     BaseContributorDetail,
     BaseContributorList,
     BaseLinkedList,
@@ -645,16 +646,9 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         serializer.save(draft=draft)
 
 
-class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodesFilterMixin):
+class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodesFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_children_list).
     """
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
-        ExcludeWithdrawals,
-    )
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
     required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
@@ -662,19 +656,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-children'
-
-    ordering = ('-modified',)
-
-    def get_default_queryset(self):
-        auth = get_user_auth(self.request)
-        return default_node_list_permission_queryset(auth=auth, model_cls=Node)
-
-    # overrides ListBulkCreateJSONAPIView
-    def get_queryset(self):
-        node = self.get_node()
-        node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
-                .values_list('child__pk', flat=True)
-        return self.get_queryset_from_request().filter(pk__in=node_pks).order_by('-modified')
+    model_class = Node
 
     def get_serializer_context(self):
         context = super(NodeChildrenList, self).get_serializer_context()
