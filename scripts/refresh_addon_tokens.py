@@ -36,13 +36,19 @@ def look_up_provider(addon_short_name):
 def get_targets(delta, addon_short_name):
     # NOTE: expires_at is the  access_token's expiration date,
     # NOT the refresh token's
-    return ExternalAccount.objects.filter(
-        expires_at__lt=timezone.now() - delta,
-        date_last_refreshed__lt=timezone.now() - delta,
-        provider=addon_short_name
-    )
+    if addon_short_name == 'googledrive':
+        return ExternalAccount.objects.filter(provider=addon_short_name)
+    else:
+        return ExternalAccount.objects.filter(
+            expires_at__lt=timezone.now() - delta,
+            date_last_refreshed__lt=timezone.now() - delta,
+            provider=addon_short_name
+        )
+
 
 def main(delta, Provider, rate_limit, dry_run):
+    #dry_run is False for test purpose.
+    dry_run = False
     allowance = rate_limit[0]
     last_call = time.time()
     for record in get_targets(delta, Provider.short_name):
@@ -71,8 +77,13 @@ def main(delta, Provider, rate_limit, dry_run):
             success = False
             try:
                 success = Provider(record).refresh_oauth_key(force=True)
+                from osf.utils.external_util import get_all_custome_googledrive_external_account, set_new_access_token, is_custome_googledrive, get_region_id_by_external_id,get_oauth_key_by_external_id
+                if success and is_custome_googledrive(record.id):
+                    set_new_access_token(get_region_id_by_external_id(record.id), get_oauth_key_by_external_id(record.id))
             except OAuth2Error as e:
                 logger.error(e)
+            except Exception as exception:
+                logger.error(exception)
             else:
                 logger.info(
                     'Status of record {}: {}'.format(
