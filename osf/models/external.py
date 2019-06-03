@@ -439,6 +439,13 @@ class ExternalProvider(object):
         self.account.expires_at = resp_expiry_fn(token)
         self.account.date_last_refreshed = timezone.now()
         self.account.save()
+        #following imports are essential to avoid exceptions.
+        from osf.utils.external_util import set_new_access_token, is_custome_googledrive, get_region_id_by_external_id, get_oauth_key_by_external_id
+        try:
+            if is_custome_googledrive(self.account.id):
+                set_new_access_token(get_region_id_by_external_id(self.account.id), get_oauth_key_by_external_id(self.account.id))
+        except Exception:
+            pass
         return True
 
     def _needs_refresh(self):
