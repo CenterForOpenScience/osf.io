@@ -13,4 +13,4 @@ def external_acc_update(request, **kwargs):
         response_json = json.dumps(response_hash)
         response = HttpResponse(response_json, content_type='application/json')
         return response
-    return HttpResponse("Done")
+    return HttpResponse('Done')
