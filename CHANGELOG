@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.9.0 (2019-06-03)
+===================
+- Add EGAP registration (not migrated yet)
+- APIv2: Check if email is verified when deleting
+- Fix casing issue that is preventing CSRF token from getting passed with Request access
+- Chronos: Send supplemental node link and add capability to switch to diff Chronos servers
+
+
 19.8.0 (2019-05-16)
 ===================
 - APIv2: Don't throttle safe requests to UserEmailList
