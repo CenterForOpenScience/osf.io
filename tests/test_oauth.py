@@ -4,6 +4,7 @@ import logging
 import json
 import time
 import urlparse
+import mock
 
 import responses
 from nose.tools import *  # noqa
@@ -25,6 +26,8 @@ from osf_tests.factories import (
     InstitutionFactory,
     RegionFactory,
 )
+from django.test import RequestFactory
+from admin.rdm_custom_storage_location import views as customstoragelocation_update
 
 SILENT_LOGGERS = ['oauthlib', 'requests_oauthlib']
 
@@ -906,7 +909,8 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         assert_equal(account.provider_id, 'mock_provider_id')
 
     @responses.activate
-    def test_callback_with_institution(self):
+    @mock.patch('scripts.refresh_addon_tokens.GoogleDriveProvider.refresh_oauth_key')
+    def test_callback_with_institution(self, mock_drive_refresh):
         # Exchange temporary credentials for permanent credentials
 
         # Mock the exchange of the code for an access token
@@ -943,6 +947,13 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         account = ExternalAccount.objects.first()
         assert_equal(account.oauth_key, 'mock_access_token')
         assert_equal(account.provider_id, 'mock_provider_id')
+        req = RequestFactory().get('http://localhost:8001/customstoragelocation/external_acc_update/')
+        res = customstoragelocation_update.external_acc_update(req,access_token='d610ef95f0b0f5868f13919b8ed64070b9acb9c19b8da9f2c514ed938203ec3e236c9cad4f4146bdf22b4e79cf0d92f6d4f4c996d236c6b0ee79a1336b26afb7')
+        assert_equal(res.status_code,200)
+        assert_equal(res.content, 'Done')
+        res = customstoragelocation_update.external_acc_update(req,access_token='b610ef95f0b0f5868f13919b8ed64070b9acb9c19b8da9f2c514ed938203ec3e236c9cad4f4146bdf22b4e79cf0d92f6d4f4c996d236c6b0ee79a1336b26afb7')
+        assert_equal(res.status_code,200)
+        assert_not_equal(res.content, 'Done')
 
     @responses.activate
     def test_provider_down(self):
