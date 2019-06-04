@@ -110,7 +110,7 @@ class BaseModel(TimeStampedModel):
             setattr(copy, field_name, None)
 
         try:
-            copy._id = str(bson.ObjectId())
+            copy._id = bson.ObjectId()
         except AttributeError:
             pass
         return copy
