@@ -58,6 +58,8 @@ def main():
     print 'Inspecting {} osfstorage records, that have *one* duplicate'.format(len(duplicate_osfstorage_files))
 
     versions_match = 0
+    sha_match = 0
+    sha256_match = 0
     for record in duplicate_osfstorage_files:
         target_id = record[0] # assuming AbstractNode, is correct for this bunch.
         name = record[1]
@@ -72,10 +74,17 @@ def main():
         file2 = files[1]
         file1_versions = file1.versions.values_list('_id', flat=True)
         file2_versions = file2.versions.values_list('_id', flat=True)
+        if file1_versions and file2_versions:
+            v1 = file1.versions.first()
+            other_v1 = file2.versions.first()
+            if other_v1.metadata['sha256'] == other_v1.metadata['sha256']:
+                sha256_match += 1
+            if other_v1.metadata['sha1'] == other_v1.metadata['sha1']:
+                sha_match += 1
         if set(file1_versions) == set(file2_versions):
             versions_match += 1
 
-        print 'Duplicate files file versions:'
+        print 'Duplicate files file versions (Point to same FileVersionObjects):'
         print file1_versions
         print file2_versions
         print 'Time between creation:'
@@ -84,6 +93,8 @@ def main():
         print '-------------------------'
 
     print 'Total number of duplicate files with identical versions: {}'.format(versions_match)
+    print 'Total number of duplicate sha1: {}'.format(sha_match)
+    print 'Total number of duplicate sha256: {}'.format(sha256_match)
 
 
 if __name__ == '__main__':
