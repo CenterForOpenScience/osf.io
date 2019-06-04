@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import pytest
 
 from api_tests.utils import create_test_file, create_test_preprint_file
+from addons.osfstorage.models import OsfStorageFolder
 
 from framework.auth import signing
 
@@ -153,6 +154,27 @@ class TestMove():
         })
         res = app.post_json(move_url, signed_payload, expect_errors=False)
         assert res.status_code == 200
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_can_move_file_out_of_quickfiles_node(self, app, user, move_url, root_node):
+        file_node = root_node.append_file('far')
+        dest_folder = OsfStorageFolder.objects.get_root(target=root_node.target)
+
+        payload = {
+            'source': file_node._id,
+            'target': user._id,
+            'user': user._id,
+            'destination': {
+                'parent': dest_folder._id,
+                'target': root_node.target._id,
+                'name': dest_folder.name,
+            }
+        }
+
+        res = app.post_json(move_url, signing.sign_data(signing.default_signer, payload))
+        assert res.status_code == 200
+        assert file_node in root_node.target.files.all()
+        assert file_node not in user.quickfiles.all()
 
     def test_blank_destination_file_name(self, app, move_url, user, root_node, folder, file):
         signed_payload = sign_payload(
