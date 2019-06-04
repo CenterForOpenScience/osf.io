@@ -469,7 +469,7 @@ class BaseChildrenList(JSONAPIBaseView):
     def get_default_queryset(self):
         return default_node_list_queryset(model_cls=self.model_class)
 
-    # overrides ListAPIView
+    # overrides GenericAPIView
     def get_queryset(self):
         """
         Returns non-deleted children of the current resource that the user has permission to view -
