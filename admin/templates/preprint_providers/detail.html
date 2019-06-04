@@ -38,6 +38,9 @@
                     Modify Preprint Provider
                 </button>
             </div>
+            <div class="col-md-12">
+                <a class="btn btn-link" href={% url 'preprint_providers:register_moderator_admin' preprint_provider.id %}>Register Moderator/Admin</a>
+            </div>
         </div>
         {% endif %}
         <div class="row" id="table-view">

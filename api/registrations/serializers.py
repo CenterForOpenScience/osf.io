@@ -5,19 +5,19 @@ import json
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, InvalidModelValueError
 
-from api.base.utils import absolute_reverse, get_user_auth
+from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer
-from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
-from api.nodes.serializers import NodeContributorsSerializer, RegistrationProviderRelationshipField
+from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer, update_institutions
+from api.nodes.serializers import NodeContributorsSerializer, NodeLicenseRelationshipField, RegistrationProviderRelationshipField, get_license_details
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
-    FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
+    FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
 )
 from framework.auth.core import Auth
@@ -28,18 +28,29 @@ from osf.utils import permissions
 from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
-
+    admin_only_editable_fields = [
+        'affiliated_institutions',
+        'article_doi',
+        'custom_citation',
+        'description',
+        'is_pending_retraction',
+        'is_public',
+        'license',
+        'license_type',
+        'withdrawal_justification',
+    ]
     title = ser.CharField(read_only=True)
-    description = ser.CharField(read_only=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
-    category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string))
+    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
     access_requests_enabled = HideIfWithdrawal(ser.BooleanField(read_only=True))
-    node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
+    node_license = HideIfWithdrawal(NodeLicenseSerializer(required=False, source='license'))
     tags = HideIfWithdrawal(ValuesListField(attr_name='name', child=ser.CharField(), required=False))
+    article_doi = ser.CharField(required=False, allow_null=True)
     public = HideIfWithdrawal(ser.BooleanField(
         source='is_public', required=False,
                help_text='Nodes that are made public will give read-only access '
@@ -56,6 +67,10 @@ class RegistrationSerializer(NodeSerializer):
     pending_embargo_approval = HideIfWithdrawal(ser.BooleanField(
         read_only=True, source='is_pending_embargo',
         help_text='The associated Embargo is awaiting approval by project admins.',
+    ))
+    pending_embargo_termination_approval = HideIfWithdrawal(ser.BooleanField(
+        read_only=True, source='is_pending_embargo_termination',
+        help_text='The associated Embargo early termination is awaiting approval by project admins',
     ))
     embargoed = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_embargoed'))
     pending_registration_approval = HideIfWithdrawal(ser.BooleanField(
@@ -97,10 +112,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'user_id': '<registered_user._id>'},
     ))
 
-    registered_from = HideIfWithdrawal(RelationshipField(
+    registered_from = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<registered_from._id>'},
-    ))
+    )
 
     children = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-children',
@@ -111,7 +126,10 @@ class RegistrationSerializer(NodeSerializer):
     comments = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
+        related_meta={
+            'unread': 'get_unread_comments_count',
+            'count': 'get_total_comments_count',
+        },
         filter={'target': '<_id>'},
     ))
 
@@ -119,6 +137,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-contributors',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'},
+    )
+
+    bibliographic_contributors = RelationshipField(
+        related_view='registrations:registration-bibliographic-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
     )
 
     implicit_contributors = RelationshipField(
@@ -135,6 +158,7 @@ class RegistrationSerializer(NodeSerializer):
     wikis = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-wikis',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_wiki_page_count'},
     ))
 
     forked_from = HideIfWithdrawal(RelationshipField(
@@ -147,9 +171,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<template_node._id>'},
     ))
 
-    license = HideIfWithdrawal(RelationshipField(
+    license = HideIfWithdrawal(NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
-        related_view_kwargs={'license_id': '<node_license.node_license._id>'},
+        related_view_kwargs={'license_id': '<license.node_license._id>'},
+        read_only=False,
     ))
 
     logs = HideIfWithdrawal(RelationshipField(
@@ -184,16 +209,16 @@ class RegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_linked_by_registrations_count'},
     ))
 
-    parent = HideIfWithdrawal(RelationshipField(
+    parent = RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<parent_node._id>'},
         filter_key='parent_node',
-    ))
+    )
 
-    root = HideIfWithdrawal(RelationshipField(
+    root = RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<root._id>'},
-    ))
+    )
 
     region = HideIfWithdrawal(RelationshipField(
         related_view='regions:region-detail',
@@ -201,10 +226,15 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True,
     ))
 
-    affiliated_institutions = HideIfWithdrawal(RelationshipField(
+    affiliated_institutions = RelationshipField(
         related_view='registrations:registration-institutions',
         related_view_kwargs={'node_id': '<_id>'},
-    ))
+        self_view='registrations:registration-relationships-institutions',
+        self_view_kwargs={'node_id': '<_id>'},
+        read_only=False,
+        many=True,
+        required=False,
+    )
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
@@ -231,10 +261,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )))
 
-    identifiers = HideIfWithdrawal(RelationshipField(
+    identifiers = RelationshipField(
         related_view='registrations:identifier-list',
         related_view_kwargs={'node_id': '<_id>'},
-    ))
+    )
 
     linked_nodes = HideIfWithdrawal(RelationshipField(
         related_view='registrations:linked-nodes',
@@ -312,37 +342,81 @@ class RegistrationSerializer(NodeSerializer):
     def get_view_only_links_count(self, obj):
         return obj.private_links.filter(is_deleted=False).count()
 
+    def get_total_comments_count(self, obj):
+        return obj.comment_set.filter(page='node', is_deleted=False).count()
+
+    def check_admin_perms(self, registration, user, validated_data):
+        """
+        While admin/write users can make both make modifications to registrations,
+        most fields are restricted to admin-only edits
+
+        Add fields that need admin perms to admin_only_editable_fields
+        """
+        user_is_admin = registration.has_permission(user, permissions.ADMIN)
+        for field in validated_data:
+            if field in self.admin_only_editable_fields and not user_is_admin:
+                raise exceptions.PermissionDenied()
+
+    def update_registration_tags(self, registration, validated_data, auth):
+        new_tags = validated_data.pop('tags', [])
+        try:
+            registration.update_tags(new_tags, auth=auth)
+        except NodeStateError as err:
+            raise Conflict(str(err))
+
+    def retract_registration(self, registration, validated_data, user):
+        is_pending_retraction = validated_data.pop('is_pending_retraction', None)
+        withdrawal_justification = validated_data.pop('withdrawal_justification', None)
+        if withdrawal_justification and not is_pending_retraction:
+            raise exceptions.ValidationError(
+                'You cannot provide a withdrawal_justification without a concurrent withdrawal request.',
+            )
+        if is_truthy(is_pending_retraction):
+            if registration.is_pending_retraction:
+                raise exceptions.ValidationError('This registration is already pending withdrawal.')
+            try:
+                retraction = registration.retract_registration(user, withdrawal_justification, save=True)
+            except NodeStateError as err:
+                raise exceptions.ValidationError(str(err))
+            retraction.ask(registration.get_active_contributors_recursive(unique_users=True))
+        elif is_pending_retraction is not None:
+            raise exceptions.ValidationError('You cannot set is_pending_withdrawal to False.')
+
     def update(self, registration, validated_data):
-        # TODO - when withdrawal is added, make sure to restrict to admin only here
         user = self.context['request'].user
         auth = Auth(user)
-        user_is_admin = registration.has_permission(user, permissions.ADMIN)
-        # Update tags
+        self.check_admin_perms(registration, user, validated_data)
+        validated_data.pop('_id', None)
+
         if 'tags' in validated_data:
-            new_tags = validated_data.pop('tags', [])
-            try:
-                registration.update_tags(new_tags, auth=auth)
-            except NodeStateError as err:
-                raise Conflict(str(err))
+            self.update_registration_tags(registration, validated_data, auth)
         if 'custom_citation' in validated_data:
-            if user_is_admin:
-                registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
-            else:
-                raise exceptions.PermissionDenied()
-        is_public = validated_data.get('is_public', None)
-        if is_public is not None:
-            if is_public:
-                if user_is_admin:
-                    try:
-                        registration.update(validated_data, auth=auth)
-                    except NodeUpdateError as err:
-                        raise exceptions.ValidationError(err.reason)
-                    except NodeStateError as err:
-                        raise exceptions.ValidationError(str(err))
-                else:
-                    raise exceptions.PermissionDenied()
-            else:
+            registration.update_custom_citation(validated_data.pop('custom_citation'), auth)
+        if 'license_type' in validated_data or 'license' in validated_data:
+            license_details = get_license_details(registration, validated_data)
+            validated_data['node_license'] = license_details
+            validated_data.pop('license_type', None)
+            validated_data.pop('license', None)
+        if 'affiliated_institutions' in validated_data:
+            institutions_list = validated_data.pop('affiliated_institutions')
+            new_institutions = [{'_id': institution} for institution in institutions_list]
+            update_institutions(registration, new_institutions, user)
+            registration.save()
+        if 'withdrawal_justification' in validated_data or 'is_pending_retraction' in validated_data:
+            self.retract_registration(registration, validated_data, user)
+        if 'is_public' in validated_data:
+            if validated_data.get('is_public') is False:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+
+        try:
+            registration.update(validated_data, auth=auth)
+        except ValidationError as e:
+            raise InvalidModelValueError(detail=e.messages[0])
+        except NodeUpdateError as err:
+            raise exceptions.ValidationError(err.reason)
+        except NodeStateError as err:
+            raise exceptions.ValidationError(str(err))
+
         return registration
 
     class Meta:
@@ -378,7 +452,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             orphan_files_names = [file_data['selectedFileName'] for file_data in orphan_files]
             raise exceptions.ValidationError('All files attached to this form must be registered to complete the process. '
                                              'The following file(s) are attached, but are not part of a component being'
-                                             ' registered: {}'.format(','.join(orphan_files_names)))
+                                             ' registered: {}'.format(', '.join(orphan_files_names)))
 
         try:
             draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
@@ -422,10 +496,16 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
 class RegistrationDetailSerializer(RegistrationSerializer):
     """
-    Overrides RegistrationSerializer to make id required.
+    Overrides RegistrationSerializer make _id required and other fields writeable
     """
 
     id = IDField(source='_id', required=True)
+
+    pending_withdrawal = HideIfWithdrawal(ser.BooleanField(
+        source='is_pending_retraction', required=False,
+        help_text='The registration is awaiting withdrawal approval by project admins.',
+    ))
+    withdrawal_justification = ser.CharField(required=False)
 
 
 class RegistrationNodeLinksSerializer(NodeLinksSerializer):
@@ -460,7 +540,7 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
         kind='folder',
     )
 
-    comments = FileCommentRelationshipField(
+    comments = FileRelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<target._id>'},
         related_meta={'unread': 'get_unread_comments_count'},

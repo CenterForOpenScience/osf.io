@@ -10,7 +10,6 @@ from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.views import BaseLinkedList
 from api.base.views import LinkedNodesRelationship
-from api.base.views import LinkedRegistrationsRelationship
 from api.nodes.utils import NodeOptimizationMixin
 
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
@@ -733,7 +732,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -751,7 +750,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -772,7 +771,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -842,7 +841,7 @@ class CollectionLinkedPreprintsRelationship(CollectionLinkedNodesRelationship):
         return obj
 
 
-class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, CollectionMixin):
+class CollectionLinkedRegistrationsRelationship(CollectionLinkedNodesRelationship):
     """ Relationship Endpoint for Collection -> Linked Registration relationships
 
     Used to set, remove, update and retrieve the ids of the linked registrations attached to this collection. For each id, there
@@ -857,7 +856,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -875,7 +874,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_regisrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -896,7 +895,7 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -913,7 +912,6 @@ class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship,
     )
 
     serializer_class = CollectedRegistrationsRelationshipSerializer
-    view_category = 'collections'
     view_name = 'collection-registration-pointer-relationship'
 
     def get_object(self):

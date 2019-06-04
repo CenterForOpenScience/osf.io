@@ -125,7 +125,7 @@ class RegionRelationshipField(RelationshipField):
         try:
             region_id = Region.objects.filter(_id=data).values_list('id', flat=True).get()
         except Region.DoesNotExist:
-            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(region_id))
+            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(data))
         return {'region_id': region_id}
 
 
@@ -338,6 +338,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_contrib_count'},
     )
 
+    bibliographic_contributors = RelationshipField(
+        related_view='nodes:node-bibliographic-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
     implicit_contributors = RelationshipField(
         related_view='nodes:node-implicit-contributors',
         related_view_kwargs={'node_id': '<_id>'},
@@ -357,6 +362,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     wikis = HideIfWikiDisabled(RelationshipField(
         related_view='nodes:node-wikis',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_wiki_page_count'},
     ))
 
     forked_from = RelationshipField(
@@ -554,8 +560,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   FROM parents JOIN osf_noderelation ON parents.PARENT_ID = osf_noderelation.child_id
                   WHERE osf_noderelation.is_node_link IS FALSE
                 ), has_admin AS (SELECT * FROM osf_contributor WHERE (node_id IN (SELECT parent_id FROM parents) OR node_id = %s) AND user_id = %s AND admin IS TRUE LIMIT 1)
-                SELECT DISTINCT
-                  COUNT(child_id)
+                SELECT COUNT(DISTINCT child_id)
                 FROM
                   osf_noderelation
                 JOIN osf_abstractnode ON osf_noderelation.child_id = osf_abstractnode.id
@@ -590,6 +595,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return obj.linked_nodes.count()
+
+    def get_wiki_page_count(self, obj):
+        return obj.wikis.filter(deleted__isnull=True).count()
 
     def get_node_links_count(self, obj):
         auth = get_user_auth(self.context['request'])

@@ -20,8 +20,6 @@ from api.base.exceptions import (
     InvalidModelValueError,
     JSONAPIException,
     Gone,
-    InvalidFilterOperator,
-    InvalidFilterValue,
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
     InvalidQueryStringError,
@@ -79,6 +77,7 @@ from api.nodes.permissions import (
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
+    ReadOnlyIfWithdrawn,
 )
 from api.nodes.serializers import (
     NodeSerializer,
@@ -119,7 +118,7 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
-from osf.utils.permissions import ADMIN, PERMISSIONS
+from osf.utils.permissions import ADMIN
 from website import mails
 
 # This is used to rethrow v1 exceptions as v2
@@ -389,21 +388,6 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     def get_resource(self):
         return self.get_node()
 
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'bibliographic':
-            operation['source_field_name'] = 'visible'
-
-    def build_query_from_field(self, field_name, operation):
-        if field_name == 'permission':
-            if operation['op'] != 'eq':
-                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
-            # operation['value'] should be 'admin', 'write', or 'read'
-            if operation['value'].lower().strip() not in PERMISSIONS:
-                raise InvalidFilterValue(value=operation['value'])
-            return Q(**{operation['value'].lower().strip(): True})
-        return super(NodeContributorsList, self).build_query_from_field(field_name, operation)
-
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
         """
@@ -534,6 +518,31 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
         return queryset
+
+
+class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
+    permission_classes = (
+        AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    model_class = OSFUser
+
+    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle,)
+
+    pagination_class = NodeContributorPagination
+    serializer_class = NodeContributorsSerializer
+    view_category = 'nodes'
+    view_name = 'node-bibliographic-contributors'
+    ordering = ('_order',)  # default ordering
+
+    def get_default_queryset(self):
+        contributors = super(NodeBibliographicContributorsList, self).get_default_queryset()
+        return contributors.filter(visible=True)
 
 
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
@@ -1432,6 +1441,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         AdminOrPublic,
+        ReadOnlyIfWithdrawn,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
@@ -1597,7 +1607,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1615,7 +1625,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1636,7 +1646,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1686,7 +1696,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1704,7 +1714,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -1725,7 +1735,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
