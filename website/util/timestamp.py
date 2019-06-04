@@ -99,7 +99,7 @@ def get_error_list(pid):
 
         # User and date of the verification
         if data.verify_date is not None:
-            verify_date = data.verify_date.strftime('%Y/%m/%d %H:%M:%S z')
+            verify_date = data.verify_date.strftime('%Y/%m/%d %H:%M:%S %Z')
         else:
             verify_date = ''
 
