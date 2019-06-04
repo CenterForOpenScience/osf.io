@@ -202,7 +202,7 @@ def get_license_details(node, validated_data):
         license = node.license if isinstance(node, Preprint) else node.node_license
     else:
         license = None
-    if ('license_type' not in validated_data or (license and license.node_license.license_id)):
+    if ('license_type' not in validated_data and not (license and license.node_license.license_id)):
         raise exceptions.ValidationError(detail='License ID must be provided for a Node License.')
     license_id = license.node_license.license_id if license else None
     license_year = license.year if license else None
