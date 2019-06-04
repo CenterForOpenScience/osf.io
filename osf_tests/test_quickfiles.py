@@ -5,10 +5,9 @@ from addons.osfstorage.models import OsfStorageFile
 from osf.exceptions import MaxRetriesError
 from api_tests.utils import create_test_quickfile, create_test_file, create_test_folder
 
-from osf_tests.factories import ProjectFactory
 from django.contrib.contenttypes.models import ContentType
 
-from osf_tests.factories import AuthUserFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 
 def bad_content_type():
@@ -28,6 +27,22 @@ def bad_node():
 @pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestQuickFolder:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user2(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user3(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self):
+        return ProjectFactory()
 
     @pytest.fixture()
     def file_node(self, user, project):

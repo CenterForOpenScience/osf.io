@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import logging
+import bson
 
 from django.apps import apps
 from django.dispatch import receiver
@@ -136,7 +137,10 @@ class OsfStorageFileNode(BaseFileNode):
         """Path is dynamically computed as storedobject.path is stored
         as an empty string to make the unique index work properly for osfstorage
         """
-        return '/' + self._id + ('' if self.is_file else '/')
+        if isinstance(self._id, bson.objectid.ObjectId):
+            return '/' + str(self._id) + ('' if self.is_file else '/')
+        else:
+            return '/' + self._id + ('' if self.is_file else '/')
 
     @property
     def is_checked_out(self):
