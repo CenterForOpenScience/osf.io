@@ -17,13 +17,19 @@ from framework import status
 from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
-from osf.exceptions import InvalidTriggerError, ValidationValueError, UserStateError, NodeStateError
+from osf.exceptions import (
+    InvalidTriggerError,
+    ValidationValueError,
+    UserStateError,
+    NodeStateError,
+    BlacklistedEmailError
+)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
 from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
-from osf.models.validators import validate_subject_hierarchy
+from osf.models.validators import validate_subject_hierarchy, validate_email
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
 from osf.utils.permissions import ADMIN, READ, WRITE, reduce_permissions, expand_permissions, REVIEW_GROUPS
@@ -999,6 +1005,11 @@ class ContributorMixin(models.Model):
         """
         OSFUser = apps.get_model('osf.OSFUser')
         send_email = send_email or self.contributor_email_template
+
+        try:
+            validate_email(email)
+        except BlacklistedEmailError:
+            raise ValidationError(detail='Unregistered contributor email address domain is blacklisted.')
 
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
