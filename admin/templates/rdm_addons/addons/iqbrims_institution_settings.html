@@ -22,6 +22,20 @@
                                attr: {disabled: !canSaveManagementProject()}"
             >Save</button>
         </div>
+        <h5>組織プロジェクト</h5>
+        <div class="organizational-project" data-bind="if: organizationalProjectGUID">
+            <a class="pull-right text-danger" data-bind="click: removeOrganizationalProject">Remove</a>
+            <p class="organizational-project-guid text-muted"><em data-bind="text: organizationalProjectGUID"></em></p>
+        </div>
+        <div class="organizational-project-form">
+            <input type="url" class="form-control organizational-project-input" placeholder="Organizational project URL"
+                   data-bind="textInput: organizationalProjectURL">
+            <button class="btn btn-success pull-right organizational-project-save"
+                    data-bind="click: saveOrganizationalProject,
+                               css: {disabled: !canSaveOrganizationalProject()},
+                               attr: {disabled: !canSaveOrganizationalProject()}"
+            >Save</button>
+        </div>
         <!-- Flashed Messages -->
         <div class="help-block">
             <p data-bind="html: message, attr: { class: messageClass }"></p>

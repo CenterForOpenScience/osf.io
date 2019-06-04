@@ -6,55 +6,58 @@ var Raven = require('raven-js');
 var OAuthAddonSettingsViewModel = require('../rdmAddonSettings.js').OAuthAddonSettingsViewModel;
 var oop = require('js/oop');
 
+var projectUrlRegex = /^https?:\/\/[^\/]+?\/([^\/]+?)\/?$/;
+
 var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
     constructor: function(url, institutionId) {
         this.super.constructor.call(this, 'iqbrims', 'IQB-RIMS', institutionId);
 
         this.managementProjectGUID = ko.observable('');
         this.managementProjectURL = ko.observable('');
-        this.managementProjectRegex = /^https?:\/\/[^\/]+?\/([^\/]+?)\/?$/;
         this.isValidManagementProjectURL = ko.pureComputed(function() {
-            var url = this.managementProjectURL().trim();
-            return this.managementProjectRegex.test(url);
+            return projectUrlRegex.test(this.managementProjectURL().trim())
         }, this);
         this.isSavingManagementProject = ko.observable(false);
         this.canSaveManagementProject = ko.pureComputed(function() {
             return this.isValidManagementProjectURL() &&
                 !this.isSavingManagementProject();
         }, this);
+
+        this.organizationalProjectGUID = ko.observable('');
+        this.organizationalProjectURL = ko.observable('');
+        this.isValidOrganizationalProjectURL = ko.pureComputed(function() {
+            return projectUrlRegex.test(this.organizationalProjectURL().trim())
+        }, this);
+        this.isSavingOrganizationalProject = ko.observable(false);
+        this.canSaveOrganizationalProject = ko.pureComputed(function() {
+            return this.isValidOrganizationalProjectURL() &&
+                !this.isSavingOrganizationalProject();
+        }, this);
     },
 
     saveManagementProject: function() {
-        this.isSavingManagementProject(true);
-        var projectUrl = this.managementProjectURL().trim();
-        var matched = projectUrl.match(this.managementProjectRegex);
+        var self = this;
+        self.isSavingManagementProject(true);
+        var projectUrl = self.managementProjectURL().trim();
+        var matched = projectUrl.match(projectUrlRegex);
         if (!matched) {
             throw new Error('Invalid management URL: ' + projectUrl);
         }
         var guid = matched[1];
 
         var url = '/addons/api/v1/settings/' + this.name + '/' + this.institutionId + '/manage/';
-        var request = $.ajax({
+        return $.ajax({
             url: url,
             type: 'PUT',
             data: JSON.stringify({guid: guid}),
             contentType: 'application/json',
             dataType: 'json'
-        });
-        var self = this;
-        request.done(function() {
-            var fetchRequest = self.fetchManagementProject();
-            fetchRequest.done(function() {
-                self.managementProjectURL('');
-                self.setMessage('Saving management project was successful', 'text-success');
-                self.isSavingManagementProject(false);
-            });
-            fetchRequest.fail(function() {
-                self.setMessage('Error while saving management project', 'text-danger');
-                self.isSavingManagementProject(false);
-            });
-        });
-        request.fail(function(xhr, status, error) {
+        }).then(function() {
+            return self.fetchManagementProject();
+        }).done(function() {
+            self.managementProjectURL('');
+            self.setMessage('Saving management project was successful', 'text-success');
+        }).fail(function(xhr, status, error) {
             Raven.captureMessage('Error while saving addon management project', {
                 extra: {
                     url: url,
@@ -63,30 +66,24 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                 }
             });
             self.setMessage('Error while saving management project', 'text-danger');
+        }).always(function() {
             self.isSavingManagementProject(false);
         });
-        return request;
     },
 
     removeManagementProject: function() {
-        var url = '/addons/api/v1/settings/' + this.name + '/' + this.institutionId + '/manage/';
-        var request = $.ajax({
+        var self = this;
+        var url = '/addons/api/v1/settings/' + self.name + '/' + self.institutionId + '/manage/';
+        return $.ajax({
             url: url,
             type: 'DELETE',
             dataType: 'json'
-        });
-        var self = this;
-        request.done(function() {
-            var fetchRequest = self.fetchManagementProject();
-            fetchRequest.done(function() {
-                self.managementProjectURL('');
-                self.setMessage('Removing management project was successful', 'text-success');
-            });
-            fetchRequest.fail(function() {
-                self.setMessage('Error while removing management project', 'text-danger');
-            });
-        });
-        request.fail(function(xhr, status, error) {
+        }).then(function() {
+            return self.fetchManagementProject();
+        }).done(function() {
+            self.managementProjectURL('');
+            self.setMessage('Removing management project was successful', 'text-success');
+        }).fail(function(xhr, status, error) {
             Raven.captureMessage('Error while removing addon management project', {
                 extra: {
                     url: url,
@@ -96,21 +93,18 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
             });
             self.setMessage('Error while removing management project', 'text-danger');
         });
-        return request;
     },
 
     fetchManagementProject: function(){
-        var url = '/addons/api/v1/settings/' + this.name + '/' + this.institutionId + '/manage/';
-        var request = $.ajax({
+        var self = this;
+        var url = '/addons/api/v1/settings/' + self.name + '/' + self.institutionId + '/manage/';
+        return $.ajax({
             url: url,
             type: 'GET',
             dataType: 'json'
-        });
-        var self = this;
-        request.done(function(data) {
+        }).done(function(data) {
             self.managementProjectGUID(data.guid);
-        });
-        request.fail(function(xhr, status, error) {
+        }).fail(function(xhr, status, error) {
             Raven.captureMessage('Error while fetching addon management project', {
                 extra: {
                     url: url,
@@ -119,7 +113,86 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                 }
             });
         });
-        return request;
+    },
+
+    saveOrganizationalProject: function() {
+        var self = this;
+        self.isSavingOrganizationalProject(true);
+        var projectUrl = self.organizationalProjectURL().trim();
+        var matched = projectUrl.match(projectUrlRegex);
+        if (!matched) {
+            throw new Error('Invalid organizational URL: ' + projectUrl);
+        }
+        var guid = matched[1];
+
+        var url = '/addons/api/v1/settings/' + this.name + '/' + this.institutionId + '/organization/';
+        return $.ajax({
+            url: url,
+            type: 'PUT',
+            data: JSON.stringify({guid: guid}),
+            contentType: 'application/json',
+            dataType: 'json'
+        }).then(function() {
+            return self.fetchOrganizationalProject();
+        }).done(function() {
+            self.organizationalProjectURL('');
+            self.setMessage('Saving organizational project was successful', 'text-success');
+        }).fail(function(xhr, status, error) {
+            Raven.captureMessage('Error while saving addon organizational project', {
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
+            });
+            self.setMessage('Error while saving organizational project', 'text-danger');
+        }).always(function() {
+            self.isSavingOrganizationalProject(false);
+        });
+    },
+
+    removeOrganizationalProject: function() {
+        var self = this;
+        var url = '/addons/api/v1/settings/' + self.name + '/' + self.institutionId + '/organization/';
+        return $.ajax({
+            url: url,
+            type: 'DELETE',
+            dataType: 'json'
+        }).then(function() {
+            return self.fetchOrganizationalProject();
+        }).done(function() {
+            self.organizationalProjectURL('');
+            self.setMessage('Removing organizational project was successful', 'text-success');
+        }).fail(function(xhr, status, error) {
+            Raven.captureMessage('Error while removing addon organizational project', {
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
+            });
+            self.setMessage('Error while removing organizational project', 'text-danger');
+        });
+    },
+
+    fetchOrganizationalProject: function(){
+        var self = this;
+        var url = '/addons/api/v1/settings/' + self.name + '/' + self.institutionId + '/organization/';
+        return $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(data) {
+            self.organizationalProjectGUID(data.guid);
+        }).fail(function(xhr, status, error) {
+            Raven.captureMessage('Error while fetching addon organization project', {
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
+            });
+        });
     }
 });
 
@@ -129,6 +202,10 @@ function IQBRIMSUserConfig(selector, url, institutionId) {
     viewModel.fetchManagementProject()
         .fail(function() {
             viewModel.setMessage('Error while fetching management project', 'text-danger');
+        });
+    viewModel.fetchOrganizationalProject()
+        .fail(function() {
+            viewModel.setMessage('Error while fetching organizational project', 'text-danger');
         });
 }
 

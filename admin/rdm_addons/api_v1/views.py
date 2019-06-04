@@ -204,6 +204,57 @@ class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
 
         return JsonResponse({}, status=httplib.OK)
 
+class OrganizationView(RdmPermissionMixin, UserPassesTestMixin, View):
+    """View for organizational project of add-on"""
+    raise_exception = True
+
+    def test_func(self):
+        """check user permissions"""
+        institution_id = int(self.kwargs.get('institution_id'))
+        return self.has_auth(institution_id)
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        """disable CSRF"""
+        return super(OrganizationView, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        addon_name = kwargs['addon_name']
+
+        institution_id = int(kwargs['institution_id'])
+        rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
+        guid = rdm_addon_option.get_organizational_node_guid()
+
+        return JsonResponse({'guid': guid})
+
+    def put(self, request, *args, **kwargs):
+        addon_name = kwargs['addon_name']
+        institution_id = int(kwargs['institution_id'])
+        json_request = json.loads(request.body)
+        if 'guid' not in json_request:
+            return JsonResponse({
+                'message': 'Require "guid" parameter.'
+            }, status=httplib.BAD_REQUEST)
+
+        rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
+        try:
+            rdm_addon_option.set_organizational_node_by_guid(json_request['guid'], save=True)
+        except (ValidationError, TypeError):
+            return JsonResponse({
+                'message': 'Invalid GUID of organizational project.'
+            }, status=httplib.BAD_REQUEST)
+
+        return JsonResponse({}, status=httplib.OK)
+
+    def delete(self, request, *args, **kwargs):
+        addon_name = kwargs['addon_name']
+        institution_id = int(kwargs['institution_id'])
+
+        rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
+        rdm_addon_option.unset_organizational_node(save=True)
+
+        return JsonResponse({}, status=httplib.OK)
+
 def add_addon_extra_info(ret, external_account, addon_name):
     """add each add-on's account information"""
     if addon_name == 'dataverse':

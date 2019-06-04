@@ -9,17 +9,22 @@ import string
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
+from osf.models import Contributor
 from addons.base import exceptions
 from addons.iqbrims import settings as drive_settings
+from addons.iqbrims.apps import IQBRIMSAddonConfig
 from addons.iqbrims.client import (IQBRIMSAuthClient,
                                                IQBRIMSClient)
 from addons.iqbrims.serializer import IQBRIMSSerializer
 from addons.iqbrims.utils import to_hgrid
 from website.util import api_v2_url
+from website import settings as ws_settings
 
 # from website.files.models.ext import PathFollowingFileNode
 
@@ -277,3 +282,27 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                                for i in range(0, 16)])
         self.save()
         return self.secret
+
+
+@receiver(post_save, sender=Contributor)
+@receiver(post_delete, sender=Contributor)
+def change_iqbrims_addon_enabled(sender, instance, **kwargs):
+    from osf.models import Node, RdmAddonOption
+
+    if IQBRIMSAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    organizational_node = instance.node
+    rdm_addon_options = RdmAddonOption.objects.filter(
+        provider=IQBRIMSAddonConfig.short_name,
+        is_allowed=True,
+        management_node__isnull=False,
+        organizational_node=organizational_node
+    ).all()
+
+    for rdm_addon_option in rdm_addon_options:
+        for node in Node.find_by_institutions(rdm_addon_option.institution):
+            if organizational_node.is_contributor(node.creator):
+                node.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)
+            else:
+                node.delete_addon(IQBRIMSAddonConfig.short_name, auth=None)

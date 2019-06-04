@@ -2524,17 +2524,20 @@ def set_parent_and_root(sender, instance, created, *args, **kwargs):
 def add_iqbrims_addon(sender, instance, created, **kwargs):
     from osf.models import RdmAddonOption
 
-    addon_short_name = IQBRIMSAddonConfig.short_name
-    if addon_short_name not in settings.ADDONS_AVAILABLE_DICT:
+    if IQBRIMSAddonConfig.short_name not in settings.ADDONS_AVAILABLE_DICT:
         return
 
     inst_ids = instance.affiliated_institutions.values('id')
-    enabled = RdmAddonOption.objects.filter(
-        provider=addon_short_name,
+    addon_option = RdmAddonOption.objects.filter(
+        provider=IQBRIMSAddonConfig.short_name,
         institution_id__in=Subquery(inst_ids),
         management_node__isnull=False,
         is_allowed=True
-    ).exists()
+    ).first()
+    if addon_option is None:
+        return
+    if addon_option.organizational_node is not None and \
+            not addon_option.organizational_node.is_contributor(instance.creator):
+        return
 
-    if enabled:
-        instance.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)
+    instance.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)
