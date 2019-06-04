@@ -77,6 +77,7 @@ class ChronosSerializer(object):
                     'DATA_VALUE': preprint.provider.name,
                 }
             ],
+            'UNDERLYING_DATASET_URL': preprint.node.absolute_url if preprint.node else '',
         }
 
     @classmethod
