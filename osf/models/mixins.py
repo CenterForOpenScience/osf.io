@@ -1006,10 +1006,11 @@ class ContributorMixin(models.Model):
         OSFUser = apps.get_model('osf.OSFUser')
         send_email = send_email or self.contributor_email_template
 
-        try:
-            validate_email(email)
-        except BlacklistedEmailError:
-            raise ValidationError('Unregistered contributor email address domain is blacklisted.')
+        if (email):
+            try:
+                validate_email(email)
+            except BlacklistedEmailError:
+                raise ValidationError('Unregistered contributor email address domain is blacklisted.')
 
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
