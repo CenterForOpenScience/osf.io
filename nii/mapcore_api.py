@@ -5,6 +5,7 @@
 # @COPYRIGHT@
 #
 
+import sys
 import time
 import json
 import logging
@@ -249,12 +250,13 @@ class MAPCore(object):
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
             r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
-            j = self.check_result(r)
+            method_name = sys._getframe().f_code.co_name
+            j = self.check_result(r, method_name)
             if j is not False:
                 # Function succeeded.
                 return j
 
-            if self.is_token_expired(r):
+            if self.is_token_expired(r, method_name):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -290,7 +292,8 @@ class MAPCore(object):
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
             r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
-            j = self.check_result(r)
+            method_name = sys._getframe().f_code.co_name
+            j = self.check_result(r, method_name)
             if j is not False:
                 if len(j['result']['groups']) == 0:
                     self.error_message = 'Group not found'
@@ -300,7 +303,7 @@ class MAPCore(object):
                 # Function succeeded.
                 return j
 
-            if self.is_token_expired(r):
+            if self.is_token_expired(r, method_name):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -332,7 +335,8 @@ class MAPCore(object):
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
             r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
-            j = self.check_result(r)
+            method_name = sys._getframe().f_code.co_name
+            j = self.check_result(r, method_name)
             if j is not False:
                 if len(j['result']['groups']) == 0:
                     self.error_message = 'Group not found'
@@ -342,7 +346,7 @@ class MAPCore(object):
                 # Function succeeded.
                 return j
 
-            if self.is_token_expired(r):
+            if self.is_token_expired(r, method_name):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -374,12 +378,13 @@ class MAPCore(object):
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
             r = requests.delete(url, headers=headers, params=payload, verify=VERIFY)
-            j = self.check_result(r)
+            method_name = sys._getframe().f_code.co_name
+            j = self.check_result(r, method_name)
             if j is not False:
                 # Function succeeded.
                 return j
 
-            if self.is_token_expired(r):
+            if self.is_token_expired(r, method_name):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -427,7 +432,8 @@ class MAPCore(object):
             }
 
             r = requests.post(url, headers=headers, data=params, verify=VERIFY)
-            j = self.check_result(r)
+            method_name = sys._getframe().f_code.co_name
+            j = self.check_result(r, method_name)
             if j is not False:
                 group_key = j['result']['groups'][0]['group_key']
                 logger.debug('  New geoup has been created (group_key=' + group_key + ')')
@@ -436,7 +442,7 @@ class MAPCore(object):
                 j = self.edit_group(group_key, group_name, group_name)
                 return j
 
-            if self.is_token_expired(r):
+            if self.is_token_expired(r, method_name):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -486,12 +492,13 @@ class MAPCore(object):
             }
 
             r = requests.post(url, headers=headers, data=params, verify=VERIFY)
-            j = self.check_result(r)
+            method_name = sys._getframe().f_code.co_name
+            j = self.check_result(r, method_name)
             if j is not False:
                 # Function succeeded.
                 return j
 
-            if self.is_token_expired(r):
+            if self.is_token_expired(r, method_name):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -523,12 +530,13 @@ class MAPCore(object):
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
             r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
-            j = self.check_result(r)
+            method_name = sys._getframe().f_code.co_name
+            j = self.check_result(r, method_name)
             if j is not False:
                 # Function succeeded.
                 return j
 
-            if self.is_token_expired(r):
+            if self.is_token_expired(r, method_name):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -560,12 +568,13 @@ class MAPCore(object):
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
             r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
-            j = self.check_result(r)
+            method_name = sys._getframe().f_code.co_name
+            j = self.check_result(r, method_name)
             if j is not False:
                 # Function succeeded.
                 return j
 
-            if self.is_token_expired(r):
+            if self.is_token_expired(r, method_name):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -610,12 +619,13 @@ class MAPCore(object):
             }
 
             r = requests.post(url, headers=headers, data=params, verify=VERIFY)
-            j = self.check_result(r)
+            method_name = sys._getframe().f_code.co_name
+            j = self.check_result(r, method_name)
             if j is not False:
                 # Function succeeded.
                 return j
 
-            if self.is_token_expired(r):
+            if self.is_token_expired(r, method_name):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -647,12 +657,13 @@ class MAPCore(object):
             headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
 
             r = requests.delete(url, headers=headers, params=payload)
-            j = self.check_result(r)
+            method_name = sys._getframe().f_code.co_name
+            j = self.check_result(r, method_name)
             if j is not False:
                 # Function succeeded.
                 return j
 
-            if self.is_token_expired(r):
+            if self.is_token_expired(r, method_name):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -712,19 +723,19 @@ class MAPCore(object):
     # Check API result status.
     # If any error occurs, a False will be returned.
     #
-    def check_result(self, result):
+    def check_result(self, result, method_name):
         self.http_status_code = result.status_code
         self.api_error_code = None
         self.error_message = ''
 
         if result.status_code != requests.codes.ok:
-            if self.is_token_expired(result):
+            if self.is_token_expired(result, method_name):
                 self.error_message = self.MSG_ACCESS_TOKEN_EXPIRED
             else:
                 self.error_message = result.headers.get(self.WWW_AUTHENTICATE)
                 if not self.error_message:
                     self.error_message = result.text
-            logger.info('MAPCore(user={})::check_result: status_code={}, error_msg={}'.format(self.user.username, result.status_code, self.error_message))
+            logger.info('MAPCore(user={},eppn={}).{}:check_result: status_code={}, error_msg={}'.format(self.user.username, self.user.eppn, method_name, result.status_code, self.error_message))
             return False
 
         #logger.debug('result.encoding={}'.format(result.encoding))
@@ -733,11 +744,11 @@ class MAPCore(object):
         if j['status']['error_code'] != 0:
             self.api_error_code = j['status']['error_code']
             self.error_message = j['status']['error_msg']
-            logger.info('MAPCore(user={})::check_result: error_code={}, error_msg={}'.format(self.user.username, self.api_error_code, self.error_message))
+            logger.info('MAPCore(user={},eppn={}).{}:check_result: error_code={}, error_msg={}'.format(self.user.username, self.user.eppn, method_name, self.api_error_code, self.error_message))
             return False
         return j
 
-    def is_token_expired(self, result):
+    def is_token_expired(self, result, method_name):
         if result.status_code != requests.codes.ok:
             s = result.headers.get(self.WWW_AUTHENTICATE)
             if s is None:
@@ -745,7 +756,7 @@ class MAPCore(object):
             #if s.find(self.MSG_ACCESS_TOKEN_EXPIRED) != -1 \
             #   or s.find(self.MSG_INVALID_ACCESS_TOKEN) != -1:
             if result.status_code == 401:  # Unauthorized
-                logger.debug('MAPCore(user={})::check_result: status_code={}, {}={}'.format(self.user.username, result.status_code, self.WWW_AUTHENTICATE, self.error_message))
+                logger.debug('MAPCore(user={},eppn={}).{}:is_token_expired: status_code={}, {}={}'.format(self.user.username, self.user.eppn, method_name, result.status_code, self.WWW_AUTHENTICATE, self.error_message))
                 return True
             else:
                 return False

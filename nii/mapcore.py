@@ -806,7 +806,7 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
         # sync group info
         if title_desc:
             mapcore_update_group(access_user, node, group_key)
-            logger.info('Node title [' + utf8(node.title) + '] and desctiption is synchronized to mAP group [' + utf8(group_key) + '].')
+            logger.info('Node title [' + utf8(node.title) + '] and desctiption are synchronized to mAP group [' + utf8(group_key) + '].')
 
         # sync members
         if contributors:
@@ -865,7 +865,7 @@ def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True
     try:
         ret = mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
     except Exception as e:
-        logger.warning('GRDM project({}) cannot be uploaded to mAP. (retry later), reason={}'.format(node._id, utf8(str(e))))
+        logger.warning('GRDM project [{} ({})] cannot be uploaded to mAP. (retry later), reason={}'.format(utf8(node.title), node._id, utf8(str(e))))
         add_log(NodeLog.MAPCORE_MAP_GROUP_NOT_UPDATED, node, access_user, e,
                 save=True)
         try:
@@ -876,7 +876,7 @@ def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True
         if use_raise:
             raise
         return False
-    if ret:
+    if ret:  # OK
         try:
             mapcore_unset_standby_to_upload(node)
         except Exception:
