@@ -645,7 +645,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         serializer.save(draft=draft)
 
 
-class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodesFilterMixin):
+class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_children_list).
     """
 

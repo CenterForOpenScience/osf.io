@@ -30,6 +30,7 @@ from api.base.serializers import (
 )
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base.utils import is_bulk_request, get_user_auth, default_node_list_queryset
+from api.nodes.filters import NodesFilterMixin
 from api.nodes.utils import get_file_object
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
@@ -456,7 +457,10 @@ def error_404(request, format=None, *args, **kwargs):
     )
 
 
-class BaseChildrenList(JSONAPIBaseView):
+class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
+    """
+    For use with NodeChildrenList and RegistrationChildrenList views.
+    """
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -466,6 +470,7 @@ class BaseChildrenList(JSONAPIBaseView):
     )
     ordering = ('-modified',)
 
+    # overrides NodesFilterMixin
     def get_default_queryset(self):
         return default_node_list_queryset(model_cls=self.model_class)
 

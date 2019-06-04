@@ -275,7 +275,7 @@ class RegistrationImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView
         return queryset
 
 
-class RegistrationChildrenList(BaseChildrenList, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
+class RegistrationChildrenList(BaseChildrenList, generics.ListAPIView, RegistrationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_children_list).
     """
     view_category = 'registrations'
