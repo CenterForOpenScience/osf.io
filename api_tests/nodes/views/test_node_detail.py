@@ -1865,27 +1865,6 @@ class TestNodeLicense:
             API_BASE, node_license._id)
         assert expected_license_url in actual_license_url
 
-    def test_node_license_on_create(
-            self, app, user, copyright_holders, year):
-        url = '/{}nodes/'.format(API_BASE)
-        res = app.post_json_api(
-            url, {
-                'data': {
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': 'new title',
-                        'category': 'project',
-                        'tags': ['foo', 'bar'],
-                        'node_license': {
-                            'copyright_holders': copyright_holders,
-                            'year': year,
-                        },
-                    }
-                }
-            }, auth=user.auth)
-        assert res.json['data']['attributes']['node_license']['year'] == year
-        assert res.json['data']['attributes']['node_license']['copyright_holders'] == copyright_holders
-
 
 @pytest.mark.django_db
 class TestNodeUpdateLicense:
