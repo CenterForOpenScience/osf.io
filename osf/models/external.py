@@ -150,12 +150,21 @@ class ExternalProvider(object):
             session.data['oauth_states'] = {}
 
         if self._oauth_version == OAUTH2:
+            # Quirk: Some time between 2019/05/31 and 2019/06/04, Bitbucket's OAuth2 API no longer
+            #        expects the query param `redirect_uri` in the `oauth2/authorize` endpoint.  In
+            #        addition, it relies on the "Callback URL" of the "OAuth Consumer" to redirect
+            #        the auth flow after successful authorization.
+            redirect_uri = None
+            if self.short_name != 'bitbucket':
+                redirect_uri = web_url_for(
+                    'oauth_callback',
+                    service_name=self.short_name,
+                    _absolute=True
+                )
             # build the URL
             oauth = OAuth2Session(
                 self.client_id,
-                redirect_uri=web_url_for('oauth_callback',
-                                         service_name=self.short_name,
-                                         _absolute=True),
+                redirect_uri=redirect_uri,
                 scope=self.default_scopes,
             )
 
@@ -251,13 +260,19 @@ class ExternalProvider(object):
                 raise PermissionsError('Request token does not match')
 
             try:
-                response = OAuth2Session(
-                    self.client_id,
-                    redirect_uri=web_url_for(
+                # Quirk: Similarly to the `oauth2/authorize` endpoint, the `oauth2/access_token`
+                #        endpoint of Bitbucket would fail if a not-none or non-empty `redirect_uri`
+                #        were provided in the body of the POST request.
+                redirect_uri = None
+                if self.short_name != 'bitbucket':
+                    redirect_uri = web_url_for(
                         'oauth_callback',
                         service_name=self.short_name,
                         _absolute=True
-                    ),
+                    )
+                response = OAuth2Session(
+                    self.client_id,
+                    redirect_uri=redirect_uri,
                 ).fetch_token(
                     self.callback_url,
                     client_secret=self.client_secret,
