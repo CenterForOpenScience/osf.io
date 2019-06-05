@@ -1,22 +1,31 @@
 import mock
 import pytest
+import datetime
 from urlparse import urlparse
 
 from rest_framework import exceptions
+from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from osf.utils import permissions
-from osf.models import Registration, NodeLog
+from osf.models import Registration, NodeLog, NodeLicense
 from framework.auth import Auth
+from website.project.signals import contributor_added
+from api_tests.utils import disconnected_from_listeners
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf_tests.factories import (
     ProjectFactory,
+    NodeFactory,
     RegistrationFactory,
     RegistrationApprovalFactory,
     AuthUserFactory,
+    UnregUserFactory,
     WithdrawnRegistrationFactory,
     CommentFactory,
+    InstitutionFactory,
 )
+
+from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
 from tests.utils import assert_latest_log
 
 
@@ -204,8 +213,7 @@ class TestRegistrationDetail:
         assert 'registrations' not in res.json['data']['relationships']
 
 
-@pytest.mark.django_db
-class TestRegistrationUpdate:
+class TestRegistrationUpdateTestCase:
 
     @pytest.fixture()
     def read_only_contributor(self):
@@ -277,6 +285,10 @@ class TestRegistrationUpdate:
         return {'public': True}
 
     @pytest.fixture()
+    def institution_one(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
     def make_payload(self, private_registration, attributes):
         def payload(
                 id=private_registration._id,
@@ -292,6 +304,14 @@ class TestRegistrationUpdate:
             }
         return payload
 
+    @pytest.fixture()
+    def license_cc0(self):
+        return NodeLicense.objects.filter(name='CC0 1.0 Universal').first()
+
+
+@pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
+class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
     def test_update_registration(
             self, app, user, read_only_contributor,
             read_write_contributor, public_registration,
@@ -353,8 +373,8 @@ class TestRegistrationUpdate:
 
     def test_fields(
             self, app, user, public_registration,
-            private_registration, public_url,
-            private_url, make_payload):
+            private_registration, public_url, institution_one,
+            private_url, make_payload, license_cc0):
 
         #   test_public_field_has_invalid_value
         invalid_public_payload = make_payload(
@@ -369,12 +389,75 @@ class TestRegistrationUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"Dr.Strange" is not a valid boolean.'
 
-    #   test_fields_other_than_public_are_ignored
+    #   test_some_registration_fields_are_editable
+        user.affiliated_institutions.add(institution_one)
+        year = '2009'
+        copyright_holders = ['Grapes McGee']
+        description = 'New description'
+        tags = ['hello', 'hi']
+        custom_citation = 'This is my custom citation. Grapes McGee.'
+        article_doi = '10.123/456/789'
+
         attribute_list = {
             'public': True,
             'category': 'instrumentation',
             'title': 'New title',
-            'description': 'New description'
+            'description': description,
+            'tags': tags,
+            'custom_citation': custom_citation,
+            'node_license': {
+                'year': year,
+                'copyright_holders': copyright_holders
+            },
+            'article_doi': '10.123/456/789'
+        }
+        verbose_private_payload = make_payload(attributes=attribute_list)
+        verbose_private_payload['data']['relationships'] = {
+            'license': {
+                'data': {
+                    'type': 'licenses',
+                    'id': license_cc0._id
+                }
+            },
+            'affiliated_institutions': {
+                'data': [
+                    {'type': 'institutions', 'id': institution_one._id}
+                ]
+            }
+        }
+        res = app.put_json_api(
+            private_url,
+            verbose_private_payload,
+            auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['public'] is True
+        assert res.json['data']['attributes']['category'] == 'project'
+        assert res.json['data']['attributes']['description'] == description
+        assert res.json['data']['attributes']['tags'] == tags
+        assert res.json['data']['attributes']['title'] == private_registration.title
+        assert res.json['data']['attributes']['node_license']['copyright_holders'] == copyright_holders
+        assert res.json['data']['attributes']['node_license']['year'] == year
+        assert res.json['data']['attributes']['custom_citation'] == custom_citation
+        assert res.json['data']['attributes']['article_doi'] == article_doi
+
+        institution_links = res.json['data']['relationships']['affiliated_institutions']['links']
+        assert '/{}registrations/{}/institutions/'.format(
+            API_BASE, private_registration._id) in institution_links['related']['href']
+        assert '/{}registrations/{}/relationships/institutions/'.format(
+            API_BASE, private_registration._id) in institution_links['self']['href']
+
+    #   test_can_unset_certain_registration_fields
+        attribute_list = {
+            'public': True,
+            'category': 'instrumentation',
+            'title': 'New title',
+            'description': '',
+            'tags': [],
+            'custom_citation': '',
+            'node_license': {
+                'year': '',
+                'copyright_holders': []
+            }
         }
         verbose_private_payload = make_payload(attributes=attribute_list)
 
@@ -385,8 +468,12 @@ class TestRegistrationUpdate:
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
         assert res.json['data']['attributes']['category'] == 'project'
-        assert res.json['data']['attributes']['description'] == private_registration.description
+        assert res.json['data']['attributes']['description'] == ''
+        assert res.json['data']['attributes']['tags'] == []
         assert res.json['data']['attributes']['title'] == private_registration.title
+        assert res.json['data']['attributes']['node_license']['copyright_holders'] == []
+        assert res.json['data']['attributes']['node_license']['year'] == ''
+        assert res.json['data']['attributes']['custom_citation'] == ''
 
     #   test_type_field_must_match
         node_type_payload = make_payload(type='node')
@@ -407,6 +494,15 @@ class TestRegistrationUpdate:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 409
+
+    #   test_invalid_doi
+        bad_doi_payload = make_payload(attributes={'article_doi': 'blah'})
+        res = app.put_json_api(
+            private_url,
+            bad_doi_payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
 
     def test_turning_private_registrations_public(
             self, app, user, make_payload):
@@ -431,6 +527,11 @@ class TestRegistrationUpdate:
             'lift_embargo',
             'children',
             'tags',
+            'description',
+            'node_license',
+            'license',
+            'affiliated_institutions',
+            'article_doi',
             'custom_citation']
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
@@ -445,7 +546,14 @@ class TestRegistrationUpdate:
             'registration_choice',
             'lift_embargo',
             'children',
+            'pending_withdrawal',
+            'withdrawal_justification',
             'tags',
+            'description',
+            'node_license',
+            'license',
+            'affiliated_institutions',
+            'article_doi',
             'custom_citation']
 
         for field in RegistrationDetailSerializer._declared_fields:
@@ -464,7 +572,6 @@ class TestRegistrationUpdate:
             self, app, user, unapproved_registration, unapproved_url, make_payload):
         attribute_list = {
             'public': True,
-            'withdrawn': True
         }
         unapproved_registration_payload = make_payload(
             id=unapproved_registration._id, attributes=attribute_list)
@@ -485,6 +592,151 @@ class TestRegistrationUpdate:
         )
         res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
+
+    def test_read_write_contributor_cannot_update_description(
+            self, app, read_write_contributor, private_registration, private_url, make_payload):
+        payload = make_payload(
+            id=private_registration._id,
+            attributes={'description': 'Updated description'}
+        )
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_read_write_contributor_cannot_update_article_doi(
+            self, app, read_write_contributor, private_registration, private_url, make_payload):
+        payload = make_payload(
+            id=private_registration._id,
+            attributes={'article_doi': '10.123/456/789'}
+        )
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_read_write_contributor_cannot_update_affiliated_institution(
+            self, app, read_write_contributor, private_registration, private_url, institution_one, make_payload):
+        payload = make_payload(
+            id=private_registration._id,
+        )
+        payload['relationships'] = {
+            'affiliated_institutions': {
+                'data': [
+                    {'type': 'institutions', 'id': institution_one._id}
+                ]
+            }
+        }
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+
+@pytest.mark.django_db
+class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
+
+    @pytest.fixture
+    def public_payload(self, public_registration, make_payload):
+        return make_payload(
+            id=public_registration._id,
+            attributes={'pending_withdrawal': True, 'withdrawal_justification': 'Not enough oopmh.'}
+        )
+
+    def test_initiate_withdraw_registration_fails(
+            self, app, user, read_write_contributor, public_registration, make_payload,
+            private_registration, public_url, private_url, public_project, public_payload):
+        # test set pending_withdrawal with no auth
+        res = app.put_json_api(public_url, public_payload, expect_errors=True)
+        assert res.status_code == 401
+
+        # test set pending_withdrawal from a read write contrib
+        public_registration.add_contributor(read_write_contributor, permissions=[permissions.WRITE])
+        public_registration.save()
+        res = app.put_json_api(public_url, public_payload, auth=read_write_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # test set pending_withdrawal private registration fails
+        payload_private = make_payload(
+            id=private_registration._id,
+            attributes={'pending_withdrawal': True, 'withdrawal_justification': 'fine whatever'}
+        )
+        res = app.put_json_api(private_url, payload_private, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # test set pending_withdrawal for component fails
+        project = ProjectFactory(is_public=True, creator=user)
+        NodeFactory(is_public=True, creator=user, parent=project)
+        registration_with_comp = RegistrationFactory(is_public=True, project=project)
+        registration_comp = registration_with_comp._nodes.first()
+        payload_component = make_payload(
+            id=registration_comp._id,
+            attributes={'pending_withdrawal': True}
+        )
+        url = '/{}registrations/{}/'.format(API_BASE, registration_comp._id)
+        res = app.put_json_api(url, payload_component, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # setting pending_withdrawal to false fails
+        public_payload['data']['attributes'] = {'pending_withdrawal': False}
+        res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # test set pending_withdrawal with just withdrawal_justification key
+        public_payload['data']['attributes'] = {'withdrawal_justification': 'Not enough oopmh.'}
+        res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # set pending_withdrawal on a registration already pending withdrawal fails
+        public_registration._initiate_retraction(user)
+        res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+    @mock.patch('website.mails.send_mail')
+    def test_initiate_withdrawal_success(self, mock_send_mail, app, user, public_registration, public_url, public_payload):
+        res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['pending_withdrawal'] is True
+        public_registration.refresh_from_db()
+        assert public_registration.is_pending_retraction
+        assert public_registration.registered_from.logs.first().action == 'retraction_initiated'
+        assert mock_send_mail.called
+
+    def test_initiate_withdrawal_with_embargo_ends_embargo(
+            self, app, user, public_project, public_registration, public_url, public_payload):
+        public_registration.embargo_registration(
+            user,
+            (timezone.now() + datetime.timedelta(days=10)),
+            for_existing_registration=True
+        )
+        public_registration.save()
+        assert public_registration.is_pending_embargo
+
+        approval_token = public_registration.embargo.approval_state[user._id]['approval_token']
+        public_registration.embargo.approve(user, approval_token)
+        assert public_registration.embargo_end_date
+
+        res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['pending_withdrawal'] is True
+        public_registration.reload()
+        assert public_registration.is_pending_retraction
+        assert not public_registration.is_pending_embargo
+
+    @mock.patch('website.mails.send_mail')
+    def test_withdraw_request_does_not_send_email_to_unregistered_admins(
+            self, mock_send_mail, app, user, public_registration, public_url, public_payload):
+        unreg = UnregUserFactory()
+        with disconnected_from_listeners(contributor_added):
+            public_registration.add_unregistered_contributor(
+                unreg.fullname,
+                unreg.email,
+                auth=Auth(user),
+                permissions=['read', 'write', 'admin'],
+                existing_user=unreg,
+                save=True
+            )
+
+        res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        assert res.status_code == 200
+
+        # Only the creator gets an email; the unreg user does not get emailed
+        assert public_registration._contributors.count() == 2
+        assert mock_send_mail.call_count == 1
 
 
 @pytest.mark.django_db
@@ -666,7 +918,7 @@ class TestRegistrationTags:
             auth=user_non_contrib.auth)
         assert res.status_code == 403
 
-        # test_partial_update_registration_does_not_clear_tagsb
+        # test_partial_update_registration_does_not_clear_tags
         new_payload = {
             'data': {
                 'id': registration_private._id,
@@ -756,3 +1008,70 @@ class TestRegistrationTags:
             expect_errors=True)
         assert res.status_code == 409
         assert res.json['errors'][0]['detail'] == 'Cannot remove tags of withdrawn registrations.'
+
+
+class TestUpdateRegistrationLicense(TestNodeUpdateLicense):
+    @pytest.fixture()
+    def node(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        node = RegistrationFactory(creator=user_admin_contrib, is_public=False)
+        node.add_contributor(user_write_contrib, auth=Auth(user_admin_contrib))
+        node.add_contributor(
+            user_read_contrib,
+            auth=Auth(user_admin_contrib),
+            permissions=['read'])
+        node.save()
+        return node
+
+    @pytest.fixture()
+    def url_node(self, node):
+        return '/{}registrations/{}/'.format(API_BASE, node._id)
+
+    @pytest.fixture()
+    def make_payload(self):
+        def payload(
+                node_id, license_id=None, license_year=None,
+                copyright_holders=None):
+            attributes = {}
+
+            if license_year and copyright_holders:
+                attributes = {
+                    'node_license': {
+                        'year': license_year,
+                        'copyright_holders': copyright_holders
+                    }
+                }
+            elif license_year:
+                attributes = {
+                    'node_license': {
+                        'year': license_year
+                    }
+                }
+            elif copyright_holders:
+                attributes = {
+                    'node_license': {
+                        'copyright_holders': copyright_holders
+                    }
+                }
+
+            return {
+                'data': {
+                    'type': 'registrations',
+                    'id': node_id,
+                    'attributes': attributes,
+                    'relationships': {
+                        'license': {
+                            'data': {
+                                'type': 'licenses',
+                                'id': license_id
+                            }
+                        }
+                    }
+                }
+            } if license_id else {
+                'data': {
+                    'type': 'registrations',
+                    'id': node_id,
+                    'attributes': attributes
+                }
+            }
+        return payload

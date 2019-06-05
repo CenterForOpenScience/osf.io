@@ -399,7 +399,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         uid=unclaimed_user._primary_key,
         pid=node._primary_key,
         token=unclaimed_record['token'],
-        _external=True,
+        _absolute=True,
     )
 
     # Send mail to referrer, telling them to forward verification link to claimer
