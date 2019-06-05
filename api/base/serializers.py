@@ -1693,7 +1693,6 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
                 collection.add_pointer(node, auth)
             except ValueError as e:
                 raise api_exceptions.InvalidModelValueError(
-                    source={'pointer': '/data/relationships/node_links/data/id'},
                     detail=str(e),
                 )
         return self.make_instance_obj(collection)
