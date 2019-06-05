@@ -25,7 +25,7 @@ FORWARD_SQL = '''
         file_id = File.id,
         version = NULLIF(split_part(PC._id, ':', 4), '')::int
     FROM osf_guid Guid, osf_basefilenode File
-    WHERE PC.id >= %s AND PC.id < %s AND 
+    WHERE PC.id >= %s AND PC.id < %s AND
           Guid._id = split_part(PC._id, ':', 2) AND
           File._id = split_part(PC._id, ':', 3) AND
           (PC.resource_id IS NULL or PC.file_id IS NULL or PC.version IS NULL);
@@ -100,10 +100,10 @@ class Command(BaseCommand):
             for start in range(first_record, last_record, page_size):
                 end = start + page_size
                 logger.info('Start of page: {}, end of page: {}, time: {}'.format(
-                        start,
-                        end,
-                        datetime.datetime.now(),
-                    )
+                    start,
+                    end,
+                    datetime.datetime.now(),
+                )
                 )
                 if not dry_run:
                     cursor.execute(sql_query, [start, end])
