@@ -161,6 +161,7 @@ class CoreScopes(object):
     WIKI_BASE_WRITE = 'wikis.base_write'
 
     IDENTIFIERS_READ = 'identifiers.data_read'
+    IDENTIFIERS_WRITE = 'identifiers.data_write'
 
     METRICS_BASIC = 'metrics_basic'
     METRICS_RESTRICTED = 'metrics_restricted'
@@ -200,6 +201,7 @@ class ComposedScopes(object):
 
     # Identifier views
     IDENTIFIERS_READ = (CoreScopes.IDENTIFIERS_READ, )
+    IDENTIFIERS_WRITE = (CoreScopes.IDENTIFIERS_WRITE, )
 
     # Comment reports collection
     COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
@@ -212,7 +214,7 @@ class ComposedScopes(object):
                           CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
                           CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
-                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
+                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.IDENTIFIERS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
                      CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
 

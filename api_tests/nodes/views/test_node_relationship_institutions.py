@@ -29,6 +29,10 @@ class TestNodeRelationshipInstitutions:
         return InstitutionFactory()
 
     @pytest.fixture()
+    def resource_factory(self):
+        return NodeFactory
+
+    @pytest.fixture()
     def user(self, institution_one, institution_two):
         user = AuthUserFactory()
         user.affiliated_institutions.add(institution_one)
@@ -77,7 +81,7 @@ class TestNodeRelationshipInstitutions:
         return payload
 
     def test_node_errors(
-            self, app, user, institution_one,
+            self, app, user, institution_one, resource_factory,
             create_payload, node_institutions_url):
 
         #   test_node_with_no_permissions
@@ -94,9 +98,9 @@ class TestNodeRelationshipInstitutions:
 
     #   test_user_with_no_institution
         unauthorized_user = AuthUserFactory()
-        node = NodeFactory(creator=unauthorized_user)
+        node = resource_factory(creator=unauthorized_user)
         res = app.put_json_api(
-            '/{0}nodes/{1}/relationships/institutions/'.format(API_BASE, node._id),
+            '/{0}{1}s/{2}/relationships/institutions/'.format(API_BASE, node.__class__.__name__.lower(), node._id),
             create_payload(institution_one._id),
             expect_errors=True,
             auth=unauthorized_user.auth
@@ -399,15 +403,15 @@ class TestNodeRelationshipInstitutions:
         assert res.status_code == 403
 
     def test_delete_user_is_admin_but_not_affiliated_with_inst(
-            self, app, institution_one, create_payload):
+            self, app, institution_one, resource_factory, create_payload):
         user = AuthUserFactory()
-        node = NodeFactory(creator=user)
+        node = resource_factory(creator=user)
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
         res = app.delete_json_api(
-            '/{0}nodes/{1}/relationships/institutions/'.format(API_BASE, node._id),
+            '/{0}{1}s/{2}/relationships/institutions/'.format(API_BASE, node.__class__.__name__.lower(), node._id),
             create_payload(institution_one._id),
             auth=user.auth,
         )

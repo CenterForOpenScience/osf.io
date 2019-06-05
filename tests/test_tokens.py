@@ -13,7 +13,7 @@ from framework.exceptions import HTTPError
 
 from website import settings
 from osf.models import AbstractNode, Embargo, RegistrationApproval, Retraction, Sanction
-from website.tokens import decode, encode, TokenHandler
+from osf.utils.tokens import decode, encode, TokenHandler
 from osf.exceptions import TokenHandlerNotFound
 
 NO_SANCTION_MSG = 'There is no {0} associated with this token.'
@@ -57,7 +57,7 @@ class TestTokenHandler(OsfTestCase):
         with assert_raises(TokenHandlerNotFound):
             token.to_response()
 
-    @mock.patch('website.tokens.handlers.sanction_handler')
+    @mock.patch('osf.utils.tokens.handlers.sanction_handler')
     def test_token_process_with_valid_action(self, mock_handler):
         self.payload['action'] = 'approve_registration_approval'
         token = TokenHandler.from_payload(self.payload)
@@ -91,7 +91,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
         approval_token = self.sanction.approval_state[self.user._id]['approval_token']
         handler = TokenHandler.from_string(approval_token)
         with mock_auth(self.user):
-            with mock.patch('website.tokens.handlers.{0}_handler'.format(self.kind)) as mock_handler:
+            with mock.patch('osf.utils.tokens.handlers.{0}_handler'.format(self.kind)) as mock_handler:
                 handler.to_response()
                 mock_handler.assert_called_with('approve', self.reg, self.reg.registered_from)
 
