@@ -577,7 +577,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             expect_errors=True)
         assert res.status_code == 409
 
-    #   test_unregistered_contributor_invalid_email(
+    #   test_unregistered_contributor_invalid_email
         data = {
             'data': {
                 'type': 'contributors',

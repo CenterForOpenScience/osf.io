@@ -1006,7 +1006,7 @@ class ContributorMixin(models.Model):
         OSFUser = apps.get_model('osf.OSFUser')
         send_email = send_email or self.contributor_email_template
 
-        if (email):
+        if email:
             try:
                 validate_email(email)
             except BlacklistedEmailError:
