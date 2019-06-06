@@ -19,6 +19,7 @@ from osf.models import base
 from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
+from website.settings import ADDONS_OAUTH_NO_REDIRECT
 from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
@@ -153,9 +154,11 @@ class ExternalProvider(object):
             # Quirk: Some time between 2019/05/31 and 2019/06/04, Bitbucket's OAuth2 API no longer
             #        expects the query param `redirect_uri` in the `oauth2/authorize` endpoint.  In
             #        addition, it relies on the "Callback URL" of the "OAuth Consumer" to redirect
-            #        the auth flow after successful authorization.
-            redirect_uri = None
-            if self.short_name != 'bitbucket':
+            #        the auth flow after successful authorization.  `ADDONS_OAUTH_NO_REDIRECT` is a
+            #        list containing addons that do not use `redirect_uri` in OAuth2 requests.
+            if self.short_name in ADDONS_OAUTH_NO_REDIRECT:
+                redirect_uri = None
+            else:
                 redirect_uri = web_url_for(
                     'oauth_callback',
                     service_name=self.short_name,
@@ -263,8 +266,9 @@ class ExternalProvider(object):
                 # Quirk: Similarly to the `oauth2/authorize` endpoint, the `oauth2/access_token`
                 #        endpoint of Bitbucket would fail if a not-none or non-empty `redirect_uri`
                 #        were provided in the body of the POST request.
-                redirect_uri = None
-                if self.short_name != 'bitbucket':
+                if self.short_name in ADDONS_OAUTH_NO_REDIRECT:
+                    redirect_uri = None
+                else:
                     redirect_uri = web_url_for(
                         'oauth_callback',
                         service_name=self.short_name,
