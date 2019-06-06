@@ -1,5 +1,6 @@
 from guardian.core import ObjectPermissionChecker
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
@@ -345,7 +346,7 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     def get_object(self):
         cgm = get_object_or_error(
             CollectionSubmission,
-            self.kwargs['cgm_id'],
+            Q(collection=Collection.load(self.kwargs['collection_id']), guid___id=self.kwargs['cgm_id']),
             self.request,
             'submission',
         )

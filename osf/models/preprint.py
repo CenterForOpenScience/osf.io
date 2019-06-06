@@ -30,7 +30,7 @@ from osf.models.validators import validate_subject_hierarchy, validate_title, va
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
-from osf.utils.requests import DummyRequest, get_request_and_user_id, get_headers_from_request
+from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
@@ -615,13 +615,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         old_subjects = kwargs.pop('old_subjects', [])
         if saved_fields:
             request, user_id = get_request_and_user_id()
-            request_headers = {}
-            if not isinstance(request, DummyRequest):
-                request_headers = {
-                    k: v
-                    for k, v in get_headers_from_request(request).items()
-                    if isinstance(v, basestring)
-                }
+            request_headers = string_type_request_headers(request)
             user = OSFUser.load(user_id)
             if user:
                 self.check_spam(user, saved_fields, request_headers)

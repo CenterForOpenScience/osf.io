@@ -596,7 +596,7 @@ def update_user(user, index=None):
         try:
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
             # update files in their quickfiles node if the user has been marked as spam
-            if 'spam_confirmed' in user.system_tags:
+            if user.spam_status == SpamStatus.SPAM:
                 for quickfile_id in user.quickfiles.values_list('_id', flat=True):
                     client().delete(
                         index=index,

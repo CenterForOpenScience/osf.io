@@ -15,7 +15,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0160_merge_20190408_1618'),
+        ('osf', '0161_add_spam_fields_to_user'),
     ]
 
     operations = [

@@ -5,6 +5,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.banners.serializers import BannerSerializer
 from api.base import permissions as base_permissions
+from api.base.versioning import PrivateVersioning
 
 from rest_framework import generics
 from rest_framework import permissions
@@ -21,7 +22,7 @@ class CurrentBanner(JSONAPIBaseView, generics.RetrieveAPIView):
 
     serializer_class = BannerSerializer
     # This view goes under the _/ namespace
-    versioning_class = None
+    versioning_class = PrivateVersioning
     view_category = 'banners'
     view_name = 'current'
 

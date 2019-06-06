@@ -1456,10 +1456,10 @@ class TestSearchFiles(OsfTestCase):
     @pytest.mark.enable_quickfiles_creation
     def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
         user = factories.AuthUserFactory()
-        user.disable_account()
-        user.add_system_tag('spam_confirmed')
-        user.save()
         user.quickfolder.append_file('GreenLight.mp3')
+        user.disable_account()
+        user.confirm_spam()
+        user.save()
 
         find = query_file('GreenLight.mp3')['results']
 
