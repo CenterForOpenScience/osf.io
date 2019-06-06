@@ -231,460 +231,191 @@ class MAPCore(object):
             logger.debug('OSFUser(' + u.username + ').mapcore_refresh_locked=False')
 
     #
+    # GET|POST|DELETE for methods.
+    #
+    def req_api(self, method_name, requests_method, path, parameters):
+        logger.debug('MAPCore(user={}).{}'.format(self.user.username, method_name))
+
+        if self.user.map_profile is None:
+            # Access token is not issued yet.
+            raise self.get_token_expired()
+
+        url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + path
+        count = 0
+        while count < 2:  # retry once
+            time_stamp, signature = self.calc_signature()
+            if requests_method == requests.get or \
+               requests_method == requests.delete:
+                payload = {'time_stamp': time_stamp, 'signature': signature}
+                if parameters:
+                    for k, v in parameters.items():
+                        payload[k] = v
+                headers = {'Authorization': 'Bearer '
+                           + self.user.map_profile.oauth_access_token}
+                r = requests_method(url, headers=headers,
+                                    params=payload, verify=VERIFY)
+            elif requests_method == requests.post:
+                params = {}
+                params['request'] = {
+                    'time_stamp': time_stamp,
+                    'signature': signature
+                }
+                params['parameter'] = parameters
+                params = json.dumps(params).encode('utf-8')
+                headers = {
+                    'Authorization':
+                    'Bearer ' + self.user.map_profile.oauth_access_token,
+                    'Content-Type': 'application/json; charset=utf-8',
+                    'Content-Length': str(len(params))
+                }
+                r = requests_method(url, headers=headers,
+                                    data=params, verify=VERIFY)
+            else:
+                raise Exception('unknown requests_method')
+
+            j = self.check_result(r, method_name)
+            if j is not False:
+                # Function succeeded.
+                return j
+
+            if self.is_token_expired(r, method_name):
+                if self.refresh_token() is False:
+                    # Automatic refreshing token failed.
+                    raise self.get_token_expired()
+            else:
+                # Any other API error.
+                raise self.get_exception()
+            count += 1
+
+        # Could not refresh token after retries (may not occur).
+        raise self.get_token_expired()
+
+    #
     # Get API version.
     #
     def get_api_version(self):
-
-        logger.debug('MAPCore(user={})::get_api_version'.format(self.user.username))
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
-
-        count = 0
-        while count < 2:
-            time_stamp, signature = self.calc_signature()
-
-            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/version'
-            payload = {'time_stamp': time_stamp, 'signature': signature}
-            headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
-
-            r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
-            method_name = sys._getframe().f_code.co_name
-            j = self.check_result(r, method_name)
-            if j is not False:
-                # Function succeeded.
-                return j
-
-            if self.is_token_expired(r, method_name):
-                if self.refresh_token() is False:
-                    # Automatic refreshing token failed.
-                    raise self.get_token_expired()
-                count += 1
-            else:
-                # Any other API error.
-                raise self.get_exception()
-
-        # Could not refresh token after retries (may not occur).
-        raise self.get_token_expired()
+        method_name = sys._getframe().f_code.co_name
+        return self.req_api(method_name, requests.get, '/version', None)
 
     #
-    # Get group information by group name.
+    # Get group information by group name. (unused by mapcore.py)
     #
     def get_group_by_name(self, group_name):
-
-        logger.debug('MAPCore::get_group_by_name (group_name=' + group_name + ')')
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
-
-        count = 0
-        while count < 2:
-            time_stamp, signature = self.calc_signature()
-
-            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/mygroup'
-            payload = {
-                'time_stamp': time_stamp,
-                'signature': signature,
-                'searchWord': group_name.encode('utf-8')
-            }
-            headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
-
-            r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
-            method_name = sys._getframe().f_code.co_name
-            j = self.check_result(r, method_name)
-            if j is not False:
-                if len(j['result']['groups']) == 0:
-                    self.error_message = 'Group not found'
-                    logger.debug('  {}'.format(self.error_message))
-                    # Group not found.
-                    raise self.get_exception()
-                # Function succeeded.
-                return j
-
-            if self.is_token_expired(r, method_name):
-                if self.refresh_token() is False:
-                    # Automatic refreshing token failed.
-                    raise self.get_token_expired()
-                count += 1
-            else:
-                # Any other API error.
-                raise self.get_exception()
-
-        # Could not refresh token after retries (may not occur).
-        raise self.get_token_expired()
+        method_name = sys._getframe().f_code.co_name
+        parameters = {'searchWord': group_name.encode('utf-8')}
+        path = '/mygroup'
+        j = self.req_api(method_name, requests.get, path, parameters)
+        if len(j['result']['groups']) == 0:
+            self.error_message = 'Group not found'
+            logger.debug('  {}'.format(self.error_message))
+            # Group not found.
+            raise self.get_exception()
+        return j
 
     #
     # Get group information by group key.
     #
     def get_group_by_key(self, group_key):
-
-        logger.debug('MAPCore::get_group_by_key (group_key=' + group_key + ')')
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
-
-        count = 0
-        while count < 2:
-            time_stamp, signature = self.calc_signature()
-
-            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/group/' + group_key
-            payload = {'time_stamp': time_stamp, 'signature': signature}
-            headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
-
-            r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
-            method_name = sys._getframe().f_code.co_name
-            j = self.check_result(r, method_name)
-            if j is not False:
-                if len(j['result']['groups']) == 0:
-                    self.error_message = 'Group not found'
-                    logger.debug('  {}'.format(self.error_message))
-                    # Group not found.
-                    raise self.get_exception()
-                # Function succeeded.
-                return j
-
-            if self.is_token_expired(r, method_name):
-                if self.refresh_token() is False:
-                    # Automatic refreshing token failed.
-                    raise self.get_token_expired()
-                count += 1
-            else:
-                # Any other API error.
-                raise self.get_exception()
-
-        # Could not refresh token after retries (may not occur).
-        raise self.get_token_expired()
+        method_name = sys._getframe().f_code.co_name
+        path = '/group/' + group_key
+        j = self.req_api(method_name, requests.get, path, None)
+        if len(j['result']['groups']) == 0:
+            self.error_message = 'Group not found'
+            logger.debug('  {}'.format(self.error_message))
+            raise self.get_exception()
+        return j
 
     #
-    # delete group  by group key.
+    # delete group by group key.
     #
     def delete_group(self, group_key):
-
-        logger.debug('MAPCore::delete_group_by_key (group_key=' + group_key + ')')
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
-
-        count = 0
-        while count < 2:
-            time_stamp, signature = self.calc_signature()
-
-            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/group/' + group_key
-            payload = {'time_stamp': time_stamp, 'signature': signature}
-            headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
-
-            r = requests.delete(url, headers=headers, params=payload, verify=VERIFY)
-            method_name = sys._getframe().f_code.co_name
-            j = self.check_result(r, method_name)
-            if j is not False:
-                # Function succeeded.
-                return j
-
-            if self.is_token_expired(r, method_name):
-                if self.refresh_token() is False:
-                    # Automatic refreshing token failed.
-                    raise self.get_token_expired()
-                count += 1
-            else:
-                # Any other API error.
-                raise self.get_exception()
-
-        # Could not refresh token after retries (may not occur).
-        raise self.get_token_expired()
+        method_name = sys._getframe().f_code.co_name
+        path = '/group/' + group_key
+        j = self.req_api(method_name, requests.delete, path, None)
+        return j
 
     #
     # Create new group, and make it public, active and open_member.
     #
     def create_group(self, group_name):
-        logger.debug('MAPCore::create_group (group_name=' + group_name + ')')
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
-
-        #
-        # Create new group named "group_name".
-        #
-        count = 0
-        while count < 2:
-            time_stamp, signature = self.calc_signature()
-
-            params = {}
-            params['request'] = {
-                'time_stamp': time_stamp,
-                'signature': signature
-            }
-            params['parameter'] = {
-                'group_name': group_name,
-                'group_name_en': group_name
-            }
-            params = json.dumps(params).encode('utf-8')
-
-            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/group'
-            headers = {
-                'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token,
-                'Content-Type': 'application/json; charset=utf-8',
-                'Content-Length': str(len(params))
-            }
-
-            r = requests.post(url, headers=headers, data=params, verify=VERIFY)
-            method_name = sys._getframe().f_code.co_name
-            j = self.check_result(r, method_name)
-            if j is not False:
-                group_key = j['result']['groups'][0]['group_key']
-                logger.debug('  New geoup has been created (group_key=' + group_key + ')')
-
-                # to set description
-                j = self.edit_group(group_key, group_name, group_name)
-                return j
-
-            if self.is_token_expired(r, method_name):
-                if self.refresh_token() is False:
-                    # Automatic refreshing token failed.
-                    raise self.get_token_expired()
-                count += 1
-            else:
-                # Any other API error.
-                raise self.get_exception()
-
-        # Could not refresh token after retries (may not occur).
-        raise self.get_token_expired()
+        method_name = sys._getframe().f_code.co_name
+        path = '/group'
+        parameters = {
+            'group_name': group_name,
+            'group_name_en': group_name
+        }
+        j = self.req_api(method_name, requests.post, path, parameters)
+        group_key = j['result']['groups'][0]['group_key']
+        logger.debug('  New geoup has been created (group_key=' + group_key + ')')
+        # to set description (Empty description is invalid on CG)
+        j = self.edit_group(group_key, group_name, group_name)
+        return j
 
     #
     # Change group properties.
     #
     def edit_group(self, group_key, group_name, introduction):
-        logger.debug('MAPCore(user={})::edit_group(group_name={}, introduction={})'.format(self.user.username, utf8(group_name), utf8(introduction)))
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
-
-        count = 0
-        while count < 2:
-            time_stamp, signature = self.calc_signature()
-
-            params = {}
-            params['request'] = {
-                'time_stamp': time_stamp,
-                'signature': signature
-            }
-            params['parameter'] = {
-                'group_name': group_name,
-                'group_name_en': '',
-                'introduction': introduction,
-                'introduction_en': '',
-                'public': 1,
-                'active': 1,
-                'open_member': OPEN_MEMBER_DEFAULT
-            }
-            params = json.dumps(params).encode('utf-8')
-
-            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/group/' + group_key
-            headers = {
-                'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token,
-                'Content-Type': 'application/json; charset=utf-8',
-                'Content-Length': str(len(params))
-            }
-
-            r = requests.post(url, headers=headers, data=params, verify=VERIFY)
-            method_name = sys._getframe().f_code.co_name
-            j = self.check_result(r, method_name)
-            if j is not False:
-                # Function succeeded.
-                return j
-
-            if self.is_token_expired(r, method_name):
-                if self.refresh_token() is False:
-                    # Automatic refreshing token failed.
-                    raise self.get_token_expired()
-                count += 1
-            else:
-                # Any other API error.
-                raise self.get_exception()
-
-        # Could not refresh token after retries (may not occur).
-        raise self.get_token_expired()
+        method_name = sys._getframe().f_code.co_name
+        path = '/group/' + group_key
+        parameters = {
+            'group_name': group_name,
+            'group_name_en': '',
+            'introduction': introduction,
+            'introduction_en': '',
+            'public': 1,
+            'active': 1,
+            'open_member': OPEN_MEMBER_DEFAULT
+        }
+        j = self.req_api(method_name, requests.post, path, parameters)
+        return j
 
     #
     # Get member of group.
     #
     def get_group_members(self, group_key):
-
-        logger.debug('MAPCore::get_group_members (group_key=' + group_key + ')')
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
-
-        count = 0
-        while count < 2:
-            time_stamp, signature = self.calc_signature()
-
-            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/member/' + group_key
-            payload = {'time_stamp': time_stamp, 'signature': signature}
-            headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
-
-            r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
-            method_name = sys._getframe().f_code.co_name
-            j = self.check_result(r, method_name)
-            if j is not False:
-                # Function succeeded.
-                return j
-
-            if self.is_token_expired(r, method_name):
-                if self.refresh_token() is False:
-                    # Automatic refreshing token failed.
-                    raise self.get_token_expired()
-                count += 1
-            else:
-                # Any other API error.
-                raise self.get_exception()
-
-        # Could not refresh token after retries (may not occur).
-        raise self.get_token_expired()
+        method_name = sys._getframe().f_code.co_name
+        path = '/member/' + group_key
+        parameters = None
+        j = self.req_api(method_name, requests.get, path, parameters)
+        return j
 
     #
     # Get joined group list.
     #
     def get_my_groups(self):
-
-        logger.debug('MAPCore(user={})::get_my_groups:'.format(self.user.username))
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
-
-        count = 0
-        while count < 2:
-            time_stamp, signature = self.calc_signature()
-
-            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/mygroup'
-            payload = {'time_stamp': time_stamp, 'signature': signature}
-            headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
-
-            r = requests.get(url, headers=headers, params=payload, verify=VERIFY)
-            method_name = sys._getframe().f_code.co_name
-            j = self.check_result(r, method_name)
-            if j is not False:
-                # Function succeeded.
-                return j
-
-            if self.is_token_expired(r, method_name):
-                if self.refresh_token() is False:
-                    # Automatic refreshing token failed.
-                    raise self.get_token_expired()
-                count += 1
-            else:
-                # Any other API error.
-                raise self.get_exception()
-
-        # Could not refresh token after retries (may not occur).
-        raise self.get_token_expired()
+        method_name = sys._getframe().f_code.co_name
+        path = '/mygroup'
+        parameters = None
+        j = self.req_api(method_name, requests.get, path, parameters)
+        return j
 
     #
     # Add to group.
     #
     def add_to_group(self, group_key, eppn, admin):
-
-        logger.debug('MAPCore::add_to_group (group_key=' + group_key + ', eppn=' + eppn + ', admin=' + str(admin) + ')')
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
-
-        count = 0
-        while count < 2:
-            time_stamp, signature = self.calc_signature()
-
-            params = {}
-            params['request'] = {
-                'time_stamp': time_stamp,
-                'signature': signature
-            }
-            params['parameter'] = {
-                'admin': admin
-            }
-            params = json.dumps(params).encode('utf-8')
-
-            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/member/' + group_key + '/' + eppn
-            headers = {
-                'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token,
-                'Content-Type': 'application/json; charset=utf-8',
-                'Content-Length': str(len(params))
-            }
-
-            r = requests.post(url, headers=headers, data=params, verify=VERIFY)
-            method_name = sys._getframe().f_code.co_name
-            j = self.check_result(r, method_name)
-            if j is not False:
-                # Function succeeded.
-                return j
-
-            if self.is_token_expired(r, method_name):
-                if self.refresh_token() is False:
-                    # Automatic refreshing token failed.
-                    raise self.get_token_expired()
-                count += 1
-            else:
-                # Any other API error.
-                raise self.get_exception()
-
-        # Could not refresh token after retries (may not occur).
-        raise self.get_token_expired()
+        method_name = sys._getframe().f_code.co_name
+        path = '/member/' + group_key + '/' + eppn
+        parameters = {
+            'admin': admin
+        }
+        j = self.req_api(method_name, requests.post, path, parameters)
+        return j
 
     #
     # Remove from group.
     #
     def remove_from_group(self, group_key, eppn):
-
-        logger.debug('MAPCore::remove_from_group (group_key=' + group_key + ', eppn=' + eppn + ')')
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
-
-        count = 0
-        while count < 2:
-            time_stamp, signature = self.calc_signature()
-
-            url = MAPCORE_HOSTNAME + MAPCORE_API_PATH + '/member/' + group_key + '/' + eppn
-            payload = {'time_stamp': time_stamp, 'signature': signature}
-            headers = {'Authorization': 'Bearer ' + self.user.map_profile.oauth_access_token}
-
-            r = requests.delete(url, headers=headers, params=payload)
-            method_name = sys._getframe().f_code.co_name
-            j = self.check_result(r, method_name)
-            if j is not False:
-                # Function succeeded.
-                return j
-
-            if self.is_token_expired(r, method_name):
-                if self.refresh_token() is False:
-                    # Automatic refreshing token failed.
-                    raise self.get_token_expired()
-                count += 1
-            else:
-                # Any other API error.
-                raise self.get_exception()
-
-        # Could not refresh token after retries (may not occur).
-        raise self.get_token_expired()
+        method_name = sys._getframe().f_code.co_name
+        path = '/member/' + group_key + '/' + eppn
+        parameters = None
+        j = self.req_api(method_name, requests.delete, path, parameters)
+        return j
 
     #
     # Edit member.
     #
     def edit_member(self, group_key, eppn, admin):
-
-        logger.debug('MAPCore::edit_member (group_key=' + group_key + ', eppn=' + eppn + ', admin=' + str(admin) + ')')
-
-        if self.user.map_profile is None:
-            # Access token is not issued yet.
-            raise self.get_token_expired()
+        #logger.debug('MAPCore::edit_member (group_key=' + group_key + ', eppn=' + eppn + ', admin=' + str(admin) + ')')
 
         # NOTE: If error occurs, an exception will be thrown.
         j = self.remove_from_group(group_key, eppn)
