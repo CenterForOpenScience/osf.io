@@ -50,7 +50,7 @@ LAST_ROW_SQL = """
 """
 NODE_LIST_SQL = """
         select
-           obfnv.id as fileversion_id,
+           obfnv.id as basefileversion_id,
            obfnv.basefilenode_id,
            obfnv.fileversion_id,
            file.target_object_id,
@@ -155,7 +155,7 @@ ND_PREPRINT_SUPPLEMENT_SIZE_SUM_SQL = """
     """
 PREPRINT_LIST_SQL = """
         select
-           obfnv.id as fileversion_id,
+           obfnv.id as basefileversion_id,
            basefilenode_id,
            fileversion_id,
            file.target_object_id,
