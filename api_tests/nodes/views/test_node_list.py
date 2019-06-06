@@ -1587,6 +1587,7 @@ class TestNodeCreate:
         res = app.post_json_api(url, component_data, auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Unregistered contributor email address domain is blacklisted.'
 
     def test_create_project_with_region_relationship(
             self, app, user_one, region, institution_one, private_project, url):

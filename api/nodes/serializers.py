@@ -695,7 +695,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                             permissions=parent.get_permissions(contributor.user), existing_user=contributor.user,
                         )
                     except ValidationError as e:
-                        raise InvalidModelValueError(detail=str(e))
+                        raise InvalidModelValueError(detail=str(e[0]))
             node.add_contributors(contributors, auth=auth, log=True, save=True)
         if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, 'write'):
             parent = validated_data['parent']
