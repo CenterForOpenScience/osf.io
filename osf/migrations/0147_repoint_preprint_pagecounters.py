@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from bulk_update.helper import bulk_update
 from django.contrib.contenttypes.models import ContentType
 from django.db import migrations
-import progressbar
+from tqdm import tqdm
 
 
 def noop(*args, **kwargs):
@@ -21,7 +21,7 @@ def rekey_pagecounters(state, schema):
     pct = ContentType.objects.get_for_model(Preprint).id
 
     preprints = Preprint.objects.select_related('node').exclude(primary_file_id__isnull=True).exclude(node_id__isnull=True)
-    progress_bar = progressbar.ProgressBar(maxval=preprints.count() or 1).start()
+    progress_bar = tqdm(total=preprints.count() or 1)
     batch = []
     for i, preprint in enumerate(preprints, 1):
         node_id = Guid.objects.get(content_type=nct, object_id=preprint.node_id)._id
@@ -35,7 +35,7 @@ def rekey_pagecounters(state, schema):
                 batch.append(page_counter)
         progress_bar.update(i)
     bulk_update(batch, update_fields=['_id'], batch_size=10000)
-    progress_bar.finish()
+    progress_bar.close()
 
 class Migration(migrations.Migration):
 
