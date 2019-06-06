@@ -26,7 +26,7 @@ fetch_osfstorage_duplicates = """
         _path,
         count(*) AS ct
       FROM osf_basefilenode
-      WHERE type = 'osf.osfstoragefile'
+      WHERE type = 'osf.dropboxfile'
       GROUP BY (target_object_id, name, parent_id, type, _path)
     ) as foo
     WHERE ct > 1;
@@ -49,11 +49,92 @@ only_two_duplicates = """
     WHERE ct = 2;
     """
 
+file_types = [
+    'osf.onedrivefile',
+    'osf.gitlabfile',
+    'osf.dropboxfile',
+    'osf.githubfile',
+    'osf.s3file',
+    'osf.boxfile',
+    'osf.figsharefile',
+    'osf.osfstoragefile',
+    'osf.bitbucketfile',
+    'osf.owncloudfile'
+]
+
+sql =  """
+    SELECT *
+        FROM (
+          SELECT
+            target_object_id,
+            name,
+            parent_id,
+            type,
+            _path,
+            count(*) AS ct
+          FROM osf_basefilenode
+          WHERE type = %s
+          GROUP BY (target_object_id, name, parent_id, type, _path)
+        ) as foo
+"""
+def find_public_nodes():
+    for record in osfstoragefile:
+        target_id = record[0]
+        node = AbstractNode.objects.get(id=target_id)
+        if node.is_public:
+            print node._id
+
+
+def fetch_dupes():
+    with connection.cursor() as cursor:
+        cursor.execute(fetch_osfstorage_duplicates)
+        duplicates = cursor.fetchall()
+        print duplicates
+
+
+
+def other():
+    for file_type in file_types:
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [file_type])
+            duplicate_osfstorage_files = cursor.fetchall()
+        print '_______________'
+        print file_type
+
+    for record in duplicate_osfstorage_files:
+        target_id = record[0]
+        name = record[1]
+        parent_id = record[2]
+        path = record[4]
+        count = record[5]
+        bad = False
+
+        node = AbstractNode.objects.get(id=target_id)
+        files = node.files.filter(name=name, type='osf.dropboxfile', parent_id=parent_id, _path=path)
+        file_records = []
+        for file in files:
+            version_match = []
+            for version in file.versions.all():
+                version_match.append([version.location['object'], version.location['bucket'], version.region_id])
+            file_records.append(version_match)
+
+        for i, file_record in enumerate(file_records):
+            if i > 0:
+                if (file_records[i]) != (file_records[i-1]):
+                    bad = True
+
+
+        if bad:
+            print node._id, name, files.count(), bad, [f.id for f in files], [f.versions.count() for f in files]
+
 
 def main():
     with connection.cursor() as cursor:
-        cursor.execute(only_two_duplicates)
+        cursor.execute(fetch_osfstorage_duplicates)
         duplicate_osfstorage_files = cursor.fetchall()
+        print duplicate_osfstorage_files
+
+    return
 
     print 'Inspecting {} osfstorage records, that have *one* duplicate'.format(len(duplicate_osfstorage_files))
 
@@ -98,4 +179,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    other()
