@@ -6,12 +6,10 @@ import logging
 
 from django.db import migrations
 
-from osf.management.commands.migrate_pagecounter_data import FORWARD_SQL, REVERSE_SQL, get_last_record_and_count
+from osf.management.commands.migrate_pagecounter_data import FORWARD_SQL, REVERSE_SQL
+from website.settings import DEBUG_MODE
 
 logger = logging.getLogger(__name__)
-
-TOO_LARGE_FOR_AUTO_MIGRATION_THRESHOLD = 1000000
-BATCH_SIZE = 10000
 
 
 class Migration(migrations.Migration):
@@ -20,17 +18,15 @@ class Migration(migrations.Migration):
         ('osf', '0155_pagecounter_schema'),
     ]
 
-    operations = []
-    first = 1
-    last, count = get_last_record_and_count()
-
-    if count < TOO_LARGE_FOR_AUTO_MIGRATION_THRESHOLD:
-        for start in range(first, last, BATCH_SIZE):
-                operations.append(
-                    migrations.RunSQL(
-                        [(FORWARD_SQL, {'first': start, 'last': start + BATCH_SIZE})],
-                        [(REVERSE_SQL, {'first': start, 'last': start + BATCH_SIZE})],
-                    )
-                )
+    if not DEBUG_MODE:
+        operations = [
+            migrations.RunSQL([
+                (FORWARD_SQL),
+                (REVERSE_SQL),
+            ])
+        ]
     else:
-        logger.info('Too many pagecounter records in DB. Use management command migrate_pagecount_data instead')
+        operations = []
+        logger.info(
+            'The automatic migration only runs in DEBUG_MODE. Use management command migrate_pagecount_data instead'
+        )
