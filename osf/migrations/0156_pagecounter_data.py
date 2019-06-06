@@ -21,8 +21,8 @@ class Migration(migrations.Migration):
     if not DEBUG_MODE:
         operations = [
             migrations.RunSQL([
-                (FORWARD_SQL),
-                (REVERSE_SQL),
+                FORWARD_SQL,
+                REVERSE_SQL,
             ])
         ]
     else:
