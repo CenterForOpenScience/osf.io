@@ -933,7 +933,7 @@ class TestPreprintSpam:
     def test_check_spam_skips_ham_user(self, preprint, user):
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
-                user.add_system_tag('ham_confirmed')
+                user.confirm_ham()
                 preprint.set_privacy('public')
                 assert preprint.check_spam(user, None, None) is False
 
