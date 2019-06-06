@@ -415,10 +415,17 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/view/<meeting>/',
+            '/meetings/<meeting>/',
             'get',
             conference_views.conference_results,
             OsfWebRenderer('public/pages/meeting.mako', trust=False),
+        ),
+
+        Rule(
+            '/view/<meeting>/',
+            'get',
+            conference_views.redirect_to_conference_results,
+            notemplate
         ),
 
         Rule(
