@@ -23,7 +23,7 @@ logging.getLogger('invoke').setLevel(logging.CRITICAL)
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
-
+NO_TESTS_COLLECTED = 5
 ns = Collection()
 
 try:
@@ -310,7 +310,7 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     retcode = pytest.main(args)
 
     # exit code 5 is all tests skipped which is the same as passing with testmon
-    sys.exit(0 if retcode == 5 else retcode)
+    sys.exit(0 if retcode == NO_TESTS_COLLECTED else retcode)
 
 
 OSF_TESTS = [

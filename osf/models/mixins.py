@@ -21,7 +21,7 @@ from osf.exceptions import InvalidTriggerError, ValidationValueError, UserStateE
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
-from osf.models.spam import SpamMixin
+from osf.models.spam import SpamMixin, SpamStatus
 from osf.models.tag import Tag
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
@@ -187,7 +187,7 @@ class AddonModelMixin(models.Model):
     # from addons.base.apps import BaseAddonConfig
     settings_type = None
     ADDONS_AVAILABLE = sorted([config for config in apps.get_app_configs() if config.name.startswith('addons.') and
-        config.label != 'base'])
+        config.label != 'base'], key=lambda config: config.name)
 
     class Meta:
         abstract = True
@@ -1540,7 +1540,7 @@ class SpamOverrideMixin(SpamMixin):
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
             return False
-        if 'ham_confirmed' in user.system_tags:
+        if user.spam_status == SpamStatus.HAM:
             return False
 
         content = self._get_spam_content(saved_fields)
@@ -1567,8 +1567,7 @@ class SpamOverrideMixin(SpamMixin):
             self.set_privacy('private', log=False, save=False)
 
             # Suspend the flagged user for spam.
-            if 'spam_flagged' not in user.system_tags:
-                user.add_system_tag('spam_flagged')
+            user.flag_spam()
             if not user.is_disabled:
                 user.disable_account()
                 user.is_registered = False

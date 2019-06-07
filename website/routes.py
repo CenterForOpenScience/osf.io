@@ -1576,10 +1576,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/beforeregister',
         ], 'get', project_views.register.project_before_register, json_renderer),
         Rule([
-            '/project/<pid>/drafts/<draft_id>/register/',
-            '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
-        ], 'post', project_views.drafts.register_draft_registration, json_renderer),
-        Rule([
             '/project/<pid>/withdraw/',
             '/project/<pid>/node/<nid>/withdraw/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
