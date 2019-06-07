@@ -2,10 +2,16 @@
 
 var $ = require('jquery');
 var nodeApiUrl = window.contextVars.node.urls.api;
+
+// These need to be above where timestampCommon is required.
+// datesToLocal modifies items in the table, and in timestampCommon,
+// list.js moves those items somewhere harder to modify.
+var $osf = require('../osfHelpers');
+datesToLocal();
+
 var timestampCommon = require('./timestamp-common.js');
 timestampCommon.setWebOrAdmin('web');
 
-var $osf = require('../osfHelpers');
 var moment = require('moment');
 
 function datesToLocal() {
@@ -26,7 +32,6 @@ function datesToLocal() {
 
 $(document).ready(function () {
     timestampCommon.init(window.contextVars.node.urls.api + 'timestamp/task_status/');
-    datesToLocal();
 });
 
 $(function () {
