@@ -947,7 +947,7 @@ def mapcore_sync_rdm_my_projects0(user):
             my_map_groups[group_key] = grp
 
             if not grp['active'] or not grp['public']:
-                logger.warning('mAP group [' + grp['group_name'] + '] has unsoutable attribute(s).  Ignore')
+                logger.warning('mAP group [' + grp['group_name'] + '] has unsuitable attribute(s). (ignored)')
                 continue
             if mapcore_group_member_is_private(grp):
                 logger.warning('mAP group( {} ) member list is private. (skipped)'.format(grp['group_name']))
@@ -1293,10 +1293,30 @@ if __name__ == '__main__':
         #eppn = user.eppn
         mapcore_add_to_group(user, node, node.map_group_key, eppn, MAPCore.MODE_MEMBER)
 
-    if True:
+    if False:
         me = OSFUser.objects.get(eppn=sys.argv[1])
         user_lock_test(me)
 
     if False:
         node = Node.objects.get(guids___id=sys.argv[1])
         node_lock_test(node)
+
+    if False:
+        node = Node.objects.get(guids___id=sys.argv[1])
+        admin = None
+        for u in node.admin_contributors:
+            admin = u
+            break
+        user = None
+        for u in node.contributors:
+            if u != admin:
+                user = u
+                break
+        # access_user = admin
+        access_user = user   # own
+        group_key = node.map_group_key
+        eppn = user.eppn
+        print(u'Node={}: access_user={}, removed={}, eppn={}'.format(node, admin.username, user.username, eppn))
+        mapcore_remove_from_group(access_user, node, group_key, eppn)
+        #mc = MAPCore(access_user)
+        #mc.remove_from_group(group_key, eppn)

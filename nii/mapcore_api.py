@@ -233,8 +233,8 @@ class MAPCore(object):
     #
     # GET|POST|DELETE for methods.
     #
-    def req_api(self, method_name, requests_method, path, parameters):
-        logger.debug('MAPCore(user={}).{}'.format(self.user.username, method_name))
+    def req_api(self, method_name, args, requests_method, path, parameters):
+        logger.debug('MAPCore(user={}).{}{}'.format(self.user.username, method_name, str(args)))
 
         if self.user.map_profile is None:
             # Access token is not issued yet.
@@ -273,12 +273,12 @@ class MAPCore(object):
             else:
                 raise Exception('unknown requests_method')
 
-            j = self.check_result(r, method_name)
+            j = self.check_result(r, method_name, args)
             if j is not False:
                 # Function succeeded.
                 return j
 
-            if self.is_token_expired(r, method_name):
+            if self.is_token_expired(r, method_name, args):
                 if self.refresh_token() is False:
                     # Automatic refreshing token failed.
                     raise self.get_token_expired()
@@ -295,7 +295,7 @@ class MAPCore(object):
     #
     def get_api_version(self):
         method_name = sys._getframe().f_code.co_name
-        return self.req_api(method_name, requests.get, '/version', None)
+        return self.req_api(method_name, (), requests.get, '/version', None)
 
     #
     # Get group information by group name. (unused by mapcore.py)
@@ -304,7 +304,8 @@ class MAPCore(object):
         method_name = sys._getframe().f_code.co_name
         parameters = {'searchWord': group_name.encode('utf-8')}
         path = '/mygroup'
-        j = self.req_api(method_name, requests.get, path, parameters)
+        j = self.req_api(method_name, (group_name,),
+                         requests.get, path, parameters)
         if len(j['result']['groups']) == 0:
             self.error_message = 'Group not found'
             logger.debug('  {}'.format(self.error_message))
@@ -318,7 +319,7 @@ class MAPCore(object):
     def get_group_by_key(self, group_key):
         method_name = sys._getframe().f_code.co_name
         path = '/group/' + group_key
-        j = self.req_api(method_name, requests.get, path, None)
+        j = self.req_api(method_name, (group_key,), requests.get, path, None)
         if len(j['result']['groups']) == 0:
             self.error_message = 'Group not found'
             logger.debug('  {}'.format(self.error_message))
@@ -331,7 +332,8 @@ class MAPCore(object):
     def delete_group(self, group_key):
         method_name = sys._getframe().f_code.co_name
         path = '/group/' + group_key
-        j = self.req_api(method_name, requests.delete, path, None)
+        j = self.req_api(method_name, (group_key,),
+                         requests.delete, path, None)
         return j
 
     #
@@ -344,7 +346,8 @@ class MAPCore(object):
             'group_name': group_name,
             'group_name_en': group_name
         }
-        j = self.req_api(method_name, requests.post, path, parameters)
+        j = self.req_api(method_name, (group_name,),
+                         requests.post, path, parameters)
         group_key = j['result']['groups'][0]['group_key']
         logger.debug('  New geoup has been created (group_key=' + group_key + ')')
         # to set description (Empty description is invalid on CG)
@@ -366,7 +369,8 @@ class MAPCore(object):
             'active': 1,
             'open_member': OPEN_MEMBER_DEFAULT
         }
-        j = self.req_api(method_name, requests.post, path, parameters)
+        j = self.req_api(method_name, (group_key, group_name, introduction),
+                         requests.post, path, parameters)
         return j
 
     #
@@ -376,7 +380,8 @@ class MAPCore(object):
         method_name = sys._getframe().f_code.co_name
         path = '/member/' + group_key
         parameters = None
-        j = self.req_api(method_name, requests.get, path, parameters)
+        j = self.req_api(method_name, (group_key,),
+                         requests.get, path, parameters)
         return j
 
     #
@@ -386,7 +391,7 @@ class MAPCore(object):
         method_name = sys._getframe().f_code.co_name
         path = '/mygroup'
         parameters = None
-        j = self.req_api(method_name, requests.get, path, parameters)
+        j = self.req_api(method_name, (), requests.get, path, parameters)
         return j
 
     #
@@ -398,7 +403,8 @@ class MAPCore(object):
         parameters = {
             'admin': admin
         }
-        j = self.req_api(method_name, requests.post, path, parameters)
+        j = self.req_api(method_name, (group_key, eppn, admin),
+                         requests.post, path, parameters)
         return j
 
     #
@@ -408,7 +414,8 @@ class MAPCore(object):
         method_name = sys._getframe().f_code.co_name
         path = '/member/' + group_key + '/' + eppn
         parameters = None
-        j = self.req_api(method_name, requests.delete, path, parameters)
+        j = self.req_api(method_name, (group_key, eppn),
+                         requests.delete, path, parameters)
         return j
 
     #
@@ -454,19 +461,19 @@ class MAPCore(object):
     # Check API result status.
     # If any error occurs, a False will be returned.
     #
-    def check_result(self, result, method_name):
+    def check_result(self, result, method_name, args):
         self.http_status_code = result.status_code
         self.api_error_code = None
         self.error_message = ''
 
         if result.status_code != requests.codes.ok:
-            if self.is_token_expired(result, method_name):
+            if self.is_token_expired(result, method_name, args):
                 self.error_message = self.MSG_ACCESS_TOKEN_EXPIRED
             else:
                 self.error_message = result.headers.get(self.WWW_AUTHENTICATE)
                 if not self.error_message:
                     self.error_message = result.text
-            logger.info('MAPCore(user={},eppn={}).{}:check_result: status_code={}, error_msg={}'.format(self.user.username, self.user.eppn, method_name, result.status_code, self.error_message))
+            logger.info('MAPCore(user={},eppn={}).{}{}:check_result: status_code={}, error_msg={}'.format(self.user.username, self.user.eppn, method_name, args, result.status_code, self.error_message))
             return False
 
         #logger.debug('result.encoding={}'.format(result.encoding))
@@ -475,11 +482,11 @@ class MAPCore(object):
         if j['status']['error_code'] != 0:
             self.api_error_code = j['status']['error_code']
             self.error_message = j['status']['error_msg']
-            logger.info('MAPCore(user={},eppn={}).{}:check_result: error_code={}, error_msg={}'.format(self.user.username, self.user.eppn, method_name, self.api_error_code, self.error_message))
+            logger.info('MAPCore(user={},eppn={}).{}{}:check_result: error_code={}, error_msg={}'.format(self.user.username, self.user.eppn, method_name, args, self.api_error_code, self.error_message))
             return False
         return j
 
-    def is_token_expired(self, result, method_name):
+    def is_token_expired(self, result, method_name, args):
         if result.status_code != requests.codes.ok:
             s = result.headers.get(self.WWW_AUTHENTICATE)
             if s is None:
@@ -487,7 +494,7 @@ class MAPCore(object):
             #if s.find(self.MSG_ACCESS_TOKEN_EXPIRED) != -1 \
             #   or s.find(self.MSG_INVALID_ACCESS_TOKEN) != -1:
             if result.status_code == 401:  # Unauthorized
-                logger.debug('MAPCore(user={},eppn={}).{}:is_token_expired: status_code={}, {}={}'.format(self.user.username, self.user.eppn, method_name, result.status_code, self.WWW_AUTHENTICATE, self.error_message))
+                logger.debug('MAPCore(user={},eppn={}).{}{}:is_token_expired: status_code={}, {}={}'.format(self.user.username, self.user.eppn, method_name, args, result.status_code, self.WWW_AUTHENTICATE, self.error_message))
                 return True
             else:
                 return False
