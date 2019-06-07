@@ -182,7 +182,7 @@
                                     <input type="hidden" class="verify_result_title" value="${ error_info['verify_result_title'] }" />
 
                                     <td class="verify_user_name_id">${ u'{} ({})'.format(error_info['verify_user_name'], error_info['verify_user_id']) if error_info['verify_user_id'] else 'Unknown' }</td>
-                                    <td class="verify_date">${ error_info['verify_date'] if error_info['verify_date'] else 'Unknown' }</td>
+                                    <td class="verify_date" style="color: white;">${ error_info['verify_date'] if error_info['verify_date'] else 'Unknown' }</td>
                                     <td class="verify_result_title">${ error_info['verify_result_title'] }</td>
                                 </tr>
                                 % endfor

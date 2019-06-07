@@ -2,9 +2,33 @@
 
 var $ = require('jquery');
 var nodeApiUrl = window.contextVars.node.urls.api;
+
+// These need to be above where timestampCommon is required.
+// datesToLocal modifies items in the table, and in timestampCommon,
+// list.js moves those items somewhere harder to modify.
+var $osf = require('../osfHelpers');
+datesToLocal();
+
 var timestampCommon = require('./timestamp-common.js');
 timestampCommon.setWebOrAdmin('web');
 
+var moment = require('moment');
+
+function datesToLocal() {
+    var cells = document.querySelectorAll('td[class=verify_date]');
+    for (var i = 0; i < cells.length; i++) {
+        var cell = cells[i];
+        var newDateText;
+        if (cell.textContent === 'Unknown') {
+            newDateText = cell.textContent;
+        }
+        else {
+            newDateText = new $osf.FormattableDate(new Date(cell.textContent)).local;
+        }
+        cell.textContent = newDateText;
+        cell.style.color = 'inherit';
+    }
+}
 
 $(document).ready(function () {
     timestampCommon.init(window.contextVars.node.urls.api + 'timestamp/task_status/');
