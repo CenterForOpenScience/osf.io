@@ -153,16 +153,19 @@ class MeetingSubmissionSerializer(NodeSerializer):
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT P.total
-                    FROM osf_basefilenode F, osf_pagecounter P
+                    SELECT PC.total
+                    FROM osf_basefilenode F, osf_pagecounter PC, osf_guid G
                     WHERE (F.type = 'osf.osfstoragefile'
                          AND F.provider = 'osfstorage'
                          AND F.target_content_type_id = %s
                          AND F.target_object_id = %s
-                         AND P._id = 'download:' || %s || ':' || F._id)
+                         AND split_part(PC._id, ':', 1) = 'download'
+                         AND G._id = split_part(PC._id, ':', 2)
+                         AND F._id = split_part(PC._id, ':', 3)
+                         AND NULLIF(split_part(PC._id, ':', 4), '') IS NULL)
                     ORDER BY F.id ASC
                     LIMIT 1;
-                """, [node_ct, obj.id, obj._id],
+                """, [node_ct, obj.id],
                 )
                 result = cursor.fetchone()
                 if result:
