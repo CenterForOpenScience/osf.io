@@ -77,7 +77,7 @@
                 <ul class="dropdown-menu auth-dropdown" role="menu">
                     <li><a data-bind="click: trackClick.bind($data, 'MyProfile')" href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
                     % if nav_support or nav_global_support:
-                    <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${global_support_url}" target="${global_support_target}"><i class="fa fa-life-ring fa-lg p-r-xs"></i> GakuNin RDM Support</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${global_support_url}" target="${global_support_target}"><i class="fa fa-life-ring fa-lg p-r-xs"></i> RDM Support</a></li>
                     % endif
                     <li><a data-bind="click: trackClick.bind($data, 'Settings')" href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a></li>
                     <li><a data-bind="click: trackClick.bind($data, 'Logout')" href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a></li>
