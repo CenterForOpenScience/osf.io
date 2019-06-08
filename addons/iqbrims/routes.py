@@ -86,13 +86,6 @@ api_routes = {
             json_renderer
         ),
 
-        Rule(
-            ['/project/<pid>/iqbrims/config/register-paper/'],
-            'put',
-            views.iqbrims_register_paper,
-            json_renderer
-        ),
-
         Rule([
             '/project/<pid>/iqbrims/status',
             '/project/<pid>/node/<nid>/iqbrims/status',

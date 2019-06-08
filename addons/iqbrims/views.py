@@ -245,51 +245,6 @@ def iqbrims_get_storage(**kwargs):
         files = [f for f in files if f['title'] == file_name]
     return {'status': 'complete' if len(files) > 0 else 'processing'}
 
-@must_have_addon(SHORT_NAME, 'node')
-@must_have_permission(permissions.WRITE)
-@must_be_rdm_addons_allowed(SHORT_NAME)
-def iqbrims_register_paper(auth, node_addon, pid, **kwargs):
-    register_type = request.json.get('register_type', None)
-    if not isinstance(register_type, basestring) or register_type not in REGISTER_TYPE_LIST:
-        raise HTTPError(http.BAD_REQUEST)
-    labo_name = request.json.get('labo_name', None)
-    if not isinstance(labo_name, basestring) or len(labo_name) == 0:
-        raise HTTPError(http.BAD_REQUEST)
-
-    node = AbstractNode.load(pid)
-    inst_ids = node.affiliated_institutions.values('id')
-    try:
-        opt = RdmAddonOption.objects.filter(
-            provider=SHORT_NAME,
-            institution_id__in=Subquery(inst_ids),
-            management_node__isnull=False,
-            is_allowed=True
-        ).first()
-    except RdmAddonOption.DoesNotExist:
-        raise HTTPError(http.FORBIDDEN)
-
-    # import auth
-    _iqbrims_import_auth_from_management_node(node, node_addon, opt.management_node)
-
-    # create folder
-    root_folder = _iqbrims_init_folders(node, opt.management_node, register_type, labo_name)
-
-    # mount container
-    node_addon.set_folder(root_folder, auth=auth)
-    node_addon.save()
-
-    return {
-        'result': {
-            'settings': IQBRIMSSerializer().serialize_settings(node_addon, auth.user),
-            'config': {
-                'folder': root_folder,
-                'urls': IQBRIMSSerializer(node_settings=node_addon).addon_serialized_urls,
-            },
-        },
-        'message': 'Successfully imported access token from profile.',
-    }
-
-
 def _iqbrims_import_auth_from_management_node(node, node_addon, management_node):
     """Grant oauth access on user_settings of management_node and
     set reference of user_settings and external_account of management_node
@@ -334,7 +289,9 @@ def _iqbrims_init_folders(node, management_node, register_type, labo_name):
     root_folder_title = u'{0}-{1}'.format(node.title, node._id)
     _, res = client.create_folder_if_not_exists(res['id'], root_folder_title)
     root_folder_id = res['id']
-    for title in REVIEW_FOLDERS.values():
+    for key, title in REVIEW_FOLDERS.items():
+        if register_type == 'check' and key in ['checklist', 'raw']:
+            continue
         client.create_folder_if_not_exists(root_folder_id, title)
 
     return {
