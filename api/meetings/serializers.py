@@ -70,7 +70,7 @@ class MeetingSerializer(JSONAPISerializer):
         if getattr(obj, 'submissions_count', None):
             return obj.submissions_count
         else:
-            return obj.submissions.count()
+            return obj.valid_submissions.count()
 
     class Meta:
         type_ = 'meetings'

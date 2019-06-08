@@ -10,7 +10,7 @@ def create_eligible_conference(active=True):
     conference = ConferenceFactory(active=active)
     for i in range(0, 5):
         project = ProjectFactory(is_public=True)
-        project.add_tag(conference.endpoint, Auth(project.creator))
+        conference.submissions.add(project)
         project.save()
         api_utils.create_test_file(project, project.creator, create_guid=False)
     return conference
@@ -80,21 +80,21 @@ class TestMeetingListFilter:
     @pytest.fixture()
     def meeting_one_submission(self, meeting_one, user):
         submission = ProjectFactory(is_public=True, creator=user)
-        submission.add_tag(meeting_one.endpoint, Auth(user))
+        meeting_one.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         return submission
 
     @pytest.fixture()
     def meeting_three_submission_one(self, meeting_three, user):
         submission = ProjectFactory(is_public=True, creator=user)
-        submission.add_tag(meeting_three.endpoint, Auth(user))
+        meeting_three.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         return submission
 
     @pytest.fixture()
     def meeting_three_submission_two(self, meeting_three, user):
         submission = ProjectFactory(is_public=True, creator=user)
-        submission.add_tag(meeting_three.endpoint, Auth(user))
+        meeting_three.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         return submission
 

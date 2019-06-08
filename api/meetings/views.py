@@ -1,7 +1,7 @@
 
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
-from django.db.models import Q, Count, Subquery, OuterRef, Case, When, Value, CharField, F, IntegerField
+from django.db.models import Q, Count, Subquery, OuterRef, Case, When, Value, CharField, F
 from django.db.models.functions import Length, Substr, Coalesce
 from django.contrib.contenttypes.models import ContentType
 
@@ -64,17 +64,12 @@ class MeetingList(BaseMeetingView, generics.ListAPIView, ListFilterMixin):
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        tags = Tag.objects.filter(
-            abstractnode_tagged__is_public=True,
-            abstractnode_tagged__is_deleted=False,
+        conferences = Conference.objects.filter(
+            is_meeting=True,
+            submissions__is_public=True,
+            submissions__is_deleted=False,
         ).annotate(
-            num_nodes=Count(F('abstractnode_tagged')),
-        ).filter(name=OuterRef('endpoint'))
-
-        conferences = Conference.objects.filter(is_meeting=True).annotate(
-            submissions_count=Subquery(
-                tags.values('num_nodes')[:1], output_field=IntegerField(),
-            ),
+            submissions_count=Count(F('submissions')),
         )
         return conferences.filter(submissions_count__gte=settings.CONFERENCE_MIN_COUNT)
 
@@ -124,7 +119,7 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
     # overrides ListFilterMixin
     def get_default_queryset(self):
         meeting = self.get_meeting()
-        return self.annotate_queryset_for_filtering_and_sorting(meeting, meeting.submissions)
+        return self.annotate_queryset_for_filtering_and_sorting(meeting, meeting.valid_submissions)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -238,6 +233,6 @@ class MeetingSubmissionDetail(BaseMeetingSubmission, generics.RetrieveAPIView, N
         meeting = self.get_meeting()
         node = self.get_node()
         # Submission must be associated with the Conference
-        if meeting.endpoint not in node.tags.values_list('name', flat=True):
+        if node.id not in meeting.submissions.values_list('id', flat=True):
             raise NotFound('This is not a submission to {}.'.format(meeting.name))
         return node
