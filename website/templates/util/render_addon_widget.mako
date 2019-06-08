@@ -219,7 +219,7 @@
                           </div>
                         <!-- /ko -->
                         <!-- ko ifnot: modeAdmin -->
-                          <!-- ko if: modeDeposit || modeCheck -->
+                          <!-- ko if: isSubmitted -->
                           <div style="margin: 0.5em;">
                               <div data-bind="foreach: formEntries">
                                   <div class="col-sm-4 col-md-3" style="font-weight: bold;" data-bind="text: title">
@@ -229,7 +229,7 @@
                               </div>
                           </div>
                           <!-- /ko -->
-                          <!-- ko ifnot: modeDeposit || modeCheck -->
+                          <!-- ko ifnot: isSubmitted -->
                           <div class="form-group">
                             <button type="button" class="btn btn-primary"
                                     data-bind="click: gotoDepositForm">Deposit Manuscript & Data</button>

@@ -24,6 +24,10 @@ function IQBRIMSWidget() {
   self.checkHelp = ko.observable(language.checkHelp);
   self.formEntries = ko.observableArray();
 
+  self.isSubmitted = ko.pureComputed(function() {
+      return this.modeDeposit() || this.modeCheck();
+  }, this);
+
   self.updateFormEntries = function(status) {
     self.formEntries.removeAll();
     var laboList = status['labo_list'].map(function(labo) {
