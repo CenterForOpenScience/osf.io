@@ -234,19 +234,3 @@ class TestMeetingSubmissionsList:
         data = res.json['data']
         assert len(data) == 3
         assert [third, second, first] == [meeting['id'] for meeting in data]
-
-        # test sort download count
-        res = app.get(url_meeting_two + '?sort=download_count')
-        assert res.status_code == 200
-        data = res.json['data']
-        assert len(data) == 3
-        assert [third, second, first] == [meeting['id'] for meeting in data]
-        assert [0, 1, 2] == [meeting['attributes']['download_count'] for meeting in data]
-
-        # test reverse sort download count
-        res = app.get(url_meeting_two + '?sort=-download_count')
-        assert res.status_code == 200
-        data = res.json['data']
-        assert len(data) == 3
-        assert [first, second, third] == [meeting['id'] for meeting in data]
-        assert [2, 1, 0] == [meeting['attributes']['download_count'] for meeting in data]
