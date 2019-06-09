@@ -13,7 +13,7 @@ from website.mails import Mail, send_mail
 from framework.exceptions import HTTPError
 
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
-from osf.models import AbstractNode, RdmAddonOption
+from osf.models import AbstractNode, RdmAddonOption, BaseFileNode
 from osf.utils import permissions
 from website.project.decorators import (
     must_have_addon,
@@ -91,21 +91,11 @@ def iqbrims_folder_list(node_addon, **kwargs):
 def iqbrims_get_status(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
-    inst_ids = node.affiliated_institutions.values('id')
-    try:
-        opt = RdmAddonOption.objects.filter(
-            provider=SHORT_NAME,
-            institution_id__in=Subquery(inst_ids),
-            management_node__isnull=False,
-            is_allowed=True
-        ).first()
-    except RdmAddonOption.DoesNotExist:
-        raise HTTPError(http.FORBIDDEN)
     status = iqbrims.get_status()
     status['labo_list'] = ['{}:{}'.format(l['id'], l['text'])
                            for l in settings.LABO_LIST]
     status['review_folders'] = REVIEW_FOLDERS
-    is_admin = opt.management_node._id == node._id
+    is_admin = _get_management_node(node)._id == node._id
     status['is_admin'] = is_admin
     if is_admin:
         status['task_url'] = settings.FLOWABLE_TASK_URL
@@ -136,23 +126,13 @@ def iqbrims_set_status(**kwargs):
             flowable = IQBRIMSFlowableClient(app_id)
             logger.info('Starting...: app_id={} project_id={}'.format(app_id, node._id))
             flowable.start_workflow(node._id, node.title, iqbrims.get_secret())
-
-        inst_ids = node.affiliated_institutions.values('id')
-        try:
-            opt = RdmAddonOption.objects.filter(
-                provider=SHORT_NAME,
-                institution_id__in=Subquery(inst_ids),
-                management_node__isnull=False,
-                is_allowed=True
-            ).first()
-        except RdmAddonOption.DoesNotExist:
-            raise HTTPError(http.FORBIDDEN)
+        management_node = _get_management_node(node)
 
         # import auth
-        _iqbrims_import_auth_from_management_node(node, iqbrims, opt.management_node)
+        _iqbrims_import_auth_from_management_node(node, iqbrims, management_node)
 
         # create folder
-        root_folder = _iqbrims_init_folders(node, opt.management_node, register_type, labo_name)
+        root_folder = _iqbrims_init_folders(node, management_node, register_type, labo_name)
 
         # mount container
         iqbrims.set_folder(root_folder, auth=auth)
@@ -175,17 +155,7 @@ def iqbrims_post_notify(**kwargs):
     if 'user' in to:
         nodes.append((node, 'iqbrims_user'))
     if 'admin' in to:
-        inst_ids = node.affiliated_institutions.values('id')
-        try:
-            opt = RdmAddonOption.objects.filter(
-                provider=SHORT_NAME,
-                institution_id__in=Subquery(inst_ids),
-                management_node__isnull=False,
-                is_allowed=True
-            ).first()
-        except RdmAddonOption.DoesNotExist:
-            raise HTTPError(http.FORBIDDEN)
-        nodes.append((opt.management_node, 'iqbrims_management'))
+        nodes.append((_get_management_node(node), 'iqbrims_management'))
     for n, email_template in nodes:
         action = 'iqbrims_{}'.format(notify_type)
         n.add_log(
@@ -243,7 +213,40 @@ def iqbrims_get_storage(**kwargs):
     logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
     if file_name is not None:
         files = [f for f in files if f['title'] == file_name]
-    return {'status': 'complete' if len(files) > 0 else 'processing'}
+    folder_path = iqbrims.folder_path
+    management_node = _get_management_node(node)
+    base_folder_path = management_node.get_addon('googledrive').folder_path
+    assert folder_path.startswith(base_folder_path)
+    root_folder_path = folder_path[len(base_folder_path):]
+    logger.debug(u'Folder path: {}'.format(root_folder_path))
+    node_guids = {}
+    management_guids = {}
+    if len(files) > 0:
+        for f in files:
+            g = BaseFileNode.resolve_class(SHORT_NAME, BaseFileNode.ANY).get_file_guids(
+                materialized_path=u'/{}/{}'.format(folders[0]['title'],
+                                                   f['title']),
+                provider=SHORT_NAME,
+                target=node
+            )
+            if len(g) > 0:
+                node_guids[f['title']] = g[0]
+            g = BaseFileNode.resolve_class('googledrive', BaseFileNode.ANY).get_file_guids(
+                materialized_path=u'{}{}/{}'.format(root_folder_path,
+                                                    folders[0]['title'],
+                                                    f['title']),
+                provider='googledrive',
+                target=management_node
+            )
+            if len(g) > 0:
+                management_guids[f['title']] = g[0]
+    logger.info('Guids: node={}, management={}'.format(node_guids, management_guids))
+
+    return {'status': 'complete' if len(files) > 0 else 'processing',
+            'root_folder': root_folder_path,
+            'guids': node_guids,
+            'management': {'id': management_node._id,
+                           'guids': management_guids}}
 
 def _iqbrims_import_auth_from_management_node(node, node_addon, management_node):
     """Grant oauth access on user_settings of management_node and
@@ -270,6 +273,18 @@ def _iqbrims_import_auth_from_management_node(node, node_addon, management_node)
     node_addon.nodelogger.log(action='node_authorized', save=True)
     node_addon.save()
 
+def _get_management_node(node):
+    inst_ids = node.affiliated_institutions.values('id')
+    try:
+        opt = RdmAddonOption.objects.filter(
+            provider=SHORT_NAME,
+            institution_id__in=Subquery(inst_ids),
+            management_node__isnull=False,
+            is_allowed=True
+        ).first()
+    except RdmAddonOption.DoesNotExist:
+        raise HTTPError(http.FORBIDDEN)
+    return opt.management_node
 
 def _iqbrims_init_folders(node, management_node, register_type, labo_name):
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
