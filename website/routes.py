@@ -417,10 +417,17 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/view/<meeting>/',
+            '/meetings/<meeting>/',
             'get',
             conference_views.conference_results,
             OsfWebRenderer('public/pages/meeting.mako', trust=False),
+        ),
+
+        Rule(
+            '/view/<meeting>/',
+            'get',
+            conference_views.redirect_to_conference_results,
+            notemplate
         ),
 
         Rule(
@@ -1577,10 +1584,6 @@ def make_url_map(app):
             '/project/<pid>/beforeregister/',
             '/project/<pid>/node/<nid>/beforeregister',
         ], 'get', project_views.register.project_before_register, json_renderer),
-        Rule([
-            '/project/<pid>/drafts/<draft_id>/register/',
-            '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
-        ], 'post', project_views.drafts.register_draft_registration, json_renderer),
         Rule([
             '/project/<pid>/withdraw/',
             '/project/<pid>/node/<nid>/withdraw/'

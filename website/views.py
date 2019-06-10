@@ -319,9 +319,7 @@ def resolve_guid(guid, suffix=None):
         if isinstance(referent, Registration) and (
                 not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components')
         ):
-            # Ideally, auth wouldn't be checked here. Necessary for routing
-            auth = Auth.from_kwargs(request.args.to_dict(), {})
-            if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE) and not auth.private_link:
+            if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
                 # Route only the base detail view to ember
                 if PROXY_EMBER_APPS:
                     resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
@@ -360,9 +358,9 @@ def redirect_howosfworks(**kwargs):
     return redirect('/getting-started/')
 
 
-# redirect osf.io/getting-started to help.osf.io/
+# redirect osf.io/getting-started to https://openscience.zendesk.com/hc/en-us
 def redirect_getting_started(**kwargs):
-    return redirect('http://help.osf.io/')
+    return redirect('https://openscience.zendesk.com/hc/en-us')
 
 
 # Redirect to home page

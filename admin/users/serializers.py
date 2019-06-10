@@ -11,6 +11,12 @@ def serialize_group_for_user(group, user):
     }
 
 def serialize_user(user):
+
+    potential_spam_profile_content = {
+        'schools': user.schools,
+        'jobs': user.jobs
+    }
+
     return {
         'username': user.username,
         'name': user.fullname,
@@ -25,9 +31,12 @@ def serialize_user(user):
         'two_factor': user.has_addon('twofactor'),
         'osf_link': user.absolute_url,
         'system_tags': user.system_tags,
+        'is_spammy': user.is_spammy,
+        'spam_status': user.spam_status,
         'unclaimed': bool(user.unclaimed_records),
         'requested_deactivation': bool(user.requested_deactivation),
-        'osf_groups': [serialize_group_for_user(group, user) for group in user.osf_groups]
+        'osf_groups': [serialize_group_for_user(group, user) for group in user.osf_groups],
+        'potential_spam_profile_content': user._get_spam_content(potential_spam_profile_content),
     }
 
 

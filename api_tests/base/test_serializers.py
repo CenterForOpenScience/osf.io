@@ -674,3 +674,15 @@ class VersionedDateTimeField(DbTestCase):
             ),
             data['attributes']['date_modified']
         )
+
+    # regression test for https://openscience.atlassian.net/browse/PLAT-1350
+    # VersionedDateTimeField was treating version 2.10 and higher as decimals,
+    # less than 2.2
+    def test_old_date_formats_to_new_format_with_2_10(self):
+        req = make_drf_request_with_version(version='2.10')
+        setattr(self.node, 'last_logged', self.old_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.old_date, self.new_format),
+            data['attributes']['date_modified']
+        )

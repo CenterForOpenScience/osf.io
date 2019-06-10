@@ -70,7 +70,7 @@ def reduce_permissions(permissions):
 def check_private_key_for_anonymized_link(private_key):
     from osf.models import PrivateLink
     try:
-        link = PrivateLink.objects.get(key=private_key)
+        link = PrivateLink.objects.get(key=private_key, is_deleted=False)
     except PrivateLink.DoesNotExist:
         return False
     return link.anonymous

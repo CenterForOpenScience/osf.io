@@ -1275,7 +1275,8 @@ class TestUserProfile(OsfTestCase):
         for i, job in enumerate(schools):
             assert_equal(job, res.json['contents'][i])
 
-    def test_unserialize_jobs(self):
+    @mock.patch('osf.models.user.OSFUser.check_spam')
+    def test_unserialize_jobs(self, mock_check_spam):
         jobs = [
             {
                 'institution': fake.company(),
@@ -1295,6 +1296,7 @@ class TestUserProfile(OsfTestCase):
         self.user.reload()
         # jobs field is updated
         assert_equal(self.user.jobs, jobs)
+        assert mock_check_spam.called
 
     def test_unserialize_names(self):
         fake_fullname_w_spaces = '    {}    '.format(fake.name())
@@ -1316,7 +1318,8 @@ class TestUserProfile(OsfTestCase):
         assert_equal(self.user.family_name, names['family'])
         assert_equal(self.user.suffix, names['suffix'])
 
-    def test_unserialize_schools(self):
+    @mock.patch('osf.models.user.OSFUser.check_spam')
+    def test_unserialize_schools(self, mock_check_spam):
         schools = [
             {
                 'institution': fake.company(),
@@ -1336,8 +1339,10 @@ class TestUserProfile(OsfTestCase):
         self.user.reload()
         # schools field is updated
         assert_equal(self.user.schools, schools)
+        assert mock_check_spam.called
 
-    def test_unserialize_jobs_valid(self):
+    @mock.patch('osf.models.user.OSFUser.check_spam')
+    def test_unserialize_jobs_valid(self, mock_check_spam):
         jobs = [
             {
                 'institution': fake.company(),
@@ -1354,6 +1359,7 @@ class TestUserProfile(OsfTestCase):
         url = api_url_for('unserialize_jobs')
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert mock_check_spam.called
 
     def test_update_user_timezone(self):
         assert_equal(self.user.timezone, 'Etc/UTC')
@@ -4702,7 +4708,7 @@ class TestStaticFileViews(OsfTestCase):
     def test_getting_started_page(self):
         res = self.app.get('/getting-started/')
         assert_equal(res.status_code, 302)
-        assert_equal(res.location, 'http://help.osf.io/')
+        assert_equal(res.location, 'https://openscience.zendesk.com/hc/en-us')
     def test_help_redirect(self):
         res = self.app.get('/help/')
         assert_equal(res.status_code,302)
