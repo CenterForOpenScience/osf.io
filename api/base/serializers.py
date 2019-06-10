@@ -404,7 +404,7 @@ class TypeField(ser.CharField):
             type_ = get_meta_type(self.root.child, request)
         else:
             type_ = get_meta_type(self.root, request)
-        if StrictVersion(request.version) < StrictVersion('2.15'):
+        if StrictVersion(request.version) == StrictVersion('2.15'):
             if type_ != data:
                 raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
         else:
