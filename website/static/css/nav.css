@@ -8,3 +8,7 @@
 .navbar-donate-button a{
   color: #9cd59c !important;
 }
+
+.osf-nav-wrapper .dropdown-menu.auth-dropdown {
+  width: unset !important;
+}
