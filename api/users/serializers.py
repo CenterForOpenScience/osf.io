@@ -78,32 +78,11 @@ class UserSerializer(JSONAPISerializer):
     writeable_method_fields = frozenset([
         'accepted_terms_of_service',
     ])
-    anonymized_fields = [
-        'accepted_terms_of_service',
-        'active',
-        'can_view_reviews',
-        'date_registered',
-        'default_region',
-        'education',
-        'emails',
-        'employment',
-        'family_name',
-        'full_name',
-        'given_name',
-        'id',
-        'institutions',
-        'links',
-        'locale',
-        'middle_names',
-        'nodes',
-        'preprints',
-        'quickfiles',
-        'registrations',
-        'settings',
-        'social',
-        'suffix',
-        'timezone',
+
+    non_anonymized_fields = [
+        'type',
     ]
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=186)

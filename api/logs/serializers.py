@@ -196,15 +196,10 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 class NodeLogSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset(['action', 'date'])
-    anonymized_fields = [
-        'linked_node',
-        'linked_registration',
-        'links',
-        'node',
-        'original_node',
-        'params',
-        'template_node',
-        'user',
+    non_anonymized_fields = [
+        'id',
+        'date',
+        'action',
     ]
 
     id = ser.CharField(read_only=True, source='_id')

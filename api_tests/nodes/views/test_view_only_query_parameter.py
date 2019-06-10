@@ -311,9 +311,9 @@ class TestNodeDetailViewOnlyLinks:
         assert 'custom_citation' not in attributes
         assert 'node_license' not in attributes
         assert 'registrations' not in relationships
-        assert 'forks' not in relationships, 'Add forks to anonymized_fields.'
+        assert 'forks' not in relationships
         assert 'registrations' not in embeds
-        assert 'forks' not in embeds, 'Add forks to anonymized_fields.'
+        assert 'forks' not in embeds
 
     #   test_deleted_anonymous_VOL_gives_401_for_unauthorized
         private_node_one_anonymous_link.is_deleted = True

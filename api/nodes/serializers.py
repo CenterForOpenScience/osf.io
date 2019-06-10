@@ -171,8 +171,13 @@ class NodeLicenseRelationshipField(RelationshipField):
 
 
 class NodeCitationSerializer(JSONAPISerializer):
-    anonymized_fields = [
-        'author',
+    non_anonymized_fields = [
+        'doi',
+        'id',
+        'links',
+        'publisher',
+        'title',
+        'type',
     ]
     id = IDField(read_only=True)
     title = ser.CharField(allow_blank=True, read_only=True)
@@ -239,16 +244,52 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'subjects',
     ])
 
-    anonymized_fields = [
-        'current_user_can_comment',
-        'forks',
-        'citation',
-        'custom_citation',
-        'node_license',
-        'registrations',
-        'contributors',
-        'bibliographic_contributors',
-        'implicit_contributors',
+    # If you add a field to this serializer, be sure to add to this
+    # list if it doesn't expose user data
+    non_anonymized_fields = [
+        'access_requests_enabled',
+        'affiliated_institutions',
+        'analytics_key',
+        'category',
+        'children',
+        'collection',
+        'comments',
+        'current_user_is_contributor',
+        'current_user_permissions',
+        'date_created',
+        'date_modified',
+        'description',
+        'draft_registrations',
+        'files',
+        'fork',
+        'forked_from',
+        'id',
+        'identifiers',
+        'license',
+        'linked_by_nodes',
+        'linked_by_registrations',
+        'linked_nodes',
+        'linked_registrations',
+        'links',
+        'logs',
+        'node_links',
+        'parent',
+        'preprint',
+        'preprints',
+        'public',
+        'region',
+        'registration',
+        'root',
+        'settings',
+        'subjects',
+        'tags',
+        'template_from',
+        'template_node',
+        'title',
+        'type',
+        'view_only_links',
+        'wiki_enabled',
+        'wikis',
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -997,14 +1038,9 @@ class ContributorIDField(IDField):
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
-    anonymized_fields = [
-        'id',
-        'index',
-        'links',
-        'node',
-        'type',
-        'unregistered_contributor',
-        'users',
+    non_anonymized_fields = [
+        'bibliographic',
+        'permission',
     ]
     filterable_fields = frozenset([
         'id',
