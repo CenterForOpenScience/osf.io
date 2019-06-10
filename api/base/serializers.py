@@ -404,9 +404,15 @@ class TypeField(ser.CharField):
             type_ = get_meta_type(self.root.child, request)
         else:
             type_ = get_meta_type(self.root, request)
-
-        if type_ != data:
-            raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
+        if StrictVersion(request.version) < StrictVersion('2.15'):
+            if type_ != data:
+                raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
+        else:
+            if type_ != data and str(type_).replace('-', '_') != data:
+                raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
+            elif type_ != data and str(type_).replace('-', '_') == data:
+                type_ = str(type_).replace('-', '_')
+                self.context['request'].META.setdefault('warning', 'As of API Version 2.15, all types are now Kebab-case. 2.15 will accept snake_case, but this will be deprecated in future versions.')
         return super(TypeField, self).to_internal_value(data)
 
 
@@ -1578,7 +1584,11 @@ class AddonAccountSerializer(JSONAPISerializer):
     })
 
     class Meta:
-        type_ = 'external_accounts'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'external_accounts'
+            return 'external-accounts'
 
     def get_absolute_url(self, obj):
         kwargs = self.context['request'].parser_context['kwargs']

@@ -5,6 +5,7 @@ from django.core.urlresolvers import resolve, reverse
 import furl
 import pytz
 import jsonschema
+from distutils.version import StrictVersion
 
 from framework.auth.core import Auth
 from osf.models import BaseFileNode, OSFUser, Comment, Preprint, AbstractNode
@@ -423,7 +424,11 @@ class FileVersionSerializer(JSONAPISerializer):
         return obj.get_basefilenode_version(file).version_name
 
     class Meta:
-        type_ = 'file_versions'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'file_versions'
+            return 'file-versions'
 
     def self_url(self, obj):
         return absolute_reverse(
@@ -514,7 +519,11 @@ class FileMetadataRecordSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'metadata_records'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'metadata_records'
+            return 'metadata-records'
 
 
 def get_file_download_link(obj, version=None, view_only=None):

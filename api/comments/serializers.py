@@ -1,4 +1,5 @@
 import bleach
+from distutils.version import StrictVersion
 
 from rest_framework import serializers as ser
 from osf.exceptions import ValidationError as ModelValidationError
@@ -223,7 +224,11 @@ class CommentReportSerializer(JSONAPISerializer):
     links = LinksField({'self': 'get_absolute_url'})
 
     class Meta:
-        type_ = 'comment_reports'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'comment_reports'
+            return 'comment-reports'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

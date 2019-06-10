@@ -1,5 +1,6 @@
 import jsonschema
 from django.utils import timezone
+from distutils.version import StrictVersion
 
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -287,7 +288,11 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
     })
 
     class Meta:
-        type_ = 'user_addons'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'user_addons'
+            return 'user-addons'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -482,7 +487,11 @@ class UserSettingsSerializer(JSONAPISerializer):
         )
 
     class Meta:
-        type_ = 'user_settings'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'user_settings'
+            return 'user-settings'
 
 
 class UserSettingsUpdateSerializer(UserSettingsSerializer):
@@ -604,7 +613,11 @@ class UserEmailsSerializer(JSONAPISerializer):
             return '{}?resend_confirmation=true'.format(url)
 
     class Meta:
-        type_ = 'user_emails'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'user_emails'
+            return 'user-emails'
 
     def create(self, validated_data):
         user = self.context['request'].user

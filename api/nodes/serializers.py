@@ -886,7 +886,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
 class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     class Meta:
-        type_ = 'node_addons'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'node_addons'
+            return 'node-addons'
 
     id = ser.CharField(source='config.short_name', read_only=True)
     node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
@@ -1313,7 +1317,11 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     )
     class Meta:
-        type_ = 'node_links'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'node_links'
+            return 'node-links'
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -1520,7 +1528,11 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         return draft
 
     class Meta:
-        type_ = 'draft_registrations'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'draft_registrations'
+            return 'draft-registrations'
 
 
 class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
@@ -1629,7 +1641,11 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
         )
 
     class Meta:
-        type_ = 'view_only_links'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'view_only_links'
+            return 'view-only-links'
 
 
 class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
