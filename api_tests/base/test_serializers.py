@@ -15,6 +15,9 @@ from tests.base import ApiTestCase, DbTestCase
 from osf_tests import factories
 from tests.utils import make_drf_request_with_version
 
+from osf.models import RegistrationSchema
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+
 from api.base.settings.defaults import API_BASE
 from api.base.serializers import JSONAPISerializer, BaseAPISerializer
 from api.base import serializers as base_serializers
@@ -96,6 +99,43 @@ class TestSerializerMetaType(ApiTestCase):
             ) or hasattr(
                 ser.Meta, 'get_type'
             ), 'Serializer {} has no Meta.type_ or Meta.get_type()'.format(ser)
+
+    def test_serializers_types_are_kebab_case(self):
+        serializers = JSONAPISerializer.__subclasses__()
+        request = make_drf_request_with_version(version='2.15')
+        for serializer in serializers:
+            if serializer == WaffleSerializer or serializer == BaseWaffleSerializer:
+                continue
+            if not re.match('^(api_test|test).*', serializer.__module__):
+                if hasattr(serializer.Meta, 'get_type'):
+                    json_type = serializer.Meta.get_type(request)
+                else:
+                    json_type = serializer.Meta.type_
+                assert '_' not in json_type
+
+    def test_deprecation_warning_for_2_15_snake_case(self):
+        user_auth = factories.AuthUserFactory()
+        node = factories.NodeFactory(creator=user_auth)
+        url = '/{}nodes/{}/draft_registrations/?version=2.15'.format(API_BASE, node._id)
+        schema = RegistrationSchema.objects.get(
+            name='OSF-Standard Pre-Data Collection Registration',
+            schema_version=LATEST_SCHEMA_VERSION)
+        payload = {
+            'data': {
+                'type': 'draft_registrations',
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'id': schema._id,
+                            'type': 'registration_schemas'
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=user_auth.auth)
+        assert res.json['data']['type'] == 'draft-registrations'
+        assert res.json['meta']['warning'] == 'As of API Version 2.15, all types are now Kebab-case. 2.15 will accept snake_case, but this will be deprecated in future versions.'
 
 
 class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
