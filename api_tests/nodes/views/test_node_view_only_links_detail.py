@@ -11,6 +11,11 @@ from osf.utils import permissions
 
 
 @pytest.fixture()
+def url(public_project, view_only_link):
+    return '/{}nodes/{}/view_only_links/{}/'.format(
+        API_BASE, public_project._id, view_only_link._id)
+
+@pytest.fixture()
 def user():
     return AuthUserFactory()
 
@@ -52,11 +57,6 @@ def view_only_link(public_project):
 @pytest.mark.django_db
 class TestViewOnlyLinksDetail:
 
-    @pytest.fixture()
-    def url(self, public_project, view_only_link):
-        return '/{}nodes/{}/view_only_links/{}/'.format(
-            API_BASE, public_project._id, view_only_link._id)
-
     def test_non_mutating_view_only_links_detail_tests(
             self, app, user, write_contrib, read_contrib, non_contrib, url):
 
@@ -87,7 +87,7 @@ class TestViewOnlyLinksDetail:
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'testlink'
 
-        view_only_link.nodes.remove(public_project)
+        view_only_link.is_deleted = True
         view_only_link.save()
 
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -106,11 +106,6 @@ class TestViewOnlyLinksDetail:
 
 @pytest.mark.django_db
 class TestViewOnlyLinksUpdate:
-
-    @pytest.fixture()
-    def url(self, public_project, view_only_link):
-        return '/{}nodes/{}/view_only_links/{}/'.format(
-            API_BASE, public_project._id, view_only_link._id)
 
     @pytest.fixture()
     def public_project_admin(self, public_project):
@@ -152,11 +147,25 @@ class TestViewOnlyLinksUpdate:
                 'anonymous': True
             }
         }
+        # Set anonymous to True
         res = app.put_json_api(url, {'data': payload}, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'testlink'
         assert res.json['data']['attributes']['anonymous']
+
+        # Set anonymous to False
+        payload = {
+            'attributes': {
+                'anonymous': False
+            }
+        }
+        # Set anonymous to True
+        res = app.put_json_api(url, {'data': payload}, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['name'] == 'testlink'
+        assert res.json['data']['attributes']['anonymous'] is False
 
     def test_cannot_update_vol(
             self, app, write_contrib, read_contrib, non_contrib, url):
@@ -216,12 +225,6 @@ class TestViewOnlyLinksUpdate:
 
 @pytest.mark.django_db
 class TestViewOnlyLinksDelete:
-
-    @pytest.fixture()
-    def url(self, public_project, view_only_link):
-        return '/{}nodes/{}/view_only_links/{}/'.format(
-            API_BASE, public_project._id, view_only_link._id)
-
     def test_admin_can_delete_vol(self, app, user, url, view_only_link):
         res = app.delete(url, auth=user.auth)
         view_only_link.reload()

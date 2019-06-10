@@ -78,7 +78,11 @@ class UserSerializer(JSONAPISerializer):
     writeable_method_fields = frozenset([
         'accepted_terms_of_service',
     ])
-    non_anonymized_fields = ['type']
+
+    non_anonymized_fields = [
+        'type',
+    ]
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=186)

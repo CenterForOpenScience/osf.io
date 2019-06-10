@@ -29,11 +29,13 @@ from api.base.serializers import (
     LinkedRegistrationsRelationshipSerializer,
 )
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
-from api.base.utils import is_bulk_request, get_user_auth
+from api.base.utils import is_bulk_request, get_user_auth, default_node_list_queryset
+from api.nodes.filters import NodesFilterMixin
 from api.nodes.utils import get_file_object
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.nodes.permissions import ReadOnlyIfRegistration
+from api.nodes.permissions import ExcludeWithdrawals
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
@@ -453,6 +455,37 @@ def error_404(request, format=None, *args, **kwargs):
         status=404,
         content_type='application/vnd.api+json; application/json',
     )
+
+
+class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
+    """
+    For use with NodeChildrenList and RegistrationChildrenList views.
+    """
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+        ExcludeWithdrawals,
+    )
+    ordering = ('-modified',)
+
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
+        return default_node_list_queryset(model_cls=self.model_class)
+
+    # overrides GenericAPIView
+    def get_queryset(self):
+        """
+        Returns non-deleted children of the current resource that the user has permission to view -
+        Children could be public, viewable through a view-only link (if provided), or the user
+        is a contributor, or has implicit admin perms.
+        """
+        node = self.get_node()
+        auth = get_user_auth(self.request)
+        node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
+            .values_list('child__pk', flat=True)
+        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link).order_by('-modified')
 
 
 class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
