@@ -124,7 +124,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
 @must_be_contributor_or_public
 @ember_flag_is_active(features.EMBER_REGISTRATION_FORM_DETAIL)
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
-    if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE) and not auth.private_link:
+    if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         # Registration meta page obviated during redesign
         return redirect(node.url)
     if node.is_registration and bool(node.registered_schema):
