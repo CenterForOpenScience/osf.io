@@ -10,8 +10,12 @@ def set_region_external_account(institution_id, account):
     region = Region.objects.filter(_id=institution_object._id).first()
     obj, created = RegionExternalAccount.objects.update_or_create(
         region=region,
-        defaults={'external_account': account},
+        defaults={
+            'external_account': account,
+            'region': region,
+        },
     )
+    set_new_access_token(region.id, get_oauth_key_by_external_id(account.id))
 
 def set_new_access_token(region_id, access_token):
     region = Region.objects.get(pk=region_id)
