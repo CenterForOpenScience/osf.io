@@ -18,14 +18,10 @@ SET
     resource_id = NULL,
     file_id = NULL,
     version = NULL
-WHERE PC.id in (
-    select PC.id from osf_pagecounter PC
-        left outer join osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)
-        left outer join osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
-    where
-          resource_id IS NOT NULL OR
-          file_id IS NOT NULL AND
-          Guid._id IS NOT NULL AND File._id IS NOT NULL
+WHERE PC.id IN (
+    SELECT PC.id FROM osf_pagecounter PC
+        INNER JOIN osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)
+        INNER JOIN osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
 '''
 REVERSE_SQL = '{} {}'.format(REVERSE_SQL_BASE, NO_LIMIT_CLAUSE)
 REVERSE_SQL_LIMITED = '{} {}'.format(REVERSE_SQL_BASE, LIMIT_CLAUSE)
@@ -43,8 +39,8 @@ FORWARD_SQL_BASE = '''
               File._id = split_part(PC._id, ':', 3) AND
               PC.id in (
                   select PC.id from osf_pagecounter PC
-                      left outer join osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)
-                      left outer join osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
+                      inner join osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)
+                      inner join osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
                   where (PC.resource_id is NULL or PC.file_id IS NULL) AND
                         Guid._id IS NOT NULL AND File._id IS NOT NULL
 '''
@@ -52,12 +48,11 @@ FORWARD_SQL = '{} {}'.format(FORWARD_SQL_BASE, NO_LIMIT_CLAUSE)
 FORWARD_SQL_LIMITED = '{} {}'.format(FORWARD_SQL_BASE, LIMIT_CLAUSE)
 
 COUNT_SQL = '''
-select count(PC.id)
+SELECT count(PC.id)
     from osf_pagecounter as PC
-    left join osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)
-    left join osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
-where (PC.resource_id is NULL or PC.file_id IS NULL) AND
-      Guid._id IS NOT NULL AND File._id IS NOT NULL;
+    INNER JOIN osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)
+    INNER_JOIN osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
+where (PC.resource_id IS NULL or PC.file_id IS NULL);
 '''
 
 
@@ -74,10 +69,10 @@ class Command(BaseCommand):
             help='Run queries but do not write files',
         )
         parser.add_argument(
-            '--page_size',
+            '--rows',
             type=int,
             default=10000,
-            help='How many items at a time to include for each query',
+            help='How many rows to process during this run',
         )
         parser.add_argument(
             '--reverse',
@@ -102,7 +97,8 @@ class Command(BaseCommand):
                 reverse,
             )
         )
-
+        if dry_run:
+            logger.info('DRY RUN')
         sql_query = REVERSE_SQL_LIMITED if reverse else FORWARD_SQL_LIMITED
         logger.info('SQL Query: {}'.format(sql_query))
         with connection.cursor() as cursor:
