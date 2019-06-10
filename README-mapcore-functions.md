@@ -483,8 +483,3 @@ class MAPCore(object):
     ```
     class MAPCoreTokenExpired(MAPCoreException):
     ```
-
-1. ユーザーに通知すべきエラーが発生した場合
-    ```
-    class MAPCoreUserInfoException(MAPCoreException):
-    ```
