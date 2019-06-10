@@ -10,10 +10,10 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404
 from django.http.response import JsonResponse
 from django.utils.decorators import method_decorator
-from django.core.exceptions import ValidationError
 import flask
 
-from osf.models import ExternalAccount
+from osf.models import ExternalAccount, Guid, AbstractNode
+from osf.utils import permissions
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_addons.utils import get_rdm_addon_option
 from framework.auth import Auth
@@ -172,9 +172,10 @@ class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
 
         institution_id = int(kwargs['institution_id'])
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
-        guid = rdm_addon_option.get_management_node_guid()
-
-        return JsonResponse({'guid': guid})
+        if rdm_addon_option.management_node is None:
+            return JsonResponse({'guid': None})
+        else:
+            return JsonResponse({'guid': rdm_addon_option.management_node._id})
 
     def put(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
@@ -184,14 +185,25 @@ class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
             return JsonResponse({
                 'message': 'Require "guid" parameter.'
             }, status=httplib.BAD_REQUEST)
+        guid = json_request['guid']
 
-        rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
-        try:
-            rdm_addon_option.set_management_node_by_guid(json_request['guid'], save=True)
-        except (ValidationError, TypeError):
+        guid_obj = Guid.objects.get(_id=guid)
+        node = guid_obj.referent
+        if not isinstance(node, AbstractNode):
             return JsonResponse({
                 'message': 'Invalid GUID of management project.'
             }, status=httplib.BAD_REQUEST)
+
+        if not node.has_permission(request.user, permissions.WRITE):
+            return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+
+        rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
+        if rdm_addon_option.management_node is not None and \
+                not rdm_addon_option.management_node.has_permission(request.user, permissions.WRITE):
+            return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+
+        rdm_addon_option.management_node = node
+        rdm_addon_option.save()
 
         return JsonResponse({}, status=httplib.OK)
 
@@ -200,7 +212,12 @@ class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
         institution_id = int(kwargs['institution_id'])
 
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
-        rdm_addon_option.unset_management_node(save=True)
+        if rdm_addon_option.management_node is not None:
+            if not rdm_addon_option.management_node.has_permission(request.user, permissions.WRITE):
+                return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+
+            rdm_addon_option.management_node = None
+            rdm_addon_option.save()
 
         return JsonResponse({}, status=httplib.OK)
 
@@ -223,9 +240,10 @@ class OrganizationView(RdmPermissionMixin, UserPassesTestMixin, View):
 
         institution_id = int(kwargs['institution_id'])
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
-        guid = rdm_addon_option.get_organizational_node_guid()
-
-        return JsonResponse({'guid': guid})
+        if rdm_addon_option.organizational_node is None:
+            return JsonResponse({'guid': None})
+        else:
+            return JsonResponse({'guid': rdm_addon_option.organizational_node._id})
 
     def put(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
@@ -235,14 +253,25 @@ class OrganizationView(RdmPermissionMixin, UserPassesTestMixin, View):
             return JsonResponse({
                 'message': 'Require "guid" parameter.'
             }, status=httplib.BAD_REQUEST)
+        guid = json_request['guid']
 
-        rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
-        try:
-            rdm_addon_option.set_organizational_node_by_guid(json_request['guid'], save=True)
-        except (ValidationError, TypeError):
+        guid_obj = Guid.objects.get(_id=guid)
+        node = guid_obj.referent
+        if not isinstance(node, AbstractNode):
             return JsonResponse({
                 'message': 'Invalid GUID of organizational project.'
             }, status=httplib.BAD_REQUEST)
+
+        if not node.has_permission(request.user, permissions.WRITE):
+            return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+
+        rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
+        if rdm_addon_option.organizational_node is not None and \
+                not rdm_addon_option.organizational_node.has_permission(request.user, permissions.WRITE):
+            return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+
+        rdm_addon_option.organizational_node = node
+        rdm_addon_option.save()
 
         return JsonResponse({}, status=httplib.OK)
 
@@ -251,7 +280,12 @@ class OrganizationView(RdmPermissionMixin, UserPassesTestMixin, View):
         institution_id = int(kwargs['institution_id'])
 
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
-        rdm_addon_option.unset_organizational_node(save=True)
+        if rdm_addon_option.organizational_node is not None:
+            if not rdm_addon_option.organizational_node.has_permission(request.user, permissions.WRITE):
+                return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+
+            rdm_addon_option.organizational_node = None
+            rdm_addon_option.save()
 
         return JsonResponse({}, status=httplib.OK)
 

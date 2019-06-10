@@ -65,7 +65,11 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                     error: error
                 }
             });
-            self.setMessage('Error while saving management project', 'text-danger');
+            if (error === 'Unauthorized' || error === 'Forbidden') {
+                self.setMessage('Permission error while saving management project', 'text-danger');
+            } else {
+                self.setMessage('Error while saving management project', 'text-danger');
+            }
         }).always(function() {
             self.isSavingManagementProject(false);
         });
@@ -91,7 +95,11 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                     error: error
                 }
             });
-            self.setMessage('Error while removing management project', 'text-danger');
+            if (error === 'Unauthorized' || error === 'Forbidden') {
+                self.setMessage('Permission error while removing management project', 'text-danger');
+            } else {
+                self.setMessage('Error while removing management project', 'text-danger');
+            }
         });
     },
 
@@ -145,7 +153,11 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                     error: error
                 }
             });
-            self.setMessage('Error while saving organizational project', 'text-danger');
+            if (error === 'Unauthorized' || error === 'Forbidden') {
+                self.setMessage('Permission error while saving organizational project', 'text-danger');
+            } else {
+                self.setMessage('Error while saving organizational project', 'text-danger');
+            }
         }).always(function() {
             self.isSavingOrganizationalProject(false);
         });
@@ -171,7 +183,11 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
                     error: error
                 }
             });
-            self.setMessage('Error while removing organizational project', 'text-danger');
+            if (error === 'Unauthorized' || error === 'Forbidden') {
+                self.setMessage('Permission error while removing organizational project', 'text-danger');
+            } else {
+                self.setMessage('Error while removing organizational project', 'text-danger');
+            }
         });
     },
 
