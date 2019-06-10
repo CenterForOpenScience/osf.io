@@ -253,6 +253,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
     ADDONS_DEFAULT = addon_settings['addons_default']
+    ADDONS_OAUTH_NO_REDIRECT = addon_settings['addons_oauth_no_redirect']
 
 SYSTEM_ADDED_ADDONS = {
     'user': [],
