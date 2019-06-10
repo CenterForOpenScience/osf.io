@@ -39,6 +39,30 @@ class RegistrationSerializer(NodeSerializer):
         'license_type',
         'withdrawal_justification',
     ]
+
+    # Remember to add new RegistrationSerializer fields to this list
+    # if you don't need them to be anonymized
+    non_anonymized_fields = NodeSerializer.non_anonymized_fields + [
+        'archiving',
+        'article_doi',
+        'date_registered',
+        'date_withdrawn',
+        'embargo_end_date',
+        'embargoed',
+        'pending_embargo_approval',
+        'pending_embargo_termination_approval',
+        'pending_registration_approval',
+        'pending_withdrawal',
+        'provider',
+        'registered_by',
+        'registered_from',
+        'registered_meta',
+        'registration_schema',
+        'registration_supplement',
+        'withdrawal_justification',
+        'withdrawn',
+    ]
+
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
