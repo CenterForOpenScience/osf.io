@@ -106,6 +106,7 @@ class InstitutionDefaultStorageDisplay(RdmPermissionMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['institution'] = self.request.user.affiliated_institutions.first()._id
+        kwargs['institution_pk'] = self.request.user.affiliated_institutions.first().id
         if Region.objects.filter(_id=kwargs['institution']).exists():
             kwargs['region'] = Region.objects.get(_id=kwargs['institution'])
         else:
