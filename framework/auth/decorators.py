@@ -84,12 +84,18 @@ def mapcore_check_token(auth, node, use_mapcore=True):
     # -> "Missing translation: status.<msg>" in dashboard from ember-osf-web
 
     if auth and use_mapcore and mapcore_is_enabled():
+        node_page = False
         try:
             try:
                 if mapcore_url_is_my_projects(request.url):
+                    # include MAPCore.get_my_groups() to check my token
                     mapcore_sync_rdm_my_projects(auth.user, use_raise=True)
                 elif node:
-                    mapcore_sync_rdm_project_or_map_group(auth.user, node, use_raise=True)
+                    node_page = True
+                    mapcore_api_is_available(auth.user)  # to check my token
+                    mapcore_sync_rdm_project_or_map_group(
+                        auth.user, node,
+                        use_raise=True)  # cannot check my token
                 else:
                     # check available token only
                     mapcore_api_is_available(auth.user)
@@ -101,15 +107,19 @@ def mapcore_check_token(auth, node, use_mapcore=True):
         except Exception as e:
             if MAPCORE_SYNC_IGNORE_ERROR:
                 return None
+            emsg = ''
+            if node_page:
+                emsg += '<pre>Administrators of this project may not have valid access token for mAP core API.</pre>'
             if settings.DEBUG_MODE:
                 import traceback
-                emsg = '<pre>{}</pre>'.format(traceback.format_exc())
+                emsg += '<pre>{}</pre>'.format(traceback.format_exc())
             else:
-                emsg = str(e)
+                emsg += '<pre>{}</pre>'.format(str(e))
+
             mapcore_log_error('{}: {}'.format(
                 e.__class__.__name__, emsg))
             raise HTTPError(httplib.SERVICE_UNAVAILABLE, data={
-                'message_short': 'mAP Core API Error',
+                'message_short': 'mAP core API Error',
                 'message_long': emsg
             })
     return None
