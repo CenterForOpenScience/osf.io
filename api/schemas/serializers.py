@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 from api.base.serializers import (JSONAPISerializer, IDField, TypeField, LinksField)
-
+from distutils.version import StrictVersion
 
 class SchemaSerializer(JSONAPISerializer):
 
@@ -28,13 +28,21 @@ class RegistrationSchemaSerializer(SchemaSerializer):
     filterable_fields = ['active']
 
     class Meta:
-        type_ = 'registration_schemas'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'registration_schemas'
+            return 'registration-schemas'
 
 
 class FileMetadataSchemaSerializer(SchemaSerializer):
 
     class Meta:
-        type_ = 'file_metadata_schemas'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.15'):
+                return 'file_metadata_schemas'
+            return 'file-metadata-schemas'
 
 
 class DeprecatedMetaSchemaSerializer(SchemaSerializer):

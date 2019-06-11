@@ -19,6 +19,7 @@ from osf.models import RegistrationSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
 from api.base.settings.defaults import API_BASE
+from api.schemas.serializers import SchemaSerializer
 from api.base.serializers import JSONAPISerializer, BaseAPISerializer
 from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, RelationshipField
@@ -106,6 +107,14 @@ class TestSerializerMetaType(ApiTestCase):
         for serializer in serializers:
             if serializer == WaffleSerializer or serializer == BaseWaffleSerializer:
                 continue
+            if serializer == SchemaSerializer:
+                for schema_serializer in serializer.__subclasses__():
+                    if 'Deprecated' not in str(schema_serializer):
+                        if hasattr(serializer.Meta, 'get_type'):
+                            json_type = serializer.Meta.get_type(request)
+                        else:
+                            json_type = serializer.Meta.type_
+                        assert '_' not in json_type
             if not re.match('^(api_test|test).*', serializer.__module__):
                 if hasattr(serializer.Meta, 'get_type'):
                     json_type = serializer.Meta.get_type(request)
