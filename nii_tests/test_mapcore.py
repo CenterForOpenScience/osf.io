@@ -856,23 +856,27 @@ class TestViewsWithMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_view_project')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
+    @mock.patch('nii.mapcore.mapcore_api_is_available0')
     #@mock.patch('framework.auth.decorators.mapcore_sync_rdm_project_or_map_group')  # cannot hook
-    def test_view_project(self, mock_sync):
+    def test_view_project(self, mock_sync2, mock_sync1):
         res = self.app.get(self.project_url, auth=self.me.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(mock_sync.call_count, 2)
+        assert_equal(mock_sync1.call_count, 2)  # at decorator.py and _view_project()
+        assert_equal(mock_sync2.call_count, 1)
 
     ### from tests/test_views.py::test_edit_node_title
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_edit_node_title')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
     @mock.patch('nii.mapcore.mapcore_sync_map_group0')
-    def test_edit_node_title(self, mock_sync2, mock_sync1):
+    @mock.patch('nii.mapcore.mapcore_api_is_available0')
+    def test_edit_node_title(self, mock_sync3, mock_sync2, mock_sync1):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
         # The title is changed though posting form data
         self.app.post_json(url, {'name': 'title', 'value': 'Bacon'},
                            auth=self.me.auth).maybe_follow()
         assert_equal(mock_sync1.call_count, 1)
         assert_equal(mock_sync2.call_count, 1)
+        assert_equal(mock_sync3.call_count, 1)
         self.project.reload()
         # The title was changed
         assert_equal(self.project.title, 'Bacon')
@@ -883,13 +887,15 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_edit_description')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
     @mock.patch('nii.mapcore.mapcore_sync_map_group0')
-    def test_edit_description(self, mock_sync2, mock_sync1):
+    @mock.patch('nii.mapcore.mapcore_api_is_available0')
+    def test_edit_description(self, mock_sync3, mock_sync2, mock_sync1):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
         self.app.post_json(url,
                            {'name': 'description', 'value': 'Deep-fried'},
                            auth=self.me.auth)
         assert_equal(mock_sync1.call_count, 1)
         assert_equal(mock_sync2.call_count, 1)
+        assert_equal(mock_sync3.call_count, 1)
         self.project.reload()
         assert_equal(self.project.description, 'Deep-fried')
 
@@ -897,7 +903,8 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_add_contributors')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
     @mock.patch('nii.mapcore.mapcore_sync_map_group0')
-    def test_add_contributors(self, mock_sync2, mock_sync1):
+    @mock.patch('nii.mapcore.mapcore_api_is_available0')
+    def test_add_contributors(self, mock_sync3, mock_sync2, mock_sync1):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.me, is_public=True)
         user2 = UserFactory()
@@ -926,6 +933,7 @@ class TestViewsWithMAPCore(OsfTestCase):
         ).maybe_follow()
         assert_equal(mock_sync1.call_count, 1)
         assert_equal(mock_sync2.call_count, 1)
+        assert_equal(mock_sync3.call_count, 1)
         project.reload()
         assert_in(user2, project.contributors)
         # A log event was added
@@ -939,7 +947,8 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_contributor_manage_reorder')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
     @mock.patch('nii.mapcore.mapcore_sync_map_group0')
-    def test_contributor_manage_reorder(self, mock_sync2, mock_sync1):
+    @mock.patch('nii.mapcore.mapcore_api_is_available0')
+    def test_contributor_manage_reorder(self, mock_sync3, mock_sync2, mock_sync1):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.me, is_public=True)
         reg_user1, reg_user2 = UserFactory(), UserFactory()
@@ -977,6 +986,7 @@ class TestViewsWithMAPCore(OsfTestCase):
         )
         assert_equal(mock_sync1.call_count, 1)
         assert_equal(mock_sync2.call_count, 1)
+        assert_equal(mock_sync3.call_count, 1)
         project.reload()
         assert_equal(
             # Note: Cast ForeignList to list for comparison
@@ -992,7 +1002,8 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_remove_contributor')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
     @mock.patch('nii.mapcore.mapcore_sync_map_group0')
-    def test_remove_contributor(self, mock_sync2, mock_sync1):
+    @mock.patch('nii.mapcore.mapcore_api_is_available0')
+    def test_remove_contributor(self, mock_sync3, mock_sync2, mock_sync1):
         url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
         payload = {'contributorID': self.user2._id,
@@ -1002,6 +1013,7 @@ class TestViewsWithMAPCore(OsfTestCase):
                       auth=self.me.auth).maybe_follow()
         assert_equal(mock_sync1.call_count, 1)
         assert_equal(mock_sync2.call_count, 1)
+        assert_equal(mock_sync3.call_count, 1)
         self.project.reload()
         assert_not_in(self.user2._id, self.project.contributors)
         # A log event was added

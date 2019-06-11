@@ -81,12 +81,14 @@ def mapcore_is_enabled():
 
 
 # True or Exception
-def mapcore_api_is_available(user):
+def mapcore_api_is_available0(user):
     mapcore = MAPCore(user)
     mapcore.get_api_version()
     logger.debug('mapcore_api_is_available::Access Token (for {}) is up-to-date'.format(user.username))
     return True
 
+def mapcore_api_is_available(user):
+    return mapcore_api_is_available0(user)
 
 def mapcore_log_error(msg):
     logger.error(msg)
