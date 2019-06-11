@@ -39,10 +39,9 @@ FORWARD_SQL_BASE = '''
               File._id = split_part(PC._id, ':', 3) AND
               PC.id in (
                   select PC.id from osf_pagecounter PC
-                      inner join osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)
-                      inner join osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
-                  where (PC.resource_id is NULL or PC.file_id IS NULL) AND
-                        Guid._id IS NOT NULL AND File._id IS NOT NULL
+                      INNER JOIN osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)
+                      INNER JOIN osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
+                  WHERE (PC.resource_id IS NULL OR PC.file_id IS NULL)
 '''
 FORWARD_SQL = '{} {}'.format(FORWARD_SQL_BASE, NO_LIMIT_CLAUSE)
 FORWARD_SQL_LIMITED = '{} {}'.format(FORWARD_SQL_BASE, LIMIT_CLAUSE)
@@ -51,7 +50,7 @@ COUNT_SQL = '''
 SELECT count(PC.id)
     from osf_pagecounter as PC
     INNER JOIN osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)
-    INNER_JOIN osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
+    INNER JOIN osf_basefilenode File on File._id = split_part(PC._id, ':', 3)
 where (PC.resource_id IS NULL or PC.file_id IS NULL);
 '''
 
@@ -88,12 +87,12 @@ class Command(BaseCommand):
         logger.debug(options)
 
         dry_run = options['dry_run']
-        page_size = options['page_size']
+        rows = options['rows']
         reverse = options['reverse']
         logger.debug(
-            'Dry run: {}, page size: {}, reverse: {}'.format(
+            'Dry run: {}, rows: {}, reverse: {}'.format(
                 dry_run,
-                page_size,
+                rows,
                 reverse,
             )
         )
@@ -103,7 +102,7 @@ class Command(BaseCommand):
         logger.info('SQL Query: {}'.format(sql_query))
         with connection.cursor() as cursor:
             if not dry_run:
-                cursor.execute(sql_query, [page_size])
+                cursor.execute(sql_query, [rows])
             if not reverse:
                 cursor.execute(COUNT_SQL)
                 number_of_entries_left = cursor.fetchone()[0]
