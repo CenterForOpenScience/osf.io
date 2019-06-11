@@ -477,7 +477,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         max_quota, used_quota = quota.get_quota_info(
             obj.creator, quota.get_project_storage_type(obj),
         )
-        return float(used_quota) / (max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3) * 100
+        return float(used_quota) / (max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3)
 
     def get_quota_threshold(self, obj):
         return WARNING_THRESHOLD
