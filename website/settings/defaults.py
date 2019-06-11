@@ -334,6 +334,13 @@ CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error 
 ECSARXIV_CROSSREF_USERNAME = None
 ECSARXIV_CROSSREF_PASSWORD = None
 
+# if our DOIs cannot be comfirmed after X amount of days email the admin
+DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 5
+
+# Crossref has a second metadata api that uses JSON with different features
+CROSSREF_JSON_API_URL = 'https://api.crossref.org/'
+
+
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None
 
@@ -576,6 +583,10 @@ class CeleryConfig:
             },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+            },
+            'check_crossref_doi': {
+                'task': 'scripts.periodic.check_crossref_dois',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
             },
         }

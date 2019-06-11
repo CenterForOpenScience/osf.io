@@ -435,6 +435,11 @@ CROSSREF_ERROR = Mail(
     subject='There was an error creating a DOI for preprint(s). batch_id: ${batch_id}'
 )
 
+CROSSREF_DOIS_PENDING = Mail(
+    'crossref_doi_pending',
+    subject='There are ${pending_doi_count} pending.'
+)
+
 PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
     'preprint_withdrawal_request_granted',
     subject='Your ${reviewable.provider.preprint_word} has been withdrawn',
