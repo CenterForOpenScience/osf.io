@@ -111,7 +111,7 @@ class TestNodeSerializer:
         )
 
         data = NodeSerializer(node, context={'request': req}).data['data']
-        assert data['attributes']['quota_rate'] == 50.0
+        assert data['attributes']['quota_rate'] == 0.5
 
     def test_node_serializer_nii_storage(self, user):
         parent = ProjectFactory(creator=user)
@@ -133,7 +133,7 @@ class TestNodeSerializer:
         )
 
         data = NodeSerializer(node, context={'request': req}).data['data']
-        assert data['attributes']['quota_rate'] == 50.0
+        assert data['attributes']['quota_rate'] == 0.5
 
     def test_node_serializer_custom_storage(self, user):
         parent = ProjectFactory(creator=user)
