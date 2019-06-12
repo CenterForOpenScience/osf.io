@@ -25,7 +25,7 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session, BlacklistedEmailDomain
+from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session, BlacklistedEmailDomain, PreprintContributor
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
@@ -218,6 +218,76 @@ class TestOSFUser:
         assert project.has_permission(user, 'admin') is True
         assert project.get_visible(user) is True
         assert project.is_contributor(user2) is False
+
+    def test_merge_preprints(self, user):
+        user2 = AuthUserFactory()
+
+        preprint_one = PreprintFactory(creator=user, title='preprint_one')
+
+        preprint_two = PreprintFactory(title='preprint_two')
+        preprint_two.add_contributor(user2)
+
+        preprint_three = PreprintFactory(title='preprint_three', creator=user2)
+        preprint_three.add_contributor(user, visible=False)
+
+        preprint_four = PreprintFactory(title='preprint_four')
+        preprint_four.add_contributor(user2, permissions='read', visible=False)
+
+        preprint_five = PreprintFactory(title='preprint_five')
+        preprint_five.add_contributor(user2, permissions='read', visible=False)
+        preprint_five.add_contributor(user, permissions='write', visible=True)
+
+        # two preprints shared b/t user and user2
+        assert user.preprints.count() == 3
+        assert user2.preprints.count() == 4
+
+        user.merge_user(user2)
+        preprint_one.reload()
+        preprint_two.reload()
+        preprint_three.reload()
+        preprint_four.reload()
+        preprint_five.reload()
+
+        assert user.preprints.count() == 5
+        # one group for each preprint
+        assert user.groups.count() == 5
+        assert user2.preprints.count() == 0
+        assert not user2.groups.all()
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_one)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'admin'
+        assert preprint_one.creator == user
+        assert not preprint_one.has_permission(user2, 'read')
+        assert not preprint_one.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_two)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'write'
+        assert preprint_two.creator != user
+        assert not preprint_two.has_permission(user2, 'read')
+        assert not preprint_two.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_three)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'admin'  # of the two users the highest perm wins out.
+        assert preprint_three.creator == user
+        assert not preprint_three.has_permission(user2, 'read')
+        assert not preprint_three.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_four)
+        assert contrib_obj.visible is False
+        assert contrib_obj.permission == 'read'
+        assert preprint_four.creator != user
+        assert not preprint_four.has_permission(user2, 'read')
+        assert not preprint_four.is_contributor(user2)
+
+        contrib_obj = PreprintContributor.objects.get(user=user, preprint=preprint_five)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == 'write'
+        assert preprint_five.creator != user
+        assert not preprint_five.has_permission(user2, 'read')
+        assert not preprint_five.is_contributor(user2)
 
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given
@@ -2114,3 +2184,65 @@ class TestUserGdprDelete:
             user.gdpr_delete()
         assert exc_info.value.args[0] == 'You cannot delete this user because they have an external account for' \
                                          ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)
+
+
+class TestUserSpam:
+
+    @pytest.fixture
+    def user(self):
+        return AuthUserFactory()
+
+    def test_get_spam_content(self, user):
+        schools_list = []
+        expected_content = ''
+
+        for _ in range(2):
+            institution = fake.company()
+            degree = fake.catch_phrase()
+            schools_list.append({
+                'degree': degree,
+                'institution': institution
+            })
+            expected_content += '{} {} '.format(institution, degree)
+        saved_fields = {'schools': schools_list}
+
+        spam_content = user._get_spam_content(saved_fields)
+        assert spam_content == expected_content.strip()
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch('osf.models.spam._get_client')
+    def test_do_check_spam(self, mock_get_client, user):
+        new_mock = mock.MagicMock()
+        new_mock.check_comment = mock.MagicMock(return_value=(True, None))
+        mock_get_client.return_value = new_mock
+
+        suspicious_content = 'spam eggs sausage and spam'
+        with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
+            user.do_check_spam(
+                author=user.fullname,
+                author_email=user.username,
+                content=suspicious_content,
+                request_headers={'Referrer': 'Woo', 'User-Agent': 'yay', 'Remote-Addr': 'ok'}
+            )
+        user.save()
+        assert user.spam_data['content'] == suspicious_content
+        assert user.spam_data['author'] == user.fullname
+        assert user.spam_data['author_email'] == user.username
+
+        # test do_check_spam for ham user
+        user.confirm_ham()
+        assert user.do_check_spam(None, None, None, None) is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch('osf.models.OSFUser.do_check_spam')
+    def test_check_spam(self, mock_do_check_spam, user):
+
+        # test check_spam for other saved fields
+        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
+            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
+            assert mock_do_check_spam.call_count == 0
+
+        # test check spam for correct saved_fields
+        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
+            user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
+            assert mock_do_check_spam.call_count == 1

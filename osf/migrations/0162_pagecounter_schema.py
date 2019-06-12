@@ -9,14 +9,14 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0154_remove_ember_project_registrations_flag'),
+        ('osf', '0161_add_spam_fields_to_user'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='pagecounter',
             name='action',
-            field=models.CharField(default=b'download', max_length=128),
+            field=models.CharField(blank=True, null=True, max_length=128),
         ),
         migrations.AddField(
             model_name='pagecounter',

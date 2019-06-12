@@ -149,7 +149,7 @@ def default_node_list_queryset(model_cls):
 
 def default_node_permission_queryset(user, model_cls):
     assert model_cls in {Node, Registration}
-    if user.is_anonymous:
+    if user is None or user.is_anonymous:
         return model_cls.objects.filter(is_public=True)
     sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, read=True)
     return model_cls.objects.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True) | Q(is_public=True))

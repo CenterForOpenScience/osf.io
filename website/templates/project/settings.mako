@@ -431,7 +431,7 @@
                             <li>institutional logos to be displayed on public projects</li>
                             <li>public projects to be discoverable on specific institutional landing pages</li>
                             <li>single sign-on to the OSF with institutional credentials</li>
-                            <li><a href="http://help.osf.io/m/institutions">FAQ</a></li>
+                            <li><a href="https://openscience.zendesk.com/hc/en-us/categories/360001550913">FAQ</a></li>
                          </ul>
                          <!-- /ko -->
                      </div>

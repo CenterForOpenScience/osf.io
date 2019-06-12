@@ -40,7 +40,7 @@ from osf.models.admin_log_entry import (
 )
 
 from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm
+from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 
@@ -67,8 +67,8 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 if 'ham_confirmed' in user.system_tags:
                     user.tags.through.objects.filter(tag__name='ham_confirmed').delete()
 
-                if kwargs.get('is_spam') and 'spam_confirmed' not in user.system_tags:
-                    user.add_system_tag('spam_confirmed')
+                if kwargs.get('is_spam'):
+                    user.confirm_spam()
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
@@ -77,8 +77,7 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 subscribe_on_confirm(user)
                 user.is_registered = True
                 user.tags.through.objects.filter(tag__name__in=['spam_flagged', 'spam_confirmed'], tag__system=True).delete()
-                if 'ham_confirmed' not in user.system_tags:
-                    user.add_system_tag('ham_confirmed')
+                user.confirm_ham()
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
@@ -203,6 +202,7 @@ class HamUserRestoreView(UserDeleteView):
                     self.kwargs.get('guid')
                 ))
         if user:
+            user.confirm_ham(save=True)
             for node in user.contributor_to:
                 if node.is_spam:
                     node.confirm_ham(save=True)
@@ -219,7 +219,7 @@ class HamUserRestoreView(UserDeleteView):
 
 
 class UserSpamList(PermissionRequiredMixin, ListView):
-    SPAM_TAG = 'spam_flagged'
+    SPAM_STATUS = SpamStatus.UNKNOWN
 
     paginate_by = 25
     paginate_orphans = 1
@@ -229,7 +229,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        return OSFUser.objects.filter(tags__name=self.SPAM_TAG).order_by(self.ordering)
+        return OSFUser.objects.filter(spam_status=self.SPAM_STATUS).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -239,15 +239,16 @@ class UserSpamList(PermissionRequiredMixin, ListView):
         return {
             'users': list(map(serialize_user, query_set)),
             'page': page,
+            'SPAM_STATUS': SpamStatus,
         }
 
 
 class UserFlaggedSpamList(UserSpamList, DeleteView):
-    SPAM_TAG = 'spam_flagged'
+    SPAM_STATUS = SpamStatus.FLAGGED
     template_name = 'users/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
-        if not request.user.get_perms('osf.mark_spam'):
+        if not request.user.has_perm('osf.mark_spam'):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
         user_ids = [
             uid for uid in request.POST.keys()
@@ -256,8 +257,8 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
         for uid in user_ids:
             user = OSFUser.load(uid)
             if 'spam_flagged' in user.system_tags:
-                user.system_tags.remove('spam_flagged')
-            user.add_system_tag('spam_confirmed')
+                user.tags.through.objects.filter(tag__name='spam_flagged').delete()
+            user.confirm_spam()
             user.save()
             update_admin_log(
                 user_id=self.request.user.id,
@@ -270,11 +271,11 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
 
 
 class UserKnownSpamList(UserSpamList):
-    SPAM_TAG = 'spam_confirmed'
+    SPAM_STATUS = SpamStatus.SPAM
     template_name = 'users/known_spam_list.html'
 
 class UserKnownHamList(UserSpamList):
-    SPAM_TAG = 'ham_confirmed'
+    SPAM_STATUS = SpamStatus.HAM
     template_name = 'users/known_spam_list.html'
 
 class User2FactorDeleteView(UserDeleteView):
@@ -302,6 +303,32 @@ class User2FactorDeleteView(UserDeleteView):
             action_flag=USER_2_FACTOR
         )
         return redirect(reverse_user(self.kwargs.get('guid')))
+
+
+class UserAddSystemTag(PermissionRequiredMixin, FormView):
+
+    template_name = 'users/add_system_tag.html'
+    object_type = 'osfuser'
+    permission_required = 'osf.change_osfuser'
+    raise_exception = True
+    form_class = AddSystemTagForm
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('users:user', kwargs={'guid': self.kwargs.get('guid')})
+
+    def get_object(self, queryset=None):
+        return OSFUser.load(self.kwargs.get('guid'))
+
+    def get_context_data(self, **kwargs):
+        return {'guid': self.get_object()._id}
+
+    def form_valid(self, form):
+        user = self.get_object()
+        system_tag_to_add = form.cleaned_data['system_tag_to_add']
+        user.add_system_tag(system_tag_to_add)
+        user.save()
+
+        return super(UserAddSystemTag, self).form_valid(form)
 
 
 class UserFormView(PermissionRequiredMixin, FormView):
