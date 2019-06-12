@@ -113,7 +113,7 @@
                                         Remove from bookmarks
                                     </a>
                                 </li>
-                                % if 'admin' in user['permissions'] and not node['is_registration']:  ## Create view-only link
+                                % if 'admin' in user['permissions'] and not node['is_registration'] and use_viewonlylinks:  ## Create view-only link
                                     <li>
                                         <a href="${node['url']}settings/#createVolsAnchor">
                                             Create view-only link

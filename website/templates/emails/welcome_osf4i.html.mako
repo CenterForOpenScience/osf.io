@@ -28,9 +28,11 @@ Archive your materials, data, manuscripts, or anything else associated with your
 Associate your projects with your institution. They will be added to your institution's central commons, improving discoverability of your work and fostering collaboration.<br>
 <br>
 
+% if use_viewonlylinks:
 <h4>Share your work</h4>
 Keep your research materials and data private, make it accessible to specific others with view-only links, or make it publicly accessible. You have full control of what parts of your research are public and what remains private. <a href="http://help.osf.io/m/projects/l/524048-control-your-privacy-settings/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Explore privacy settings.</a><br>
 <br>
+% endif
 
 <h4>Register your research</h4>
 Create a permanent, time-stamped version of your projects and files.  Do this to preregister your design and analysis plan to conduct a confirmatory study, or archive your materials, data, and analysis scripts when publishing a report. <a href="http://help.osf.io/m/registrations/l/524205-register-your-project/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Read about registrations.</a><br>

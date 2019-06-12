@@ -164,6 +164,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     domain=DOMAIN,
                     osf_support_email=OSF_SUPPORT_EMAIL,
                     storage_flag_is_active=waffle.flag_is_active(request, 'storage_i18n'),
+                    use_viewonlylinks=settings.to_bool('USE_VIEWONLYLINKS', True),
                 )
             ### the user is not available when have_email is False.
 

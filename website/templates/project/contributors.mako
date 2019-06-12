@@ -155,7 +155,7 @@
     </div>
     % endif
 
-    % if 'admin' in user['permissions']:
+    % if 'admin' in user['permissions'] and use_viewonlylinks:
         <h3 class="m-t-xl">View-only Links
             <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
               <i class="fa fa-plus"></i> Add
