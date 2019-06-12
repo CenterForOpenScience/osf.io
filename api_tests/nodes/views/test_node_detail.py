@@ -6,6 +6,7 @@ from urlparse import urlparse
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
+from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
 from osf.models import NodeLog
 from osf.models.licenses import NodeLicense
@@ -23,7 +24,6 @@ from osf_tests.factories import (
     PreprintFactory,
     IdentifierFactory,
     InstitutionFactory,
-    SubjectFactory,
     ForkFactory,
     WithdrawnRegistrationFactory,
 )
@@ -218,6 +218,15 @@ class TestNodeDetail:
         assert urlparse(related_url).path == expected_url
         self_url = res.json['data']['relationships']['affiliated_institutions']['links']['self']['href']
         expected_url = '{}relationships/institutions/'.format(url_public)
+        assert urlparse(self_url).path == expected_url
+
+    #   test_node_has_subjects_links_for_later_versions
+        res = app.get(url_public + '?version=2.15')
+        related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
+        expected_url = '{}subjects/'.format(url_public)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
+        expected_url = '{}relationships/subjects/'.format(url_public)
         assert urlparse(self_url).path == expected_url
 
     def test_node_has_comments_link(
@@ -580,10 +589,6 @@ class NodeCRUDTestCase:
 
 @pytest.mark.django_db
 class TestNodeUpdate(NodeCRUDTestCase):
-
-    @pytest.fixture()
-    def subject(self):
-        return SubjectFactory()
 
     def test_node_institution_update(self, app, user_two, project_private, url_private, make_node_payload,
                                      institution_one, institution_two):
@@ -1190,43 +1195,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert target_object.is_public
         assert not mock_update_doi_metadata.called
 
-    def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
-        # test_write_contrib_cannot_set_subjects
-        write_contrib = AuthUserFactory()
-        project_public.add_contributor(write_contrib, permissions=['read', 'write'], auth=Auth(user), save=True)
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(url_public, update_subjects_payload, auth=write_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-
-        # test_non_contrib_cannot_set_subjects
-        non_contrib = AuthUserFactory()
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-
-        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(url_public, update_subjects_payload, auth=non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-
-        # test_admin_can_set_subjects
-        admin_contrib = AuthUserFactory()
-        project_public.add_contributor(admin_contrib, permissions=['read', 'write', 'admin'], auth=Auth(user), save=True)
-
-        assert not project_public.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
-
-        res = app.patch_json_api(url_public, update_subjects_payload, auth=admin_contrib.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        assert project_public.subjects.filter(_id=subject._id).exists()
-
 
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
@@ -1485,6 +1453,18 @@ class TestReturnDeletedNode:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 410
+
+
+@pytest.mark.django_db
+class TestUpdateNodeSubjects(UpdateSubjectsMixin):
+
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        project = ProjectFactory(is_public=True, creator=user_admin_contrib)
+        project.add_contributor(user_write_contrib, permissions=['write', 'read'])
+        project.add_contributor(user_read_contrib, permissions=['read'])
+        project.save()
+        return project
 
 
 @pytest.mark.django_db

@@ -37,8 +37,10 @@ class RegistrationSerializer(NodeSerializer):
         'is_public',
         'license',
         'license_type',
+        'subjects',
         'withdrawal_justification',
     ]
+
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
@@ -301,6 +303,16 @@ class RegistrationSerializer(NodeSerializer):
 
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
+    @property
+    def subjects_related_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'registrations:registration-subjects'
+
+    @property
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'registrations:registration-relationships-subjects'
+
     def get_registration_url(self, obj):
         return absolute_reverse(
             'registrations:registration-detail', kwargs={
@@ -402,6 +414,9 @@ class RegistrationSerializer(NodeSerializer):
             new_institutions = [{'_id': institution} for institution in institutions_list]
             update_institutions(registration, new_institutions, user)
             registration.save()
+        if 'subjects' in validated_data:
+            subjects = validated_data.pop('subjects', None)
+            self.update_subjects(registration, subjects, auth)
         if 'withdrawal_justification' in validated_data or 'is_pending_retraction' in validated_data:
             self.retract_registration(registration, validated_data, user)
         if 'is_public' in validated_data:
