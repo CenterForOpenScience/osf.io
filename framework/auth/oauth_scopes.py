@@ -41,6 +41,8 @@ class CoreScopes(object):
     SUBSCRIPTIONS_READ = 'subscriptions_read'
     SUBSCRIPTIONS_WRITE = 'subscriptions_write'
 
+    MEETINGS_READ = 'meetings.base_read'
+
     NODE_BASE_READ = 'nodes.base_read'
     NODE_BASE_WRITE = 'nodes.base_write'
 
@@ -135,6 +137,9 @@ class CoreScopes(object):
 
     PROVIDERS_WRITE = 'providers_write'
 
+    CHRONOS_SUBMISSION_READ = 'chronos_submission_read'
+    CHRONOS_SUBMISSION_WRITE = 'chronos_submission_write'
+
     WAFFLE_READ = 'waffle_read'
 
     NULL = 'null'
@@ -160,6 +165,8 @@ class CoreScopes(object):
     IDENTIFIERS_READ = 'identifiers.data_read'
     IDENTIFIERS_WRITE = 'identifiers.data_write'
 
+    METRICS_BASIC = 'metrics_basic'
+    METRICS_RESTRICTED = 'metrics_restricted'
 
 class ComposedScopes(object):
     """
@@ -214,8 +221,9 @@ class ComposedScopes(object):
                      CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
 
     # Preprints collection
-    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ,)
-    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE,)
+    # TODO: Move Metrics scopes to their own restricted composed scope once the Admin app can manage scopes on tokens/apps
+    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ, CoreScopes.METRICS_BASIC,)
+    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE, CoreScopes.METRICS_RESTRICTED,)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
@@ -259,7 +267,7 @@ class ComposedScopes(object):
     REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.MODERATORS_WRITE, CoreScopes.PROVIDERS_WRITE)
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + PREPRINT_ALL_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + PREPRINT_ALL_READ + (CoreScopes.MEETINGS_READ, CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
     FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE + PREPRINT_ALL_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use

@@ -45,7 +45,7 @@ class RegistrationSerializer(NodeSerializer):
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
-    category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string))
+    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
@@ -114,10 +114,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'user_id': '<registered_user._id>'},
     ))
 
-    registered_from = HideIfWithdrawal(RelationshipField(
+    registered_from = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<registered_from._id>'},
-    ))
+    )
 
     children = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-children',
@@ -211,16 +211,16 @@ class RegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_linked_by_registrations_count'},
     ))
 
-    parent = HideIfWithdrawal(RelationshipField(
+    parent = RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<parent_node._id>'},
         filter_key='parent_node',
-    ))
+    )
 
-    root = HideIfWithdrawal(RelationshipField(
+    root = RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<root._id>'},
-    ))
+    )
 
     region = HideIfWithdrawal(RelationshipField(
         related_view='regions:region-detail',
@@ -228,7 +228,7 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True,
     ))
 
-    affiliated_institutions = HideIfWithdrawal(RelationshipField(
+    affiliated_institutions = RelationshipField(
         related_view='registrations:registration-institutions',
         related_view_kwargs={'node_id': '<_id>'},
         self_view='registrations:registration-relationships-institutions',
@@ -236,7 +236,7 @@ class RegistrationSerializer(NodeSerializer):
         read_only=False,
         many=True,
         required=False,
-    ))
+    )
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
@@ -263,10 +263,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )))
 
-    identifiers = HideIfWithdrawal(RelationshipField(
+    identifiers = RelationshipField(
         related_view='registrations:identifier-list',
         related_view_kwargs={'node_id': '<_id>'},
-    ))
+    )
 
     linked_nodes = HideIfWithdrawal(RelationshipField(
         related_view='registrations:linked-nodes',

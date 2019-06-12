@@ -77,6 +77,7 @@ from api.nodes.permissions import (
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
+    ReadOnlyIfWithdrawn,
 )
 from api.nodes.serializers import (
     NodeSerializer,
@@ -1441,7 +1442,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         AdminOrPublic,
-        ExcludeWithdrawals,
+        ReadOnlyIfWithdrawn,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]

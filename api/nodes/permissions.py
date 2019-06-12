@@ -140,6 +140,16 @@ class ExcludeWithdrawals(permissions.BasePermission):
             return False
         return True
 
+class ReadOnlyIfWithdrawn(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if isinstance(obj, Node):
+            node = obj
+        else:
+            context = request.parser_context['kwargs']
+            node = AbstractNode.load(context[view.node_lookup_url_kwarg])
+        if node.is_retracted:
+            return request.method in permissions.SAFE_METHODS
+        return True
 
 class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""

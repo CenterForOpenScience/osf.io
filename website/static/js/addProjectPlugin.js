@@ -269,7 +269,7 @@ var AddProject = {
                                     m('i', ' This component will inherit the same license as ',
                                         m('b', options.parentTitle),
                                         '. ',
-                                        m('a[target="_blank"][href="http://help.osf.io/m/sharing/l/524050-licenses?id=524050-licenses"]', 'Learn more.' )
+                                        m('a[target="_blank"][href="https://openscience.zendesk.com/hc/en-us/articles/360019737854"]', 'Learn more.' )
                                     )
                                 )
                         ]): '',

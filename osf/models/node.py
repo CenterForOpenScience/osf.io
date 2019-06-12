@@ -49,7 +49,7 @@ from osf.models.validators import validate_title
 from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.requests import DummyRequest, get_request_and_user_id
+from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from osf.utils import sanitize
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -59,10 +59,12 @@ from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
-from osf.utils.requests import get_headers_from_request
 from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, expand_permissions
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from api.caching.tasks import update_storage_usage
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 
 
 logger = logging.getLogger(__name__)
@@ -677,6 +679,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         try:
             search.search.update_node(self, bulk=False, async_update=True)
+            if self.is_collected and self.is_public:
+                search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1489,6 +1493,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 return True
         return False
 
+    def add_affiliations(self, user, new):
+        # add all of the user's affiliations to the forked or templated node
+        for affiliation in user.affiliated_institutions.all():
+            new.affiliated_institutions.add(affiliation)
+
     # TODO: Optimize me (e.g. use bulk create)
     def fork_node(self, auth, title=None, parent=None):
         """Recursively fork a node.
@@ -1570,6 +1579,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if len(forked.title) > 512:
             forked.title = forked.title[:512]
 
+        self.add_affiliations(user, forked)
         forked.add_contributor(
             contributor=user,
             permissions=CREATOR_PERMISSIONS,
@@ -1685,6 +1695,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.node_license = self.license.copy() if self.license else None
+
+        self.add_affiliations(auth.user, new)
 
         # If that title hasn't been changed, apply the default prefix (once)
         if (
@@ -1871,13 +1883,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def on_update(self, first_save, saved_fields):
         User = apps.get_model('osf.OSFUser')
         request, user_id = get_request_and_user_id()
-        request_headers = {}
-        if not isinstance(request, DummyRequest):
-            request_headers = {
-                k: v
-                for k, v in get_headers_from_request(request).items()
-                if isinstance(v, basestring)
-            }
+        request_headers = string_type_request_headers(request)
         self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
         user = User.load(user_id)
@@ -2218,6 +2224,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log_date=timezone.now(),
         )
         self.save()
+
+    @property
+    def storage_usage(self):
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self._id)
+
+        storage_usage_total = storage_usage_cache.get(key)
+        if storage_usage_total:
+            return storage_usage_total
+        else:
+            update_storage_usage(self)  # sets cache
+            return storage_usage_cache.get(key)
 
 
 class Node(AbstractNode):

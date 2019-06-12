@@ -3205,6 +3205,54 @@ class TestCollectionRelationshipNodeLinks:
         assert len(res.json['data']) + \
             len(reg_res.json['data']) == number_of_links
 
+    def test_delete_linked_registration(
+            self, app, make_payload, url_private_linked_regs, user_two,
+            collection_private, user_one, registration_private):
+
+        payload = {
+            'data': [
+                {'id': registration_private._id, 'type': 'linked_registrations'}
+            ]
+        }
+        # Cannot delete registration from someone else's collection
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_two.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        assert collection_private.guid_links.filter(_id=registration_private._id).exists()
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_one.auth
+        )
+        assert res.status_code == 204
+        collection_private.reload()
+        assert not collection_private.guid_links.filter(_id=registration_private._id).exists()
+
+    def test_delete_linked_registration_213(
+            self, app, make_payload, url_private_linked_regs, user_two,
+            collection_private, user_one, registration_private):
+
+        payload = {
+            'data': [
+                {'id': registration_private._id, 'type': 'registrations'}
+            ]
+        }
+        url_private_linked_regs = '{}?version=2.13'.format(url_private_linked_regs)
+
+        # Cannot delete registration from someone else's collection
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_two.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        assert collection_private.guid_links.filter(_id=registration_private._id).exists()
+        res = app.delete_json_api(
+            url_private_linked_regs, payload, auth=user_one.auth
+        )
+        assert res.status_code == 204
+        collection_private.reload()
+        assert not collection_private.guid_links.filter(_id=registration_private._id).exists()
+
     def test_node_links_and_relationship_represent_same_nodes(
             self, app, user_one, url_private_linked_nodes, auth_user_one,
             node_admin, node_contributor, collection_private):
@@ -4538,6 +4586,12 @@ class TestCollectedMetaDetail:
         return cgm
 
     @pytest.fixture()
+    def second_collection(self, user_one, project_one):
+        c = CollectionFactory(creator=user_one)
+        c.collect_object(project_one, user_one)
+        return c
+
+    @pytest.fixture()
     def url(self, collection, cgm):
         return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm.guid._id)
 
@@ -4644,6 +4698,19 @@ class TestCollectedMetaDetail:
             auth=user_two.auth,
         )
         assert res.status_code == 204
+
+    def test_get_collection_metadata_project_belongs_to_multiple_collections(self, app, collection, second_collection, project_one, user_one, url):
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        invalid_collection_url = '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, 'abcde', project_one._id)
+        invalid_project_url = '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, 'abcde')
+
+        res = app.get(invalid_collection_url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        res = app.get(invalid_project_url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
 
     def test_with_permissions(self, app, collection, cgm, user_one, user_two, url, payload):
         res = app.get(url, auth=user_one.auth, expect_errors=True)
