@@ -17,7 +17,8 @@ UPDATE osf_pagecounter PC
 SET
     resource_id = NULL,
     file_id = NULL,
-    version = NULL
+    version = NULL,
+    action = NULL
 WHERE PC.id IN (
     SELECT PC.id FROM osf_pagecounter PC
         INNER JOIN osf_guid Guid on Guid._id = split_part(PC._id, ':', 2)

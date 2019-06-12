@@ -66,7 +66,7 @@ class PageCounter(BaseModel):
     total = models.PositiveIntegerField(default=0)
     unique = models.PositiveIntegerField(default=0)
 
-    action = models.CharField(max_length=128, null=False, blank=False, default='download')
+    action = models.CharField(max_length=128, null=True, blank=True)
     resource = models.ForeignKey(Guid, related_name='pagecounters', null=True, blank=True)
     file = models.ForeignKey('osf.BaseFileNode', null=True, blank=True, related_name='pagecounters')
     version = models.IntegerField(null=True, blank=True)
