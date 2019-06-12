@@ -659,11 +659,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             try:
                 license_details = get_license_details(None, validated_data)
             except ValidationError as e:
-                raise InvalidModelValueError(detail=e.messages[0])
-            if validated_data.get('license'):
-                validated_data.pop('license')
-            if validated_data.get('license_type'):
-                validated_data.pop('license_type')
+                raise InvalidModelValueError(detail=str(e.messages[0]))
+            validated_data.pop('license', None)
+            validated_data.pop('license_type', None)
         if 'tag_names' in validated_data:
             tags = validated_data.pop('tag_names')
             for tag in tags:
@@ -725,7 +723,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                     save=True,
                 )
             except ValidationError as e:
-                raise InvalidModelValueError(detail=e.message)
+                raise InvalidModelValueError(detail=str(e.message))
 
         if not region_id:
             region_id = self.context.get('region_id')
