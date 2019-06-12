@@ -513,7 +513,7 @@ class TestNodeIdentifierCreate:
             responses.Response(
                 responses.POST,
                 client.base_url + '/metadata',
-                body='OK (10.5072/FK2osf.io/dp438)',
+                body='OK (10.70102/FK2osf.io/dp438)',
                 status=201,
             )
         )
@@ -521,7 +521,7 @@ class TestNodeIdentifierCreate:
             responses.Response(
                 responses.POST,
                 client.base_url + '/doi',
-                body='OK (10.5072/FK2osf.io/dp438)',
+                body='OK (10.70102/FK2osf.io/dp438)',
                 status=201,
             )
         )

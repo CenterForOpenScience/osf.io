@@ -36,15 +36,14 @@ def create_mock_bitbucket(user='octo-cat', private=False):
         'owner': {'username': user},
     }
     bitbucket_mock.repos.return_value = [
-        {'name': 'cow-problems-app',   'owner': {'username': user}, 'is_private': private},
-        {'name': 'duck-problems-app',  'owner': {'username': user}, 'is_private': True},
-        {'name': 'horse-problems-app', 'owner': {'username': user}, 'is_private': False},
+        {'full_name': '{}/cow-problems-app'.format(user)},
+        {'full_name': '{}/duck-problems-app'.format(user)},
+        {'full_name': '{}/horse-problems-app'.format(user)},
     ]
     bitbucket_mock.team_repos.return_value = [
-        {'name': 'pig-problems-app',   'owner': {'username': 'team-barn-devs'}, 'is_private': private},
-        {'name': 'goat-problems-app',  'owner': {'username': 'team-barn-devs'}, 'is_private': True},
-        {'name': 'goose-problems-app', 'owner': {'username': 'team-barn-devs'}, 'is_private': False},
-
+        {'full_name': 'team-barn-devs/pig-problems-app'},
+        {'full_name': 'team-barn-devs/goat-problems-app'},
+        {'full_name': 'team-barn-devs/goose-problems-app'},
     ]
 
     bitbucket_mock.repo_default_branch.return_value = 'master'

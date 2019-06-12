@@ -2,15 +2,14 @@ import functools
 from rest_framework import status as http_status
 import itertools
 
+import waffle
 from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
-from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 from flask import request, redirect
 import pytz
-import waffle
 
 from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
@@ -21,12 +20,10 @@ from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
 from osf.utils.functional import rapply
 from osf.models import NodeLog, RegistrationSchema, DraftRegistration, Sanction
-from osf.exceptions import NodeStateError
 
 from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
-    http_error_if_disk_saving_mode
 )
 from website import language, settings
 from website.ember_osf_web.decorators import ember_flag_is_active

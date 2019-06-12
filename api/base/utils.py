@@ -147,6 +147,10 @@ def default_node_list_queryset(model_cls):
     return model_cls.objects.filter(is_deleted=False).annotate(region=F('addons_osfstorage_node_settings__region___id'))
 
 def default_node_permission_queryset(user, model_cls):
+    """
+    Return nodes that are either public or you have perms because you're a contributor.
+    Implicit admin permissions not included here (NodeList, UserNodes, for example, don't factor this in.)
+    """
     assert model_cls in {Node, Registration}
     if user is None or user.is_anonymous:
         return model_cls.objects.filter(is_public=True)
