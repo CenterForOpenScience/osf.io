@@ -115,12 +115,14 @@ class TestSerializerMetaType(ApiTestCase):
                         else:
                             json_type = serializer.Meta.type_
                         assert '_' not in json_type
+                        assert json_type == json_type.lower()
             if not re.match('^(api_test|test).*', serializer.__module__):
                 if hasattr(serializer.Meta, 'get_type'):
                     json_type = serializer.Meta.get_type(request)
                 else:
                     json_type = serializer.Meta.type_
                 assert '_' not in json_type
+                assert json_type == json_type.lower()
 
     def test_deprecation_warning_for_2_15_snake_case(self):
         user_auth = factories.AuthUserFactory()

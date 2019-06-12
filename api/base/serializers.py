@@ -408,11 +408,13 @@ class TypeField(ser.CharField):
             if type_ != data:
                 raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
         else:
-            if type_ != data and str(type_).replace('-', '_') != data:
-                raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
-            elif type_ != data and str(type_).replace('-', '_') == data:
-                type_ = str(type_).replace('-', '_')
-                self.context['request'].META.setdefault('warning', 'As of API Version 2.15, all types are now Kebab-case. 2.15 will accept snake_case, but this will be deprecated in future versions.')
+            kebab_case = str(type_).replace('-', '_')
+            if type_ != data:
+                if kebab_case == data:
+                    type_ = kebab_case
+                    self.context['request'].META.setdefault('warning', 'As of API Version 2.15, all types are now Kebab-case. 2.15 will accept snake_case, but this will be deprecated in future versions.')
+                else:
+                    raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
         return super(TypeField, self).to_internal_value(data)
 
 
