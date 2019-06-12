@@ -23,6 +23,10 @@ class GroupSerializer(JSONAPISerializer):
         'name',
     ])
 
+    non_anonymized_fields = [
+        'type',
+    ]
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     name = ser.CharField(required=True)
@@ -76,6 +80,11 @@ class GroupMemberSerializer(JSONAPISerializer):
     writeable_method_fields = frozenset([
         'role',
     ])
+    non_anonymized_fields = [
+        'type',
+        'role',
+    ]
+
     id = GroupCompoundIDField(source='_id', read_only=True)
     type = TypeField()
     role = ser.SerializerMethodField()

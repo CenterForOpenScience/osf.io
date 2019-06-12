@@ -256,6 +256,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'collection',
         'comments',
         'current_user_is_contributor',
+        'current_user_is_contributor_or_group_member',
         'current_user_permissions',
         'date_created',
         'date_modified',
@@ -1790,6 +1791,11 @@ class NodeGroupsSerializer(JSONAPISerializer):
     writeable_method_fields = frozenset([
         'permission',
     ])
+
+    non_anonymized_fields = [
+        'type',
+        'permission',
+    ]
 
     id = CompoundIDField(source='_id', read_only=True)
     type = TypeField()
