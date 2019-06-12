@@ -1,6 +1,7 @@
 import logging
 import functools
 from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -10,10 +11,12 @@ from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.exceptions import PermissionsError
 from framework.auth.core import get_user, Auth
 from framework.sentry import log_exception
+from osf.exceptions import BlacklistedEmailError
 from osf.models import base
 from osf.models.mixins import GuardianMixin, Loggable
 from osf.models import Node, OSFUser, NodeLog
 from osf.models.osf_grouplog import OSFGroupLog
+from osf.models.validators import validate_email
 from osf.utils.permissions import ADMIN, READ_NODE, WRITE, MANAGER, MEMBER, MANAGE, reduce_permissions
 from osf.utils import sanitize
 from website.project import signals as project_signals
@@ -216,6 +219,11 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
         :param role: string, "member" or "manager", default is member
         """
         OSFUser = apps.get_model('osf.OSFUser')
+
+        try:
+            validate_email(email)
+        except BlacklistedEmailError:
+            raise ValidationError('Email address domain is blacklisted.')
 
         user = get_user(email=email)
         if user:

@@ -2,6 +2,7 @@ import mock
 import pytest
 import time
 from django.contrib.auth.models import Group
+from django.core.exceptions import ValidationError
 
 from addons.github.tests import factories
 from addons.osfstorage.models import OsfStorageFile
@@ -164,6 +165,10 @@ class TestOSFGroup:
         assert unreg_manager in osf_group.managers
         assert osf_group.has_permission(unreg_manager, MEMBER) is True
         assert osf_group._id in unreg_manager.unclaimed_records
+
+        # Add unregistered member with blacklisted email
+        with pytest.raises(ValidationError):
+            osf_group.add_unregistered_member(test_fullname, 'test@example.com', auth=Auth(manager), role=MANAGER)
 
     def test_remove_member(self, manager, member, user_three, osf_group):
         new_member = AuthUserFactory()

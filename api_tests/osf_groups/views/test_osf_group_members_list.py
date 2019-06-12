@@ -209,6 +209,12 @@ class TestOSFGroupMembersCreate:
             assert res.status_code == 400
             assert res.json['errors'][0]['detail'] == 'User already exists.'
 
+            # test unregistered user email is blacklisted
+            payload['data']['attributes']['email'] = 'eight@example.com'
+            res = app.post_json_api(url, payload, auth=manager.auth, expect_errors=True)
+            assert res.status_code == 400
+            assert res.json['errors'][0]['detail'] == 'Email address domain is blacklisted.'
+
     def test_create_member_perms(self, app, manager, member, osf_group, user3, url):
         with override_flag(OSF_GROUPS, active=True):
             payload = make_create_payload(MEMBER, user3)

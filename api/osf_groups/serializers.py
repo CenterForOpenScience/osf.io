@@ -1,6 +1,8 @@
 from rest_framework import serializers as ser, exceptions
+from django.core.exceptions import ValidationError
 
 from framework.auth.core import Auth
+from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     IDField,
     LinksField,
@@ -166,6 +168,8 @@ class GroupMemberCreateSerializer(GroupMemberSerializer):
                     user = group.add_unregistered_member(full_name, email, auth, role)
         except ValueError as e:
             raise exceptions.ValidationError(detail=str(e.message))
+        except ValidationError as e:
+            raise InvalidModelValueError(detail=str(e[0]))
 
         return user
 
