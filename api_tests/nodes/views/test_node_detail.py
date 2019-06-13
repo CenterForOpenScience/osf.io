@@ -845,24 +845,27 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_public_project_logged_in(
             self, app, user, title_new, description_new,
             category_new, project_public, url_public):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                        'public': True
-                    }
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                    'public': True
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == title_new
-            assert res.json['data']['attributes']['description'] == description_new
-            assert res.json['data']['attributes']['category'] == category_new
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = [log.action for log in project_public.logs.all()]
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_cannot_update_a_registration(self, app, user, project_public):
         registration = RegistrationFactory(
@@ -890,49 +893,55 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_private_project_logged_in_contributor(
             self, app, user, title_new, description_new,
             category_new, project_private, url_private):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_private):
-            res = app.put_json_api(url_private, {
-                'data': {
-                    'id': project_private._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                        'public': False
-                    }
+        res = app.put_json_api(url_private, {
+            'data': {
+                'id': project_private._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': title_new,
+                    'description': description_new,
+                    'category': category_new,
+                    'public': False
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == title_new
-            assert res.json['data']['attributes']['description'] == description_new
-            assert res.json['data']['attributes']['category'] == category_new
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+        log_actions = [log.action for log in project_private.logs.all()]
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_update_project_sanitizes_html_properly(
             self, app, user, category_new, project_public, url_public):
-        with assert_latest_log(NodeLog.UPDATED_FIELDS, project_public):
-            """Post request should update resource, and any HTML in fields should be stripped"""
-            new_title = '<strong>Super</strong> Cool Project'
-            new_description = 'An <script>alert("even cooler")</script> project'
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': new_title,
-                        'description': new_description,
-                        'category': category_new,
-                        'public': True,
-                    }
+        """Post request should update resource, and any HTML in fields should be stripped"""
+        new_title = '<strong>Super</strong> Cool Project'
+        new_description = 'An <script>alert("even cooler")</script> project'
+        res = app.put_json_api(url_public, {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': new_title,
+                    'description': new_description,
+                    'category': category_new,
+                    'public': True,
                 }
-            }, auth=user.auth)
-            assert res.status_code == 200
-            assert res.content_type == 'application/vnd.api+json'
-            assert res.json['data']['attributes']['title'] == strip_html(
-                new_title)
-            assert res.json['data']['attributes']['description'] == strip_html(
-                new_description)
+            }
+        }, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == strip_html(
+            new_title)
+        assert res.json['data']['attributes']['description'] == strip_html(
+            new_description)
+        log_actions = [log.action for log in project_public.logs.all()]
+        assert NodeLog.EDITED_TITLE in log_actions
+        assert NodeLog.EDITED_DESCRIPTION in log_actions
+        assert NodeLog.CATEGORY_UPDATED in log_actions
 
     def test_partial_update_project_updates_project_correctly_and_sanitizes_html(
             self, app, user, description, category, project_public, url_public):

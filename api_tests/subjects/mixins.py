@@ -2,7 +2,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import Preprint
+from osf.models import Preprint, NodeLog
 from osf_tests.factories import (
     AuthUserFactory,
     SubjectFactory,
@@ -287,6 +287,11 @@ class UpdateSubjectsMixin(object):
         assert res.status_code == 200
         assert resource.subjects.filter(_id=subject._id).exists()
 
+        # assert subjects log is present
+        if hasattr(resource, 'logs'):
+            recent_log = resource.logs.first()
+            assert recent_log.action == NodeLog.SUBJECTS_UPDATED
+
     def test_set_subjects_as_relationships_perms(self, app, user_admin_contrib, resource, subject, resource_type_plural,
             url, make_resource_payload, user_write_contrib, user_read_contrib, user_non_contrib, write_can_edit):
 
@@ -329,6 +334,11 @@ class UpdateSubjectsMixin(object):
         res = app.patch_json_api(url, update_subjects_payload, auth=user_admin_contrib.auth, expect_errors=True)
         assert res.status_code == 200
         assert resource.subjects.filter(_id=subject._id).exists()
+
+        # assert subjects log is present
+        if hasattr(resource, 'logs'):
+            recent_log = resource.logs.first()
+            assert recent_log.action == NodeLog.SUBJECTS_UPDATED
 
     def test_set_subjects_as_attributes_validation(self, app, user_admin_contrib, resource, subject, resource_type_plural,
             url, make_resource_payload):

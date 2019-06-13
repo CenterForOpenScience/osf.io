@@ -441,7 +441,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
-        assert res.json['data']['attributes']['category'] == 'project'
+        assert res.json['data']['attributes']['category'] == 'instrumentation'
         assert res.json['data']['attributes']['description'] == description
         assert res.json['data']['attributes']['tags'] == tags
         assert res.json['data']['attributes']['title'] == private_registration.title
@@ -459,7 +459,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
     #   test_can_unset_certain_registration_fields
         attribute_list = {
             'public': True,
-            'category': 'instrumentation',
+            'category': '',
             'title': 'New title',
             'description': '',
             'tags': [],
@@ -477,7 +477,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
-        assert res.json['data']['attributes']['category'] == 'project'
+        assert res.json['data']['attributes']['category'] == ''
         assert res.json['data']['attributes']['description'] == ''
         assert res.json['data']['attributes']['tags'] == []
         assert res.json['data']['attributes']['title'] == private_registration.title
@@ -542,6 +542,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'license',
             'affiliated_institutions',
             'article_doi',
+            'category',
             'custom_citation']
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
@@ -564,6 +565,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'license',
             'affiliated_institutions',
             'article_doi',
+            'category',
             'custom_citation']
 
         for field in RegistrationDetailSerializer._declared_fields:
