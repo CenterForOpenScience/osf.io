@@ -17,6 +17,7 @@ from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
     RegionFactory,
+    PrivateLinkFactory,
 )
 from website.views import find_bookmark_collection
 
@@ -36,7 +37,19 @@ class TestUserDetail:
     def user_two(self):
         return AuthUserFactory()
 
-    def test_get(self, app, user_one, user_two):
+    @pytest.fixture()
+    def project(self, user_one):
+        project = ProjectFactory(creator=user_one)
+        return project
+
+    @pytest.fixture()
+    def view_only_link(self, project):
+        view_only_link = PrivateLinkFactory(name='test user', anonymous=True)
+        view_only_link.nodes.add(project)
+        view_only_link.save()
+        return view_only_link
+
+    def test_get(self, app, user_one, user_two, project, view_only_link):
 
         #   test_gets_200
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
@@ -94,6 +107,16 @@ class TestUserDetail:
         res = app.get(url)
         user_json = res.json['data']
         assert 'profile_image' in user_json['links']
+
+    #   user_viewed_through_anonymous_link
+        url = '/{}users/{}/?view_only={}'.format(API_BASE, user_one._id, view_only_link.key)
+        res = app.get(url)
+        user_json = res.json['data']
+        assert user_json['id'] == ''
+        assert user_json['type'] == 'users'
+        assert user_json['attributes'] == {}
+        assert 'relationships' not in user_json
+        assert user_json['links'] == {}
 
     def test_files_relationship_upload(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
