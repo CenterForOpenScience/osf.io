@@ -112,6 +112,7 @@ def get_globals():
         'use_tfa': settings.to_bool('USE_TFA', True),
         'global_support_url': getattr(settings, 'GLOBAL_SUPPORT_URL', '{}support/'.format(settings.DOMAIN)),
         'global_support_target': '_blank' if hasattr(settings, 'GLOBAL_SUPPORT_URL') else '_self',
+        'use_viewonlylinks': settings.to_bool('USE_VIEWONLYLINKS', True),
         ''
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',

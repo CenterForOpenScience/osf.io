@@ -103,6 +103,7 @@ class TestAuthUtils(OsfTestCase):
             'to_addr': user.username,
             'osf_support_email': settings.OSF_SUPPORT_EMAIL,
             'storage_flag_is_active': storage_i18n_flag_active(),
+            'use_viewonlylinks': settings.to_bool('USE_VIEWONLYLINKS', True),
         })
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie())
