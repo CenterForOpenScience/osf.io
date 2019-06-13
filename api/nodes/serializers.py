@@ -125,7 +125,7 @@ class RegionRelationshipField(RelationshipField):
         try:
             region_id = Region.objects.filter(_id=data).values_list('id', flat=True).get()
         except Region.DoesNotExist:
-            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(region_id))
+            raise exceptions.ValidationError(detail='Region {} is invalid.'.format(data))
         return {'region_id': region_id}
 
 
@@ -171,6 +171,14 @@ class NodeLicenseRelationshipField(RelationshipField):
 
 
 class NodeCitationSerializer(JSONAPISerializer):
+    non_anonymized_fields = [
+        'doi',
+        'id',
+        'links',
+        'publisher',
+        'title',
+        'type',
+    ]
     id = IDField(read_only=True)
     title = ser.CharField(allow_blank=True, read_only=True)
     author = ser.ListField(read_only=True)
@@ -236,28 +244,52 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'subjects',
     ])
 
+    # If you add a field to this serializer, be sure to add to this
+    # list if it doesn't expose user data
     non_anonymized_fields = [
-        'id',
-        'title',
-        'description',
+        'access_requests_enabled',
+        'affiliated_institutions',
+        'analytics_key',
         'category',
+        'children',
+        'collection',
+        'comments',
+        'current_user_is_contributor',
+        'current_user_permissions',
         'date_created',
         'date_modified',
-        'registration',
-        'tags',
-        'public',
-        'license',
-        'links',
-        'children',
-        'comments',
-        'contributors',
+        'description',
+        'draft_registrations',
         'files',
+        'fork',
+        'forked_from',
+        'id',
+        'identifiers',
+        'license',
+        'linked_by_nodes',
+        'linked_by_registrations',
+        'linked_nodes',
+        'linked_registrations',
+        'links',
+        'logs',
         'node_links',
         'parent',
+        'preprint',
+        'preprints',
+        'public',
+        'region',
+        'registration',
         'root',
-        'logs',
-        'wikis',
+        'settings',
         'subjects',
+        'tags',
+        'template_from',
+        'template_node',
+        'title',
+        'type',
+        'view_only_links',
+        'wiki_enabled',
+        'wikis',
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -336,6 +368,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'},
+    )
+
+    bibliographic_contributors = RelationshipField(
+        related_view='nodes:node-bibliographic-contributors',
+        related_view_kwargs={'node_id': '<_id>'},
     )
 
     implicit_contributors = RelationshipField(
@@ -555,8 +592,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   FROM parents JOIN osf_noderelation ON parents.PARENT_ID = osf_noderelation.child_id
                   WHERE osf_noderelation.is_node_link IS FALSE
                 ), has_admin AS (SELECT * FROM osf_contributor WHERE (node_id IN (SELECT parent_id FROM parents) OR node_id = %s) AND user_id = %s AND admin IS TRUE LIMIT 1)
-                SELECT DISTINCT
-                  COUNT(child_id)
+                SELECT COUNT(DISTINCT child_id)
                 FROM
                   osf_noderelation
                 JOIN osf_abstractnode ON osf_noderelation.child_id = osf_abstractnode.id
@@ -1002,7 +1038,10 @@ class ContributorIDField(IDField):
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
-    non_anonymized_fields = ['bibliographic', 'permission']
+    non_anonymized_fields = [
+        'bibliographic',
+        'permission',
+    ]
     filterable_fields = frozenset([
         'id',
         'bibliographic',
@@ -1505,13 +1544,10 @@ class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
     def update(self, link, validated_data):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
 
-        name = validated_data.get('name')
-        anonymous = validated_data.get('anonymous')
-
-        if name:
-            link.name = name
-        if anonymous:
-            link.anonymous = anonymous
+        if 'name' in validated_data:
+            link.name = validated_data.get('name')
+        if 'anonymous' in validated_data:
+            link.anonymous = validated_data.get('anonymous')
 
         link.save()
         return link

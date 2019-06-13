@@ -20,8 +20,6 @@ from api.base.exceptions import (
     InvalidModelValueError,
     JSONAPIException,
     Gone,
-    InvalidFilterOperator,
-    InvalidFilterValue,
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
     InvalidQueryStringError,
@@ -40,10 +38,11 @@ from api.base.throttling import (
     NonCookieAuthThrottle,
     AddContributorThrottle,
 )
-from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
+from api.base.utils import default_node_list_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.views import JSONAPIBaseView
 from api.base.views import (
+    BaseChildrenList,
     BaseContributorDetail,
     BaseContributorList,
     BaseLinkedList,
@@ -79,6 +78,7 @@ from api.nodes.permissions import (
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
+    ReadOnlyIfWithdrawn,
 )
 from api.nodes.serializers import (
     NodeSerializer,
@@ -119,7 +119,7 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
-from osf.utils.permissions import ADMIN, PERMISSIONS
+from osf.utils.permissions import ADMIN
 from website import mails
 
 # This is used to rethrow v1 exceptions as v2
@@ -389,21 +389,6 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     def get_resource(self):
         return self.get_node()
 
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'bibliographic':
-            operation['source_field_name'] = 'visible'
-
-    def build_query_from_field(self, field_name, operation):
-        if field_name == 'permission':
-            if operation['op'] != 'eq':
-                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
-            # operation['value'] should be 'admin', 'write', or 'read'
-            if operation['value'].lower().strip() not in PERMISSIONS:
-                raise InvalidFilterValue(value=operation['value'])
-            return Q(**{operation['value'].lower().strip(): True})
-        return super(NodeContributorsList, self).build_query_from_field(field_name, operation)
-
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
         """
@@ -536,6 +521,31 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
         return queryset
 
 
+class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
+    permission_classes = (
+        AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    model_class = OSFUser
+
+    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle,)
+
+    pagination_class = NodeContributorPagination
+    serializer_class = NodeContributorsSerializer
+    view_category = 'nodes'
+    view_name = 'node-bibliographic-contributors'
+    ordering = ('_order',)  # default ordering
+
+    def get_default_queryset(self):
+        contributors = super(NodeBibliographicContributorsList, self).get_default_queryset()
+        return contributors.filter(visible=True)
+
+
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_list).
     """
@@ -635,16 +645,9 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         serializer.save(draft=draft)
 
 
-class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodesFilterMixin):
+class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_children_list).
     """
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
-        ExcludeWithdrawals,
-    )
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
     required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
@@ -652,19 +655,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-children'
-
-    ordering = ('-modified',)
-
-    def get_default_queryset(self):
-        return default_node_list_queryset(model_cls=Node)
-
-    # overrides ListBulkCreateJSONAPIView
-    def get_queryset(self):
-        node = self.get_node()
-        auth = get_user_auth(self.request)
-        node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
-                .values_list('child__pk', flat=True)
-        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user).order_by('-modified')
+    model_class = Node
 
     def get_serializer_context(self):
         context = super(NodeChildrenList, self).get_serializer_context()
@@ -1432,6 +1423,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         AdminOrPublic,
+        ReadOnlyIfWithdrawn,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
@@ -1871,7 +1863,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
 
     def get_object(self):
         try:
-            return self.get_node().private_links.get(_id=self.kwargs['link_id'])
+            return self.get_node().private_links.get(_id=self.kwargs['link_id'], is_deleted=False)
         except PrivateLink.DoesNotExist:
             raise NotFound
 

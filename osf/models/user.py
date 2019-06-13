@@ -40,12 +40,14 @@ from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
+from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
+from osf.utils.permissions import PERMISSIONS
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import filters, mails
@@ -112,7 +114,7 @@ class Email(BaseModel):
         return self.address
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin, SpamMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
         'system_tags': 'tags',
@@ -156,6 +158,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'academiaProfileID': u'.academia.edu/{}',
         'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
         'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
+    }
+
+    SPAM_USER_PROFILE_FIELDS = {
+        'schools': ['degree', 'institution', 'department'],
+        'jobs': ['title', 'institution', 'department']
     }
 
     # The primary email address for the account.
@@ -763,6 +770,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             merging_user_file.move_under(primary_quickfiles_root)
             merging_user_file.save()
 
+        self._merge_users_preprints(user)
+
         # finalize the merge
 
         remove_sessions_for_user(user)
@@ -776,6 +785,46 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.merged_by = self
 
         user.save()
+
+    def _merge_users_preprints(self, user):
+        """
+        Preprints use guardian.  The PreprintContributor table stores order and bibliographic information.
+        Permissions are stored on guardian tables.  PreprintContributor information needs to be transferred
+        from user -> self, and preprint permissions need to be transferred from user -> self.
+        """
+        from osf.models.preprint import PreprintContributor
+
+        # Loop through `user`'s preprints
+        for preprint in user.preprints.all():
+            user_contributor = PreprintContributor.objects.get(preprint=preprint, user=user)
+            user_perms = user_contributor.permission
+
+            # Both `self` and `user` are contributors on the preprint
+            if preprint.is_contributor(self) and preprint.is_contributor(user):
+                self_contributor = PreprintContributor.objects.get(preprint=preprint, user=self)
+                self_perms = self_contributor.permission
+
+                max_perms_index = max(PERMISSIONS.index(self_perms), PERMISSIONS.index(user_perms))
+                # Add the highest of `self` perms or `user` perms to `self`
+                preprint.set_permissions(user=self, permissions=PERMISSIONS[max_perms_index])
+
+                if not self_contributor.visible and user_contributor.visible:
+                    # if `self` is not visible, but `user` is visible, make `self` visible.
+                    preprint.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+                # Now that perms and bibliographic info have been transferred to `self` contributor,
+                # delete `user` contributor
+                user_contributor.delete()
+            else:
+                # `self` is not a contributor, but `user` is.  Transfer `user` permissions and
+                # contributor information to `self`.  Remove permissions from `user`.
+                preprint.contributor_set.filter(user=user).update(user=self)
+                preprint.add_permission(self, user_perms)
+
+            if preprint.creator == user:
+                preprint.creator = self
+
+            preprint.remove_permission(user, user_perms)
+            preprint.save()
 
     def disable_account(self):
         """
@@ -1536,6 +1585,33 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
+
+    def _get_spam_content(self, saved_fields):
+        content = []
+        for field, contents in saved_fields.items():
+            if field in self.SPAM_USER_PROFILE_FIELDS.keys():
+                for item in contents:
+                    for key, value in item.items():
+                        if key in self.SPAM_USER_PROFILE_FIELDS[field]:
+                            content.append(value.encode('utf-8'))
+        return ' '.join(content).strip()
+
+    def check_spam(self, saved_fields, request_headers):
+        if not website_settings.SPAM_CHECK_ENABLED:
+            return False
+        is_spam = False
+        if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(set(saved_fields.keys())):
+            content = self._get_spam_content(saved_fields)
+            if content:
+                is_spam = self.do_check_spam(
+                    self.fullname,
+                    self.username,
+                    content,
+                    request_headers
+                )
+                self.save()
+
+        return is_spam
 
     def gdpr_delete(self):
         """

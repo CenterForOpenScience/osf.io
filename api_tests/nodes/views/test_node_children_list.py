@@ -9,6 +9,7 @@ from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
+    PrivateLinkFactory,
 )
 from tests.base import fake
 from osf.utils import permissions
@@ -58,6 +59,13 @@ class TestNodeChildrenList:
     @pytest.fixture()
     def public_project_url(self, user, public_project):
         return '/{}nodes/{}/children/'.format(API_BASE, public_project._id)
+
+    @pytest.fixture()
+    def view_only_link(self, private_project):
+        view_only_link = PrivateLinkFactory(name='node_view_only_link')
+        view_only_link.nodes.add(private_project)
+        view_only_link.save()
+        return view_only_link
 
     def test_return_public_node_children_list(
             self, app, public_component,
@@ -149,6 +157,99 @@ class TestNodeChildrenList:
         assert public_component._id in ids  # sanity check
 
         assert pointed_to._id not in ids
+
+    # Regression test for https://openscience.atlassian.net/browse/EMB-593
+    # Duplicates returned in child count
+    def test_node_children_related_counts_duplicate_query_results(self, app, user, public_project,
+            private_project, public_project_url):
+        user_2 = AuthUserFactory()
+
+        # Adding a child component
+        child = NodeFactory(parent=public_project, creator=user, is_public=True, category='software')
+        child.add_contributor(user_2, ['read', 'write'], save=True)
+        # Adding a grandchild
+        NodeFactory(parent=child, creator=user, is_public=True)
+        # Adding a node link
+        public_project.add_pointer(
+            private_project,
+            auth=Auth(public_project.creator)
+        )
+        # Assert NodeChildrenList returns one result
+        res = app.get(public_project_url, auth=user.auth)
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == child._id
+
+        project_url = '/{}nodes/{}/?related_counts=children'.format(API_BASE, public_project._id)
+        res = app.get(project_url, auth=user.auth)
+        assert res.status_code == 200
+        # Verifying related_counts match direct children count (grandchildren not included, pointers not included)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+    def test_node_children_related_counts(self, app, user, public_project):
+        parent = ProjectFactory(creator=user, is_public=False)
+        user_2 = AuthUserFactory()
+        parent.add_contributor(user_2, ['read', 'write', 'admin'])
+
+        child = NodeFactory(parent=parent, creator=user_2, is_public=False, category='software')
+        NodeFactory(parent=child, creator=user_2, is_public=False)
+
+        # child has one component. `user` can view due to implict admin perms
+        component_url = '/{}nodes/{}/children/'.format(API_BASE, child._id, auth=user.auth)
+        res = app.get(component_url, auth=user.auth)
+
+        assert len(res.json['data']) == 1
+
+        project_url = '/{}nodes/{}/?related_counts=children'.format(API_BASE, child._id)
+
+        res = app.get(project_url, auth=user.auth)
+        assert res.status_code == 200
+        # Nodes with implicit admin perms are also included in the count
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+    def test_private_node_children_with_view_only_link(self, user, app, private_project,
+            component, view_only_link, private_project_url):
+
+        # get node related_counts with vol before vol is attached to components
+        node_url = '/{}nodes/{}/?related_counts=children&view_only={}'.format(API_BASE,
+            private_project._id, view_only_link.key)
+        res = app.get(node_url)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+
+        # view only link is not attached to components
+        view_only_link_url = '{}?view_only={}'.format(private_project_url, view_only_link.key)
+        res = app.get(view_only_link_url)
+        ids = [node['id'] for node in res.json['data']]
+        assert res.status_code == 200
+        assert len(ids) == 0
+        assert component._id not in ids
+
+        # view only link is attached to components
+        view_only_link.nodes.add(component)
+        res = app.get(view_only_link_url)
+        ids = [node['id'] for node in res.json['data']]
+        assert res.status_code == 200
+        assert component._id in ids
+        assert 'contributors' in res.json['data'][0]['relationships']
+        assert 'implicit_contributors' in res.json['data'][0]['relationships']
+        assert 'bibliographic_contributors' in res.json['data'][0]['relationships']
+
+        # get node related_counts with vol once vol is attached to components
+        res = app.get(node_url)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+        # make private vol anonymous
+        view_only_link.anonymous = True
+        view_only_link.save()
+        res = app.get(view_only_link_url)
+        assert 'contributors' not in res.json['data'][0]['relationships']
+        assert 'implicit_contributors' not in res.json['data'][0]['relationships']
+        assert 'bibliographic_contributors' not in res.json['data'][0]['relationships']
+
+        # delete vol
+        view_only_link.is_deleted = True
+        view_only_link.save()
+        res = app.get(view_only_link_url, expect_errors=True)
+        assert res.status_code == 401
 
 
 @pytest.mark.django_db

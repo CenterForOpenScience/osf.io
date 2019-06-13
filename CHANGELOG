@@ -2,6 +2,59 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.12.0 (2019-06-10)
+===================
+- APIv2: View-only Links/Anonymous VOL's for Registrations improvements
+
+19.11.0 (2019-06-06)
+===================
+- APIv2: Private endpoints for meetings backend
+
+19.10.0 (2019-06-04)
+===================
+- Update retired Bitbucket endpoints
+- APIv2: Fix VersionedDateTimeField to handle later versions appropriately
+- Inspect user profile info for spam
+- Update test datacite prefixes
+- Point new help links to zendesk
+- APIv2: Fix CollectedMetaDetail where submission belongs to multiple collections
+- Py3 backwards compatible changes
+- Reduce number of queries for at mentions
+- Remove dead code that was obsolete after partial registrations
+- Better track where users are signing up from
+
+19.9.0 (2019-06-03)
+===================
+- Add EGAP registration (not migrated yet)
+- APIv2: Check if email is verified when deleting
+- Fix casing issue that is preventing CSRF token from getting passed with Request access
+- Chronos: Send supplemental node link and add capability to switch to diff Chronos servers
+
+
+19.8.0 (2019-05-16)
+===================
+- APIv2: Don't throttle safe requests to UserEmailList
+- Modify payload sent to Chronos
+
+19.7.0 (2019-04-22)
+===================
+- Update from jessie to stretch
+- APIv2: Add ability to update user's default storage location
+- APIv2: Allow access to preprint metric data for date ranges
+- Backend support for new registries overview page, including:
+- Modify approval links format for registrations
+- Add article_doi field to registrations
+- APIv2: Make several registration fields editable by admins
+- APIv2: Expose more withdrawn registration fields
+- APIv2: Add node/registration bibliographic contributor list endpoints
+- APIv2: Fix DELETE CollectionLinkedRegistrationsRelationship 500 error
+- APIv2: Fix children count on NodeSerializer
+
+19.6.0 (2019-04-09)
+===================
+- Add support for sending withdrawal request denied emails
+- Bump libreoffice version in unoconv docker service
+
 19.5.0 (2019-04-01)
 ===================
 - Display OSF Storage Usage on project overview page

@@ -6,22 +6,18 @@ from flask import request
 from framework.exceptions import HTTPError
 
 from website import settings
-from website.tokens import handlers
+from osf.utils.tokens import handlers
 from osf.exceptions import TokenHandlerNotFound
 
-
 class TokenHandler(object):
+
     HANDLERS = {
-        'approve_registration_approval': functools.partial(handlers.sanction_handler,
-                                                           'registration', 'approve'),
-        'reject_registration_approval': functools.partial(handlers.sanction_handler,
-                                                          'registration', 'reject'),
+        'approve_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'approve'),
+        'reject_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'reject'),
         'approve_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'approve'),
         'reject_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'reject'),
-        'approve_embargo_termination_approval': functools.partial(handlers.sanction_handler,
-                                                                  'embargo_termination_approval', 'approve'),
-        'reject_embargo_termination_approval': functools.partial(handlers.sanction_handler,
-                                                                 'embargo_termination_approval', 'reject'),
+        'approve_embargo_termination_approval': functools.partial(handlers.sanction_handler, 'embargo_termination_approval', 'approve'),
+        'reject_embargo_termination_approval': functools.partial(handlers.sanction_handler, 'embargo_termination_approval', 'reject'),
         'approve_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'approve'),
         'reject_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'reject')
     }
@@ -86,7 +82,6 @@ def process_token_or_pass(func):
             if res:
                 return res
         return func(*args, **kwargs)
-
     return wrapper
 
 

@@ -122,6 +122,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
         # fields that are visible for withdrawals
         visible_on_withdrawals = [
             'contributors',
+            'bibliographic_contributors',
             'implicit_contributors',
             'date_created',
             'date_modified',
@@ -129,8 +130,14 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'id',
             'links',
             'registration',
+            'article_doi',
             'title',
             'type',
+            'category',
+            'root',
+            'parent',
+            'affiliated_institutions',
+            'identifiers',
             'current_user_can_comment',
             'current_user_is_contributor',
             'preprint',
@@ -538,7 +545,7 @@ class TestShowIfVersion(ApiTestCase):
             self.registration,
             context={'request': req}
         ).data['data']
-        assert_in('node_links', data['attributes'])
+        assert_in('node_links', data['relationships'])
 
     def test_node_links_bad_version_registration_serializer(self):
         req = make_drf_request_with_version(version='2.1')
@@ -546,7 +553,25 @@ class TestShowIfVersion(ApiTestCase):
             self.registration,
             context={'request': req}
         ).data['data']
-        assert_not_in('node_links', data['attributes'])
+        assert_not_in('node_links', data['relationships'])
+
+    def test_node_links_withdrawn_registration(self):
+        factories.WithdrawnRegistrationFactory(
+            registration=self.registration)
+
+        req = make_drf_request_with_version(version='2.0')
+        data = RegistrationSerializer(
+            self.registration,
+            context={'request': req}
+        ).data['data']
+        assert_not_in('node_links', data['relationships'])
+
+        req = make_drf_request_with_version(version='2.1')
+        data = RegistrationSerializer(
+            self.registration,
+            context={'request': req}
+        ).data['data']
+        assert_not_in('node_links', data['relationships'])
 
 
 class VersionedDateTimeField(DbTestCase):
@@ -646,5 +671,17 @@ class VersionedDateTimeField(DbTestCase):
                 self.new_date_without_microseconds,
                 self.new_format
             ),
+            data['attributes']['date_modified']
+        )
+
+    # regression test for https://openscience.atlassian.net/browse/PLAT-1350
+    # VersionedDateTimeField was treating version 2.10 and higher as decimals,
+    # less than 2.2
+    def test_old_date_formats_to_new_format_with_2_10(self):
+        req = make_drf_request_with_version(version='2.10')
+        setattr(self.node, 'last_logged', self.old_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.old_date, self.new_format),
             data['attributes']['date_modified']
         )

@@ -10,6 +10,8 @@ from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
 from api.base.serializers import get_meta_type, AddonAccountSerializer
 from api.base.utils import (
@@ -180,6 +182,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     view_name = 'user-detail'
 
     serializer_class = UserDetailSerializer
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     def get_serializer_class(self):
         if self.request.auth:
@@ -893,7 +896,7 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
     def perform_destroy(self, instance):
         user = self.get_user()
         email = instance.address
-        if instance.confirmed:
+        if instance.confirmed and instance.verified:
             try:
                 user.remove_email(email)
             except PermissionsError as e:
