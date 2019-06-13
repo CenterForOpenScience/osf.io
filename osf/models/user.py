@@ -369,6 +369,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
 
+    # whether the user has who requested deactivation has been contacted
+    contacted_deactivation = models.BooleanField(default=False)
+
     affiliated_institutions = models.ManyToManyField('Institution', blank=True)
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
@@ -1704,6 +1707,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.external_accounts.clear()
         self.external_identity = {}
         self.deleted = timezone.now()
+
+    @property
+    def has_resources(self):
+        # TODO: Update once quickfolders in merged
+
+        nodes = self.nodes.exclude(type='osf.quickfilesnode').exists()
+        quickfiles = self.nodes.get(type='osf.quickfilesnode').files.exists()
+
+        return nodes or quickfiles or self.preprints.exists()
 
     class Meta:
         # custom permissions for use in the OSF Admin App

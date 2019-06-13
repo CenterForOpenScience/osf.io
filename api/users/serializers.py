@@ -20,9 +20,8 @@ from osf.models import Email
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
 from osf.models import OSFUser, QuickFilesNode, Preprint
 from osf.utils.requests import string_type_request_headers
-from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL, OSF_SUPPORT_EMAIL
+from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
-from website import mails
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
@@ -522,17 +521,8 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
     def request_deactivation(self, instance, requested_deactivation):
         if instance.requested_deactivation != requested_deactivation:
-            if requested_deactivation:
-                mails.send_mail(
-                    to_addr=OSF_SUPPORT_EMAIL,
-                    mail=mails.REQUEST_DEACTIVATION,
-                    user=instance,
-                    can_change_preferences=False,
-                )
-                instance.email_last_sent = timezone.now()
             instance.requested_deactivation = requested_deactivation
             instance.save()
-        return
 
     def to_representation(self, instance):
         """

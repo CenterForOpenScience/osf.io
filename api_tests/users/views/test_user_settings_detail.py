@@ -250,31 +250,24 @@ class TestUpdateRequestedDeactivation:
         assert res.status_code == 403
 
         # Logged in, request to deactivate
-        assert user_one.email_last_sent is None
         assert user_one.requested_deactivation is False
         res = app.patch_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 200
         user_one.reload()
-        assert user_one.email_last_sent is not None
         assert user_one.requested_deactivation is True
-        assert mock_mail.call_count == 1
 
         # Logged in, deactivation already requested
         res = app.patch_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 200
         user_one.reload()
-        assert user_one.email_last_sent is not None
         assert user_one.requested_deactivation is True
-        assert mock_mail.call_count == 1
 
         # Logged in, request to cancel deactivate request
         payload['data']['attributes']['deactivation_requested'] = False
         res = app.patch_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 200
         user_one.reload()
-        assert user_one.email_last_sent is not None
         assert user_one.requested_deactivation is False
-        assert mock_mail.call_count == 1
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_patch_invalid_type(self, mock_mail, app, user_one, url, payload):
