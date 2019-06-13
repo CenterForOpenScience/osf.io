@@ -311,7 +311,7 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     #   test_cannot_create_relationship_with_child_registration
-        child_reg = RegistrationFactory(creator=user_read_contrib)
+        child_reg = RegistrationFactory(creator=user_admin_contrib)
         url = '/{}nodes/{}/relationships/linked_registrations/'.format(
             API_BASE, node_private._id)
         data = make_payload(registration_id=child_reg._id)
@@ -503,7 +503,7 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     #   test_cannot_update_relationship_with_child_registration
-        child_reg = RegistrationFactory(creator=user_read_contrib)
+        child_reg = RegistrationFactory(creator=user_admin_contrib)
         url = '/{}nodes/{}/relationships/linked_registrations/'.format(
             API_BASE, node_private._id)
         data = make_payload(registration_id=child_reg._id)
