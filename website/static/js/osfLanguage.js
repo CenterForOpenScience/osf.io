@@ -137,8 +137,16 @@ module.exports = {
                 'This will revoke access to IQB-RIMS for all projects you have ' +
                 'associated with this account.',
             deauthError: 'Could not disconnect the IQB-RIMS account at this time',
-            depositHelp: '論文登録を行い承認を得るための申請手続きを実行',
-            checkHelp: '論文登録前に画像のみのスキャンサービスを実行'
+            depositHelp: 'Register a paper and apply for approval',
+            checkHelp: 'Perform image only scan service before submitting a paper',
+            labo: 'Research Field',
+            accepted_date: 'Accepted Date',
+            journal_name: 'Journal Name',
+            doi: 'DOI',
+            publish_date: 'Publish Date',
+            volume: 'Volume',
+            page_number: 'Page Number',
+            workflow_overall_state: 'Workflow Overall State'
         },
     },
     apiOauth2Application: {

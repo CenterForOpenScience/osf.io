@@ -37,28 +37,28 @@ function IQBRIMSWidget() {
       return labo['id'] == status['labo_id'];
     });
     if (status['labo_id']) {
-      self.formEntries.push({'title': '研究分野', 'value': laboList[0]['text']});
+      self.formEntries.push({'title': language.labo, 'value': laboList[0]['text']});
     }
     if (status['accepted_date']) {
-      self.formEntries.push({'title': '論文受理日', 'value': new Date(status['accepted_date'])});
+      self.formEntries.push({'title': language.accepted_date, 'value': new Date(status['accepted_date'])});
     }
     if (status['journal_name']) {
-      self.formEntries.push({'title': '雑誌名', 'value': status['journal_name']});
+      self.formEntries.push({'title': language.journal_name, 'value': status['journal_name']});
     }
     if (status['doi']) {
-      self.formEntries.push({'title': 'DOI', 'value': status['doi']});
+      self.formEntries.push({'title': language.doi, 'value': status['doi']});
     }
     if (status['publish_date']) {
-      self.formEntries.push({'title': '出版日', 'value': new Date(status['publish_date'])});
+      self.formEntries.push({'title': language.publish_date, 'value': new Date(status['publish_date'])});
     }
     if (status['volume']) {
-      self.formEntries.push({'title': '巻', 'value': status['volume']});
+      self.formEntries.push({'title': language.volume, 'value': status['volume']});
     }
     if (status['page_number']) {
-      self.formEntries.push({'title': 'ページ番号', 'value': status['page_number']});
+      self.formEntries.push({'title': language.page_number, 'value': status['page_number']});
     }
     if (status['workflow_overall_state']) {
-      self.formEntries.push({'title': '審査状況', 'value': status['workflow_overall_state']});
+      self.formEntries.push({'title': language.workflow_overall_state, 'value': status['workflow_overall_state']});
     }
   };
 
