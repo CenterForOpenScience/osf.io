@@ -6,6 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     RegistrationFactory,
+    NodeRelationFactory,
 )
 from rest_framework import exceptions
 
@@ -312,6 +313,7 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
 
     #   test_cannot_create_relationship_with_child_registration
         child_reg = RegistrationFactory(creator=user_admin_contrib)
+        NodeRelationFactory(child=child_reg, parent=node_private)
         url = '/{}nodes/{}/relationships/linked_registrations/'.format(
             API_BASE, node_private._id)
         data = make_payload(registration_id=child_reg._id)
@@ -504,6 +506,7 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
 
     #   test_cannot_update_relationship_with_child_registration
         child_reg = RegistrationFactory(creator=user_admin_contrib)
+        NodeRelationFactory(child=child_reg, parent=node_private)
         url = '/{}nodes/{}/relationships/linked_registrations/'.format(
             API_BASE, node_private._id)
         data = make_payload(registration_id=child_reg._id)
