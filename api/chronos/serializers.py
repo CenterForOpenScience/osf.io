@@ -2,7 +2,7 @@ from rest_framework import serializers as ser
 from rest_framework.exceptions import NotFound
 
 from api.base.exceptions import Conflict
-from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField
+from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, ShowIfChronosSubmitter
 from api.base.utils import absolute_reverse
 from osf.external.chronos import ChronosClient
 from osf.models import ChronosJournal
@@ -37,7 +37,7 @@ class ChronosSubmissionSerializer(JSONAPISerializer):
         type_ = 'chronos-submissions'
 
     id = ser.CharField(source='publication_id', read_only=True)
-    submission_url = ser.CharField(read_only=True)
+    submission_url = ShowIfChronosSubmitter(ser.CharField(read_only=True))
     status = ser.SerializerMethodField()
     modified = ser.DateTimeField(read_only=True)
 
