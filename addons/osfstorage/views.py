@@ -282,6 +282,8 @@ def osfstorage_get_children(file_node, **kwargs):
 def osfstorage_create_child(file_node, payload, **kwargs):
     parent = file_node  # Just for clarity
     name = payload.get('name')
+    # If you are uploading a new version of an existing file with a new name.
+    new_name = payload.get('new_name')
     user = OSFUser.load(payload.get('user'))
     is_folder = payload.get('kind') == 'folder'
 
@@ -335,6 +337,10 @@ def osfstorage_create_child(file_node, payload, **kwargs):
             ))
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
+
+        if new_name:
+            file_node.name = new_name
+            file_node._update_node(save=True)
         current_version = file_node.get_version()
         new_version = file_node.create_version(user, location, metadata)
 
