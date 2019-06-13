@@ -15,6 +15,7 @@ from framework.auth import authenticate
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sessions import session
 from osf.models.external import ExternalAccount, ExternalProvider, OAUTH1, OAUTH2
+from addons.osfstorage.models import Region
 from website.util import api_url_for, web_url_for
 
 from tests.base import OsfTestCase
@@ -1312,3 +1313,50 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
         with assert_raises(OAuth2Error):
             self.provider.refresh_oauth_key(force=True)
+
+    @responses.activate
+    def test_set_new_access_token(self):
+        from osf.models.region_external_account import RegionExternalAccount
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc)
+        )
+
+        institution = InstitutionFactory()
+        region = RegionFactory()
+        logger = logging.getLogger(__name__)
+        logger.info(region.id)
+        region.save()
+
+        obj, created = RegionExternalAccount.objects.update_or_create(
+            region=region,
+            defaults={
+                'external_account': external_account,
+                'region': region,
+            },
+        )
+
+        # mock a successful call to the provider to refresh tokens
+        responses.add(
+            responses.Response(
+                responses.POST,
+                self.provider.auto_refresh_url,
+                body=json.dumps({
+                    'access_token': 'refreshed_access_token',
+                    'expires_in': 3600,
+                    'refresh_token': 'refreshed_refresh_token'
+                })
+            )
+        )
+
+        old_expiry = external_account.expires_at
+        self.provider.account = external_account
+        self.provider.refresh_oauth_key(force=True)
+        external_account.reload()
+
+        updated_region = Region.objects.get(id=region.id)
+        assert_equal(external_account.oauth_key, updated_region.waterbutler_credentials['storage']['token'])
