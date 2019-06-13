@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0159_merge_20190331_2301'),
+        ('osf', '0161_add_spam_fields_to_user'),
     ]
 
     operations = [
@@ -25,5 +25,9 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='basefileversionsthrough',
             unique_together=set([('basefilenode', 'fileversion')]),
+        ),
+        migrations.AlterIndexTogether(
+            name='basefileversionsthrough',
+            index_together=set([('basefilenode', 'fileversion')]),
         ),
     ]

@@ -11,8 +11,15 @@ logger = logging.getLogger(__file__)
 
 increment = 10000
 
-def noop(*args, **kwargs):
-    pass
+def restore_default_through_table(state, schema):
+    sql = """
+
+        INSERT INTO osf_basefilenode_versions (basefilenode_id, fileversion_id)
+        SELECT new_thru.basefilenode_id, new_thru.fileversion_id
+        FROM osf_basefileversionsthrough new_thru;
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
 
 
 # Batching adapted from strategy in website/search_migration/migrate.py
@@ -51,9 +58,9 @@ def populate_fileversion_name(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0160_add_custom_file_versions_through'),
+        ('osf', '0162_add_custom_file_versions_through'),
     ]
 
     operations = [
-        migrations.RunPython(populate_fileversion_name, migrations.RunPython.noop)
+        migrations.RunPython(populate_fileversion_name, restore_default_through_table)
     ]

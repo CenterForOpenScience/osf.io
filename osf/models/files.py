@@ -825,9 +825,12 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
 
 class BaseFileVersionsThrough(models.Model):
-    basefilenode = models.ForeignKey(BaseFileNode)
-    fileversion = models.ForeignKey(FileVersion)
+    basefilenode = models.ForeignKey(BaseFileNode, db_index=True)
+    fileversion = models.ForeignKey(FileVersion, db_index=True)
     version_name = models.TextField(blank=True)
 
     class Meta:
         unique_together = (('basefilenode', 'fileversion'),)
+        index_together = (
+            ('basefilenode', 'fileversion', )
+        )
