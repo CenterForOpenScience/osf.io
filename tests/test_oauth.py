@@ -1328,8 +1328,6 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
         institution = InstitutionFactory()
         region = RegionFactory()
-        logger = logging.getLogger(__name__)
-        logger.info(region.id)
         region.save()
 
         obj, created = RegionExternalAccount.objects.update_or_create(

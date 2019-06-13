@@ -30,6 +30,8 @@ from osf_tests.factories import (
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
+    InstitutionFactory,
+    RegionFactory,
 )
 from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
@@ -256,6 +258,15 @@ class TestAUser(OsfTestCase):
         td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, user2.display_absolute_url)
+
+    def test_update_default_storage(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        region = RegionFactory()
+        region._id = institution._id
+        region.save()
+        res = self.app.get('/login/', auth=self.user.auth)
+        assert_equal(region, self.user.get_addon('osfstorage').default_region)
 
 
 @pytest.mark.enable_bookmark_creation
