@@ -9,7 +9,7 @@ from django.db import migrations, connection
 
 logger = logging.getLogger(__file__)
 
-increment = 10000
+increment = 100000
 
 def restore_default_through_table(state, schema):
     sql = """
@@ -29,10 +29,9 @@ def populate_fileversion_name(state, schema):
 
     sql = """
         INSERT INTO osf_basefileversionsthrough (basefilenode_id, fileversion_id, version_name)
-        SELECT F.id, V.id, F.name
-        FROM osf_basefilenode_versions THRU, osf_fileversion V, osf_basefilenode F
-        WHERE THRU.fileversion_id = V.id
-        AND THRU.basefilenode_id = F.id
+        SELECT THRU.basefilenode_id, THRU.fileversion_id, F.name
+        FROM osf_basefilenode_versions THRU, osf_basefilenode F
+        WHERE THRU.basefilenode_id = F.id
         AND THRU.id > {}
         AND THRU.id <= {};
     """
@@ -53,6 +52,7 @@ def populate_fileversion_name(state, schema):
                 page_start,
                 page_end
             ))
+        print page
         page_start = page_end
 
 class Migration(migrations.Migration):
