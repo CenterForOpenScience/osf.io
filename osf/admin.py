@@ -20,7 +20,7 @@ class OSFUserAdmin(admin.ModelAdmin):
         """
         if db_field.name == 'groups':
             kwargs['queryset'] = Group.objects.exclude(name__startswith='preprint_')
-            #kwargs['queryset'] = Group.objects.exclude(name__startswith='collections_')
+            kwargs['queryset'] = Group.objects.exclude(name__startswith='collections_')
         return super(OSFUserAdmin, self).formfield_for_manytomany(db_field, request, **kwargs)
 
     def save_related(self, request, form, formsets, change):
