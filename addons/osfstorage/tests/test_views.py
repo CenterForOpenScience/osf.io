@@ -241,8 +241,7 @@ class TestUploadFileHook(HookTestCase):
     def make_payload(self, **kwargs):
         user = kwargs.pop('user', self.user)
         name = kwargs.pop('name', self.name)
-        new_name = kwargs.pop('new_name', '')
-        return make_payload(user=user, name=name, new_name=new_name, **kwargs)
+        return make_payload(user=user, name=name, **kwargs)
 
     def test_upload_create(self):
         name = 'slightly-mad'
@@ -511,27 +510,16 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
 
     def test_upload_update(self):
-        assert_equal(self.record.versions.first().get_basefilenode_version(self.record).version_name, self.name)
-        assert_equal(self.record.versions.count(), 1)
-
-        res = self.send_upload_hook(self.preprint.root_folder, self.preprint, self.make_payload())
-        self.record.reload()
-        assert_equal(self.record.versions.count(), 2)
+        delta = Delta(lambda: self.record.versions.count(), lambda value: value + 1)
+        with AssertDeltas(delta):
+            res = self.send_upload_hook(self.preprint.root_folder, self.preprint, self.make_payload())
+            self.record.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'success')
         version = models.FileVersion.load(res.json['version'])
         assert_is_not(version, None)
         assert_in(version, self.record.versions.all())
         assert_equal(self.record.versions.first().get_basefilenode_version(self.record).version_name, self.name)
-
-        # upload version of same file with new name
-        new_payload = self.make_payload(new_name='new_preprint.jpg')
-        new_payload['metadata']['name'] = 'newdata'
-        res = self.send_upload_hook(self.preprint.root_folder, self.preprint, new_payload)
-        self.record.reload()
-        assert_equal(self.record.versions.count(), 3)
-        assert_equal(self.record.versions.first().get_basefilenode_version(self.record).version_name, 'new_preprint.jpg')
-        assert_equal(self.record.name, 'new_preprint.jpg')
 
     def test_upload_duplicate(self):
         location = {
