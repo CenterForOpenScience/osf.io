@@ -16,7 +16,7 @@ class OSFUserAdmin(admin.ModelAdmin):
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         """
-        Restricts preprint django groups from showing up in the user's groups list in the admin app
+        Restricts preprint and collection django groups from showing up in the user's groups list in the admin app
         """
         if db_field.name == 'groups':
             kwargs['queryset'] = Group.objects.exclude(name__startswith='preprint_')
@@ -25,8 +25,9 @@ class OSFUserAdmin(admin.ModelAdmin):
 
     def save_related(self, request, form, formsets, change):
         """
-        Since m2m fields overridden with new form data in admin app, preprint groups (which are now excluded from being selections)
-        are removed.  Manually re-adds preprint groups after adding new groups in form.
+        Since m2m fields overridden with new form data in admin app, preprint groups and collection django groups
+        (which are now excluded from being selections) are removed.
+        Manually re-adds preprint groups and collection django groups after adding new groups in form.
         """
         preprint_groups = list(form.instance.groups.filter(name__startswith='preprint_'))
         collection_groups = list(form.instance.groups.filter(name__startswith='collections_'))
