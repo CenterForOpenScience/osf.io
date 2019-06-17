@@ -421,11 +421,10 @@ def get_storage_region_list(user, node=False):
     else:
         default_region = user.get_addon('osfstorage').default_region
 
-    default_region = {'name': default_region.name, '_id': default_region._id}
-    available_regions = [default_region]
+    available_regions = [{'name': default_region.name, '_id': default_region._id}]
     institution_id = user.affiliated_institutions.first()
     if institution_id is not None:
         region_queryset = Region.objects.filter(_id=institution_id._id).order_by('name').values('_id', 'name')
-        if(region_queryset.count() > 0):
+        if region_queryset.count() > 0:
             available_regions = list(region_queryset)
     return available_regions
