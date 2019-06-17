@@ -18,19 +18,17 @@ def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
         _id=user_id,
         content_type_id=ContentType.objects.get_for_model(OSFUser).id
     )
-    projects = AbstractNode.objects.filter(
+    projects_ids = AbstractNode.objects.filter(
         projectstoragetype__storage_type=storage_type,
         creator_id=guid.object_id
-    ).all()
-    projects_ids = list(map(lambda p: p.id, projects))
+    ).values_list('id', flat=True)
 
-    files = OsfStorageFileNode.objects.filter(
+    files_ids = OsfStorageFileNode.objects.filter(
         target_object_id__in=projects_ids,
         target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
         deleted_on=None,
         deleted_by_id=None,
-    ).all()
-    files_ids = list(map(lambda f: f.id, files))
+    ).values_list('id', flat=True)
 
     db_sum = FileInfo.objects.filter(file_id__in=files_ids).aggregate(
         filesize_sum=Coalesce(Sum('file_size'), 0))
