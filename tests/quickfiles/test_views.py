@@ -32,34 +32,6 @@ signing_expired = partial(signing.sign_data, signing.default_signer, ttl=0)
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
-class TestFileDetailView(V2ViewsCase):
-    """ FileDetailView """
-
-    @pytest.fixture(autouse=True)
-    def file_node(self, user, project):
-        return create_test_quickfile(user)
-
-    def test_get_files_detail_has_user_relationship(self, app, user, file_node):
-        url = '/{}files/{}/'.format(API_BASE, file_node._id)
-        res = app.get(url, auth=user.auth)
-        file_detail_json = res.json['data']
-
-        assert 'user' in file_detail_json['relationships']
-        assert 'node' not in file_detail_json['relationships']
-        assert file_detail_json['relationships']['user']['links']['related']['href'].split(
-            '/')[-2] == user._id
-
-    def test_embed_user_on_quickfiles_detail(self, app, user, file_node):
-        url = '/{}files/{}/?embed=user'.format(API_BASE, file_node._id)
-        res = app.get(url, auth=user.auth)
-
-        assert res.json['data'].get('embeds', None)
-        assert res.json['data']['embeds']['user']
-        assert res.json['data']['embeds']['user']['data']['id'] == user._id
-
-
-@pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestQuickFilesV1(V1ViewsCase):
 
     @pytest.fixture()
@@ -192,7 +164,7 @@ class TestQuickFilesV1(V1ViewsCase):
 
         log = UserLog.objects.first()
         assert UserLog.objects.count() == 1
-        assert log.action == 'quickfiles_file_added'
+        assert log.action == 'osf_storage_file_added'
         assert log.params['target'] == user._id
 
     def test_waterbutler_hook_succeeds_for_quickfiles(self, app, user):

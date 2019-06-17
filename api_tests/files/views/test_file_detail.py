@@ -608,6 +608,7 @@ class TestFileView:
         assert node.id not in split_href
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestFileVersionView:
 
     @pytest.fixture()
@@ -634,6 +635,18 @@ class TestFileVersionView:
             'contentType': 'img/png'
         }).save()
         return file
+
+    @pytest.fixture()
+    def file_node(self, user):
+        return api_utils.create_test_quickfile(user)
+
+    def test_embed_user_on_quickfiles_detail(self, app, user, file_node):
+        url = '/{}files/{}/?embed=user'.format(API_BASE, file_node._id)
+        res = app.get(url, auth=user.auth)
+
+        assert res.json['data'].get('embeds', None)
+        assert res.json['data']['embeds']['user']
+        assert res.json['data']['embeds']['user']['data']['id'] == user._id
 
     def test_listing(self, app, user, file):
         file.create_version(user, {

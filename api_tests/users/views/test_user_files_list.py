@@ -5,6 +5,7 @@ from osf_tests.factories import AuthUserFactory
 from api.base.settings.defaults import API_BASE
 from django.core.urlresolvers import reverse
 from tests.json_api_test_app import JSONAPITestApp
+from api_tests.utils import create_test_quickfile
 
 @pytest.fixture()
 def django_app():
@@ -28,6 +29,10 @@ class TestUserQuickFiles:
         user.quickfolder.append_file('Follow.txt')
         user.quickfolder.append_file('The.txt')
         user.quickfolder.append_file('Buzzards.txt')
+
+    @pytest.fixture()
+    def file_node(self, user):
+        return create_test_quickfile(user)
 
     @pytest.fixture()
     def url(self, user):
@@ -105,3 +110,13 @@ class TestUserQuickFiles:
         assert sorted(ids_returned) == sorted(ids_from_files)
         for ident in user2_file_ids:
             assert ident not in ids_returned
+
+    def test_get_files_detail_has_user_relationship(self, app, user, file_node):
+        url = '/{}files/{}/'.format(API_BASE, file_node._id)
+        res = app.get(url, auth=user.auth)
+        file_detail_json = res.json['data']
+
+        assert 'user' in file_detail_json['relationships']
+        assert 'node' not in file_detail_json['relationships']
+        assert file_detail_json['relationships']['user']['links']['related']['href'].split(
+            '/')[-2] == user._id
