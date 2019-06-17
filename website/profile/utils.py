@@ -110,7 +110,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         icon_name = None
         if used_rate < api_settings.WARNING_THRESHOLD:
             icon_name = 'storage_ok.png'
-        elif used_rate <= 1:
+        elif used_rate < 1.0:
             icon_name = 'storage_warning.png'
         else:
             icon_name = 'storage_error.png'
