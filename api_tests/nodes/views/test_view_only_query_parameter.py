@@ -43,13 +43,10 @@ def private_node_one(admin, read_contrib, write_contrib):
         creator=admin,
         title='Private One')
     private_node_one.add_contributor(
-        read_contrib, permissions=[
-            permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     private_node_one.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return private_node_one
 
@@ -82,12 +79,10 @@ def private_node_two(admin, read_contrib, write_contrib):
         creator=admin,
         title='Private Two')
     private_node_two.add_contributor(
-        read_contrib, permissions=[permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     private_node_two.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return private_node_two
 
@@ -102,12 +97,10 @@ def public_node_one(admin, read_contrib, write_contrib):
     public_node_one = ProjectFactory(
         is_public=True, creator=admin, title='Public One')
     public_node_one.add_contributor(
-        read_contrib, permissions=[permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     public_node_one.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return public_node_one
 
@@ -138,12 +131,10 @@ def public_node_two(admin, read_contrib, write_contrib):
     public_node_two = ProjectFactory(
         is_public=True, creator=admin, title='Public Two')
     public_node_two.add_contributor(
-        read_contrib, permissions=[permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     public_node_two.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return public_node_two
 
@@ -191,7 +182,7 @@ class TestNodeDetailViewOnlyLinks:
             {'view_only': private_node_one_private_link.key})
         assert res_linked.status_code == 200
         assert res_linked.json['data']['attributes']['current_user_permissions'] == [
-            'read']
+            permissions.READ]
 
         # Remove any keys that will be different for view-only responses
         res_normal_json = res_normal.json
