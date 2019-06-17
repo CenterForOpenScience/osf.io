@@ -1728,7 +1728,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         }
 
         self.add_log(
-            'quickfiles_{}'.format(action),
+            'osf_storage_{}'.format(action),
             auth=auth,
             params=params
         )

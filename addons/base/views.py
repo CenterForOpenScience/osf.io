@@ -292,8 +292,9 @@ def get_auth(auth, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    target = FileTargetMixin.load_target_from_guid(node_id)
-    if not target:
+    try:
+        target = FileTargetMixin.load_target_from_guid(node_id)
+    except Guid.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 
     check_access(target, auth, action, cas_resp)
