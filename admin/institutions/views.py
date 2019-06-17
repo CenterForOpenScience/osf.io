@@ -116,7 +116,6 @@ class InstitutionDefaultStorageDisplay(RdmPermissionMixin, TemplateView):
         return kwargs
 
 class InstitutionDefaultStorageDetail(RdmPermissionMixin, UserPassesTestMixin, View):
-    permission_required = None
     raise_exception = False
     template_name = 'institutions/default_storage.html'
 
