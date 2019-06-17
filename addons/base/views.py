@@ -522,36 +522,35 @@ def addon_delete_file_node(self, target, user, event_type, payload):
     Required so that the guids of deleted addon files are not re-pointed when an
     addon file or folder is moved or renamed.
     """
-    if event_type == 'file_removed':
-        if payload.get('provider', None) != 'osfstorage':
-            provider = payload['provider']
-            path = payload['metadata']['path']
-            materialized_path = payload['metadata']['materialized']
-            content_type = ContentType.objects.get_for_model(target)
-            if path.endswith('/'):
-                folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
-                    provider=provider,
+    if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
+        provider = payload['provider']
+        path = payload['metadata']['path']
+        materialized_path = payload['metadata']['materialized']
+        content_type = ContentType.objects.get_for_model(target)
+        if path.endswith('/'):
+            folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
+                provider=provider,
+                target_object_id=target.id,
+                target_content_type=content_type,
+                _materialized_path__startswith=materialized_path
+            )
+            for item in folder_children:
+                if item.kind == 'file' and not TrashedFileNode.load(item._id):
+                    item.delete(user=user)
+                elif item.kind == 'folder':
+                    BaseFileNode.delete(item)
+        else:
+            try:
+                file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
                     target_object_id=target.id,
                     target_content_type=content_type,
-                    _materialized_path__startswith=materialized_path
+                    _materialized_path=materialized_path
                 )
-                for item in folder_children:
-                    if item.kind == 'file' and not TrashedFileNode.load(item._id):
-                        item.delete(user=user)
-                    elif item.kind == 'folder':
-                        BaseFileNode.delete(item)
-            else:
-                try:
-                    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
-                        target_object_id=target.id,
-                        target_content_type=content_type,
-                        _materialized_path=materialized_path
-                    )
-                except BaseFileNode.DoesNotExist:
-                    file_node = None
+            except BaseFileNode.DoesNotExist:
+                file_node = None
 
-                if file_node and not TrashedFileNode.load(file_node._id):
-                    file_node.delete(user=user)
+            if file_node and not TrashedFileNode.load(file_node._id):
+                file_node.delete(user=user)
 
 
 @must_be_valid_project
