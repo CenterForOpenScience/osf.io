@@ -11,8 +11,8 @@
     ${initiated_by} initiated an embargoed registration of ${project_name}. The proposed registration can be viewed here: ${registration_link}.<br>
     % endif
     <br>
-    If approved, a registration will be created for the project, and it will remain private until it is withdrawn, it is manually 
-    made public, or the embargo end date is passed on ${embargo_end_date.date()}.<br>
+    If approved, a registration will be created for the project, and it will remain private until it is withdrawn, 
+    it is manually made public, or the embargo end date is passed on ${embargo_end_date.date()}.<br>
     <br>
     To approve this embargo, click the following link: ${approval_link}.<br>
     <br>
