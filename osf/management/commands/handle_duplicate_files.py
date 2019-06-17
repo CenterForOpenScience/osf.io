@@ -9,10 +9,7 @@ from addons.osfstorage.models import BaseFileNode
 
 logger = logging.getLogger(__name__)
 
-# # TODO:
 """
-1) Figure out how to tell if Files with no versions are literal duplicates
-2) If literal duplicate, repoint guids and mark all files except the first as trashed Files
 3) Get folder checks working
 """
 
@@ -28,6 +25,7 @@ FETCH_DUPLICATES_BY_FILETYPE = """
         count(*) AS ct
       FROM osf_basefilenode
       WHERE type = %s
+      AND name != ''
       GROUP BY (target_object_id, name, parent_id, type, _path)
     ) as foo
     WHERE ct > 1;
@@ -44,7 +42,8 @@ file_types = [
     'osf.figsharefile',
     'osf.osfstoragefile',
     'osf.bitbucketfile',
-    'osf.owncloudfile'
+    'osf.owncloudfile',
+    'osf.osfstoragefolder'
 ]
 
 class Command(BaseCommand):
@@ -69,16 +68,12 @@ class Command(BaseCommand):
             help='File type - must be in file_types',
         )
 
-    def get_version_info(self, file):
-        # Returns a tuple with a dictionary of location info and the region id
-        return file.versions.values_list('location', 'region_id', 'metadata')
-
-    def get_version_metadata(self, versions_tuple):
-        metadata = versions_tuple[0][2]
-        commitSha = metadata['extra'].get('commitSha')
-        if commitSha:
-            return {'commitSha': commitSha}
-        return None
+    def get_version_info(self, file, file_type):
+        if file_type == 'osf.osfstoragefile':
+            # Returns a tuple of location and region_id information
+            return file.versions.values_list('location', 'region_id')
+        # Returns an array of dictionaries
+        return file._history
 
     def get_version_locations(self, versions_tuple):
         # Pulls the version location's bucket and object (sha)
@@ -98,52 +93,104 @@ class Command(BaseCommand):
             name.encode('utf-8'),
         ))
 
-    def examine_duplicates(self, duplicate_files, file_type):
+    def inspect_file_versions_for_errors(self, first_file_versions, next_file_versions, file_type):
+        if not first_file_versions or not next_file_versions:
+            return 'No versions found.'
+
+        if file_type == 'osf.osfstoragefile':
+            if not first_file_versions[0][0] or not next_file_versions[0][0]:
+                return 'No location information.'
+            if (self.get_version_locations(next_file_versions) != self.get_version_locations(first_file_versions) or
+                    self.get_version_region(next_file_versions) != self.get_version_region(first_file_versions)):
+                return 'Version discrepancies.'
+        else:
+            if first_file_versions != next_file_versions:
+                return 'Addon discrepancies detected.'
+        return None
+
+    def inspect_children(self, target, first_file, second_file):
+        if not first_file or not second_file:
+            logger.error('Entry does not match, resolve manually: target: {}, name: {}'.format(target._id, first_file.name))
+            return
+        if first_file.kind == 'folder':
+            if (not first_file or not second_file) or (first_file.name != second_file.name and first_file.kind != second_file.kind and first_file.target != second_file.target):
+                logger.error('Folder does not match, resolve manually: target: {}, name: {}, type: {}'.format(target._id, first_file.name, 'osf.osfstoragefolder'))
+            for child in first_file.children:
+                matching_child = BaseFileNode.objects.filter(target_object_id=target.id, name=child.name, parent=second_file.parent).first()
+                self.inspect_children(target, child, matching_child)
+        else:
+            file_type = 'osf.osfstoragefile'
+            first_file_versions = self.get_version_info(first_file, 'osf.osfstoragefile')
+            next_file_versions = self.get_version_info(second_file, file_type)
+            error = self.inspect_file_versions_for_errors(first_file_versions, next_file_versions, file_type)
+            print error
+
+    def examine_duplicates(self, dry_run, duplicate_files, file_type):
         num_files = len(duplicate_files)
         num_errored = 0
-        repoint_guids = 0
+        deleted_files = []
+        repointed_guids = []
+
         for record in duplicate_files:
             target_id = record[0]
             name = record[1]
-            parent_id = record[2]
-            path = record[4]
-            error = ''
 
             node = AbstractNode.objects.get(id=target_id)
-            files = BaseFileNode.objects.filter(name=name, type=file_type, target_object_id=target_id, parent_id=parent_id, _path=path).order_by('created')
-            first_file_versions = self.get_version_info(files[0])
+            files = BaseFileNode.objects.filter(
+                name=name,
+                type=file_type,
+                target_object_id=target_id,
+                parent_id=record[2],
+                _path=record[4]
+            ).order_by('created')
 
-            # For each duplicate file, compare its version information to see if it's an exact match.
-            for file in files[1:]:
-                next_file_versions = self.get_version_info(file)
-                if not first_file_versions or not next_file_versions:
-                    error = 'No versions found.'
-                    continue
-                if not first_file_versions[0][0] or not next_file_versions[0][0]:
-                    # if self.get_version_metadata(first_file_versions) != self.get_version_metadata(next_file_versions):
-                    error = 'No location information.'
-                    continue
-                if (self.get_version_locations(next_file_versions) != self.get_version_locations(first_file_versions) or
-                        self.get_version_region(next_file_versions) != self.get_version_region(first_file_versions)):
-                    error = 'Version discrepancies.'
-                    continue
+            first_file = files[0]
+            second_file = files[1]
 
-            repoint = files.last().get_guid()
-            if repoint:
-                repoint_guids += 1
-            if error:
-                num_errored += 1
-                self.log_error(error, node, name, files)
+            if file_type == 'osf.osfstoragefolder':
+                self.inspect_children(node, first_file, second_file)
+
+            else:
+                first_file_versions = self.get_version_info(first_file, file_type)
+                logger.info('Preserving {} file {}, node {}, name {}'.format(file_type, first_file._id, node._id, name.encode('utf-8')))
+
+                # For each duplicate file, compare its version information to see if it's an exact match.
+                # Osfstorage files are comparing versions, and addons are comparing file _history
+                for next_file in files[1:]:
+                    next_file_versions = self.get_version_info(next_file, file_type)
+                    error = self.inspect_file_versions_for_errors(first_file_versions, next_file_versions, file_type)
+                    if not error and not dry_run:
+                        deleted_file_id, guid_dict = self.remove_duplicates(first_file, next_file)
+                        deleted_files.append(deleted_file_id)
+                        repointed_guids.append(guid_dict)
+
+                if error:
+                    num_errored += 1
+                    self.log_error(error, node, name, files)
 
         logger.info('{}/{} errors must be addressed manually for type {}'.format(num_errored, num_files, file_type))
-        logger.info('{}/{} have guids that will have to be repointed.'.format(repoint_guids, num_files))
+        if not dry_run:
+            logger.info('Deleted the following {} files {}.'.format(file_type, deleted_files))
+            logger.info('Repointed the following {} guids {}.'.format(file_type, repointed_guids))
+
+    def remove_duplicates(self, first_file, next_file):
+        guid = next_file.get_guid()
+        guid_dict = {}
+        if guid:
+            guid.referent = first_file
+            guid.save()
+            guid_dict = {
+                'guid': guid._id,
+                'former_referent': next_file._id,
+                'current_referent': first_file._id}
+        next_file.delete()
+        return next_file._id, guid_dict
 
     # Management command handler
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
         logger.info('Script started time: {}'.format(script_start_time))
         logger.debug(options)
-
         dry_run = options['dry_run']
         file_type = options['file_type']
         logger.debug(
@@ -159,11 +206,10 @@ class Command(BaseCommand):
         if dry_run:
             logger.info('DRY RUN')
         with connection.cursor() as cursor:
-            if not dry_run:
-                logger.info('Examining duplicates for {}'.format(file_type))
-                cursor.execute(FETCH_DUPLICATES_BY_FILETYPE, [file_type])
-                duplicate_files = cursor.fetchall()
-                self.examine_duplicates(duplicate_files, file_type)
+            logger.info('Examining duplicates for {}'.format(file_type))
+            cursor.execute(FETCH_DUPLICATES_BY_FILETYPE, [file_type])
+            duplicate_files = cursor.fetchall()
+            self.examine_duplicates(dry_run, duplicate_files, file_type)
 
         script_finish_time = datetime.datetime.now()
         logger.info('Script finished time: {}'.format(script_finish_time))
