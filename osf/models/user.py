@@ -1784,11 +1784,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # Overrides FileTargetMixin
     @property
-    def is_spam(self):
-        return 'spam_confirmed' in self.system_tags
-
-    # Overrides FileTargetMixin
-    @property
     def is_public(self):
         return True
 
