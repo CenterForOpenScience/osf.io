@@ -128,7 +128,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
                 'used': used_quota_abbr,
                 'rate': '{:.1f}'.format(used_rate * 100),
                 'icon_url': '{}static/img/{}'.format(settings.DOMAIN, icon_name),
-                'storage_type': storage_type
+                'is_nii_storage': storage_type == UserQuota.NII_STORAGE
             }
         })
         if include_node_counts:
