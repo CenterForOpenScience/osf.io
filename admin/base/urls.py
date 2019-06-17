@@ -41,7 +41,7 @@ urlpatterns = [
             url(r'^timestampadd/', include('admin.rdm_timestampadd.urls', namespace='timestampadd')),
             url(r'^keymanagement/', include('admin.rdm_keymanagement.urls', namespace='keymanagement')),
             url(r'^timestampsettings/', include('admin.rdm_timestampsettings.urls', namespace='timestampsettings')),
-            url(r'^customstoragelocation/', include('admin.rdm_custom_storage_location.urls', namespace='customstoragelocation')),
+            url(r'^custom_storage_location/', include('admin.rdm_custom_storage_location.urls', namespace='custom_storage_location')),
         ]),
     ),
 ]
