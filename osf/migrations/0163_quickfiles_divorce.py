@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from scripts.remove_after_use.divorce_quickfiles import divorce_quickfiles, reverse_divorce_quickfiles
+from scripts.divorce_quickfiles import divorce_quickfiles, reverse_divorce_quickfiles
 
 import logging
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0162_auto_20190425_1948')
+        ('osf', '0162_auto_20190614_1429')
     ]
 
     operations = [

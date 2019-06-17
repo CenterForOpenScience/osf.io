@@ -17,16 +17,16 @@ class UserLog(BaseLog):
 
     FILE_METADATA_UPDATED = 'file_metadata_updated'
 
-    FILE_MOVED = 'quickfiles_file_moved'
-    FILE_COPIED = 'quickfiles_file_copied'
-    FILE_RENAMED = 'quickfiles_file_renamed'
+    FILE_MOVED = 'addon_file_moved'
+    FILE_COPIED = 'addon_file_copied'
+    FILE_RENAMED = 'addon_file_renamed'
 
-    FILE_ADDED = 'quickfiles_file_added'
-    FILE_UPDATED = 'quickfiles_file_updated'
-    FILE_REMOVED = 'quickfiles_file_removed'
-    FILE_RESTORED = 'quickfiles_file_restored'
+    FILE_ADDED = 'osf_storage_file_added'
+    FILE_UPDATED = 'osf_storage_file_updated'
+    FILE_REMOVED = 'osf_storage_file_removed'
+    FILE_RESTORED = 'osf_storage_file_restored'
 
-    actions = (FILE_TAG_REMOVED, FILE_TAG_ADDED, FILE_MOVED, FILE_COPIED, FILE_METADATA_UPDATED,
+    actions = (FILE_TAG_REMOVED, FILE_TAG_ADDED, FILE_MOVED, FILE_COPIED, FILE_RENAMED, FILE_METADATA_UPDATED,
                FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED)
 
     action_choices = [(action, action.upper()) for action in actions]

@@ -1,7 +1,5 @@
-import time
-
 import pytest
-from scripts.remove_after_use.divorce_quickfiles import (
+from scripts.divorce_quickfiles import (
     create_quickfolders,
     reverse_create_quickfolders,
     repoint_guids,
@@ -10,7 +8,7 @@ from scripts.remove_after_use.divorce_quickfiles import (
     reverse_migrate_quickfiles_to_quickfolders
 )
 
-from osf_tests.factories import AuthUserFactory, NodeLogFactory, UserLogFactory
+from osf_tests.factories import NodeLogFactory, UserLogFactory
 from osf.models import OSFUser, QuickFolder, Guid
 from osf.utils.testing.pytest_utils import MigrationTestCase
 from osf.models.legacy_quickfiles import QuickFilesNode

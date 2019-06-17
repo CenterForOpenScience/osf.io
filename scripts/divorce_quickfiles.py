@@ -1,5 +1,5 @@
 from osf.models import QuickFolder, OSFUser, UserLog
-from osf.models.legacy_quickfiles import QuickFilesNode
+from osf.models.legacy_quickfiles import QuickFilesNode, get_quickfiles_project_title
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery, Count
 from django.contrib.contenttypes.models import ContentType
@@ -36,26 +36,25 @@ def create_quickfolders():
     Bulk creates a Quickfolder for every user.
     :return:
     """
-    users = OSFUser.objects.all()
+    users = OSFUser.objects.all().values_list('id', flat=True)
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
-    quickfolder_content_type_id = ContentType.objects.get_for_model(QuickFolder).id
 
-    paginated_users = Paginator(users, 1000)
-    logger.info('There are {} '.format(users.count()))
+    logger.info('There are {} users'.format(users.count()))
 
     total_created = 0
     quickfolders_to_create = []
-    for page_num in paginated_users.page_range:
-        for user in paginated_users.page(page_num).object_list:
-            quickfolder = QuickFolder(target_object_id=user.id,
-                                      target_content_type_id=user_content_type_id,
-                                      provider='osfstorage',
-                                      path='/')
+    for user in users:
+        quickfolder = QuickFolder(target_object_id=user,
+                                  target_content_type_id=user_content_type_id,
+                                  provider='osfstorage',
+                                  path='/')
 
-            quickfolders_to_create.append(quickfolder)
+        quickfolders_to_create.append(quickfolder)
+        total_created += 1
 
-            total_created += 1
-    QuickFolder.objects.bulk_create(quickfolders_to_create)
+    QuickFolder.objects.bulk_create(quickfolders_to_create, 1000)
+
+
     logger.info('There are {} total quickfolders created'.format(total_created))
 
 
@@ -65,17 +64,22 @@ def reverse_create_quickfolders():
     :return:
     """
     users = OSFUser.objects.all()
+    QuickFilesNodes_to_create = []
 
-    paginated_users = Paginator(users, 1000)
-    logger.info('There are {} '.format(users.count()))
+    logger.info('There are {} users'.format(users.count()))
 
     total_created = 0
-    for page_num in paginated_users.page_range:
-        for user in paginated_users.page(page_num).object_list:
-            QuickFilesNode.objects.create_for_user(user)
-            total_created += 1
+    for user in users:
+        quickfilenode = QuickFilesNode(
+            title=get_quickfiles_project_title(user),
+            creator=user
+        )
+        QuickFilesNodes_to_create.append(quickfilenode)
+        total_created += 1
 
-    logger.info('There are {} total quickfolders created'.format(total_created))
+        logger.info('There are {} total quickfilenodes created'.format(total_created))
+
+    QuickFilesNode.objects.bulk_create(QuickFilesNodes_to_create, 1000)
 
 
 def repoint_guids():
@@ -84,21 +88,20 @@ def repoint_guids():
     :return:
     """
     guids_repointed = 0
+    logger.info('Repointing guids...')
 
-    quickfiles_nodes = QuickFilesNode.objects.all()
-    paginated_quickfiles_nodes = Paginator(quickfiles_nodes, 1000)
+    quickfilesnodes = QuickFilesNode.objects.all().prefetch_related('guids').prefetch_related('creator')
     quickfolder_content_type_id = ContentType.objects.get_for_model(QuickFolder).id
 
-    for page_num in paginated_quickfiles_nodes.page_range:
-        for quickfiles_nodes in paginated_quickfiles_nodes.page(page_num).object_list:
-            guid = quickfiles_nodes.guids.last()
-            guid.referent = guid.referent.creator.quickfolder
-            guid.object_id = guid.referent.target.quickfolder.id
-            guid.content_type_id = quickfolder_content_type_id
-            guid.save()
-            guids_repointed += 1
+    for quickfilesnode in quickfilesnodes:
+        guid = quickfilesnode.guids.last()
+        guid.referent = quickfilesnode.creator.quickfolder
+        guid.object_id = quickfilesnode.creator.quickfolder.id
+        guid.content_type_id = quickfolder_content_type_id
+        guid.save()
+        guids_repointed += 1
 
-    logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
+        logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
 
 
 def reverse_repoint_guids():
@@ -108,19 +111,17 @@ def reverse_repoint_guids():
     """
     guids_repointed = 0
 
-    users = OSFUser.objects.all()
+    users = OSFUser.objects.all().prefetch_related('guids')
 
-    paginated_users = Paginator(users, 1000)
-
-    for page_num in paginated_users.page_range:
-        for user in paginated_users.page(page_num).object_list:
-            guid = user.guids.last()
-            node = QuickFilesNode.objects.get_for_user(user)
+    for user in users:
+        guid = user.guids.last()
+        node = QuickFilesNode.objects.get_for_user(user)
+        if guid:
             node.guids.add(guid)
-            node.save()
-            guids_repointed += 1
+        node.save()
+        guids_repointed += 1
 
-    logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
+        logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
 
 
 def migrate_quickfiles_to_quickfolders():
@@ -128,10 +129,14 @@ def migrate_quickfiles_to_quickfolders():
     This migrates the actual files from Quickfilesnode to Quickfolders
     :return:
     """
+
+
     user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
     find_quickfolders = Subquery(QuickFolder.objects.filter(target_object_id=OuterRef('id')).values('id'))
     users_ids_for_with_quickfiles = QuickFilesNode.objects.all().annotate(file_count=Count('files')).filter(file_count__gt=0).values_list('creator_id', flat=True)
-    users_with_quickfiles = OSFUser.objects.filter(id__in=users_ids_for_with_quickfiles).annotate(_quickfolder=find_quickfolders).prefetch_related('guids')
+    users_with_quickfiles = OSFUser.objects.filter(id__in=users_ids_for_with_quickfiles).annotate(_quickfolder=find_quickfolders)
+
+    logger.info('Migrating quickfiles over {} nodes...'.format(users_with_quickfiles.count()))
 
     for user in users_with_quickfiles:
         try:
@@ -153,15 +158,15 @@ def reverse_migrate_quickfiles_to_quickfolders():
     This migrates the actual files from Quickfilesnode to Quickfolders
     :return:
     """
-    users = OSFUser.objects.all()
+    quickfilesnodes = QuickFilesNode.objects.all().prefetch_related('creator')
     quickfiles_type_id = ContentType.objects.get_for_model(QuickFilesNode).id
 
-    for user in users:
-        qf_node = QuickFilesNode.objects.get_for_user(user)
-        user.quickfiles.update(parent_id=qf_node.files.last(),
-                        target_object_id=qf_node.id,
+    for quickfilesnode in quickfilesnodes:
+        quickfilesnode.creator.quickfiles.update(parent_id=quickfilesnode.files.last(),
+                        target_object_id=quickfilesnode.id,
                         target_content_type_id=quickfiles_type_id)
-        reverse_transfer_logs(QuickFilesNode.objects.get_for_user(user))
+        reverse_transfer_logs(quickfilesnode)
+
 
     QuickFolder.objects.all().delete()
 
