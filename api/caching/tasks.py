@@ -115,7 +115,7 @@ def update_storage_usage_cache(target_id):
 
 
 def update_storage_usage(target):
-    Node = apps.get_model('osf.Node')
+    AbstractNode = apps.get_model('osf.AbstractNode')
 
-    if isinstance(target, Node):
+    if isinstance(target, AbstractNode):
         enqueue_postcommit_task(update_storage_usage_cache, (target._id,), {}, celery=True)
