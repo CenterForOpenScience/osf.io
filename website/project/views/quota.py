@@ -11,6 +11,6 @@ def creator_quota(pid, **kwargs):
         node.creator, quota.get_project_storage_type(node)
     )
     return {
-        'max': max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3,
+        'max': max_quota * api_settings.SIZE_UNIT_GB,
         'used': used_quota
     }

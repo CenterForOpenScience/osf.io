@@ -80,7 +80,7 @@ class TestQuotaProfileView(OsfTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE,
             user=self.user,
             max_quota=200,
-            used=100 * api_settings.DEFAULT_SIZE_UNIT ** 3
+            used=100 * api_settings.SIZE_UNIT_GB
         )
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
@@ -98,7 +98,7 @@ class TestQuotaProfileView(OsfTestCase):
         assert_in(self.quota_text.format(0.0, 560, 'B', 100), response.body)
 
     def test_used_quota_giga(self):
-        UserQuota.objects.create(user=self.user, max_quota=100, used=5.2 * api_settings.DEFAULT_SIZE_UNIT ** 3)
+        UserQuota.objects.create(user=self.user, max_quota=100, used=5.2 * api_settings.SIZE_UNIT_GB)
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
@@ -114,7 +114,7 @@ class TestQuotaProfileView(OsfTestCase):
         assert_in('storage_ok.png', response.body)
 
     def test_used_quota_storage_icon_warning(self):
-        UserQuota.objects.create(user=self.user, max_quota=100, used=95 * api_settings.DEFAULT_SIZE_UNIT ** 3)
+        UserQuota.objects.create(user=self.user, max_quota=100, used=95 * api_settings.SIZE_UNIT_GB)
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
@@ -122,7 +122,7 @@ class TestQuotaProfileView(OsfTestCase):
         assert_in('storage_warning.png', response.body)
 
     def test_used_quota_storage_icon_error(self):
-        UserQuota.objects.create(user=self.user, max_quota=100, used=105 * api_settings.DEFAULT_SIZE_UNIT ** 3)
+        UserQuota.objects.create(user=self.user, max_quota=100, used=105 * api_settings.SIZE_UNIT_GB)
         response = self.app.get(
             web_url_for('profile_view_id', uid=self.user._id),
             auth=self.user.auth
@@ -1140,7 +1140,7 @@ class TestQuotaApi(OsfTestCase):
             )
         )
         assert_equal(response.status_code, 200)
-        assert_equal(response.json['max'], api_settings.DEFAULT_MAX_QUOTA * api_settings.DEFAULT_SIZE_UNIT ** 3)
+        assert_equal(response.json['max'], api_settings.DEFAULT_MAX_QUOTA * api_settings.SIZE_UNIT_GB)
         assert_equal(response.json['used'], 0)
 
     def test_used_half_custom_quota(self):
@@ -1148,7 +1148,7 @@ class TestQuotaApi(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.user,
             max_quota=200,
-            used=100 * api_settings.DEFAULT_SIZE_UNIT ** 3
+            used=100 * api_settings.SIZE_UNIT_GB
         )
 
         response = self.app.get(
@@ -1158,8 +1158,8 @@ class TestQuotaApi(OsfTestCase):
             )
         )
         assert_equal(response.status_code, 200)
-        assert_equal(response.json['max'], 200 * api_settings.DEFAULT_SIZE_UNIT ** 3)
-        assert_equal(response.json['used'], 100 * api_settings.DEFAULT_SIZE_UNIT ** 3)
+        assert_equal(response.json['max'], 200 * api_settings.SIZE_UNIT_GB)
+        assert_equal(response.json['used'], 100 * api_settings.SIZE_UNIT_GB)
 
     def test_used_half_custom_institution_quota(self):
         UserQuota.objects.create(
@@ -1172,7 +1172,7 @@ class TestQuotaApi(OsfTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE,
             user=self.user,
             max_quota=200,
-            used=100 * api_settings.DEFAULT_SIZE_UNIT ** 3
+            used=100 * api_settings.SIZE_UNIT_GB
         )
 
         institution = InstitutionFactory()
@@ -1189,5 +1189,5 @@ class TestQuotaApi(OsfTestCase):
             )
         )
         assert_equal(response.status_code, 200)
-        assert_equal(response.json['max'], 200 * api_settings.DEFAULT_SIZE_UNIT ** 3)
-        assert_equal(response.json['used'], 100 * api_settings.DEFAULT_SIZE_UNIT ** 3)
+        assert_equal(response.json['max'], 200 * api_settings.SIZE_UNIT_GB)
+        assert_equal(response.json['used'], 100 * api_settings.SIZE_UNIT_GB)

@@ -270,7 +270,7 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
         user_list = []
         for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
             max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
-            max_quota_bytes = max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3
+            max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
             remaining_quota = max_quota_bytes - used_quota
             used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
             remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
@@ -343,7 +343,7 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, L
 
             for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
                 max_quota, used_quota = quota.get_quota_info(user, UserQuota.CUSTOM_STORAGE)
-                max_quota_bytes = max_quota * api_settings.DEFAULT_SIZE_UNIT ** 3
+                max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
                 remaining_quota = max_quota_bytes - used_quota
                 used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
                 remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))

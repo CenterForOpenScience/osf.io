@@ -321,14 +321,14 @@ class TestGetUserListWithQuota(AdminTestCase):
         nt.assert_equal(round(user_quota['usage_value'], 1), 0.6)
         nt.assert_equal(user_quota['usage_abbr'], 'KB')
 
-        nt.assert_equal(user_quota['remaining'], int(100 * api_settings.DEFAULT_SIZE_UNIT ** 3) - 560)
+        nt.assert_equal(user_quota['remaining'], int(100 * api_settings.SIZE_UNIT_GB) - 560)
         nt.assert_equal(round(user_quota['remaining_value'], 1), 100)
         nt.assert_equal(user_quota['remaining_abbr'], 'GB')
 
         nt.assert_equal(round(user_quota['ratio'], 1), 0)
 
     def test_used_quota_giga(self):
-        used = int(5.2 * api_settings.DEFAULT_SIZE_UNIT ** 3)
+        used = int(5.2 * api_settings.SIZE_UNIT_GB)
         UserQuota.objects.create(user=self.user, storage_type=UserQuota.NII_STORAGE, max_quota=100, used=used)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
@@ -337,7 +337,7 @@ class TestGetUserListWithQuota(AdminTestCase):
         nt.assert_equal(round(user_quota['usage_value'], 1), 5.2)
         nt.assert_equal(user_quota['usage_abbr'], 'GB')
 
-        nt.assert_equal(user_quota['remaining'], 100 * api_settings.DEFAULT_SIZE_UNIT ** 3 - used)
+        nt.assert_equal(user_quota['remaining'], 100 * api_settings.SIZE_UNIT_GB - used)
         nt.assert_equal(round(user_quota['remaining_value'], 1), 100 - 5.2)
         nt.assert_equal(user_quota['remaining_abbr'], 'GB')
 
@@ -347,9 +347,9 @@ class TestGetUserListWithQuotaSorted(AdminTestCase):
     def setUp(self):
         self.institution = InstitutionFactory()
         self.users = []
-        self.users.append(self.add_user(100, 80 * api_settings.DEFAULT_SIZE_UNIT ** 3))
-        self.users.append(self.add_user(200, 90 * api_settings.DEFAULT_SIZE_UNIT ** 3))
-        self.users.append(self.add_user(10, 10 * api_settings.DEFAULT_SIZE_UNIT ** 3))
+        self.users.append(self.add_user(100, 80 * api_settings.SIZE_UNIT_GB))
+        self.users.append(self.add_user(200, 90 * api_settings.SIZE_UNIT_GB))
+        self.users.append(self.add_user(10, 10 * api_settings.SIZE_UNIT_GB))
 
     def add_user(self, max_quota, used):
         user = AuthUserFactory()
@@ -405,25 +405,25 @@ class TestGetUserListWithQuotaSorted(AdminTestCase):
         nt.assert_equal(result, expected)
 
     def test_sort_usage_asc(self):
-        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [10, 80, 90])
+        expected = map(lambda x: x * api_settings.SIZE_UNIT_GB, [10, 80, 90])
         response = self.view_get('order_by=usage&status=asc')
         result = map(itemgetter('usage'), response.context_data['users'])
         nt.assert_equal(result, expected)
 
     def test_sort_usage_desc(self):
-        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [90, 80, 10])
+        expected = map(lambda x: x * api_settings.SIZE_UNIT_GB, [90, 80, 10])
         response = self.view_get('order_by=usage&status=desc')
         result = map(itemgetter('usage'), response.context_data['users'])
         nt.assert_equal(result, expected)
 
     def test_sort_remaining_asc(self):
-        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [0, 20, 110])
+        expected = map(lambda x: x * api_settings.SIZE_UNIT_GB, [0, 20, 110])
         response = self.view_get('order_by=remaining&status=asc')
         result = map(itemgetter('remaining'), response.context_data['users'])
         nt.assert_equal(result, expected)
 
     def test_sort_remaining_desc(self):
-        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [110, 20, 0])
+        expected = map(lambda x: x * api_settings.SIZE_UNIT_GB, [110, 20, 0])
         response = self.view_get('order_by=remaining&status=desc')
         result = map(itemgetter('remaining'), response.context_data['users'])
         nt.assert_equal(result, expected)
@@ -496,14 +496,14 @@ class TestStatisticalStatusDefaultStorage(AdminTestCase):
         nt.assert_equal(round(user_quota['usage_value'], 1), 0.6)
         nt.assert_equal(user_quota['usage_abbr'], 'KB')
 
-        nt.assert_equal(user_quota['remaining'], int(100 * api_settings.DEFAULT_SIZE_UNIT ** 3) - 560)
+        nt.assert_equal(user_quota['remaining'], int(100 * api_settings.SIZE_UNIT_GB) - 560)
         nt.assert_equal(round(user_quota['remaining_value'], 1), 100)
         nt.assert_equal(user_quota['remaining_abbr'], 'GB')
 
         nt.assert_equal(round(user_quota['ratio'], 1), 0)
 
     def test_used_quota_giga(self):
-        used = int(5.2 * api_settings.DEFAULT_SIZE_UNIT ** 3)
+        used = int(5.2 * api_settings.SIZE_UNIT_GB)
         UserQuota.objects.create(user=self.user, storage_type=UserQuota.CUSTOM_STORAGE, max_quota=100, used=used)
         response = self.view.get(self.request)
         user_quota = response.context_data['users'][0]
@@ -512,7 +512,7 @@ class TestStatisticalStatusDefaultStorage(AdminTestCase):
         nt.assert_equal(round(user_quota['usage_value'], 1), 5.2)
         nt.assert_equal(user_quota['usage_abbr'], 'GB')
 
-        nt.assert_equal(user_quota['remaining'], 100 * api_settings.DEFAULT_SIZE_UNIT ** 3 - used)
+        nt.assert_equal(user_quota['remaining'], 100 * api_settings.SIZE_UNIT_GB - used)
         nt.assert_equal(round(user_quota['remaining_value'], 1), 100 - 5.2)
         nt.assert_equal(user_quota['remaining_abbr'], 'GB')
 
@@ -527,9 +527,9 @@ class TestStatisticalStatusDefaultStorageSorted(AdminTestCase):
         self.us.save()
 
         self.users = []
-        self.users.append(self.add_user(100, 80 * api_settings.DEFAULT_SIZE_UNIT ** 3))
-        self.users.append(self.add_user(200, 90 * api_settings.DEFAULT_SIZE_UNIT ** 3))
-        self.users.append(self.add_user(10, 10 * api_settings.DEFAULT_SIZE_UNIT ** 3))
+        self.users.append(self.add_user(100, 80 * api_settings.SIZE_UNIT_GB))
+        self.users.append(self.add_user(200, 90 * api_settings.SIZE_UNIT_GB))
+        self.users.append(self.add_user(10, 10 * api_settings.SIZE_UNIT_GB))
 
     def add_user(self, max_quota, used):
         user = AuthUserFactory()
@@ -590,25 +590,25 @@ class TestStatisticalStatusDefaultStorageSorted(AdminTestCase):
         nt.assert_equal(result, expected)
 
     def test_sort_usage_asc(self):
-        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [10, 80, 90])
+        expected = map(lambda x: x * api_settings.SIZE_UNIT_GB, [10, 80, 90])
         response = self.view_get('order_by=usage&status=asc')
         result = map(itemgetter('usage'), response.context_data['users'])
         nt.assert_equal(result, expected)
 
     def test_sort_usage_desc(self):
-        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [90, 80, 10])
+        expected = map(lambda x: x * api_settings.SIZE_UNIT_GB, [90, 80, 10])
         response = self.view_get('order_by=usage&status=desc')
         result = map(itemgetter('usage'), response.context_data['users'])
         nt.assert_equal(result, expected)
 
     def test_sort_remaining_asc(self):
-        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [0, 20, 110])
+        expected = map(lambda x: x * api_settings.SIZE_UNIT_GB, [0, 20, 110])
         response = self.view_get('order_by=remaining&status=asc')
         result = map(itemgetter('remaining'), response.context_data['users'])
         nt.assert_equal(result, expected)
 
     def test_sort_remaining_desc(self):
-        expected = map(lambda x: x * api_settings.DEFAULT_SIZE_UNIT ** 3, [110, 20, 0])
+        expected = map(lambda x: x * api_settings.SIZE_UNIT_GB, [110, 20, 0])
         response = self.view_get('order_by=remaining&status=desc')
         result = map(itemgetter('remaining'), response.context_data['users'])
         nt.assert_equal(result, expected)

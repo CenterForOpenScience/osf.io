@@ -101,7 +101,7 @@ class TestNodeSerializer:
             user=user,
             storage_type=UserQuota.NII_STORAGE,
             max_quota=150,
-            used=75 * api_settings.DEFAULT_SIZE_UNIT ** 3
+            used=75 * api_settings.SIZE_UNIT_GB
         )
         UserQuota.objects.create(
             user=user,
@@ -123,7 +123,7 @@ class TestNodeSerializer:
             user=user,
             storage_type=UserQuota.NII_STORAGE,
             max_quota=150,
-            used=75 * api_settings.DEFAULT_SIZE_UNIT ** 3
+            used=75 * api_settings.SIZE_UNIT_GB
         )
         UserQuota.objects.create(
             user=user,
@@ -145,7 +145,7 @@ class TestNodeSerializer:
             user=user,
             storage_type=UserQuota.NII_STORAGE,
             max_quota=150,
-            used=75 * api_settings.DEFAULT_SIZE_UNIT ** 3
+            used=75 * api_settings.SIZE_UNIT_GB
         )
         UserQuota.objects.create(
             user=user,
