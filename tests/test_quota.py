@@ -143,22 +143,22 @@ class TestAbbreviateSize(OsfTestCase):
         assert_equal(abbr_size[1], 'B')
 
     def test_abbreviate_kilobyte(self):
-        abbr_size = quota.abbreviate_size(512 * api_settings.DEFAULT_SIZE_UNIT)
+        abbr_size = quota.abbreviate_size(512 * api_settings.BASE_FOR_METRIC_PREFIX)
         assert_equal(abbr_size[0], 512)
         assert_equal(abbr_size[1], 'KB')
 
     def test_abbreviate_megabyte(self):
-        abbr_size = quota.abbreviate_size(512 * api_settings.DEFAULT_SIZE_UNIT ** 2)
+        abbr_size = quota.abbreviate_size(512 * api_settings.BASE_FOR_METRIC_PREFIX ** 2)
         assert_equal(abbr_size[0], 512)
         assert_equal(abbr_size[1], 'MB')
 
     def test_abbreviate_gigabyte(self):
-        abbr_size = quota.abbreviate_size(512 * api_settings.DEFAULT_SIZE_UNIT ** 3)
+        abbr_size = quota.abbreviate_size(512 * api_settings.BASE_FOR_METRIC_PREFIX ** 3)
         assert_equal(abbr_size[0], 512)
         assert_equal(abbr_size[1], 'GB')
 
     def test_abbreviate_terabyte(self):
-        abbr_size = quota.abbreviate_size(512 * api_settings.DEFAULT_SIZE_UNIT ** 4)
+        abbr_size = quota.abbreviate_size(512 * api_settings.BASE_FOR_METRIC_PREFIX ** 4)
         assert_equal(abbr_size[0], 512)
         assert_equal(abbr_size[1], 'TB')
 
