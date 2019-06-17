@@ -10,7 +10,6 @@ from framework.exceptions import HTTPError
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from osf.models import OSFUser, Guid
-from osf.models.files import BaseFileNode
 from website.files import exceptions
 from website.project.decorators import (
     must_not_be_registration,
@@ -62,7 +61,7 @@ def autoload_filenode(must_be=None, default_root=False):
             if 'fid' not in kwargs and default_root:
                 file_node = OsfStorageFolder.objects.get_root(kwargs['target'])
             else:
-                file_node = BaseFileNode.get_from_target(kwargs.get('fid'), kwargs['target'])
+                file_node = OsfStorageFileNode.get((kwargs.get('fid'), kwargs['target']))
             if must_be and file_node.kind != must_be:
                 raise HTTPError(httplib.BAD_REQUEST, data={
                     'message_short': 'incorrect type',
