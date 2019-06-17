@@ -108,7 +108,6 @@ class TestFileView:
         res = app.get(url, expect_errors=True)
         assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
                                                   ' quickfiles are no longer available.'
-        print(res.json)
         assert res.status_code == 410
 
     def test_file_guid_guid_status(self, app, user, file, file_url):
