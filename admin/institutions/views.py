@@ -122,7 +122,7 @@ class InstitutionDefaultStorageDetail(RdmPermissionMixin, UserPassesTestMixin, V
     def test_func(self):
         """check user permissions"""
         return not self.is_super_admin and self.is_admin and \
-            self.request.user.affiliated_institutions.all().count() > 0
+            self.request.user.affiliated_institutions.exists()
 
     def get(self, request, *args, **kwargs):
         view = InstitutionDefaultStorageDisplay.as_view()
