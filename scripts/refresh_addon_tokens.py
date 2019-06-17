@@ -47,8 +47,6 @@ def get_targets(delta, addon_short_name):
 
 
 def main(delta, Provider, rate_limit, dry_run):
-    #dry_run is False for test purpose.
-    dry_run = False
     allowance = rate_limit[0]
     last_call = time.time()
     for record in get_targets(delta, Provider.short_name):
