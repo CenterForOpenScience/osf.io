@@ -1177,7 +1177,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
     def update(self, instance, validated_data):
 
         # avoiding circular import
-        from api.nodes.serializers import ContributorIDField
+        from api.nodes.serializers import CompoundIDField
 
         # if PATCH request, the child serializer's partial attribute needs to be True
         if self.context['request'].method == 'PATCH':
@@ -1191,7 +1191,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         id_lookup = self.child.fields['id'].source
         data_mapping = {item.get(id_lookup): item for item in validated_data}
 
-        if isinstance(self.child.fields['id'], ContributorIDField):
+        if isinstance(self.child.fields['id'], CompoundIDField):
             instance_mapping = {self.child.fields['id'].get_id(item): item for item in instance}
         else:
             instance_mapping = {getattr(item, id_lookup): item for item in instance}
@@ -1309,13 +1309,13 @@ class JSONAPISerializer(BaseAPISerializer):
         # failsafe, let python do it if something bad happened in the ESI construction
         return super(JSONAPISerializer, self).to_representation(data)
 
-    def run_validation(self, *args, **kwargs):
+    def run_validation(self, data):
         # Overrides construtor for validated_data to allow writes to a SerializerMethodField
         # Validation for writeable SMFs is expected to happen in the model
-        _validated_data = super(JSONAPISerializer, self).run_validation(*args, **kwargs)
+        _validated_data = super(JSONAPISerializer, self).run_validation(data)
         for field in self.writeable_method_fields:
-            if field in self.initial_data:
-                _validated_data[field] = self.initial_data[field]
+            if field in data:
+                _validated_data[field] = data[field]
         return _validated_data
 
     def get_unwrapped_field(self, field):

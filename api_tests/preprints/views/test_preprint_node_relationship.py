@@ -2,6 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
+from osf.utils.permissions import READ, WRITE
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
@@ -100,13 +101,13 @@ class TestPreprintNodeRelationship:
         assert res.status_code == 403
 
         # read-contributor
-        preprint.add_contributor(user_two, 'read')
+        preprint.add_contributor(user_two, READ)
         preprint.save()
         res = app.patch_json_api(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
         # write-contributor
-        preprint.update_contributor(user_two, 'write', True, auth=Auth(user), save=True)
+        preprint.update_contributor(user_two, WRITE, True, auth=Auth(user), save=True)
         res = app.patch_json_api(url, {'data': None}, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 200
         assert res.json['data'] is None

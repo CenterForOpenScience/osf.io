@@ -3,7 +3,6 @@ import functools
 import urlparse
 import logging
 import re
-import pytz
 
 from dirtyfields import DirtyFieldsMixin
 from include import IncludeManager
@@ -13,13 +12,14 @@ from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.dispatch import receiver
-from guardian.shortcuts import get_objects_for_user
+from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
+from guardian.shortcuts import get_objects_for_user, get_group_perms
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import AnonymousUser
 from django.db.models.signals import post_save
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
-from framework.analytics import increment_user_activity_counters
 from framework.auth import oauth_scopes
 
 from osf.models import Subject, Tag, OSFUser, PreprintProvider
@@ -30,6 +30,7 @@ from osf.models.validators import validate_subject_hierarchy, validate_title, va
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
+from osf.utils.permissions import ADMIN, WRITE
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
@@ -67,13 +68,13 @@ class PreprintManager(IncludeManager):
         & (Q(date_withdrawn__isnull=True) | Q(ever_public=True))
 
     def preprint_permissions_query(self, user=None, allow_contribs=True, public_only=False):
-        include_non_public = user and not public_only
+        include_non_public = user and not user.is_anonymous and not public_only
         if include_non_public:
-            moderator_for = get_objects_for_user(user, 'view_submissions', PreprintProvider)
-            admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id))))
+            moderator_for = get_objects_for_user(user, 'view_submissions', PreprintProvider, with_superuser=False)
+            admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
             reviews_user_query = Q(is_public=True, provider__in=moderator_for)
             if allow_contribs:
-                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id))))
+                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
                 query = (self.no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
             else:
                 query = (self.no_user_query | admin_user_query | reviews_user_query)
@@ -125,9 +126,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'contributors',
         'tags',
     }
-
-    # Setting for ContributorMixin
-    DEFAULT_CONTRIBUTOR_PERMISSIONS = 'write'
 
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
@@ -346,9 +344,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return self.absolute_api_v2_url + 'relationships/node/'
 
     @property
-    def admin_contributor_ids(self):
+    def admin_contributor_or_group_member_ids(self):
         # Overrides ContributorMixin
-        return self.get_group('admin').user_set.filter(is_active=True).values_list('guids___id', flat=True)
+        # Preprints don't have parents or group members at the moment, so we override here.
+        # Called when removing project subscriptions
+        return self.get_group(ADMIN).user_set.filter(is_active=True).values_list('guids___id', flat=True)
 
     @property
     def csl(self):  # formats node information into CSL format for citation parsing
@@ -408,16 +408,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         log.save()
 
-        if self.logs.count() == 1:
-            self.last_logged = log.created.replace(tzinfo=pytz.utc)
-        else:
-            self.last_logged = self.logs.first().created
-
-        if save:
-            self.save()
-        if user:
-            increment_user_activity_counters(user._primary_key, action, log.created.isoformat())
-
+        self._complete_add_log(log, action, user, save)
         return log
 
     def can_view_files(self, auth=None):
@@ -428,33 +419,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return self.verified_publishable
         else:
             return self.can_view(auth=auth)
-
-    # Overrides ContributorMixin entirely
-    # TODO: When nodes user guardian as well, move this to ContributorMixin
-    def has_permission(self, user, permission):
-        """Check whether user has permission.
-        :param User user: User to test
-        :param str permission: Required permission
-        :returns: User has required permission
-        """
-        if not user:
-            return False
-        return user.has_perm('{}_preprint'.format(permission), self)
-
-    # Overrides ContributorMixin entirely
-    # TODO: When nodes user guardian as well, move this to ContributorMixin
-    def set_permissions(self, user, permissions, validate=True, save=False):
-        # Ensure that user's permissions cannot be lowered if they are the only admin
-        if isinstance(user, PreprintContributor):
-            user = user.user
-
-        if validate and (self.has_permission(user, 'admin') and 'admin' not in permissions):
-            if self.get_group('admin').user_set.count() <= 1:
-                raise PreprintStateError('Must have at least one registered admin contributor')
-        self.clear_permissions(user)
-        self.add_permission(user, permissions)
-        if save:
-            self.save()
 
     def get_addons(self):
         # Override for ContributorMixin, Preprints don't have addons
@@ -472,7 +436,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return ret
 
     def set_subjects(self, preprint_subjects, auth, log=True):
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
@@ -504,7 +468,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if not self.root_folder:
             raise PreprintStateError('Preprint needs a root folder.')
 
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to change a preprint\'s primary file.')
 
         if preprint_file.target != self or preprint_file.provider != 'osfstorage':
@@ -533,7 +497,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['primary_file'])
 
     def set_published(self, published, auth, save=False):
-        if not self.has_permission(auth.user, 'admin'):
+        if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can publish a preprint.')
 
         if self.is_published and not published:
@@ -641,7 +605,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         self.save()
 
     def _add_creator_as_contributor(self):
-        self.add_contributor(self.creator, permissions='admin', visible=True, log=False, save=True)
+        self.add_contributor(self.creator, permissions=ADMIN, visible=True, log=False, save=True)
 
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
@@ -731,10 +695,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return True
 
     def set_supplemental_node(self, node, auth, save=False):
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('You must have write permissions to set a supplemental node.')
 
-        if not node.has_permission(auth.user, 'write'):
+        if not node.has_permission(auth.user, WRITE):
             raise PermissionsError('You must have write permissions on the supplemental node to attach.')
 
         if node.is_deleted:
@@ -756,7 +720,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.save()
 
     def unset_supplemental_node(self, auth, save=False):
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('You must have write permissions to set a supplemental node.')
 
         current_node_id = self.node._id if self.node else None
@@ -781,7 +745,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
 
         # Called so validation does not have to wait until save.
@@ -814,7 +778,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         :param auth: All the auth informtion including user, API key.
         :param bool save: Save self after updating.
         """
-        if not self.has_permission(auth.user, 'write'):
+        if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
 
         original = self.description
@@ -840,6 +804,15 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
 
+    def get_permissions(self, user):
+        # Overrides guardian mixin - doesn't return view_preprint perms, and
+        # returns readable perms instead of literal perms
+        if isinstance(user, AnonymousUser):
+            return []
+        perms = ['read_preprint', 'write_preprint', 'admin_preprint']
+        user_perms = sorted(set(get_group_perms(user, self)).intersection(perms), key=perms.index)
+        return [perm.split('_')[0] for perm in user_perms]
+
     def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False):
         """Set the permissions for this preprint - mainly for spam purposes.
 
@@ -849,7 +822,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         :param bool meeting_creation: Whether this was created due to a meetings email.
         :param bool check_addons: Check and collect messages for addons?
         """
-        if auth and not self.has_permission(auth.user, 'write'):
+        if auth and not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to change privacy settings.')
         if permissions == 'public' and not self.is_public:
             if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
@@ -881,7 +854,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         return (self.verified_publishable or
             (self.is_public and auth.user.has_perm('view_submissions', self.provider)) or
-            self.has_permission(auth.user, 'admin') or
+            self.has_permission(auth.user, ADMIN) or
             (self.is_contributor(auth.user) and self.has_submitted_preprint)
         )
 
@@ -900,60 +873,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         user = user or auth.user
 
         return (
-            user and ((self.has_permission(user, 'write') and self.has_submitted_preprint) or self.has_permission(user, 'admin'))
+            user and ((self.has_permission(user, WRITE) and self.has_submitted_preprint) or self.has_permission(user, ADMIN))
         )
-
-    def belongs_to_permission_group(self, user, permission):
-        # Override for contributormixin
-        return self.get_group(permission).user_set.filter(id=user.id).exists()
-
-    # Overrides ContributorMixin entirely, since Preprints use guardian permissions.
-    # TODO: When nodes user guardian as well, move this to ContributorMixin
-    def add_permission(self, user, permission, save=False):
-        """Grant permission to a user.
-
-        :param User user: User to grant permission to
-        :param str permission: Permission to grant
-        :param bool save: Save changes
-        :raises: ValueError if user already has permission
-        """
-        if not self.belongs_to_permission_group(user, permission):
-            permission_group = self.get_group(permission)
-            permission_group.user_set.add(user)
-        else:
-            raise ValueError('User already has permission {0}'.format(permission))
-        if save:
-            self.save()
-
-    # Overrides ContributorMixin entirely, since Preprints use guardian permissions.
-    # TODO: When nodes user guardian as well, move this to ContributorMixin
-    def remove_permission(self, user, permission, save=False):
-        """Revoke permission from a user.
-
-        :param User user: User to revoke permission from
-        :param str permission: Permission to revoke
-        :param bool save: Save changes
-        :raises: ValueError if user does not have permission
-        """
-        if self.belongs_to_permission_group(user, permission):
-            permission_group = self.get_group(permission)
-            permission_group.user_set.remove(user)
-        else:
-            raise ValueError('User does not have permission {0}'.format(permission))
-        if save:
-            self.save()
-
-    # TODO: When nodes user guardian as well, move this to ContributorMixin
-    def clear_permissions(self, user):
-        for name in self.groups.keys():
-            if user.groups.filter(name=self.get_group(name)).exists():
-                self.remove_permission(user, name)
-
-    def expand_permissions(self, permission=None):
-        # Property needed for ContributorMixin
-        # Preprint contributor methods don't require a list ['read', 'write'], they
-        # just use highest permission, 'write'
-        return permission
 
     def get_contributor_order(self):
         # Method needed for ContributorMixin
@@ -962,24 +883,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def set_contributor_order(self, contributor_ids):
         # Method needed for ContributorMixin
         return self.set_preprintcontributor_order(contributor_ids)
-
-    # Overrides replace_contributor since users needed to be added to groups
-    def replace_contributor(self, old, new):
-        res = super(Preprint, self).replace_contributor(old, new)
-
-        for group_name in self.groups.keys():
-            if self.belongs_to_permission_group(old, group_name):
-                self.get_group(group_name).user_set.remove(old)
-                self.get_group(group_name).user_set.add(new)
-        return res
-
-    # Overrides ContributorMixin since this query is constructed differently
-    def _get_admin_contributors_query(self, users):
-        return PreprintContributor.objects.select_related('user').filter(
-            preprint=self,
-            user__in=users,
-            user__is_active=True,
-            user__groups=(self.get_group('admin').id))
 
     @classmethod
     def bulk_update_search(cls, preprints, index=None):
@@ -1056,3 +959,23 @@ def create_file_node(sender, instance, **kwargs):
     # Note: The "root" node will always be "named" empty string
     root_folder = OsfStorageFolder(name='', target=instance, is_root=True)
     root_folder.save()
+
+
+class PreprintUserObjectPermission(UserObjectPermissionBase):
+    """
+    Direct Foreign Key Table for guardian - User models - we typically add object
+    perms directly to Django groups instead of users, so this will be used infrequently
+    """
+    content_object = models.ForeignKey(Preprint, on_delete=models.CASCADE)
+
+class PreprintGroupObjectPermission(GroupObjectPermissionBase):
+    """
+    Direct Foreign Key Table for guardian - Group models. Makes permission checks faster.
+
+    This table gives a Django group a particular permission to a Preprint.
+    For example, every time a preprint is created, an admin, write, and read Django group
+    are created for the preprint. The "write" group has write/read perms to the preprint.
+
+    Those links are stored here:  content_object_id (preprint_id), group_id, permission_id
+    """
+    content_object = models.ForeignKey(Preprint, on_delete=models.CASCADE)

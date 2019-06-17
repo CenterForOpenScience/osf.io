@@ -7,6 +7,7 @@ from website import settings
 from osf.models import MailRecord
 from api.base.utils import waterbutler_api_url_for
 from osf.exceptions import NodeStateError
+from osf.utils.permissions import ADMIN
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
@@ -55,7 +56,7 @@ def prepare_contributors(admins):
     return [
         {
             'user': admin,
-            'permissions': ['read', 'write', 'admin'],
+            'permissions': ADMIN,
             'visible': False,
         }
         for admin in admins

@@ -39,9 +39,9 @@ def non_contrib():
 def public_project(user, read_contrib, write_contrib):
     public_project = ProjectFactory(is_public=True, creator=user)
     public_project.add_contributor(
-        read_contrib, permissions=[permissions.READ])
+        read_contrib, permissions=permissions.READ)
     public_project.add_contributor(
-        write_contrib, permissions=[permissions.READ, permissions.WRITE])
+        write_contrib, permissions=permissions.WRITE)
     public_project.save()
     return public_project
 
@@ -114,8 +114,7 @@ class TestViewOnlyLinksUpdate:
     @pytest.fixture()
     def public_project(self, public_project_admin, public_project):
         public_project.add_contributor(
-            public_project_admin, permissions=[
-                permissions.ADMIN])
+            public_project_admin, permissions=permissions.ADMIN)
         return public_project
 
     @pytest.fixture()

@@ -114,7 +114,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             u'embargo_end_date': unicode(self.embargo_payload['data']['attributes']['lift_embargo'])
         })
 
-    def test_submit_draft_for_review_invalid_registrationChoice(self):
+    def test_submit_draft_for_review_invalid(self):
+        # invalid registrationChoice
         url = self.draft_api_url('submit_draft_for_review')
         res = self.app.post_json(
             url,
@@ -123,6 +124,15 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
+
+        # submitted by a group admin fails
+        res = self.app.post_json(
+            url,
+            self.embargo_payload,
+            auth=self.group_mem.auth,
+            expect_errors=True
+        )
+        assert res.status_code == http.FORBIDDEN
 
     def test_submit_draft_for_review_already_registered(self):
         self.draft.register(Auth(self.user), save=True)
@@ -296,6 +306,10 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.put_json(url, payload, auth=self.non_admin.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
+        # group admin cannot update draft registration
+        res = self.app.put_json(url, payload, auth=self.group_mem.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
     def test_delete_draft_registration(self):
         assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
@@ -311,6 +325,10 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.delete(url, auth=self.non_admin.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
+
+        # group admin cannot delete draft registration
+        res = self.app.delete(url, auth=self.group_mem.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
     @mock.patch('website.archiver.tasks.archive')
     def test_delete_draft_registration_registered(self, mock_register_draft):
