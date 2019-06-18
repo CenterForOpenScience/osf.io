@@ -386,10 +386,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     ordering = ('_order',)  # default ordering
 
     def get_resource(self):
-        try:
-            return self.get_node()
-        except PermissionDenied:
-            return None
+        return self.get_node()
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
