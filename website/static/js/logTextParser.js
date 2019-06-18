@@ -297,6 +297,16 @@ var LogPieces = {
             return m('span', 'a project');
         }
     },
+    // OSF Group attached to node
+    group: {
+        view: function (ctrl, logObject) {
+            var group = logObject.embeds.group;
+            if (group && paramIsReturned(group, logObject) && !group.errors) {
+                return m('span', $osf.decodeText(group.data.attributes.name));
+            }
+            return m('span', 'a group');
+        }
+    },
     // Node that is linked to the node involved
     pointer: {
         view: function (ctrl, logObject) {

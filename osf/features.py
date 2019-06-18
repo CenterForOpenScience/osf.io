@@ -6,6 +6,7 @@ ENFORCE_CSRF = 'enforce_csrf'
 INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
 STORAGE_I18N = 'storage_i18n'
 OSF_PREREGISTRATION = 'osf_preregistration'
+OSF_GROUPS = 'osf_groups'
 
 EMBER_AUTH_REGISTER = 'ember_auth_register'
 EMBER_CREATE_DRAFT_REGISTRATION = 'ember_create_draft_registration_page'

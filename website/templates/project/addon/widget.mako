@@ -1,4 +1,4 @@
-% if complete or 'write' in user['permissions']:
+% if complete or permissions.WRITE in user['permissions']:
     <div class="panel panel-default" name="${short_name}">
         <div class="panel-heading clearfix">
             <h3 class="panel-title">${full_name}</h3>
@@ -15,7 +15,7 @@
         % else:
             <div class='addon-config-error p-sm'>
                 ${full_name} add-on is not configured properly.
-                % if user['is_contributor']:
+                % if user['is_contributor_or_group_member']:
                     Configure this add-on on the <a href="${node['url']}addons/">add-ons</a> page.
                 % endif
             </div>
