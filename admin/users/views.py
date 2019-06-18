@@ -622,7 +622,22 @@ class UserReindexElastic(UserDeleteView):
         return redirect(reverse_user(self.kwargs.get('guid')))
 
 
-class UserQuotaView(View):
+class BaseUserQuotaView(View):
+    """Base class for UserQuotaView and UserInstitutionQuotaView.
+    """
+
+    def update_quota(self, max_quota, storage_type):
+        if max_quota <= 0:
+            max_quota = 1
+
+        UserQuota.objects.update_or_create(
+            user=OSFUser.load(self.kwargs.get('guid')),
+            storage_type=storage_type,
+            defaults={'max_quota': max_quota}
+        )
+
+
+class UserQuotaView(BaseUserQuotaView):
     """
     Changes the maximum quota on NII Storage for a user.
     """
@@ -630,18 +645,8 @@ class UserQuotaView(View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
-        uid = self.kwargs.get('guid')
-        user = OSFUser.load(uid)
-        max_quota = int(request.POST.get('maxQuota'))
-        if max_quota <= 0:
-            max_quota = 1
-
-        UserQuota.objects.update_or_create(
-            user=user,
-            storage_type=UserQuota.NII_STORAGE,
-            defaults={'max_quota': max_quota}
-        )
-        return redirect(reverse_user(uid))
+        self.update_quota(int(request.POST.get('maxQuota')), UserQuota.NII_STORAGE)
+        return redirect(reverse_user(self.kwargs.get('guid')))
 
 
 class UserDetailsView(RdmPermissionMixin, UserPassesTestMixin, GuidView):
@@ -667,7 +672,7 @@ class UserDetailsView(RdmPermissionMixin, UserPassesTestMixin, GuidView):
         }
 
 
-class UserInstitutionQuotaView(RdmPermissionMixin, UserPassesTestMixin, View):
+class UserInstitutionQuotaView(BaseUserQuotaView, RdmPermissionMixin, UserPassesTestMixin):
     """
     User screen for intitution managers.
     """
@@ -676,15 +681,5 @@ class UserInstitutionQuotaView(RdmPermissionMixin, UserPassesTestMixin, View):
             and self.request.user.affiliated_institutions.exists()
 
     def post(self, request, *args, **kwargs):
-        uid = self.kwargs.get('guid')
-        user = OSFUser.load(uid)
-        max_quota = int(request.POST.get('maxQuota'))
-        if max_quota <= 0:
-            max_quota = 1
-
-        UserQuota.objects.update_or_create(
-            user=user,
-            storage_type=UserQuota.CUSTOM_STORAGE,
-            defaults={'max_quota': max_quota}
-        )
-        return redirect('users:user_details', guid=uid)
+        self.update_quota(int(request.POST.get('maxQuota')), UserQuota.CUSTOM_STORAGE)
+        return redirect('users:user_details', guid=self.kwargs.get('guid'))
