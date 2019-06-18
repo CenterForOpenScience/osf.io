@@ -3,7 +3,7 @@
 <%def name="render_nodes(nodes, sortable, user, pluralized_node_type, show_path, include_js=True)">
 
     % if len(nodes):
-        <ul data-bind="stopBinding: true" class="list-group m-md ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
+        <ul data-bind="stopBinding: true" class="list-group m-md ${'sortable' if sortable and permissions.WRITE in user['permissions'] else ''}">
             ## TODO: Add .scripted when JS is hooked up
             <span id='${pluralized_node_type if pluralized_node_type is not UNDEFINED else 'osfNodeList'}' class="render-nodes-list">
                 % for each in nodes:
@@ -12,7 +12,7 @@
                 <%include file="../project/nodes_delete.mako"/>
             </span>
         </ul>
-        % if sortable and 'write' in user['permissions'] and not node['is_registration']:
+        % if sortable and permissions.WRITE in user['permissions'] and not node['is_registration']:
         <script>
             $(function(){
                 $('.sortable').sortable({

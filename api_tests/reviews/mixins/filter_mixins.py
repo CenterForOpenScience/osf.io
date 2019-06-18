@@ -10,6 +10,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
     ProjectFactory,
 )
+from osf.utils import permissions
 
 
 def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
@@ -225,7 +226,7 @@ class ReviewProviderFilterMixin(object):
     def admin_pair(self, expected_providers):
         user = AuthUserFactory()
         provider = expected_providers[1]
-        user.groups.add(provider.get_group('admin'))
+        user.groups.add(provider.get_group(permissions.ADMIN))
         return (user, provider)
 
     def test_review_provider_filters(

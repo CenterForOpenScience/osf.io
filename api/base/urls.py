@@ -38,6 +38,7 @@ urlpatterns = [
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
                 url(r'^docs/', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
                 url(r'^files/', include('api.files.urls', namespace='files')),
+                url(r'^groups/', include('api.osf_groups.urls', namespace='groups')),
                 url(r'^guids/', include('api.guids.urls', namespace='guids')),
                 url(r'^identifiers/', include('api.identifiers.urls', namespace='identifiers')),
                 url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
