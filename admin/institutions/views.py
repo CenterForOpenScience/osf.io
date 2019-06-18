@@ -254,57 +254,42 @@ class CannotDeleteInstitution(TemplateView):
         context['institution'] = Institution.objects.get(id=self.kwargs['institution_id'])
         return context
 
-class UserListByInstitutionID(PermissionRequiredMixin, ListView):
-    template_name = 'institutions/list_institute.html'
-    permission_required = 'osf.view_osfuser'
-    raise_exception = True
-    paginate_by = 10
+
+class QuotaUserList(ListView):
+    """Base class for UserListByInstitutionID and StatisticalStatusDefaultStorage.
+    """
 
     def custom_size_abbreviation(self, size, abbr):
         if abbr == 'B':
             return (size / api_settings.BASE_FOR_METRIC_PREFIX, 'KB')
         return size, abbr
 
+    def get_user_quota_info(self, user, storage_type):
+        max_quota, used_quota = quota.get_quota_info(user, storage_type)
+        max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
+        remaining_quota = max_quota_bytes - used_quota
+        used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
+        remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
+        return {
+            'id': user.guids.first()._id,
+            'fullname': user.fullname,
+            'username': user.username,
+            'ratio': float(used_quota) / max_quota_bytes * 100,
+            'usage': used_quota,
+            'usage_value': used_quota_abbr[0],
+            'usage_abbr': used_quota_abbr[1],
+            'remaining': remaining_quota,
+            'remaining_value': remaining_abbr[0],
+            'remaining_abbr': remaining_abbr[1],
+            'quota': max_quota
+        }
+
     def get_queryset(self):
-        user_list = []
-        for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
-            max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
-            max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
-            remaining_quota = max_quota_bytes - used_quota
-            used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
-            remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
-            user_list.append({
-                'id': user.guids.first()._id,
-                'fullname': user.fullname,
-                'username': user.username,
-                'ratio': float(used_quota) / max_quota_bytes * 100,
-                'usage': used_quota,
-                'usage_value': used_quota_abbr[0],
-                'usage_abbr': used_quota_abbr[1],
-                'remaining': remaining_quota,
-                'remaining_value': remaining_abbr[0],
-                'remaining_abbr': remaining_abbr[1],
-                'quota': max_quota
-            })
+        user_list = self.get_userlist()
         order_by = self.get_order_by()
         reverse = self.get_direction() != 'asc'
         user_list.sort(key=itemgetter(order_by), reverse=reverse)
         return user_list
-
-    def get_context_data(self, **kwargs):
-        institution = Institution.objects.get(id=self.kwargs['institution_id'])
-        kwargs['institution_name'] = institution.name
-
-        self.query_set = self.get_queryset()
-        self.page_size = self.get_paginate_by(self.query_set)
-        self.paginator, self.page, self.query_set, self.is_paginated = \
-            self.paginate_queryset(self.query_set, self.page_size)
-
-        kwargs['users'] = self.query_set
-        kwargs['page'] = self.page
-        kwargs['order_by'] = self.get_order_by()
-        kwargs['direction'] = self.get_direction()
-        return super(UserListByInstitutionID, self).get_context_data(**kwargs)
 
     def get_order_by(self):
         order_by = self.request.GET.get('order_by', 'ratio')
@@ -318,8 +303,40 @@ class UserListByInstitutionID(PermissionRequiredMixin, ListView):
             return 'desc'
         return direction
 
+    def get_context_data(self, **kwargs):
+        institution = self.get_institution()
+        kwargs['institution_id'] = institution.id
+        kwargs['institution_name'] = institution.name
 
-class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, ListView):
+        self.query_set = self.get_queryset()
+        self.page_size = self.get_paginate_by(self.query_set)
+        self.paginator, self.page, self.query_set, self.is_paginated = \
+            self.paginate_queryset(self.query_set, self.page_size)
+
+        kwargs['users'] = self.query_set
+        kwargs['page'] = self.page
+        kwargs['order_by'] = self.get_order_by()
+        kwargs['direction'] = self.get_direction()
+        return super(QuotaUserList, self).get_context_data(**kwargs)
+
+
+class UserListByInstitutionID(QuotaUserList, PermissionRequiredMixin):
+    template_name = 'institutions/list_institute.html'
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+    paginate_by = 10
+
+    def get_userlist(self):
+        user_list = []
+        for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
+            user_list.append(self.get_user_quota_info(user, UserQuota.NII_STORAGE))
+        return user_list
+
+    def get_institution(self):
+        return Institution.objects.get(id=self.kwargs['institution_id'])
+
+
+class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPassesTestMixin):
     template_name = 'institutions/statistical_status_default_storage.html'
     permission_required = 'osf.view_institution'
     raise_exception = True
@@ -329,65 +346,13 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, L
         return not self.is_super_admin and self.is_admin \
             and self.request.user.affiliated_institutions.exists()
 
-    def custom_size_abbreviation(self, size, abbr):
-        if abbr == 'B':
-            return (size / api_settings.BASE_FOR_METRIC_PREFIX, 'KB')
-        return size, abbr
-
-    def get_queryset(self):
+    def get_userlist(self):
         user_list = []
-
         institution = self.request.user.affiliated_institutions.first()
         if institution is not None and Region.objects.filter(_id=institution._id).exists():
-
             for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
-                max_quota, used_quota = quota.get_quota_info(user, UserQuota.CUSTOM_STORAGE)
-                max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
-                remaining_quota = max_quota_bytes - used_quota
-                used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
-                remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
-                user_list.append({
-                    'id': user.guids.first()._id,
-                    'fullname': user.fullname,
-                    'username': user.username,
-                    'ratio': float(used_quota) / max_quota_bytes * 100,
-                    'usage': used_quota,
-                    'usage_value': used_quota_abbr[0],
-                    'usage_abbr': used_quota_abbr[1],
-                    'remaining': remaining_quota,
-                    'remaining_value': remaining_abbr[0],
-                    'remaining_abbr': remaining_abbr[1],
-                    'quota': max_quota
-                })
-        order_by = self.get_order_by()
-        reverse = self.get_direction() != 'asc'
-        user_list.sort(key=itemgetter(order_by), reverse=reverse)
+                user_list.append(self.get_user_quota_info(user, UserQuota.CUSTOM_STORAGE))
         return user_list
 
-    def get_context_data(self, **kwargs):
-        institution = Institution.objects.get(id=self.request.user.affiliated_institutions.filter()[0].id)
-        kwargs['institution_id'] = self.request.user.affiliated_institutions.filter()[0].id
-        kwargs['institution_name'] = institution.name
-
-        self.query_set = self.get_queryset()
-        self.page_size = self.get_paginate_by(self.query_set)
-        self.paginator, self.page, self.query_set, self.is_paginated = \
-            self.paginate_queryset(self.query_set, self.page_size)
-
-        kwargs['users'] = self.query_set
-        kwargs['page'] = self.page
-        kwargs['order_by'] = self.get_order_by()
-        kwargs['direction'] = self.get_direction()
-        return super(StatisticalStatusDefaultStorage, self).get_context_data(**kwargs)
-
-    def get_order_by(self):
-        order_by = self.request.GET.get('order_by', 'ratio')
-        if order_by not in ['fullname', 'username', 'ratio', 'usage', 'remaining', 'quota']:
-            return 'ratio'
-        return order_by
-
-    def get_direction(self):
-        direction = self.request.GET.get('status', 'desc')
-        if direction not in ['asc', 'desc']:
-            return 'desc'
-        return direction
+    def get_institution(self):
+        return self.request.user.affiliated_institutions.first()
