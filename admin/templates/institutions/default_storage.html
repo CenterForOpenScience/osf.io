@@ -16,7 +16,7 @@
 <h1>Institutional Storage</h1>
 <div id="content-main">
     <form enctype="multipart/form-data" action="" method="post" id="region_form" novalidate="">{% csrf_token %}
-        <div class="row" style="margin-bottom: 15px;">
+        <div class="row">
             <div class="col-md-2">
                 <label class="required" for="id_name">Name:</label>
             </div>
@@ -25,7 +25,7 @@
                 <input type="hidden" name="_id" id="id__id" required="" class="vTextField" maxlength="255" value="{{institution}}">
             </div>
         </div>
-        <div class="row" style="margin-bottom: 15px;">
+        <div class="row">
             <div class="col-md-2">
                 <label class="required" for="id_waterbutler_credentials">Storage addon credentials:</label>
             </div>
@@ -34,7 +34,7 @@
                 <input type="hidden" name="initial-waterbutler_credentials" value="{{region.waterbutler_credentials}}" id="initial-id_waterbutler_credentials">
             </div>
         </div>
-        <div class="row" style="margin-bottom: 15px;">
+        <div class="row">
             <div class="col-md-2">
                 <label class="required" for="id_waterbutler_url">Waterbutler url:</label>
             </div>
@@ -45,7 +45,7 @@
                 </p>
             </div>
         </div>
-        <div class="row" style="margin-bottom: 15px;">
+        <div class="row">
             <div class="col-md-2">
                 <label class="required" for="id_mfr_url">Mfr url:</label>
             </div>
@@ -56,7 +56,7 @@
                 </p>
             </div>
         </div>
-        <div class="row" style="margin-bottom: 15px;">
+        <div class="row">
             <div class="col-md-2">
                 <label class="required" for="id_waterbutler_settings">Storage addon settings:</label>
             </div>
@@ -65,11 +65,8 @@
                 <input type="hidden" name="initial-waterbutler_settings" value="{{region.waterbutler_settings}}" id="initial-id_waterbutler_settings">
             </div>
         </div>
-        <div>
-        </div>
         <div class="row">
-            <div class="col-md-8">
-            </div>
+            <div class="col-md-8"></div>
             <div class="col-md-1">
                 <div class="text-right">
                     <a href="{% url 'oauth:connect'   'googledrive' institution_pk   %}" class="btn btn-primary" role="button" target="_blank">Google OAuth</a>
