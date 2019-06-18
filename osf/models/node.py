@@ -53,6 +53,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
 from osf.utils import sanitize
 from osf.utils.workflows import DefaultStates
+from api.base import settings as api_settings
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -2973,11 +2974,11 @@ def remove_addons(auth, resource_object_list):
 
 def set_project_storage_type(instance):
     from addons.osfstorage.models import NodeSettings  # this import was essential
-    storage_type = 2
+    storage_type = ProjectStorageType.CUSTOM_STORAGE
     nodeSettings = NodeSettings.objects.filter(owner_id=instance.id).first()
     if nodeSettings is not None:
-        if nodeSettings.region_id == 1:
-            storage_type = 1
+        if nodeSettings.region_id == api_settings.NII_STORAGE_REGION_ID:
+            storage_type = ProjectStorageType.NII_STORAGE
         obj, created = ProjectStorageType.objects.update_or_create(
             node_id=instance.id, defaults={'node_id': instance.id, 'storage_type': storage_type}
         )
