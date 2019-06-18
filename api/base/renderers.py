@@ -50,6 +50,9 @@ class BrowsableAPIRendererNoForms(BrowsableAPIRenderer):
             del context[form]
         return context
 
+    def show_form_for_method(self, view, method, request, obj):
+        return False
+
 
 class PlainTextRenderer(StaticHTMLRenderer):
     """
