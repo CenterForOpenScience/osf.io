@@ -75,6 +75,7 @@ from osf.utils.permissions import (
     READ_NODE,
     WRITE
 )
+from website.util.metrics import ProviderSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from api.caching.tasks import update_storage_usage
@@ -2368,39 +2369,36 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             update_storage_usage(self)  # sets cache
             return storage_usage_cache.get(key)
 
+    # Overrides ContributorMixin
+    # TODO: Deprecate this when we emberize contributors management for nodes
     def add_contributor(self, *args, **kwargs):
         contributor = super(AbstractNode, self).add_contributor(*args, **kwargs)
         if contributor and not contributor.is_registered:
-            prereg_system_tag = self.all_tags.filter(name='source:campaign|prereg', system=True).first()
-            registered_report_system_tag = self.all_tags.filter(name='source:campaign|osf_registered_reports', system=True).first()
-            osf4m_system_tag = self.all_tags.filter(name='source:campaign|osf4m', system=True).first()
-            if prereg_system_tag:
-                contributor.add_system_tag(prereg_system_tag)
-            elif registered_report_system_tag:
-                contributor.add_system_tag(registered_report_system_tag)
-            elif osf4m_system_tag:
-                contributor.add_system_tag(osf4m_system_tag)
-            else:
-                osf_provider_tag, created = Tag.all_tags.get_or_create(name='source:provider|osf', system=True)
-                contributor.add_system_tag(osf_provider_tag)
+            self._add_related_source_tags(contributor)
+
         return contributor
 
+    # Overrides ContributorMixin
     def add_unregistered_contributor(self, *args, **kwarg):
-        prereg_system_tag = self.all_tags.filter(name='source:campaign|prereg', system=True).first()
-        registered_report_system_tag = self.all_tags.filter(name='source:campaign|osf_registered_reports', system=True).first()
-        osf4m_system_tag = self.all_tags.filter(name='source:campaign|osf4m', system=True).first()
         unreg_contrib = super(AbstractNode, self).add_unregistered_contributor(*args, **kwarg)
-        if prereg_system_tag:
-            unreg_contrib.add_system_tag(prereg_system_tag)
-        elif registered_report_system_tag:
-            unreg_contrib.add_system_tag(registered_report_system_tag)
-        elif osf4m_system_tag:
-            unreg_contrib.add_system_tag(osf4m_system_tag)
-        else:
-            osf_provider_tag, created = Tag.all_tags.get_or_create(name='source:provider|osf', system=True)
-            unreg_contrib.add_system_tag(osf_provider_tag)
+        self._add_related_source_tags(unreg_contrib)
 
         return unreg_contrib
+
+    def _add_related_source_tags(self, contributor):
+        prereg_system_tag = self.all_tags.filter(name=CampaignSourceTags.Prereg.value, system=True).first()
+        registered_report_system_tag = self.all_tags.filter(name=CampaignSourceTags.OsfRegisteredReports.value,
+                                                            system=True).first()
+        osf4m_system_tag = self.all_tags.filter(name=CampaignSourceTags.Osf4m.value, system=True).first()
+        if prereg_system_tag:
+            contributor.add_system_tag(prereg_system_tag)
+        elif registered_report_system_tag:
+            contributor.add_system_tag(registered_report_system_tag)
+        elif osf4m_system_tag:
+            contributor.add_system_tag(osf4m_system_tag)
+        else:
+            osf_provider_tag, created = Tag.all_tags.get_or_create(name=ProviderSourceTags.Osf.value, system=True)
+            contributor.add_system_tag(osf_provider_tag)
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):

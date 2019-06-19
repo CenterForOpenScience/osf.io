@@ -6,123 +6,113 @@ from website.app import init_app
 from scripts import utils as script_utils
 import sys
 from django.db import transaction
+from website.util.metrics import ProviderSourceTags, ProviderClaimedTags, CampaignSourceTags, CampaignClaimedTags
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
 PROVIDER_SOURCE_TAGS = [
-    ('africarxiv_preprints', 'source:provider|preprint|africarxiv'),
-    ('agrixiv_preprints', 'source:provider|preprint|agrixiv'),
-    ('arabixiv_preprints', 'source:provider|preprint|arabixiv'),
-    ('bitss_preprints', 'source:provider|preprint|metaarxiv'),
-    ('eartharxiv_preprints', 'source:provider|preprint|eartharxiv'),
-    ('ecoevorxiv_preprints', 'source:provider|preprint|ecoevorxiv'),
-    ('ecsarxiv_preprints', 'source:provider|preprint|ecsarxiv'),
-    ('engrxiv_preprints', 'source:provider|preprint|engrxiv'),
-    ('focusarchive_preprints', 'source:provider|preprint|focusarchive'),
-    ('frenxiv_preprints', 'source:provider|preprint|frenxiv'),
-    ('inarxiv_preprints', 'source:provider|preprint|inarxiv'),
-    ('lawarxiv_preprints', 'source:provider|preprint|lawarxiv'),
-    ('lissa_preprints', 'source:provider|preprint|lissa'),
-    ('marxiv_preprints', 'source:provider|preprint|marxiv'),
-    ('mediarxiv_preprints', 'source:provider|preprint|mediarxiv'),
-    ('mindrxiv_preprints', 'source:provider|preprint|mindrxiv'),
-    ('nutrixiv_preprints', 'source:provider|preprint|nutrixiv'),
-    ('osf_preprints', 'source:provider|preprint|osf'),
-    ('paleorxiv_preprints', 'source:provider|preprint|paleorxiv'),
-    ('psyarxiv_preprints', 'source:provider|preprint|psyarxiv'),
-    ('socarxiv_preprints', 'source:provider|preprint|socarxiv'),
-    ('sportrxiv_preprints', 'source:provider|preprint|sportrxiv'),
-    ('thesiscommons_preprints', 'source:provider|preprint|thesiscommons'),
-    ('bodoarxiv_preprints', 'source:provider|preprint|bodoarxiv'),
-    ('osf_registries', 'source:provider|registry|osf'),
+    ('africarxiv_preprints', ProviderSourceTags.AfricarxivPreprints.value),
+    ('agrixiv_preprints', ProviderSourceTags.AgrixivPreprints.value),
+    ('arabixiv_preprints', ProviderSourceTags.ArabixivPreprints.value),
+    ('bitss_preprints', ProviderSourceTags.MetaarxivPreprints.value),
+    ('eartharxiv_preprints', ProviderSourceTags.EartharxivPreprints.value),
+    ('ecoevorxiv_preprints', ProviderSourceTags.EcoevorxivPreprints.value),
+    ('ecsarxiv_preprints', ProviderSourceTags.EcsarxivPreprints.value),
+    ('engrxiv_preprints', ProviderSourceTags.EngrxivPreprints.value),
+    ('focusarchive_preprints', ProviderSourceTags.FocusarchivePreprints.value),
+    ('frenxiv_preprints', ProviderSourceTags.FrenxivPreprints.value),
+    ('inarxiv_preprints', ProviderSourceTags.InarxivPreprints.value),
+    ('lawarxiv_preprints', ProviderSourceTags.LawarxivPreprints.value),
+    ('lissa_preprints', ProviderSourceTags.LissaPreprints.value),
+    ('marxiv_preprints', ProviderSourceTags.MarxivPreprints.value),
+    ('mediarxiv_preprints', ProviderSourceTags.MediarxivPreprints.value),
+    ('mindrxiv_preprints', ProviderSourceTags.MindrxivPreprints.value),
+    ('nutrixiv_preprints', ProviderSourceTags.NutrixivPreprints.value),
+    ('osf_preprints', ProviderSourceTags.OsfPreprints.value),
+    ('paleorxiv_preprints', ProviderSourceTags.PaleorxivPreprints.value),
+    ('psyarxiv_preprints', ProviderSourceTags.PsyarxivPreprints.value),
+    ('socarxiv_preprints', ProviderSourceTags.SocarxivPreprints.value),
+    ('sportrxiv_preprints', ProviderSourceTags.SportrxivPreprints.value),
+    ('thesiscommons_preprints', ProviderSourceTags.ThesiscommonsPreprints.value),
+    ('bodoarxiv_preprints', ProviderSourceTags.BodoarxivPreprints.value),
+    ('osf_registries', ProviderSourceTags.OsfRegistries.value),
 ]
 
 CAMPAIGN_SOURCE_TAGS = [
-    ('erp_challenge_campaign', 'source:campaign|erp'),
-    ('prereg_challenge_campaign', 'source:campaign|prereg_challenge'),
-    ('osf_registered_reports', 'source:campaign|osf_registered_reports'),
-    ('osf4m', 'source:campaign|osf4m'),
+    ('erp_challenge_campaign', CampaignSourceTags.ErpChallenge.value),
+    ('prereg_challenge_campaign', CampaignSourceTags.PreregChallenge.value),
+    ('osf_registered_reports', CampaignSourceTags.OsfRegisteredReports.value),
+    ('osf4m', CampaignSourceTags.Osf4m.value),
 ]
 
 PROVIDER_CLAIMED_TAGS = [
-    'claimed:provider|preprint|africarxiv',
-    'claimed:provider|preprint|agrixiv',
-    'claimed:provider|preprint|arabixiv',
-    'claimed:provider|preprint|metaarxiv',
-    'claimed:provider|preprint|eartharxiv',
-    'claimed:provider|preprint|ecoevorxiv',
-    'claimed:provider|preprint|ecsarxiv',
-    'claimed:provider|preprint|engrxiv',
-    'claimed:provider|preprint|focusarchive',
-    'claimed:provider|preprint|frenxiv',
-    'claimed:provider|preprint|inarxiv',
-    'claimed:provider|preprint|lawarxiv',
-    'claimed:provider|preprint|lissa',
-    'claimed:provider|preprint|marxiv',
-    'claimed:provider|preprint|mediarxiv',
-    'claimed:provider|preprint|mindrxiv',
-    'claimed:provider|preprint|nutrixiv',
-    'claimed:provider|preprint|osf',
-    'claimed:provider|preprint|paleorxiv',
-    'claimed:provider|preprint|psyarxiv',
-    'claimed:provider|preprint|socarxiv',
-    'claimed:provider|preprint|sportrxiv',
-    'claimed:provider|preprint|thesiscommons',
-    'claimed:provider|preprint|bodoarxiv',
-    'claimed:provider|registry|osf',
+    ProviderClaimedTags.AfricarxivPreprints.value,
+    ProviderClaimedTags.AgrixivPreprints.value,
+    ProviderClaimedTags.ArabixivPreprints.value,
+    ProviderClaimedTags.MetaarxivPreprints.value,
+    ProviderClaimedTags.EartharxivPreprints.value,
+    ProviderClaimedTags.EcoevorxivPreprints.value,
+    ProviderClaimedTags.EcsarxivPreprints.value,
+    ProviderClaimedTags.EngrxivPreprints.value,
+    ProviderClaimedTags.FocusarchivePreprints.value,
+    ProviderClaimedTags.FrenxivPreprints.value,
+    ProviderClaimedTags.InarxivPreprints.value,
+    ProviderClaimedTags.LawarxivPreprints.value,
+    ProviderClaimedTags.LissaPreprints.value,
+    ProviderClaimedTags.MarxivPreprints.value,
+    ProviderClaimedTags.MediarxivPreprints.value,
+    ProviderClaimedTags.MindrxivPreprints.value,
+    ProviderClaimedTags.NutrixivPreprints.value,
+    ProviderClaimedTags.OsfPreprints.value,
+    ProviderClaimedTags.PaleorxivPreprints.value,
+    ProviderClaimedTags.PsyarxivPreprints.value,
+    ProviderClaimedTags.SocarxivPreprints.value,
+    ProviderClaimedTags.SportrxivPreprints.value,
+    ProviderClaimedTags.ThesiscommonsPreprints.value,
+    ProviderClaimedTags.BodoarxivPreprints.value,
+    ProviderClaimedTags.OsfRegistries.value,
 ]
 
 CAMPAIGN_CLAIMED_TAGS = [
-    'claimed:campaign|erp',
-    'claimed:campaign|prereg_challenge',
-    'claimed:campaign|prereg',
-    'claimed:campaign|osf_registered_reports',
-    'claimed:campaign|osf4m',
+    CampaignClaimedTags.ErpChallenge.value,
+    CampaignClaimedTags.PreregChallenge.value,
+    CampaignClaimedTags.Prereg.value,
+    CampaignClaimedTags.OsfRegisteredReports.value,
+    CampaignClaimedTags.Osf4m.value,
 ]
 
 
-def normalize_provider_source_tags():
-    """ Normailize provider source tags
-    """
+def migrate_source_tags(tags):
     Tag = apps.get_model('osf', 'Tag')
-    for tag_name in PROVIDER_SOURCE_TAGS:
+    for tag_name in tags:
         tag = Tag.all_tags.get(name=tag_name[0], system=True)
         tag.name = tag_name[1]
         tag.save()
         logging.info(tag_name[0] + ' migrated to ' + tag_name[1])
 
 
-def add_provider_claimed_tags():
-    """ Add provider claimed tag instances
-    """
+def add_tags(tags):
     Tag = apps.get_model('osf', 'Tag')
-    for tag_name in PROVIDER_CLAIMED_TAGS:
+    for tag_name in tags:
         tag = Tag.all_tags.create(name=tag_name, system=True)
         tag.save()
         logging.info('Added tag ' + tag.name)
 
 
-def normalize_campaign_source_tags():
-    """ Normalize campaign source tags
+def normalize_source_tags():
+    """ Normailize source tags
     """
-    Tag = apps.get_model('osf', 'Tag')
-    for tag_name in CAMPAIGN_SOURCE_TAGS:
-        tag = Tag.all_tags.get(name=tag_name[0], system=True)
-        tag.name = tag_name[1]
-        tag.save()
-        logging.info(tag_name[0] + ' migrated to ' + tag_name[1])
+    migrate_source_tags(PROVIDER_SOURCE_TAGS)
+    migrate_source_tags(CAMPAIGN_SOURCE_TAGS)
 
 
-def add_campaign_claimed_tags():
-    """ Add campaign claimed tag instances
+def add_claimed_tags():
+    """ Add claimed tags
     """
-    Tag = apps.get_model('osf', 'Tag')
-    for tag_name in CAMPAIGN_CLAIMED_TAGS:
-        tag = Tag.all_tags.create(name=tag_name, system=True)
-        tag.save()
-        logging.info('Added tag ' + tag.name)
+    add_tags(PROVIDER_CLAIMED_TAGS)
+    add_tags(CAMPAIGN_CLAIMED_TAGS)
 
 
 def add_osf_provider_tags():
@@ -130,10 +120,10 @@ def add_osf_provider_tags():
         Add 'claimed:provider|osf' tag instance.
     """
     Tag = apps.get_model('osf', 'Tag')
-    Tag.all_tags.create(name='source:provider|osf', system=True)
-    Tag.all_tags.create(name='claimed:provider|osf', system=True)
-    logging.info('Added tag ' + 'source:provider|osf')
-    logging.info('Added tag ' + 'claimed:provider|osf')
+    Tag.all_tags.create(name=ProviderSourceTags.Osf.value, system=True)
+    Tag.all_tags.create(name=ProviderClaimedTags.Osf.value, system=True)
+    logging.info('Added tag ' + ProviderSourceTags.Osf.value)
+    logging.info('Added tag ' + ProviderClaimedTags.Osf.value)
 
 
 def add_prereg_campaign_tags():
@@ -143,8 +133,8 @@ def add_prereg_campaign_tags():
     """
     Tag = apps.get_model('osf', 'Tag')
     OSFUser = apps.get_model('osf', 'OSFuser')
-    prereg_challenge_source_tag = Tag.all_tags.get(name='source:campaign|prereg_challenge', system=True)
-    prereg_source_tag = Tag.all_tags.create(name='source:campaign|prereg', system=True)
+    prereg_challenge_source_tag = Tag.all_tags.get(name=CampaignSourceTags.PreregChallenge.value, system=True)
+    prereg_source_tag = Tag.all_tags.create(name=CampaignSourceTags.Prereg.value, system=True)
     logging.info('Added tag ' + prereg_source_tag.name)
     prereg_challenge_cutoff_date = pytz.utc.localize(datetime(2019, 01, 01, 05, 59))
     prereg_users_registered_after_january_first = OSFUser.objects.filter(tags__id=prereg_challenge_source_tag.id, date_registered__gt=prereg_challenge_cutoff_date)
@@ -166,10 +156,8 @@ def main():
         script_utils.add_file_logger(logger, __file__)
 
     with transaction.atomic():
-        normalize_provider_source_tags()
-        add_provider_claimed_tags()
-        normalize_campaign_source_tags()
-        add_campaign_claimed_tags()
+        normalize_source_tags()
+        add_claimed_tags()
         add_osf_provider_tags()
         add_prereg_campaign_tags()
         if dry_run:
