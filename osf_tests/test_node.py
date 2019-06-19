@@ -725,8 +725,7 @@ class TestProject:
         nodeSettings.save()
         set_project_storage_type(project)
         fetch_newly_created_project = ProjectStorageType.objects.get(node=project)
-        assert fetch_newly_created_project.storage_type != 1
-        assert fetch_newly_created_project.storage_type == 2
+        assert fetch_newly_created_project.storage_type == ProjectStorageType.CUSTOM_STORAGE
 
 
 class TestLogging:
