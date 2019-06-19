@@ -23,6 +23,7 @@ from osf.models import NodeLog, RegistrationSchema, DraftRegistration, Sanction
 
 from website.project.decorators import (
     must_be_valid_project,
+    must_be_contributor_and_not_group_member,
     must_have_permission,
 )
 from website import language, settings
@@ -111,6 +112,7 @@ def check_draft_state(draft):
         })
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     """Submit for approvals and/or notifications
@@ -181,6 +183,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     }, http.ACCEPTED
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def draft_before_register_page(auth, node, draft, *args, **kwargs):
     """Allow the user to select an embargo period and confirm registration
@@ -223,6 +226,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
+@must_be_contributor_and_not_group_member
 @ember_flag_is_active(features.EMBER_CREATE_DRAFT_REGISTRATION)
 def new_draft_registration(auth, node, *args, **kwargs):
     """Create a new draft registration for the node
@@ -261,6 +265,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @ember_flag_is_active(features.EMBER_EDIT_DRAFT_REGISTRATION)
 @must_be_branched_from_node
 def edit_draft_registration_page(auth, node, draft, **kwargs):
@@ -275,6 +280,7 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
     return ret
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def update_draft_registration(auth, node, draft, *args, **kwargs):
     """Update an existing draft registration
@@ -302,6 +308,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     return serialize_draft_registration(draft, auth), http.OK
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def delete_draft_registration(auth, node, draft, *args, **kwargs):
     """Permanently delete a draft registration

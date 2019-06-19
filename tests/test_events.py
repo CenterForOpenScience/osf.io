@@ -12,6 +12,7 @@ from website.notifications.events import utils
 from addons.base import signals
 from framework.auth import Auth
 from osf_tests import factories
+from osf.utils.permissions import WRITE
 from tests.base import OsfTestCase, NotificationTestCase
 
 email_transactional = 'email_transactional'
@@ -386,13 +387,13 @@ class TestFileMoved(NotificationTestCase):
         # Move Event: Tests that store_emails is called 3 times, one in
         # each category
         self.sub.email_transactional.add(self.user_1)
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.project.save()
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.private_node.save()
         self.sub.email_digest.add(self.user_3)
         self.sub.save()
-        self.project.add_contributor(self.user_4, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_4, permissions=WRITE, auth=self.auth)
         self.project.save()
         self.file_sub.email_digest.add(self.user_4)
         self.file_sub.save()
@@ -402,7 +403,7 @@ class TestFileMoved(NotificationTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_remove_user_sent_once(self, mock_store):
         # Move Event: Tests removed user is removed once. Regression
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.project.save()
         self.file_sub.email_digest.add(self.user_3)
         self.file_sub.save()
@@ -468,13 +469,13 @@ class TestFileCopied(NotificationTestCase):
         # Copy Event: Tests that store_emails is called 2 times, two with
         # permissions, one without
         self.sub.email_transactional.add(self.user_1)
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.project.save()
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.private_node.save()
         self.sub.email_digest.add(self.user_3)
         self.sub.save()
-        self.project.add_contributor(self.user_4, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_4, permissions=WRITE, auth=self.auth)
         self.project.save()
         self.file_sub.email_digest.add(self.user_4)
         self.file_sub.save()
@@ -539,9 +540,9 @@ class TestCategorizeUsers(NotificationTestCase):
         # Tests that a user with a sub in the origin node gets a warning that
         # they are no longer tracking the file.
         self.sub.email_transactional.add(self.user_1)
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.project.save()
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.private_node.save()
         self.sub.email_digest.add(self.user_3)
         self.sub.save()
@@ -557,9 +558,9 @@ class TestCategorizeUsers(NotificationTestCase):
     def test_moved_user(self):
         # Doesn't warn a user with two different subs, but does send a
         # moved email
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.project.save()
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.private_node.save()
         self.sub.email_digest.add(self.user_3)
         self.sub.save()
@@ -573,7 +574,7 @@ class TestCategorizeUsers(NotificationTestCase):
         assert_equal({email_transactional: [self.user_3._id], email_digest: [], 'none': []}, moved)
 
     def test_remove_user(self):
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.project.save()
         self.file_sub.email_transactional.add(self.user_3)
         self.file_sub.save()
@@ -584,7 +585,7 @@ class TestCategorizeUsers(NotificationTestCase):
         assert_equal({email_transactional: [self.user_3._id], email_digest: [], 'none': []}, removed)
 
     def test_node_permissions(self):
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'])
+        self.private_node.add_contributor(self.user_3, permissions=WRITE)
         self.private_sub.email_digest.add(self.user_3, self.user_4)
         remove = {email_transactional: [], email_digest: [], 'none': []}
         warn = {email_transactional: [], email_digest: [self.user_3._id, self.user_4._id], 'none': []}
@@ -812,5 +813,3 @@ def file_renamed_payload():
         (u'time', 1441905340.876648),
         ('node', u'wp6xv'),
         ('project', None)])
-
-

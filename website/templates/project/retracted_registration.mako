@@ -54,7 +54,7 @@
 
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${ node['category'] }</span>
-                % elif node['description'] or 'write' in user['permissions']:
+                % elif node['description'] or permissions.WRITE in user['permissions']:
                     <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${ node['description'] }</span>
                 % endif
             </div>

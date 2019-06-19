@@ -3,6 +3,7 @@ from rest_framework import permissions
 from api.base.utils import get_user_auth
 from osf.models import BaseFileNode, FileMetadataRecord
 from api.preprints.permissions import PreprintPublishedOrAdmin
+from osf.utils.permissions import ADMIN
 from osf.utils.workflows import DefaultStates
 
 class CheckedOutOrAdmin(permissions.BasePermission):
@@ -18,7 +19,7 @@ class CheckedOutOrAdmin(permissions.BasePermission):
             return False
         return obj.checkout is None \
             or obj.checkout == auth.user \
-            or obj.target.has_permission(auth.user, 'admin')
+            or obj.target.has_permission(auth.user, ADMIN)
 
 
 class IsPreprintFile(PreprintPublishedOrAdmin):

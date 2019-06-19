@@ -7,7 +7,7 @@ from hashids import Hashids
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import OuterRef, Exists, Q, QuerySet, F
+from django.db.models import QuerySet, F
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -17,7 +17,7 @@ from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser, Contributor, Node, Registration
+from osf.models import OSFUser, Node, Registration
 from osf.models.base import GuidMixin
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
@@ -153,10 +153,7 @@ def default_node_permission_queryset(user, model_cls):
     Implicit admin permissions not included here (NodeList, UserNodes, for example, don't factor this in.)
     """
     assert model_cls in {Node, Registration}
-    if user is None or user.is_anonymous:
-        return model_cls.objects.filter(is_public=True)
-    sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, read=True)
-    return model_cls.objects.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True) | Q(is_public=True))
+    return model_cls.objects.get_nodes_for_user(user, include_public=True)
 
 def default_node_list_permission_queryset(user, model_cls):
     # **DO NOT** change the order of the querysets below.
