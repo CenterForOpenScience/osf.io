@@ -249,9 +249,15 @@ def format_results(results):
         if result.get('category') == 'user':
             result['url'] = '/profile/' + result['id']
         elif result.get('category') == 'file':
-            parent_info = load_parent(result.get('parent_id'))
-            result['parent_url'] = parent_info.get('url') if parent_info else None
-            result['parent_title'] = parent_info.get('title') if parent_info else None
+            file_node = BaseFileNode.objects.get(_id=result.get('id'))
+            if file_node.is_quickfile:
+                result['parent_url'] = '{}quickfiles/'.format(file_node.target.url)
+                result['parent_title'] = file_node.target.quickfolder.title
+            else:
+                parent_info = load_parent(result.get('parent_id'))
+                result['parent_url'] = parent_info.get('url') if parent_info else None
+                result['parent_title'] = parent_info.get('title') if parent_info else None
+
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         elif result.get('category') in {'preprint'}:

@@ -128,7 +128,7 @@ class Loggable(models.Model):
             self.save()
 
         if user and not getattr(self, 'is_collection', None):
-            increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
+            increment_user_activity_counters(user._primary_key, action, self.last_logged.isoformat())
 
         return log
 

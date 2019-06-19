@@ -26,7 +26,7 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFUser, OSFGroup, Tag, Contributor, Session, BlacklistedEmailDomain, QuickFilesNode, PreprintContributor
+from osf.models import AbstractNode, OSFUser, OSFGroup, Tag, Contributor, Session, BlacklistedEmailDomain, PreprintContributor
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
@@ -77,6 +77,7 @@ def auth(user):
 
 # Tests copied from tests/test_models.py
 @pytest.mark.enable_implicit_clean
+@pytest.mark.enable_quickfiles_creation
 class TestOSFUser:
 
     def test_create(self):
@@ -201,7 +202,6 @@ class TestOSFUser:
         with pytest.raises(ValidationError):
             u.save()
 
-    @pytest.mark.enable_quickfiles_creation
     def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self, user):
         user2 = UserFactory.build()
         user2.save()
@@ -223,7 +223,6 @@ class TestOSFUser:
         assert project.get_visible(user) is True
         assert project.is_contributor(user2) is False
 
-    @pytest.mark.enable_quickfiles_creation
     def test_merged_user_group_member_permissions_are_ignored(self, user):
         user2 = UserFactory.build()
         user2.save()
@@ -1697,6 +1696,7 @@ class TestUser(OsfTestCase):
         assert collection_node._id not in contributor_to_nodes
         assert group_project._id not in contributor_to_nodes
 
+    @pytest.mark.enable_bookmark_creation
     def test_contributor_or_group_member_to_property(self):
         normal_node = ProjectFactory(creator=self.user)
         normal_contributed_node = ProjectFactory()
@@ -1736,11 +1736,10 @@ class TestUser(OsfTestCase):
         project_three.save()
 
         user_nodes = self.user.all_nodes
-        assert user_nodes.count() == 3
+        assert user_nodes.count() == 2
         assert project in user_nodes
         assert project_two in user_nodes
         assert project_three not in user_nodes
-        assert QuickFilesNode.objects.get(creator=self.user) in user_nodes
 
     @pytest.mark.enable_bookmark_creation
     def test_visible_contributor_to_property(self):

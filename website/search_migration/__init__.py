@@ -439,7 +439,7 @@ FROM osf_basefilenode AS F
             ) NODE ON TRUE
 WHERE name IS NOT NULL
       AND name != ''
-      AND target_object_id = ANY (SELECT id
+      AND (target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
                          WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
                                AND is_public IS TRUE
@@ -458,7 +458,13 @@ WHERE name IS NOT NULL
                                              WHERE (AJ.status != 'FAILURE' AND AJ.status != 'SUCCESS'
                                                 AND AJ.dst_node_id IS NOT NULL)))
                         )
-      AND target_content_type_id = (SELECT id FROM "django_content_type" WHERE ("django_content_type"."model" = 'abstractnode' AND "django_content_type"."app_label" = 'osf'))
+        AND target_content_type_id = (SELECT id FROM "django_content_type" WHERE ("django_content_type"."model" = 'abstractnode' AND "django_content_type"."app_label" = 'osf'))
+      )
+      OR (target_object_id = ANY (SELECT id FROM osf_osfuser)
+        AND target_content_type_id = (SELECT id FROM "django_content_type" WHERE ("django_content_type"."model" = 'osfuser' AND "django_content_type"."app_label" = 'osf'))
+        AND parent_id IS NOT NULL
+      )
+
       AND id > {page_start}
       AND id <= {page_end}
 LIMIT 1;

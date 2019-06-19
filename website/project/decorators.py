@@ -11,7 +11,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
-from osf.models import AbstractNode, Guid, Preprint, OSFGroup
+from osf.models import AbstractNode, Guid, Preprint, OSFGroup, OSFUser
 from osf.utils.permissions import WRITE
 from website import settings, language
 from website.util import web_url_for
@@ -93,10 +93,14 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
         def wrapped(*args, **kwargs):
             if preprints_valid and Preprint.load(kwargs.get('pid')):
                 _inject_nodes(kwargs)
-
                 return func(*args, **kwargs)
+
             if groups_valid and OSFGroup.load(kwargs.get('pid')):
                 kwargs['node'] = OSFGroup.load(kwargs.get('pid'))
+                return func(*args, **kwargs)
+
+            if quickfiles_valid and OSFUser.load(kwargs.get('pid')):
+                kwargs['node'] = OSFUser.load(kwargs.get('pid'))
                 return func(*args, **kwargs)
 
             _inject_nodes(kwargs)
