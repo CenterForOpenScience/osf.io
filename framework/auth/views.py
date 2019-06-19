@@ -554,6 +554,7 @@ def external_login_confirm_email_get(auth, uid, token):
             user=user,
             osf_support_email=settings.OSF_SUPPORT_EMAIL,
             storage_flag_is_active=storage_i18n_flag_active(),
+            use_viewonlylinks=settings.to_bool('USE_VIEWONLYLINKS', True),
         )
         service_url += '&{}'.format(urllib.urlencode({'new': 'true'}))
     elif external_status == 'LINK':
@@ -637,6 +638,7 @@ def confirm_email_get(token, auth=None, **kwargs):
             domain=settings.DOMAIN,
             osf_support_email=settings.OSF_SUPPORT_EMAIL,
             storage_flag_is_active=storage_i18n_flag_active(),
+            use_viewonlylinks=settings.to_bool('USE_VIEWONLYLINKS', True),
         )
 
     # new random verification key, allows CAS to authenticate the user w/o password one-time only.

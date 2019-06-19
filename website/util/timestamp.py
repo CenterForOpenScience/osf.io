@@ -99,7 +99,7 @@ def get_error_list(pid):
 
         # User and date of the verification
         if data.verify_date is not None:
-            verify_date = data.verify_date.strftime('%Y/%m/%d %H:%M:%S')
+            verify_date = data.verify_date.strftime('%Y/%m/%d %H:%M:%S %Z')
         else:
             verify_date = ''
 
@@ -332,9 +332,8 @@ def celery_verify_timestamp_token(self, uid, node_id):
             if result is None:
                 continue
             # Do not let the task run too many requests
-            # An sleep would stop the celery process (and all its tasks)
             while time.time() < last_run + secs_to_wait:
-                pass
+                time.sleep(0.1)
     if self.is_aborted():
         logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
     celery_app.current_task.update_state(state='SUCCESS', meta={'progress': 100})
@@ -355,9 +354,8 @@ def celery_add_timestamp_token(self, uid, node_id, request_data):
         if result is None:
             continue
         # Do not let the task run too many requests
-        # An sleep would stop the celery process (and all its tasks)
         while time.time() < last_run + secs_to_wait:
-            pass
+            time.sleep(0.1)
     if self.is_aborted():
         logger.warning('Task from project ID {} was cancelled by user ID {}'.format(node_id, uid))
 

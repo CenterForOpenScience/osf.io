@@ -16,7 +16,7 @@ from framework.auth.core import get_user
 
 from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
-from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
+from website.settings import OSF_SUPPORT_EMAIL, DOMAIN, to_bool
 from website.util.quota import update_default_storage
 
 import logging
@@ -165,6 +165,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     domain=DOMAIN,
                     osf_support_email=OSF_SUPPORT_EMAIL,
                     storage_flag_is_active=waffle.flag_is_active(request, 'storage_i18n'),
+                    use_viewonlylinks=to_bool('USE_VIEWONLYLINKS', True),
                 )
             ### the user is not available when have_email is False.
 
