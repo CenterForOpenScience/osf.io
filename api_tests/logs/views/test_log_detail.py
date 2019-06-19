@@ -27,7 +27,7 @@ class LogsTestCase:
         node_private = ProjectFactory(is_public=False)
         node_private.add_contributor(
             user_one,
-            permissions=[osf_permissions.READ],
+            permissions=osf_permissions.READ,
             auth=Auth(node_private.creator),
             log=True, save=True
         )
@@ -38,7 +38,7 @@ class LogsTestCase:
         node_public = ProjectFactory(is_public=True)
         node_public.add_contributor(
             user_one,
-            permissions=[osf_permissions.READ],
+            permissions=osf_permissions.READ,
             auth=Auth(node_public.creator),
             log=True, save=True
         )

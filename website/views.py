@@ -68,6 +68,22 @@ def serialize_contributors_for_summary(node, max_count=3):
         'others_count': others_count,
     }
 
+def serialize_groups_for_summary(node):
+    groups = node.osf_groups
+    n_groups = len(groups)
+    group_string = ''
+    for index, group in enumerate(groups):
+        if index == n_groups - 1:
+            separator = ''
+        elif index == n_groups - 2:
+            separator = ' & '
+        else:
+            separator = ', '
+
+        group_string = group_string + group.name + separator
+
+    return group_string
+
 
 def serialize_node_summary(node, auth, primary=True, show_path=False):
     is_registration = node.is_registration
@@ -104,6 +120,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'childExists': Node.objects.get_children(node, active=True).exists(),
             'is_admin': node.has_permission(user, permissions.ADMIN),
             'is_contributor': node.is_contributor(user),
+            'is_contributor_or_group_member': node.is_contributor_or_group_member(user),
             'logged_in': auth.logged_in,
             'node_type': node.project_or_component,
             'is_fork': node.is_fork,
@@ -124,6 +141,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'show_path': show_path,
             'contributors': contributor_data['contributors'],
             'others_count': contributor_data['others_count'],
+            'groups': serialize_groups_for_summary(node),
             'description': node.description if len(node.description) <= 150 else node.description[0:150] + '...',
         })
     else:
@@ -301,9 +319,7 @@ def resolve_guid(guid, suffix=None):
         if isinstance(referent, Registration) and (
                 not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components')
         ):
-            # Ideally, auth wouldn't be checked here. Necessary for routing
-            auth = Auth.from_kwargs(request.args.to_dict(), {})
-            if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE) and not auth.private_link:
+            if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
                 # Route only the base detail view to ember
                 if PROXY_EMBER_APPS:
                     resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
@@ -342,9 +358,9 @@ def redirect_howosfworks(**kwargs):
     return redirect('/getting-started/')
 
 
-# redirect osf.io/getting-started to help.osf.io/
+# redirect osf.io/getting-started to https://openscience.zendesk.com/hc/en-us
 def redirect_getting_started(**kwargs):
-    return redirect('http://help.osf.io/')
+    return redirect('https://openscience.zendesk.com/hc/en-us')
 
 
 # Redirect to home page

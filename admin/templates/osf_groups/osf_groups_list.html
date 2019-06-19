@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load node_extras %}
+
+{% load static %}
+{% block title %}
+    <title>OSF Groups</title>
+{% endblock title %}
+{% block content %}
+<h2>List of Groups</h2>
+{% include "util/pagination.html" with items=page status=status %}
+<table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <td>Name</td>
+            <td>Date Created</td>
+            <td>Date Modified</td>
+            <td>Creator</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for group in groups %}
+        <tr>
+            <td>
+                <a href="{{ group.id | reverse_osf_group }}">{{ group.name }}</a>
+            </td>
+            <td>
+                {{ group.created }}
+            </td>
+            <td>
+                {{ group.modified }}
+            </td>
+            <td>
+                <a href="{{ group.creator.id | reverse_user }}">{{ group.creator.name }}</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock content %}
