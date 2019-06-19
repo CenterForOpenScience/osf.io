@@ -7,6 +7,7 @@ from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )
+from osf.utils.permissions import WRITE
 from rest_framework import exceptions
 
 
@@ -44,10 +45,10 @@ class TestNodeEmbeds:
             write_contrib_two, make_public_node):
         root_node = make_public_node()
         root_node.add_contributor(
-            write_contrib_one, ['read', 'write'],
+            write_contrib_one, WRITE,
             auth=auth, save=True)
         root_node.add_contributor(
-            write_contrib_two, ['read', 'write'],
+            write_contrib_two, WRITE,
             auth=auth, save=True)
         return root_node
 
@@ -58,10 +59,10 @@ class TestNodeEmbeds:
             root_node):
         child_one = make_public_node(parent=root_node)
         child_one.add_contributor(
-            write_contrib_one, ['read', 'write'],
+            write_contrib_one, WRITE,
             auth=auth, save=True)
         child_one.add_contributor(
-            write_contrib_two, ['read', 'write'],
+            write_contrib_two, WRITE,
             auth=auth, save=True)
         return child_one
 

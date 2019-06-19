@@ -20,8 +20,8 @@ class TestRegistrationBibliographicContributors(TestNodeBibliographicContributor
             creator=admin_contributor_bib,
             project=project
         )
-        reg.add_contributor(write_contributor_non_bib, [READ, WRITE], visible=False)
-        reg.add_contributor(read_contributor_bib, [READ])
+        reg.add_contributor(write_contributor_non_bib, WRITE, visible=False)
+        reg.add_contributor(read_contributor_bib, READ)
         reg.save()
         return reg
 

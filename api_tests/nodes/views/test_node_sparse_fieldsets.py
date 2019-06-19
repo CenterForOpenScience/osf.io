@@ -246,10 +246,10 @@ class TestSparseViewOnlyLinks:
             title='Private One')
         private_node_one.add_contributor(
             contributing_read_user,
-            permissions=[permissions.READ], save=True)
+            permissions=permissions.READ, save=True)
         private_node_one.add_contributor(
             contributing_write_user,
-            permissions=[permissions.READ, permissions.WRITE],
+            permissions=permissions.WRITE,
             save=True)
         return private_node_one
 
@@ -271,10 +271,9 @@ class TestSparseViewOnlyLinks:
             'fields[nodes]': 'title,current_user_can_comment,contributors',
             'fields[contributors]': 'id',
             'embed': 'contributors'
-        })  # current_user_can_comment is an anonymized field, should be removed
+        })  # current_user_can_comment and contributors are anonymized fields, should be removed
         assert res.status_code == 200
         assert res.json['data']['attributes'].keys() == ['title']
 
-        for contrib in res.json['data']['embeds']['contributors']['data']:
-            assert contrib['id'] == ''
-            assert contrib['attributes'] == {}
+        embeds = res.json['data'].get('embeds', None)
+        assert embeds is None or 'contributors' not in embeds

@@ -1,10 +1,11 @@
 import pytz
 
 from django.apps import apps
-from django.db.models import Exists, F, OuterRef, Q
+from django.db.models import F, Q
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
+from api.base.waffle_decorators import require_flag
 from api.base.exceptions import Conflict, UserGone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
@@ -15,7 +16,6 @@ from api.base.parsers import (
 )
 from api.base.serializers import get_meta_type, AddonAccountSerializer
 from api.base.utils import (
-    default_node_list_queryset,
     default_node_list_permission_queryset,
     get_object_or_error,
     get_user_auth,
@@ -28,6 +28,7 @@ from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationSerializer
 from api.nodes.utils import NodeOptimizationMixin
+from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 
@@ -62,6 +63,7 @@ from framework.auth.exceptions import ChangePasswordError
 from framework.utils import throttle_period_expired
 from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError, HTTPError
+from osf.features import OSF_GROUPS
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
@@ -76,9 +78,11 @@ from osf.models import (
     Preprint,
     Node,
     Registration,
+    OSFGroup,
     OSFUser,
     Email,
 )
+from osf.utils import permissions
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 
@@ -313,11 +317,15 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
     ordering = ('-last_logged',)
 
     # overrides NodesFilterMixin
+
     def get_default_queryset(self):
         user = self.get_user()
+        # Nodes the requested user has read_permissions on
+        default_queryset = user.nodes_contributor_or_group_member_to
         if user != self.request.user:
-            return default_node_list_permission_queryset(user=self.request.user, model_cls=Node).filter(contributor__user__id=user.id)
-        return self.optimize_node_queryset(default_node_list_queryset(model_cls=Node).filter(contributor__user__id=user.id))
+            # Further restrict UserNodes to nodes the *requesting* user can view
+            return Node.objects.get_nodes_for_user(self.request.user, base_queryset=default_queryset, include_public=True)
+        return self.optimize_node_queryset(default_queryset)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -326,6 +334,33 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
             .select_related('node_license')
             .include('contributor__user__guids', 'root__guids', limit_includes=10)
         )
+
+
+class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.OSF_GROUPS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    model_class = apps.get_model('osf.OSFGroup')
+    serializer_class = GroupSerializer
+    view_category = 'users'
+    view_name = 'user-groups'
+    ordering = ('-modified', )
+
+    @require_flag(OSF_GROUPS)
+    def get_default_queryset(self):
+        requested_user = self.get_user()
+        current_user = self.request.user
+        if current_user.is_anonymous:
+            return OSFGroup.objects.none()
+        return requested_user.osf_groups.filter(id__in=current_user.osf_groups.values_list('id', flat=True))
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, UserMixin, ListFilterMixin):
@@ -443,6 +478,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
         user = self.get_user()
         current_user = self.request.user
         qs = default_node_list_permission_queryset(user=current_user, model_cls=Registration)
+        # OSF group members not copied to registration.  Only registration contributors need to be checked here.
         return qs.filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
@@ -467,8 +503,7 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
     def get_queryset(self):
         user = self.get_user()
-        contrib_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, admin=True)
-        node_qs = Node.objects.annotate(admin=Exists(contrib_qs)).filter(admin=True).exclude(is_deleted=True)
+        node_qs = Node.objects.get_nodes_for_user(user, permissions.ADMIN_NODE)
         return DraftRegistration.objects.filter(
             Q(registered_node__isnull=True) |
             Q(registered_node__is_deleted=True),
@@ -711,7 +746,6 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         """ This avoids needing to reimplement all of the logic in the sender methods.
         When v1 is more fully deprecated, those send hooks should be reworked to not
         rely upon a flask context and placed in utils (or elsewhere).
-
         :param bool registered: Indicates which sender to call (passed in as keyword)
         :param *args: Positional arguments passed to senders
         :param **kwargs: Keyword arguments passed to senders

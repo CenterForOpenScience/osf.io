@@ -16,7 +16,7 @@ from framework.auth.oauth_scopes import public_scopes
 from framework.auth.cas import CasResponse
 from website import settings
 from osf.models import ApiOAuth2PersonalToken, Session
-
+from osf.utils.permissions import ADMIN
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
@@ -74,12 +74,12 @@ class TestWelcomeToApi(ApiTestCase):
 
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['admin'], True)
+        assert_equal(res.json['meta'][ADMIN], True)
 
     def test_basic_auth_does_not_have_admin(self):
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_not_in('admin', res.json['meta'].keys())
+        assert_not_in(ADMIN, res.json['meta'].keys())
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
@@ -111,7 +111,7 @@ class TestWelcomeToApi(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['admin'], True)
+        assert_equal(res.json['meta'][ADMIN], True)
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     def test_non_admin_scoped_token_does_not_have_admin(self, mock_auth):
@@ -138,4 +138,4 @@ class TestWelcomeToApi(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_not_in('admin', res.json['meta'].keys())
+        assert_not_in(ADMIN, res.json['meta'].keys())

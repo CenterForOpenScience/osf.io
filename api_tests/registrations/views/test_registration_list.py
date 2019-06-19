@@ -17,6 +17,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     DraftRegistrationFactory,
+    OSFGroupFactory,
 )
 from rest_framework import exceptions
 from tests.base import ApiTestCase
@@ -650,7 +651,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     def test_cannot_create_registration(
             self, app, user_write_contrib, user_read_contrib,
-            payload, url_registrations):
+            payload, url_registrations, project_public):
 
         # def test_write_only_contributor_cannot_create_registration(self):
         res = app.post_json_api(
@@ -671,6 +672,13 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     # def test_non_authenticated_user_cannot_create_registration(self):
         res = app.post_json_api(url_registrations, payload, expect_errors=True)
         assert res.status_code == 401
+
+        # admin via a group cannot create registration
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, permissions.ADMIN)
+        res = app.post_json_api(url_registrations, payload, auth=group_mem.auth, expect_errors=True)
+        assert res.status_code == 403
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_registration_draft_must_be_specified(
@@ -1343,11 +1351,9 @@ class TestRegistrationBulkUpdate:
             self, app, user, registration_one, registration_two, public_payload, url):
         read_contrib = AuthUserFactory()
         registration_one.add_contributor(
-            read_contrib, permissions=[
-                permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
         registration_two.add_contributor(
-            read_contrib, permissions=[
-                permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
 
         res = app.put_json_api(
             url,

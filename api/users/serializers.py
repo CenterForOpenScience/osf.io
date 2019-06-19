@@ -12,7 +12,7 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
-from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
+from api.base.utils import default_node_list_queryset
 from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
@@ -78,7 +78,11 @@ class UserSerializer(JSONAPISerializer):
     writeable_method_fields = frozenset([
         'accepted_terms_of_service',
     ])
-    non_anonymized_fields = ['type']
+
+    non_anonymized_fields = [
+        'type',
+    ]
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=186)
@@ -110,6 +114,11 @@ class UserSerializer(JSONAPISerializer):
             'projects_in_common': 'get_projects_in_common',
             'count': 'get_node_count',
         },
+    ))
+
+    groups = HideIfDisabled(RelationshipField(
+        related_view='users:user-groups',
+        related_view_kwargs={'user_id': '<_id>'},
     ))
 
     quickfiles = HideIfDisabled(QuickFilesRelationshipField(
@@ -161,7 +170,7 @@ class UserSerializer(JSONAPISerializer):
     def get_projects_in_common(self, obj):
         user = get_user_auth(self.context['request']).user
         if obj == user:
-            return user.contributor_to.count()
+            return user.contributor_or_group_member_to.count()
         return obj.n_projects_in_common(user)
 
     def absolute_url(self, obj):
@@ -178,11 +187,11 @@ class UserSerializer(JSONAPISerializer):
         )
 
     def get_node_count(self, obj):
+        default_queryset = obj.nodes_contributor_or_group_member_to
         auth = get_user_auth(self.context['request'])
         if obj != auth.user:
-            return default_node_list_permission_queryset(user=auth.user, model_cls=Node).filter(contributor__user__id=obj.id).count()
-
-        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=obj.id).count()
+            return Node.objects.get_nodes_for_user(auth.user, base_queryset=default_queryset, include_public=True).count()
+        return default_queryset.count()
 
     def get_quickfiles_count(self, obj):
         return obj.quickfiles.count()

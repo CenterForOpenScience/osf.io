@@ -11,9 +11,8 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
-
-from osf.models import AbstractNode, Guid, Preprint, OSFUser
-
+from osf.models import AbstractNode, Guid, Preprint, OSFGroup
+from osf.utils.permissions import WRITE
 from website import settings, language
 from website.util import web_url_for
 
@@ -84,7 +83,7 @@ def must_not_be_rejected(func):
 
     return wrapped
 
-def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=False, preprints_valid=False):
+def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=False, preprints_valid=False, groups_valid=False):
     """ Ensures permissions to retractions are never implicitly granted. """
 
     # TODO: Check private link
@@ -96,10 +95,8 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
                 _inject_nodes(kwargs)
 
                 return func(*args, **kwargs)
-
-            if quickfiles_valid and OSFUser.load(kwargs.get('pid')):
-                _inject_nodes(kwargs)
-
+            if groups_valid and OSFGroup.load(kwargs.get('pid')):
+                kwargs['node'] = OSFGroup.load(kwargs.get('pid'))
                 return func(*args, **kwargs)
 
             _inject_nodes(kwargs)
@@ -212,7 +209,7 @@ def check_can_download_preprint_file(user, node):
     return user.has_perm('view_submissions', node.provider)
 
 
-def check_can_access(node, user, key=None, api_node=None):
+def check_can_access(node, user, key=None, api_node=None, include_groups=True):
     """View helper that returns whether a given user can access a node.
     If ``user`` is None, returns False.
 
@@ -225,7 +222,7 @@ def check_can_access(node, user, key=None, api_node=None):
         if check_can_download_preprint_file(user, node):
             return True
 
-    if not node.can_view(Auth(user=user)) and api_node != node:
+    if (not node.can_view(Auth(user=user)) and api_node != node) or (not include_groups and not node.is_contributor(user)):
         if node.is_deleted:
             raise HTTPError(http.GONE, data={'message_long': 'The node for this file has been deleted.'})
 
@@ -271,7 +268,7 @@ def check_key_expired(key, node, url):
     return url
 
 
-def _must_be_contributor_factory(include_public, include_view_only_anon=True):
+def _must_be_contributor_factory(include_public, include_view_only_anon=True, include_groups=True):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
     whether the current project is public.
@@ -295,7 +292,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
 
-            response = check_contributor_auth(target, kwargs['auth'], include_public, include_view_only_anon)
+            response = check_contributor_auth(target, kwargs['auth'], include_public, include_view_only_anon, include_groups)
 
             return response or func(*args, **kwargs)
 
@@ -307,6 +304,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
 must_be_contributor = _must_be_contributor_factory(False)
 must_be_contributor_or_public = _must_be_contributor_factory(True)
 must_be_contributor_or_public_but_not_anonymized = _must_be_contributor_factory(include_public=True, include_view_only_anon=False)
+must_be_contributor_and_not_group_member = _must_be_contributor_factory(include_public=True, include_view_only_anon=False, include_groups=False)
 
 
 def must_have_addon(addon_name, model):
@@ -440,7 +438,7 @@ def must_have_write_permission_or_public_wiki(func):
         if wiki and wiki.is_publicly_editable:
             return func(*args, **kwargs)
         else:
-            return must_have_permission('write')(func)(*args, **kwargs)
+            return must_have_permission(WRITE)(func)(*args, **kwargs)
 
     # Return decorated function
     return wrapped
@@ -460,7 +458,7 @@ def http_error_if_disk_saving_mode(func):
         return func(*args, **kwargs)
     return wrapper
 
-def check_contributor_auth(target, auth, include_public, include_view_only_anon):
+def check_contributor_auth(target, auth, include_public, include_view_only_anon, include_groups=True):
     response = None
 
     user = auth.user
@@ -476,10 +474,10 @@ def check_contributor_auth(target, auth, include_public, include_view_only_anon)
 
     if not target.is_public or not include_public:
         if not include_view_only_anon and link_anon:
-            if not check_can_access(node=target, user=user):
+            if not check_can_access(node=target, user=user, include_groups=include_groups):
                 raise HTTPError(http.UNAUTHORIZED)
         elif not getattr(target, 'private_link_keys_active', False) or auth.private_key not in target.private_link_keys_active:
-            if not check_can_access(node=target, user=user, key=auth.private_key):
+            if not check_can_access(node=target, user=user, key=auth.private_key, include_groups=include_groups):
                 redirect_url = check_key_expired(key=auth.private_key, node=target, url=request.url)
                 if request.headers.get('Content-Type') == 'application/json':
                     raise HTTPError(http.UNAUTHORIZED)

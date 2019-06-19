@@ -110,6 +110,7 @@ class TestNodeRegistrationSerializer:
             'registration_schema',
             'region',
             'provider',
+            'groups',
         ]
 
         # Attributes

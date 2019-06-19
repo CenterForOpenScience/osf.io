@@ -99,6 +99,10 @@ class NodeLog(BaseLog):
     EMBARGO_INITIATED = 'embargo_initiated'
     EMBARGO_TERMINATED = 'embargo_terminated'
 
+    GROUP_ADDED = 'group_added'
+    GROUP_UPDATED = 'group_updated'
+    GROUP_REMOVED = 'group_removed'
+
     RETRACTION_APPROVED = 'retraction_approved'
     RETRACTION_CANCELLED = 'retraction_cancelled'
     RETRACTION_INITIATED = 'retraction_initiated'
@@ -136,6 +140,7 @@ class NodeLog(BaseLog):
                 RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED,
                 REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
                 PREREG_REGISTRATION_INITIATED,
+                GROUP_ADDED, GROUP_UPDATED, GROUP_REMOVED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
                 PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
