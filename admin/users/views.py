@@ -672,7 +672,7 @@ class UserDetailsView(RdmPermissionMixin, UserPassesTestMixin, GuidView):
         }
 
 
-class UserInstitutionQuotaView(BaseUserQuotaView, RdmPermissionMixin, UserPassesTestMixin):
+class UserInstitutionQuotaView(RdmPermissionMixin, UserPassesTestMixin, BaseUserQuotaView):
     """
     User screen for intitution managers.
     """
