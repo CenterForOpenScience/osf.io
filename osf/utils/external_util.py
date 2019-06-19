@@ -1,9 +1,9 @@
-
 # -*- coding: utf-8 -*-
 from addons.osfstorage.models import Region
 from osf.models.region_external_account import RegionExternalAccount
 from osf.models.institution import Institution
 from osf.models.external import ExternalAccount
+
 
 def set_region_external_account(institution_id, account):
     institution_object = Institution.objects.get(pk=institution_id)
@@ -25,12 +25,8 @@ def set_new_access_token(region_id, access_token):
 def get_oauth_key_by_external_id(external_account_id):
     return ExternalAccount.objects.get(pk=external_account_id).oauth_key
 
-
-def is_custome_googledrive(external_account_id):
-    external_account = RegionExternalAccount.objects.filter(external_account_id=external_account_id)
-    if not external_account.exists():
-        return False
-    return True
+def is_custom_googledrive(external_account_id):
+    return RegionExternalAccount.objects.filter(external_account_id=external_account_id).exists()
 
 def get_region_id_by_external_id(external_account_id):
     return RegionExternalAccount.objects.get(external_account_id__exact=external_account_id).region_id

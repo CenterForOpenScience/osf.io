@@ -75,9 +75,15 @@ def main(delta, Provider, rate_limit, dry_run):
             success = False
             try:
                 success = Provider(record).refresh_oauth_key(force=True)
-                from osf.utils.external_util import set_new_access_token, is_custome_googledrive, get_region_id_by_external_id,get_oauth_key_by_external_id
-                if success and is_custome_googledrive(record.id):
-                    set_new_access_token(get_region_id_by_external_id(record.id), get_oauth_key_by_external_id(record.id))
+                from osf.utils.external_util import (
+                    set_new_access_token, is_custom_googledrive,
+                    get_region_id_by_external_id,get_oauth_key_by_external_id
+                )
+                if success and is_custom_googledrive(record.id):
+                    set_new_access_token(
+                        get_region_id_by_external_id(record.id),
+                        get_oauth_key_by_external_id(record.id)
+                    )
             except OAuth2Error as e:
                 logger.error(e)
             except Exception as exception:
