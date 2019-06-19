@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 from addons.osfstorage.models import Region
 from osf.models.region_external_account import RegionExternalAccount
