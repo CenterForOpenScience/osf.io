@@ -6,6 +6,7 @@ import requests
 import tempfile
 import zipfile
 
+from framework.celery_tasks import app as celery_app
 from collections import OrderedDict
 from datetime import date
 from decimal import Decimal
@@ -445,6 +446,7 @@ def upload_to_storage(file_path, upload_url, params):
         )
 
 
+@celery_app.task(name='management.commands.data_storage_usage')
 def process_usages(
         dry_run=False,
         page_size=10000,
