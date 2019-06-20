@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
+from django.db.models import Q
 
 from osf.models import OSFUser, Node, BlacklistedEmailDomain
 
@@ -19,8 +20,8 @@ class OSFUserAdmin(admin.ModelAdmin):
         Restricts preprint and collection django groups from showing up in the user's groups list in the admin app
         """
         if db_field.name == 'groups':
-            kwargs['queryset'] = Group.objects.exclude(name__startswith='preprint_')
-            kwargs['queryset'] = Group.objects.exclude(name__startswith='collections_')
+            kwargs['queryset'] = Group.objects.exclude(
+                Q(name__startswith='preprint_') | Q(name__startswith='collections_'))
         return super(OSFUserAdmin, self).formfield_for_manytomany(db_field, request, **kwargs)
 
     def save_related(self, request, form, formsets, change):

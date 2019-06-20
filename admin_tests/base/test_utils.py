@@ -1,22 +1,33 @@
 from nose.tools import *  # noqa: F403
+import pytest
 import datetime as datetime
 
+from django.test import RequestFactory
 from django.db.models import Q
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError, PermissionDenied
+from django.contrib.admin.sites import AdminSite
 
 from tests.base import AdminTestCase
 
-from osf_tests.factories import SubjectFactory, UserFactory, RegistrationFactory
+from osf_tests.factories import SubjectFactory, UserFactory, RegistrationFactory, PreprintFactory
 
-from osf.models import Subject
+from osf.models import Subject, OSFUser
 from osf.models.provider import rules_to_subjects
 from admin.base.utils import get_subject_rules, change_embargo_date
+from osf.admin import OSFUserAdmin
 
 
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+class MockRequest:
+    pass
+
+
+request = MockRequest()
+site = AdminSite()
 
 
 class TestSubjectRules(AdminTestCase):
@@ -158,3 +169,33 @@ class TestNodeChanges(AdminTestCase):
         assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
 
         # Add a test to check privatizing
+
+
+class TestGroupCollectionsPreprints(AdminTestCase):
+
+    @pytest.mark.enable_bookmark_creation
+    def test_admin_app_groups(self):
+        user = UserFactory()
+        user.save()
+        request = RequestFactory()
+        get_request = request.get('/admin/osf/osfuser/{}/change'.format(user.id))
+        get_request.user = user
+        post_request = request.post('/admin/osf/osfuser/{}/change'.format(user.id))
+        post_request.user = user
+        preprint = PreprintFactory()
+        preprint.save()
+        admin = OSFUserAdmin(OSFUser, site)
+        formfield = (admin.formfield_for_manytomany(OSFUser.groups.field, request=get_request))
+        queryset = formfield.queryset
+
+        collections_group = Group.objects.filter(name__startswith='collections_')[0]
+        assert(collections_group not in queryset)
+
+        preprint_group = Group.objects.filter(name__startswith='preprint_')[0]
+        assert(preprint_group not in queryset)
+
+        form = admin.get_form(request=post_request, obj=user)
+        new_form = form(instance=user)
+        new_form.save(commit=False)
+        assert(new_form.is_valid())
+        admin.save_related(request=post_request, orm=new_form, formsets=[], change=True)
