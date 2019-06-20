@@ -268,7 +268,7 @@ def gather_usage_data(start, end, dry_run, zip_file):
         abstractnode_content_type = content_types['osf.abstractnode']
         preprint_content_type = content_types['osf.preprint']
 
-        logger.info('Gathering node usage at {}'.format(datetime.datetime.now()))
+        logger.debug('Gathering node usage at {}'.format(datetime.datetime.now()))
         filename = './data-usage-raw-nodes-{}-{}.csv'.format(start, end)
         cursor.execute(
             NODE_LIST_SQL,
@@ -281,7 +281,7 @@ def gather_usage_data(start, end, dry_run, zip_file):
             ]
         )
         if not dry_run:
-            logger.info('Writing {} to zip'.format(filename))
+            logger.debug('Writing {} to zip'.format(filename))
             write_raw_data(cursor=cursor, zip_file=zip_file, filename=filename)
 
         logger.debug('Gathering abstractnode summary at {}'.format(datetime.datetime.now()))
@@ -351,7 +351,7 @@ def gather_usage_data(start, end, dry_run, zip_file):
             ]
         )
         if not dry_run:
-            logger.info('Writing {} to zip.'.format(filename))
+            logger.debug('Writing {} to zip.'.format(filename))
             write_raw_data(cursor=cursor, zip_file=zip_file, filename=filename)
 
         logger.debug('Gathering preprint summary at {}'.format(datetime.datetime.now()))
@@ -476,7 +476,7 @@ def process_usages(
         ('germany_frankfurt', 0),
         ('united_states', 0),
     ])
-    logger.info('Collecting usage details - {}'.format(datetime.datetime.now()))
+    logger.debug('Collecting usage details - {}'.format(datetime.datetime.now()))
     summary_totals = {}
     start = 0
     end = min(page_size, last_item)
@@ -569,8 +569,8 @@ class Command(BaseCommand):
     # Management command handler
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logging.info('Script started time: {}'.format(script_start_time))
-        logging.debug(options)
+        logger.info('Script started time: {}'.format(script_start_time))
+        logger.debug(options)
 
         dry_run = options['dry_run']
         page_size = options['page_size']
@@ -578,7 +578,9 @@ class Command(BaseCommand):
 
         remote_base_folder = None
 
-        if not dry_run:
+        if dry_run:
+            logger.info('DRY RUN')
+        else:
             if DS_METRICS_BASE_FOLDER is not None and DS_METRICS_OSF_TOKEN is not None:
                 json = requests.get(
                     url=DS_METRICS_BASE_FOLDER,
@@ -609,5 +611,5 @@ class Command(BaseCommand):
             remote_base_folder=remote_base_folder,
         )
         script_finish_time = datetime.datetime.now()
-        logging.info('Script finished time: {}'.format(script_finish_time))
-        logging.info('Run time {}'.format(script_finish_time - script_start_time))
+        logger.info('Script finished time: {}'.format(script_finish_time))
+        logger.info('Run time {}'.format(script_finish_time - script_start_time))
