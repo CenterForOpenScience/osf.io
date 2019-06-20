@@ -49,13 +49,20 @@ class PreprintMetricMixin(JSONAPIBaseView):
         return search.filter('terms', preprint_id=preprint_guids)
 
     def format_response(self, response, query_params):
-        data = {}
+        data = []
         if getattr(response, 'aggregations') and response.aggregations:
-            for result in response.aggregations.preprints.buckets:
+            for result in response.aggregations.dates.buckets:
                 guid_results = {}
-                for preprint_result in result.dates.buckets:
-                    guid_results[preprint_result.key_as_string] = preprint_result['total']['value']
-                data[result['key']] = guid_results
+                for preprint_result in result.preprints.buckets:
+                    guid_results[preprint_result['key']] = preprint_result['total']['value']
+                    # return 0 for the guids with no results for consistent payloads
+                guids = query_params['guids'].split(',')
+                if guid_results.keys() != guids:
+                    for guid in guids:
+                        if not guid_results.get(guid):
+                            guid_results[guid] = 0
+                result_dict = {result.key_as_string: guid_results}
+                data.append(result_dict)
 
         return {
             'metric_type': self.metric_type,
@@ -81,9 +88,9 @@ class PreprintMetricMixin(JSONAPIBaseView):
         start_datetime, end_datetime = parse_datetimes(query_params)
 
         search = self.metric.search(after=start_datetime)
-        search = search.filter('range', timestamp={'gte': start_datetime, 'lte': end_datetime})
-        search.aggs.bucket('preprints', 'terms', field='preprint_id') \
-            .bucket('dates', 'date_histogram', field='timestamp', interval=interval) \
+        search = search.filter('range', timestamp={'gte': start_datetime, 'lt': end_datetime})
+        search.aggs.bucket('dates', 'date_histogram', field='timestamp', interval=interval) \
+            .bucket('preprints', 'terms', field='preprint_id') \
             .metric('total', 'sum', field='count')
         search = self.add_search(search, query_params, **kwargs)
         response = self.execute_search(search)
