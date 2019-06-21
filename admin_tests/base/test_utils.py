@@ -182,7 +182,7 @@ class TestGroupCollectionsPreprints(AdminTestCase):
         get_request.user = user
         post_request = request.post('/admin/osf/osfuser/{}/change'.format(user.id))
         post_request.user = user
-        preprint = PreprintFactory()
+        preprint = PreprintFactory(creator=user)
         preprint.save()
         admin = OSFUserAdmin(OSFUser, site)
         formfield = (admin.formfield_for_manytomany(OSFUser.groups.field, request=get_request))
@@ -194,8 +194,14 @@ class TestGroupCollectionsPreprints(AdminTestCase):
         preprint_group = Group.objects.filter(name__startswith='preprint_')[0]
         assert(preprint_group not in queryset)
 
-        form = admin.get_form(request=post_request, obj=user)
-        new_form = form(instance=user)
-        new_form.save(commit=False)
-        assert(new_form.is_valid())
-        admin.save_related(request=post_request, orm=new_form, formsets=[], change=True)
+        form = admin.get_form(request=get_request, obj=user)
+        get_form = form(get_request.GET, instance=user)
+        post_request.POST = get_form
+        #form = admin.get_form(request=post_request, obj=user)
+        post_form = form(post_request.POST, instance=user)
+        post_form.is_valid()
+        assert(post_form.is_valid())
+        post_form.save(commit=False)
+        admin.save_related(request=post_request, form=post_form, formsets=[], change=True)
+        assert(len(list(user.groups.filter(name__startswith='collections_'))) > 0)
+        assert(len(list(user.groups.filter(name__startswith='preprint_'))) > 0)

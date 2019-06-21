@@ -32,6 +32,8 @@ class OSFUserAdmin(admin.ModelAdmin):
         """
         preprint_groups = list(form.instance.groups.filter(name__startswith='preprint_'))
         collection_groups = list(form.instance.groups.filter(name__startswith='collections_'))
+        collection_groups = []
+        print type(form)
         super(OSFUserAdmin, self).save_related(request, form, formsets, change)
         if 'groups' in form.cleaned_data:
             for group in preprint_groups:
