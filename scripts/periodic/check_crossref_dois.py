@@ -39,7 +39,16 @@ def check_crossref_dois(dry_run=True):
         pending_dois.append('doi:{}'.format(settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)))
 
     url = '{}/works?filter={}'.format(settings.CROSSREF_JSON_API_URL, ','.join(pending_dois))
-    preprints = requests.get(url).json()['message']['items']
+
+    try:
+        resp = requests.get(url)
+        resp.raise_for_status()
+    except requests.exceptions.HTTPError as exc:
+        logger.error('Could not contact crossref to check for DOIs, response returned with exception {}'.format(exc))
+        raise exc
+
+    preprints = resp.json()['message']['items']
+
     for preprint in preprints:
         guid = preprint['DOI'].split('/')[-1]
         pending_preprint = preprints_with_pending_dois.get(guids___id=guid)
