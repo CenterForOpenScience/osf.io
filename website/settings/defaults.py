@@ -587,7 +587,7 @@ class CeleryConfig:
             },
             'check_crossref_doi': {
                 'task': 'scripts.periodic.check_crossref_dois',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+                'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
             },
         }
 
