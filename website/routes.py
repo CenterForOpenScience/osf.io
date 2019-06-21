@@ -102,6 +102,7 @@ def get_globals():
         'nav_quickfiles': settings.to_bool('NAV_QUICKFILES', True),
         'nav_search': settings.to_bool('NAV_SEARCH', True),
         'nav_support': settings.to_bool('NAV_SUPPORT', True),
+        'nav_global_support': settings.to_bool('NAV_GLOBAL_SUPPORT', False),
         'nav_donate': settings.to_bool('NAV_DONATE', True),
         'nav_signup': settings.to_bool('NAV_SIGNUP', True),
         'pages_footer': settings.to_bool('PAGES_FOOTER', True),
@@ -110,6 +111,9 @@ def get_globals():
         'project_makepublic': settings.to_bool('PROJECT_MAKEPUBLIC', True),
         'osf_page_name': unicode(settings.OSF_PAGE_NAME, 'utf-8'),
         'use_tfa': settings.to_bool('USE_TFA', True),
+        'global_support_url': getattr(settings, 'GLOBAL_SUPPORT_URL', '{}support/'.format(settings.DOMAIN)),
+        'global_support_target': '_blank' if hasattr(settings, 'GLOBAL_SUPPORT_URL') else '_self',
+        'use_viewonlylinks': settings.to_bool('USE_VIEWONLYLINKS', True),
         ''
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',

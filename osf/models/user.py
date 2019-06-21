@@ -1247,6 +1247,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 domain=website_settings.DOMAIN,
                 osf_support_email=website_settings.OSF_SUPPORT_EMAIL,
                 storage_flag_is_active=waffle.flag_is_active(req, 'storage_i18n'),
+                use_viewonlylinks=website_settings.to_bool('USE_VIEWONLYLINKS', True),
             )
 
         if not self.emails.filter(address=email).exists():

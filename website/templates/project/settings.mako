@@ -24,7 +24,9 @@
 
                     % if not node['is_registration']:
                         % if 'admin' in user['permissions']:
+                            % if use_viewonlylinks:
                             <li><a href="#createVolsAnchor">View-only Links</a></li>
+                            % endif
                             <li><a href="#enableRequestAccessAnchor">Access Requests</a></li>
                         % endif
 
@@ -186,7 +188,7 @@
 
         % endif  ## End Configure Project
 
-        % if 'admin' in user['permissions']:  ## Begin create VOLS
+        % if 'admin' in user['permissions'] and use_viewonlylinks:  ## Begin create VOLS
             % if not node['is_registration']:
                 <div class="panel panel-default">
                     <span id="createVolsAnchor" class="anchor"></span>
