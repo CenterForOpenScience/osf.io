@@ -42,7 +42,7 @@ def campaign_claimed_tag(campaign_name):
 
 
 class ProviderSourceTags(Enum):
-    AfricaxvPreprints = provider_source_tag('preprint', 'africarxiv')
+    AfricarxivPreprints = provider_source_tag('preprint', 'africarxiv')
     AgrixivPreprints = provider_source_tag('preprint', 'agrixiv')
     ArabixivPreprints = provider_source_tag('preprint', 'arabixiv')
     MetaarxivPreprints = provider_source_tag('preprint', 'metaarxiv')
@@ -79,7 +79,7 @@ class CampaignSourceTags(Enum):
 
 
 class ProviderClaimedTags(Enum):
-    AfricaxvPreprints = provider_claimed_tag('preprint', 'africarxiv')
+    AfricarxivPreprints = provider_claimed_tag('preprint', 'africarxiv')
     AgrixivPreprints = provider_claimed_tag('preprint', 'agrixiv')
     ArabixivPreprints = provider_claimed_tag('preprint', 'arabixiv')
     MetaarxivPreprints = provider_claimed_tag('preprint', 'metaarxiv')

@@ -6,7 +6,7 @@ from django.utils import timezone
 from website import mails, settings
 from osf.models import PreprintProvider
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
-from website.util.metrics import ProviderSourceTags, ProviderClaimedTags, CampaignSourceTags, CampaignClaimedTags, provider_source_tag, provider_claimed_tag, campaign_source_tag, campaign_claimed_tag
+from website.util.metrics import ProviderSourceTags, ProviderClaimedTags, CampaignSourceTags, CampaignClaimedTags, provider_source_tag
 from framework.utils import throttle_period_expired
 
 
@@ -90,7 +90,7 @@ def get_campaigns():
 
             newest_campaigns.update({
                 'osf-registered-reports': {
-                    'system_tag': CampaignSourceTags.OsfRegisteredReports,
+                    'system_tag': CampaignSourceTags.OsfRegisteredReports.value,
                     'redirect_url': furl.furl(DOMAIN).add(path='rr/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
