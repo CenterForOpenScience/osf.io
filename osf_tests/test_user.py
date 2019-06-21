@@ -279,9 +279,9 @@ class TestOSFUser:
 
         assert user.nodes.filter(type='osf.node').count() == 5
         # one group for each node
-        assert user.groups.count() == 6  # (including quickfiles node)
+        assert user.groups.count() == 5
         assert user2.nodes.filter(type='osf.node').count() == 0
-        assert user2.groups.count() == 1  # (quickfilesnode)
+        assert user2.groups.count() == 0
 
         contrib_obj = Contributor.objects.get(user=user, node=project_one)
         assert contrib_obj.visible is True
