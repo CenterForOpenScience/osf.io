@@ -75,8 +75,7 @@ class CasClient(object):
 
         url = furl.furl(self.BASE_URL)
         url.path.segments.append('login')
-        #Login from /forgotpassword/ should redirect to the dashboard.
-        url.args['service'] = service_url.replace('forgotpassword', 'dashboard')
+        url.args['service'] = service_url
         if campaign:
             url.args['campaign'] = campaign
         elif username and verification_key:
