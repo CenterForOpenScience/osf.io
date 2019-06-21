@@ -77,7 +77,7 @@ def reverse_create_quickfolders():
         QuickFilesNodes_to_create.append(quickfilenode)
         total_created += 1
 
-        logger.info('There are {} total quickfilenodes created'.format(total_created))
+    logger.info('There are {} total quickfilenodes created'.format(total_created))
 
     QuickFilesNode.objects.bulk_create(QuickFilesNodes_to_create, 1000)
 
@@ -101,7 +101,7 @@ def repoint_guids():
         guid.save()
         guids_repointed += 1
 
-        logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
+    logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
 
 
 def reverse_repoint_guids():
@@ -121,7 +121,7 @@ def reverse_repoint_guids():
         node.save()
         guids_repointed += 1
 
-        logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
+    logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
 
 
 def migrate_quickfiles_to_quickfolders():
@@ -166,7 +166,6 @@ def reverse_migrate_quickfiles_to_quickfolders():
                         target_object_id=quickfilesnode.id,
                         target_content_type_id=quickfiles_type_id)
         reverse_transfer_logs(quickfilesnode)
-
 
     QuickFolder.objects.all().delete()
 

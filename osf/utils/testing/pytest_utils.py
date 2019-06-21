@@ -1,5 +1,6 @@
 import uuid
 import pytest
+import random
 
 from django.core.urlresolvers import reverse
 
@@ -14,15 +15,6 @@ from api_tests.utils import create_test_file, create_test_quickfile
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-
-
-@pytest.fixture()
-def flask_app():
-    return TestApp(test_app)
-
-@pytest.fixture()
-def django_app():
-    return JSONAPITestApp()
 
 
 class V1ViewsCase:
@@ -76,7 +68,6 @@ class MigrationTestCase:
         :return:
         """
         random_queryset = list(OSFUser.objects.order_by('?'))
-        import random
         for _ in range(0, num_of_files):
             random.shuffle(random_queryset)
             instance = random_queryset[0]
@@ -116,13 +107,6 @@ class MigrationTestCase:
         values_set1 = set(list((model.objects.all().values_list(field_name, flat=True))))
         values_set2 = set(list((model2.objects.all().values_list(field_name2, flat=True))))
         assert values_set1 == values_set2, '{model}.{field_name}, didn\'t join with {model2}.{field_name2}'.format(model=model.__name__,
-                                                                                                                   field_name=field_name,
-                                                                                                                   model2=model2.__name__,
-                                                                                                                   field_name2=field_name2)
-    def assert_subset(self, model, field_name, model2, field_name2):
-        values_set1 = set(list((model.objects.all().values_list(field_name, flat=True))))
-        values_set2 = set(list((model2.objects.all().values_list(field_name2, flat=True))))
-        assert values_set1.issubset(values_set2), '{model}.{field_name}, didn\'t join with {model2}.{field_name2}'.format(model=model.__name__,
                                                                                                                    field_name=field_name,
                                                                                                                    model2=model2.__name__,
                                                                                                                    field_name2=field_name2)
