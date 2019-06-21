@@ -18,6 +18,10 @@ from scripts.periodic.check_crossref_dois import check_crossref_dois, report_stu
 class TestCheckCrossrefDOIs:
 
     @pytest.fixture()
+    def preprint(self):
+        return PreprintFactory()
+
+    @pytest.fixture()
     def stuck_preprint(self):
         preprint = PreprintFactory(set_doi=False)
         published_date = preprint.date_published - timedelta(days=settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL + 1)
@@ -39,7 +43,7 @@ class TestCheckCrossrefDOIs:
             return json.loads(fp.read())
 
     @responses.activate
-    def test_check_crossref_dois(self, crossref_response, stuck_preprint):
+    def test_check_crossref_dois(self, crossref_response, stuck_preprint, preprint):
         doi = settings.DOI_FORMAT.format(prefix=stuck_preprint.provider.doi_prefix, guid=stuck_preprint.guids.first()._id)
         responses.add(
             responses.Response(
@@ -51,6 +55,9 @@ class TestCheckCrossrefDOIs:
         )
 
         check_crossref_dois(dry_run=False)
+
+
+        assert preprint.identifiers.count() == 1
 
         assert stuck_preprint.identifiers.count() == 1
         assert stuck_preprint.identifiers.first().value == doi
