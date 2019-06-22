@@ -222,9 +222,9 @@
                           <!-- ko if: isSubmitted -->
                           <div style="margin: 0.5em;">
                               <div data-bind="foreach: formEntries">
-                                  <div class="col-sm-4 col-md-3" style="font-weight: bold;" data-bind="text: title">
+                                  <div class="col-sm-4 col-md-4" style="font-weight: bold;" data-bind="text: title">
                                   </div>
-                                  <div class="col-sm-8 col-md-9" data-bind="text: value">
+                                  <div class="col-sm-8 col-md-8" data-bind="text: value">
                                   </div>
                               </div>
                           </div>

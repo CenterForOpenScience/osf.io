@@ -146,7 +146,7 @@ module.exports = {
             publish_date: 'Publish Date',
             volume: 'Volume',
             page_number: 'Page Number',
-            workflow_overall_state: 'Workflow Overall State'
+            workflow_overall_state: 'Current Status'
         },
     },
     apiOauth2Application: {
