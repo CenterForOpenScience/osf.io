@@ -27,6 +27,7 @@ from addons.iqbrims import settings
 from addons.base import generic_views, exceptions
 from addons.iqbrims.serializer import IQBRIMSSerializer
 from addons.iqbrims.models import NodeSettings as IQBRIMSNodeSettings
+from addons.iqbrims.models import REVIEW_FOLDERS
 from addons.iqbrims.utils import must_have_valid_hash
 
 logger = logging.getLogger(__name__)
@@ -34,11 +35,6 @@ logger = logging.getLogger(__name__)
 SHORT_NAME = 'iqbrims'
 FULL_NAME = 'IQB-RIMS'
 
-REGISTER_TYPE_LIST = ['check', 'deposit']
-REVIEW_FOLDERS = {'paper': u'最終原稿・組図',
-                  'raw': u'生データ',
-                  'checklist': u'チェックリスト',
-                  'scan': u'スキャン結果'}
 
 iqbrims_account_list = generic_views.account_list(
     SHORT_NAME,
@@ -183,7 +179,9 @@ def iqbrims_post_workflow_state(**kwargs):
     part = kwargs['part']
     logger.info('Workflow State: {}, {}'.format(part, request.data))
     status = iqbrims.get_status()
-    status['workflow_' + part + '_state'] = json.loads(request.data)['state']
+    reqdata = json.loads(request.data)
+    status['workflow_' + part + '_state'] = reqdata['state']
+    status['workflow_' + part + '_permissions'] = reqdata['permissions']
     iqbrims.set_status(status)
 
 @must_be_valid_project

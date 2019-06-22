@@ -28,6 +28,15 @@ from website import settings as ws_settings
 
 # from website.files.models.ext import PathFollowingFileNode
 
+REVIEW_FOLDERS = {'paper': u'最終原稿・組図',
+                  'raw': u'生データ',
+                  'checklist': u'チェックリスト',
+                  'scan': u'スキャン結果'}
+INITIAL_FOLDERS_PERMISSIONS = {'paper': ['VISIBLE', 'WRITABLE'],
+                               'raw': ['VISIBLE', 'WRITABLE'],
+                               'checklist': ['VISIBLE', 'WRITABLE'],
+                               'scan': []}
+
 
 # TODO make iqbrims "pathfollowing"
 # A migration will need to be run that concats
@@ -211,13 +220,19 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
             raise exceptions.AddonError('Folder is not configured')
-
+        status = self.get_status()
+        permissions = [(fname,
+                        status['workflow_' + fid + '_permissions']
+                        if 'workflow_' + fid + '_permissions' in status else
+                        INITIAL_FOLDERS_PERMISSIONS[fid])
+                       for fid, fname in REVIEW_FOLDERS.items()]
         return {
             'folder': {
                 'id': self.folder_id,
                 'name': self.folder_name,
                 'path': self.folder_path
-            }
+            },
+            'permissions': dict(permissions)
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
