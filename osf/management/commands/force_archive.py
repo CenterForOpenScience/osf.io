@@ -195,7 +195,7 @@ def manually_archive(tree, reg, node_settings, parent=None):
 
         if file_obj.versions.exists() and filenode['version']:  # Min version identifier is 1
             if not cloned.versions.filter(identifier=filenode['version']).exists():
-                attach_versions(cloned, file_obj.versions.filter(identifier__lte=filenode['version']))
+                attach_versions(cloned, file_obj.versions.filter(identifier__lte=filenode['version']), file_obj)
 
         if filenode.get('children'):
             manually_archive(filenode['children'], reg, node_settings, parent=cloned)

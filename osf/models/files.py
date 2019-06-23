@@ -234,9 +234,17 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                     storage.pop(key)
         return storage
 
-    def add_version(self, version):
-        BaseFileVersionsThrough.objects.create(fileversion=version, basefilenode=self, version_name=self.name)
-        return
+    def add_version(self, version, name=None):
+        """
+        Relates the file object to the version object.
+        :param version: Version object
+        :param name: Name, optional.  Pass in if this version needs to have
+        a different name than the file
+        :return: Returns version that was passed in
+        """
+        version_name = name or self.name
+        BaseFileVersionsThrough.objects.create(fileversion=version, basefilenode=self, version_name=version_name)
+        return version
 
     @classmethod
     def files_checked_out(cls, user):
@@ -371,6 +379,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         if renaming and self.is_file and self.versions.exists():
             newest_version = self.versions.first()
             node_file_version = newest_version.get_basefilenode_version(self)
+            # Rename version in through table
             node_file_version.version_name = self.name
             node_file_version.save()
 
@@ -766,7 +775,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     def get_basefilenode_version(self, file):
         # Returns the throughtable object  - the record that links this version
         # to the given file.
-        return self.basefileversionsthrough_set.get(basefilenode=file)
+        return self.basefileversionsthrough_set.filter(basefilenode=file).first()
 
     def update_metadata(self, metadata, save=True):
         self.metadata.update(metadata)
