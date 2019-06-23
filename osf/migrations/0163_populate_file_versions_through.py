@@ -3,57 +3,89 @@
 from __future__ import unicode_literals
 
 import logging
-from math import ceil
 
 from django.db import migrations, connection
 
 logger = logging.getLogger(__file__)
 
-increment = 100000
 
 def restore_default_through_table(state, schema):
     sql = """
+        DROP TABLE osf_basefilenode_versions;
+        CREATE TABLE osf_basefilenode_versions AS
+        SELECT
+            new_thru.basefilenode_id,
+            new_thru.fileversion_id
+        FROM
+            osf_basefileversionsthrough AS new_thru;
 
-        INSERT INTO osf_basefilenode_versions (basefilenode_id, fileversion_id)
-        SELECT new_thru.basefilenode_id, new_thru.fileversion_id
-        FROM osf_basefileversionsthrough new_thru;
+        ALTER TABLE osf_basefilenode_versions ADD COLUMN id SERIAL PRIMARY KEY;
+        ALTER TABLE osf_basefilenode_versions ADD CONSTRAINT osf_basefilenod_basefilenode_id_b0knah27_fk_osf_basefilenode_id FOREIGN KEY (basefilenode_id) REFERENCES osf_basefilenode DEFERRABLE INITIALLY DEFERRED;
+        ALTER TABLE osf_basefilenode_versions ALTER COLUMN basefilenode_id
+        SET
+            DATA TYPE INTEGER;
+        ALTER TABLE osf_basefilenode_versions ALTER COLUMN fileversion_id
+        SET
+            NOT NULL;
+        ALTER TABLE osf_basefilenode_versions ALTER COLUMN fileversion_id
+        SET
+            DATA TYPE INTEGER;
+        ALTER TABLE osf_basefilenode_versions ALTER COLUMN basefilenode_id
+        SET
+            NOT NULL;
+        ALTER TABLE osf_basefilenode_versions ADD CONSTRAINT osf_basefilenode__fileversion_id_93etanfc_fk_osf_fileversion_id FOREIGN KEY (fileversion_id) REFERENCES osf_fileversion DEFERRABLE INITIALLY DEFERRED;
+        ALTER TABLE osf_basefilenode_versions ADD CONSTRAINT osf_basefilenode__fileversion_uniq564 UNIQUE (basefilenode_id, fileversion_id);
+        CREATE INDEX
+        ON osf_basefilenode_versions (basefilenode_id, fileversion_id);
+        CREATE INDEX
+        ON osf_basefilenode_versions (basefilenode_id);
+        CREATE INDEX
+        ON osf_basefilenode_versions (fileversion_id);
     """
     with connection.cursor() as cursor:
         cursor.execute(sql)
 
 
-# Batching adapted from strategy in website/search_migration/migrate.py
 def populate_fileversion_name(state, schema):
-    BaseFileNodeVersion = state.get_model('osf.basefilenode_versions')
-    max_thru_id = getattr(BaseFileNodeVersion.objects.order_by('id').last(), 'id', 0)
 
     sql = """
-        INSERT INTO osf_basefileversionsthrough (basefilenode_id, fileversion_id, version_name)
-        SELECT THRU.basefilenode_id, THRU.fileversion_id, F.name
-        FROM osf_basefilenode_versions THRU, osf_basefilenode F
-        WHERE THRU.basefilenode_id = F.id
-        AND THRU.id > {}
-        AND THRU.id <= {};
+        DROP TABLE osf_basefileversionsthrough;
+        CREATE TABLE osf_basefileversionsthrough AS
+        SELECT
+            obfv.basefilenode_id,
+            obfv.fileversion_id,
+            ob.name as version_name
+        FROM
+            osf_basefilenode_versions obfv
+            LEFT JOIN
+                osf_basefilenode ob
+                ON obfv.basefilenode_id = ob.id;
+        ALTER TABLE osf_basefileversionsthrough ADD COLUMN id SERIAL PRIMARY KEY;
+        ALTER TABLE osf_basefileversionsthrough ADD CONSTRAINT osf_basefilenod_basefilenode_id_b0nwad27_fk_osf_basefilenode_id FOREIGN KEY (basefilenode_id) REFERENCES osf_basefilenode DEFERRABLE INITIALLY DEFERRED;
+        ALTER TABLE osf_basefileversionsthrough ALTER COLUMN basefilenode_id
+        SET
+            DATA TYPE INTEGER;
+        ALTER TABLE osf_basefileversionsthrough ALTER COLUMN fileversion_id
+        SET
+            NOT NULL;
+        ALTER TABLE osf_basefileversionsthrough ALTER COLUMN fileversion_id
+        SET
+            DATA TYPE INTEGER;
+        ALTER TABLE osf_basefileversionsthrough ALTER COLUMN basefilenode_id
+        SET
+            NOT NULL;
+        ALTER TABLE osf_basefileversionsthrough ADD CONSTRAINT osf_basefilenode__fileversion_id_93nwadfc_fk_osf_fileversion_id FOREIGN KEY (fileversion_id) REFERENCES osf_fileversion DEFERRABLE INITIALLY DEFERRED;
+        ALTER TABLE osf_basefileversionsthrough ADD CONSTRAINT osf_basefilenode__fileversion_uniq UNIQUE (basefilenode_id, fileversion_id);
+        CREATE INDEX
+        ON osf_basefileversionsthrough (basefilenode_id, fileversion_id);
+        CREATE INDEX
+        ON osf_basefileversionsthrough (basefilenode_id);
+        CREATE INDEX
+        ON osf_basefileversionsthrough (fileversion_id);
     """
 
-    total_pages = int(ceil(max_thru_id / float(increment)))
-    page_start = 0
-    page_end = 0
-    page = 0
-    while page_end <= (max_thru_id):
-        page += 1
-        page_end += increment
-        if page <= total_pages:
-            logger.info('Transferring BaseFileNodeVersions to custom through table: {} / {}'.format(page_end / increment, total_pages))
-        with connection.cursor() as cursor:
-            cursor.execute(sql.format(
-                page_start,
-                page_end,
-                page_start,
-                page_end
-            ))
-        print page
-        page_start = page_end
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
 
 class Migration(migrations.Migration):
 
