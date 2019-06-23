@@ -3,6 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from osf.models import PreprintLog, NodeLog
 from api_tests import utils
+from osf.utils.permissions import READ
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -122,7 +123,7 @@ class TestFileMetadataRecordUpdate:
     @pytest.fixture()
     def public_record(self, user, node, user_write, user_read):
         node.add_contributor(user_write)
-        node.add_contributor(user_read, permissions=['read'])
+        node.add_contributor(user_read, permissions=READ)
         public_file = utils.create_test_file(node, user, filename='public_file')
         return public_file.records.get(schema___id='datacite')
 

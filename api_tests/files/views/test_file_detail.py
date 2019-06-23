@@ -9,10 +9,12 @@ from django.utils import timezone
 from addons.base.utils import get_mfr_url
 from addons.github.models import GithubFileNode
 from addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage.listeners import checkin_files_task
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
 from osf.models import NodeLog, Session, QuickFilesNode
+from osf.utils.permissions import WRITE, READ
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
     AuthUserFactory,
@@ -21,9 +23,7 @@ from osf_tests.factories import (
     UserFactory,
     PreprintFactory,
 )
-from tests.base import capture_signals
 from website import settings as website_settings
-from website.project.signals import contributor_removed
 
 
 # stolen from^W^Winspired by DRF
@@ -482,7 +482,7 @@ class TestFileView:
         # test_noncontrib_cannot_checkout
         non_contrib = AuthUserFactory()
         assert file.checkout is None
-        assert not node.has_permission(non_contrib, 'read')
+        assert not node.has_permission(non_contrib, READ)
         res = app.put_json_api(
             file_url, {
                 'data': {
@@ -501,7 +501,7 @@ class TestFileView:
 
         # test_read_contrib_cannot_checkout
         read_contrib = AuthUserFactory()
-        node.add_contributor(read_contrib, permissions=['read'])
+        node.add_contributor(read_contrib, permissions=READ)
         node.save()
         assert not node.can_edit(user=read_contrib)
         res = app.put_json_api(
@@ -521,7 +521,7 @@ class TestFileView:
 
     def test_write_contrib_can_checkin(self, app, node, file, file_url):
         write_contrib = AuthUserFactory()
-        node.add_contributor(write_contrib, permissions=['read', 'write'])
+        node.add_contributor(write_contrib, permissions=WRITE)
         node.save()
         assert node.can_edit(user=write_contrib)
         file.checkout = write_contrib
@@ -540,19 +540,19 @@ class TestFileView:
         assert res.status_code == 200
         assert file.checkout is None
 
-    def test_removed_contrib_files_checked_in(self, app, node, file):
+    @mock.patch('addons.osfstorage.listeners.enqueue_postcommit_task')
+    def test_removed_contrib_files_checked_in(self, mock_enqueue, app, node, file):
         write_contrib = AuthUserFactory()
-        node.add_contributor(write_contrib, permissions=['read', 'write'])
+        node.add_contributor(write_contrib, permissions=WRITE)
         node.save()
         assert node.can_edit(user=write_contrib)
         file.checkout = write_contrib
         file.save()
         assert file.is_checked_out
-        with capture_signals() as mock_signals:
-            node.remove_contributor(write_contrib, auth=Auth(write_contrib))
-        assert mock_signals.signals_sent() == set([contributor_removed])
-        file.reload()
-        assert not file.is_checked_out
+
+        node.remove_contributor(write_contrib, auth=Auth(write_contrib))
+
+        mock_enqueue.assert_called_with(checkin_files_task, (node._id, write_contrib._id,), {}, celery=True)
 
     def test_must_be_osfstorage(self, app, user, file, file_url):
         file.recast(GithubFileNode._typedmodels_type)
@@ -830,7 +830,7 @@ class TestPreprintFileView:
         assert res.status_code == 200
 
         # Write contrib
-        preprint.add_contributor(other_user, 'write', save=True)
+        preprint.add_contributor(other_user, WRITE, save=True)
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -851,7 +851,7 @@ class TestPreprintFileView:
         assert res.status_code == 403
 
         # Write contrib
-        preprint.add_contributor(other_user, 'write', save=True)
+        preprint.add_contributor(other_user, WRITE, save=True)
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -872,7 +872,7 @@ class TestPreprintFileView:
         assert res.status_code == 403
 
         # Write contrib
-        preprint.add_contributor(other_user, 'write', save=True)
+        preprint.add_contributor(other_user, WRITE, save=True)
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -893,7 +893,7 @@ class TestPreprintFileView:
         assert res.status_code == 410
 
         # Write contrib
-        preprint.add_contributor(other_user, 'write', save=True)
+        preprint.add_contributor(other_user, WRITE, save=True)
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 410
 
@@ -914,7 +914,7 @@ class TestPreprintFileView:
         assert res.status_code == 403
 
         # Write contrib
-        preprint.add_contributor(other_user, 'write', save=True)
+        preprint.add_contributor(other_user, WRITE, save=True)
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -935,7 +935,7 @@ class TestPreprintFileView:
         assert res.status_code == 200
 
         # Write contrib
-        preprint.add_contributor(other_user, 'write', save=True)
+        preprint.add_contributor(other_user, WRITE, save=True)
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -956,7 +956,7 @@ class TestPreprintFileView:
         assert res.status_code == 403
 
         # Write contributor
-        preprint.add_contributor(other_user, 'write', save=True)
+        preprint.add_contributor(other_user, WRITE, save=True)
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 403
 

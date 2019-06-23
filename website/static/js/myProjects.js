@@ -518,7 +518,7 @@ var MyProjects = {
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     // TODO assess sparse field usage (some already implemented)
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node', 'group',], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -1957,6 +1957,7 @@ var Information = {
 
         var template = '';
         var category;
+        var permission;
         var showRemoveFromCollection;
         var collectionFilter = args.currentView().collection;
         if (args.selected().length === 0) {
@@ -1965,7 +1966,14 @@ var Information = {
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
             var resourceType = item.type;
-            var permission = item.attributes.current_user_permissions.slice(-1)[0];
+            var allPerms = item.attributes.current_user_permissions;
+            if (allPerms.includes('admin')) {
+                permission = 'admin';
+            } else if (allPerms.includes('write')) {
+                permission = 'write';
+            } else {
+                permission = 'read';
+            }
             showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
             if (resourceType === 'preprints') {
                 category = 'Preprint';

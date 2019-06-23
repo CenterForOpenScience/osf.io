@@ -15,6 +15,7 @@ from osf_tests.factories import (
     PreprintFactory,
     WithdrawnRegistrationFactory,
 )
+from osf.utils.permissions import READ, WRITE
 from osf.utils.workflows import DefaultStates
 from tests.utils import assert_items_equal
 from website.identifiers.clients import DataCiteClient
@@ -336,7 +337,7 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -366,7 +367,7 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -396,7 +397,7 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -420,7 +421,7 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -444,7 +445,7 @@ class TestPreprintIdentifierList:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -463,14 +464,14 @@ class TestNodeIdentifierCreate:
     @pytest.fixture()
     def write_contributor(self, resource):
         user = AuthUserFactory()
-        resource.add_contributor(user, ['read', 'write'])
+        resource.add_contributor(user, WRITE)
         resource.save()
         return user
 
     @pytest.fixture()
     def read_contributor(self, resource):
         user = AuthUserFactory()
-        resource.add_contributor(user, ['read'])
+        resource.add_contributor(user, READ)
         resource.save()
         return user
 
