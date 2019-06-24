@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def check_crossref_dois():
+def check_crossref_dois(dry_run=True):
     """
     This script is to check for any DOI confirmation messages we may have missed during downtime and alert admins to any
     DOIs that have been pending for X number of days.
@@ -52,10 +52,13 @@ def check_crossref_dois():
     for preprint in preprints:
         guid = preprint['DOI'].split('/')[-1]
         pending_preprint = preprints_with_pending_dois.get(guids___id=guid)
-        pending_preprint.set_identifier_values(preprint['DOI'])
+        if not dry_run:
+            pending_preprint.set_identifier_values(preprint['DOI'])
+        else:
+            logger.info('DRY RUN')
 
 
-def report_stuck_dois():
+def report_stuck_dois(dry_run=True):
     time_since_published = timedelta(days=settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL)
 
     preprints_with_pending_dois = Preprint.objects.filter(preprint_doi_created__isnull=True,
@@ -65,25 +68,38 @@ def report_stuck_dois():
     if preprints_with_pending_dois:
         guids = ', '.join(preprints_with_pending_dois.values_list('guids___id', flat=True))
         content = 'DOIs for the following preprints have been pending at least {} days: {}'.format(time_since_published.days, guids)
-        mails.send_mail(
-            to_addr=settings.OSF_SUPPORT_EMAIL,
-            mail=mails.CROSSREF_DOIS_PENDING,
-            pending_doi_count=preprints_with_pending_dois.count(),
-            email_content=content,
-        )
+        if not dry_run:
+            mails.send_mail(
+                to_addr=settings.OSF_SUPPORT_EMAIL,
+                mail=mails.CROSSREF_DOIS_PENDING,
+                pending_doi_count=preprints_with_pending_dois.count(),
+                email_content=content,
+            )
+        else:
+            logger.info('DRY RUN')
+
         logger.error('There were {} stuck registrations for CrossRef, email sent to help desk'.format(preprints_with_pending_dois.count()))
 
 
 @celery_app.task(name='management.commands.check_crossref_dois')
-def main():
-    check_crossref_dois()
-    report_stuck_dois()
+def main(dry_run=False):
+    check_crossref_dois(dry_run=dry_run)
+    report_stuck_dois(dry_run=dry_run)
 
 
 class Command(BaseCommand):
     help = '''Checks if we've missed any Crossref DOI confirmation emails. '''
 
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser)
+        parser.add_argument(
+            '--dry',
+            action='store_true',
+            dest='dry_run',
+            help='Dry run',
+        )
+
     # Management command handler
     def handle(self, *args, **options):
-        check_crossref_dois()
-        report_stuck_dois()
+        dry_run = options.get('dry_run', False)
+        main(dry_run=dry_run)
