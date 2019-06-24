@@ -3,6 +3,10 @@ import pytest
 import random
 
 from django.core.urlresolvers import reverse
+from django.contrib.contenttypes.models import ContentType
+
+from addons.osfstorage.utils import update_analytics
+from addons.osfstorage.models import OsfStorageFile
 
 from tests.base import test_app
 from webtest_plus import TestApp
@@ -60,14 +64,14 @@ class MigrationTestCase:
 
     logger = logging.getLogger(__name__)
 
-    def sprinkle_quickfiles(self, model, num_of_files):
+    def sprinkle_quickfiles(self, model, num_of_files, downloads=None):
         """
         Randomly adds files to QuickfilesNodes or Quickfolders to test the divorce migration
         :param model:
         :param num_of_files:
         :return:
         """
-        random_queryset = list(OSFUser.objects.order_by('?'))
+        random_queryset = list(OSFUser.objects.all())
         for _ in range(0, num_of_files):
             random.shuffle(random_queryset)
             instance = random_queryset[0]
@@ -77,6 +81,14 @@ class MigrationTestCase:
                 file_node = create_test_quickfile(instance, filename=str(uuid.uuid4()))
 
             file_node.save()
+
+    def sprinkle_pagecounters(self, type, number):
+        quickfolder_content_type_id = ContentType.objects.get_for_model(QuickFilesNode).id
+        quickfiles = list(OsfStorageFile.objects.filter(target_content_type_id=quickfolder_content_type_id))
+        for _ in range(0, number):
+            random.shuffle(quickfiles)
+            quickfile = quickfiles[0]
+            update_analytics(quickfile.target, quickfile._id, random.randint(0, 2), type)
 
     def add_users(self, num, **kwargs):
         """
