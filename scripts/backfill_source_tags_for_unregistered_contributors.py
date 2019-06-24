@@ -136,7 +136,7 @@ def backfill_osf_provider_tags_to_users_not_invited_but_have_no_source_tags(dry_
     source_tag_ids = Tag.all_tags.filter(name__icontains='source:', system=True).values_list('id', flat=True)
 
     # Find not invited users with no source tags
-    id_users_with_no_source_tags = OSFUser.objects.exclude(is_invited=True).exclude(tags__id__in=source_tag_ids).values_list('pk', flat=True)
+    id_users_with_no_source_tags = OSFUser.objects.exclude(is_invited=True).exclude(tags__id__in=source_tag_ids).values_list('pk', flat=True).order_by('pk')
     logger.info('Number of users with no source tag {}'.format(id_users_with_no_source_tags.count()))
 
     # Backfill OSF source tags to these users
