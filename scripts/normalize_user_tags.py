@@ -9,8 +9,11 @@ from django.db import transaction
 from website.util.metrics import ProviderSourceTags, ProviderClaimedTags, CampaignSourceTags, CampaignClaimedTags
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
+logger.propagate = False
+console_handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 PROVIDER_SOURCE_TAGS = [
     ('africarxiv_preprints', ProviderSourceTags.AfricarxivPreprints.value),
@@ -90,7 +93,7 @@ def migrate_source_tags(tags):
         tag = Tag.all_tags.get(name=tag_name[0], system=True)
         tag.name = tag_name[1]
         tag.save()
-        logging.info(tag_name[0] + ' migrated to ' + tag_name[1])
+        logger.info(tag_name[0] + ' migrated to ' + tag_name[1])
 
 
 def add_tags(tags):
@@ -98,7 +101,7 @@ def add_tags(tags):
     for tag_name in tags:
         tag = Tag.all_tags.create(name=tag_name, system=True)
         tag.save()
-        logging.info('Added tag ' + tag.name)
+        logger.info('Added tag ' + tag.name)
 
 
 def normalize_source_tags():
@@ -122,8 +125,8 @@ def add_osf_provider_tags():
     Tag = apps.get_model('osf', 'Tag')
     Tag.all_tags.create(name=ProviderSourceTags.Osf.value, system=True)
     Tag.all_tags.create(name=ProviderClaimedTags.Osf.value, system=True)
-    logging.info('Added tag ' + ProviderSourceTags.Osf.value)
-    logging.info('Added tag ' + ProviderClaimedTags.Osf.value)
+    logger.info('Added tag ' + ProviderSourceTags.Osf.value)
+    logger.info('Added tag ' + ProviderClaimedTags.Osf.value)
 
 
 def add_prereg_campaign_tags():
@@ -135,10 +138,10 @@ def add_prereg_campaign_tags():
     OSFUser = apps.get_model('osf', 'OSFuser')
     prereg_challenge_source_tag = Tag.all_tags.get(name=CampaignSourceTags.PreregChallenge.value, system=True)
     prereg_source_tag = Tag.all_tags.create(name=CampaignSourceTags.Prereg.value, system=True)
-    logging.info('Added tag ' + prereg_source_tag.name)
+    logger.info('Added tag ' + prereg_source_tag.name)
     prereg_challenge_cutoff_date = pytz.utc.localize(datetime(2019, 01, 01, 05, 59))
     prereg_users_registered_after_january_first = OSFUser.objects.filter(tags__id=prereg_challenge_source_tag.id, date_registered__gt=prereg_challenge_cutoff_date)
-    logging.info('Number of OSFUsers created on/after 2019-01-01: ' + str(len(prereg_users_registered_after_january_first)))
+    logger.info('Number of OSFUsers created on/after 2019-01-01: ' + str(len(prereg_users_registered_after_january_first)))
     for user in prereg_users_registered_after_january_first:
         user.tags.through.objects.filter(tag=prereg_challenge_source_tag, osfuser=user).delete()
         user.add_system_tag(prereg_source_tag)
@@ -146,7 +149,7 @@ def add_prereg_campaign_tags():
         # If so, add the same tag to that user as well
         if user.merged_by is not None:
             user.merged_by.add_system_tag(prereg_source_tag)
-    logging.info('Migrated users from ' + prereg_challenge_source_tag.name + ' to ' + prereg_source_tag.name)
+    logger.info('Migrated users from ' + prereg_challenge_source_tag.name + ' to ' + prereg_source_tag.name)
 
 
 def main():
