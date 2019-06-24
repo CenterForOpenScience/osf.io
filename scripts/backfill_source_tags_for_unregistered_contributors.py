@@ -23,7 +23,7 @@ def _get_set_of_user_ids_from_logs(node_logs):
     OSFUser = apps.get_model('osf', 'OSFUser')
     set_of_user_ids = set()
     with tqdm(total=node_logs.count()) as pbar:
-        for entry in tqdm(node_logs):
+        for entry in node_logs:
             entry_created_date = entry.created
             for contributor_id in entry.params['contributors']:
                 try:
@@ -105,14 +105,14 @@ def backfill_source_tags_for_nodes_and_preprints_unregistered_contributors(dry_r
 
         # For pre-NPD preprints
         logger.info('Finding pre-NPD preprints within then minutes for {}'.format(provider._id))
-        preprint_ids_with_node_created_within_ten_minutes = provider.preprints.filter(migrated__isnull=False, node__isnull=False, created__lte=F('node__created')+timedelta(minutes=10)).values_list('id', flat=True)
+        node_ids_created_within_ten_minutes = provider.preprints.filter(migrated__isnull=False, node__isnull=False, created__lte=F('node__created')+timedelta(minutes=10)).values_list('node__id', flat=True)
         logger.info('Finding pre-NPD logs within then minutes for {}'.format(provider._id))
-        node_logs_within_ten_minutes = NodeLog.objects.filter(action='contributor_added', node__id__in=preprint_ids_with_node_created_within_ten_minutes).only('created', 'params')
+        node_logs_within_ten_minutes = NodeLog.objects.filter(action='contributor_added', node__id__in=node_ids_created_within_ten_minutes).only('created', 'params')
 
         logger.info('Finding pre-NPD preprints more than a day for {}'.format(provider._id))
-        preprint_ids_with_node_created_more_than_a_day = provider.preprints.filter(migrated__isnull=False, node__isnull=False, created__gte=F('node__created')+timedelta(days=1)).values_list('id', flat=True)
+        node_ids_created_more_than_a_day = provider.preprints.filter(migrated__isnull=False, node__isnull=False, created__gte=F('node__created')+timedelta(days=1)).values_list('node__id', flat=True)
         logger.info('Finding pre-NPD logs more than a day for {}'.format(provider._id))
-        node_logs_more_than_a_day = NodeLog.objects.filter(action='contributor_added', node__id__in=preprint_ids_with_node_created_more_than_a_day).only('created', 'params')
+        node_logs_more_than_a_day = NodeLog.objects.filter(action='contributor_added', node__id__in=node_ids_created_more_than_a_day).only('created', 'params')
 
         logger.info('Finding pre-NPD unreg contrib for {}'.format(provider._id))
         set_of_user_ids_pre_npd_provider_tag = _get_set_of_user_ids_from_logs(node_logs_within_ten_minutes)
