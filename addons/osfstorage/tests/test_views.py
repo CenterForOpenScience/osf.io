@@ -1571,7 +1571,6 @@ class TestFileTags(StorageTestCase):
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
 class TestFileViews(StorageTestCase):
-
     def test_file_views(self):
         file = create_test_file(target=self.node, user=self.user)
         url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
@@ -1616,6 +1615,25 @@ class TestFileViews(StorageTestCase):
         url = base_url.format(folder._id)
         redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert redirect.status_code == 400
+
+    def test_osfstorage_download_view(self):
+        file = create_test_file(target=self.node, user=self.user)
+        version = factories.FileVersionFactory()
+        file.add_version(version)
+        file.move_under(self.node_settings.get_root(), name='new_name')
+        file.save()
+
+        res = self.app.get(
+                api_url_for(
+                    'osfstorage_download',
+                    fid=file._id,
+                    guid=self.node._id,
+                    **signing.sign_data(signing.default_signer, {})
+                ),
+                auth=self.user.auth,
+            )
+        assert res.status_code == 200
+        assert res.json['data']['name'] == 'new_name'
 
     @responses.activate
     @mock.patch('framework.auth.cas.get_client')

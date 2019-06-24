@@ -404,9 +404,12 @@ def osfstorage_download(file_node, payload, **kwargs):
             raise make_error(httplib.BAD_REQUEST, message_short='Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
+    file_version_thru = version.get_basefilenode_version(file_node)
+    name = file_version_thru.version_name if file_version_thru else file_node.name
+
     return {
         'data': {
-            'name': file_node.name,
+            'name': name,
             'path': version.location_hash,
         },
         'settings': {
