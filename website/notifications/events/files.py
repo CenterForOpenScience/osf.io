@@ -16,8 +16,10 @@ from website.notifications.events.base import (
     register, Event, event_registry, RegistryError
 )
 from website.notifications.events import utils as event_utils
-from osf.models import AbstractNode, NodeLog, Preprint
+from osf.models import NodeLog, Preprint
+from osf.models.mixins import FileTargetMixin
 from addons.base.signals import file_updated as signal
+from rest_framework.exceptions import NotFound
 
 
 @signal.connect
@@ -120,7 +122,11 @@ class ComplexFileEvent(FileEvent):
         super(ComplexFileEvent, self).__init__(user, node, event, payload=payload)
 
         source_nid = self.payload['source']['node']['_id']
-        self.source_node = AbstractNode.load(source_nid) or Preprint.load(source_nid)
+        try:
+            self.source_node = FileTargetMixin.load_target_from_guid(source_nid)
+        except NotFound:
+            self.source_node = None
+
         self.addon = self.node.get_addon(self.payload['destination']['provider'])
 
     def _build_message(self, html=False):

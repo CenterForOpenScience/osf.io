@@ -121,7 +121,7 @@ def reverse_repoint_guids():
         node.save()
         guids_repointed += 1
 
-    logger.info('There are {} total guids repointed to quickfolders'.format(guids_repointed))
+    logger.info('There are {} total guids repointed to quickfilenodes'.format(guids_repointed))
 
 
 def migrate_quickfiles_to_quickfolders():

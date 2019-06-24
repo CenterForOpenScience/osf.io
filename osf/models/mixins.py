@@ -674,7 +674,6 @@ class GuardianMixin(models.Model):
             for p in to_remove:
                 remove_perm(p, group, self)
             for p in group_permissions:
-                print(p)
                 assign_perm(p, group, self)
 
     def get_permissions(self, user):

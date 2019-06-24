@@ -1812,16 +1812,25 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                            _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
     # Overrides FileTargetMixin
-    def create_waterbutler_log(self, auth, action, metadata):
+    def create_waterbutler_log(self, auth, action, payload):
+
+        metadata = payload['metadata']
+        user = auth.user
         params = {
             'target': self._id,
-            'id': self._id,
-            'path': metadata['metadata']['materialized'],
+            'path': metadata['materialized'],
         }
+        url = self.web_url_for(
+            'addon_view_or_download_file',
+            guid=self._id,
+            path=metadata['path'],
+            provider='osfstorage'
+        )
+        params['urls'] = {'view': url, 'download': url + '?action=download'}
 
         self.add_log(
-            'osf_storage_{}'.format(action),
-            auth=auth,
+            'osf_storage_{0}'.format(action),
+            auth=Auth(user),
             params=params
         )
 

@@ -452,6 +452,16 @@ def create_waterbutler_log(payload, **kwargs):
             if hasattr(target, 'get_addon'):
                 destination = target.get_addon(payload['destination']['provider'])
 
+            if isinstance(source_target, OSFUser):
+                source_title = source_target.quickfolder.title
+            else:
+                source_title = source_target.title
+
+            if isinstance(destination_target, OSFUser):
+                destination_title = destination_target.quickfolder.title
+            else:
+                destination_title = destination_target.title
+
             payload['source'].update({
                 'materialized': payload['source']['materialized'].lstrip('/'),
                 'addon': source.config.full_name if source else 'osfstorage',
@@ -463,7 +473,7 @@ def create_waterbutler_log(payload, **kwargs):
                 'node': {
                     '_id': source_target._id,
                     'url': source_target.url,
-                    'title': source_target.title,
+                    'title': source_title,
                 }
             })
 
@@ -478,7 +488,7 @@ def create_waterbutler_log(payload, **kwargs):
                 'node': {
                     '_id': destination_target._id,
                     'url': destination_target.url,
-                    'title': destination_target.title,
+                    'title': destination_title,
                 }
             })
 

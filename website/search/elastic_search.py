@@ -229,7 +229,6 @@ def search(query, index=None, doc_type='_all', raw=False):
         pass
     aggregations = get_aggregations(aggs_query, doc_type=doc_type)
     counts = get_counts(count_query, index)
-    print(query)
     # Run the real query and get the results
     raw_results = client().search(index=index, doc_type=doc_type, body=query)
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
@@ -251,7 +250,7 @@ def format_results(results):
         elif result.get('category') == 'file':
             file_node = BaseFileNode.objects.get(_id=result.get('id'))
             if file_node.is_quickfile:
-                result['parent_url'] = '{}quickfiles/'.format(file_node.target.url)
+                result['parent_url'] = '/{}/quickfiles/'.format(file_node.target._id)
                 result['parent_title'] = file_node.target.quickfolder.title
             else:
                 parent_info = load_parent(result.get('parent_id'))

@@ -2430,20 +2430,6 @@ def remove_addons(auth, resource_object_list):
                 addon.after_delete(auth.user)
 
 
-##### Signal listeners #####
-@receiver(post_save, sender=Node)
-def add_creator_as_contributor(sender, instance, created, **kwargs):
-    if created:
-        Contributor.objects.get_or_create(
-            user=instance.creator,
-            node=instance,
-            visible=True,
-            read=True,
-            write=True,
-            admin=True
-        )
-
-
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
     if created and instance.is_original and not instance._suppress_log:
