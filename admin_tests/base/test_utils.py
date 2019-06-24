@@ -7,6 +7,8 @@ from django.db.models import Q
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.contrib.admin.sites import AdminSite
+from django.forms.models import model_to_dict
+from django.http import QueryDict
 
 from tests.base import AdminTestCase
 
@@ -194,14 +196,28 @@ class TestGroupCollectionsPreprints(AdminTestCase):
         preprint_group = Group.objects.filter(name__startswith='preprint_')[0]
         assert(preprint_group not in queryset)
 
-        form = admin.get_form(request=get_request, obj=user)
-        get_form = form(get_request.GET, instance=user)
-        post_request.POST = get_form
-        #form = admin.get_form(request=post_request, obj=user)
-        post_form = form(post_request.POST, instance=user)
-        post_form.is_valid()
+        form = admin.get_form(request=post_request, obj=user)
+        data_dict = model_to_dict(user)
+        data_dict['comments_viewed_timestamp'] = '{}'
+        data_dict['contributor_added_email_records'] = '{}'
+        data_dict['email_verifications'] = '{}'
+        data_dict['external_identity'] = '{}'
+        data_dict['groups'] = []
+        data_dict['jobs'] = '{}'
+        data_dict['mailchimp_mailing_lists'] = '{}'
+        data_dict['notifications_configured'] = '{}'
+        data_dict['osf_mailing_lists'] = '{}'
+        data_dict['schools'] = '{}'
+        data_dict['security_messages'] = '{}'
+        data_dict['social'] = '{}'
+        data_dict['unclaimed_records'] = '{}'
+        data_dict['verification_key_v2'] = '{}'
+        post_form = form(data_dict, instance=user)
         assert(post_form.is_valid())
         post_form.save(commit=False)
+        qdict = QueryDict('', mutable=True)
+        qdict.update(data_dict)
+        post_request.POST = qdict
         admin.save_related(request=post_request, form=post_form, formsets=[], change=True)
         assert(len(list(user.groups.filter(name__startswith='collections_'))) > 0)
         assert(len(list(user.groups.filter(name__startswith='preprint_'))) > 0)
