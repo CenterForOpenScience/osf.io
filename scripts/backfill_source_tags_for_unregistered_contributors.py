@@ -142,7 +142,7 @@ def backfill_osf_provider_tags_to_users_not_invited_but_have_no_source_tags(dry_
     # Backfill OSF source tags to these users
     logger.info('Backfilling OSF Source tags to uninvited users with no source tags')
     paginated_users = Paginator(id_users_with_no_source_tags, 1000)
-    with tqdm(total=paginated_users.page_range) as pbar:
+    with tqdm(total=paginated_users.num_pages) as pbar:
         for page_num in paginated_users.page_range:
             through_models_to_create = []
             for i in paginated_users.page(page_num).object_list:
