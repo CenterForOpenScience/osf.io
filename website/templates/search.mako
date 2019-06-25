@@ -129,7 +129,7 @@
         <h5>
             <!-- ko if: parent_url --> From: <a data-bind="attr: {href: parent_url}, text: parent_title || '' + ' /'"></a> <!-- /ko -->
             <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <!-- /ko -->
-            <a data-bind="attr: {href: node_url}, text: node_title"></a>
+            <!-- ko if: parent_url != node_url -->  <a data-bind="attr: {href: node_url}, text: node_title"></a> <!-- /ko -->
         </h5>
         <!-- ko if: tags.length > 0 --> <div data-bind="template: 'tag-cloud'"></div> <!-- /ko -->
     </script>
