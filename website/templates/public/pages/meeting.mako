@@ -3,7 +3,7 @@
 
 <%def name="nav()">
     <%namespace name="nav_helper" file="nav.mako" />
-    ${nav_helper.nav(service_name='MEETINGS', service_url='/meetings/', service_support_url='http://help.osf.io/m/meetings/')}
+    ${nav_helper.nav(service_name='MEETINGS', service_url='/meetings/', service_support_url='https://openscience.zendesk.com/hc/en-us/categories/360001550933')}
 </%def>
 
 <%def name="content()">

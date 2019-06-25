@@ -11,7 +11,7 @@ class LicenseSerializer(JSONAPISerializer):
         'name',
         'id',
     ])
-    non_anonymized_fields = ['type']
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     name = ser.CharField(required=True, help_text='License name')

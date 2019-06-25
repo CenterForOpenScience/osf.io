@@ -87,69 +87,6 @@ class TestUserRequestExport:
 
 
 @pytest.mark.django_db
-class TestUserRequestDeactivate:
-
-    @pytest.fixture()
-    def url(self, user_one):
-        return '/{}users/{}/settings/deactivate/'.format(API_BASE, user_one._id)
-
-    @pytest.fixture()
-    def payload(self):
-        return {
-            'data': {
-                'type': 'user-account-deactivate-form',
-                'attributes': {}
-            }
-        }
-
-    def test_get(self, app, user_one, url):
-        res = app.get(url, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 405
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_post(self, mock_mail, app, user_one, user_two, url, payload):
-        # Logged out
-        res = app.post_json_api(url, payload, expect_errors=True)
-        assert res.status_code == 401
-
-        # Logged in, requesting export for another user
-        res = app.post_json_api(url, payload, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # Logged in
-        assert user_one.email_last_sent is None
-        assert user_one.requested_deactivation is False
-        res = app.post_json_api(url, payload, auth=user_one.auth)
-        assert res.status_code == 204
-        user_one.reload()
-        assert user_one.email_last_sent is not None
-        assert user_one.requested_deactivation is True
-        assert mock_mail.call_count == 1
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_post_invalid_type(self, mock_mail, app, user_one, url, payload):
-        assert user_one.email_last_sent is None
-        payload['data']['type'] = 'Invalid Type'
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 409
-        user_one.reload()
-        assert user_one.email_last_sent is None
-        assert mock_mail.call_count == 0
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_exceed_throttle(self, mock_mail, app, user_one, url, payload):
-        assert user_one.email_last_sent is None
-        res = app.post_json_api(url, payload, auth=user_one.auth)
-        assert res.status_code == 204
-
-        res = app.post_json_api(url, payload, auth=user_one.auth)
-        assert res.status_code == 204
-
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 429
-
-
-@pytest.mark.django_db
 class TestUserChangePassword:
 
     @pytest.fixture()
@@ -168,7 +105,7 @@ class TestUserChangePassword:
     def payload(self, user_one):
         return {
             'data': {
-                'type': 'user_password',
+                'type': 'user_passwords',
                 'id': user_one._id,
                 'attributes': {
                     'existing_password': 'password1',
@@ -264,6 +201,11 @@ class TestUserEmailsList:
         assert len(data) == confirmed_count + unconfirmed_count
         assert len([email for email in data if email['attributes']['confirmed']]) == confirmed_count
         assert len([email for email in data if email['attributes']['confirmed'] is False]) == unconfirmed_count
+
+    def test_get_emails_not_throttled(self, app, url, user_one):
+        for i in range(3):
+            res = app.get(url, auth=user_one.auth)
+            assert res.status_code == 200
 
     def test_get_emails_not_current_user(self, app, url, user_one, user_two):
         res = app.get(url, auth=user_two.auth, expect_errors=True)
@@ -598,6 +540,20 @@ class TestUserEmailDetail:
         # old URL no longer resolves
         res_original = app.get(unconfirmed_url, auth=user_one.auth, expect_errors=True)
         assert res_original.status_code == 404
+
+    def test_delete_confirmed_but_unverified_email(self, app, user_one, unconfirmed_address,
+                                                unconfirmed_url, payload, unconfirmed_token):
+        # manually set the email to confirmed
+        user_one.email_verifications[unconfirmed_token]['confirmed'] = True
+        user_one.email_verifications[unconfirmed_token]['verified'] = False
+        user_one.save()
+        # send api request to delete the token
+        res = app.delete_json_api(unconfirmed_url, payload, auth=user_one.auth)
+        assert res.status_code == 204
+
+        user_one.reload()
+        confirmed_tokens = [key for key, value in user_one.email_verifications.iteritems() if value['confirmed']]
+        assert unconfirmed_token not in confirmed_tokens
 
     @pytest.mark.enable_quickfiles_creation
     def test_updating_verified_for_merge(self, app, user_one, user_two, payload):

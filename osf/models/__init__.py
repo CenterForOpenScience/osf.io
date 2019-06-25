@@ -1,4 +1,4 @@
-from osf.models.metaschema import RegistrationSchema  # noqa
+from osf.models.metaschema import RegistrationSchema, FileMetadataSchema  # noqa
 from osf.models.base import Guid, BlackListGuid  # noqa
 from osf.models.user import OSFUser, Email  # noqa
 from osf.models.contributor import Contributor, RecentlyAddedContributor, PreprintContributor  # noqa
@@ -18,6 +18,8 @@ from osf.models.archive import ArchiveJob, ArchiveTarget  # noqa
 from osf.models.queued_mail import QueuedMail  # noqa
 from osf.models.external import ExternalAccount, ExternalProvider  # noqa
 from osf.models.oauth import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope  # noqa
+from osf.models.osf_group import OSFGroup  # noqa
+from osf.models.osf_grouplog import OSFGroupLog  # noqa
 from osf.models.licenses import NodeLicense, NodeLicenseRecord  # noqa
 from osf.models.private_link import PrivateLink  # noqa
 from osf.models.notifications import NotificationDigest, NotificationSubscription  # noqa
@@ -32,6 +34,7 @@ from osf.models.files import (  # noqa
     File, Folder,  # noqa
     FileVersion, TrashedFile, TrashedFileNode, TrashedFolder, FileVersionUserMetadata,  # noqa
 )  # noqa
+from osf.models.metadata import FileMetadataRecord  # noqa
 from osf.models.node_relation import NodeRelation  # noqa
 from osf.models.analytics import UserActivityCounter, PageCounter  # noqa
 from osf.models.admin_profile import AdminProfile  # noqa
@@ -43,4 +46,5 @@ from osf.models.dismissed_alerts import DismissedAlert  # noqa
 from osf.models.action import ReviewAction  # noqa
 from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAction  # noqa
 from osf.models.storage import ProviderAssetFile  # noqa
+from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
 from osf.models.blacklisted_email_domain import BlacklistedEmailDomain  # noqa

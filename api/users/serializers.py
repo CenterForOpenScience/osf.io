@@ -1,5 +1,6 @@
 import jsonschema
 from django.utils import timezone
+
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -11,15 +12,20 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
+from api.base.utils import default_node_list_queryset
+from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
-from osf.models import OSFUser, QuickFilesNode, Email
+from osf.models import Email
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
-from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
+from osf.models import OSFUser, QuickFilesNode, Preprint
+from osf.utils.requests import string_type_request_headers
+from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL, OSF_SUPPORT_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
+from website import mails
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
-from api.nodes.serializers import NodeSerializer
-from api.users.schemas.utils import validate_user_json, from_json
+from api.nodes.serializers import NodeSerializer, RegionRelationshipField
+from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
 
 
@@ -72,7 +78,11 @@ class UserSerializer(JSONAPISerializer):
     writeable_method_fields = frozenset([
         'accepted_terms_of_service',
     ])
-    non_anonymized_fields = ['type']
+
+    non_anonymized_fields = [
+        'type',
+    ]
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=186)
@@ -100,17 +110,27 @@ class UserSerializer(JSONAPISerializer):
     nodes = HideIfDisabled(RelationshipField(
         related_view='users:user-nodes',
         related_view_kwargs={'user_id': '<_id>'},
-        related_meta={'projects_in_common': 'get_projects_in_common'},
+        related_meta={
+            'projects_in_common': 'get_projects_in_common',
+            'count': 'get_node_count',
+        },
+    ))
+
+    groups = HideIfDisabled(RelationshipField(
+        related_view='users:user-groups',
+        related_view_kwargs={'user_id': '<_id>'},
     ))
 
     quickfiles = HideIfDisabled(QuickFilesRelationshipField(
         related_view='users:user-quickfiles',
         related_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_quickfiles_count'},
     ))
 
     registrations = HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
         related_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_registration_count'},
     ))
 
     institutions = HideIfDisabled(RelationshipField(
@@ -118,11 +138,13 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
         self_view='users:user-institutions-relationship',
         self_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_institutions_count'},
     ))
 
     preprints = HideIfDisabled(RelationshipField(
         related_view='users:user-preprints',
         related_view_kwargs={'user_id': '<_id>'},
+        related_meta={'count': 'get_preprint_count'},
     ))
 
     emails = ShowIfCurrentUser(RelationshipField(
@@ -130,9 +152,15 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
-    default_region = ShowIfCurrentUser(RelationshipField(
+    default_region = ShowIfCurrentUser(RegionRelationshipField(
         related_view='regions:region-detail',
         related_view_kwargs={'region_id': 'get_default_region_id'},
+        read_only=False,
+    ))
+
+    settings = ShowIfCurrentUser(RelationshipField(
+        related_view='users:user_settings',
+        related_view_kwargs={'user_id': '<_id>'},
         read_only=True,
     ))
 
@@ -142,7 +170,7 @@ class UserSerializer(JSONAPISerializer):
     def get_projects_in_common(self, obj):
         user = get_user_auth(self.context['request']).user
         if obj == user:
-            return user.contributor_to.count()
+            return user.contributor_or_group_member_to.count()
         return obj.n_projects_in_common(user)
 
     def absolute_url(self, obj):
@@ -157,6 +185,29 @@ class UserSerializer(JSONAPISerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+    def get_node_count(self, obj):
+        default_queryset = obj.nodes_contributor_or_group_member_to
+        auth = get_user_auth(self.context['request'])
+        if obj != auth.user:
+            return Node.objects.get_nodes_for_user(auth.user, base_queryset=default_queryset, include_public=True).count()
+        return default_queryset.count()
+
+    def get_quickfiles_count(self, obj):
+        return QuickFilesNode.objects.get(contributor__user__id=obj.id).files.filter(type='osf.osfstoragefile').count()
+
+    def get_registration_count(self, obj):
+        auth = get_user_auth(self.context['request'])
+        user_registration = default_node_list_queryset(model_cls=Registration).filter(contributor__user__id=obj.id)
+        return user_registration.can_view(user=auth.user, private_link=auth.private_link).count()
+
+    def get_preprint_count(self, obj):
+        auth_user = get_user_auth(self.context['request']).user
+        user_preprints_query = Preprint.objects.filter(_contributors__guids___id=obj._id).exclude(machine_state='initial')
+        return Preprint.objects.can_view(user_preprints_query, auth_user, allow_contribs=False).count()
+
+    def get_institutions_count(self, obj):
+        return obj.affiliated_institutions.count()
 
     def get_can_view_reviews(self, obj):
         group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
@@ -204,6 +255,12 @@ class UserSerializer(JSONAPISerializer):
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
+            elif 'region_id' == attr:
+                region_id = validated_data.get('region_id')
+                user_settings = instance._settings_model('osfstorage').objects.get(owner=instance)
+                user_settings.default_region_id = region_id
+                user_settings.save()
+                instance.default_region = self.context['request'].data['default_region']
             else:
                 setattr(instance, attr, value)
         try:
@@ -212,6 +269,9 @@ class UserSerializer(JSONAPISerializer):
             raise InvalidModelValueError(detail=e.message)
         except ValidationError as e:
             raise InvalidModelValueError(e)
+        if set(validated_data.keys()).intersection(set(OSFUser.SPAM_USER_PROFILE_FIELDS.keys())):
+            request_headers = string_type_request_headers(self.context['request'])
+            instance.check_spam(saved_fields=validated_data, request_headers=request_headers)
 
         return instance
 
@@ -351,28 +411,28 @@ class UserAccountExportSerializer(BaseAPISerializer):
         type_ = 'user-account-export-form'
 
 
-class UserAccountDeactivateSerializer(BaseAPISerializer):
-    type = TypeField()
-
-    class Meta:
-        type_ = 'user-account-deactivate-form'
-
-
 class UserChangePasswordSerializer(BaseAPISerializer):
     type = TypeField()
     existing_password = ser.CharField(write_only=True, required=True)
     new_password = ser.CharField(write_only=True, required=True)
 
     class Meta:
-        type_ = 'user_password'
+        type_ = 'user_passwords'
 
 
 class UserSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     two_factor_enabled = ser.SerializerMethodField()
+    two_factor_confirmed = ser.SerializerMethodField(read_only=True)
     subscribe_osf_general_email = ser.SerializerMethodField()
     subscribe_osf_help_email = ser.SerializerMethodField()
+    deactivation_requested = ser.BooleanField(source='requested_deactivation', required=False)
+    secret = ser.SerializerMethodField(read_only=True)
+
+    def to_representation(self, instance):
+        self.context['twofactor_addon'] = instance.get_addon('twofactor')
+        return super(UserSettingsSerializer, self).to_representation(instance)
 
     def get_two_factor_enabled(self, obj):
         try:
@@ -380,6 +440,17 @@ class UserSettingsSerializer(JSONAPISerializer):
             return not two_factor.deleted
         except TwoFactorUserSettings.DoesNotExist:
             return False
+
+    def get_two_factor_confirmed(self, obj):
+        two_factor_addon = self.context['twofactor_addon']
+        if two_factor_addon and two_factor_addon.is_confirmed:
+            return True
+        return False
+
+    def get_secret(self, obj):
+        two_factor_addon = self.context['twofactor_addon']
+        if two_factor_addon and not two_factor_addon.is_confirmed:
+            return two_factor_addon.totp_secret_b32
 
     def get_subscribe_osf_general_email(self, obj):
         return obj.mailchimp_mailing_lists.get(MAILCHIMP_GENERAL_LIST, False)
@@ -389,7 +460,17 @@ class UserSettingsSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
+        'export': 'get_export_link',
     })
+
+    def get_export_link(self, obj):
+        return absolute_reverse(
+            'users:user-account-export',
+            kwargs={
+                'user_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -444,6 +525,20 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
             raise exceptions.PermissionDenied(detail='The two-factor verification code you provided is invalid.')
         two_factor_addon.save()
 
+    def request_deactivation(self, instance, requested_deactivation):
+        if instance.requested_deactivation != requested_deactivation:
+            if requested_deactivation:
+                mails.send_mail(
+                    to_addr=OSF_SUPPORT_EMAIL,
+                    mail=mails.REQUEST_DEACTIVATION,
+                    user=instance,
+                    can_change_preferences=False,
+                )
+                instance.email_last_sent = timezone.now()
+            instance.requested_deactivation = requested_deactivation
+            instance.save()
+        return
+
     def to_representation(self, instance):
         """
         Overriding to_representation allows using different serializers for the request and response.
@@ -460,6 +555,8 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
             elif 'two_factor_verification' == attr:
                 two_factor_addon = instance.get_addon('twofactor')
                 self.verify_two_factor(instance, value, two_factor_addon)
+            elif 'requested_deactivation' == attr:
+                self.request_deactivation(instance, value)
             elif attr in self.MAP_MAIL.keys():
                 self.update_email_preferences(instance, attr, value)
 

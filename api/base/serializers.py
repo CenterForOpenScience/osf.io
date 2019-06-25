@@ -82,8 +82,9 @@ class ConditionalField(ser.Field):
 
     def __init__(self, field, **kwargs):
         super(ConditionalField, self).__init__(**kwargs)
-        self.field = field
-        self.source = self.field.source
+        self.field = getattr(field, 'child_relation', field)
+        # source is intentionally field.source and not self.field.source
+        self.source = field.source
         self.required = self.field.required
         self.read_only = self.field.read_only
 
@@ -354,7 +355,7 @@ class VersionedDateTimeField(ser.DateTimeField):
     def to_representation(self, value):
         request = self.context.get('request')
         if request:
-            if request.version >= '2.2':
+            if StrictVersion(request.version) >= '2.2':
                 self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
             else:
                 self.format = '%Y-%m-%dT%H:%M:%S.%f' if value.microsecond else '%Y-%m-%dT%H:%M:%S'
@@ -731,7 +732,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 else:
                     if callable(view):
                         view = view(getattr(obj, self.field_name))
-                    kwargs.update({'version': request.parser_context['kwargs']['version']})
+                    if request.parser_context['kwargs'].get('version', False):
+                        kwargs.update({'version': request.parser_context['kwargs']['version']})
                     url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
                         formatted_filters = self.format_filter(obj)
@@ -892,11 +894,11 @@ class TypedRelationshipField(RelationshipField):
         return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
 
 
-class FileCommentRelationshipField(RelationshipField):
+class FileRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):
         if obj.kind == 'folder':
             raise SkipField
-        return super(FileCommentRelationshipField, self).get_url(obj, view_name, request, format)
+        return super(FileRelationshipField, self).get_url(obj, view_name, request, format)
 
 
 class TargetField(ser.Field):
@@ -1175,7 +1177,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
     def update(self, instance, validated_data):
 
         # avoiding circular import
-        from api.nodes.serializers import ContributorIDField
+        from api.nodes.serializers import CompoundIDField
 
         # if PATCH request, the child serializer's partial attribute needs to be True
         if self.context['request'].method == 'PATCH':
@@ -1189,7 +1191,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         id_lookup = self.child.fields['id'].source
         data_mapping = {item.get(id_lookup): item for item in validated_data}
 
-        if isinstance(self.child.fields['id'], ContributorIDField):
+        if isinstance(self.child.fields['id'], CompoundIDField):
             instance_mapping = {self.child.fields['id'].get_id(item): item for item in instance}
         else:
             instance_mapping = {getattr(item, id_lookup): item for item in instance}
@@ -1307,14 +1309,26 @@ class JSONAPISerializer(BaseAPISerializer):
         # failsafe, let python do it if something bad happened in the ESI construction
         return super(JSONAPISerializer, self).to_representation(data)
 
-    def run_validation(self, *args, **kwargs):
+    def run_validation(self, data):
         # Overrides construtor for validated_data to allow writes to a SerializerMethodField
         # Validation for writeable SMFs is expected to happen in the model
-        _validated_data = super(JSONAPISerializer, self).run_validation(*args, **kwargs)
+        _validated_data = super(JSONAPISerializer, self).run_validation(data)
         for field in self.writeable_method_fields:
-            if field in self.initial_data:
-                _validated_data[field] = self.initial_data[field]
+            if field in data:
+                _validated_data[field] = data[field]
         return _validated_data
+
+    def get_unwrapped_field(self, field):
+        """
+        Returns the lowest nested field. If no nesting, returns the original field.
+        :param field, highest field
+
+        Assumes nested structures like the following:
+        - field, field.field, field.child_relation, field.field.child_relation, etc.
+        """
+        while hasattr(field, 'field'):
+            field = field.field
+        return getattr(field, 'child_relation', field)
 
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
@@ -1367,6 +1381,7 @@ class JSONAPISerializer(BaseAPISerializer):
             )
 
         for field in fields:
+            nested_field = self.get_unwrapped_field(field)
             try:
                 if hasattr(field, 'child_relation'):
                     attribute = field.child_relation.get_attribute(obj)
@@ -1374,15 +1389,10 @@ class JSONAPISerializer(BaseAPISerializer):
                     attribute = field.get_attribute(obj)
             except SkipField:
                 continue
-
-            if hasattr(field, 'child_relation'):
-                nested_field = field.child_relation
-            else:
-                nested_field = getattr(field, 'field', None)
             if attribute is None:
                 # We skip `to_representation` for `None` values so that
                 # fields do not have to explicitly deal with that case.
-                if getattr(field, 'field', None) and isinstance(field.field, RelationshipField):
+                if isinstance(nested_field, RelationshipField):
                     # if this is a RelationshipField, serialize as a null relationship
                     data['relationships'][field.field_name] = {'data': None}
                 else:

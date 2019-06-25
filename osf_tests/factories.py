@@ -326,6 +326,15 @@ class RegistrationProviderFactory(DjangoModelFactory):
         return obj
 
 
+class OSFGroupFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    created = factory.LazyFunction(timezone.now)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    class Meta:
+        model = models.OSFGroup
+
+
 class RegistrationFactory(BaseNodeFactory):
 
     creator = None
@@ -350,7 +359,7 @@ class RegistrationFactory(BaseNodeFactory):
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
-        if project.has_permission(user, 'admin'):
+        if project.is_admin_contributor(user):
             project.add_contributor(
                 contributor=user,
                 permissions=permissions.CREATOR_PERMISSIONS,
@@ -996,5 +1005,52 @@ class ProviderAssetFileFactory(DjangoModelFactory):
         providers = kwargs.pop('providers', [])
         instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
         instance.providers = providers
+        instance.save()
+        return instance
+
+class ChronosJournalFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ChronosJournal
+
+    name = factory.Faker('text')
+    title = factory.Faker('text')
+    journal_id = factory.Faker('ean')
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        kwargs['raw_response'] = kwargs.get('raw_response', {
+            'TITLE': kwargs.get('title', factory.Faker('text').generate([])),
+            'JOURNAL_ID': kwargs.get('title', factory.Faker('ean').generate([])),
+            'NAME': kwargs.get('name', factory.Faker('text').generate([])),
+            'JOURNAL_URL': factory.Faker('url').generate([]),
+            'PUBLISHER_ID': factory.Faker('ean').generate([]),
+            'PUBLISHER_NAME': factory.Faker('name').generate([])
+            # Other stuff too probably
+        })
+        instance = super(ChronosJournalFactory, cls)._create(target_class, *args, **kwargs)
+        instance.save()
+        return instance
+
+
+class ChronosSubmissionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ChronosSubmission
+
+    publication_id = factory.Faker('ean')
+    journal = factory.SubFactory(ChronosJournalFactory)
+    preprint = factory.SubFactory(PreprintFactory)
+    submitter = factory.SubFactory(AuthUserFactory)
+    status = factory.Faker('random_int', min=1, max=5)
+    submission_url = factory.Faker('url')
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        kwargs['raw_response'] = kwargs.get('raw_response', {
+            'PUBLICATION_ID': kwargs.get('publication_id', factory.Faker('ean').generate([])),
+            'STATUS_CODE': kwargs.get('status', factory.Faker('random_int', min=1, max=5).generate([])),
+            'CHRONOS_SUBMISSION_URL': kwargs.get('submission_url', factory.Faker('url').generate([])),
+            # Other stuff too probably
+        })
+        instance = super(ChronosSubmissionFactory, cls)._create(target_class, *args, **kwargs)
         instance.save()
         return instance

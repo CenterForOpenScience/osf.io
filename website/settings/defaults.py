@@ -66,6 +66,7 @@ REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
+
 # Question titles to be reomved for anonymized VOL
 ANONYMIZED_TITLES = ['Authors']
 
@@ -252,6 +253,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
     ADDONS_DEFAULT = addon_settings['addons_default']
+    ADDONS_OAUTH_NO_REDIRECT = addon_settings['addons_oauth_no_redirect']
 
 SYSTEM_ADDED_ADDONS = {
     'user': [],
@@ -293,6 +295,12 @@ DISK_SAVING_MODE = False
 # Seconds before another notification email can be sent to a contributor when added to a project
 CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 
+# Seconds before another notification email can be sent to a member when added to an OSFGroup
+GROUP_MEMBER_ADDED_EMAIL_THROTTLE = 24 * 3600
+
+# Seconds before another notification email can be sent to group members when added to a project
+GROUP_CONNECTED_EMAIL_THROTTLE = 24 * 3600
+
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
 GOOGLE_SITE_VERIFICATION = None
@@ -318,7 +326,7 @@ EZID_ARK_NAMESPACE = 'ark:99999'
 DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
 DATACITE_URL = None
-DATACITE_PREFIX = '10.5072'  # Datacite's test DOI prefix -- update in production
+DATACITE_PREFIX = '10.70102'  # Datacite's test DOI prefix -- update in production
 # Minting DOIs only works on Datacite's production server, so
 # disable minting on staging and development environments by default
 DATACITE_MINT_DOIS = not DEV_MODE
@@ -448,6 +456,7 @@ class CeleryConfig:
     imports = (
         'framework.celery_tasks',
         'framework.email.tasks',
+        'osf.external.tasks',
         'website.mailchimp_utils',
         'website.notifications.tasks',
         'website.archiver.tasks',
@@ -1878,3 +1887,13 @@ FOOTER_LINKS = {
     'googleGroup': 'https://groups.google.com/forum/#!forum/openscienceframework',
     'github': 'https://www.github.com/centerforopenscience',
 }
+
+CHRONOS_USE_FAKE_FILE = False
+CHRONOS_FAKE_FILE_URL = ''
+CHRONOS_USERNAME = os_env.get('CHRONOS_USERNAME', '')
+CHRONOS_PASSWORD = os_env.get('CHRONOS_PASSWORD', '')
+CHRONOS_API_KEY = os_env.get('CHRONOS_API_KEY', '')
+CHRONOS_HOST = os_env.get('CHRONOS_HOST', 'https://sandbox.api.chronos-oa.com')
+VERIFY_CHRONOS_SSL_CERT = not DEV_MODE
+# Maximum minutes we allow ChronosSubmission status to be stale (only update when user is requesting it)
+CHRONOS_SUBMISSION_UPDATE_TIME = timedelta(minutes=5)
