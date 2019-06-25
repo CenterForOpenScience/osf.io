@@ -39,6 +39,7 @@ class RegistrationSerializer(NodeSerializer):
         'license_type',
         'subjects',
         'withdrawal_justification',
+        'category',
     ]
 
     title = ser.CharField(read_only=True)
