@@ -6,6 +6,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import campaigns, views as auth_views, cas
 from website.util import web_url_for
+from website.util.metrics import ProviderSourceTags
 from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.utils import mock_auth
@@ -154,7 +155,7 @@ class TestCampaignMethods(OsfTestCase):
 
     def test_campaign_for_user(self):
         user = factories.UserFactory()
-        user.add_system_tag('source:provider|preprint|osf')
+        user.add_system_tag(ProviderSourceTags.OsfPreprints.value)
         user.save()
         campaign = campaigns.campaign_for_user(user)
         assert_equal(campaign, 'osf-preprints')
