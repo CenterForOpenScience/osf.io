@@ -38,6 +38,7 @@ class Registration(AbstractNode):
         'description',
         'is_public',
         'node_license',
+        'category',
     ]
 
     article_doi = models.CharField(max_length=128,
