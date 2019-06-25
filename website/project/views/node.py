@@ -20,6 +20,7 @@ from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from osf.utils.functional import rapply
+from osf.utils import sanitize
 from osf import features
 
 from website import language
@@ -1026,7 +1027,7 @@ def serialize_child_tree(child_list, user, nested):
                 'node': {
                     'id': child._id,
                     'url': child.url,
-                    'title': child.title,
+                    'title': sanitize.unescape_entities(child.title),
                     'is_public': child.is_public,
                     'contributors': contributors,
                     'is_admin': child.has_permission(user, ADMIN),
@@ -1080,7 +1081,7 @@ def node_child_tree(user, node):
             'node': {
                 'id': node._id,
                 'url': node.url if can_read else '',
-                'title': node.title if can_read else 'Private Project',
+                'title': sanitize.unescape_entities(node.title) if can_read else 'Private Project',
                 'is_public': node.is_public,
                 'contributors': contributors,
                 'is_admin': is_admin,
