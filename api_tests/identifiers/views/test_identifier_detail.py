@@ -10,6 +10,7 @@ from osf_tests.factories import (
     NodeFactory,
     PreprintFactory
 )
+from osf.utils.permissions import READ
 from osf.utils.workflows import DefaultStates
 
 
@@ -154,7 +155,7 @@ class TestIdentifierDetail:
 
         # test_unpublished_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -180,7 +181,7 @@ class TestIdentifierDetail:
 
         # test_deleted_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -206,7 +207,7 @@ class TestIdentifierDetail:
 
         # test_private_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -232,7 +233,7 @@ class TestIdentifierDetail:
 
         # test_abandoned_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -258,7 +259,7 @@ class TestIdentifierDetail:
 
         # test_orphaned_preprint_identifier_readcontrib_authenticated
         read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, 'read', save=True)
+        preprint.add_contributor(read_user, READ, save=True)
         res = app.get(url, auth=read_user.auth, expect_errors=True)
         assert res.status_code == 200
 

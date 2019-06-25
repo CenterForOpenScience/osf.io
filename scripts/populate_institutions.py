@@ -150,7 +150,7 @@ def main(env):
             {
                 '_id': 'cfa',
                 'name': 'Center for Astrophysics | Harvard & Smithsonian',
-                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="http://help.osf.io/">Get Help</a>',
+                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://openscience.zendesk.com/hc/en-us">Get Help</a>',
                 'banner_name': 'cfa-banner.png',
                 'logo_name': 'cfa-shield.png',
                 'login_url': None,
@@ -238,7 +238,7 @@ def main(env):
             {
                 '_id': 'cwru',
                 'name': 'Case Western Reserve University',
-                'description': 'The Case Western Reserve University research community is pleased to hold partnerships with the <a href="https://case.edu/research/">Office of Research and Technology Management</a>, <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, and <a href="https://case.edu/utech/">University Technology<a>. Projects must abide by the <a href="https://case.edu/utech/services/information-security-office">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
+                'description': 'This site is provided as a partnership of the <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, <a href="https://case.edu/utech/">University Technology</a>, and the <a href="https://case.edu/research/">Office of Research and Technology Management</a> at <a href="https://case.edu/">Case Western Reserve University</a>. Projects must abide by the <a href="https://case.edu/utech/departments/information-security/policies">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
                 'banner_name': 'cwru-banner.png',
                 'logo_name': 'cwru-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:case.edu')),
@@ -330,6 +330,18 @@ def main(env):
                 'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'ibhri',
+                'name': 'Integrative Behavioral Health Research Institute',
+                'description': '<a href="https://www.ibhri.org/">The Integrative Behavioral Health Research Institute</a>',
+                'banner_name': 'ibhri-banner.png',
+                'logo_name': 'ibhri-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['osf.ibhri.org'],
+                'email_domains': ['ibhri.org'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'icarehb',
@@ -543,7 +555,7 @@ def main(env):
             {
                 '_id': 'temple',
                 'name': 'Temple University',
-                'description': 'Projects must abide by the <a href="https://computerservices.temple.edu/classification-and-handling-protected-data">University Classification and Handling of Protected Data</a> and <a href="https://computerservices.temple.edu/guidelines-storing-and-using-personally-identifiable-information-non-production-environments">Guidelines for Storing and Using Personally Identifiable Information in Non-Production Environments</a>.',
+                'description': 'Projects must abide by Temple University\'s <a href="https://www.temple.edu/privacy-statement">Privacy Statement</a>, <a href="https://its.temple.edu/technology-usage-policy">Technology Usage Policy</a>, <a href="https://its.temple.edu/classification-and-handling-protected-data">University Classification and Handling of Protected Data</a>, and <a href="https://its.temple.edu/guidelines-storing-and-using-personally-identifiable-information-non-production-environments">Guidelines for Storing and Using Personally Identifiable Information in Non-Production Environments</a>.',
                 'banner_name': 'temple-banner.png',
                 'logo_name': 'temple-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fim.temple.edu/idp/shibboleth')),
@@ -949,7 +961,7 @@ def main(env):
             {
                 '_id': 'cfa',
                 'name': 'Center for Astrophysics | Harvard & Smithsonian [Test]',
-                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="http://help.osf.io/">Get Help</a>',
+                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://openscience.zendesk.com/hc/en-us">Get Help</a>',
                 'banner_name': 'cfa-banner.png',
                 'logo_name': 'cfa-shield.png',
                 'login_url': None,
@@ -1037,7 +1049,7 @@ def main(env):
             {
                 '_id': 'cwru',
                 'name': 'Case Western Reserve University [Test]',
-                'description': 'The Case Western Reserve University research community is pleased to hold partnerships with the <a href="https://case.edu/research/">Office of Research and Technology Management</a>, <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, and <a href="https://case.edu/utech/">University Technology<a>. Projects must abide by the <a href="https://case.edu/utech/services/information-security-office">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
+                'description': 'This site is provided as a partnership of the <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, <a href="https://case.edu/utech/">University Technology</a>, and the <a href="https://case.edu/research/">Office of Research and Technology Management</a> at <a href="https://case.edu/">Case Western Reserve University</a>. Projects must abide by the <a href="https://case.edu/utech/departments/information-security/policies">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
                 'banner_name': 'cwru-banner.png',
                 'logo_name': 'cwru-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:case.edu')),
@@ -1129,6 +1141,18 @@ def main(env):
                 'domains': ['test-osf-gwu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'ibhri',
+                'name': 'Integrative Behavioral Health Research Institute [Test]',
+                'description': '<a href="https://www.ibhri.org/">The Integrative Behavioral Health Research Institute</a>',
+                'banner_name': 'ibhri-banner.png',
+                'logo_name': 'ibhri-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['test-osf-ibhri.cos.io'],
+                'email_domains': ['ibhri.org'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'icarehb',
