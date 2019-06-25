@@ -113,7 +113,7 @@ REGIONAL_NODE_SIZE_SUM_SQL = """
         SELECT
            region.name, sum(size)
         FROM osf_basefilenode_versions AS obfnv
-        left outer join osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
         WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
@@ -126,9 +126,9 @@ ABSTRACT_NODE_SIZE_SUM_SQL = """
         SELECT
            node.type, sum(size)
         FROM osf_basefilenode_versions AS obfnv
-        left outer join osf_basefilenode file ON obfnv.basefilenode_id = file.id
-        left outer join osf_fileversion version ON obfnv.fileversion_id = version.id
-        left outer join osf_abstractnode node ON file.target_object_id = node.id
+        LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+        LEFT JOIN osf_abstractnode node ON file.target_object_id = node.id
         WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
           AND (node.type = 'osf.registration' or (node.type = 'osf.node' AND node.is_public = TRUE))
           AND node.is_deleted = False
@@ -165,6 +165,7 @@ ND_PREPRINT_SUPPLEMENT_SIZE_SUM_SQL = """
         LEFT JOIN osf_preprint preprint ON preprint.node_id = node.id
         WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
           AND preprint.id IS NOT NULL AND preprint.deleted IS NULL
+          AND node.is_deleted = False
           AND file.deleted_on IS NULL
           AND obfnv.id >= %s AND obfnv.id <= %s
     """
@@ -204,7 +205,7 @@ ND_PREPRINT_SIZE_SUM_SQL = """
         SELECT
            'nd_preprints', sum(size) AS nd_preprint_size_sum
         FROM osf_basefilenode_versions AS obfnv
-        left outer join osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN osf_preprint preprint ON preprint.id = file.target_object_id
         WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
@@ -396,11 +397,13 @@ def write_summary_data(filename, summary_data, remote_base_folder):
     file_path = '{}{}'.format(TEMP_FOLDER, filename)
     old_remote = requests.get(
         url=remote_base_folder['files'],
+        headers={'Accept': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
         auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
         params={'filter[name]': filename},
     ).json()
     try:
-        if old_remote['meta']['total'] > 1:
+        logger.debug('json: {}'.format(old_remote))
+        if old_remote[u'meta'][u'total'] > 1:
             sentry.log_message(
                 'Too many files that look like {} - this may cause problems for data storage usage summaries'.format(
                     remote_base_folder['files']
@@ -416,6 +419,7 @@ def write_summary_data(filename, summary_data, remote_base_folder):
             writer.writerow(header_row)
             with requests.get(
                     url=upload,  # Yes, upload is correct here.
+                    headers={'Accept': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
                     auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
                     stream=True,
             ) as old_file:
@@ -458,6 +462,7 @@ def upload_to_storage(file_path, upload_url, params):
     with open(file_path, 'r') as summary_file:
         requests.put(
             url=upload_url,
+            headers={'Accept': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
             params=params,
             data=summary_file,
             auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
@@ -604,7 +609,7 @@ class Command(BaseCommand):
             if DS_METRICS_BASE_FOLDER is not None and DS_METRICS_OSF_TOKEN is not None:
                 json = requests.get(
                     url=DS_METRICS_BASE_FOLDER,
-                    headers={'Accept-Header': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
+                    headers={'Accept': 'application/vnd.api+json;version={}'.format(DEFAULT_API_VERSION)},
                     auth=bearer_token_auth(DS_METRICS_OSF_TOKEN)
                 ).json()['data']
 
