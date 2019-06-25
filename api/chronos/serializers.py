@@ -2,11 +2,26 @@ from rest_framework import serializers as ser
 from rest_framework.exceptions import NotFound
 
 from api.base.exceptions import Conflict
-from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, ShowIfChronosSubmitter
-from api.base.utils import absolute_reverse
+from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, ConditionalField
+from api.base.utils import absolute_reverse, get_user_auth
 from osf.external.chronos import ChronosClient
 from osf.models import ChronosJournal
 from osf.utils.workflows import ChronosSubmissionStatus
+
+
+class ShowIfChronosSubmitter(ConditionalField):
+    """
+    If the ChronosSubmission instance's submitter is not the current user, hide this field.
+    """
+
+    def should_show(self, instance):
+        request = self.context.get('request')
+        auth = get_user_auth(request)
+        if auth.logged_in:
+            if instance.submitter == auth.user:
+                return True
+        return False
+
 
 class ChronosJournalRelationshipField(RelationshipField):
     def to_internal_value(self, journal_id):
@@ -15,6 +30,7 @@ class ChronosJournalRelationshipField(RelationshipField):
         except ChronosJournal.DoesNotExist:
             raise NotFound('Unable to find specified journal.')
         return {'journal': journal}
+
 
 class ChronosJournalSerializer(JSONAPISerializer):
     class Meta:

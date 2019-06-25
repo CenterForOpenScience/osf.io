@@ -301,20 +301,6 @@ class HideIfProviderCommentsPrivate(ConditionalField):
         return True
 
 
-class ShowIfChronosSubmitter(ConditionalField):
-    """
-    If the ChronosSubmission instance's submitter is not the current user, hide this field.
-    """
-
-    def should_show(self, instance):
-        request = self.context.get('request')
-        auth = utils.get_user_auth(request)
-        if auth.logged_in:
-            if instance.submitter == auth.user:
-                return True
-        return False
-
-
 class AllowMissing(ser.Field):
     def __init__(self, field, **kwargs):
         super(AllowMissing, self).__init__(**kwargs)
