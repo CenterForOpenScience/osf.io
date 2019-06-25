@@ -82,17 +82,7 @@
                     <td>{{ item.is_registration }}</td>
                 {% endif %}
                 <td>{{ item.number_contributors }}</td>
-                <td>
-                    {% if item.spam_status == SPAM_STATUS.UNKNOWN %}
-                        <span class="label label-default">Unknown</span>
-                    {% elif item.spam_status == SPAM_STATUS.FLAGGED %}
-                        <span class="label label-warning">Flagged</span>
-                    {% elif item.spam_status == SPAM_STATUS.SPAM %}
-                        <span class="label label-danger">Spam</span>
-                    {% elif item.spam_status == SPAM_STATUS.HAM %}
-                        <span class="label label-success">Ham</span>
-                    {% endif %}
-                </td>
+                <td>{% include "nodes/spam_status.html" with resource=item %}</td>
                 {%  if perms.osf.delete_node %}
                 <td>
                     {% if item.number_contributors < 2 and resource_type == "preprint" or not item.is_registration %}
