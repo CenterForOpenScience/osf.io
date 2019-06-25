@@ -254,7 +254,7 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['united_states'] += file_size
         expected_summary_data['registrations'] += file_size
 
-        actual_summary_data = process_usages(dry_run=True)
+        actual_summary_data = process_usages(dry_run=True, page_size=2)
 
         actual_keys = actual_summary_data.keys()
         for key in actual_summary_data:

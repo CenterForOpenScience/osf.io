@@ -6,7 +6,6 @@ import requests
 import tempfile
 import zipfile
 
-from framework.celery_tasks import app as celery_app
 from collections import OrderedDict
 from datetime import date
 from decimal import Decimal
@@ -19,11 +18,13 @@ try:
 except ImportError:
     from io import StringIO  # Python 3
 
+from framework import sentry
+from framework.celery_tasks import app as celery_app
 from website.settings import DS_METRICS_BASE_FOLDER, DS_METRICS_OSF_TOKEN
 
 DEFAULT_API_VERSION = '2.14'
 TEMP_FOLDER = tempfile.mkdtemp(suffix='/')
-VALUES = (
+VALUES = [
     'file_version_id',
     'file_id',
     'version_id',
@@ -41,170 +42,187 @@ VALUES = (
     'target_is_deleted',
     'target_spam_status',
     'target_is_supplementary_node'
-)
+]
+
+# Grab the id of end of the basefilenode_version table for query limiting
 LAST_ROW_SQL = """
-    select
-        obfnv.id as fileversion_id
-    from osf_basefilenode_versions as obfnv
-    order by obfnv.id DESC
+    SELECT
+        obfnv.id AS fileversion_id
+    FROM osf_basefilenode_versions AS obfnv
+    ORDER BY obfnv.id DESC
     LIMIT 1
 """
+
+# Get the raw data for all of the node-based items
 NODE_LIST_SQL = """
-        select
-           obfnv.id as basefileversion_id,
+        SELECT
+           obfnv.id AS basefileversion_id,
            obfnv.basefilenode_id,
            obfnv.fileversion_id,
            file.target_object_id,
            file.target_content_type_id,
            file.deleted_on,
            version.size,
-           region.name as region,
-           guid._id as guid,
-           node.title as node_title,
-           node.type as node_type,
+           region.name AS region,
+           guid._id AS guid,
+           node.title AS node_title,
+           node.type AS node_type,
            node.is_public,
            node.is_fork,
-           root_guid._id as root_guid,
-           node.is_deleted as node_deleted,
+           root_guid._id AS root_guid,
+           node.is_deleted AS node_deleted,
            node.spam_status,
-           preprint.id is not null as is_supplementary_node
-        from osf_basefilenode_versions as obfnv
-        left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
-        left outer join osf_fileversion version on obfnv.fileversion_id = version.id
-        left outer join addons_osfstorage_region region on version.region_id = region.id
-        left outer join osf_abstractnode node on node.id = file.target_object_id
-        left outer join osf_preprint preprint on preprint.node_id = node.id
-        LEFT outer JOIN osf_guid guid ON (node.id = guid.object_id AND guid.content_type_id = %s)
-        left outer join osf_guid root_guid ON (node.id = root_guid.object_id AND root_guid.content_type_id = %s)
-        where file.provider = 'osfstorage' and file.target_content_type_id = %s
-        and obfnv.id >= %s and obfnv.id <= %s
-        order by obfnv.id
+           preprint.id IS NOT NULL AS is_supplementary_node
+        FROM osf_basefilenode_versions AS obfnv
+        LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+        LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
+        LEFT JOIN osf_abstractnode node ON node.id = file.target_object_id
+        LEFT JOIN osf_preprint preprint ON preprint.node_id = node.id
+        LEFT JOIN osf_guid guid ON (node.id = guid.object_id AND guid.content_type_id = %s)
+        LEFT JOIN osf_guid root_guid ON (node.root_id = root_guid.object_id AND root_guid.content_type_id = %s)
+        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
+        AND obfnv.id >= %s AND obfnv.id <= %s
     """
+
+# Aggregation of total file size based on the node query above
 TOTAL_FILE_SIZE_SUM_SQL = """
-    select
-       'total', sum(size) as deleted_size_sum
-    from osf_basefilenode_versions as obfnv
-    left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
-    left outer join osf_fileversion version on obfnv.fileversion_id = version.id
-    where file.provider = 'osfstorage'
-      and obfnv.id > %s and obfnv.id <= %s
+    SELECT
+       'total', sum(size) AS deleted_size_sum
+    FROM osf_basefilenode_versions AS obfnv
+    LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+    LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+    WHERE file.provider = 'osfstorage'
+      AND obfnv.id >= %s AND obfnv.id <= %s
     """
+
+# Aggregation of deleted files based on the node query above
 DELETED_FILE_SIZE_SUM_SQL = """
-    select
-       'deleted', sum(size) as deleted_size_sum
-    from osf_basefilenode_versions as obfnv
-    left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
-    left outer join osf_fileversion version on obfnv.fileversion_id = version.id
-    where file.provider = 'osfstorage'
-      and file.deleted_on is not null
-      and obfnv.id > %s and obfnv.id <= %s
+    SELECT
+       'deleted', sum(size) AS deleted_size_sum
+    FROM osf_basefilenode_versions AS obfnv
+    LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+    LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+    WHERE file.provider = 'osfstorage'
+      AND file.deleted_on IS NOT NULL
+      AND obfnv.id >= %s AND obfnv.id <= %s
     """
+
+#  Aggregation of the regional node file content based on the node query above
 REGIONAL_NODE_SIZE_SUM_SQL = """
-        select
+        SELECT
            region.name, sum(size)
-        from osf_basefilenode_versions as obfnv
-        left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
-        left join osf_fileversion version on obfnv.fileversion_id = version.id
-        left join addons_osfstorage_region region on version.region_id = region.id
-        where file.provider = 'osfstorage' and file.target_content_type_id = %s
-        and obfnv.id >= %s and obfnv.id <= %s
-        group by region.name
+        FROM osf_basefilenode_versions AS obfnv
+        left outer join osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+        LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
+        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
+        AND obfnv.id >= %s AND obfnv.id <= %s
+        GROUP BY region.name
     """
+
+# Aggregation of files in registries and non-deleted, public nodes based on the node query above
 ABSTRACT_NODE_SIZE_SUM_SQL = """
-        select
+        SELECT
            node.type, sum(size)
-        from osf_basefilenode_versions as obfnv
-        left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
-        left outer join osf_fileversion version on obfnv.fileversion_id = version.id
-        left outer join addons_osfstorage_region region on version.region_id = region.id
-        left outer join osf_abstractnode node on file.target_object_id = node.id
-        where file.provider = 'osfstorage' and file.target_content_type_id = %s
-          and (node.type != 'osf.node' or (node.type = 'osf.node' and node.is_public = TRUE))
-          and node.type != 'osf.quickfilesnode'
-          and node.is_deleted = False
-          and file.deleted_on is Null
-          and obfnv.id >= %s and obfnv.id <= %s
-        group by node.type
+        FROM osf_basefilenode_versions AS obfnv
+        left outer join osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        left outer join osf_fileversion version ON obfnv.fileversion_id = version.id
+        left outer join osf_abstractnode node ON file.target_object_id = node.id
+        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
+          AND (node.type = 'osf.registration' or (node.type = 'osf.node' AND node.is_public = TRUE))
+          AND node.is_deleted = False
+          AND file.deleted_on IS NULL
+          AND obfnv.id >= %s AND obfnv.id <= %s
+        GROUP BY node.type
     """
+
+# Aggregation of non-deleted quick file sizes (NOTE: This will break when QuickFolders is merged)
 ND_QUICK_FILE_SIZE_SUM_SQL = """
-        select
+        SELECT
            node.type, sum(size)
-        from osf_basefilenode_versions as obfnv
-        left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
-        left outer join osf_fileversion version on obfnv.fileversion_id = version.id
-        left outer join addons_osfstorage_region region on version.region_id = region.id
-        left outer join osf_abstractnode node on file.target_object_id = node.id
-        where file.provider = 'osfstorage' and file.target_content_type_id = %s
-          and node.type = 'osf.quickfilesnode'
-          and file.deleted_on is null
-          and obfnv.id >= %s and obfnv.id <= %s
-        group by node.type
+        FROM osf_basefilenode_versions AS obfnv
+        LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+        LEFT JOIN osf_abstractnode node ON file.target_object_id = node.id
+        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
+          AND node.type = 'osf.quickfilesnode'
+          AND node.is_deleted = False
+          AND file.deleted_on IS NULL
+          AND obfnv.id >= %s AND obfnv.id <= %s
+        GROUP BY node.type
 
     """
+
+# Aggregation of size of non-deleted files in preprint supplemental nodes based on the node query above
 ND_PREPRINT_SUPPLEMENT_SIZE_SUM_SQL = """
-        select
-           'nd_supplement', sum(size) as supplementary_node_size
-        from osf_basefilenode_versions as obfnv
-        left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
-        left outer join osf_fileversion version on obfnv.fileversion_id = version.id
-        left outer join osf_abstractnode node on node.id = file.target_object_id
-        left outer join osf_preprint preprint on preprint.node_id = node.id
-        where file.provider = 'osfstorage' and file.target_content_type_id = %s
-          and preprint.id is not null and preprint.deleted is null
-          and file.deleted_on is null
-          and obfnv.id > %s and obfnv.id <= %s
+        SELECT
+           'nd_supplement', sum(size) AS supplementary_node_size
+        FROM osf_basefilenode_versions AS obfnv
+        LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+        LEFT JOIN osf_abstractnode node ON node.id = file.target_object_id
+        LEFT JOIN osf_preprint preprint ON preprint.node_id = node.id
+        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
+          AND preprint.id IS NOT NULL AND preprint.deleted IS NULL
+          AND file.deleted_on IS NULL
+          AND obfnv.id >= %s AND obfnv.id <= %s
     """
+
+# Raw data for preprints
 PREPRINT_LIST_SQL = """
-        select
-           obfnv.id as basefileversion_id,
+        SELECT
+           obfnv.id AS basefileversion_id,
            basefilenode_id,
            fileversion_id,
            file.target_object_id,
            file.target_content_type_id,
            file.deleted_on,
            version.size,
-           region.name as region,
-           guid._id as preprint_guid,
-           preprint.title as preprint_title,
-           'osf.preprint' as type,
+           region.name AS region,
+           guid._id AS preprint_guid,
+           preprint.title AS preprint_title,
+           'osf.preprint' AS type,
            preprint.is_public,
-           FALSE as is_fork,
-           guid._id as root_guid,
-           preprint.deleted is not null as preprint_deleted,
+           FALSE AS is_fork,
+           guid._id AS root_guid,
+           preprint.deleted IS NOT NULL AS preprint_deleted,
            preprint.spam_status,
-           FALSE as is_supplementary_node
-        from osf_basefilenode_versions as obfnv
-        left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
-        left outer join osf_fileversion version on obfnv.fileversion_id = version.id
-        left outer join addons_osfstorage_region region on version.region_id = region.id
-        left outer join osf_preprint preprint on preprint.id = file.target_object_id
-        LEFT OUTER JOIN osf_guid guid ON (preprint.id = guid.object_id AND guid.content_type_id = %s)
-        where file.provider like 'osfstorage' and file.target_content_type_id = %s
-          and obfnv.id >= %s and obfnv.id <= %s
+           FALSE AS is_supplementary_node
+        FROM osf_basefilenode_versions AS obfnv
+        LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+        LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
+        LEFT JOIN osf_preprint preprint ON preprint.id = file.target_object_id
+        LEFT JOIN osf_guid guid ON (preprint.id = guid.object_id AND guid.content_type_id = %s)
+        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
+          AND obfnv.id >= %s AND obfnv.id <= %s
     """
+
+# Aggregation of non-deleted preprint file sizes (not including supplementary files)
 ND_PREPRINT_SIZE_SUM_SQL = """
-        select
-           'nd_preprints', sum(size) as nd_preprint_size_sum
-        from osf_basefilenode_versions as obfnv
-        left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
-        left join osf_fileversion version on obfnv.fileversion_id = version.id
-        left join addons_osfstorage_region region on version.region_id = region.id
-        left join osf_preprint preprint on preprint.id = file.target_object_id
-        where file.provider like 'osfstorage' and file.target_content_type_id = %s
-          and preprint.deleted is null and file.deleted_on is null
-          and obfnv.id > %s and obfnv.id <= %s
+        SELECT
+           'nd_preprints', sum(size) AS nd_preprint_size_sum
+        FROM osf_basefilenode_versions AS obfnv
+        left outer join osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+        LEFT JOIN osf_preprint preprint ON preprint.id = file.target_object_id
+        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
+          AND preprint.deleted IS NULL AND file.deleted_on IS NULL
+          AND obfnv.id >= %s AND obfnv.id <= %s
     """
+
+# Aggregation of preprint file sizes grouped by region
 REGIONAL_PREPRINT_SIZE_SUM_SQL = """
-        select
+        SELECT
            region.name, sum(size)
-        from osf_basefilenode_versions as obfnv
-        left outer join osf_basefilenode file on obfnv.basefilenode_id = file.id
-        left join osf_fileversion version on obfnv.fileversion_id = version.id
-        left join addons_osfstorage_region region on version.region_id = region.id
-        left join osf_preprint preprint on preprint.id = file.target_object_id
-        where file.provider like 'osfstorage' and file.target_content_type_id = %s
-          and obfnv.id > %s and obfnv.id <= %s
-        group by region.name
+        FROM osf_basefilenode_versions AS obfnv
+        LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
+        LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
+        LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
+        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
+          AND obfnv.id >= %s AND obfnv.id <= %s
+        GROUP BY region.name
     """
 
 logger = logging.getLogger(__name__)
@@ -213,13 +231,11 @@ logger = logging.getLogger(__name__)
 # 1. Get content types for nodes, registration, preprints,
 def get_content_types(cursor):
     sql = """
-        select concat(app_label, '.', model) as type, id
-        from django_content_type type
-        where type.model in (
+        SELECT concat(app_label, '.', model) AS type, id
+        FROM django_content_type type
+        WHERE type.model IN (
                              'abstractnode',
-                             'node',
-                             'preprint',
-                             'quickfilesnode'
+                             'preprint'
                             )
     """
     cursor.execute(sql)
@@ -375,11 +391,8 @@ def gather_usage_data(start, end, dry_run, zip_file):
 
 
 def write_summary_data(filename, summary_data, remote_base_folder):
-    header_row = []
-    summary_row = []
-    for key in summary_data:
-        header_row += [key]
-        summary_row += [summary_data[key]]
+    header_row = summary_data.keys()
+    summary_row = summary_data.values()
     file_path = '{}{}'.format(TEMP_FOLDER, filename)
     old_remote = requests.get(
         url=remote_base_folder['files'],
@@ -387,17 +400,22 @@ def write_summary_data(filename, summary_data, remote_base_folder):
         params={'filter[name]': filename},
     ).json()
     try:
+        if old_remote['meta']['total'] > 1:
+            sentry.log_message(
+                'Too many files that look like {} - this may cause problems for data storage usage summaries'.format(
+                    remote_base_folder['files']
+                )
+            )
         old_remote_data = old_remote['data'][0]
         upload = old_remote_data['links']['upload']
         params = {'kind': 'file'}
-        old_file_path = old_remote_data['links']['upload']  # Yes, upload is correct here.
 
         header_skipped = False
         with open(file_path, 'w') as new_file:
             writer = csv.writer(new_file, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
             writer.writerow(header_row)
             with requests.get(
-                    url=old_file_path,
+                    url=upload,  # Yes, upload is correct here.
                     auth=bearer_token_auth(DS_METRICS_OSF_TOKEN),
                     stream=True,
             ) as old_file:
@@ -425,7 +443,7 @@ def write_summary_data(filename, summary_data, remote_base_folder):
 def write_raw_data(cursor, zip_file, filename):
     data_buffer = StringIO()
     writer = csv.writer(data_buffer, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
-    writer.writerow(list(VALUES))
+    writer.writerow(VALUES)
     for row in cursor.fetchall():
         row_to_write = []
         for s in row:
@@ -544,7 +562,9 @@ def bearer_token_auth(token):
 class Command(BaseCommand):
     help = '''Get raw and summary data of storage usage for Product and Metascience.
     For remote upload, add a setting for DS_METRICS_API_TOKEN that has write access to a waterbutler info URL
-    for a folder on an OSF project stored in the DS_METRICS_BASE_FOLDER setting.'''
+    for a folder on an OSF project stored in the DS_METRICS_BASE_FOLDER setting. WARNING: If you are making
+    changes to this and are using Production data, do not put the data that this script outputs anywhere that
+    you wouldn't put production data.'''
 
     def add_arguments(self, parser):
         parser.add_argument(
