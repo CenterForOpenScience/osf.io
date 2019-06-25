@@ -15,7 +15,7 @@ from osf.models import ApiOAuth2Application
 
 from api.base.filters import ListFilterMixin
 from api.base.utils import get_object_or_error
-from api.base.views import JSONAPIBaseView
+from api.base.views import JSONAPIBaseView, DeprecatedView
 from api.base import permissions as base_permissions
 from api.applications.serializers import ApiOAuth2ApplicationSerializer, ApiOAuth2ApplicationDetailSerializer, ApiOAuth2ApplicationResetSerializer
 
@@ -104,12 +104,15 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, 
         serializer.save(owner=self.request.user)
 
 
-class ApplicationReset(JSONAPIBaseView, generics.CreateAPIView, ApplicationMixin):
+class ApplicationReset(DeprecatedView, generics.CreateAPIView, ApplicationMixin):
     """
     Resets client secret of a specific API application (eg OAuth2) that the user has registered
 
     Should not perform update or return information if the application belongs to a different user
     """
+
+    max_version = '2.14'
+
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.OwnerOnly,
