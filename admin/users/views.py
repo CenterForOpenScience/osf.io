@@ -434,7 +434,7 @@ class UserView(PermissionRequiredMixin, GuidView):
         user = OSFUser.load(self.kwargs.get('guid'))  # Pull User for Node/Preprints
 
         preprint_queryset = user.preprints.filter(deleted=None).order_by('title')
-        node_queryset = user.contributor_to.order_by('title')
+        node_queryset = user.contributor_or_group_member_to.order_by('title')
         kwargs = self.get_paginated_queryset(preprint_queryset, 'preprint', serialize_simple_preprint, **kwargs)
         kwargs = self.get_paginated_queryset(node_queryset, 'node', serialize_simple_node, **kwargs)
 
