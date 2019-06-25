@@ -12,7 +12,7 @@ This migration:
 2. Adds a scopes_temp field
 3. Copies scopes information from scopes field to scopes temp (char -> m2m)
 
-0157_finalize_token_scopes_mig:
+0171_finalize_token_scopes_mig:
 1. Removes old scopes field (charfield)
 2. Renames scopes_temp -> scopes
 
@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
         ('osf', '0169_apioauth2scope_is_public'),
     ]
 
-    # AlterField migration added to set null=True because when reverting 0157_finalize_token_scopes_mig,
+    # AlterField migration added to set null=True because when reverting 0171_finalize_token_scopes_mig,
     # scopes will be renamed to scopes_temp, and a scopes field will be restored.  That scopes
     # field would be empty until this migration was run, but null needs to be True to all this.
     operations = [
