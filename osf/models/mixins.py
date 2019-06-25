@@ -340,6 +340,16 @@ class NodeLinkMixin(models.Model):
                 'Target Node \'{}\' is already a child of \'{}\'.'.format(node._id, self._id)
             )
 
+        existant_relation = NodeRelation.objects.filter(parent=node, child=self).first()
+        if existant_relation and existant_relation.is_node_link:
+            raise ValueError(
+                'Node \'{}\' is linked to target node \'{}\'.'.format(node._id, self._id)
+            )
+        elif existant_relation and not existant_relation.is_node_link:
+            raise ValueError(
+                'Node \'{}\' is already a child of target node \'{}\'.'.format(node._id, self._id)
+            )
+
         if self.is_registration:
             raise NodeStateError('Cannot add a node link to a registration')
 

@@ -478,6 +478,25 @@ class TestNodeRelationshipNodeLinks:
 
         assert res.status_code == 400
 
+    #   test_linking_child_node_to_parent_on_create
+        node_child = NodeFactory(creator=user)
+        node_parent = NodeFactory(creator=user)
+        node_parent_child = NodeRelationFactory(child=node_child, parent=node_parent)
+        url = '/{}nodes/{}/relationships/linked_nodes/'.format(
+            API_BASE, node_parent_child.child._id
+        )
+        res = app.post_json_api(
+            url, {
+                'data': [{
+                    'type': 'linked_nodes',
+                    'id': node_parent_child.parent._id
+                }]
+            },
+            auth=user.auth, expect_errors=True
+        )
+
+        assert res.status_code == 400
+
     #   test_node_child_cannot_be_linked_on_update
         node_child = NodeFactory(creator=user)
         node_parent = NodeFactory(creator=user)
@@ -490,6 +509,25 @@ class TestNodeRelationshipNodeLinks:
                 'data': [{
                     'type': 'linked_nodes',
                     'id': node_parent_child.child._id
+                }]
+            },
+            auth=user.auth, expect_errors=True
+        )
+
+        assert res.status_code == 400
+
+    #   test_linking_child_node_to_parent_on_update
+        node_child = NodeFactory(creator=user)
+        node_parent = NodeFactory(creator=user)
+        node_parent_child = NodeRelationFactory(child=node_child, parent=node_parent)
+        url = '/{}nodes/{}/relationships/linked_nodes/'.format(
+            API_BASE, node_parent_child.child._id
+        )
+        res = app.put_json_api(
+            url, {
+                'data': [{
+                    'type': 'linked_nodes',
+                    'id': node_parent_child.parent._id
                 }]
             },
             auth=user.auth, expect_errors=True
