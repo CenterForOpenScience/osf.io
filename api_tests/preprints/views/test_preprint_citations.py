@@ -5,6 +5,7 @@ from django.utils import timezone
 from nose.tools import *  # noqa:
 from osf_tests.factories import AuthUserFactory, PreprintFactory
 from tests.base import ApiTestCase
+from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 
 
@@ -89,7 +90,7 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
         assert_equal(res.status_code, 403)
 
         # Write contrib
-        self.unpublished_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        self.unpublished_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.unpublished_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
         # Really because preprint is in initial machine state, not because of published flag
         assert_equal(res.status_code, 403)
@@ -111,7 +112,7 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
         assert_equal(res.status_code, 403)
 
         # Write contrib
-        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
         # Really because preprint is in initial machine state
         assert_equal(res.status_code, 200)
@@ -133,7 +134,7 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
         assert_equal(res.status_code, 404)
 
         # Write contrib
-        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
         # Really because preprint is in initial machine state
         assert_equal(res.status_code, 404)
@@ -155,7 +156,7 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
         assert_equal(res.status_code, 403)
 
         # Write contrib
-        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
         # Really because preprint is in initial machine state
         assert_equal(res.status_code, 403)
@@ -177,7 +178,7 @@ class TestPreprintCitationsPermissions(PreprintCitationsMixin, ApiTestCase):
         assert_equal(res.status_code, 403)
 
         # Write contrib
-        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth)
         # Really because preprint is in initial machine state
         assert_equal(res.status_code, 200)
@@ -234,7 +235,7 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
         assert_equal(res.status_code, 403)
 
         # Write contrib
-        self.unpublished_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        self.unpublished_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.unpublished_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
         # Really because preprint is in initial machine state, not because of published flag
         assert_equal(res.status_code, 403)
@@ -256,7 +257,7 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
         assert_equal(res.status_code, 403)
 
         # Write contrib
-        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
         # Really because preprint is in initial machine state
         assert_equal(res.status_code, 200)
@@ -278,7 +279,7 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
         assert_equal(res.status_code, 404)
 
         # Write contrib
-        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
         # Really because preprint is in initial machine state
         assert_equal(res.status_code, 404)
@@ -300,7 +301,7 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
         assert_equal(res.status_code, 403)
 
         # Write contrib
-        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth, expect_errors=True)
         # Really because preprint is in initial machine state
         assert_equal(res.status_code, 403)
@@ -322,7 +323,7 @@ class TestPreprintCitationsContentPermissions(PreprintCitationsMixin, ApiTestCas
         assert_equal(res.status_code, 403)
 
         # Write contrib
-        self.published_preprint.add_contributor(self.other_contrib, 'write', save=True)
+        self.published_preprint.add_contributor(self.other_contrib, WRITE, save=True)
         res = self.app.get(self.published_preprint_url, auth=self.other_contrib.auth)
         # Really because preprint is in initial machine state
         assert_equal(res.status_code, 200)

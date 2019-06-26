@@ -66,7 +66,7 @@ var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isPa
             'POST',
             requestUrl,
             {
-                'is_cors': true,
+                'isCors': true,
                 'data': payload,
                 'fields': {
                     xhrFields: {withCredentials: true}
