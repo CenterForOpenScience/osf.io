@@ -286,8 +286,6 @@ class TestParentNode:
         NodeFactory(parent=grandchild3)
         greatgrandchild_1 = NodeFactory(parent=grandchild_1)
 
-        child.add_node_link(root, auth=Auth(root.creator))
-        child.add_node_link(greatgrandchild_1, auth=Auth(greatgrandchild_1.creator))
         greatgrandchild_1.add_node_link(child, auth=Auth(child.creator))
 
         assert 20 == len(Node.objects.get_children(root))
@@ -2733,7 +2731,6 @@ class TestNodeTraversals:
         point1 = ProjectFactory(creator=user, parent=root)
         point2 = ProjectFactory(creator=user, parent=root)
         point1.add_pointer(point2, auth=auth)
-        point2.add_pointer(point1, auth=auth)
 
         descendants = list(point1.get_descendants_recursive())
         assert len(descendants) == 1
