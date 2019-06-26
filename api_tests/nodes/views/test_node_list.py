@@ -1762,7 +1762,7 @@ class TestNodeCreate:
         parent_project = ProjectFactory(creator=user_one)
         parent_project.add_unregistered_contributor(
             fullname='far', email='foo@bar.baz',
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             auth=Auth(user=user_one), save=True)
         contributor = parent_project.contributors.filter(fullname='far').first()
         contributor.username = 'foo@example.com'
