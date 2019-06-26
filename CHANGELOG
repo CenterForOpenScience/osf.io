@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.14.0 (2019-06-26)
+===================
+- Chronos: Limit Submission URL visibility
+- APIv2: Private meetings endpoints optimizations.
+- Modifications to how meetings and submissions are related - instead of using
+tags, using a m2m field.
+
 19.13.0 (2019-06-17)
 ===================
 - "Groups-guardian" release.  Switches to django-guardian for permissions on AbstractNodes
