@@ -19,7 +19,7 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 from website.mails import send_mail
 from website.util import web_url_for
-from website.util.metrics import ProviderSourceTags, CampaignSourceTags
+from website.util.metrics import CampaignSourceTags
 
 logger = logging.getLogger(__name__)
 
