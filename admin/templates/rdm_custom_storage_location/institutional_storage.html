@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
 {% load static %}
 
 {% block top_includes %}
@@ -67,3 +68,7 @@
 
 <br class="clear">
 {% endblock content %}
+
+{% block bottom_js %}
+    {% render_bundle 'rdm-institutional-storage-page' %}
+{% endblock %}
