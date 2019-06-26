@@ -249,6 +249,16 @@
             </span>
         </p>
         <!-- /ko -->
+        <!-- ko if: groups ? groups.length > 0 : false -->
+        <p>
+            <strong>Groups:</strong> <span data-bind="foreach: groups">
+                <!-- ko if: url -->
+                    <span data-bind="text: name"></span>
+                <!-- /ko-->
+            <!-- ko if: ($index()+1) < ($parent.groups.length) -->&nbsp;- <!-- /ko -->
+            </span>
+        </p>
+        <!-- /ko -->
       <!-- ko if: affiliated_institutions ? affiliated_institutions.length > 0 : false -->
         <p><strong>Affiliated institutions:</strong>
             <!-- ko foreach: {data: affiliated_institutions, as: 'item'} -->
@@ -295,6 +305,35 @@
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
+        <!-- /ko -->
+    </script>
+    <script type="text/html" id="group">
+        <h4><span data-bind="text: title"></span></h4>
+        <!-- ko if: managers.length > 0 -->
+        <p>
+            <strong>Managers:</strong> <span data-bind="foreach: managers">
+                <!-- ko if: url -->
+                    <a data-bind="attr: {href: url}, text: fullname"></a>
+                <!-- /ko-->
+                <!-- ko ifnot: url -->
+                    <span data-bind="text: fullname"></span>
+                <!-- /ko -->
+            <!-- ko if: ($index()+1) < ($parent.managers.length) -->&nbsp;- <!-- /ko -->
+            </span>
+        </p>
+        <!-- /ko -->
+        <!-- ko if: members.length > 0 -->
+        <p>
+            <strong>Members:</strong> <span data-bind="foreach: members">
+                <!-- ko if: url -->
+                    <a data-bind="attr: {href: url}, text: fullname"></a>
+                <!-- /ko-->
+                <!-- ko ifnot: url -->
+                    <span data-bind="text: fullname"></span>
+                <!-- /ko -->
+            <!-- ko if: ($index()+1) < ($parent.members.length) -->&nbsp;- <!-- /ko -->
+            </span>
+        </p>
         <!-- /ko -->
     </script>
     <script type="text/html" id="registration">

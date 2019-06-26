@@ -2,11 +2,7 @@ from django.db import models
 from include import IncludeManager
 
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.permissions import (
-    READ,
-    WRITE,
-    ADMIN,
-)
+from osf.utils import permissions
 
 
 class AbstractBaseContributor(models.Model):
@@ -14,16 +10,13 @@ class AbstractBaseContributor(models.Model):
 
     primary_identifier_name = 'user__guids___id'
 
-    read = models.BooleanField(default=False)
-    write = models.BooleanField(default=False)
-    admin = models.BooleanField(default=False)
     visible = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
 
     def __repr__(self):
         return ('<{self.__class__.__name__}(user={self.user}, '
-                'read={self.read}, write={self.write}, admin={self.admin}, '
-                'visible={self.visible}'
+                'visible={self.visible}, '
+                'permission={self.permission}'
                 ')>').format(self=self)
 
     class Meta:
@@ -35,14 +28,15 @@ class AbstractBaseContributor(models.Model):
 
     @property
     def permission(self):
-        if self.admin:
-            return 'admin'
-        if self.write:
-            return 'write'
-        return 'read'
+        return get_contributor_permission(self, self.node)
 
 
 class Contributor(AbstractBaseContributor):
+    # TO BE DELETED (read/write/admin fields)
+    read = models.BooleanField(default=False)
+    write = models.BooleanField(default=False)
+    admin = models.BooleanField(default=False)
+
     node = models.ForeignKey('AbstractNode', on_delete=models.CASCADE)
 
     @property
@@ -56,46 +50,16 @@ class Contributor(AbstractBaseContributor):
         order_with_respect_to = 'node'
 
 
-class PreprintContributor(models.Model):
-    objects = IncludeManager()
-
-    primary_identifier_name = 'user__guids___id'
-    visible = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
+class PreprintContributor(AbstractBaseContributor):
     preprint = models.ForeignKey('Preprint', on_delete=models.CASCADE)
-
-    def __repr__(self):
-        return ('<{self.__class__.__name__}(user={self.user}, '
-                'visible={self.visible}, '
-                'permission={self.permission}, '
-                ')>').format(self=self)
 
     @property
     def _id(self):
         return '{}-{}'.format(self.preprint._id, self.user._id)
 
     @property
-    def bibliographic(self):
-        return self.visible
-
-    @property
     def permission(self):
-        # Checking group membership instead of permissions since unregistered
-        # contributors technically have no permissions
-        preprint_id = self.preprint.id
-        user = self.user
-        read = 'preprint_{}_read'.format(preprint_id)
-        write = 'preprint_{}_write'.format(preprint_id)
-        admin = 'preprint_{}_admin'.format(preprint_id)
-        user_groups = user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
-        if admin in user_groups:
-            return 'admin'
-        elif write in user_groups:
-            return 'write'
-        elif read in user_groups:
-            return 'read'
-        else:
-            return None
+        return get_contributor_permission(self, self.preprint)
 
     class Meta:
         unique_together = ('user', 'preprint')
@@ -105,6 +69,11 @@ class PreprintContributor(models.Model):
 
 
 class InstitutionalContributor(AbstractBaseContributor):
+    # TO BE DELETED (read/write/admin fields)
+    read = models.BooleanField(default=False)
+    write = models.BooleanField(default=False)
+    admin = models.BooleanField(default=False)
+
     institution = models.ForeignKey('Institution', on_delete=models.CASCADE)
 
     class Meta:
@@ -119,15 +88,20 @@ class RecentlyAddedContributor(models.Model):
     class Meta:
         unique_together = ('user', 'contributor')
 
-def get_contributor_permissions(contributor, as_list=True):
-    perm = []
-    if contributor.read:
-        perm.append(READ)
-    if contributor.write:
-        perm.append(WRITE)
-    if contributor.admin:
-        perm.append(ADMIN)
-    if as_list:
-        return perm
+def get_contributor_permission(contributor, resource):
+    """
+    Returns a contributor's permissions - perms through contributorship only. No permissions through osf group membership.
+    """
+    read = resource.format_group(permissions.READ)
+    write = resource.format_group(permissions.WRITE)
+    admin = resource.format_group(permissions.ADMIN)
+    # Checking for django group membership allows you to also get the intended permissions of unregistered contributors
+    user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
+    if admin in user_groups:
+        return permissions.ADMIN
+    elif write in user_groups:
+        return permissions.WRITE
+    elif read in user_groups:
+        return permissions.READ
     else:
-        return perm[-1]
+        return None

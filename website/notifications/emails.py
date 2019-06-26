@@ -1,7 +1,7 @@
 from babel import dates, core, Locale
 
 from osf.models import AbstractNode, OSFUser, NotificationDigest, NotificationSubscription
-
+from osf.utils.permissions import READ
 from website import mails
 from website.notifications import constants
 from website.notifications import utils
@@ -155,7 +155,7 @@ def check_node(node, event):
             users = getattr(subscription, notification_type, [])
             if users:
                 for user in users.exclude(date_disabled__isnull=False):
-                    if node.has_permission(user, 'read'):
+                    if node.has_permission(user, READ):
                         node_subscriptions[notification_type].append(user._id)
     return node_subscriptions
 
