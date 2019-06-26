@@ -9,6 +9,7 @@ import json
 import platform
 import subprocess
 import logging
+import sqlite3
 
 import invoke
 from invoke import Collection
@@ -22,7 +23,7 @@ logging.getLogger('invoke').setLevel(logging.CRITICAL)
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
-
+NO_TESTS_COLLECTED = 5
 ns = Collection()
 
 try:
@@ -272,7 +273,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
 
 
 @task
-def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False):
+def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False, testmon=False):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
@@ -300,11 +301,16 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
+    if testmon:
+        args.extend(['--testmon'])
+
     if params:
         params = [params] if isinstance(params, basestring) else params
         args.extend(params)
     retcode = pytest.main(args)
-    sys.exit(retcode)
+
+    # exit code 5 is all tests skipped which is the same as passing with testmon
+    sys.exit(0 if retcode == NO_TESTS_COLLECTED else retcode)
 
 
 OSF_TESTS = [
@@ -329,8 +335,10 @@ API_TESTS1 = [
 API_TESTS2 = [
     'api_tests/actions',
     'api_tests/chronos',
+    'api_tests/meetings',
     'api_tests/metrics',
     'api_tests/nodes',
+    'api_tests/osf_groups',
     'api_tests/requests',
     'api_tests/subscriptions',
     'api_tests/waffle',
@@ -366,52 +374,52 @@ ADMIN_TESTS = [
 
 
 @task
-def test_osf(ctx, numprocesses=None, coverage=False):
+def test_osf(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the OSF test suite."""
     print('Testing modules "{}"'.format(OSF_TESTS))
-    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
-def test_website(ctx, numprocesses=None, coverage=False):
+def test_website(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the old test suite."""
     print('Testing modules "{}"'.format(WEBSITE_TESTS))
-    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
-def test_api1(ctx, numprocesses=None, coverage=False):
+def test_api1(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS1 + ADMIN_TESTS))
-    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_api2(ctx, numprocesses=None, coverage=False):
+def test_api2(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS2))
-    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_api3(ctx, numprocesses=None, coverage=False):
+def test_api3(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS))
     # NOTE: There may be some concurrency issues with ES
-    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_admin(ctx, numprocesses=None, coverage=False):
+def test_admin(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the Admin test suite."""
     print('Testing module "admin_tests"')
-    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_addons(ctx, numprocesses=None, coverage=False):
+def test_addons(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run all the tests in the addons directory.
     """
     print('Testing modules "{}"'.format(ADDON_TESTS))
-    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
@@ -434,6 +442,13 @@ def test(ctx, all=False, lint=False):
         karma(ctx)
 
 @task
+def remove_failures_from_testmon(ctx, db_path=None):
+
+    conn = sqlite3.connect(db_path)
+    tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
+    ctx.run('echo {} failures purged from travis cache'.format(tests_decached))
+
+@task
 def travis_setup(ctx):
     ctx.run('npm install -g bower', echo=True)
 
@@ -446,41 +461,41 @@ def travis_setup(ctx):
         ctx.run('bower install {}'.format(bower_json['dependencies']['styles']), echo=True)
 
 @task
-def test_travis_addons(ctx, numprocesses=None, coverage=False):
+def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):
     """
     Run half of the tests to help travis go faster.
     """
     travis_setup(ctx)
     syntax(ctx)
-    test_addons(ctx, numprocesses=numprocesses, coverage=coverage)
+    test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
-def test_travis_website(ctx, numprocesses=None, coverage=False):
+def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
     """
     Run other half of the tests to help travis go faster.
     """
     travis_setup(ctx)
-    test_website(ctx, numprocesses=numprocesses, coverage=coverage)
+    test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False):
+def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
     # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
     # karma(ctx)
     travis_setup(ctx)
-    test_api1(ctx, numprocesses=numprocesses, coverage=coverage)
+    test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_travis_api2(ctx, numprocesses=None, coverage=False):
+def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False):
     travis_setup(ctx)
-    test_api2(ctx, numprocesses=numprocesses, coverage=coverage)
+    test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False):
+def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
     travis_setup(ctx)
-    test_api3(ctx, numprocesses=numprocesses, coverage=coverage)
+    test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
 def karma(ctx, travis=False):
