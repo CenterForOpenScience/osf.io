@@ -762,7 +762,7 @@ class TestPreprintUpdateSubjects(UpdateSubjectsMixin):
         preprint.add_contributor(
             user_read_contrib,
             auth=Auth(user_admin_contrib),
-            permissions=['read'])
+            permissions=READ)
         preprint.save()
         return preprint
 
