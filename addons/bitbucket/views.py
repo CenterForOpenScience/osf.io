@@ -17,6 +17,7 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
     must_be_contributor_or_public
 )
+from osf.utils.permissions import WRITE
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ bitbucket_deauthorize_node = generic_views.deauthorize_node(
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
-@must_have_permission('write')
+@must_have_permission(WRITE)
 def bitbucket_set_config(auth, **kwargs):
     node_settings = kwargs.get('node_addon', None)
     node = kwargs.get('node', None)

@@ -11,7 +11,7 @@ from django.apps import apps
 
 from addons.wiki import settings as wiki_settings
 from addons.wiki.exceptions import InvalidVersionError
-
+from osf.utils.permissions import ADMIN, READ, WRITE
 # MongoDB forbids field names that begin with "$" or contain ".". These
 # utilities map to and from Mongo field names.
 
@@ -96,7 +96,7 @@ def migrate_uuid(node, wname):
 
     write_contributors = [
         user._id for user in node.contributors
-        if node.has_permission(user, 'write')
+        if node.has_permission(user, WRITE)
     ]
     broadcast_to_sharejs('unlock', old_sharejs_uuid, data=write_contributors)
 
@@ -184,8 +184,8 @@ def serialize_wiki_settings(user, nodes):
     for node in nodes:
         assert node, '{} is not a valid Node.'.format(node._id)
 
-        can_read = node.has_permission(user, 'read')
-        is_admin = node.has_permission(user, 'admin')
+        can_read = node.has_permission(user, READ)
+        is_admin = node.has_permission(user, ADMIN)
         include_wiki_settings = WikiPage.objects.include_wiki_settings(node)
 
         if not include_wiki_settings:
@@ -215,7 +215,7 @@ def serialize_wiki_settings(user, nodes):
                 'is_public': node.is_public
             },
             'children': children_tree,
-            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
+            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, READ) else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
             'permissions': {

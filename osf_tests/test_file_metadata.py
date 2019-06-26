@@ -8,6 +8,7 @@ from website.settings import DOI_FORMAT, DATACITE_PREFIX
 from website.project.licenses import set_license
 from osf.models import FileMetadataSchema, NodeLicense, NodeLog
 from osf_tests.factories import ProjectFactory, SubjectFactory, AuthUserFactory
+from osf.utils.permissions import READ
 from api_tests.utils import create_test_file
 
 
@@ -224,7 +225,7 @@ class TestFileMetadataRecord:
 
         # Can't update with read-only auth
         read_contrib = AuthUserFactory()
-        node.add_contributor(read_contrib, permissions=['read'])
+        node.add_contributor(read_contrib, permissions=READ)
         node.save()
         with pytest.raises(PermissionsError):
             record.update(initial_metadata, user=read_contrib)

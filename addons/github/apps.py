@@ -27,7 +27,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if privacy mismatch and not contributor
     node = node_settings.owner
-    if node.is_public and not node.is_contributor(auth.user):
+    if node.is_public and not node.is_contributor_or_group_member(auth.user):
         try:
             repo = connection.repo(node_settings.user, node_settings.repo)
         except NotFoundError:

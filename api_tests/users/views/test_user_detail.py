@@ -17,6 +17,7 @@ from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
     RegionFactory,
+    PrivateLinkFactory,
 )
 from website.views import find_bookmark_collection
 
@@ -36,7 +37,19 @@ class TestUserDetail:
     def user_two(self):
         return AuthUserFactory()
 
-    def test_get(self, app, user_one, user_two):
+    @pytest.fixture()
+    def project(self, user_one):
+        project = ProjectFactory(creator=user_one)
+        return project
+
+    @pytest.fixture()
+    def view_only_link(self, project):
+        view_only_link = PrivateLinkFactory(name='test user', anonymous=True)
+        view_only_link.nodes.add(project)
+        view_only_link.save()
+        return view_only_link
+
+    def test_get(self, app, user_one, user_two, project, view_only_link):
 
         #   test_gets_200
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
@@ -94,6 +107,16 @@ class TestUserDetail:
         res = app.get(url)
         user_json = res.json['data']
         assert 'profile_image' in user_json['links']
+
+    #   user_viewed_through_anonymous_link
+        url = '/{}users/{}/?view_only={}'.format(API_BASE, user_one._id, view_only_link.key)
+        res = app.get(url)
+        user_json = res.json['data']
+        assert user_json['id'] == ''
+        assert user_json['type'] == 'users'
+        assert user_json['attributes'] == {}
+        assert 'relationships' not in user_json
+        assert user_json['links'] == {}
 
     def test_files_relationship_upload(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
@@ -1222,11 +1245,13 @@ class UserProfileMixin(object):
     def user_one_url(self, user_one):
         return '/v2/users/{}/'.format(user_one._id)
 
-    def test_user_put_profile_200(self, app, user_one, user_one_url, request_payload, request_key, user_attr):
+    @mock.patch('osf.models.user.OSFUser.check_spam')
+    def test_user_put_profile_200(self, mock_check_spam, app, user_one, user_one_url, request_payload, request_key, user_attr):
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth)
         user_one.reload()
         assert res.status_code == 200
         assert getattr(user_one, user_attr) == request_payload['data']['attributes'][request_key]
+        assert mock_check_spam.called
 
     def test_user_put_profile_400(self, app, user_one, user_one_url, bad_request_payload):
         res = app.put_json_api(user_one_url, bad_request_payload, auth=user_one.auth, expect_errors=True)

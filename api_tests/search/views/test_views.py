@@ -80,10 +80,12 @@ class ApiSearchTestCase:
 
     @pytest.fixture()
     def project(self, user_one):
-        return ProjectFactory(
+        project = ProjectFactory(
             title='Graduation',
             creator=user_one,
             is_public=True)
+        project.update_search()
+        return project
 
     @pytest.fixture()
     def project_public(self, user_one):

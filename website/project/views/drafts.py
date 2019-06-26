@@ -2,31 +2,30 @@ import functools
 from rest_framework import status as http_status
 import itertools
 
+import waffle
 from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
-from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 from flask import request, redirect
 import pytz
-import waffle
 
 from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
 from osf import features
+from osf.exceptions import ValidationError, NodeStateError
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
 from osf.utils.functional import rapply
 from osf.models import NodeLog, RegistrationSchema, DraftRegistration, Sanction
-from osf.exceptions import NodeStateError
 
 from website.project.decorators import (
     must_be_valid_project,
+    must_be_contributor_and_not_group_member,
     must_have_permission,
-    http_error_if_disk_saving_mode
 )
 from website import language, settings
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -114,6 +113,7 @@ def check_draft_state(draft):
         })
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     """Submit for approvals and/or notifications
@@ -184,6 +184,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     }, http_status.HTTP_202_ACCEPTED
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def draft_before_register_page(auth, node, draft, *args, **kwargs):
     """Allow the user to select an embargo period and confirm registration
@@ -199,7 +200,6 @@ def draft_before_register_page(auth, node, draft, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_branched_from_node
-@http_error_if_disk_saving_mode
 def register_draft_registration(auth, node, draft, *args, **kwargs):
     """Initiate a registration from a draft registration
 
@@ -248,6 +248,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
         }
     }, http_status.HTTP_202_ACCEPTED
 
+
 @must_have_permission(ADMIN)
 @must_be_branched_from_node
 def get_draft_registration(auth, node, draft, *args, **kwargs):
@@ -277,6 +278,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
+@must_be_contributor_and_not_group_member
 @ember_flag_is_active(features.EMBER_CREATE_DRAFT_REGISTRATION)
 def new_draft_registration(auth, node, *args, **kwargs):
     """Create a new draft registration for the node
@@ -315,6 +317,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @ember_flag_is_active(features.EMBER_EDIT_DRAFT_REGISTRATION)
 @must_be_branched_from_node
 def edit_draft_registration_page(auth, node, draft, **kwargs):
@@ -329,6 +332,7 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
     return ret
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def update_draft_registration(auth, node, draft, *args, **kwargs):
     """Update an existing draft registration
@@ -356,6 +360,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     return serialize_draft_registration(draft, auth), http_status.HTTP_200_OK
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def delete_draft_registration(auth, node, draft, *args, **kwargs):
     """Permanently delete a draft registration

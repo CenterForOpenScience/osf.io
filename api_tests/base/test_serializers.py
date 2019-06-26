@@ -140,11 +140,12 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'identifiers',
             'current_user_can_comment',
             'current_user_is_contributor',
+            'current_user_is_contributor_or_group_member',
             'preprint',
             'subjects',
             'wiki_enabled']
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'children']
+        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'children', 'groups']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)
@@ -671,5 +672,17 @@ class VersionedDateTimeField(DbTestCase):
                 self.new_date_without_microseconds,
                 self.new_format
             ),
+            data['attributes']['date_modified']
+        )
+
+    # regression test for https://openscience.atlassian.net/browse/PLAT-1350
+    # VersionedDateTimeField was treating version 2.10 and higher as decimals,
+    # less than 2.2
+    def test_old_date_formats_to_new_format_with_2_10(self):
+        req = make_drf_request_with_version(version='2.10')
+        setattr(self.node, 'last_logged', self.old_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.old_date, self.new_format),
             data['attributes']['date_modified']
         )

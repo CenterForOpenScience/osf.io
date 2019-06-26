@@ -17,6 +17,7 @@ from addons.dataverse.settings import DEFAULT_HOSTS
 from addons.dataverse.serializer import DataverseSerializer
 from dataverse.exceptions import VersionJsonNotFoundError, OperationFailedError
 from osf.models import ExternalAccount
+from osf.utils.permissions import WRITE
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
@@ -117,7 +118,7 @@ def dataverse_add_user_account(auth, **kwargs):
 
     return {}
 
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
@@ -145,7 +146,7 @@ def dataverse_set_config(node_addon, auth, **kwargs):
     return {'dataverse': dataverse.title, 'dataset': dataset.title}, http_status.HTTP_200_OK
 
 
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
 def dataverse_get_datasets(node_addon, **kwargs):
@@ -164,7 +165,7 @@ def dataverse_get_datasets(node_addon, **kwargs):
 ## Crud ##
 
 
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @must_not_be_registration
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
