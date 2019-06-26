@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+{% load node_extras %}
+<title>OSF Group</title>
+{% endblock title %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="btn-group" role="group">
+                <a href="{% url 'osf_groups:search' %}" class="btn btn-default"><i class="fa fa-search"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h3>OSF Group Detail</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>_id</td>
+                        <td colspan="2">{{ group.id }}</td>
+                    </tr>
+                    <tr>
+                        <td>Name</td>
+                        <td colspan="2">{{ group.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Date Created</td>
+                        <td colspan="2">{{ group.created }}</td>
+                    </tr>
+                    <tr>
+                        <td>Date Modified</td>
+                        <td colspan="2">{{ group.modified }}</td>
+                    </tr>
+                    <tr>
+                        <td>Creator</td>
+                        <td colspan="2"><a href="{{ group.creator.id | reverse_user }}">{{ group.creator.name }}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Managers</td>
+                        <td>
+                            <select class="form-control" id="manager-select">
+                                {% for manager in group.managers %}
+                                    <option value="{{ manager.id | reverse_user }}">{{ manager.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('manager-select').value;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Members</td>
+                        <td>
+                            <select class="form-control" id="member-select">
+                                {% for member in group.members %}
+                                    <option value="{{ member.id | reverse_user }}">{{ member.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        {% if group.members %}
+                            <td>
+                                <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('member-select').value;" />
+                            </td>
+                        {% endif %}
+                    </tr>
+                    {% if group.nodes %}
+                        <tr>
+                            <td>Nodes</td>
+                            <td>
+                                <select class="form-control" id="node-select">
+                                    {% for node in group.nodes %}
+                                        <option value="{{ node.id | reverse_node }}">{{ node.title }} ({{ node.permission }})</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="submit" class="pull-right btn btn-default" value="Go to" onclick="document.location.href = document.getElementById('node-select').value;" />
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock content %}

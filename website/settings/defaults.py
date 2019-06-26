@@ -253,6 +253,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
     ADDONS_DEFAULT = addon_settings['addons_default']
+    ADDONS_OAUTH_NO_REDIRECT = addon_settings['addons_oauth_no_redirect']
 
 SYSTEM_ADDED_ADDONS = {
     'user': [],
@@ -293,6 +294,12 @@ DISK_SAVING_MODE = False
 
 # Seconds before another notification email can be sent to a contributor when added to a project
 CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
+
+# Seconds before another notification email can be sent to a member when added to an OSFGroup
+GROUP_MEMBER_ADDED_EMAIL_THROTTLE = 24 * 3600
+
+# Seconds before another notification email can be sent to group members when added to a project
+GROUP_CONNECTED_EMAIL_THROTTLE = 24 * 3600
 
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None

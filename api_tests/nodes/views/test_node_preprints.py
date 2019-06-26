@@ -91,8 +91,8 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
 
         # contribs can only see withdrawn preprints that have been public
         user2 = AuthUserFactory()
-        preprint_one.add_contributor(user2, 'read')
-        preprint_two.add_contributor(user2, 'read')
+        preprint_one.add_contributor(user2, permissions.READ)
+        preprint_two.add_contributor(user2, permissions.READ)
         expected = [preprint_two._id]
         res = app.get(url, auth=user2.auth)
         actual = [preprint['id'] for preprint in res.json['data']]

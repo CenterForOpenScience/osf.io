@@ -2,6 +2,16 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.13.0 (2019-06-17)
+===================
+- "Groups-guardian" release.  Switches to django-guardian for permissions on AbstractNodes
+- Switches Preprints to using guardian direct foreign keys for performance improvements
+- APIv2: OSF Groups functionality, allows groups of users to be added to projects
+
+19.12.0 (2019-06-10)
+===================
+- APIv2: View-only Links/Anonymous VOL's for Registrations improvements
+
 19.11.0 (2019-06-06)
 ===================
 - APIv2: Private endpoints for meetings backend

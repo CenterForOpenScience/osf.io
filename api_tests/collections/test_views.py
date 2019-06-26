@@ -17,6 +17,7 @@ from osf_tests.factories import (
 )
 from osf.models import Collection
 from osf.utils.sanitize import strip_html
+from osf.utils.permissions import ADMIN, WRITE, READ
 from tests.utils import assert_items_equal
 from website.project.signals import contributor_removed
 from api_tests.utils import disconnected_from_listeners
@@ -4473,8 +4474,8 @@ class TestCollectedMetaSubjectsList(SubjectsListMixin):
     @pytest.fixture()
     def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         project = ProjectFactory(creator=user_admin_contrib)
-        project.add_contributor(user_write_contrib, permissions=['write', 'read'])
-        project.add_contributor(user_read_contrib, permissions=['read'])
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
         return project
 
     @pytest.fixture()
@@ -4515,8 +4516,8 @@ class TestUpdateCollectedMetaSubjects(UpdateSubjectsMixin):
     @pytest.fixture()
     def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         project = ProjectFactory(creator=user_admin_contrib)
-        project.add_contributor(user_write_contrib, permissions=['write', 'read'])
-        project.add_contributor(user_read_contrib, permissions=['read'])
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
         return project
 
     @pytest.fixture()
@@ -4543,8 +4544,8 @@ class TestCollectedMetaSubjectsRelationship(SubjectsRelationshipMixin):
     @pytest.fixture()
     def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         project = ProjectFactory(creator=user_admin_contrib)
-        project.add_contributor(user_write_contrib, permissions=['write', 'read'])
-        project.add_contributor(user_read_contrib, permissions=['read'])
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
         return project
 
     @pytest.fixture()
@@ -4692,7 +4693,7 @@ class TestCollectedMetaDetail:
         )
         assert res.status_code == 403
 
-        project_one.add_contributor(user_two, permissions='admin', save=True)  # has referent admin perms
+        project_one.add_contributor(user_two, permissions=ADMIN, save=True)  # has referent admin perms
         res = app.delete_json_api(
             url,
             auth=user_two.auth,

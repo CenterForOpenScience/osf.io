@@ -5,6 +5,8 @@ from api_tests.subjects.mixins import SubjectsListMixin
 from osf_tests.factories import (
     PreprintFactory,
 )
+from osf.utils.permissions import WRITE, READ
+
 
 class TestPreprintSubjectsList(SubjectsListMixin):
     @pytest.fixture()
@@ -12,8 +14,8 @@ class TestPreprintSubjectsList(SubjectsListMixin):
         # unpublished preprint in initial state - only creator can view
         preprint = PreprintFactory(creator=user_admin_contrib, is_published=False)
         preprint.subjects.clear()
-        preprint.add_contributor(user_write_contrib, permissions=['write', 'read'])
-        preprint.add_contributor(user_read_contrib, permissions=['read'])
+        preprint.add_contributor(user_write_contrib, permissions=WRITE)
+        preprint.add_contributor(user_read_contrib, permissions=READ)
         preprint.save()
         return preprint
 
