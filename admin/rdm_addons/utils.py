@@ -47,6 +47,13 @@ def get_addon_config(config_type, addon_short_name):
             return addon
     return None
 
+def get_addon_by_name(addon_short_name):
+    """get Addon object from Short Name."""
+    for addon in settings.ADDONS_AVAILABLE:
+        if addon.short_name == addon_short_name:
+            return addon
+    return None
+
 def collect_addon_js(addons):
     """Get a list of addon's JavaScript files."""
     js_url_list = []

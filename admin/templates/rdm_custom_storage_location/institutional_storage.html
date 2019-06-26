@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block top_includes %}
+<link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+<link rel="stylesheet" href='/static/css/rdm_addons.css'>
+<link rel="stylesheet" href='/static/css/rdm_institutional_storage.css'>
+{% endblock %}
+
+{% load user_extras %}
+{% load spam_extras %}
+
+{% block title %}
+<title>Institutional Storage</title>
+{% endblock title %}
+
+{% block content %}
+<h2>Institutional Storage <small>({{region.name}})</small></h2>
+
+<div id="content-main">
+    <form role="form">
+        <div id="addonSettings">
+            <div class="row form-inline storage-name">
+                <div class="form-group">
+                    <label for="storage_name" class="label-large">Name:</label>
+                    <input type="text" class="form-control" id="storage_name">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default setup-content" id="step-1">
+                        <div class="panel-heading">
+                            <h3 class="panel-title label-large">Configure Institutional Storage Accounts</h3>
+                        </div>
+                        <div class="panel-body">
+
+                            <table class="table table-condensed">
+                                {% for addon in addons %}
+                                <tr>
+                                    <td class="is_allowed">
+                                        <div class="radio">
+                                            <label class="center-block">
+                                                <input type="radio" name="options" id="{{addon.short_name}}" value="{{addon.short_name}}" {% if provider == addon.short_name %}checked{% endif %}>
+                                                <h4 class="addon-title">
+                                                    <img src="{{addon.icon_url_admin}}" class="addon-icon">
+                                                    <span>{{addon.full_name}}</span>
+                                                </h4>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+
+                        </div>
+                    </div>
+                    <div class="pull-right">
+                        <button class="btn btn-default" type="reset">Reset</button>
+                        <button class="btn btn-success next-btn" type="button">Next</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<br class="clear">
+{% endblock content %}
