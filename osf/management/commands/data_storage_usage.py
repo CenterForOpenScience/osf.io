@@ -124,17 +124,20 @@ REGIONAL_NODE_SIZE_SUM_SQL = """
 # Aggregation of files in registries and non-deleted, public nodes based on the node query above
 ABSTRACT_NODE_SIZE_SUM_SQL = """
         SELECT
-           node.type, sum(size)
+           CASE WHEN (
+               node.type = 'osf.node' AND NOT node.is_public
+           ) THEN 'osf.private-node' ELSE node.type END AS type,
+           sum(size)
         FROM osf_basefilenode_versions AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN osf_abstractnode node ON file.target_object_id = node.id
         WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
-          AND (node.type = 'osf.registration' or (node.type = 'osf.node' AND node.is_public = TRUE))
+          AND (node.type = 'osf.registration' or node.type = 'osf.node')
           AND node.is_deleted = False
           AND file.deleted_on IS NULL
           AND obfnv.id >= %s AND obfnv.id <= %s
-        GROUP BY node.type
+        GROUP BY node.type, node.is_public
     """
 
 # Aggregation of non-deleted quick file sizes (NOTE: This will break when QuickFolders is merged)
@@ -492,10 +495,11 @@ def process_usages(
         ('registrations', 0),
         ('nd_quick_files', 0),
         ('nd_public_nodes', 0),
+        ('nd_private_nodes', 0),
         ('nd_preprints', 0),
         ('nd_supp_nodes', 0),
         ('canada_montreal', 0),
-        ('australia_syndey', 0),
+        ('australia_sydney', 0),
         ('germany_frankfurt', 0),
         ('united_states', 0),
     ])
@@ -540,10 +544,11 @@ def process_usages(
     summary_data['registrations'] = summary_totals.get('osf.registration', 0)
     summary_data['nd_quick_files'] = summary_totals.get('osf.quickfilesnode', 0)
     summary_data['nd_public_nodes'] = summary_totals.get('osf.node', 0)
+    summary_data['nd_private_nodes'] = summary_totals.get('osf.private-node', 0)
     summary_data['nd_preprints'] = summary_totals.get('nd_preprints', 0)
     summary_data['nd_supp_nodes'] = summary_totals.get('nd_supplement', 0)
     summary_data['canada_montreal'] = summary_totals.get(u'Canada - Montréal', 0)
-    summary_data['australia_syndey'] = summary_totals.get('Australia - Sydney', 0)
+    summary_data['australia_sydney'] = summary_totals.get('Australia - Sydney', 0)
     summary_data['germany_frankfurt'] = summary_totals.get('Germany - Frankfurt', 0)
     summary_data['united_states'] = summary_totals.get('United States', 0)
     if not dry_run:

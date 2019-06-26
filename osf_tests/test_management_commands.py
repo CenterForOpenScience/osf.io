@@ -98,10 +98,11 @@ class TestDataStorageUsage(DbTestCase):
             ('registrations', 0),
             ('nd_quick_files', 0),
             ('nd_public_nodes', 0),
+            ('nd_private_nodes', 0),
             ('nd_preprints', 0),
             ('nd_supp_nodes', 0),
             ('canada_montreal', 0),
-            ('australia_syndey', 0),
+            ('australia_sydney', 0),
             ('germany_frankfurt', 0),
             ('united_states', 0),
         ])
@@ -134,6 +135,18 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_public_nodes'] += file_size
         expected_summary_data['united_states'] += file_size
+
+        project_private_au = self.project(creator=user, is_public=False, region=region_au)
+        file_size = next(small_size)
+        create_test_file(
+            target=project_private_au,
+            user=user,
+            size=file_size
+        )
+        logger.debug(u'Private project, AU: {}'.format(file_size))
+        expected_summary_data['total'] += file_size
+        expected_summary_data['nd_private_nodes'] += file_size
+        expected_summary_data['australia_sydney'] += file_size
 
         component_private_small_deleted_de = self.project(
             creator=user,
@@ -190,7 +203,7 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_supp_nodes'] += file_size
         expected_summary_data['nd_public_nodes'] += file_size
-        expected_summary_data['australia_syndey'] += file_size
+        expected_summary_data['australia_sydney'] += file_size
 
         file_size = next(small_size)
         withdrawn_preprint_us = PreprintFactory(creator=user, file_size=file_size)
