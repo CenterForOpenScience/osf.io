@@ -980,8 +980,8 @@ class TestNotificationUtils(OsfTestCase):
                 'children': []
             }, {
                 'event': {
-                    'title': 'global_mentions',
-                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_mentions'],
+                    'title': 'global_comments',
+                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comments'],
                     'notificationType': 'email_transactional',
                     'parent_notification_type': None
                 },
@@ -989,8 +989,8 @@ class TestNotificationUtils(OsfTestCase):
                 'children': []
             }, {
                 'event': {
-                    'title': 'global_comments',
-                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comments'],
+                    'title': 'global_mentions',
+                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_mentions'],
                     'notificationType': 'email_transactional',
                     'parent_notification_type': None
                 },
@@ -1007,6 +1007,7 @@ class TestNotificationUtils(OsfTestCase):
                 'children': []
             }
         ]
+
         assert_equal(data, expected)
 
     def test_get_global_notification_type(self):

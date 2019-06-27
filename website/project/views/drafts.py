@@ -16,7 +16,6 @@ from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
 from osf import features
-from osf.exceptions import ValidationError, NodeStateError
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
 from osf.utils.functional import rapply
@@ -196,57 +195,6 @@ def draft_before_register_page(auth, node, draft, *args, **kwargs):
 
     ret['draft'] = serialize_draft_registration(draft, auth)
     return ret
-
-
-@must_have_permission(ADMIN)
-@must_be_branched_from_node
-def register_draft_registration(auth, node, draft, *args, **kwargs):
-    """Initiate a registration from a draft registration
-
-    :return: success message; url to registrations page
-    :rtype: dict
-    """
-    json_data = request.get_json()
-    if 'data' not in json_data:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long='Payload must include "data".'))
-    data = json_data['data']
-    if 'attributes' not in data:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long='Payload must include "data/attributes".'))
-    attributes = data['attributes']
-    registration_choice = attributes['registration_choice']
-    validate_registration_choice(registration_choice)
-
-    # Don't allow resubmission unless submission was rejected
-    if draft.approval and draft.approval.state != Sanction.REJECTED:
-        raise HTTPError(http_status.HTTP_409_CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
-
-    register = draft.register(auth)
-    draft.save()
-
-    if registration_choice == 'embargo':
-        # Initiate embargo
-        embargo_end_date = parse_date(attributes['lift_embargo'], ignoretz=True).replace(tzinfo=pytz.utc)
-        try:
-            register.embargo_registration(auth.user, embargo_end_date)
-        except ValidationError as err:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long=err.message))
-    else:
-        try:
-            register.require_approval(auth.user)
-        except NodeStateError as err:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(message_long=str(err)))
-
-    register.save()
-    push_status_message(language.AFTER_REGISTER_ARCHIVING,
-                        kind='info',
-                        trust=False,
-                        id='registration_archiving')
-    return {
-        'status': 'initiated',
-        'urls': {
-            'registrations': node.web_url_for('node_registrations', _guid=True)
-        }
-    }, http_status.HTTP_202_ACCEPTED
 
 
 @must_have_permission(ADMIN)

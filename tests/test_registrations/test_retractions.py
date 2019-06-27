@@ -886,7 +886,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
         # group admin POST fails
         res = self.app.post_json(self.retraction_post_url, auth=self.group_mem.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     @mock.patch('website.mails.send_mail')
     def test_POST_retraction_without_justification_returns_HTTPOK(self, mock_send):
@@ -952,7 +952,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
         # group admin on node fails disapproval GET
         res = self.app.get(approval_url, auth=self.group_mem.auth, expect_errors=True)
-        assert_equal(res.status_code, http.UNAUTHORIZED)
+        assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
 
     def test_non_contributor_GET_disapproval_returns_HTTPError_UNAUTHORIZED(self):
         non_contributor = AuthUserFactory()
@@ -967,4 +967,4 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
         # group admin on node fails disapproval GET
         res = self.app.get(disapproval_url, auth=self.group_mem.auth, expect_errors=True)
-        assert_equal(res.status_code, http.UNAUTHORIZED)
+        assert_equal(res.status_code, http_status.HTTP_401_UNAUTHORIZED)
