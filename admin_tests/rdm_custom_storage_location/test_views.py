@@ -8,7 +8,6 @@ from osf_tests.factories import (
 )
 from admin_tests.utilities import setup_user_view
 from admin.rdm_custom_storage_location import views
-from admin.rdm_custom_storage_location import csl_utils
 from addons.osfstorage.models import Region
 
 class TestInstitutionDefaultStorage(AdminTestCase):
