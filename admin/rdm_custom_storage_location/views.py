@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.http import HttpResponse
-from django.views.generic import TemplateView
-import hashlib
+from django.http import HttpResponse, Http404
+from django.views.generic import TemplateView, View
 import json
+import hashlib
+from mimetypes import MimeTypes
+import os
 
 from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
-from admin.rdm_custom_storage_location import csl_utils
+from admin.rdm_custom_storage_location import utils
 from osf.models import Institution
 from scripts import refresh_addon_tokens
 
@@ -47,6 +49,29 @@ class InstitutionalStorage(RdmPermissionMixin, UserPassesTestMixin, TemplateView
 
         kwargs['institution'] = institution
         kwargs['region'] = region
-        kwargs['providers'] = csl_utils.get_providers()
+        kwargs['providers'] = utils.get_providers()
         kwargs['selected_provider_short_name'] = region.waterbutler_settings['storage']['provider']
         return kwargs
+
+
+class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
+    """View for each addon's icon"""
+    raise_exception = True
+
+    def test_func(self):
+        """check user permissions"""
+        # login check
+        return self.is_authenticated
+
+    def get(self, request, *args, **kwargs):
+        addon_name = kwargs['addon_name']
+        addon = utils.get_addon_by_name(addon_name)
+        if addon:
+            # get addon's icon
+            image_path = os.path.join('addons', addon_name, 'static', addon.icon)
+            if os.path.exists(image_path):
+                with open(image_path, 'rb') as f:
+                    image_data = f.read()
+                    content_type = MimeTypes().guess_type(addon.icon)[0]
+                    return HttpResponse(image_data, content_type=content_type)
+        raise Http404

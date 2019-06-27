@@ -137,29 +137,6 @@ class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
         raise Http404
 
 
-class IconIgnoreConfigView(RdmPermissionMixin, UserPassesTestMixin, View):
-    """View for each addon's icon"""
-    raise_exception = True
-
-    def test_func(self):
-        """check user permissions"""
-        # login check
-        return self.is_authenticated
-
-    def get(self, request, *args, **kwargs):
-        addon_name = kwargs['addon_name']
-        addon = utils.get_addon_by_name(addon_name)
-        if addon:
-            # get addon's icon
-            image_path = os.path.join('addons', addon_name, 'static', addon.icon)
-            if os.path.exists(image_path):
-                with open(image_path, 'rb') as f:
-                    image_data = f.read()
-                    content_type = MimeTypes().guess_type(addon.icon)[0]
-                    return HttpResponse(image_data, content_type=content_type)
-        raise Http404
-
-
 class AddonAllowView(RdmPermissionMixin, UserPassesTestMixin, View):
     """View for saving whether to allow use of each add-on"""
     raise_exception = True

@@ -14,10 +14,17 @@ def get_providers():
     for provider in osf_settings.ADDONS_AVAILABLE:
         if 'storage' in provider.categories and provider.short_name in enabled_providers_list:
             provider.icon_url_admin = \
-                '/addons/icon_ignore_config/{}/comicon.png'.format(provider.short_name)
+                '/custom_storage_location/icon/{}/comicon.png'.format(provider.short_name)
             provider.modal_path = get_modal_path(provider.short_name)
             provider_list.append(provider)
     return provider_list
+
+def get_addon_by_name(addon_short_name):
+    """get Addon object from Short Name."""
+    for addon in osf_settings.ADDONS_AVAILABLE:
+        if addon.short_name == addon_short_name:
+            return addon
+    return None
 
 def get_modal_path(short_name):
     base_path = os.path.join('rdm_custom_storage_location', 'providers')
