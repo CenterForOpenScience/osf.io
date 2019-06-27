@@ -36,15 +36,17 @@
                         <div class="panel-body">
 
                             <table class="table table-condensed">
-                                {% for addon in addons %}
+                                {% for provider_item in providers %}
                                 <tr>
                                     <td class="is_allowed">
                                         <div class="radio">
                                             <label class="center-block">
-                                                <input type="radio" name="options" id="{{addon.short_name}}" value="{{addon.short_name}}" {% if provider == addon.short_name %}checked{% endif %}>
+                                                <input type="radio" name="options" id="{{provider_item.short_name}}"
+                                                    value="{{provider_item.short_name}}"
+                                                    {% if selected_provider_short_name == provider_item.short_name %}checked{% endif %}>
                                                 <h4 class="addon-title">
-                                                    <img src="{{addon.icon_url_admin}}" class="addon-icon">
-                                                    <span>{{addon.full_name}}</span>
+                                                    <img src="{{provider_item.icon_url_admin}}" class="addon-icon">
+                                                    <span>{{provider_item.full_name}}</span>
                                                 </h4>
                                             </label>
                                         </div>
@@ -64,11 +66,14 @@
 
         </div>
     </form>
+    {% for provider_item in providers %}
+    {% include provider_item.modal_path %}
+    {% endfor %}
 </div>
 
 <br class="clear">
 {% endblock content %}
 
 {% block bottom_js %}
-    {% render_bundle 'rdm-institutional-storage-page' %}
+{% render_bundle 'rdm-institutional-storage-page' %}
 {% endblock %}
