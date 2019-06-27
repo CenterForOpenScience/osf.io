@@ -2,6 +2,10 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.15.0 (2019-06-27)
+===================
+- Add a management command for measuring data storage usage metrics
+
 19.14.0 (2019-06-26)
 ===================
 - Chronos: Limit Submission URL visibility
