@@ -456,10 +456,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         social_user_fields = {}
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
-                if not isinstance(val, basestring):
-                    social_user_fields[key] = val
+                if isinstance(self.SOCIAL_FIELDS[key], basestring):
+                    if isinstance(val, basestring):
+                        social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
+                    else:
+                        social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val[0])
                 else:
-                    social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
+                    if not isinstance(val, basestring):
+                        social_user_fields[key] = val
+                    else:
+                        social_user_fields[key] = [val]
         return social_user_fields
 
     @property
