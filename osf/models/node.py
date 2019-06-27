@@ -2209,82 +2209,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # After delete callback
         remove_addons(auth, hierarchy)
 
-<<<<<<< HEAD
-=======
-        # Add log to parent
-        if self.parent_node:
-            self.parent_node.add_log(
-                NodeLog.NODE_REMOVED,
-                params={
-                    'project': self._primary_key,
-                },
-                auth=auth,
-                log_date=log_date,
-                save=True,
-            )
-        else:
-            self.add_log(
-                NodeLog.PROJECT_DELETED,
-                params={
-                    'project': self._primary_key,
-                },
-                auth=auth,
-                log_date=log_date,
-                save=True,
-            )
-
-        self.is_deleted = True
-        self.deleted = log_date
-        self.save()
-
-        project_signals.node_deleted.send(self)
-
-        return True
-
-    def admin_public_wiki(self, user):
-        return (
-            self.has_addon('wiki') and
-            self.has_permission(user, 'admin') and
-            self.is_public
-        )
-
-    def admin_of_wiki(self, user):
-        return (
-            self.has_addon('wiki') and
-            self.has_permission(user, 'admin')
-        )
-
-    def include_wiki_settings(self, user):
-        """Check if node meets requirements to make publicly editable."""
-        return self.get_descendants_recursive()
-
-    def get_wiki_page(self, name=None, version=None, id=None):
-        NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
-        if name:
-            name = (name or '').strip()
-            key = to_mongo_key(name)
-            try:
-                if version and (isinstance(version, int) or version.isdigit()):
-                    id = self.wiki_pages_versions[key][int(version) - 1]
-                elif version == 'previous':
-                    id = self.wiki_pages_versions[key][-2]
-                elif version == 'current' or version is None:
-                    id = self.wiki_pages_current[key]
-                else:
-                    return None
-            except (KeyError, IndexError):
-                return None
-        return NodeWikiPage.load(id)
-
-    def update_node_wiki(self, name, content, auth):
-        """Update the node's wiki page with new content.
-
-        :param page: A string, the page's name, e.g. ``"home"``.
-        :param content: A string, the posted content.
-        :param auth: All the auth information including user, API key.
-        """
-        NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
->>>>>>> dda3fea7c3... Add deleted datetime field and migration, rename existing deleted fields
         Comment = apps.get_model('osf.Comment')
         Comment.objects.filter(node__id__in=hierarchy).update(root_target=None)
 
@@ -2293,6 +2217,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # Add log to parents
             node.is_deleted = True
             node.deleted_date = date
+            node.deleted = date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
 
