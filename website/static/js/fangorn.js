@@ -656,16 +656,8 @@ function doItemOp(operation, to, from, rename, conflict) {
             tb.pendingFileOps.pop();
         }
         if (xhr.status === 202) {
-            var mithrilContent = m('div', [
-                m('h3.break-word', operation.action + ' "' + (from.data.materialized || '/') + '" to "' + (to.data.materialized || '/') + '" is taking a bit longer than expected.'),
-                m('p', 'We\'ll send you an email when it has finished.'),
-                m('p', 'In the mean time you can leave this page; your ' + operation.status + ' will still be completed.')
-            ]);
-            var mithrilButtons = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
-            ]);
-            var header =  m('h3.modal-title.break-word', 'Operation Information');
-            tb.modal.update(mithrilContent, mithrilButtons, header);
+            var message =  'We\'ll send you an email when it has finished. <br> You can leave this page; your ' + operation.status + ' will still be completed.';
+            $osf.growl(operation.action + ' "' + (from.data.materialized || '/') + '" to "' + (to.data.materialized || '/') + '" is pending', message);
             return;
         }
         from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
