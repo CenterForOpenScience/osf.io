@@ -704,6 +704,7 @@ class TestProject:
         # )
         assert node.is_public is False
         assert node.is_deleted is False
+        assert hasattr(node, 'deleted_date')
         assert hasattr(node, 'deleted')
         assert node.is_registration is False
         assert hasattr(node, 'registered_date')

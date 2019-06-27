@@ -335,6 +335,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                 related_name='nodes_created',
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
+    deleted_date = NonNaiveDateTimeField(null=True, blank=True)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
