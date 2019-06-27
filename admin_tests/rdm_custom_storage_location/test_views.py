@@ -35,6 +35,13 @@ class TestInstitutionDefaultStorage(AdminTestCase):
             'NextcloudAddonAppConfig',
         ]
 
+    def test_admin_login(self):
+        self.request.user.is_active = True
+        self.request.user.is_registered = True
+        self.request.user.is_superuser = False
+        self.request.user.is_staff = True
+        nt.assert_true(self.view.test_func())
+
     def test_get(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **kwargs)
         nt.assert_equal(res.status_code, 200)
