@@ -10,17 +10,6 @@ enabled_addons_list = [
 ]
 
 
-def get_provider_short_name(settings):
-    if 'storage' in settings and 'provider' in settings['storage']:
-        return settings['storage']['provider']
-    return 'osfstorage'
-
-def load_addons_info():
-    data = None
-    with open(osf_settings.APP_PATH + '/addons.json') as f:
-        data = json.load(f)
-    return data
-
 def get_addons():
     addon_list = []
     for addon in osf_settings.ADDONS_AVAILABLE:
