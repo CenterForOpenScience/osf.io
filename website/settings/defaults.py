@@ -582,7 +582,7 @@ class CeleryConfig:
             },
             'data_storage_usage': {
               'task': 'management.commands.data_storage_usage',
-              'schedule': crontab(day_of_month=1, minute=30, hour=9),  # First of the month at 4:30 a.m.
+              'schedule': crontab(day_of_month=1, minute=30, hour=4),  # Last of the month at 11:30 p.m.
             },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
