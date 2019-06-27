@@ -45,7 +45,7 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         for addon in res.context_data['addons']:
             nt.assert_true(type(addon).__name__ in self.addon_type_dict)
         nt.assert_equal(res.context_data['region'], self.default_region)
-        nt.assert_equal(res.context_data['provider'], csl_utils.get_provider_short_name(res.context_data['region'].waterbutler_settings))
+        nt.assert_equal(res.context_data['provider'], res.context_data['region'].waterbutler_settings['storage']['provider'])
 
     def test_get_custom_storage(self, *args, **kwargs):
         self.us = RegionFactory()
@@ -55,4 +55,4 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         for addon in res.context_data['addons']:
             nt.assert_true(type(addon).__name__ in self.addon_type_dict)
         nt.assert_equal(res.context_data['region'], self.us)
-        nt.assert_equal(res.context_data['provider'], csl_utils.get_provider_short_name(res.context_data['region'].waterbutler_settings))
+        nt.assert_equal(res.context_data['provider'], res.context_data['region'].waterbutler_settings['storage']['provider'])

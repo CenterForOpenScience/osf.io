@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import json
 from website import settings as osf_settings
 
 addons = None
