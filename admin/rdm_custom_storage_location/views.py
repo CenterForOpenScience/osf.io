@@ -47,6 +47,6 @@ class InstitutionalStorage(RdmPermissionMixin, UserPassesTestMixin, TemplateView
 
         kwargs['institution'] = institution
         kwargs['region'] = region
-        kwargs['addons'] = csl_utils.get_addons()
-        kwargs['provider'] = region.waterbutler_settings['storage']['provider']
+        kwargs['providers'] = csl_utils.get_providers()
+        kwargs['selected_provider_short_name'] = region.waterbutler_settings['storage']['provider']
         return kwargs
