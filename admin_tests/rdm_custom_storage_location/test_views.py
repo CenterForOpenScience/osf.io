@@ -52,8 +52,6 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         for addon in res.context_data['providers']:
             nt.assert_true(type(addon).__name__ in self.addon_type_dict)
         nt.assert_equal(res.context_data['region'], self.default_region)
-        import logging
-        logging.critical(res.context_data['selected_provider_short_name'])
         nt.assert_equal(res.context_data['selected_provider_short_name'], 'osfstorage')
 
     def test_get_custom_storage(self, *args, **kwargs):
