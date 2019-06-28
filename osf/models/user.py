@@ -460,6 +460,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     if isinstance(val, basestring):
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
                     else:
+                        # Provide a single account url for services which we allow multiple-accounts
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val[0])
                 else:
                     if not isinstance(val, basestring):
