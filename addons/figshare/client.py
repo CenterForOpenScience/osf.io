@@ -80,9 +80,12 @@ class FigshareClient(BaseClient):
         return bool(self.project(project_id).get('date_published'))
 
     def container_is_public(self, container_id, container_type):
+        folder_type_names = {
+            settings.FIGSHARE_DEFINED_TYPE_MAP.inverse[t] for t in settings.FIGSHARE_FOLDER_TYPES
+        }
         if container_type == 'project':
             return self.project_is_public(container_id)
-        elif container_type == 'fileset':
+        elif container_type in folder_type_names:
             return self.article_is_public(container_id)
 
     def article(self, article_id):
@@ -94,30 +97,39 @@ class FigshareClient(BaseClient):
 
     # OTHER HELPERS
     def get_folders(self):
-        projects = [{
-            'name': project['title'],
-            'path': 'project',
-            'id': str(project['id']),
-            'kind': 'folder',
-            'permissions': {'view': True},
-            'addon': 'figshare',
-            'hasChildren': False
-        } for project in self.projects()]
+        """ Return a list containing both projects and folder-like articles. """
 
-        articles = [{  # TODO: Figshare needs to make this filterable by defined_type to limit spurious requests
-            'name': (article['title'] or 'untitled article'),
-            'path': 'fileset',
-            'id': str(article['id']),
-            'kind': 'folder',
-            'permissions': {'view': True},
-            'addon': 'figshare',
-            'hasChildren': False
-        } for article in self.articles() if article['defined_type'] == settings.FIGSHARE_DEFINED_TYPE_NUM_MAP['fileset']]
+        projects = self.projects()
+        project_list = [
+            {
+                'name': project['title'],
+                'path': 'project',
+                'id': str(project['id']),
+                'kind': 'folder',
+                'permissions': {'view': True},
+                'addon': 'figshare',
+                'hasChildren': False
+            } for project in projects
+        ]
 
-        return projects + articles
+        # TODO: Figshare needs to make this filterable by defined_type to limit spurious requests
+        articles = self.articles()
+        article_list = [
+            {
+                'name': (article['title'] or 'untitled article'),
+                'path': settings.FIGSHARE_DEFINED_TYPE_MAP.inverse[article['defined_type']],
+                'id': str(article['id']),
+                'kind': 'folder',
+                'permissions': {'view': True},
+                'addon': 'figshare',
+                'hasChildren': False
+            } for article in articles if article['defined_type'] in settings.FIGSHARE_FOLDER_TYPES
+        ]
+
+        return project_list + article_list
 
     def get_linked_folder_info(self, _id):
-        """ Returns info about a linkable object -- 'project' or 'fileset' """
+        """ Returns info about a linkable object -- 'project', 'dataset' or 'fileset' """
         ret = {}
         try:
             folder = self._make_request(
@@ -129,9 +141,9 @@ class FigshareClient(BaseClient):
             ret['path'] = 'project'
         except HTTPError:
             folder = self.article(_id)
-            if folder.get('defined_type') != settings.FIGSHARE_DEFINED_TYPE_NUM_MAP['fileset']:
+            if folder.get('defined_type') not in settings.FIGSHARE_FOLDER_TYPES:
                 raise
-            ret['path'] = 'fileset'
+            ret['path'] = settings.FIGSHARE_DEFINED_TYPE_MAP.inverse[folder.get('defined_type')]
         ret['name'] = folder['title'] or 'untitled article'
         ret['id'] = str(_id)
         return ret
