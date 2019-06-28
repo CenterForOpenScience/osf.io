@@ -8,6 +8,7 @@ from django.contrib.postgres import fields
 from django.core.urlresolvers import reverse
 from django.db import models
 from osf.models import base
+from osf.utils.fields import NonNaiveDateTimeField
 from osf.models.contributor import InstitutionalContributor
 from osf.models.mixins import Loggable
 from website import settings as website_settings
@@ -54,6 +55,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     )
 
     is_deleted = models.BooleanField(default=False, db_index=True)
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
 
     class Meta:
         # custom permissions for use in the OSF Admin App
