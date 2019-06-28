@@ -136,7 +136,6 @@ class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
                     return HttpResponse(image_data, content_type=content_type)
         raise Http404
 
-
 class AddonAllowView(RdmPermissionMixin, UserPassesTestMixin, View):
     """View for saving whether to allow use of each add-on"""
     raise_exception = True

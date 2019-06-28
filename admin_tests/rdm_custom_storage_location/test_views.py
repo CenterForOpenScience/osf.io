@@ -1,5 +1,6 @@
 from nose import tools as nt
 from django.test import RequestFactory
+from django.http import Http404
 from tests.base import AdminTestCase
 from osf_tests.factories import (
     AuthUserFactory,
@@ -62,3 +63,29 @@ class TestInstitutionDefaultStorage(AdminTestCase):
             nt.assert_true(type(addon).__name__ in self.addon_type_dict)
         nt.assert_equal(res.context_data['region'], self.us)
         nt.assert_equal(res.context_data['selected_provider_short_name'], res.context_data['region'].waterbutler_settings['storage']['provider'])
+
+
+class TestIconView(AdminTestCase):
+    def setUp(self):
+        super(TestIconView, self).setUp()
+        self.user = AuthUserFactory()
+        self.request = RequestFactory().get('/fake_path')
+        self.view = views.IconView()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+    def tearDown(self):
+        super(TestIconView, self).tearDown()
+        self.user.delete()
+
+    def test_login_user(self):
+        nt.assert_true(self.view.test_func())
+
+    def test_valid_get(self, *args, **kwargs):
+        self.view.kwargs = {'addon_name': 's3'}
+        res = self.view.get(self.request, *args, **self.view.kwargs)
+        nt.assert_equal(res.status_code, 200)
+
+    def test_invalid_get(self, *args, **kwargs):
+        self.view.kwargs = {'addon_name': 'invalidprovider'}
+        with nt.assert_raises(Http404):
+            self.view.get(self.request, *args, **self.view.kwargs)
