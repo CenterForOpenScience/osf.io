@@ -10,18 +10,18 @@
                 <div>
                     <div class="form-group">
                         <label for="swift_keytone_versionSelect">Authentication(Keystone) Version</label>
-                        <select class="form-control" id="swift_keytone_versionSelect">
+                        <select class="form-control" id="swift_keytone_versionSelect" required>
                             <option value="v2" selected>v2</option>
                             <option value="v3">v3</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="swift_authentication_url">Authentication URL</label>
-                        <input type="text" class="form-control" id="swift_authentication_url">
+                        <input type="text" class="form-control" id="swift_authentication_url" required>
                     </div>
                     <div class="form-group">
                         <label for="swift_tenant_name">Tenant name</label>
-                        <input type="text" class="form-control" id="swift_tenant_name">
+                        <input type="text" class="form-control" id="swift_tenant_name" required>
                     </div>
                     <div class="form-group">
                         <label for="swift_project_domain_name">Project Domain name</label>
@@ -29,7 +29,7 @@
                     </div>
                     <div class="form-group">
                         <label for="swift_username">Username</label>
-                        <input type="text" class="form-control" id="swift_username">
+                        <input type="text" class="form-control" id="swift_username" required>
                     </div>
                     <div class="form-group">
                         <label for="swift_user_domain_name">User Domain name</label>
@@ -37,16 +37,17 @@
                     </div>
                     <div class="form-group">
                         <label for="swift_password">Password</label>
-                        <input type="password" class="form-control" id="swift_password">
+                        <input type="password" class="form-control" id="swift_password" required>
                     </div>
                     <div class="form-group">
                         <label for="swift_folder">Folder</label>
                         <input type="text" class="form-control" id="swift_folder"
-                            placeholder="institutional/OSF Storage">
+                            placeholder="institutional/OSF Storage" required>
                     </div>
                     <div class="form-group">
                         <label for="swift_container">Container</label>
-                        <input type="text" class="form-control" id="swift_container" placeholder="my_container">
+                        <input type="text" class="form-control" id="swift_container" placeholder="my_container"
+                            required>
                     </div>
 
                 </div>
@@ -54,8 +55,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-default" id="swift_connect">Connect</button>
-                <button type="button" class="btn btn-success">Save</button>
+                <button type="button" class="btn btn-success" id="swift_connect" disabled>Connect</button>
+                <button type="button" class="btn btn-default" disabled>Save</button>
             </div>
         </div>
     </div>
