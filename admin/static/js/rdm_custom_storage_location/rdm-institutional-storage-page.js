@@ -12,7 +12,7 @@ $('#s3_modal input').keyup(function () {
     var allFilled = $('#s3_modal [required]').toArray().reduce(function (accumulator, current) {
         return accumulator && current.value.length > 0;
     }, true);
-    $('#s3_connect').toggleClass('disabled', !allFilled);
+    $("#s3_connect").attr("disabled", !allFilled);
 });
 
 $("#swift_keytone_versionSelect").change(function() {
