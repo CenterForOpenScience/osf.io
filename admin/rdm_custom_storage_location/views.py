@@ -46,11 +46,15 @@ class InstitutionalStorage(RdmPermissionMixin, UserPassesTestMixin, TemplateView
             region = Region.objects.get(_id=institution._id)
         else:
             region = Region.objects.first()
+            region.name = ''
+
+        provider_name = region.waterbutler_settings['storage']['provider']
+        provider_name = provider_name if provider_name != 'filesystem' else 'osfstorage'
 
         kwargs['institution'] = institution
         kwargs['region'] = region
         kwargs['providers'] = utils.get_providers()
-        kwargs['selected_provider_short_name'] = region.waterbutler_settings['storage']['provider']
+        kwargs['selected_provider_short_name'] = provider_name
         return kwargs
 
 
