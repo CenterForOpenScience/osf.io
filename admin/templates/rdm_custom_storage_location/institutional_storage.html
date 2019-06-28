@@ -19,12 +19,12 @@
 <h2>Institutional Storage <small>({{ institution.name }})</small></h2>
 
 <div id="content-main">
-    <form role="form">
+    <form role="form"  id="institutional_storage_form">
         <div id="addonSettings">
             <div class="row form-inline storage-name">
                 <div class="form-group">
                     <label for="storage_name" class="label-large">Name:</label>
-                    <input type="text" class="form-control" id="storage_name" value="{{ region.name }}">
+                    <input type="text" required class="form-control" id="storage_name" name="storage_name" value="{{ region.name }}" >
                 </div>
             </div>
             <div class="row">
@@ -59,7 +59,7 @@
                     </div>
                     <div class="pull-right">
                         <button class="btn btn-default" type="reset">Reset</button>
-                        <button class="btn btn-success next-btn" type="button">Next</button>
+                        <button class="btn btn-success next-btn" type="submit">Next</button>
                     </div>
                 </div>
             </div>

@@ -2,9 +2,12 @@
 
 var $ = require('jquery');
 
-$('.next-btn').click(function () {
-    var selectedProvider = $('input[name=\'options\']:checked').val();
-    $('#' + selectedProvider + '_modal').modal('show');
+$("#institutional_storage_form").submit(function (e) {
+    if ($('#institutional_storage_form')[0].checkValidity()) {
+        var selectedProvider = $('input[name=\'options\']:checked').val();
+        $('#' + selectedProvider + '_modal').modal('show');
+    }
+    e.preventDefault();
 });
 
 $('#s3_modal input').keyup(function () {
