@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from functools import reduce
 import httplib as http
 import json
@@ -247,6 +248,47 @@ def iqbrims_get_storage(**kwargs):
             'guids': node_guids,
             'management': {'id': management_node._id,
                            'guids': management_guids}}
+
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_valid_hash()
+def iqbrims_reject_storage(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    iqbrims = node.get_addon('iqbrims')
+    folder = kwargs['folder']
+    folder_name = None
+    file_name = None
+    if folder == 'index':
+        folder_name = REVIEW_FOLDERS['raw']
+    else:
+        folder_name = REVIEW_FOLDERS[folder]
+    try:
+        access_token = iqbrims.fetch_access_token()
+    except exceptions.InvalidAuthError:
+        raise HTTPError(403)
+    client = IQBRIMSClient(access_token)
+    folders = client.folders(folder_id=iqbrims.folder_id)
+    folders = [f for f in folders if f['title'] == folder_name]
+
+    folder_path = iqbrims.folder_path
+    management_node = _get_management_node(node)
+    base_folder_path = management_node.get_addon('googledrive').folder_path
+    assert folder_path.startswith(base_folder_path)
+    root_folder_path = folder_path[len(base_folder_path):]
+
+    if len(folders) == 0:
+        logger.info(u'Already rejected: {}, {}'.format(folder, folder_name))
+        return {'status': 'nochange',
+                'root_folder': root_folder_path}
+    logger.info(u'Rejecting Storage: {}, {}, {}'.format(folder, folder_name,
+                                                        folders[0]['id']))
+    rejected_name = u'{}.{}'.format(folder_name,
+                                    datetime.now().strftime('%Y%m%d-%H%M%S'))
+    client.rename_folder(folders[0]['id'], rejected_name)
+    client.create_folder(iqbrims.folder_id, folder_name)
+
+    return {'status': 'rejected',
+            'root_folder': root_folder_path}
 
 def _iqbrims_import_auth_from_management_node(node, node_addon, management_node):
     """Grant oauth access on user_settings of management_node and

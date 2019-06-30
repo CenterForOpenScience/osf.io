@@ -90,6 +90,22 @@ class IQBRIMSClient(BaseClient):
         )
         return res.json()
 
+    def rename_folder(self, folder_id, title):
+        res = self._make_request(
+            'PUT',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+                            folder_id),
+            headers={
+                'Content-Type': 'application/json',
+            },
+            data=json.dumps({
+                'title': title,
+            }),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
     def create_folder_if_not_exists(self, folder_id, title):
         items = self.folders(folder_id)
         exists = filter(lambda item: item['title'] == title, items)

@@ -111,6 +111,11 @@ api_routes = {
             '/project/<pid>/node/<nid>/iqbrims/storage/<folder>',
         ], 'get', views.iqbrims_get_storage, json_renderer),
 
+        Rule([
+            '/project/<pid>/iqbrims/storage/<folder>',
+            '/project/<pid>/node/<nid>/iqbrims/storage/<folder>',
+        ], 'delete', views.iqbrims_reject_storage, json_renderer),
+
     ],
     'prefix': '/api/v1'
 }
