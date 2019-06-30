@@ -105,7 +105,7 @@ class IQBRIMSFlowableClient(object):
     def __init__(self, app_id):
         self.app_id = app_id
 
-    def start_workflow(self, project_id, project_title, secret):
+    def start_workflow(self, project_id, project_title, status, secret):
         url = '{}service/runtime/process-instances'.format(settings.FLOWABLE_HOST)
         payload = {'processDefinitionId': self.app_id,
                    'variables': [{'name': 'projectId',
@@ -114,6 +114,9 @@ class IQBRIMSFlowableClient(object):
                                  {'name': 'paperTitle',
                                   'type': 'string',
                                   'value': project_title},
+                                 {'name': 'isDirectlySubmitData',
+                                  'type': 'boolean',
+                                  'value': status['is_directly_submit_data']},
                                  {'name': 'secret',
                                   'type': 'string',
                                   'value': secret}]}

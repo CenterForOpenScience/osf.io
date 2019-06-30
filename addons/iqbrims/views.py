@@ -122,7 +122,8 @@ def iqbrims_set_status(**kwargs):
                 app_id = iqbrims.get_process_definition_id(register_type)
                 flowable = IQBRIMSFlowableClient(app_id)
                 logger.info('Starting...: app_id={} project_id={}'.format(app_id, node._id))
-                flowable.start_workflow(node._id, node.title, iqbrims.get_secret())
+                flowable.start_workflow(node._id, node.title, all_status,
+                                        iqbrims.get_secret())
             management_node = _get_management_node(node)
 
             # import auth
