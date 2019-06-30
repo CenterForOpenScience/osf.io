@@ -136,6 +136,9 @@ class IQBRIMSFlowableClient(object):
                                  {'name': 'isDirectlySubmitData',
                                   'type': 'boolean',
                                   'value': is_directly_submit_data},
+                                 {'name': 'flowableWorkflowUrl',
+                                  'type': 'string',
+                                  'value': settings.FLOWABLE_TASK_URL},
                                  {'name': 'secret',
                                   'type': 'string',
                                   'value': secret}]}

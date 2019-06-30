@@ -4,6 +4,7 @@ from functools import reduce
 import httplib as http
 import json
 import logging
+import urllib
 
 from django.db import transaction
 from django.db.models import Subquery
@@ -21,6 +22,7 @@ from website.project.decorators import (
     must_be_addon_authorizer,
     must_have_permission,
 )
+from website import settings as website_settings
 from website.ember_osf_web.views import use_ember_app
 from addons.iqbrims import settings
 
@@ -28,7 +30,7 @@ from addons.base import generic_views, exceptions
 from addons.iqbrims.serializer import IQBRIMSSerializer
 from addons.iqbrims.models import NodeSettings as IQBRIMSNodeSettings
 from addons.iqbrims.models import REVIEW_FOLDERS
-from addons.iqbrims.utils import must_have_valid_hash
+from addons.iqbrims.utils import get_log_actions, must_have_valid_hash
 
 logger = logging.getLogger(__name__)
 
@@ -150,13 +152,20 @@ def iqbrims_post_notify(**kwargs):
     data = json.loads(request.data)
     notify_type = data['notify_type']
     to = data['to']
+    notify_body = data['notify_body'] if 'notify_body' in data else None
     nodes = []
     if 'user' in to:
         nodes.append((node, 'iqbrims_user'))
     if 'admin' in to:
         nodes.append((_get_management_node(node), 'iqbrims_management'))
+    action = 'iqbrims_{}'.format(notify_type)
+    if notify_body is None:
+        log_actions = get_log_actions()
+        if action in log_actions:
+            notify_body = log_actions[action]
+            notify_body = notify_body.replace('${user}', node.creator._id)
+            notify_body = notify_body.replace('${node}', node._id)
     for n, email_template in nodes:
-        action = 'iqbrims_{}'.format(notify_type)
         n.add_log(
             action=action,
             params={
@@ -171,7 +180,8 @@ def iqbrims_post_notify(**kwargs):
         for email in emails:
             send_mail(email, Mail(email_template, action),
                       title=n.title, guid=n._id, author=node.creator,
-                      notify_type=notify_type, mimetype='html')
+                      notify_type=notify_type, mimetype='html',
+                      notify_body=notify_body)
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
@@ -220,34 +230,27 @@ def iqbrims_get_storage(**kwargs):
     assert folder_path.startswith(base_folder_path)
     root_folder_path = folder_path[len(base_folder_path):]
     logger.debug(u'Folder path: {}'.format(root_folder_path))
-    node_guids = {}
-    management_guids = {}
+    node_urls = []
+    management_urls = []
     if len(files) > 0:
         for f in files:
-            g = BaseFileNode.resolve_class(SHORT_NAME, BaseFileNode.ANY).get_file_guids(
-                materialized_path=u'/{}/{}'.format(folders[0]['title'],
-                                                   f['title']),
-                provider=SHORT_NAME,
-                target=node
-            )
-            if len(g) > 0:
-                node_guids[f['title']] = g[0]
-            g = BaseFileNode.resolve_class('googledrive', BaseFileNode.ANY).get_file_guids(
-                materialized_path=u'{}{}/{}'.format(root_folder_path,
-                                                    folders[0]['title'],
-                                                    f['title']),
-                provider='googledrive',
-                target=management_node
-            )
-            if len(g) > 0:
-                management_guids[f['title']] = g[0]
-    logger.info('Guids: node={}, management={}'.format(node_guids, management_guids))
+            url = website_settings.DOMAIN.rstrip('/') + '/' + node._id + \
+                  '/files/iqbrims/' + \
+                  urllib.quote(folders[0]['title'].encode('utf8')) + '/' + \
+                  urllib.quote(f['title'].encode('utf8'))
+            node_urls.append({'title': f['title'], 'url': url})
+            url = website_settings.DOMAIN.rstrip('/') + '/' + management_node._id + \
+                  '/files/googledrive' + root_folder_path + \
+                  urllib.quote(folders[0]['title'].encode('utf8')) + '/' + \
+                  urllib.quote(f['title'].encode('utf8'))
+            management_urls.append({'title': f['title'], 'url': url})
+    logger.info('Urls: node={}, management={}'.format(node_urls, management_urls))
 
     return {'status': 'complete' if len(files) > 0 else 'processing',
             'root_folder': root_folder_path,
-            'guids': node_guids,
+            'urls': node_urls,
             'management': {'id': management_node._id,
-                           'guids': management_guids}}
+                           'urls': management_urls}}
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
