@@ -107,6 +107,9 @@ class IQBRIMSFlowableClient(object):
 
     def start_workflow(self, project_id, project_title, status, secret):
         url = '{}service/runtime/process-instances'.format(settings.FLOWABLE_HOST)
+        is_directly_submit_data = status['is_directly_submit_data'] \
+                                  if 'is_directly_submit_data' in status \
+                                  else False
         payload = {'processDefinitionId': self.app_id,
                    'variables': [{'name': 'projectId',
                                   'type': 'string',
@@ -116,7 +119,7 @@ class IQBRIMSFlowableClient(object):
                                   'value': project_title},
                                  {'name': 'isDirectlySubmitData',
                                   'type': 'boolean',
-                                  'value': status['is_directly_submit_data']},
+                                  'value': is_directly_submit_data},
                                  {'name': 'secret',
                                   'type': 'string',
                                   'value': secret}]}
