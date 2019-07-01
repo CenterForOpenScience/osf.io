@@ -14,6 +14,8 @@
   "iqbrims_expire_paper": "Expired paper of ${user} for ${node}",
   "iqbrims_expire_raw": "Expired raw of ${user} for ${node}",
   "iqbrims_expire_checklist": "Expired checklist of ${user} for ${node}",
+  "iqbrims_confirm_checklist": "Please confirm checklist of ${user} for ${node}",
+  "iqbrims_reject_checklist": "Reject checklist of ${user} for ${node}",
   "iqbrims_complete_paper": "Uploaded paper of ${user} for ${node}",
   "iqbrims_complete_raw": "Uploaded raw of ${user} for ${node}",
   "iqbrims_complete_checklist": "Uploaded checklist of ${user} for ${node}",

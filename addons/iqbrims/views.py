@@ -152,6 +152,7 @@ def iqbrims_post_notify(**kwargs):
     data = json.loads(request.data)
     notify_type = data['notify_type']
     to = data['to']
+    notify_title = data['notify_title'] if 'notify_title' in data else None
     notify_body = data['notify_body'] if 'notify_body' in data else None
     nodes = []
     if 'user' in to:
@@ -163,8 +164,13 @@ def iqbrims_post_notify(**kwargs):
         log_actions = get_log_actions()
         if action in log_actions:
             notify_body = log_actions[action]
-            notify_body = notify_body.replace('${user}', node.creator._id)
-            notify_body = notify_body.replace('${node}', node._id)
+            uname = 'User {} ({})'.format(node.creator.username,
+                                          node.creator._id)
+            notify_body = notify_body.replace('${user}', uname)
+            nname = 'Node {} ({})'.format(node.title, node._id)
+            notify_body = notify_body.replace('${node}', nname)
+    if notify_title is None:
+        notify_title = action
     for n, email_template in nodes:
         n.add_log(
             action=action,
@@ -178,10 +184,10 @@ def iqbrims_post_notify(**kwargs):
                         [[e.address for e in u.emails.all()]
                          for u in n.contributors])
         for email in emails:
-            send_mail(email, Mail(email_template, action),
+            send_mail(email, Mail(email_template, notify_title),
                       title=n.title, guid=n._id, author=node.creator,
                       notify_type=notify_type, mimetype='html',
-                      notify_body=notify_body)
+                      notify_body=notify_body, notify_title=notify_title)
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
