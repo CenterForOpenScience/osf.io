@@ -25,6 +25,7 @@ def transfer_forked_date(state, schema):
     """
     If the most recent node log is forking, transfer that log's date to the node's last_logged field
     """
+    Node = state.get_model('osf', 'Node')
     newest = NodeLog.objects.filter(node=OuterRef('pk')).order_by('-date')
     nodes = Node.objects.filter(is_fork=True).annotate(latest_log=Subquery(newest.values('action')[:1])).filter(latest_log='node_forked')
     for node in nodes:
