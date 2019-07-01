@@ -69,7 +69,7 @@ def build_filename_set(files):
     """
     return set(files.values_list('name', flat=True).order_by('name'))
 
-def compare_basefilenodes(resource_one, resource_two):
+def recursively_compare_folders(resource_one, resource_two):
     """
     Recursively compares the contents of two folders - assumes initial resource_one
     and resource_two have the same name
@@ -96,7 +96,7 @@ def resources_match(resource_one, resource_two):
     If two files, compares versions.
     """
     if resource_one['type'] == FOLDER:
-        match = compare_basefilenodes(resource_one, resource_two)
+        match = recursively_compare_folders(resource_one, resource_two)
     else:
         match = compare_versions(resource_one, resource_two)
     return match
