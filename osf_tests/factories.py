@@ -187,6 +187,13 @@ class BaseNodeFactory(DjangoModelFactory):
     class Meta:
         model = models.Node
 
+    #Fix for adding the deleted date.
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        if kwargs.get('is_deleted', None):
+            kwargs['deleted'] = timezone.now()
+        return super(BaseNodeFactory, cls)._create(*args, **kwargs)
+
 
 class ProjectFactory(BaseNodeFactory):
     category = 'project'
