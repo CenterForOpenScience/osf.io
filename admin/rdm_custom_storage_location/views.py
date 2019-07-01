@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse
 from django.views.generic import TemplateView, View
 import json
 import hashlib
@@ -79,3 +79,17 @@ class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
                     content_type = MimeTypes().guess_type(addon.icon)[0]
                     return HttpResponse(image_data, content_type=content_type)
         raise Http404
+
+def test_connection(request):
+    data = json.loads(request.body)
+    provider_short_name = data.get('provider_short_name', None)
+    if not provider_short_name:
+        response = {
+            'message': 'Provider is missing.'
+        }
+        return JsonResponse(response, status=500)
+
+    if(provider_short_name == 's3'):
+        s3_access_key = data.get('s3_access_key', None)
+        s3_secret_key = data.get('s3_secret_key', None)
+        return utils.test_s3_connection(s3_access_key, s3_secret_key)
