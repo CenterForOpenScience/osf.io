@@ -220,7 +220,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                node.get_addon(external_account.provider, is_deleted=True).deauthorize(auth=auth)
+                node.get_addon(external_account.provider, deleted=True).deauthorize(auth=auth)
             except AttributeError:
                 # No associated addon settings despite oauth grant
                 pass
