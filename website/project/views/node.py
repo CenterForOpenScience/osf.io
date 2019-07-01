@@ -728,7 +728,7 @@ def _view_project(node, auth, primary=False,
         'node': {
             'disapproval_link': disapproval_link,
             'id': node._primary_key,
-            'title': node.title,
+            'title': sanitize.unescape_entities(node.title),
             'category': node.category_display,
             'category_short': node.category,
             'node_type': node.project_or_component,
