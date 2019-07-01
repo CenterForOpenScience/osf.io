@@ -869,6 +869,14 @@ def addon_view_file(auth, node, file_node, version):
         args={'url': download_url.url}
     )
 
+    version_names = []
+    versions = file_node.versions.order_by('-created')
+    if versions.count():
+        for vers in versions:
+            file_version_thru = vers.get_basefilenode_version(file_node)
+            name = file_version_thru.version_name if file_version_thru else file_node.name
+            version_names.append(name)
+
     ret.update({
         'urls': {
             'render': render_url.url,
@@ -896,6 +904,7 @@ def addon_view_file(auth, node, file_node, version):
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
         'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
+        'version_names': version_names
     })
 
     ret.update(rubeus.collect_addon_assets(node))

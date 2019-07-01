@@ -31,7 +31,7 @@ from osf.models import Tag, QuickFilesNode
 from osf.models import files as models
 from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
-from addons.base.views import make_auth
+from addons.base.views import make_auth, addon_view_file
 from addons.osfstorage import settings as storage_settings
 from api_tests.utils import create_test_file, create_test_preprint_file
 from api.caching.settings import STORAGE_USAGE_KEY
@@ -1615,6 +1615,21 @@ class TestFileViews(StorageTestCase):
         url = base_url.format(folder._id)
         redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert redirect.status_code == 400
+
+    def test_addon_view_file(self):
+        file = create_test_file(target=self.node, user=self.user, filename='first_name')
+        version = factories.FileVersionFactory()
+        file.add_version(version)
+        file.move_under(self.node_settings.get_root(), name='second_name')
+        file.save()
+
+        version = factories.FileVersionFactory()
+        file.add_version(version)
+        file.move_under(self.node_settings.get_root(), name='third_name')
+        file.save()
+
+        ret = addon_view_file(Auth(self.user), self.node, file, version)
+        assert ret['version_names'] == ['third_name', 'second_name', 'first_name']
 
     def test_osfstorage_download_view(self):
         file = create_test_file(target=self.node, user=self.user)
