@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import httplib
 import os
 from website import settings as osf_settings
 
@@ -17,6 +18,7 @@ def get_providers():
                 '/custom_storage_location/icon/{}/comicon.png'.format(provider.short_name)
             provider.modal_path = get_modal_path(provider.short_name)
             provider_list.append(provider)
+    provider_list.sort(key=lambda x: x.full_name.lower())
     return provider_list
 
 def get_addon_by_name(addon_short_name):
