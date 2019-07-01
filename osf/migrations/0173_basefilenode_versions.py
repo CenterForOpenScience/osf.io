@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0171_remove_basefilenode_versions'),
+        ('osf', '0172_remove_basefilenode_versions'),
     ]
 
     operations = [
