@@ -154,6 +154,7 @@ def iqbrims_post_notify(**kwargs):
     to = data['to']
     notify_title = data['notify_title'] if 'notify_title' in data else None
     notify_body = data['notify_body'] if 'notify_body' in data else None
+    use_mail = data['use_mail'] if 'use_mail' in data else False
     nodes = []
     if 'user' in to:
         nodes.append((node, 'iqbrims_user'))
@@ -180,6 +181,8 @@ def iqbrims_post_notify(**kwargs):
             },
             auth=Auth(user=node.creator),
         )
+        if not use_mail:
+            continue
         emails = reduce(lambda x, y: x + y,
                         [[e.address for e in u.emails.all()]
                          for u in n.contributors])
