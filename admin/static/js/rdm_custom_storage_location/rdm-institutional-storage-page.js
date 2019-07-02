@@ -19,6 +19,10 @@ $('#swift_modal input').keyup(function () {
     validateRequiredFields('swift');
 });
 
+$('#owncloud_modal input').keyup(function () {
+    validateRequiredFields('owncloud');
+});
+
 function validateRequiredFields(providerShortName) {
     // Check if all the inputs are filled, so we can enable the connect button
     var allFilled = $('#' + providerShortName + '_modal [required]').toArray().reduce(function (accumulator, current) {
