@@ -657,7 +657,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         if (xhr.status === 202) {
             var message =  'We\'ll send you an email when it has finished. <br> You can leave this page; your ' + operation.status + ' will still be completed.';
-            $osf.growl(operation.action + ' "' + (from.data.materialized || '/') + '" to "' + (to.data.materialized || '/') + '" is pending', message);
+            $osf.growl(operation.action + ' "' + (from.data.materialized || '/') + '" to "' + (to.data.materialized || '/') + '" is pending', message, 'info');
             return;
         }
         from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
