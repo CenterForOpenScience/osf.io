@@ -2,7 +2,6 @@
 import furl
 import httplib as http
 import urllib
-import re
 
 import markupsafe
 from django.core.exceptions import ValidationError
@@ -50,10 +49,6 @@ def reset_password_get(auth, uid=None, token=None):
     :raises: HTTPError(http.BAD_REQUEST) if verification key for the user is invalid, has expired or was used
     """
 
-    #override routes.py login_url to redirect to dashboard
-    next_url = re.sub(r'resetpassword/[A-z,0-9,/]+', '', request.url)
-    next_url = next_url + 'dashboard/'
-    service_url = cas.get_login_url(next_url)
     # if users are logged in, log them out and redirect back to this page
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
@@ -70,6 +65,9 @@ def reset_password_get(auth, uid=None, token=None):
     # refresh the verification key (v2)
     user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
     user_obj.save()
+
+    #override routes.py login_url to redirect to dashboard
+    service_url = web_url_for('dashboard', _absolute=True)
 
     return {
         'uid': user_obj._id,
@@ -138,14 +136,14 @@ def forgot_password_get(auth):
     :param auth: the authentication context
     :return
     """
-    #overriding the routes.py sign in url to redirect to the dashboard after login
-    context = {}
-    next_url = request.url.replace('/forgotpassword/', '/dashboard/')
-    context['login_url'] = cas.get_login_url(next_url)
 
     # if users are logged in, log them out and redirect back to this page
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
+
+    #overriding the routes.py sign in url to redirect to the dashboard after login
+    context = {}
+    context['login_url'] = web_url_for('dashboard', _absolute=True)
 
     return context
 
