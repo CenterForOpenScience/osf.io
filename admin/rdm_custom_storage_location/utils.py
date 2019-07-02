@@ -54,6 +54,6 @@ def test_s3_connection(access_key, secret_key):
                 'Listing buckets is required permission that can be changed via IAM')
         }, status=httplib.BAD_REQUEST)
     return JsonResponse({
-        'message': ('credentials are valid'),
+        'message': ('Credentials are valid'),
         'jdata': vars(user_info)
     }, status=httplib.OK)
