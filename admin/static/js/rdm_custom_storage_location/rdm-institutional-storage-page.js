@@ -48,8 +48,8 @@ $('#swift_keytone_versionSelect').change(function () {
 });
 
 function test_connection(this_object) {
-    var id_of_modal = $(this_object).attr('id')
-    var short_name_of_provider = id_of_modal.replace('_connect', '')
+    var id_of_modal = $(this_object).attr('id');
+    var short_name_of_provider = id_of_modal.replace('_connect', '');
     if (short_name_of_provider === 's3') {
         var s3_access_key = $('#s3_access_key').val();
         var s3_secret_key = $('#s3_secret_key').val();
@@ -90,7 +90,7 @@ function ajax_request(params, short_name_of_provider) {
         custom: short_name_of_provider,
     });
 
-    request.done(function (data, xhr) {
+    request.done(function (data) {
         test_connection_succeed(this.custom, data);
     });
 
