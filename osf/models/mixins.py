@@ -382,7 +382,7 @@ class NodeLinkMixin(models.Model):
         existant_relation = NodeRelation.objects.filter(parent=parent_node, child=child_node).first()
         if existant_relation and existant_relation.is_node_link:
             raise ValueError(
-                'Target Node \'{}\' already pointed to by \'{}\'.'.format(parent_node._id, child_node._id)
+                'Target Node \'{}\' already pointed to by \'{}\'.'.format(child_node._id, parent_node._id)
             )
         elif existant_relation and not existant_relation.is_node_link:
             raise ValueError(
