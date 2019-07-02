@@ -12,7 +12,7 @@
                             <label>Host URL</label>
                             <div class="input-group form-group">
                                 <div class="input-group-addon">https://</div>
-                                <input required type="text" class="form-control" name="customHost" data-bind="value: customHost" placeholder="owncloud.example.org">
+                                <input required type="text" class="form-control" id="owncloud_host" name="customHost" data-bind="value: customHost" placeholder="owncloud.example.org">
                             </div>
                             <div class="text-muted" style="text-align: center">
                                 <em>Only ownCloud instances supporting <a href="https://doc.nextcloud.org/server/9.1/user_manual/files/access_webdav.html" target="_blank">WebDAV</a> and <a href="https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/" target="_blank">
@@ -40,11 +40,14 @@
                         </div>
                     </div>
                 </div>
+                <div class="help-block">
+                    <p id='owncloud_message' class='text-danger'></p>
+                </div>
 
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-default" id="owncloud_connect" disabled>Connect</button>
+                <button type="button" class="btn btn-default test-connection" id="owncloud_connect" disabled>Connect</button>
                 <button type="button" class="btn btn-success" disabled>Save</button>
             </div>
         </div>

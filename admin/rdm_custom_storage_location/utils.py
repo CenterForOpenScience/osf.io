@@ -57,3 +57,8 @@ def test_s3_connection(access_key, secret_key):
         'message': ('Credentials are valid'),
         'jdata': vars(user_info)
     }, status=httplib.OK)
+
+def test_owncloud_connection(host, folder, username, password):
+    return JsonResponse({
+        'message': ('Credentials are valid')
+    }, status=httplib.OK)

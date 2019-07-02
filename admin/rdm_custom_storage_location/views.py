@@ -5,6 +5,7 @@ from django.http import HttpResponse, Http404, JsonResponse
 from django.views.generic import TemplateView, View
 import json
 import hashlib
+import httplib
 from mimetypes import MimeTypes
 import os
 
@@ -87,9 +88,20 @@ def test_connection(request):
         response = {
             'message': 'Provider is missing.'
         }
-        return JsonResponse(response, status=500)
+        return JsonResponse(response, status=httplib.BAD_REQUEST)
 
-    if(provider_short_name == 's3'):
+    if provider_short_name == 's3':
         s3_access_key = data.get('s3_access_key', None)
         s3_secret_key = data.get('s3_secret_key', None)
         return utils.test_s3_connection(s3_access_key, s3_secret_key)
+    elif provider_short_name == 'owncloud':
+        return utils.test_owncloud_connection(
+            data.get('owncloud_host'),
+            data.get('owncloud_folder'),
+            data.get('owncloud_username'),
+            data.get('owncloud_password'),
+        )
+
+    return JsonResponse({
+        'message': 'Invalid provider.'
+    }, status=httplib.BAD_REQUEST)

@@ -32,8 +32,8 @@ function validateRequiredFields(providerShortName) {
 }
 
 $('#swift_keytone_versionSelect').change(function () {
-    var swift_keystone_version_val = $(this).val();
-    if (swift_keystone_version_val === 'v2') {
+    var swiftKeystoneVersion = $(this).val();
+    if (swiftKeystoneVersion === 'v2') {
         $('#swift_project_domain_name').attr('disabled', true);
         $('#swift_user_domain_name').attr('disabled', true);
         $('#swift_project_domain_name').attr('required', false);
@@ -47,27 +47,29 @@ $('#swift_keytone_versionSelect').change(function () {
     validateRequiredFields('swift');
 });
 
-function test_connection(this_object) {
-    var id_of_modal = $(this_object).attr('id');
-    var short_name_of_provider = id_of_modal.replace('_connect', '');
-    if (short_name_of_provider === 's3') {
-        var s3_access_key = $('#s3_access_key').val();
-        var s3_secret_key = $('#s3_secret_key').val();
-        var s3_bucket = $('#s3_bucket').val();
+function testConnection(thisObject) {
+    var modalId = $(thisObject).attr('id');
+    var providerShortName = modalId.replace('_connect', '');
+    var params = {'provider_short_name': providerShortName};
 
-        var params = {
-            's3_access_key': s3_access_key,
-            's3_secret_key': s3_secret_key,
-            's3_bucket': s3_bucket,
-            'provider_short_name': short_name_of_provider,
-        };
-        ajax_request(params, short_name_of_provider);
-
+    switch (providerShortName) {
+        case 's3':
+            params.s3_access_key = $('#s3_access_key').val();
+            params.s3_secret_key = $('#s3_secret_key').val();
+            params.s3_bucket = $('#s3_bucket').val();
+            break;
+        case 'owncloud':
+            params.owncloud_host = $('#owncloud_host').val();
+            params.owncloud_folder = $('#owncloud_folder').val();
+            params.owncloud_username = $('#owncloud_username').val();
+            params.owncloud_password = $('#owncloud_password').val();
+            break;
     }
 
+    ajaxRequest(params, providerShortName);
 }
 
-function ajax_request(params, short_name_of_provider) {
+function ajaxRequest(params, providerShortName) {
     var csrftoken = Cookie.get('admin-csrf');
 
     function csrfSafeMethod(method) {
@@ -87,24 +89,24 @@ function ajax_request(params, short_name_of_provider) {
         type: 'POST',
         data: JSON.stringify(params),
         contentType: 'application/json; charset=utf-8',
-        custom: short_name_of_provider,
+        custom: providerShortName,
     });
 
     request.done(function (data) {
-        test_connection_succeed(this.custom, data);
+        testConnectionSucceed(this.custom, data);
     });
 
     request.fail(function (jqXHR) {
-        test_connection_failed(this.custom, jqXHR.responseJSON.message);
+        testConnectionFailed(this.custom, jqXHR.responseJSON.message);
     });
 }
 
 $('.test-connection').click(function () {
-    test_connection(this);
+    testConnection(this);
 });
 
 
-function test_connection_succeed(id, data) {
+function testConnectionSucceed(id, data) {
     $('#' + id + '_save').attr('disabled', false);
     $('#' + id + '_save').removeClass('btn-default').addClass('btn-success ');
     $('#' + id + '_connect').removeClass('btn-success').addClass('btn-default ');
@@ -115,7 +117,7 @@ function test_connection_succeed(id, data) {
     }
 }
 
-function test_connection_failed(id, message) {
+function testConnectionFailed(id, message) {
     $('#' + id + '_message').html(message);
     $('#' + id + '_save').attr('disabled', true);
     $('#' + id + '_save').removeClass('btn-success').addClass('btn-default ');
