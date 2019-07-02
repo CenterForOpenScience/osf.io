@@ -65,3 +65,9 @@ class MergeConflictError(EmailConfirmTokenError):
     """Raised if a merge is not possible due to a conflict"""
     message_short = language.CANNOT_MERGE_ACCOUNTS_SHORT
     message_long = language.CANNOT_MERGE_ACCOUNTS_LONG
+
+
+class MergeDisableError(EmailConfirmTokenError):
+    """Raised if the merge feature is disabled"""
+    message_short = 'The merge feature is disabled'
+    message_long = 'The merge feature is disabled'

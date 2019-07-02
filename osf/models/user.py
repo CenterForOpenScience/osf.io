@@ -31,7 +31,8 @@ from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        InvalidTokenError,
                                        MergeConfirmedRequiredError,
-                                       MergeConflictError)
+                                       MergeConflictError,
+                                       MergeDisableError)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
@@ -620,6 +621,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
             raise MergeConflictError('Users cannot be merged')
+
+        if not website_settings.ENABLE_USER_MERGE:
+            raise MergeDisableError('The merge feature is disabled')
+
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags.all():

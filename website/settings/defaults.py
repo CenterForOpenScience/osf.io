@@ -1970,3 +1970,6 @@ PROJECT_SYNC_TIME_LENGTH   = 3600  # sec.
 
 ADMIN_URL='http://localhost:8001/'
 ADMIN_INTERNAL_DOCKER_URL='http://192.168.168.167:8001/'
+
+# the user merge feature
+ENABLE_USER_MERGE = True

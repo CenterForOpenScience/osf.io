@@ -95,6 +95,7 @@ def get_globals():
         request_login_url = request.url
 
     return {
+        'user_merge': settings.ENABLE_USER_MERGE,
         'embedded_ds': settings.to_bool('USE_EMBEDDED_DS', False),
         'embedded_ds_url': settings.EMBEDDED_DS_URL,
         'nav_dropdown': settings.to_bool('NAV_DROPDOWN', True),
