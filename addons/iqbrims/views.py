@@ -165,10 +165,13 @@ def iqbrims_post_notify(**kwargs):
         log_actions = get_log_actions()
         if action in log_actions:
             notify_body = log_actions[action]
-            uname = 'User {} ({})'.format(node.creator.username,
-                                          node.creator._id)
+            href_prefix = website_settings.DOMAIN.rstrip('/') + '/'
+            href = href_prefix + node.creator._id + '/'
+            uname = 'User <a href="{1}">{0}</a>'.format(node.creator.username,
+                                                        href)
             notify_body = notify_body.replace('${user}', uname)
-            nname = 'Node {} ({})'.format(node.title, node._id)
+            href = href_prefix + node._id + '/'
+            nname = 'Paper <a href="{1}">{0}</a>'.format(node.title, href)
             notify_body = notify_body.replace('${node}', nname)
     if notify_title is None:
         notify_title = action
@@ -249,7 +252,8 @@ def iqbrims_get_storage(**kwargs):
                   urllib.quote(f['title'].encode('utf8'))
             node_urls.append({'title': f['title'], 'url': url})
             url = website_settings.DOMAIN.rstrip('/') + '/' + management_node._id + \
-                  '/files/googledrive' + root_folder_path + \
+                  '/files/googledrive' + \
+                  urllib.quote(root_folder_path) + \
                   urllib.quote(folders[0]['title'].encode('utf8')) + '/' + \
                   urllib.quote(f['title'].encode('utf8'))
             management_urls.append({'title': f['title'], 'url': url})
