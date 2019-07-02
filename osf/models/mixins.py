@@ -332,29 +332,11 @@ class NodeLinkMixin(models.Model):
         :param bool save: Save changes
         :return: Created pointer
         """
-        if (self._id == node._id):
-            raise ValueError(
-                'Cannot link node \'{}\' to itself.'.format(self._id)
-            )
-        existant_relation = NodeRelation.objects.filter(parent=self, child=node).first()
-        if existant_relation and existant_relation.is_node_link:
-            raise ValueError(
-                'Target Node \'{}\' already pointed to by \'{}\'.'.format(node._id, self._id)
-            )
-        elif existant_relation and not existant_relation.is_node_link:
-            raise ValueError(
-                'Target Node \'{}\' is already a child of \'{}\'.'.format(node._id, self._id)
-            )
-
-        existant_relation = NodeRelation.objects.filter(parent=node, child=self).first()
-        if existant_relation and existant_relation.is_node_link:
-            raise ValueError(
-                'Node \'{}\' is linked to target node \'{}\'.'.format(node._id, self._id)
-            )
-        elif existant_relation and not existant_relation.is_node_link:
-            raise ValueError(
-                'Node \'{}\' is already a child of target node \'{}\'.'.format(node._id, self._id)
-            )
+        try:
+            self.check_node_link(child_node=node, parent_node=self)
+            self.check_node_link(child_node=self, parent_node=node)
+        except ValueError as e:
+            raise ValueError(e.message)
 
         if self.is_registration:
             raise self.state_error('Cannot add a node link to a registration')
@@ -391,6 +373,21 @@ class NodeLinkMixin(models.Model):
         return node_relation
 
     add_pointer = add_node_link  # For v1 compat
+
+    def check_node_link(self, child_node, parent_node):
+        if child_node._id == parent_node._id:
+            raise ValueError(
+                'Cannot link node \'{}\' to itself.'.format(child_node._id)
+            )
+        existant_relation = NodeRelation.objects.filter(parent=parent_node, child=child_node).first()
+        if existant_relation and existant_relation.is_node_link:
+            raise ValueError(
+                'Target Node \'{}\' already pointed to by \'{}\'.'.format(parent_node._id, child_node._id)
+            )
+        elif existant_relation and not existant_relation.is_node_link:
+            raise ValueError(
+                'Target Node \'{}\' is already a child of \'{}\'.'.format(child_node._id, parent_node._id)
+            )
 
     def rm_node_link(self, node_relation, auth):
         """Remove a pointer.
