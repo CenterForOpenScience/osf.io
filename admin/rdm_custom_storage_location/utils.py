@@ -54,9 +54,9 @@ def test_s3_connection(access_key, secret_key):
                 'Listing buckets is required permission that can be changed via IAM')
         }, status=httplib.BAD_REQUEST)
     s3_response = {
-        'id': str(user_info.id),
-        'display_name': str(user_info.display_name),
-        'Owner': str(user_info.Owner),
+        'id': user_info.id,
+        'display_name': user_info.display_name,
+        'Owner': user_info.Owner,
     }
 
     return JsonResponse({

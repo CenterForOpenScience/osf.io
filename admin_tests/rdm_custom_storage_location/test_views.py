@@ -14,7 +14,6 @@ import json
 import httplib
 from django.urls import reverse
 import mock
-from boto.s3.user import User as s3_user
 
 class TestInstitutionDefaultStorage(AdminTestCase):
     def setUp(self):
@@ -101,13 +100,12 @@ class TestS3ConnectionStorage(AdminTestCase):
         self.mock_can_list = mock.patch('addons.s3.views.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
-        self.mock_uid = mock.patch('addons.s3.views.utils.get_user_info')
-        s3_user_object = s3_user()
-        s3_user_object.Owner = 'Owner'
-        s3_user_object.id = '12346789'
-        s3_user_object.display_name = 'Owner'
-        s3_user_object.type = None
-        self.mock_uid.return_value = s3_user_object
+        config = {
+            'return_value.id': '12346789',
+            'return_value.display_name': 's3.user',
+            'return_value.Owner': 'Owner',
+        }
+        self.mock_uid = mock.patch('addons.s3.views.utils.get_user_info', **config)
         self.mock_uid.start()
         self.mock_exists = mock.patch('addons.s3.views.utils.bucket_exists')
         self.mock_exists.return_value = True
