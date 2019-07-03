@@ -53,9 +53,15 @@ def test_s3_connection(access_key, secret_key):
             'message': ('Unable to list buckets.\n'
                 'Listing buckets is required permission that can be changed via IAM')
         }, status=httplib.BAD_REQUEST)
+    s3_response = {
+        'id': str(user_info.id),
+        'display_name': str(user_info.display_name),
+        'Owner': str(user_info.Owner),
+    }
+
     return JsonResponse({
         'message': ('Credentials are valid'),
-        'jdata': vars(user_info)
+        'data': s3_response
     }, status=httplib.OK)
 
 def test_owncloud_connection(host, folder, username, password):
