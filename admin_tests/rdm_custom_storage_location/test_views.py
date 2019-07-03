@@ -119,7 +119,7 @@ class TestS3ConnectionStorage(AdminTestCase):
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.add(self.institution1)
         self.user.save()
-        self.url = reverse("custom_storage_location:test_connection")
+        self.url = reverse('custom_storage_location:test_connection')
 
     def test_without_provider(self):
         params = {
