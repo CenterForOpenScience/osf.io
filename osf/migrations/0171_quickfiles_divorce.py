@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0170_repoint_quickfiles_pagecounters')
+        ('osf', '0170_auto_20190614_1429')
     ]
 
     operations = [
