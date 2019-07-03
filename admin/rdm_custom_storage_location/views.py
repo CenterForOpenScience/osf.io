@@ -97,9 +97,9 @@ def test_connection(request):
     elif provider_short_name == 'owncloud':
         return utils.test_owncloud_connection(
             data.get('owncloud_host'),
-            data.get('owncloud_folder'),
             data.get('owncloud_username'),
             data.get('owncloud_password'),
+            data.get('owncloud_folder'),
         )
 
     return JsonResponse({

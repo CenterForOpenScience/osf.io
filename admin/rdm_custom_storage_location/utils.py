@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import httplib
 from django.http import JsonResponse
+from furl import furl
+import httplib
+import requests
 import os
-from website import settings as osf_settings
+import owncloud
+
+from addons.owncloud import settings as owncloud_settings
 from addons.s3 import utils as s3_utils
+from website import settings as osf_settings
 
 providers = None
 enabled_providers_list = [
@@ -64,7 +69,24 @@ def test_s3_connection(access_key, secret_key):
         'data': s3_response
     }, status=httplib.OK)
 
-def test_owncloud_connection(host, folder, username, password):
+def test_owncloud_connection(host_url, username, password, folder):
+    host = furl()
+    host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
+    host.scheme = 'https'
+
+    try:
+        oc = owncloud.Client(host.url, verify_certs=owncloud_settings.USE_SSL)
+        oc.login(username, password)
+        oc.logout()
+    except requests.exceptions.ConnectionError:
+        return JsonResponse({
+            'message': 'Invalid ownCloud server.' + host.url
+        }, status=httplib.BAD_REQUEST)
+    except owncloud.owncloud.HTTPResponseError:
+        return JsonResponse({
+            'message': 'ownCloud Login failed.'
+        }, status=httplib.UNAUTHORIZED)
+
     return JsonResponse({
         'message': ('Credentials are valid')
     }, status=httplib.OK)
