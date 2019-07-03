@@ -29,7 +29,7 @@ def create_test_folder(target, filename='test_file'):
     return root_node.append_folder(filename)
 
 
-def create_test_quickfile(user, filename='test_file', create_guid=True):
+def create_test_quickfile(user, filename='test_file', size=1337, create_guid=True):
     test_file = user.quickfolder.append_file(filename)
 
     if create_guid:
@@ -40,7 +40,7 @@ def create_test_quickfile(user, filename='test_file', create_guid=True):
         'service': 'cloud',
         osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
     }, {
-        'size': 1337,
+        'size': size,
         'contentType': 'img/png'
     }).save()
     return test_file

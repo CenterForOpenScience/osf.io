@@ -116,8 +116,9 @@ REGIONAL_NODE_SIZE_SUM_SQL = """
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
         LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
-        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
-        AND obfnv.id >= %s AND obfnv.id <= %s
+        WHERE file.provider = 'osfstorage'
+            AND (file.target_content_type_id = %s OR file.target_content_type_id = %s)
+            AND obfnv.id >= %s AND obfnv.id <= %s
         GROUP BY region.name
     """
 
@@ -140,21 +141,16 @@ ABSTRACT_NODE_SIZE_SUM_SQL = """
         GROUP BY node.type, node.is_public
     """
 
-# Aggregation of non-deleted quick file sizes (NOTE: This will break when QuickFolders is merged)
+# Aggregation of non-deleted quick file sizes
 ND_QUICK_FILE_SIZE_SUM_SQL = """
         SELECT
-           node.type, sum(size)
+           'nd_quick_files', sum(size) AS quickfiles_size_sum
         FROM osf_basefilenode_versions AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
-        LEFT JOIN osf_abstractnode node ON file.target_object_id = node.id
-        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
-          AND node.type = 'osf.quickfilesnode'
-          AND node.is_deleted = False
-          AND file.deleted_on IS NULL
-          AND obfnv.id >= %s AND obfnv.id <= %s
-        GROUP BY node.type
-
+        WHERE file.target_content_type_id = %s
+            AND file.deleted_on IS NULL
+            AND obfnv.id >= %s AND obfnv.id <= %s
     """
 
 # Aggregation of size of non-deleted files in preprint supplemental nodes based on the node query above
@@ -239,7 +235,8 @@ def get_content_types(cursor):
         FROM django_content_type type
         WHERE type.model IN (
                              'abstractnode',
-                             'preprint'
+                             'preprint',
+                             'osfuser'
                             )
     """
     cursor.execute(sql)
@@ -281,12 +278,26 @@ def summarize(sql, content_type, start, end, cursor):
     return cursor.fetchall()
 
 
+def summarize_more(sql, content_type, content_type2, start, end, cursor):
+    cursor.execute(
+        sql,
+        [
+            content_type,
+            content_type2,
+            start,
+            end,
+        ]
+    )
+    return cursor.fetchall()
+
+
 def gather_usage_data(start, end, dry_run, zip_file):
     logger.info('Start: {}, end: {}, dry run: {}'.format(start, end, dry_run))
     with connection.cursor() as cursor:
         content_types = get_content_types(cursor)
         abstractnode_content_type = content_types['osf.abstractnode']
         preprint_content_type = content_types['osf.preprint']
+        osfuser_content_type = content_types['osf.osfuser']
 
         logger.debug('Gathering node usage at {}'.format(datetime.datetime.now()))
         filename = './data-usage-raw-nodes-{}-{}.csv'.format(start, end)
@@ -313,9 +324,10 @@ def gather_usage_data(start, end, dry_run, zip_file):
             cursor=cursor,
         ))
         logger.debug('Gathering regional node summary at {}'.format(datetime.datetime.now()))
-        summary_data = combine_summary_data(summary_data, summarize(
+        summary_data = combine_summary_data(summary_data, summarize_more(
             sql=REGIONAL_NODE_SIZE_SUM_SQL,
             content_type=abstractnode_content_type,
+            content_type2=osfuser_content_type,
             start=start,
             end=end,
             cursor=cursor,
@@ -325,7 +337,7 @@ def gather_usage_data(start, end, dry_run, zip_file):
         logger.debug('Gathering quickfile summary at {}'.format(datetime.datetime.now()))
         summary_data = combine_summary_data(summary_data, summarize(
             sql=ND_QUICK_FILE_SIZE_SUM_SQL,
-            content_type=abstractnode_content_type,
+            content_type=osfuser_content_type,
             start=start,
             end=end,
             cursor=cursor,
@@ -542,7 +554,7 @@ def process_usages(
     summary_data['total'] = summary_totals.get('total', 0)
     summary_data['deleted'] = summary_totals.get('deleted', 0)
     summary_data['registrations'] = summary_totals.get('osf.registration', 0)
-    summary_data['nd_quick_files'] = summary_totals.get('osf.quickfilesnode', 0)
+    summary_data['nd_quick_files'] = summary_totals.get('nd_quick_files', 0)
     summary_data['nd_public_nodes'] = summary_totals.get('osf.node', 0)
     summary_data['nd_private_nodes'] = summary_totals.get('osf.private-node', 0)
     summary_data['nd_preprints'] = summary_totals.get('nd_preprints', 0)

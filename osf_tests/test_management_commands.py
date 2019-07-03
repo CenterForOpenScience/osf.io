@@ -7,9 +7,9 @@ from collections import OrderedDict
 from django.utils import timezone
 
 from addons.osfstorage import settings as osfstorage_settings
-from api_tests.utils import create_test_file
+from api_tests.utils import create_test_file, create_test_quickfile
 from framework.auth import Auth
-from osf.models import QuickFilesNode, RegistrationSchema
+from osf.models import RegistrationSchema
 from osf_tests.factories import (
     PreprintFactory,
     ProjectFactory,
@@ -215,9 +215,8 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['nd_preprints'] += file_size
         expected_summary_data['united_states'] += file_size
 
-        quickfiles_node_us = QuickFilesNode.objects.get(creator=user)
         file_size = next(small_size)
-        create_test_file(target=quickfiles_node_us, user=user, size=file_size)
+        create_test_quickfile(user, size=file_size)
         logger.debug(u'Quickfile, US: {}'.format(file_size))
 
         expected_summary_data['total'] += file_size
@@ -225,12 +224,7 @@ class TestDataStorageUsage(DbTestCase):
         expected_summary_data['united_states'] += file_size
 
         file_size = next(small_size)
-        quickfile_deleted = create_test_file(
-            filename='deleted_test_file',
-            target=quickfiles_node_us,
-            user=user,
-            size=file_size
-        )
+        quickfile_deleted = create_test_quickfile(user, filename='deleted_test_file', size=file_size)
         quickfile_deleted.delete(user=user, save=True)
         logger.debug(u'Deleted quickfile, US: {}'.format(file_size))
 
