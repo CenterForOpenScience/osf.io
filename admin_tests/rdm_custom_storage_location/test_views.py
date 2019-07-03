@@ -1,19 +1,21 @@
-from nose import tools as nt
 from django.test import RequestFactory
 from django.http import Http404
+import json
+import httplib
+import mock
+from nose import tools as nt
+
+from admin_tests.utilities import setup_user_view
+from admin.rdm_custom_storage_location import views
+from addons.osfstorage.models import Region
+from django.urls import reverse
 from tests.base import AdminTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     RegionFactory,
     InstitutionFactory,
 )
-from admin_tests.utilities import setup_user_view
-from admin.rdm_custom_storage_location import views
-from addons.osfstorage.models import Region
-import json
-import httplib
-from django.urls import reverse
-import mock
+
 
 class TestInstitutionDefaultStorage(AdminTestCase):
     def setUp(self):
@@ -68,6 +70,7 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         nt.assert_equal(res.context_data['region'], self.us)
         nt.assert_equal(res.context_data['selected_provider_short_name'], res.context_data['region'].waterbutler_settings['storage']['provider'])
 
+
 class TestIconView(AdminTestCase):
     def setUp(self):
         super(TestIconView, self).setUp()
@@ -97,6 +100,7 @@ class TestIconView(AdminTestCase):
 class TestS3ConnectionStorage(AdminTestCase):
 
     def setUp(self):
+        super(TestS3ConnectionStorage, self).setUp()
         self.mock_can_list = mock.patch('addons.s3.views.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
@@ -110,7 +114,6 @@ class TestS3ConnectionStorage(AdminTestCase):
         self.mock_exists = mock.patch('addons.s3.views.utils.bucket_exists')
         self.mock_exists.return_value = True
         self.mock_exists.start()
-        super(TestS3ConnectionStorage, self).setUp()
         self.institution1 = InstitutionFactory()
         self.institution2 = InstitutionFactory()
         self.user = AuthUserFactory()
