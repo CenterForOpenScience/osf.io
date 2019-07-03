@@ -9,6 +9,8 @@ import owncloud
 
 from addons.owncloud import settings as owncloud_settings
 from addons.s3 import utils as s3_utils
+from addons.swift import utils as swift_utils
+from addons.swift.provider import SwiftProvider
 from website import settings as osf_settings
 
 providers = None
@@ -89,4 +91,53 @@ def test_owncloud_connection(host_url, username, password, folder):
 
     return JsonResponse({
         'message': ('Credentials are valid')
+    }, status=httplib.OK)
+
+def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant_name,
+                          user_domain_name, project_domain_name, folder, container):
+    """Verifies new external account credentials and adds to user's list"""
+    if not (auth_version and auth_url and access_key and secret_key and tenant_name):
+        return JsonResponse({
+            'message': 'All the fields above are required.'
+        }, status=httplib.BAD_REQUEST)
+    if auth_version == '3' and not user_domain_name:
+        return JsonResponse({
+            'message': 'The field `user_domain_name` is required when you choose identity V3.'
+        }, status=httplib.BAD_REQUEST)
+    if auth_version == '3' and not project_domain_name:
+        return JsonResponse({
+            'message': 'The field `project_domain_name` is required when you choose identity V3.'
+        }, status=httplib.BAD_REQUEST)
+
+    user_info = swift_utils.get_user_info(auth_version, auth_url, access_key,
+                                    user_domain_name, secret_key, tenant_name,
+                                    project_domain_name)
+
+    if not user_info:
+        return JsonResponse({
+            'message': ('Unable to access account.\n'
+                'Check to make sure that the above credentials are valid, '
+                'and that they have permission to list containers.')
+        }, status=httplib.BAD_REQUEST)
+
+    if not swift_utils.can_list(auth_version, auth_url, access_key, user_domain_name,
+                          secret_key, tenant_name, project_domain_name):
+        return JsonResponse({
+            'message': ('Unable to list containers.\n'
+                'Listing containers is required permission.')
+        }, status=httplib.BAD_REQUEST)
+
+    provider = SwiftProvider(account=None, auth_version=auth_version,
+                             auth_url=auth_url, tenant_name=tenant_name,
+                             project_domain_name=project_domain_name,
+                             username=access_key,
+                             user_domain_name=user_domain_name,
+                             password=secret_key)
+    swift_response = {
+        'id': provider.account.id,
+        'display_name': provider.account.display_name,
+    }
+    return JsonResponse({
+        'message': ('Credentials are valid'),
+        'data': swift_response
     }, status=httplib.OK)

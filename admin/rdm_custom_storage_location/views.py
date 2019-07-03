@@ -101,6 +101,18 @@ def test_connection(request):
             data.get('owncloud_password'),
             data.get('owncloud_folder'),
         )
+    elif provider_short_name == 'swift':
+        return utils.test_swift_connection(
+            data.get('swift_auth_version'),
+            data.get('swift_auth_url'),
+            data.get('swift_access_key'),
+            data.get('swift_secret_key'),
+            data.get('swift_tenant_name'),
+            data.get('swift_user_domain_name', None),
+            data.get('swift_project_domain_name', None),
+            data.get('swift_folder', None),
+            data.get('swift_container', None),
+        )
 
     return JsonResponse({
         'message': 'Invalid provider.'
