@@ -39,7 +39,7 @@ def test_s3_connection(access_key, secret_key):
     if not (access_key and secret_key):
         return JsonResponse({
             'message': 'All the fields above are required.'
-        }, httplib.BAD_REQUEST)
+        }, status=httplib.BAD_REQUEST)
     user_info = s3_utils.get_user_info(access_key, secret_key)
     if not user_info:
         return JsonResponse({
