@@ -2,6 +2,10 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.16.0 (2019-07-03)
+===================
+- Fangorn rate limiting - spaces out requests when moving large groups of files
+
 19.15.0 (2019-06-27)
 ===================
 - Add a management command for measuring data storage usage metrics
