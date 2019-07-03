@@ -1219,7 +1219,8 @@ def search_node(auth, **kwargs):
             is_deleted=False)
         .exclude(id__in=nin)
         .exclude(type='osf.collection')
-        .exclude(type='osf.quickfilesnode'))
+        .exclude(type='osf.quickfilesnode')
+        .exclude(type='osf.draftnode'))
 
     count = nodes.count()
     pages = math.ceil(count / size)

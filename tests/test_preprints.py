@@ -328,249 +328,271 @@ class TestPreprintCreation:
 
 # Copied from osf_tests/test_node.py
 class TestContributorMethods:
-    def test_add_contributor(self, preprint, user, auth):
+    @pytest.fixture()
+    def resource(self, user):
+        return PreprintFactory(creator=user)
+
+    @pytest.fixture()
+    def contrib(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def make_resource_contributor(self, user, resource, visible=True):
+        def make_contributor(user, resource, visible=True):
+            contrib = PreprintContributor.objects.create(user=user, preprint=resource, visible=visible)
+            return contrib
+        return make_contributor
+
+    @pytest.fixture()
+    def contributor_exists(self, user, resource, visible=True):
+        def query_contributor(user, resource, visible):
+            contrib = PreprintContributor.objects.filter(user=user, preprint=resource, visible=visible).exists()
+            return contrib
+        return query_contributor
+
+    def test_add_contributor(self, resource, user, auth):
         # A user is added as a contributor
         user = UserFactory()
-        preprint.add_contributor(contributor=user, auth=auth)
-        preprint.save()
-        assert preprint.is_contributor(user) is True
-        assert preprint.has_permission(user, ADMIN) is False
-        assert preprint.has_permission(user, WRITE) is True
-        assert preprint.has_permission(user, READ) is True
+        resource.add_contributor(contributor=user, auth=auth)
+        resource.save()
+        assert resource.is_contributor(user) is True
+        assert resource.has_permission(user, ADMIN) is False
+        assert resource.has_permission(user, WRITE) is True
+        assert resource.has_permission(user, READ) is True
 
-        last_log = preprint.logs.all().order_by('-created')[0]
+        last_log = resource.logs.all().order_by('-created')[0]
         assert last_log.action == 'contributor_added'
         assert last_log.params['contributors'] == [user._id]
 
-    def test_add_contributors(self, preprint, auth):
+    def test_add_contributors(self, resource, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
+        resource.add_contributors(
             [
                 {'user': user1, 'permissions': ADMIN, 'visible': True},
                 {'user': user2, 'permissions': WRITE, 'visible': False}
             ],
             auth=auth
         )
-        last_log = preprint.logs.all().order_by('-created')[0]
+        last_log = resource.logs.all().order_by('-created')[0]
         assert (
             last_log.params['contributors'] ==
             [user1._id, user2._id]
         )
-        assert preprint.is_contributor(user1)
-        assert preprint.is_contributor(user2)
-        assert user1._id in preprint.visible_contributor_ids
-        assert user2._id not in preprint.visible_contributor_ids
-        assert preprint.get_permissions(user1) == [READ, WRITE, ADMIN]
-        assert preprint.get_permissions(user2) == [READ, WRITE]
-        last_log = preprint.logs.all().order_by('-created')[0]
+        assert resource.is_contributor(user1)
+        assert resource.is_contributor(user2)
+        assert user1._id in resource.visible_contributor_ids
+        assert user2._id not in resource.visible_contributor_ids
+        assert resource.get_permissions(user1) == [READ, WRITE, ADMIN]
+        assert resource.get_permissions(user2) == [READ, WRITE]
+        last_log = resource.logs.all().order_by('-created')[0]
         assert (
             last_log.params['contributors'] ==
             [user1._id, user2._id]
         )
 
-    def test_cant_add_creator_as_contributor_twice(self, preprint, user):
-        preprint.add_contributor(contributor=user)
-        preprint.save()
-        assert len(preprint.contributors) == 1
+    def test_cant_add_creator_as_contributor_twice(self, resource, user):
+        resource.add_contributor(contributor=user)
+        resource.save()
+        assert len(resource.contributors) == 1
 
-    def test_cant_add_same_contributor_twice(self, preprint):
+    def test_cant_add_same_contributor_twice(self, resource):
         contrib = UserFactory()
-        preprint.add_contributor(contributor=contrib)
-        preprint.save()
-        preprint.add_contributor(contributor=contrib)
-        preprint.save()
-        assert len(preprint.contributors) == 2
+        resource.add_contributor(contributor=contrib)
+        resource.save()
+        resource.add_contributor(contributor=contrib)
+        resource.save()
+        assert len(resource.contributors) == 2
 
-    def test_remove_unregistered_conributor_removes_unclaimed_record(self, preprint, auth):
-        new_user = preprint.add_unregistered_contributor(fullname='David Davidson',
+    def test_remove_unregistered_conributor_removes_unclaimed_record(self, resource, auth):
+        new_user = resource.add_unregistered_contributor(fullname='David Davidson',
             email='david@davidson.com', auth=auth)
-        preprint.save()
-        assert preprint.is_contributor(new_user)  # sanity check
-        assert preprint._primary_key in new_user.unclaimed_records
-        preprint.remove_contributor(
+        resource.save()
+        assert resource.is_contributor(new_user)  # sanity check
+        assert resource._primary_key in new_user.unclaimed_records
+        resource.remove_contributor(
             auth=auth,
             contributor=new_user
         )
-        preprint.save()
+        resource.save()
         new_user.refresh_from_db()
-        assert preprint.is_contributor(new_user) is False
-        assert preprint._primary_key not in new_user.unclaimed_records
+        assert resource.is_contributor(new_user) is False
+        assert resource._primary_key not in new_user.unclaimed_records
 
-    def test_is_contributor(self, preprint):
-        contrib, noncontrib = UserFactory(), UserFactory()
-        PreprintContributor.objects.create(user=contrib, preprint=preprint)
+    def test_is_contributor(self, resource, contrib, make_resource_contributor):
+        noncontrib = UserFactory()
+        make_resource_contributor(contrib, resource)
 
-        assert preprint.is_contributor(contrib) is True
-        assert preprint.is_contributor(noncontrib) is False
-        assert preprint.is_contributor(None) is False
+        assert resource.is_contributor(contrib) is True
+        assert resource.is_contributor(noncontrib) is False
+        assert resource.is_contributor(None) is False
 
-    def test_visible_contributor_ids(self, preprint, user):
+    def test_visible_contributor_ids(self, resource, user, make_resource_contributor):
         visible_contrib = UserFactory()
         invisible_contrib = UserFactory()
-        PreprintContributor.objects.create(user=visible_contrib, preprint=preprint, visible=True)
-        PreprintContributor.objects.create(user=invisible_contrib, preprint=preprint, visible=False)
-        assert visible_contrib._id in preprint.visible_contributor_ids
-        assert invisible_contrib._id not in preprint.visible_contributor_ids
+        make_resource_contributor(user=visible_contrib, resource=resource, visible=True)
+        make_resource_contributor(user=invisible_contrib, resource=resource, visible=False)
+        assert visible_contrib._id in resource.visible_contributor_ids
+        assert invisible_contrib._id not in resource.visible_contributor_ids
 
-    def test_visible_contributors(self, preprint, user):
+    def test_visible_contributors(self, resource, user, make_resource_contributor):
         visible_contrib = UserFactory()
         invisible_contrib = UserFactory()
-        PreprintContributor.objects.create(user=visible_contrib, preprint=preprint, visible=True)
-        PreprintContributor.objects.create(user=invisible_contrib, preprint=preprint, visible=False)
-        assert visible_contrib in preprint.visible_contributors
-        assert invisible_contrib not in preprint.visible_contributors
+        make_resource_contributor(user=visible_contrib, resource=resource, visible=True)
+        make_resource_contributor(user=invisible_contrib, resource=resource, visible=False)
+        assert visible_contrib in resource.visible_contributors
+        assert invisible_contrib not in resource.visible_contributors
 
-    def test_set_visible_false(self, preprint, auth):
+    def test_set_visible_false(self, resource, auth, make_resource_contributor, contributor_exists):
         contrib = UserFactory()
-        PreprintContributor.objects.create(user=contrib, preprint=preprint, visible=True)
-        preprint.set_visible(contrib, visible=False, auth=auth)
-        preprint.save()
-        assert PreprintContributor.objects.filter(user=contrib, preprint=preprint, visible=False).exists() is True
+        make_resource_contributor(user=contrib, resource=resource, visible=True)
+        resource.set_visible(contrib, visible=False, auth=auth)
+        resource.save()
+        assert contributor_exists(contrib, resource, visible=False) is True
 
-        last_log = preprint.logs.all().order_by('-created')[0]
+        last_log = resource.logs.all().order_by('-created')[0]
         assert last_log.user == auth.user
         assert last_log.action == PreprintLog.MADE_CONTRIBUTOR_INVISIBLE
 
-    def test_set_visible_true(self, preprint, auth):
+    def test_set_visible_true(self, resource, auth, make_resource_contributor, contributor_exists):
         contrib = UserFactory()
-        PreprintContributor.objects.create(user=contrib, preprint=preprint, visible=False)
-        preprint.set_visible(contrib, visible=True, auth=auth)
-        preprint.save()
-        assert PreprintContributor.objects.filter(user=contrib, preprint=preprint, visible=True).exists() is True
+        make_resource_contributor(user=contrib, resource=resource, visible=False)
+        resource.set_visible(contrib, visible=True, auth=auth)
+        resource.save()
+        assert contributor_exists(contrib, resource, visible=True) is True
 
-        last_log = preprint.logs.all().order_by('-created')[0]
+        last_log = resource.logs.all().order_by('-created')[0]
         assert last_log.user == auth.user
         assert last_log.action == PreprintLog.MADE_CONTRIBUTOR_VISIBLE
 
-    def test_set_visible_is_noop_if_visibility_is_unchanged(self, preprint, auth):
+    def test_set_visible_is_noop_if_visibility_is_unchanged(self, resource, auth, make_resource_contributor):
         visible, invisible = UserFactory(), UserFactory()
-        PreprintContributor.objects.create(user=visible, preprint=preprint, visible=True)
-        PreprintContributor.objects.create(user=invisible, preprint=preprint, visible=False)
-        original_log_count = preprint.logs.count()
-        preprint.set_visible(invisible, visible=False, auth=auth)
-        preprint.set_visible(visible, visible=True, auth=auth)
-        preprint.save()
-        assert preprint.logs.count() == original_log_count
+        make_resource_contributor(user=visible, resource=resource, visible=True)
+        make_resource_contributor(user=invisible, resource=resource, visible=False)
+        original_log_count = resource.logs.count()
+        resource.set_visible(invisible, visible=False, auth=auth)
+        resource.set_visible(visible, visible=True, auth=auth)
+        resource.save()
+        assert resource.logs.count() == original_log_count
 
-    def test_set_visible_contributor_with_only_one_contributor(self, preprint, user):
+    def test_set_visible_contributor_with_only_one_contributor(self, resource, user):
         with pytest.raises(ValueError) as excinfo:
-            preprint.set_visible(user=user, visible=False, auth=None)
+            resource.set_visible(user=user, visible=False, auth=None)
         assert excinfo.value.message == 'Must have at least one visible contributor'
 
-    def test_set_visible_missing(self, preprint):
+    def test_set_visible_missing(self, resource):
         with pytest.raises(ValueError):
-            preprint.set_visible(UserFactory(), True)
+            resource.set_visible(UserFactory(), True)
 
-    def test_remove_contributor(self, preprint, auth):
+    def test_remove_contributor(self, resource, auth):
         # A user is added as a contributor
         user2 = UserFactory()
-        preprint.add_contributor(contributor=user2, auth=auth, save=True)
-        assert user2 in preprint.contributors
-        assert preprint.has_permission(user2, WRITE)
+        resource.add_contributor(contributor=user2, auth=auth, save=True)
+        assert user2 in resource.contributors
+        assert resource.has_permission(user2, WRITE)
         # The user is removed
-        preprint.remove_contributor(auth=auth, contributor=user2)
-        preprint.reload()
+        resource.remove_contributor(auth=auth, contributor=user2)
+        resource.reload()
 
-        assert user2 not in preprint.contributors
-        assert preprint.get_permissions(user2) == []
-        assert preprint.logs.latest().action == 'contributor_removed'
-        assert preprint.logs.latest().params['contributors'] == [user2._id]
+        assert user2 not in resource.contributors
+        assert resource.get_permissions(user2) == []
+        assert resource.logs.latest().action == 'contributor_removed'
+        assert resource.logs.latest().params['contributors'] == [user2._id]
 
-    def test_remove_contributors(self, preprint, auth):
+    def test_remove_contributors(self, resource, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
+        resource.add_contributors(
             [
                 {'user': user1, 'permissions': WRITE, 'visible': True},
                 {'user': user2, 'permissions': WRITE, 'visible': True}
             ],
             auth=auth
         )
-        assert user1 in preprint.contributors
-        assert user2 in preprint.contributors
-        assert preprint.has_permission(user1, WRITE)
-        assert preprint.has_permission(user2, WRITE)
+        assert user1 in resource.contributors
+        assert user2 in resource.contributors
+        assert resource.has_permission(user1, WRITE)
+        assert resource.has_permission(user2, WRITE)
 
-        preprint.remove_contributors(auth=auth, contributors=[user1, user2], save=True)
-        preprint.reload()
+        resource.remove_contributors(auth=auth, contributors=[user1, user2], save=True)
+        resource.reload()
 
-        assert user1 not in preprint.contributors
-        assert user2 not in preprint.contributors
-        assert preprint.get_permissions(user1) == []
-        assert preprint.get_permissions(user2) == []
-        assert preprint.logs.latest().action == 'contributor_removed'
+        assert user1 not in resource.contributors
+        assert user2 not in resource.contributors
+        assert resource.get_permissions(user1) == []
+        assert resource.get_permissions(user2) == []
+        assert resource.logs.latest().action == 'contributor_removed'
 
-    def test_replace_contributor(self, preprint):
+    def test_replace_contributor(self, resource):
         contrib = UserFactory()
-        preprint.add_contributor(contrib, auth=Auth(preprint.creator))
-        preprint.save()
-        assert contrib in preprint.contributors.all()  # sanity check
+        resource.add_contributor(contrib, auth=Auth(resource.creator))
+        resource.save()
+        assert contrib in resource.contributors.all()  # sanity check
         replacer = UserFactory()
-        old_length = preprint.contributors.count()
-        preprint.replace_contributor(contrib, replacer)
-        preprint.save()
-        new_length = preprint.contributors.count()
-        assert contrib not in preprint.contributors.all()
-        assert replacer in preprint.contributors.all()
+        old_length = resource.contributors.count()
+        resource.replace_contributor(contrib, replacer)
+        resource.save()
+        new_length = resource.contributors.count()
+        assert contrib not in resource.contributors.all()
+        assert replacer in resource.contributors.all()
         assert old_length == new_length
 
         # test unclaimed_records is removed
         assert (
-            preprint._id not in
+            resource._id not in
             contrib.unclaimed_records.keys()
         )
 
-    def test_permission_override_fails_if_no_admins(self, preprint, user):
+    def test_permission_override_fails_if_no_admins(self, resource, user):
         # User has admin permissions because they are the creator
         # Cannot lower permissions
-        with pytest.raises(PreprintStateError):
-            preprint.add_contributor(user, permissions=WRITE)
+        with pytest.raises(resource.state_error):
+            resource.add_contributor(user, permissions=WRITE)
 
-    def test_update_contributor(self, preprint, auth):
+    def test_update_contributor(self, resource, auth):
         new_contrib = AuthUserFactory()
-        preprint.add_contributor(new_contrib, permissions=WRITE, auth=auth)
+        resource.add_contributor(new_contrib, permissions=WRITE, auth=auth)
 
-        assert preprint.get_permissions(new_contrib) == [READ, WRITE]
-        assert preprint.get_visible(new_contrib) is True
+        assert resource.get_permissions(new_contrib) == [READ, WRITE]
+        assert resource.get_visible(new_contrib) is True
 
-        preprint.update_contributor(
+        resource.update_contributor(
             new_contrib,
             READ,
             False,
             auth=auth
         )
-        assert preprint.get_permissions(new_contrib) == [READ]
-        assert preprint.get_visible(new_contrib) is False
+        assert resource.get_permissions(new_contrib) == [READ]
+        assert resource.get_visible(new_contrib) is False
 
-    def test_update_contributor_non_admin_raises_error(self, preprint, auth):
+    def test_update_contributor_non_admin_raises_error(self, resource, auth):
         non_admin = AuthUserFactory()
-        preprint.add_contributor(
+        resource.add_contributor(
             non_admin,
             permissions=WRITE,
             auth=auth
         )
         with pytest.raises(PermissionsError):
-            preprint.update_contributor(
+            resource.update_contributor(
                 non_admin,
                 None,
                 False,
                 auth=Auth(non_admin)
             )
 
-    def test_update_contributor_only_admin_raises_error(self, preprint, auth):
-        with pytest.raises(PreprintStateError):
-            preprint.update_contributor(
+    def test_update_contributor_only_admin_raises_error(self, resource, auth):
+        with pytest.raises(resource.state_error):
+            resource.update_contributor(
                 auth.user,
                 WRITE,
                 True,
                 auth=auth
             )
 
-    def test_update_contributor_non_contrib_raises_error(self, preprint, auth):
+    def test_update_contributor_non_contrib_raises_error(self, resource, auth):
         non_contrib = AuthUserFactory()
         with pytest.raises(ValueError):
-            preprint.update_contributor(
+            resource.update_contributor(
                 non_contrib,
                 ADMIN,
                 True,

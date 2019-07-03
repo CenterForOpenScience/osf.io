@@ -64,8 +64,9 @@ def remove_contributor_from_subscriptions(node, user):
         admin on any of node's parent projects.
     """
     Preprint = apps.get_model('osf.Preprint')
-    # Preprints don't have subscriptions at this time
-    if isinstance(node, Preprint):
+    DraftRegistration = apps.get_model('osf.DraftRegistration')
+    # Preprints/Draft Registrations don't have subscriptions at this time
+    if isinstance(node, Preprint) or isinstance(node, DraftRegistration):
         return
 
     # If user still has permissions through being a contributor or group member, or has
@@ -203,6 +204,7 @@ def get_configured_projects(user):
     user_subscriptions = get_all_user_subscriptions(user, extra=(
         ~Q(node__type='osf.collection') &
         ~Q(node__type='osf.quickfilesnode') &
+        ~Q(node__type='osf.draftnode') &
         Q(node__is_deleted=False)
     ))
 
@@ -454,13 +456,18 @@ def subscribe_user_to_notifications(node, user):
     """
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     Preprint = apps.get_model('osf.Preprint')
+    DraftRegistration = apps.get_model('osf.DraftRegistration')
+
     if isinstance(node, Preprint):
         raise InvalidSubscriptionError('Preprints are invalid targets for subscriptions at this time.')
 
-    if node.is_collection:
+    if isinstance(node, DraftRegistration):
+        raise InvalidSubscriptionError('DraftRegistrations are invalid targets for subscriptions at this time.')
+
+    if getattr(node, 'is_collection', None):
         raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
 
-    if node.is_deleted:
+    if getattr(node, 'is_deleted', None):
         raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
 
     events = constants.NODE_SUBSCRIPTIONS_AVAILABLE

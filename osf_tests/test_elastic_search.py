@@ -385,6 +385,7 @@ class TestProject(OsfTestCase):
         search.create_index(elastic_search.INDEX)
         self.user = factories.UserFactory(fullname='John Deacon')
         self.project = factories.ProjectFactory(title='Red Special', creator=self.user)
+        self.draft_node = factories.DraftNodeFactory(creator=self.user, title='Draft Node')
 
     def test_new_project_private(self):
         # Verify that a private project is not present in Elastic Search.
@@ -399,6 +400,14 @@ class TestProject(OsfTestCase):
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 1)
 
+    def test_make_draft_node_public(self):
+        # Assert in the off-chance that a draft node is made public,
+        # it does not appear in search
+        with run_celery_tasks():
+            self.draft_node.is_public = True
+            self.draft_node.save()
+        docs = query(self.draft_node.title)['results']
+        assert_equal(len(docs), 0)
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task

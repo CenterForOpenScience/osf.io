@@ -98,7 +98,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     def test_draft_with_registered_node_does_not_show_up_in_draft_list(
             self, app, user, project_public, draft_registration, url_draft_registrations):
-        reg = RegistrationFactory(project=project_public)
+        reg = RegistrationFactory(project=project_public, draft_registration=draft_registration)
         draft_registration.registered_node = reg
         draft_registration.save()
         res = app.get(url_draft_registrations, auth=user.auth)
@@ -110,7 +110,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
             self, app, user, project_public,
             draft_registration, schema,
             url_draft_registrations):
-        reg = RegistrationFactory(project=project_public)
+        reg = RegistrationFactory(project=project_public, draft_registration=draft_registration)
         draft_registration.registered_node = reg
         draft_registration.save()
         reg.is_deleted = True

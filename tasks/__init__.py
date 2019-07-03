@@ -225,14 +225,11 @@ def syntax(ctx):
 @task(aliases=['req'])
 def requirements(ctx, base=False, addons=False, release=False, dev=False, all=False):
     """Install python dependencies.
-
     Examples:
         inv requirements
         inv requirements --all
-
     You should use --all for updating your developement environment.
     --all will install (in order): addons, dev and the base requirements.
-
     By default, base requirements will run. However, if any set of addons, release, or dev are chosen, base
     will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
     requirements will prevent dev, and base from running.
@@ -495,9 +492,7 @@ def karma(ctx, travis=False):
 @task
 def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
     """Build wheels for python dependencies.
-
     Examples:
-
         inv wheelhouse --dev
         inv wheelhouse --addons
         inv wheelhouse --release
@@ -730,7 +725,6 @@ def generate_csr(ctx, domain):
 def request_ssl_cert(ctx, domain):
     """Generate a key, a key with password removed, and a signing request for
     the specified domain.
-
     Usage:
     > invoke request_ssl_cert pizza.osf.io
     """
@@ -843,7 +837,6 @@ def set_maintenance(ctx, message='', level=1, start=None, end=None):
     setup_django()
     from website.maintenance import set_maintenance
     """Display maintenance notice across OSF applications (incl. preprints, registries, etc.)
-
     start - Start time for the maintenance period
     end - End time for the mainteance period
         NOTE: If no start or end values are provided, default to starting now
@@ -852,7 +845,6 @@ def set_maintenance(ctx, message='', level=1, start=None, end=None):
         "The site will undergo maintenance between <localized start time> and <localized end time>. Thank you
         for your patience."
     level - Severity level. Modifies the color of the displayed notice. Must be one of 1 (info), 2 (warning), 3 (danger).
-
     Examples:
         invoke set_maintenance --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00
         invoke set_maintenance --message 'The OSF is experiencing issues connecting to a 3rd party service' --level 2 --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00

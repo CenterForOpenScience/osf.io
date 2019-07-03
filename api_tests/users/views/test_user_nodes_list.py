@@ -11,6 +11,7 @@ from osf_tests.factories import (
     PreprintFactory,
     ProjectFactory,
     RegistrationFactory,
+    DraftNodeFactory,
     UserFactory,
 )
 from website.views import find_bookmark_collection
@@ -91,6 +92,12 @@ class TestUserNodes:
             creator=user_one,
             is_public=True)
 
+    @pytest.fixture()
+    def draft_node(self, user_one):
+        return DraftNodeFactory(
+            creator=user_one
+        )
+
     def test_user_nodes(
             self, app, user_one, user_two,
             public_project_user_one,
@@ -98,6 +105,7 @@ class TestUserNodes:
             private_project_user_one,
             private_project_user_two,
             deleted_project_user_one,
+            draft_node,
             folder, deleted_folder, registration):
 
         #   test_authorized_in_gets_200
@@ -126,6 +134,7 @@ class TestUserNodes:
         assert deleted_folder._id not in ids
         assert deleted_project_user_one._id not in ids
         assert registration._id not in ids
+        assert draft_node._id not in ids
 
     #   test_get_projects_not_logged_in
         url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
@@ -140,6 +149,7 @@ class TestUserNodes:
         assert folder._id not in ids
         assert deleted_project_user_one._id not in ids
         assert registration._id not in ids
+        assert draft_node._id not in ids
 
     #   test_get_projects_logged_in_as_different_user
         url = '/{}users/{}/nodes/'.format(API_BASE, user_two._id)
@@ -154,6 +164,7 @@ class TestUserNodes:
         assert folder._id not in ids
         assert deleted_project_user_one._id not in ids
         assert registration._id not in ids
+        assert draft_node._id not in ids
 
         url = '/{}users/{}/nodes/?sort=-title'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one.auth)

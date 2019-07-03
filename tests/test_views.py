@@ -72,7 +72,7 @@ from api_tests.utils import create_test_file
 
 pytestmark = pytest.mark.django_db
 
-from osf.models import NodeRelation, QuickFilesNode, BlacklistedEmailDomain
+from osf.models import NodeRelation, QuickFilesNode, DraftNode, BlacklistedEmailDomain
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -93,7 +93,8 @@ from osf_tests.factories import (
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
-    RegionFactory
+    RegionFactory,
+    DraftRegistrationFactory,
 )
 
 @mock_app.route('/errorexc')
@@ -2119,7 +2120,13 @@ class TestAddingContributorViews(OsfTestCase):
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
         provider = RegistrationProviderFactory()
-        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None, provider=provider)
+        project.register_node(
+            get_default_metaschema(),
+            Auth(user=project.creator),
+            DraftRegistrationFactory(branched_from=project),
+            None,
+            provider=provider
+        )
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
@@ -4982,8 +4989,6 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
-
-
     def test_preprint_provider_with_osf_domain(self):
         provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
         preprint = PreprintFactory(provider=provider)
@@ -5009,6 +5014,15 @@ class TestResolveGuid(OsfTestCase):
 
         assert_equal(res.status_code, http.GONE)
         assert_equal(res.request.path, '/{}/'.format(guid))
+
+    def test_cannot_access_draft_node(self):
+        user = AuthUserFactory()
+        draft_node = DraftNode.objects.create(title='Draft Node', creator_id=user.id)
+
+        url = web_url_for('resolve_guid', _guid=True, guid=draft_node._id)
+        res = self.app.get(url, auth=Auth(user), expect_errors=True)
+        assert_equal(res.status_code, http.NOT_FOUND)
+
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 

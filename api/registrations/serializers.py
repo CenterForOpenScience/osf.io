@@ -513,6 +513,9 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             # TODO: Raise an error once our JSON schemas are updated
 
         try:
+            # To preserve old workflow, copy original node's editable metadata to the draft
+            # before registration, because the draft registration's fields trump node fields
+            draft.copy_editable_fields(draft.branched_from, auth=auth)
             registration = draft.register(auth, save=True, child_ids=children)
         except NodeStateError as err:
             raise exceptions.ValidationError(err)

@@ -665,6 +665,17 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'The parents of all child nodes being registered must be registered.'
 
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_old_workflow_node_editable_metadata_copied_to_draft_before_registration(
+            self, mock_enqueue, app, user, url_registrations, payload, project_public, draft_registration):
+        # New workflow allows you to edit fields on draft registration, but old workflow does not.
+        project_public.title = 'Recently updated title'
+        project_public.save()
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 201
+        # Assert project updates are transferred to registration, trumping draft registration fields
+        assert res.json['data']['attributes']['title'] == 'Recently updated title'
+
     def test_cannot_create_registration(
             self, app, user_write_contrib, user_read_contrib,
             payload, url_registrations, project_public):

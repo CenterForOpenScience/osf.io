@@ -67,7 +67,7 @@ class TestQuickFilesNode:
 
     def test_quickfiles_cannot_be_registered(self, quickfiles, auth):
         with pytest.raises(NodeStateError):
-            quickfiles.register_node(get_default_metaschema(), auth, '', None)
+            quickfiles.register_node(get_default_metaschema(), auth, factories.DraftRegistrationFactory(branched_from=quickfiles), None)
 
     def test_quickfiles_cannot_be_forked(self, quickfiles, auth):
         with pytest.raises(NodeStateError):

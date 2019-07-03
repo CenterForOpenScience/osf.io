@@ -27,6 +27,7 @@ from osf_tests.factories import (
     ForkFactory,
     OSFGroupFactory,
     WithdrawnRegistrationFactory,
+    DraftNodeFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake
@@ -52,6 +53,10 @@ class TestNodeDetail:
             title='Project One',
             is_public=True,
             creator=user)
+
+    @pytest.fixture()
+    def draft_node(self, user):
+        return DraftNodeFactory(creator=user)
 
     @pytest.fixture()
     def project_private(self, user):
@@ -91,7 +96,7 @@ class TestNodeDetail:
     def test_return_project_details(
             self, app, user, user_two, project_public,
             project_private, url_public, url_private,
-            permissions_read, permissions_admin):
+            permissions_read, permissions_admin, draft_node):
 
         #   test_return_public_project_details_logged_out
         res = app.get(url_public)
@@ -150,6 +155,11 @@ class TestNodeDetail:
         res = app.get(url_private, auth=user_two.auth)
         assert res.status_code == 200
         assert project_private.has_permission(user_two, permissions.WRITE) is True
+
+    #   test_draft_node_not_returned_under_node_detail_endpoint
+        draft_node_url = '/{}nodes/{}/'.format(API_BASE, draft_node._id)
+        res = app.get(draft_node_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
 
     def test_return_private_project_details_logged_in_write_contributor(
             self, app, user, user_two, project_private, url_private, permissions_write):

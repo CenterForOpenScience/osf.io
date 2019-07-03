@@ -181,10 +181,10 @@ class Sitemap(object):
             progress.increment()
         progress.stop()
 
-        # AbstractNode urls (Nodes and Registrations, no Collections)
+        # AbstractNode urls (Nodes and Registrations, no Collections, Quickfiles, DraftNodes)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type__in=['osf.collection', 'osf.quickfilesnode'])
+            .exclude(type__in=['osf.collection', 'osf.quickfilesnode', 'osf.draftnode'])
             .values('guids___id', 'modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:

@@ -23,7 +23,8 @@ from website.util import api_url_for
 from website.project.views import drafts as draft_views
 
 from osf_tests.factories import (
-    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory, Auth
+    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory,
+    Auth, DraftRegistrationFactory
 )
 from tests.test_registrations.base import RegistrationsTestBase
 
@@ -40,7 +41,8 @@ class TestRegistrationViews(RegistrationsTestBase):
 
     @mock.patch('website.archiver.tasks.archive')
     def test_node_register_page_registration(self, mock_archive):
-        reg = self.node.register_node(get_default_metaschema(), self.auth, '', None)
+        draft_reg = DraftRegistrationFactory(branched_from=self.node, user=self.node.creator)
+        reg = self.node.register_node(get_default_metaschema(), self.auth, draft_reg, None)
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)

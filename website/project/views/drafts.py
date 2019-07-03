@@ -256,7 +256,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
     meta_schema = get_schema_or_fail(Q(name=schema_name, schema_version=int(schema_version)))
     draft = DraftRegistration.create_from_node(
-        node,
+        node=node,
         user=auth.user,
         schema=meta_schema,
         data={}

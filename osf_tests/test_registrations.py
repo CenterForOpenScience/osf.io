@@ -1,13 +1,11 @@
 import mock
 import pytest
-import datetime
 
 from addons.wiki.models import WikiVersion
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from framework.auth.core import Auth
-from framework.exceptions import PermissionsError
-from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
+from osf.models import Node, Registration, Sanction, NodeLog
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
 
@@ -15,7 +13,7 @@ from website import settings
 
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
-from .factories import get_default_metaschema
+from .factories import get_default_metaschema, DraftRegistrationFactory
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 
 pytestmark = pytest.mark.django_db
@@ -54,16 +52,19 @@ def test_factory(user, project):
     # Create a registration from a project
     user2 = factories.UserFactory()
     project.add_contributor(user2)
+
+    data = {'some': 'data'}
+    draft_reg = DraftRegistrationFactory(registration_metadata=data, branched_from=project)
     registration2 = factories.RegistrationFactory(
         project=project,
         user=user2,
-        data={'some': 'data'},
+        draft_registration=draft_reg,
     )
     assert registration2.registered_from == project
     assert registration2.registered_user == user2
     assert (
         registration2.registered_meta[get_default_metaschema()._id] ==
-        {'some': 'data'}
+        data
     )
 
 
@@ -308,7 +309,8 @@ class TestRegisterNode:
             wiki_page=wiki_page,
             identifier=2
         )
-        registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
+        draft_reg = factories.DraftRegistrationFactory(branched_from=project)
+        registration = project.register_node(get_default_metaschema(), Auth(user), draft_reg, None)
         assert registration.wiki_private_uuids == {}
 
         registration_wiki_current = WikiVersion.objects.get_for_node(registration, current_wiki.wiki_page.page_name)
@@ -538,136 +540,3 @@ class TestDOIValidation:
         reg.article_doi = doi
         reg.save()
         assert reg.article_doi == doi
-
-
-class TestDraftRegistrations:
-
-    # copied from tests/test_registrations/test_models.py
-    def test_factory(self):
-        draft = factories.DraftRegistrationFactory()
-        assert draft.branched_from is not None
-        assert draft.initiator is not None
-        assert draft.registration_schema is not None
-
-        user = factories.UserFactory()
-        draft = factories.DraftRegistrationFactory(initiator=user)
-        assert draft.initiator == user
-
-        node = factories.ProjectFactory()
-        draft = factories.DraftRegistrationFactory(branched_from=node)
-        assert draft.branched_from == node
-        assert draft.initiator == node.creator
-
-        # Pick an arbitrary v2 schema
-        schema = RegistrationSchema.objects.filter(schema_version=2).first()
-        data = {'some': 'data'}
-        draft = factories.DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
-        assert draft.registration_schema == schema
-        assert draft.registration_metadata == data
-
-    @mock.patch('website.settings.ENABLE_ARCHIVER', False)
-    def test_register(self):
-        user = factories.UserFactory()
-        auth = Auth(user)
-        project = factories.ProjectFactory(creator=user)
-        draft = factories.DraftRegistrationFactory(branched_from=project)
-        assert not draft.registered_node
-        draft.register(auth)
-        assert draft.registered_node
-
-        # group member with admin access cannot register
-        member = factories.AuthUserFactory()
-        osf_group = factories.OSFGroupFactory(creator=user)
-        osf_group.make_member(member, auth=auth)
-        project.add_osf_group(osf_group, ADMIN)
-        draft_2 = factories.DraftRegistrationFactory(branched_from=project)
-        assert project.has_permission(member, ADMIN)
-        with pytest.raises(PermissionsError):
-            draft_2.register(Auth(member))
-        assert not draft_2.registered_node
-
-    def test_update_metadata_tracks_changes(self, project):
-        draft = factories.DraftRegistrationFactory(branched_from=project)
-
-        draft.registration_metadata = {
-            'foo': {
-                'value': 'bar',
-            },
-            'a': {
-                'value': 1,
-            },
-            'b': {
-                'value': True
-            },
-        }
-        changes = draft.update_metadata({
-            'foo': {
-                'value': 'foobar',
-            },
-            'a': {
-                'value': 1,
-            },
-            'b': {
-                'value': True,
-            },
-            'c': {
-                'value': 2,
-            },
-        })
-        draft.save()
-        for key in ['foo', 'c']:
-            assert key in changes
-
-    def test_has_active_draft_registrations(self):
-        project, project2 = factories.ProjectFactory(), factories.ProjectFactory()
-        factories.DraftRegistrationFactory(branched_from=project)
-        assert project.has_active_draft_registrations is True
-        assert project2.has_active_draft_registrations is False
-
-    def test_draft_registrations_active(self):
-        project = factories.ProjectFactory()
-        registration = factories.RegistrationFactory(project=project)
-        deleted_registration = factories.RegistrationFactory(project=project, is_deleted=True)
-        draft = factories.DraftRegistrationFactory(branched_from=project)
-        draft2 = factories.DraftRegistrationFactory(branched_from=project, registered_node=deleted_registration)
-        finished_draft = factories.DraftRegistrationFactory(branched_from=project, registered_node=registration)
-        assert draft in project.draft_registrations_active.all()
-        assert draft2 in project.draft_registrations_active.all()
-        assert finished_draft in project.draft_registrations_active.all()
-
-    def test_update_metadata_interleaves_comments_by_created_timestamp(self, project):
-        draft = factories.DraftRegistrationFactory(branched_from=project)
-        now = datetime.datetime.today()
-
-        comments = []
-        times = (now + datetime.timedelta(minutes=i) for i in range(6))
-        for time in times:
-            comments.append({
-                'created': time.isoformat(),
-                'value': 'Foo'
-            })
-        orig_data = {
-            'foo': {
-                'value': 'bar',
-                'comments': [comments[i] for i in range(0, 6, 2)]
-            }
-        }
-        draft.update_metadata(orig_data)
-        draft.save()
-        assert draft.registration_metadata['foo']['comments'] == [comments[i] for i in range(0, 6, 2)]
-
-        new_data = {
-            'foo': {
-                'value': 'bar',
-                'comments': [comments[i] for i in range(1, 6, 2)]
-            }
-        }
-        draft.update_metadata(new_data)
-        draft.save()
-        assert draft.registration_metadata['foo']['comments'] == comments
-
-    def test_draft_registration_url(self):
-        project = factories.ProjectFactory()
-        draft = factories.DraftRegistrationFactory(branched_from=project)
-
-        assert draft.url == settings.DOMAIN + 'project/{}/drafts/{}'.format(project._id, draft._id)

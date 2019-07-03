@@ -19,7 +19,7 @@ from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
 from osf.exceptions import NodeStateError
-from osf.models import AbstractNode, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
+from osf.models import AbstractNode, OSFGroup, OSFUser, Preprint, PreprintProvider, DraftRegistration, RecentlyAddedContributor
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
 from website import mails, language, settings
@@ -597,7 +597,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
 @contributor_added.connect
 def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs):
-    if isinstance(node, Preprint):
+    if isinstance(node, Preprint) or isinstance(node, DraftRegistration):
         return
     MAX_RECENT_LENGTH = 15
     # Add contributor to recently added list for user

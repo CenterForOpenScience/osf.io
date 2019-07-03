@@ -131,6 +131,10 @@ class PreprintStateError(PreprintError):
     """Raised when the Preprint's state is not suitable for the requested action"""
     pass
 
+class DraftRegistrationStateError(OSFError):
+    """Raised when an action cannot be performed on a Draft Registration model"""
+    pass
+
 
 class PreprintProviderError(PreprintError):
     """Raised when there is an error with the preprint provider"""

@@ -192,6 +192,13 @@ class ProjectFactory(BaseNodeFactory):
     category = 'project'
 
 
+class DraftNodeFactory(BaseNodeFactory):
+    category = 'project'
+
+    class Meta:
+        model = models.DraftNode
+
+
 class ProjectWithAddonFactory(ProjectFactory):
     """Factory for a project that has an addon. The addon will be added to
     both the Node and the creator records. ::
@@ -347,7 +354,7 @@ class RegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, is_public=False,
-                schema=None, data=None,
+                schema=None, draft_registration=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
                 provider=None,
                 *args, **kwargs):
@@ -368,14 +375,15 @@ class RegistrationFactory(BaseNodeFactory):
             )
         project.save()
 
+        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, user=user)
+
         # Default registration parameters
         schema = schema or get_default_metaschema()
-        data = data or {'some': 'data'}
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            data=data,
+            draft_registration=draft_registration,
             provider=provider,
         )
 
@@ -485,6 +493,8 @@ class DraftRegistrationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
+        title = kwargs.pop('title', None)
+        description = kwargs.pop('description', None)
         branched_from = kwargs.get('branched_from')
         initiator = kwargs.get('initiator')
         registration_schema = kwargs.get('registration_schema')
@@ -500,12 +510,17 @@ class DraftRegistrationFactory(DjangoModelFactory):
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         draft = models.DraftRegistration.create_from_node(
-            branched_from,
+            node=branched_from,
             user=initiator,
             schema=registration_schema,
             data=registration_metadata,
             provider=provider,
         )
+        if title:
+            draft.title = title
+        if description:
+            draft.description = description
+        draft.save()
         return draft
 
 class CommentFactory(DjangoModelFactory):
