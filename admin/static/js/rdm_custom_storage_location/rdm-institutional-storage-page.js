@@ -31,7 +31,7 @@ function validateRequiredFields(providerShortName) {
     $('#' + providerShortName + '_connect').attr('disabled', !allFilled);
 }
 
-$('#swift_keytone_versionSelect').change(function () {
+$('#swift_auth_version').change(function () {
     var swiftKeystoneVersion = $(this).val();
     if (swiftKeystoneVersion === 'v2') {
         $('#swift_project_domain_name').attr('disabled', true);
@@ -64,6 +64,8 @@ function testConnection(thisObject) {
             params.owncloud_username = $('#owncloud_username').val();
             params.owncloud_password = $('#owncloud_password').val();
             break;
+        case 'swift':
+            getParameters(params);
     }
 
     ajaxRequest(params, providerShortName);
@@ -106,7 +108,7 @@ $('.test-connection').click(function () {
 });
 
 
-function testConnectionSucceed(id, data) {
+function testConnectionSucceed (id, data) {
     $('#' + id + '_save').attr('disabled', false);
     $('#' + id + '_save').removeClass('btn-default').addClass('btn-success ');
     $('#' + id + '_connect').removeClass('btn-success').addClass('btn-default ');
@@ -117,7 +119,7 @@ function testConnectionSucceed(id, data) {
     }
 }
 
-function testConnectionFailed(id, message) {
+function testConnectionFailed (id, message) {
     $('#' + id + '_message').html(message);
     $('#' + id + '_save').attr('disabled', true);
     $('#' + id + '_save').removeClass('btn-success').addClass('btn-default ');
@@ -126,4 +128,14 @@ function testConnectionFailed(id, message) {
         $('#' + id + '_message').addClass('text-danger ');
         $('#' + id + '_message').removeClass('text-success ');
     }
+}
+
+function getParameters (params) {
+    var providerClass = params.provider_short_name + '-params';
+    var allParameters= $('.' + providerClass);
+    $.each( allParameters, function(key, value) {
+        if (!value.disabled) {
+            params[value.id] = value.value;
+        }
+      });
 }
