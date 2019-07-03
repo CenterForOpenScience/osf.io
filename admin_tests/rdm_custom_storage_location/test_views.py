@@ -1,7 +1,9 @@
 from django.test import RequestFactory
-from django.http import Http404
+from django.http import Http404, HttpResponse
 import json
 import httplib
+import owncloud
+import requests
 import mock
 from nose import tools as nt
 
@@ -116,7 +118,6 @@ class TestS3ConnectionStorage(AdminTestCase):
         self.mock_exists.start()
         self.institution1 = InstitutionFactory()
         self.institution2 = InstitutionFactory()
-        self.user = AuthUserFactory()
         self.default_region = Region.objects.first()
 
         self.user = AuthUserFactory()
@@ -196,3 +197,64 @@ class TestS3ConnectionStorage(AdminTestCase):
         request_post_response = views.test_connection(request_post)
         nt.assert_equals(request_post_response.status_code, httplib.OK)
         nt.assert_in('Credentials are valid', request_post_response.content)
+
+
+class TestOwncloudConnectionStorage(AdminTestCase):
+
+    def setUp(self):
+        super(TestOwncloudConnectionStorage, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.save()
+
+    @staticmethod
+    def view_post(params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        return views.test_connection(request)
+
+    @mock.patch('owncloud.Client')
+    def test_success(self, mock_client):
+        response = self.view_post({
+            'owncloud_host': 'my-valid-host',
+            'owncloud_username': 'my-valid-username',
+            'owncloud_password': 'my-valid-password',
+            'owncloud_folder': 'my-valid-folder',
+            'provider_short_name': 'owncloud',
+        })
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('Credentials are valid', response.content)
+
+    @mock.patch('owncloud.Client')
+    def test_connection_error(self, mock_client):
+        mock_client.side_effect = requests.exceptions.ConnectionError()
+
+        response = self.view_post({
+            'owncloud_host': 'cuzidontcare',
+            'owncloud_username': 'my-valid-username',
+            'owncloud_password': 'my-valid-password',
+            'owncloud_folder': 'my-valid-folder',
+            'provider_short_name': 'owncloud',
+        })
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Invalid ownCloud server.', response.content)
+
+    @mock.patch('owncloud.Client')
+    def test_unauthorized(self, mock_client):
+        res = HttpResponse(status=httplib.UNAUTHORIZED)
+        mock_client.side_effect = owncloud.owncloud.HTTPResponseError(res)
+
+        response = self.view_post({
+            'owncloud_host': 'my-valid-host',
+            'owncloud_username': 'bad-username',
+            'owncloud_password': 'bad-password',
+            'owncloud_folder': 'my-valid-folder',
+            'provider_short_name': 'owncloud',
+        })
+        nt.assert_equals(response.status_code, httplib.UNAUTHORIZED)
+        nt.assert_in('ownCloud Login failed.', response.content)
