@@ -198,6 +198,21 @@ class TestS3ConnectionStorage(AdminTestCase):
         nt.assert_equals(request_post_response.status_code, httplib.OK)
         nt.assert_in('Credentials are valid', request_post_response.content)
 
+    @mock.patch('addons.s3.views.utils.get_user_info', return_value=None)
+    def test_user_settings_invalid_credentials(self, mock_uid):
+        params = {
+            's3_access_key': 'Non-empty-secret-key',
+            's3_secret_key': 'Non-empty-secret-key',
+            'provider_short_name': 's3',
+        }
+        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
+        request_post.is_ajax()
+        request_post_response = views.test_connection(request_post)
+        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Unable to access account.\\n'
+                'Check to make sure that the above credentials are valid,'
+                'and that they have permission to list buckets.', request_post_response.content)
+
 
 class TestOwncloudConnectionStorage(AdminTestCase):
 
