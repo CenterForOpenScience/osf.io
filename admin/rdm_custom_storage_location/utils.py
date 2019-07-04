@@ -71,7 +71,13 @@ def test_s3_connection(access_key, secret_key):
         'data': s3_response
     }, status=httplib.OK)
 
-def test_owncloud_connection(host_url, username, password, folder):
+def test_owncloud_connection(host_url, username, password, folder, provider):
+    provider_name = ''
+    if provider == 'owncloud':
+        provider_name = 'ownCloud'
+    elif provider == 'nextcloud':
+        provider_name = 'Nextcloud'
+
     host = furl()
     host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
     host.scheme = 'https'
@@ -82,11 +88,11 @@ def test_owncloud_connection(host_url, username, password, folder):
         oc.logout()
     except requests.exceptions.ConnectionError:
         return JsonResponse({
-            'message': 'Invalid ownCloud server.' + host.url
+            'message': ('Invalid {} server.').format(provider_name) + host.url
         }, status=httplib.BAD_REQUEST)
     except owncloud.owncloud.HTTPResponseError:
         return JsonResponse({
-            'message': 'ownCloud Login failed.'
+            'message': ('{} Login failed.').format(provider_name)
         }, status=httplib.UNAUTHORIZED)
 
     return JsonResponse({
