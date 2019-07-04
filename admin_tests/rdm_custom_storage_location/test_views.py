@@ -140,6 +140,18 @@ class TestS3ConnectionStorage(AdminTestCase):
         params = {
             's3_access_key': '',
             's3_secret_key': '',
+            'provider_short_name': '',
+        }
+        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
+        request_post.is_ajax()
+        request_post_response = views.test_connection(request_post)
+        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Provider is missing.', request_post_response.content)
+
+    def test_s3_settings_input_empty_keys_with_provider(self):
+        params = {
+            's3_access_key': '',
+            's3_secret_key': '',
             'provider_short_name': 's3',
         }
         request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
@@ -234,13 +246,25 @@ class TestOwncloudConnectionStorage(AdminTestCase):
         return views.test_connection(request)
 
     @mock.patch('owncloud.Client')
-    def test_success(self, mock_client):
+    def test_success_owncloud(self, mock_client):
         response = self.view_post({
             'owncloud_host': 'my-valid-host',
             'owncloud_username': 'my-valid-username',
             'owncloud_password': 'my-valid-password',
             'owncloud_folder': 'my-valid-folder',
             'provider_short_name': 'owncloud',
+        })
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('Credentials are valid', response.content)
+
+    @mock.patch('owncloud.Client')
+    def test_success_nextcloud(self, mock_client):
+        response = self.view_post({
+            'nextcloud_host': 'my-valid-host',
+            'nextcloud_username': 'my-valid-username',
+            'nextcloud_password': 'my-valid-password',
+            'nextcloud_folder': 'my-valid-folder',
+            'provider_short_name': 'nextcloud',
         })
         nt.assert_equals(response.status_code, httplib.OK)
         nt.assert_in('Credentials are valid', response.content)

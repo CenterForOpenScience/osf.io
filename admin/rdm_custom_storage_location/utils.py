@@ -72,6 +72,7 @@ def test_s3_connection(access_key, secret_key):
     }, status=httplib.OK)
 
 def test_owncloud_connection(host_url, username, password, folder, provider):
+    """ This method is valid for both ownCloud and Nextcloud """
     provider_name = ''
     if provider == 'owncloud':
         provider_name = 'ownCloud'
