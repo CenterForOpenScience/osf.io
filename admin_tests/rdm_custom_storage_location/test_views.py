@@ -148,6 +148,18 @@ class TestS3ConnectionStorage(AdminTestCase):
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('Provider is missing.', request_post_response.content)
 
+    def test_s3_settings_input_invalid_provider(self):
+        params = {
+            's3_access_key': '',
+            's3_secret_key': '',
+            'provider_short_name': 'invalidprovider',
+        }
+        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
+        request_post.is_ajax()
+        request_post_response = views.test_connection(request_post)
+        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Invalid provider.', request_post_response.content)
+
     def test_s3_settings_input_empty_keys_with_provider(self):
         params = {
             's3_access_key': '',
