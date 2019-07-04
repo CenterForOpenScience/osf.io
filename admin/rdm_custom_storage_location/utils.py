@@ -96,7 +96,7 @@ def test_owncloud_connection(host_url, username, password, folder):
 def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant_name,
                           user_domain_name, project_domain_name, folder, container):
     """Verifies new external account credentials and adds to user's list"""
-    if not (auth_version and auth_url and access_key and secret_key and tenant_name):
+    if not (auth_version and auth_url and access_key and secret_key and tenant_name and folder and container):
         return JsonResponse({
             'message': 'All the fields above are required.'
         }, status=httplib.BAD_REQUEST)

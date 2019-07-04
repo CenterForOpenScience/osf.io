@@ -258,3 +258,153 @@ class TestOwncloudConnectionStorage(AdminTestCase):
         })
         nt.assert_equals(response.status_code, httplib.UNAUTHORIZED)
         nt.assert_in('ownCloud Login failed.', response.content)
+
+class TestSwiftConnectionStorage(AdminTestCase):
+
+    def setUp(self):
+        super(TestSwiftConnectionStorage, self).setUp()
+        self.mock_can_list = mock.patch('addons.swift.views.utils.can_list')
+        self.mock_can_list.return_value = True
+        self.mock_can_list.start()
+        self.mock_uid = mock.patch('addons.swift.views.utils.get_user_info')
+        self.mock_uid.return_value = {'id': '1234567890', 'display_name': 'swift.user'}
+        self.mock_uid.start()
+        config = {
+            'return_value.id': '12346789',
+            'return_value.display_name': 'swift.user',
+        }
+        self.mock_exists = mock.patch('addons.swift.views.utils.container_exists', **config)
+        self.mock_exists.return_value = True
+        self.mock_exists.start()
+
+        self.institution1 = InstitutionFactory()
+        self.institution2 = InstitutionFactory()
+        self.default_region = Region.objects.first()
+
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution1)
+        self.user.save()
+        self.url = reverse('custom_storage_location:test_connection')
+
+    def tearDown(self):
+        self.mock_can_list.stop()
+        self.mock_uid.stop()
+        self.mock_exists.stop()
+        super(TestSwiftConnectionStorage, self).tearDown()
+
+    def test_swift_settings_input_empty_keys(self):
+        params = {
+            'swift_auth_version': '',
+            'swift_auth_url': '',
+            'swift_access_key': '',
+            'swift_secret_key': '',
+            'swift_tenant_name': '',
+            'swift_folder': '',
+            'swift_container': '',
+            'provider_short_name': 'swift',
+        }
+        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
+        request_post.is_ajax()
+        request_post_response = views.test_connection(request_post)
+        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('All the fields above are required.', request_post_response.content)
+
+    def test_swift_settings_input_empty_swift_user_domain_name_v3(self):
+        params = {
+            'swift_auth_version': '3',
+            'swift_auth_url': 'Non-empty-auth-url',
+            'swift_access_key': 'Non-empty-access-key',
+            'swift_secret_key': 'Non-empty-secret-key',
+            'swift_tenant_name': 'Non-empty-tenant_name',
+            'swift_user_domain_name': '',
+            'swift_project_domain_name': 'Non-empty-project_domain_name',
+            'swift_folder': 'Non-empty-folder',
+            'swift_container': 'Non-empty-container',
+            'provider_short_name': 'swift',
+        }
+        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
+        request_post.is_ajax()
+        request_post_response = views.test_connection(request_post)
+        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('The field `user_domain_name` is required when you choose identity V3.', request_post_response.content)
+
+    def test_swift_settings_input_empty_swift_project_domain_name_v3(self):
+        params = {
+            'swift_auth_version': '3',
+            'swift_auth_url': 'Non-empty-auth-url',
+            'swift_access_key': 'Non-empty-access-key',
+            'swift_secret_key': 'Non-empty-secret-key',
+            'swift_tenant_name': 'Non-empty-tenant_name',
+            'swift_user_domain_name': 'Non-empty-user_domain_name',
+            'swift_project_domain_name': '',
+            'swift_folder': 'Non-empty-folder',
+            'swift_container': 'Non-empty-container',
+            'provider_short_name': 'swift',
+        }
+        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
+        request_post.is_ajax()
+        request_post_response = views.test_connection(request_post)
+        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('The field `project_domain_name` is required when you choose identity V3.', request_post_response.content)
+
+    @mock.patch('addons.swift.views.utils.get_user_info', return_value=None)
+    def test_swift_settings_invalid_credentials(self, mock_uid):
+        params = {
+            'swift_auth_version': '3',
+            'swift_auth_url': 'Non-empty-auth-url',
+            'swift_access_key': 'Non-empty-access-key',
+            'swift_secret_key': 'Non-empty-secret-key',
+            'swift_tenant_name': 'Non-empty-tenant_name',
+            'swift_user_domain_name': 'Non-empty-user_domain_name',
+            'swift_project_domain_name': 'Non-empty-project_domain_name',
+            'swift_folder': 'Non-empty-folder',
+            'swift_container': 'Non-empty-container',
+            'provider_short_name': 'swift',
+        }
+        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
+        request_post.is_ajax()
+        request_post_response = views.test_connection(request_post)
+        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Unable to access account.\\n'
+                'Check to make sure that the above credentials are valid, '
+                'and that they have permission to list containers.', request_post_response.content)
+
+    @mock.patch('addons.swift.views.utils.can_list', return_value=False)
+    def test_swift_settings_cant_list_v3(self, mock_can_list):
+        params = {
+            'swift_auth_version': '3',
+            'swift_auth_url': 'Non-empty-auth-url',
+            'swift_access_key': 'Non-empty-access-key',
+            'swift_secret_key': 'Non-empty-secret-key',
+            'swift_tenant_name': 'Non-empty-tenant_name',
+            'swift_user_domain_name': 'Non-empty-user_domain_name',
+            'swift_project_domain_name': 'Non-empty-project_domain_name',
+            'swift_folder': 'Non-empty-folder',
+            'swift_container': 'Non-empty-container',
+            'provider_short_name': 'swift',
+        }
+        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
+        request_post.is_ajax()
+        request_post_response = views.test_connection(request_post)
+        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Unable to list containers.\\n'
+                'Listing containers is required permission.', request_post_response.content)
+
+    def test_swift_settings_can_list_v3(self):
+        params = {
+            'swift_auth_version': '3',
+            'swift_auth_url': 'Non-empty-auth-url',
+            'swift_access_key': 'Non-empty-access-key',
+            'swift_secret_key': 'Non-empty-secret-key',
+            'swift_tenant_name': 'Non-empty-tenant_name',
+            'swift_user_domain_name': 'Non-empty-user_domain_name',
+            'swift_project_domain_name': 'Non-empty-project_domain_name',
+            'swift_folder': 'Non-empty-folder',
+            'swift_container': 'Non-empty-container',
+            'provider_short_name': 'swift',
+        }
+        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
+        request_post.is_ajax()
+        request_post_response = views.test_connection(request_post)
+        nt.assert_equals(request_post_response.status_code, httplib.OK)
+        nt.assert_in('Credentials are valid', request_post_response.content)
