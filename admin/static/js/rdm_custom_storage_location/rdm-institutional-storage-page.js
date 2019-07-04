@@ -1,12 +1,25 @@
 'use strict';
 
 var $ = require('jquery');
+var $osf = require('js/osfHelpers');
 var Cookie = require('js-cookie');
 
 $('#institutional_storage_form').submit(function (e) {
     if ($('#institutional_storage_form')[0].checkValidity()) {
-        var selectedProvider = $('input[name=\'options\']:checked').val();
-        $('#' + selectedProvider + '_modal').modal('show');
+        var showModal = function () {
+            var selectedProvider = $('input[name=\'options\']:checked').val();
+            $('#' + selectedProvider + '_modal').modal('show');
+        };
+        $osf.confirmDangerousAction({
+            title: 'Are you sure you want to change institutional storage?',
+            message: '<p>The previous storage will no longer be available to all contributors on the project.</p>',
+            callback: showModal,
+            buttons: {
+                success: {
+                    label: 'Change'
+                }
+            }
+        });
     }
     e.preventDefault();
 });
