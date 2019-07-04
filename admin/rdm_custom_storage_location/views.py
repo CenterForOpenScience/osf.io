@@ -100,6 +100,15 @@ def test_connection(request):
             data.get('owncloud_username'),
             data.get('owncloud_password'),
             data.get('owncloud_folder'),
+            provider_short_name,
+        )
+    elif provider_short_name == 'nextcloud':
+        return utils.test_owncloud_connection(
+            data.get('nextcloud_host'),
+            data.get('nextcloud_username'),
+            data.get('nextcloud_password'),
+            data.get('nextcloud_folder'),
+            provider_short_name,
         )
     elif provider_short_name == 'swift':
         return utils.test_swift_connection(

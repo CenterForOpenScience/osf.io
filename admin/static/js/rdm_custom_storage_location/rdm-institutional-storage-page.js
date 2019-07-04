@@ -36,6 +36,10 @@ $('#owncloud_modal input').keyup(function () {
     validateRequiredFields('owncloud');
 });
 
+$('#nextcloud_modal input').keyup(function () {
+    validateRequiredFields('nextcloud');
+});
+
 function validateRequiredFields(providerShortName) {
     // Check if all the inputs are filled, so we can enable the connect button
     var allFilled = $('#' + providerShortName + '_modal [required]').toArray().reduce(function (accumulator, current) {
@@ -46,7 +50,7 @@ function validateRequiredFields(providerShortName) {
 
 $('#swift_auth_version').change(function () {
     var swiftKeystoneVersion = $(this).val();
-    if (swiftKeystoneVersion === 'v2') {
+    if (swiftKeystoneVersion === '2') {
         $('#swift_project_domain_name').attr('disabled', true);
         $('#swift_user_domain_name').attr('disabled', true);
         $('#swift_project_domain_name').attr('required', false);
@@ -63,7 +67,9 @@ $('#swift_auth_version').change(function () {
 function testConnection(thisObject) {
     var modalId = $(thisObject).attr('id');
     var providerShortName = modalId.replace('_connect', '');
-    var params = {'provider_short_name': providerShortName};
+    var params = {
+        'provider_short_name': providerShortName
+    };
 
     switch (providerShortName) {
         case 's3':
@@ -78,6 +84,8 @@ function testConnection(thisObject) {
             params.owncloud_password = $('#owncloud_password').val();
             break;
         case 'swift':
+            getParameters(params);
+        case 'nextcloud':
             getParameters(params);
     }
 
@@ -121,7 +129,7 @@ $('.test-connection').click(function () {
 });
 
 
-function testConnectionSucceed (id, data) {
+function testConnectionSucceed(id, data) {
     $('#' + id + '_save').attr('disabled', false);
     $('#' + id + '_save').removeClass('btn-default').addClass('btn-success ');
     $('#' + id + '_connect').removeClass('btn-success').addClass('btn-default ');
@@ -132,7 +140,7 @@ function testConnectionSucceed (id, data) {
     }
 }
 
-function testConnectionFailed (id, message) {
+function testConnectionFailed(id, message) {
     $('#' + id + '_message').html(message);
     $('#' + id + '_save').attr('disabled', true);
     $('#' + id + '_save').removeClass('btn-success').addClass('btn-default ');
@@ -143,12 +151,12 @@ function testConnectionFailed (id, message) {
     }
 }
 
-function getParameters (params) {
+function getParameters(params) {
     var providerClass = params.provider_short_name + '-params';
-    var allParameters= $('.' + providerClass);
-    $.each( allParameters, function(key, value) {
+    var allParameters = $('.' + providerClass);
+    $.each(allParameters, function (key, value) {
         if (!value.disabled) {
             params[value.id] = value.value;
         }
-      });
+    });
 }
