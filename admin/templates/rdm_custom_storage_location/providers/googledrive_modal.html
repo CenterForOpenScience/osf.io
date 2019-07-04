@@ -1,0 +1,60 @@
+<div class="modal fade" id="googledrive_modal" tabindex="-1" role="dialog" aria-labelledby="googledrive_modal_label">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span></button>
+                <h3 id="googledrive_modal_label">Connect a Google Drive Account</h3>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h4>
+                            Please click "Get OAuth Permission" button to connect Google Drive.
+                            <br />
+                            Then you will be redirected to Google authentication page.
+                        </h4>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-3">
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group text-center">
+                            <a href="{% url 'oauth:connect'   'googledrive' institution.id   %}" class="btn btn-primary"
+                                role="button" target="_blank">Get OAuth permission</a>
+                        </div>
+                        <div class="hidden" id="googledrive_authorization_div">
+                            <label>
+                                Authorized by:
+                            </label>
+                            <span id='googledrive_authorized_by'>
+                                Taro
+                            </span>
+                        </div>
+                        <div class="hidden" id="googledrive_current_token_div">
+                            <label>
+                                Current token:
+                            </label>
+                            <span id='googledrive_current_token_span'>
+                                3fR4ELZK2BfaZom8zRTP1pEc64nLFeNY
+                            </span>
+                        </div>
+                        <div class="form-group">
+                            <label for="googledrive_bucket">Folder</label>
+                            <input type="text" class="form-control" id="googledrive_bucket"
+                                placeholder='Folder ID (Ex: root)'>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-default" id="googledrive_connect" disabled>Connect</button>
+                <button type="button" class="btn btn-success" disabled>Save</button>
+            </div>
+        </div>
+    </div>
+</div>
