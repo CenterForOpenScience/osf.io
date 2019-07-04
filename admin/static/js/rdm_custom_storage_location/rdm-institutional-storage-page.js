@@ -33,7 +33,7 @@ function validateRequiredFields(providerShortName) {
 
 $('#swift_auth_version').change(function () {
     var swiftKeystoneVersion = $(this).val();
-    if (swiftKeystoneVersion === 'v2') {
+    if (swiftKeystoneVersion === '2') {
         $('#swift_project_domain_name').attr('disabled', true);
         $('#swift_user_domain_name').attr('disabled', true);
         $('#swift_project_domain_name').attr('required', false);
