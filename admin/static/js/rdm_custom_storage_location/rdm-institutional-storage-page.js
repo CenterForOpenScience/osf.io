@@ -44,6 +44,10 @@ $('#nextcloud_modal input').keyup(function () {
     validateRequiredFields('nextcloud');
 });
 
+$('#googledrive_modal input').keyup(function () {
+    authSaveButton('googledrive');
+});
+
 function validateRequiredFields(providerShortName) {
     // Check if all the inputs are filled, so we can enable the connect button
     var allFilled = $('#' + providerShortName + '_modal [required]').toArray().reduce(function (accumulator, current) {
@@ -163,4 +167,35 @@ function getParameters(params) {
             params[value.id] = value.value;
         }
     });
+}
+
+$('.auth-permission-button').click(function(e) {
+    var providerShortName = this.id.replace('_auth_hyperlink', '');
+    var authorizedBy = 'Taro';
+    var currentToken = '3fR4ELZK2BfaZom8zRTP1pEc64nLFeNY';
+    authPermissionSucceed(providerShortName, authorizedBy, currentToken);
+    authSaveButton('googledrive');
+    e.preventDefault();
+});
+
+function authPermissionSucceed(providerShortName, authorizedBy, currentToken){
+    var providerClass = providerShortName + '-auth-callback';
+    var allFeedbackFields = $('.' + providerClass);
+    allFeedbackFields.removeClass('hidden');
+    $('#' + providerShortName + '_authorized_by').text(authorizedBy);
+    $('#' + providerShortName + '_current_token').text(currentToken);
+}
+
+function authPermissionFailed(providerShortName){
+    var providerClass = providerShortName + '-auth-callback';
+    var allFeedbackFields = $('.' + providerClass);
+    allFeedbackFields.addClass('hidden');
+    $('#' + providerShortName + '_authorized_by').text('');
+    $('#' + providerShortName + '_current_token').text('');
+}
+
+function authSaveButton(providerShortName) {
+    var is_folder_valid = $('#' + providerShortName + '_folder').val() != '';
+    var is_token_valid = $('#' + providerShortName + '_current_token').text().length>0;
+    $('#' + providerShortName + '_save').attr('disabled', !(is_folder_valid && is_token_valid))
 }
