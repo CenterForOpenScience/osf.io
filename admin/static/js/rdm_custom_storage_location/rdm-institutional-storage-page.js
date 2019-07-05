@@ -152,9 +152,12 @@ function getParameters(params) {
 }
 
 $('.auth-permission-button').click(function(e) {
+    $(this).click(false)
+    $(this).addClass('disabled')
     var providerShortName = this.id.replace('_auth_hyperlink', '');
     var authorizedBy = 'Taro';
     var currentToken = '3fR4ELZK2BfaZom8zRTP1pEc64nLFeNY';
+
     authPermissionSucceed(providerShortName, authorizedBy, currentToken);
     authSaveButton('googledrive');
     e.preventDefault();
