@@ -27,8 +27,9 @@ from api.files.permissions import CheckedOutOrAdmin
 from api.files.permissions import FileMetadataRecordPermission
 from api.files.serializers import FileSerializer
 from api.files.serializers import FileDetailSerializer, QuickFilesDetailSerializer
-from api.files.serializers import FileVersionSerializer
 from api.files.serializers import FileMetadataRecordSerializer
+from api.files.serializers import FileVersionSerializer
+from osf.utils.permissions import ADMIN
 
 
 class FileMixin(object):
@@ -102,7 +103,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
         if self.request.GET.get('create_guid', False):
             # allows quickfiles to be given guids when another user wants a permanent link to it
-            if (self.get_target().has_permission(user, 'admin') and utils.has_admin_scope(self.request)) or getattr(file.target, 'is_quickfiles', False):
+            if (self.get_target().has_permission(user, ADMIN) and utils.has_admin_scope(self.request)) or getattr(file.target, 'is_quickfiles', False):
                 file.get_guid(create=True)
         return file
 

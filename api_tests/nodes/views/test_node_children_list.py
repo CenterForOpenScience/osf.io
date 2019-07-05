@@ -3,15 +3,17 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import AbstractNode, NodeLog
+from osf.utils import permissions
 from osf.utils.sanitize import strip_html
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
+    OSFGroupFactory,
     RegistrationFactory,
     AuthUserFactory,
+    PrivateLinkFactory,
 )
 from tests.base import fake
-from osf.utils import permissions
 
 
 @pytest.fixture()
@@ -27,10 +29,7 @@ class TestNodeChildrenList:
         private_project = ProjectFactory()
         private_project.add_contributor(
             user,
-            permissions=[
-                permissions.READ,
-                permissions.WRITE
-            ]
+            permissions=permissions.WRITE
         )
         private_project.save()
         return private_project
@@ -59,6 +58,13 @@ class TestNodeChildrenList:
     def public_project_url(self, user, public_project):
         return '/{}nodes/{}/children/'.format(API_BASE, public_project._id)
 
+    @pytest.fixture()
+    def view_only_link(self, private_project):
+        view_only_link = PrivateLinkFactory(name='node_view_only_link')
+        view_only_link.nodes.add(private_project)
+        view_only_link.save()
+        return view_only_link
+
     def test_return_public_node_children_list(
             self, app, public_component,
             public_project_url):
@@ -79,7 +85,7 @@ class TestNodeChildrenList:
         assert res.json['data'][0]['id'] == public_component._id
 
     def test_return_private_node_children_list(
-            self, app, user, component, private_project_url):
+            self, app, user, component, private_project, private_project_url):
 
         #   test_return_private_node_children_list_logged_out
         res = app.get(private_project_url, expect_errors=True)
@@ -99,6 +105,16 @@ class TestNodeChildrenList:
         res = app.get(private_project_url, auth=user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == component._id
+
+    #   test_return_private_node_children_osf_group_member_admin
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        private_project.add_osf_group(group, permissions.ADMIN)
+        res = app.get(private_project_url, auth=group_mem.auth)
+        assert res.status_code == 200
+        # Can view node children that you have implict admin permissions
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == component._id
 
@@ -158,7 +174,7 @@ class TestNodeChildrenList:
 
         # Adding a child component
         child = NodeFactory(parent=public_project, creator=user, is_public=True, category='software')
-        child.add_contributor(user_2, ['read', 'write'], save=True)
+        child.add_contributor(user_2, permissions.WRITE, save=True)
         # Adding a grandchild
         NodeFactory(parent=child, creator=user, is_public=True)
         # Adding a node link
@@ -180,7 +196,7 @@ class TestNodeChildrenList:
     def test_node_children_related_counts(self, app, user, public_project):
         parent = ProjectFactory(creator=user, is_public=False)
         user_2 = AuthUserFactory()
-        parent.add_contributor(user_2, ['read', 'write', 'admin'])
+        parent.add_contributor(user_2, permissions.ADMIN)
 
         child = NodeFactory(parent=parent, creator=user_2, is_public=False, category='software')
         NodeFactory(parent=child, creator=user_2, is_public=False)
@@ -197,6 +213,69 @@ class TestNodeChildrenList:
         assert res.status_code == 200
         # Nodes with implicit admin perms are also included in the count
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+    def test_child_counts_permissions(self, app, user, public_project):
+        NodeFactory(parent=public_project, creator=user)
+
+        url = '/{}nodes/{}/?related_counts=children'.format(API_BASE, public_project._id)
+        user_two = AuthUserFactory()
+
+        # Unauthorized
+        res = app.get(url)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+
+        # Logged in noncontrib
+        res = app.get(url, auth=user_two.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+
+        # Logged in contrib
+        res = app.get(url, auth=user.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+    def test_private_node_children_with_view_only_link(self, user, app, private_project,
+            component, view_only_link, private_project_url):
+
+        # get node related_counts with vol before vol is attached to components
+        node_url = '/{}nodes/{}/?related_counts=children&view_only={}'.format(API_BASE,
+            private_project._id, view_only_link.key)
+        res = app.get(node_url)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+
+        # view only link is not attached to components
+        view_only_link_url = '{}?view_only={}'.format(private_project_url, view_only_link.key)
+        res = app.get(view_only_link_url)
+        ids = [node['id'] for node in res.json['data']]
+        assert res.status_code == 200
+        assert len(ids) == 0
+        assert component._id not in ids
+
+        # view only link is attached to components
+        view_only_link.nodes.add(component)
+        res = app.get(view_only_link_url)
+        ids = [node['id'] for node in res.json['data']]
+        assert res.status_code == 200
+        assert component._id in ids
+        assert 'contributors' in res.json['data'][0]['relationships']
+        assert 'implicit_contributors' in res.json['data'][0]['relationships']
+        assert 'bibliographic_contributors' in res.json['data'][0]['relationships']
+
+        # get node related_counts with vol once vol is attached to components
+        res = app.get(node_url)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
+
+        # make private vol anonymous
+        view_only_link.anonymous = True
+        view_only_link.save()
+        res = app.get(view_only_link_url)
+        assert 'contributors' not in res.json['data'][0]['relationships']
+        assert 'implicit_contributors' not in res.json['data'][0]['relationships']
+        assert 'bibliographic_contributors' not in res.json['data'][0]['relationships']
+
+        # delete vol
+        view_only_link.is_deleted = True
+        view_only_link.save()
+        res = app.get(view_only_link_url, expect_errors=True)
+        assert res.status_code == 401
 
 
 @pytest.mark.django_db
@@ -259,7 +338,7 @@ class TestNodeChildCreate:
         read_contrib = AuthUserFactory()
         project.add_contributor(
             read_contrib,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             auth=Auth(user), save=True
         )
         res = app.post_json_api(
@@ -281,6 +360,23 @@ class TestNodeChildCreate:
 
         project.reload()
         assert len(project.nodes) == 0
+
+    #   test_creates_child_group_member_read
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project.add_osf_group(group, permissions.READ)
+        res = app.post_json_api(
+            url, child, auth=group_mem.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+        project.update_osf_group(group, permissions.WRITE)
+        res = app.post_json_api(
+            url, child, auth=group_mem.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 201
 
     #   test_creates_child_no_type
         child = {
@@ -332,9 +428,7 @@ class TestNodeChildCreate:
         write_contrib = AuthUserFactory()
         project.add_contributor(
             write_contrib,
-            permissions=[
-                permissions.READ,
-                permissions.WRITE],
+            permissions=permissions.WRITE,
             auth=Auth(user),
             save=True)
 
@@ -477,7 +571,7 @@ class TestNodeChildrenBulkCreate:
         read_contrib = AuthUserFactory()
         project.add_contributor(
             read_contrib,
-            permissions=[permissions.READ],
+            permissions=permissions.READ,
             auth=Auth(user),
             save=True)
         res = app.post_json_api(
@@ -529,9 +623,7 @@ class TestNodeChildrenBulkCreate:
         write_contrib = AuthUserFactory()
         project.add_contributor(
             write_contrib,
-            permissions=[
-                permissions.READ,
-                permissions.WRITE],
+            permissions=permissions.WRITE,
             auth=Auth(user),
             save=True)
 
