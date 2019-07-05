@@ -1,7 +1,7 @@
 {
     "name": "Preregistration Template from AsPredicted.org",
-    "version": 2,
-    "description": "You will be asked to answer 8 questions about your study. This registration form uses the content recommended on the website AsPredicted.org.",
+    "version": 3,
+    "description": "You will be asked to answer 9 questions about your study. This registration form uses the content recommended on the website AsPredicted.org.",
     "pages": [{
         "title": "Preregistration Template from AsPredicted.org",
         "id": "page1",
@@ -12,8 +12,9 @@
             "type": "choose",
             "format": "singleselect",
             "options": [
-                "Yes, at least some data have been collected for this study already",
-                "No, no data have been collected for this study yet"
+                "Yes, we already collected the data.",
+                "No, no data have been collected for this study yet.",
+                "It's complicated. We have already collected some data but explain in Question 8 why readers may consider this a valid pre-registration nevertheless."
             ],
             "description": "Please choose"
         },{
@@ -41,9 +42,9 @@
             "type": "string",
             "format": "textarea"
         },{
-            "qid": "analyses2",
-            "title": "Any secondary analyses?",
-            "nav": "More analyses",
+            "qid": "outliers",
+            "title": "Describe exactly how outliers will be defined and handled, and your precise rule(s) for excluding observations.",
+            "nav": "Outliers and Exclusions",
             "type": "string",
             "format": "textarea"
         },{
@@ -56,6 +57,13 @@
             "qid": "other",
             "title": "Anything else you would like to pre-register? (e.g., data exclusions, variables collected for exploratory purposes, unusual analyses planned?)",
             "nav": "Other",
+            "type": "string",
+            "format": "textarea"
+        },
+        {
+            "qid": "name",
+            "title": "Give a title for this AsPredicted pre-registration. Suggestion: use the name of the project, followed by study description.",
+            "nav": "Name",
             "type": "string",
             "format": "textarea"
         }]
