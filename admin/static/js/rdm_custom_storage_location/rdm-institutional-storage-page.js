@@ -78,25 +78,7 @@ function testConnection(thisObject) {
     var params = {
         'provider_short_name': providerShortName
     };
-
-    switch (providerShortName) {
-        case 's3':
-            params.s3_access_key = $('#s3_access_key').val();
-            params.s3_secret_key = $('#s3_secret_key').val();
-            params.s3_bucket = $('#s3_bucket').val();
-            break;
-        case 'owncloud':
-            params.owncloud_host = $('#owncloud_host').val();
-            params.owncloud_folder = $('#owncloud_folder').val();
-            params.owncloud_username = $('#owncloud_username').val();
-            params.owncloud_password = $('#owncloud_password').val();
-            break;
-        case 'swift':
-            getParameters(params);
-        case 'nextcloud':
-            getParameters(params);
-    }
-
+    getParameters(params);
     ajaxRequest(params, providerShortName);
 }
 
