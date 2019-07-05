@@ -59,7 +59,7 @@
             <!-- /ko -->
         </h3>
 
-        % if 'admin' in user['permissions'] and not node['is_registration']:
+        % if permissions.ADMIN in user['permissions'] and not node['is_registration']:
             <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
         % endif
 
@@ -138,7 +138,7 @@
         ${buttonGroup()}
     </div>
 
-    % if 'admin' in user['permissions'] and access_requests and node['access_requests_enabled']:
+    % if permissions.ADMIN in user['permissions'] and access_requests and node['access_requests_enabled']:
     <div id="manageAccessRequests">
         <h3> Requests for Access</h3>
         <p class="m-b-xs">The following users have requested access to this project.</p>
@@ -155,7 +155,7 @@
     </div>
     % endif
 
-    % if 'admin' in user['permissions']:
+    % if permissions.ADMIN in user['permissions']:
         <h3 class="m-t-xl">View-only Links
             <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
               <i class="fa fa-plus"></i> Add
@@ -385,7 +385,7 @@
 </script>
 
 <%def name="buttonGroup()">
-    % if 'admin' in user['permissions']:
+    % if permissions.ADMIN in user['permissions']:
         <div class="m-b-sm">
             <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
             <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>

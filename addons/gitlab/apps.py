@@ -23,7 +23,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if privacy mismatch and not contributor
     node = node_settings.owner
-    if node.is_public or node.is_contributor(auth.user):
+    if node.is_public or node.is_contributor_or_group_member(auth.user):
         try:
             repo = connection.repo(node_settings.repo_id)
         except NotFoundError:

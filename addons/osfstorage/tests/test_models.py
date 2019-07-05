@@ -11,6 +11,7 @@ from nose.tools import *  # noqa
 from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
+from osf.utils.permissions import WRITE, ADMIN
 from osf.utils.fields import EncryptedJSONField
 from osf_tests.factories import ProjectFactory, UserFactory, PreprintFactory, RegionFactory, NodeFactory
 
@@ -841,7 +842,7 @@ class TestOsfStorageCheckout(StorageTestCase):
 
     def test_checkout_logs(self):
         non_admin = factories.AuthUserFactory()
-        self.node.add_contributor(non_admin, permissions=['read', 'write'])
+        self.node.add_contributor(non_admin, permissions=WRITE)
         self.node.save()
         self.file.check_in_or_out(non_admin, non_admin, save=True)
         self.file.reload()
@@ -913,11 +914,9 @@ class TestOsfStorageCheckout(StorageTestCase):
         models.Contributor.objects.create(
             node=self.node,
             user=user,
-            admin=True,
-            write=True,
-            read=True,
             visible=True
         )
+        self.node.add_permission(user, ADMIN)
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         assert_equal(self.file.checkout, self.user)

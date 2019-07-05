@@ -110,7 +110,7 @@ class PreprintRequestTestMixin(object):
         pre.save()
         pre.add_contributor(
             contributor=write_contrib,
-            permissions='write',
+            permissions=permissions.WRITE,
             save=True
         )
         pre.is_public = True
@@ -128,7 +128,7 @@ class PreprintRequestTestMixin(object):
         pre.save()
         pre.add_contributor(
             contributor=write_contrib,
-            permissions='write',
+            permissions=permissions.WRITE,
             save=True
         )
         return pre
@@ -142,7 +142,7 @@ class PreprintRequestTestMixin(object):
         post.save()
         post.add_contributor(
             contributor=write_contrib,
-            permissions='write',
+            permissions=permissions.WRITE,
             save=True
         )
         return post
@@ -156,7 +156,7 @@ class PreprintRequestTestMixin(object):
         preprint.save()
         preprint.add_contributor(
             contributor=write_contrib,
-            permissions='write',
+            permissions=permissions.WRITE,
             save=True
         )
         return preprint

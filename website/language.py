@@ -13,7 +13,7 @@ from website import settings
 # (upon clicking primary email confirmation link)
 WELCOME_MESSAGE = """
 <h1>Welcome to the OSF!</h1>
-<p>Visit our <a href="http://help.osf.io/" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
+<p>Visit our <a href="https://openscience.zendesk.com/hc/en-us" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
 """
 
 TERMS_OF_SERVICE = """
