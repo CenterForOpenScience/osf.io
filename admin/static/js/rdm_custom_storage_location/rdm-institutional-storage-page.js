@@ -47,6 +47,9 @@ $('#nextcloud_modal input').keyup(function () {
 $('#googledrive_modal input').keyup(function () {
     authSaveButton('googledrive');
 });
+$('#box_modal input').keyup(function () {
+    authSaveButton('box');
+});
 
 function validateRequiredFields(providerShortName) {
     // Check if all the inputs are filled, so we can enable the connect button
@@ -159,7 +162,7 @@ $('.auth-permission-button').click(function(e) {
     var currentToken = '3fR4ELZK2BfaZom8zRTP1pEc64nLFeNY';
 
     authPermissionSucceed(providerShortName, authorizedBy, currentToken);
-    authSaveButton('googledrive');
+    authSaveButton(providerShortName);
     e.preventDefault();
 });
 
