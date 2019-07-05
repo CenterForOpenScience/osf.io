@@ -32,8 +32,8 @@ class TestNodeBibliographicContributors:
         project = ProjectFactory(
             creator=admin_contributor_bib
         )
-        project.add_contributor(write_contributor_non_bib, [READ, WRITE], visible=False)
-        project.add_contributor(read_contributor_bib, [READ])
+        project.add_contributor(write_contributor_non_bib, WRITE, visible=False)
+        project.add_contributor(read_contributor_bib, READ)
         project.save()
         return project
 

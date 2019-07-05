@@ -1,4 +1,4 @@
-FROM python:2.7-slim-jessie
+FROM python:2.7-slim-stretch
 
 ENV GOSU_VERSION=1.10 \
     NODE_ENV=production \

@@ -59,10 +59,8 @@ class TestNodeRelationshipInstitutions:
         node = NodeFactory(creator=user)
         node.add_contributor(
             write_contrib,
-            permissions=[
-                permissions.READ,
-                permissions.WRITE])
-        node.add_contributor(read_contrib, permissions=[permissions.READ])
+            permissions=permissions.WRITE)
+        node.add_contributor(read_contrib, permissions=permissions.READ)
         node.save()
         return node
 
@@ -389,7 +387,7 @@ class TestNodeRelationshipInstitutions:
         user = AuthUserFactory()
         user.affiliated_institutions.add(institution_one)
         user.save()
-        node.add_contributor(user, permissions=[permissions.READ])
+        node.add_contributor(user, permissions=permissions.READ)
         node.affiliated_institutions.add(institution_one)
         node.save()
 

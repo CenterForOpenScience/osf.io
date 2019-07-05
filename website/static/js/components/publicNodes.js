@@ -202,7 +202,7 @@ var PublicNodes = {
                         'You have no public ' + ctrl.nodeType + '.',
                         m('p', {}, [
                             'Find out how to make your ' + ctrl.nodeType + ' ',
-                            m('a', {'href': 'http://help.osf.io/m/gettingstarted/l/524048-control-your-privacy-settings', 'target': '_blank'}, 'public'),
+                            m('a', {'href': 'https://openscience.zendesk.com/hc/en-us/articles/360018981414', 'target': '_blank'}, 'public'),
                             '.'
                         ])
                     ])

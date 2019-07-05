@@ -114,7 +114,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             u'embargo_end_date': unicode(self.embargo_payload['data']['attributes']['lift_embargo'])
         })
 
-    def test_submit_draft_for_review_invalid_registrationChoice(self):
+    def test_submit_draft_for_review_invalid(self):
+        # invalid registrationChoice
         url = self.draft_api_url('submit_draft_for_review')
         res = self.app.post_json(
             url,
@@ -123,6 +124,15 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
+
+        # submitted by a group admin fails
+        res = self.app.post_json(
+            url,
+            self.embargo_payload,
+            auth=self.group_mem.auth,
+            expect_errors=True
+        )
+        assert res.status_code == http.FORBIDDEN
 
     def test_submit_draft_for_review_already_registered(self):
         self.draft.register(Auth(self.user), save=True)
@@ -151,139 +161,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             expect_errors=True
         )
         assert_equal(res.status_code, http.FORBIDDEN)
-
-    @mock.patch('osf.models.DraftRegistration.register', autospec=True)
-    def test_register_draft_registration(self, mock_register_draft):
-
-        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        res = self.app.post_json(url, {
-            'data': {
-                'attributes': {
-                    'registration_choice': 'immediate',
-                },
-            },
-        }, auth=self.user.auth)
-
-        assert_equal(res.status_code, http.ACCEPTED)
-        assert_equal(mock_register_draft.call_args[0][0]._id, self.draft._id)
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_register_template_make_public_creates_pending_registration(self, mock_enqueue):
-        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
-
-        assert_equal(res.status_code, http.ACCEPTED)
-        self.node.reload()
-        # Most recent node is a registration
-        reg = self.node.registrations_all.order_by('-registered_date').first()
-        assert_true(reg.is_registration)
-        # The registration created is public
-        assert_true(reg.is_pending_registration)
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_register_template_make_public_makes_children_pending_registration(self, mock_enqueue):
-        comp1 = NodeFactory(parent=self.node)
-        NodeFactory(parent=comp1)
-
-        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
-
-        assert_equal(res.status_code, http.ACCEPTED)
-        self.node.reload()
-        # Most recent node is a registration
-        reg = self.node.registrations_all.order_by('-registered_date').first()
-        for node in reg.get_descendants_recursive():
-            assert_true(node.is_registration)
-            assert_true(node.is_pending_registration)
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enqueue):
-        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        end_date = timezone.now() + dt.timedelta(days=3)
-        res = self.app.post_json(
-            url,
-            {
-                'data': {
-                    'attributes': {
-                        'children': [self.node._id],
-                        'registration_choice': 'embargo',
-                        'lift_embargo': end_date.strftime('%c'),
-                    },
-                    'type': 'registrations',
-                }
-            },
-            auth=self.user.auth)
-
-        assert_equal(res.status_code, http.ACCEPTED)
-        self.node.reload()
-        # Most recent node is a registration
-        reg = self.node.registrations_all.order_by('-registered_date').first()
-        assert_true(reg.is_registration)
-        # The registration created is not public
-        assert_false(reg.is_public)
-        # The registration is pending an embargo that has not been approved
-        assert_true(reg.is_pending_embargo)
-        assert_true(reg.embargo.end_date)
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self, mock_enqueue):
-        initial_project_logs = self.node.logs.count()
-        res = self.app.post_json(
-            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
-            self.embargo_payload,
-            auth=self.user.auth
-        )
-
-        assert_equal(res.status_code, http.ACCEPTED)
-        self.node.reload()
-        # Logs: Created, registered, embargo initiated
-        assert_equal(self.node.logs.count(), initial_project_logs + 1)
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_register_draft_registration_with_embargo_is_not_public(self, mock_enqueue):
-        res = self.app.post_json(
-            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
-            self.embargo_payload,
-            auth=self.user.auth
-        )
-
-        assert_equal(res.status_code, http.ACCEPTED)
-
-        registration = Registration.objects.all().order_by('-registered_date').first()
-
-        assert_false(registration.is_public)
-        assert_true(registration.is_pending_embargo)
-        assert_is_not_none(registration.embargo)
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_register_draft_registration_invalid_embargo_end_date_raises_HTTPError(self, mock_enqueue):
-        res = self.app.post_json(
-            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
-            self.invalid_embargo_date_payload,
-            auth=self.user.auth,
-            expect_errors=True
-        )
-
-        assert_equal(res.status_code, http.BAD_REQUEST)
-
-    def test_register_draft_registration_invalid_registrationChoice(self):
-        res = self.app.post_json(
-            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
-            self.invalid_payload,
-            auth=self.user.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http.BAD_REQUEST)
-
-    def test_register_draft_registration_already_registered(self):
-        reg = RegistrationFactory(user=self.user)
-        res = self.app.post_json(
-            reg.api_url_for('register_draft_registration', draft_id=self.draft._id),
-            self.invalid_payload,
-            auth=self.user.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_get_draft_registration(self):
         url = self.draft_api_url('get_draft_registration')
@@ -429,6 +306,10 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.put_json(url, payload, auth=self.non_admin.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
+        # group admin cannot update draft registration
+        res = self.app.put_json(url, payload, auth=self.group_mem.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
     def test_delete_draft_registration(self):
         assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
@@ -444,6 +325,10 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.delete(url, auth=self.non_admin.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
+
+        # group admin cannot delete draft registration
+        res = self.app.delete(url, auth=self.group_mem.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
     @mock.patch('website.archiver.tasks.archive')
     def test_delete_draft_registration_registered(self, mock_register_draft):

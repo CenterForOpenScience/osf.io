@@ -12,18 +12,19 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
-from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
+from api.base.utils import default_node_list_queryset
 from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
 from osf.models import Email
 from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
 from osf.models import OSFUser, QuickFilesNode, Preprint
+from osf.utils.requests import string_type_request_headers
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL, OSF_SUPPORT_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from website import mails
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
-from api.nodes.serializers import NodeSerializer
+from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
 
@@ -77,7 +78,11 @@ class UserSerializer(JSONAPISerializer):
     writeable_method_fields = frozenset([
         'accepted_terms_of_service',
     ])
-    non_anonymized_fields = ['type']
+
+    non_anonymized_fields = [
+        'type',
+    ]
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=186)
@@ -111,6 +116,11 @@ class UserSerializer(JSONAPISerializer):
         },
     ))
 
+    groups = HideIfDisabled(RelationshipField(
+        related_view='users:user-groups',
+        related_view_kwargs={'user_id': '<_id>'},
+    ))
+
     quickfiles = HideIfDisabled(QuickFilesRelationshipField(
         related_view='users:user-quickfiles',
         related_view_kwargs={'user_id': '<_id>'},
@@ -142,10 +152,10 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
-    default_region = ShowIfCurrentUser(RelationshipField(
+    default_region = ShowIfCurrentUser(RegionRelationshipField(
         related_view='regions:region-detail',
         related_view_kwargs={'region_id': 'get_default_region_id'},
-        read_only=True,
+        read_only=False,
     ))
 
     settings = ShowIfCurrentUser(RelationshipField(
@@ -160,7 +170,7 @@ class UserSerializer(JSONAPISerializer):
     def get_projects_in_common(self, obj):
         user = get_user_auth(self.context['request']).user
         if obj == user:
-            return user.contributor_to.count()
+            return user.contributor_or_group_member_to.count()
         return obj.n_projects_in_common(user)
 
     def absolute_url(self, obj):
@@ -177,11 +187,11 @@ class UserSerializer(JSONAPISerializer):
         )
 
     def get_node_count(self, obj):
+        default_queryset = obj.nodes_contributor_or_group_member_to
         auth = get_user_auth(self.context['request'])
         if obj != auth.user:
-            return default_node_list_permission_queryset(user=auth.user, model_cls=Node).filter(contributor__user__id=obj.id).count()
-
-        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=obj.id).count()
+            return Node.objects.get_nodes_for_user(auth.user, base_queryset=default_queryset, include_public=True).count()
+        return default_queryset.count()
 
     def get_quickfiles_count(self, obj):
         return QuickFilesNode.objects.get(contributor__user__id=obj.id).files.filter(type='osf.osfstoragefile').count()
@@ -245,6 +255,12 @@ class UserSerializer(JSONAPISerializer):
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
+            elif 'region_id' == attr:
+                region_id = validated_data.get('region_id')
+                user_settings = instance._settings_model('osfstorage').objects.get(owner=instance)
+                user_settings.default_region_id = region_id
+                user_settings.save()
+                instance.default_region = self.context['request'].data['default_region']
             else:
                 setattr(instance, attr, value)
         try:
@@ -253,6 +269,9 @@ class UserSerializer(JSONAPISerializer):
             raise InvalidModelValueError(detail=e.message)
         except ValidationError as e:
             raise InvalidModelValueError(e)
+        if set(validated_data.keys()).intersection(set(OSFUser.SPAM_USER_PROFILE_FIELDS.keys())):
+            request_headers = string_type_request_headers(self.context['request'])
+            instance.check_spam(saved_fields=validated_data, request_headers=request_headers)
 
         return instance
 

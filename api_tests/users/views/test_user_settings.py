@@ -202,6 +202,11 @@ class TestUserEmailsList:
         assert len([email for email in data if email['attributes']['confirmed']]) == confirmed_count
         assert len([email for email in data if email['attributes']['confirmed'] is False]) == unconfirmed_count
 
+    def test_get_emails_not_throttled(self, app, url, user_one):
+        for i in range(3):
+            res = app.get(url, auth=user_one.auth)
+            assert res.status_code == 200
+
     def test_get_emails_not_current_user(self, app, url, user_one, user_two):
         res = app.get(url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
@@ -535,6 +540,20 @@ class TestUserEmailDetail:
         # old URL no longer resolves
         res_original = app.get(unconfirmed_url, auth=user_one.auth, expect_errors=True)
         assert res_original.status_code == 404
+
+    def test_delete_confirmed_but_unverified_email(self, app, user_one, unconfirmed_address,
+                                                unconfirmed_url, payload, unconfirmed_token):
+        # manually set the email to confirmed
+        user_one.email_verifications[unconfirmed_token]['confirmed'] = True
+        user_one.email_verifications[unconfirmed_token]['verified'] = False
+        user_one.save()
+        # send api request to delete the token
+        res = app.delete_json_api(unconfirmed_url, payload, auth=user_one.auth)
+        assert res.status_code == 204
+
+        user_one.reload()
+        confirmed_tokens = [key for key, value in user_one.email_verifications.iteritems() if value['confirmed']]
+        assert unconfirmed_token not in confirmed_tokens
 
     @pytest.mark.enable_quickfiles_creation
     def test_updating_verified_for_merge(self, app, user_one, user_two, payload):

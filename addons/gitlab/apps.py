@@ -23,7 +23,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if privacy mismatch and not contributor
     node = node_settings.owner
-    if node.is_public or node.is_contributor(auth.user):
+    if node.is_public or node.is_contributor_or_group_member(auth.user):
         try:
             repo = connection.repo(node_settings.repo_id)
         except NotFoundError:
@@ -52,8 +52,8 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         'upload': node_settings.owner.api_url + 'gitlab/file/' + ref,
         'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + ref,
         'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/' + ref,
-        'zip': 'https://{0}/{1}/repository/archive.zip?branch={2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref),
-        'repo': 'https://{0}/{1}/tree/{2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref)
+        'zip': '{0}/{1}/repository/archive.zip?branch={2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref),
+        'repo': '{0}/{1}/tree/{2}'.format(node_settings.external_account.oauth_secret, repo.path_with_namespace, ref)
     }
 
     branch_names = [each.name for each in branches]

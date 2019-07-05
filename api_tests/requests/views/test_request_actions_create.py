@@ -229,7 +229,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
 
     def test_set_permissions_on_approve(self, app, admin, url, node_request):
         assert node_request.creator not in node_request.target.contributors
-        payload = self.create_payload(node_request._id, trigger='accept', permissions='admin')
+        payload = self.create_payload(node_request._id, trigger='accept', permissions=permissions.ADMIN)
         res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 201
         node_request.reload()

@@ -6,6 +6,7 @@ from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
+    PrivateLinkFactory,
 )
 
 
@@ -29,10 +30,15 @@ def registration_with_children_url(registration_with_children):
         registration_with_children._id,
     )
 
+@pytest.fixture()
+def view_only_link(registration_with_children):
+    view_only_link = PrivateLinkFactory(name='testlink')
+    view_only_link.nodes.add(registration_with_children)
+    view_only_link.save()
+    return view_only_link
 
 @pytest.fixture()
 def registration_with_children_approved(user, registration_with_children):
-
     registration_with_children._initiate_approval(user)
     approval_token = registration_with_children.registration_approval.approval_state[user._id]['approval_token']
     registration_with_children.registration_approval.approve(user, approval_token)
@@ -76,6 +82,51 @@ class TestRegistrationsChildrenList:
 
         assert res.status_code == 401
         assert res.content_type == 'application/vnd.api+json'
+
+    def test_registration_children_no_auth_vol(self, user, app, registration_with_children,
+            registration_with_children_url, view_only_link):
+        # viewed through private link
+        component_one, component_two = registration_with_children.nodes
+
+        # get registration related_counts with vol before vol is attached to components
+        node_url = '/{}registrations/{}/?related_counts=children&view_only={}'.format(API_BASE,
+            registration_with_children._id, view_only_link.key)
+        res = app.get(node_url)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+
+        # view only link is not attached to components
+        view_only_link_url = '{}?view_only={}'.format(registration_with_children_url, view_only_link.key)
+        res = app.get(view_only_link_url)
+        ids = [node['id'] for node in res.json['data']]
+        assert res.status_code == 200
+        assert len(ids) == 0
+        assert component_one._id not in ids
+        assert component_two._id not in ids
+
+        # view only link now attached to components
+        view_only_link.nodes.add(component_one)
+        view_only_link.nodes.add(component_two)
+        res = app.get(view_only_link_url)
+        ids = [node['id'] for node in res.json['data']]
+        assert res.status_code == 200
+        assert component_one._id in ids
+        assert component_two._id in ids
+
+        # get registration related_counts with vol once vol is attached to components
+        res = app.get(node_url)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 2
+
+        # make private vol anonymous
+        view_only_link.anonymous = True
+        view_only_link.save()
+        res = app.get(view_only_link_url)
+        assert 'contributors' not in res.json['data'][0]['relationships']
+
+        # delete vol
+        view_only_link.is_deleted = True
+        view_only_link.save()
+        res = app.get(view_only_link_url, expect_errors=True)
+        assert res.status_code == 401
 
 
 @pytest.mark.django_db

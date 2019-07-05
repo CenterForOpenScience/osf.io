@@ -15,7 +15,7 @@ def serialize_meeting(meeting):
         'public_projects': meeting.public_projects,
         'poster': meeting.poster,
         'talk': meeting.talk,
-        'num_submissions': meeting.num_submissions,
+        'num_submissions': meeting.valid_submissions.count(),
         'location': meeting.location,
         'start_date': meeting.start_date,
         'end_date': meeting.end_date,
