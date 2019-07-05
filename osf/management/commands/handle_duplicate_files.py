@@ -6,6 +6,7 @@ from django.db import connection
 
 from osf.models import AbstractNode, Guid
 from addons.osfstorage.models import BaseFileNode
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -232,7 +233,7 @@ class Command(BaseCommand):
             '--file_type',
             type=str,
             required=True,
-            help='File type - must be in valid_file_types',
+            help='File type - must be in valid_file_types or "all-files" or "all"',
         )
 
     # Management command handler
@@ -242,20 +243,32 @@ class Command(BaseCommand):
         dry_run = options['dry_run']
         file_type = options['file_type']
 
-        if file_type not in valid_file_types:
+        if file_type not in valid_file_types and file_type not in ['all', 'all-files']:
             raise Exception('This is not a valid filetype.')
+
+        if file_type == 'all':
+            file_types = valid_file_types
+        elif file_type == 'all-files':
+            file_types = [t for t in valid_file_types if t != FOLDER]
+        else:
+            file_types = [file_type]
 
         if dry_run:
             logger.info('Dry Run. Data will not be modified.')
 
-        with connection.cursor() as cursor:
-            logger.info('Examining duplicates for {}'.format(file_type))
-            cursor.execute(FETCH_DUPLICATES_BY_FILETYPE, [file_type])
-            duplicate_files = cursor.fetchall()
+        for file_type in file_types:
+            type_start_time = datetime.datetime.now()
+            with connection.cursor() as cursor:
+                logger.info('Examining duplicates for {}'.format(file_type))
+                cursor.execute(FETCH_DUPLICATES_BY_FILETYPE, [file_type])
+                duplicate_files = cursor.fetchall()
 
-        to_remove = inspect_duplicates(duplicate_files)
-        if not dry_run:
-            remove_duplicates(to_remove, file_type)
+            to_remove = inspect_duplicates(duplicate_files)
+            if not dry_run:
+                with transaction.atomic():
+                    remove_duplicates(to_remove, file_type)
+            type_finish_time = datetime.datetime.now()
+            logger.info('{} run time {}'.format(file_type, type_finish_time - type_start_time))
 
         script_finish_time = datetime.datetime.now()
         logger.info('Script finished time: {}'.format(script_finish_time))
