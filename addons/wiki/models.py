@@ -20,8 +20,9 @@ from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from osf.models import NodeLog, OSFUser, Comment
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
+from osf.models.spam import SpamStatus
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.requests import DummyRequest, get_request_and_user_id
+from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from osf.exceptions import NodeStateError
 from addons.wiki import utils as wiki_utils
 from addons.wiki.exceptions import (
@@ -31,7 +32,6 @@ from addons.wiki.exceptions import (
 from website.util import api_v2_url
 from website.files.exceptions import VersionNotFoundError
 from website import settings
-from osf.utils.requests import get_headers_from_request
 
 from .exceptions import (
     NameEmptyError,
@@ -185,20 +185,14 @@ class WikiVersion(ObjectIDMixin, BaseModel):
     def check_spam(self):
         request, user_id = get_request_and_user_id()
         user = OSFUser.load(user_id)
-        if not isinstance(request, DummyRequest):
-            request_headers = {
-                k: v
-                for k, v in get_headers_from_request(request).items()
-                if isinstance(v, basestring)
-            }
-
+        request_headers = string_type_request_headers(request)
         node = self.wiki_page.node
 
         if not settings.SPAM_CHECK_ENABLED:
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not node.is_public:
             return False
-        if 'ham_confirmed' in user.system_tags:
+        if user.spam_status == SpamStatus.HAM:
             return False
 
         content = self._get_spam_content(node)

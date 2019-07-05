@@ -17,10 +17,8 @@ class TestRegistrationRelationshipInstitutions(TestNodeRelationshipInstitutions)
         registration = RegistrationFactory(creator=user)
         registration.add_contributor(
             write_contrib,
-            permissions=[
-                permissions.READ,
-                permissions.WRITE])
-        registration.add_contributor(read_contrib, permissions=[permissions.READ])
+            permissions=permissions.WRITE)
+        registration.add_contributor(read_contrib, permissions=permissions.READ)
         registration.save()
         return registration
 

@@ -1,5 +1,5 @@
 import gc
-import StringIO
+from io import StringIO
 import cProfile
 import pstats
 import threading

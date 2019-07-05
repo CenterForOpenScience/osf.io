@@ -8,6 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     SubjectFactory,
 )
+from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 
 
@@ -256,7 +257,7 @@ class PreprintIsValidListMixin:
             subjects=[[subject._id]],
             project=project,
             is_published=True)
-        preprint.add_contributor(user_write_contrib, 'write', save=True)
+        preprint.add_contributor(user_write_contrib, WRITE, save=True)
         return preprint
 
     def test_preprint_is_preprint_orphan_invisible_no_auth(
