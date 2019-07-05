@@ -44,7 +44,7 @@ def noop(*args, **kwargs):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0169_merge_20190618_1429'),
+        ('osf', '0170_ensure_schemas'),
     ]
 
     operations = [
