@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from six import string_types
 from django.db import transaction
 from flask import Request as FlaskRequest
 from flask import request
@@ -74,3 +75,14 @@ def get_headers_from_request(req):
         }
         headers['Remote-Addr'] = req.remote_addr
     return headers
+
+
+def string_type_request_headers(req):
+    request_headers = {}
+    if not isinstance(req, DummyRequest):
+        request_headers = {
+            k: v
+            for k, v in get_headers_from_request(req).items()
+            if isinstance(v, string_types)
+        }
+    return request_headers

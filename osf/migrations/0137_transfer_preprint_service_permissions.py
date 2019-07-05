@@ -3,12 +3,13 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from django.contrib.auth.models import Permission
 from django.core.management.sql import emit_post_migrate_signal
 
 
 def unmigrate_preprint_service_permissions(state, schema):
     emit_post_migrate_signal(2, False, 'default')
+
+    Permission = state.get_model('auth', 'permission')
 
     # New permission groups
     Permission.objects.filter(codename='add_preprint').update(codename='add_preprintservice', name='Can add preprint service')
@@ -22,6 +23,8 @@ def migrate_preprint_service_permissions(state, schema):
     """
     # this is to make sure that the permissions created earlier exist!
     emit_post_migrate_signal(2, False, 'default')
+
+    Permission = state.get_model('auth', 'permission')
 
     Permission.objects.filter(codename='add_preprint').delete()
     Permission.objects.filter(codename='change_preprint').delete()

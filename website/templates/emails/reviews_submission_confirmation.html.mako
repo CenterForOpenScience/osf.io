@@ -41,8 +41,8 @@
                                     Now that you've shared your ${reviewable.provider.preprint_word}, take advantage of more OSF features:
                                         <ul>
                                             <li>Upload supplemental, materials, data, and code to an OSF project associated with your ${reviewable.provider.preprint_word}.
-                                                <a href="http://help.osf.io/m/preprints/l/685323-add-supplemental-files-to-a-preprint" target="_blank">Learn how</a></li>
-                                            <li>Preregister your next study. <a href="http://help.osf.io/m/registrations/l/524205-register-your-project">Read more</a></li>
+                                                <a href="https://openscience.zendesk.com/hc/en-us/articles/360019930533-Upload-a-Preprint#add-supplemental-materials" target="_blank">Learn how</a></li>
+                                            <li>Preregister your next study. <a href="https://openscience.zendesk.com/hc/en-us/articles/360019930893">Read more</a></li>
                                             <li>Or share on social media: Tell your friends through:
                                                 <table style="display: inline-table;" width="53" border="0" cellspacing="0" cellpadding="0" align="center">
                                                     <tbody>
@@ -86,7 +86,7 @@
                 <br>
                 <p>
                     Sincerely,<br>
-                    ${'Your OSF team' if isOsfSubmission else 'Your {provider} and OSF teams'.format(provider=reviewable.provider.name)}
+                    ${'The OSF team' if isOsfSubmission else 'The {provider} and OSF teams'.format(provider=reviewable.provider.name)}
                 </p>
             </div>
         </td>

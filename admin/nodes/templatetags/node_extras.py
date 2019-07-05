@@ -23,3 +23,7 @@ def reverse_user(user_id):
     else:
         user = OSFUser.load(user_id)
     return reverse('users:user', kwargs={'guid': user._id})
+
+@register.filter
+def reverse_osf_group(value):
+    return reverse('osf_groups:osf_group', kwargs={'id': value})

@@ -24,7 +24,7 @@ from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import AbstractNode, CollectionProvider, CollectionSubmission, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
-from osf.utils.permissions import REVIEW_PERMISSIONS
+from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
 from osf.metrics import PreprintDownload, PreprintView
 
@@ -458,10 +458,10 @@ class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.L
 
     def get_default_queryset(self):
         provider = self.get_provider()
-        admin_group = provider.get_group('admin')
+        admin_group = provider.get_group(ADMIN)
         mod_group = provider.get_group('moderator')
         return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
-            When(groups=admin_group, then=Value('admin')),
+            When(groups=admin_group, then=Value(ADMIN)),
             default=Value('moderator'),
             output_field=CharField(),
         )).order_by('fullname')
