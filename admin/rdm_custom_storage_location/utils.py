@@ -8,6 +8,7 @@ import os
 import owncloud
 
 from addons.owncloud import settings as owncloud_settings
+from addons.nextcloud import settings as nextcloud_settings
 from addons.s3 import utils as s3_utils
 from addons.swift import utils as swift_utils
 from addons.swift.provider import SwiftProvider
@@ -73,18 +74,21 @@ def test_s3_connection(access_key, secret_key):
 
 def test_owncloud_connection(host_url, username, password, folder, provider):
     """ This method is valid for both ownCloud and Nextcloud """
-    provider_name = ''
+    provider_name = None
+    provider_setting = None
     if provider == 'owncloud':
         provider_name = 'ownCloud'
+        provider_setting = owncloud_settings
     elif provider == 'nextcloud':
         provider_name = 'Nextcloud'
+        provider_setting = nextcloud_settings
 
     host = furl()
     host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
     host.scheme = 'https'
 
     try:
-        oc = owncloud.Client(host.url, verify_certs=owncloud_settings.USE_SSL)
+        oc = owncloud.Client(host.url, verify_certs=provider_setting.USE_SSL)
         oc.login(username, password)
         oc.logout()
     except requests.exceptions.ConnectionError:
