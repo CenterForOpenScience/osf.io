@@ -15,6 +15,37 @@ OAUTH_SCOPE = [
 ]
 OAUTH_BASE_URL = 'https://accounts.google.com/o/oauth2/'
 API_BASE_URL = 'https://www.googleapis.com/'
+SHEETS_API_BASE_URL = 'https://sheets.googleapis.com/'
+
+APPSHEET_FILENAME = 'IQB-RIMS'
+APPSHEET_SHEET_NAME = 'Registrations'
+APPSHEET_DEPOSIT_COLUMNS = [('Updated', '_updated'),
+                            (u'Project ID', '_node_id'),
+                            ('Account', '_node_owner'),
+                            ('Mail address', '_node_mail'),
+                            ('Laboratory', '_labo_name'),
+                            ('Title', '_node_title'),
+                            ('Authors', None),
+                            ('Journal Name', 'journal_name'),
+                            ('Publish Date', 'publish_date'),
+                            ('Volume', 'volume'),
+                            ('Page Number', 'page_number'),
+                            ('Current Status', 'workflow_overall_state'),
+                            ('Manuscript', None),
+                            ('Raw data', None),
+                            ('Checklist', None),
+                            ('Folder', '_drive_url')]
+APPSHEET_CHECK_COLUMNS = [('Updated', '_updated'),
+                          (u'Project ID', '_node_id'),
+                          ('Account', '_node_owner'),
+                          ('Mail address', '_node_mail'),
+                          ('Laboratory', '_labo_name'),
+                          ('Title', '_node_title'),
+                          ('Authors', None),
+                          ('Comment', None),
+                          ('Current Status', 'workflow_overall_state'),
+                          ('Manuscript', None),
+                          ('Folder', '_drive_url')]
 
 FLOWABLE_HOST = 'http://localhost:9977/flowable-rest/'
 FLOWABLE_RESEARCH_APP_ID = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
