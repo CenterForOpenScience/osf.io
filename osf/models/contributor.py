@@ -87,6 +87,10 @@ class DraftRegistrationContributor(AbstractBaseContributor):
     def permission(self):
         return get_contributor_permission(self, self.draft_registration)
 
+    @property
+    def _id(self):
+        return '{}-{}'.format(self.draft_registration._id, self.user._id)
+
     class Meta:
         unique_together = ('user', 'draft_registration')
         order_with_respect_to = 'draft_registration'
@@ -99,6 +103,7 @@ class RecentlyAddedContributor(models.Model):
 
     class Meta:
         unique_together = ('user', 'contributor')
+
 
 def get_contributor_permission(contributor, resource):
     """

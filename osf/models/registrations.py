@@ -11,11 +11,12 @@ from guardian.models import (
     GroupObjectPermissionBase,
     UserObjectPermissionBase,
 )
+from dirtyfields import DirtyFieldsMixin
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.permissions import ADMIN
+from osf.utils.permissions import ADMIN, READ
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from website.util import api_v2_url
 from website import settings
@@ -439,7 +440,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     action = models.CharField(max_length=255)
     draft = models.ForeignKey('DraftRegistration', related_name='logs',
                               null=True, blank=True, on_delete=models.CASCADE)
-    user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
+    user = models.ForeignKey('OSFUser', db_index=True, null=True, blank=True, on_delete=models.CASCADE)
     params = DateTimeAwareJSONField(default=dict)
 
     SUBMITTED = 'submitted'
@@ -449,6 +450,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
+    CATEGORY_UPDATED = 'category_updated'
 
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -476,7 +478,15 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
         get_latest_by = 'created'
 
 
-class DraftRegistration(ObjectIDMixin, BaseModel, Loggable, EditableFieldsMixin, GuardianMixin):
+class DraftRegistration(ObjectIDMixin, DirtyFieldsMixin, BaseModel, Loggable,
+        EditableFieldsMixin, GuardianMixin):
+    # Fields that are writable by DraftRegistration.update
+    WRITABLE_WHITELIST = [
+        'title',
+        'description',
+        'category',
+        'node_license',
+    ]
 
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
     # Overrides EditableFieldsMixin to make title not required
@@ -595,6 +605,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel, Loggable, EditableFieldsMixin,
 
     @property
     def absolute_api_v2_url(self):
+        # Old draft registration URL - user new endpoints, through draft registration
         node = self.branched_from
         path = '/nodes/{}/draft_registrations/{}/'.format(node._id, self._id)
         return api_v2_url(path)
@@ -651,6 +662,14 @@ class DraftRegistration(ObjectIDMixin, BaseModel, Loggable, EditableFieldsMixin,
         # Override for ContributorMixin
         return DraftRegistrationContributor
 
+    def get_contributor_order(self):
+        # Method needed for ContributorMixin
+        return self.get_draftregistrationcontributor_order()
+
+    def set_contributor_order(self, contributor_ids):
+        # Method needed for ContributorMixin
+        return self.set_draftregistrationcontributor_order(contributor_ids)
+
     @property
     def contributor_kwargs(self):
         # Override for ContributorMixin
@@ -680,6 +699,11 @@ class DraftRegistration(ObjectIDMixin, BaseModel, Loggable, EditableFieldsMixin,
         return self.initiator
 
     @property
+    def is_public(self):
+        # Convenience property for sharing code with nodes
+        return False
+
+    @property
     def log_params(self):
         # Override for EditableFieldsMixin
         return {
@@ -697,11 +721,31 @@ class DraftRegistration(ObjectIDMixin, BaseModel, Loggable, EditableFieldsMixin,
     @property
     def contributor_email_template(self):
         # Override for ContributorMixin
-        return None
+        return 'draft_registration'
+
+    @property
+    def institutions_url(self):
+        # For NodeInstitutionsRelationshipSerializer
+        path = '/draft_registrations/{}/institutions/'.format(self._id)
+        return api_v2_url(path)
+
+    @property
+    def institutions_relationship_url(self):
+        # For NodeInstitutionsRelationshipSerializer
+        path = '/draft_registrations/{}/relationships/institutions/'.format(self._id)
+        return api_v2_url(path)
 
     def update_search(self):
         # Override for AffiliatedInstitutionMixin, not sending DraftRegs to search
         pass
+
+    def can_view(self, auth):
+        """Does the user have permission to view the draft registration?
+        Checking permissions directly on the draft, not the node.
+        """
+        if not auth:
+            return False
+        return auth.user and self.has_permission(auth.user, READ)
 
     def get_addons(self):
         # Override for ContributorMixin, Draft Registrations don't have addons
@@ -886,6 +930,40 @@ class DraftRegistration(ObjectIDMixin, BaseModel, Loggable, EditableFieldsMixin,
         if 'old_subjects' in kwargs.keys():
             kwargs.pop('old_subjects')
         return super(DraftRegistration, self).save(*args, **kwargs)
+
+    def update(self, fields, auth=None, save=True):
+        """Update the draft registration with the given fields.
+
+        :param dict fields: Dictionary of field_name:value pairs.
+        :param Auth auth: Auth object for the user making the update.
+        :param bool save: Whether to save after updating the object.
+        """
+        if not fields:  # Bail out early if there are no fields to update
+            return False
+        for key, value in fields.items():
+            if key not in self.WRITABLE_WHITELIST:
+                continue
+            if key == 'title':
+                self.set_title(title=value, auth=auth, save=False)
+            elif key == 'description':
+                self.set_description(description=value, auth=auth, save=False)
+            elif key == 'category':
+                self.set_category(category=value, auth=auth, save=False)
+            elif key == 'node_license':
+                self.set_node_license(
+                    {
+                        'id': value.get('id'),
+                        'year': value.get('year'),
+                        'copyrightHolders': value.get('copyrightHolders') or value.get('copyright_holders', [])
+                    },
+                    auth,
+                    save=save
+                )
+        if save:
+            updated = self.get_dirty_fields()
+            self.save()
+
+        return updated
 
 
 class DraftRegistrationUserObjectPermission(UserObjectPermissionBase):

@@ -165,15 +165,15 @@ class SubjectsListMixin(object):
         assert res.status_code == 401
 
         # test_noncontrib
-        res = app. get(url, auth=user_non_contrib.auth, expect_errors=True)
+        res = app.get(url, auth=user_non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_read_contrib
-        res = app. get(url, auth=user_write_contrib.auth, expect_errors=True)
+        res = app.get(url, auth=user_read_contrib.auth, expect_errors=True)
         assert res.status_code == 200
 
         # test_write_contrib
-        res = app. get(url, auth=user_read_contrib.auth, expect_errors=True)
+        res = app.get(url, auth=user_write_contrib.auth, expect_errors=True)
         assert res.status_code == 200
 
     def test_get_resource_subjects(self, app, url, resource, user_admin_contrib, subject,

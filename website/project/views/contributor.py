@@ -541,8 +541,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
     # Email users for projects, or for components where they are not contributors on the parent node.
-    if contributor.is_registered and (isinstance(node, Preprint) or
-            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))):
+    if contributor.is_registered and ((isinstance(node, Preprint) or (isinstance(node, DraftRegistration)) or
+            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))))):
         mimetype = 'html'
         preprint_provider = None
         logo = None
@@ -555,6 +555,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
                 logo = preprint_provider._id
+        elif email_template == 'draft_registration':
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION'.format(email_template.upper()))
         elif email_template == 'access_request':
             mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
@@ -586,7 +588,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             can_change_preferences=False,
             logo=logo if logo else settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            published_preprints=[] if isinstance(node, Preprint) else serialize_preprints(node, user=None)
+            published_preprints=[] if isinstance(node, Preprint) or isinstance(node, DraftRegistration) else serialize_preprints(node, user=None)
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()

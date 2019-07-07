@@ -54,7 +54,10 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
-    #   test_group_mem_admin_can_view
+    def test_admin_group_member_can_view(
+        self, app, user, draft_registration, project_public,
+            schema, url_draft_registrations, group_mem):
+
         res = app.get(url_draft_registrations, auth=group_mem.auth)
         assert res.status_code == 200
 

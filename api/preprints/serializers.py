@@ -15,13 +15,13 @@ from api.base.utils import absolute_reverse, get_user_auth
 from api.base.parsers import NO_DATA_ERROR
 from api.nodes.serializers import (
     NodeCitationSerializer,
-    NodeLicenseSerializer,
     NodeContributorsSerializer,
     NodeStorageProviderSerializer,
     NodeContributorsCreateSerializer,
     NodeContributorDetailSerializer,
     get_license_details,
     NodeTagField,
+    NodeLicenseSerializer,
 )
 from api.base.metrics import MetricsSerializerMixin
 from api.taxonomies.serializers import TaxonomizableSerializerMixin

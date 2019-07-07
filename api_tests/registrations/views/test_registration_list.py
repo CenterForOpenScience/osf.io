@@ -533,7 +533,11 @@ class TestRegistrationSubjectFiltering(SubjectsFilterMixin):
         return '/{}registrations/'.format(API_BASE)
 
 
-class TestRegistrationCreate(DraftRegistrationTestCase):
+class TestNodeRegistrationCreate(DraftRegistrationTestCase):
+    """
+    Tests for creating registration through new workflow -
+    POST NodeRegistrationList
+    """
 
     @pytest.fixture()
     def schema(self):
@@ -1120,6 +1124,66 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'All files attached to this form must be registered to complete the' \
                                                   ' process. The following file(s) are attached, but are not part of' \
                                                   ' a component being registered: file 1'
+
+
+class TestRegistrationCreate(TestNodeRegistrationCreate):
+    """
+    Tests for creating registration through new workflow -
+    POST RegistrationList
+    """
+    @pytest.fixture()
+    def url_registrations(self, project_public):
+        return '/{}registrations/'.format(API_BASE)
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_registration_draft_must_be_draft_of_current_node(
+            self, mock_enqueue, app, user, schema, url_registrations):
+        # Overrides TestNodeRegistrationCreate - node is not in URL in this workflow
+        return
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_need_admin_perms_on_node_and_draft(
+            self, mock_enqueue, app, user, payload, url_registrations):
+        user_two = AuthUserFactory()
+        group = OSFGroupFactory(creator=user)
+
+        draft_registration = DraftRegistrationFactory(creator=user_two)
+        draft_registration.add_contributor(user, permissions.ADMIN)
+        draft_registration.branched_from.add_contributor(user, permissions.WRITE)
+        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        # User is admin on draft, but not on node
+        assert draft_registration.branched_from.is_admin_contributor(user) is False
+        assert draft_registration.has_permission(user, permissions.ADMIN) is True
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # User is an admin group contributor on the node (not enough)
+        draft_registration.branched_from.add_osf_group(group, permissions.ADMIN)
+        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        # User is admin on draft, but not on node
+        assert draft_registration.branched_from.is_admin_contributor(user) is False
+        assert draft_registration.branched_from.has_permission(user, permissions.ADMIN) is True
+        assert draft_registration.has_permission(user, permissions.ADMIN) is True
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        draft_registration = DraftRegistrationFactory(creator=user_two)
+        draft_registration.add_contributor(user, permissions.WRITE)
+        draft_registration.branched_from.add_contributor(user, permissions.ADMIN)
+        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        # User is admin on node but not on draft
+        draft_registration.branched_from.is_admin_contributor(user) is True
+        assert draft_registration.has_permission(user, permissions.ADMIN) is False
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # User is admin on draft and node
+        draft_registration = DraftRegistrationFactory(creator=user)
+        assert draft_registration.branched_from.is_admin_contributor(user) is True
+        assert draft_registration.has_permission(user, permissions.ADMIN) is True
+        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        res = app.post_json_api(url_registrations, payload, auth=user.auth)
+        assert res.status_code == 201
 
 
 @pytest.mark.django_db

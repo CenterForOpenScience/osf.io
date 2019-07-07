@@ -18,7 +18,13 @@ from framework.auth import Auth
 from framework.auth.core import get_user
 from framework.analytics import increment_user_activity_counters
 from framework.exceptions import PermissionsError
-from osf.exceptions import InvalidTriggerError, ValidationValueError, UserStateError, UserNotAffiliatedError
+from osf.exceptions import (
+    InvalidTriggerError,
+    ValidationValueError,
+    UserStateError,
+    UserNotAffiliatedError,
+    InvalidTagError,
+)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
@@ -217,6 +223,15 @@ class DescriptionMixin(models.Model):
 
 class CategoryMixin(models.Model):
 
+    @property
+    def log_class(self):
+        # PreprintLog or NodeLog, for example
+        raise NotImplementedError()
+
+    @property
+    def log_params(self):
+        raise NotImplementedError()
+
     CATEGORY_MAP = {
         'analysis': 'Analysis',
         'communication': 'Communication',
@@ -235,6 +250,30 @@ class CategoryMixin(models.Model):
                                 choices=CATEGORY_MAP.items(),
                                 blank=True,
                                 default='')
+
+    def set_category(self, category, auth, save=False):
+        """Set the category and log the event.
+        :param str category: The new category
+        :param auth: All the auth informtion including user, API key.
+        :param bool save: Save self after updating.
+        """
+        original = self.category
+        new_category = category
+        if original == new_category:
+            return False
+        self.category = new_category
+        params = self.log_params
+        params['category_new'] = self.category
+        params['category_original'] = original
+        self.add_log(
+            action=self.log_class.CATEGORY_UPDATED,
+            params=params,
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+        return None
 
     class Meta:
         abstract = True
@@ -323,6 +362,15 @@ class NodeLicenseMixin(models.Model):
 
 class Taggable(models.Model):
 
+    @property
+    def log_class(self):
+        # PreprintLog or NodeLog, for example
+        raise NotImplementedError()
+
+    @property
+    def log_params(self):
+        raise NotImplementedError()
+
     tags = models.ManyToManyField('Tag', related_name='%(class)s_tagged')
 
     def update_tags(self, new_tags, auth=None, save=True, log=True, system=False):
@@ -350,6 +398,30 @@ class Taggable(models.Model):
             self.on_tag_added(tag_instance)
         if save:
             self.save()
+
+    def remove_tags(self, tags, auth, save=True):
+        """
+        Unlike remove_tag, this optimization method assumes that the provided
+        tags are already present on the resource.
+        """
+        if not tags:
+            raise InvalidTagError
+
+        for tag in tags:
+            tag_obj = Tag.objects.get(name=tag)
+            self.tags.remove(tag_obj)
+            params = self.log_params
+            params['tag'] = tag
+            self.add_log(
+                action=self.log_class.TAG_REMOVED,
+                params=params,
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
+
+        return True
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if not system and not auth:

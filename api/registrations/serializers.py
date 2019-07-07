@@ -12,9 +12,9 @@ from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
-from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer
-from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer, update_institutions
-from api.nodes.serializers import NodeContributorsSerializer, NodeLicenseRelationshipField, RegistrationProviderRelationshipField, get_license_details
+from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer, NodeLicenseRelationshipField
+from api.nodes.serializers import NodeLinksSerializer, update_institutions, NodeLicenseSerializer
+from api.nodes.serializers import NodeContributorsSerializer, RegistrationProviderRelationshipField, get_license_details
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,

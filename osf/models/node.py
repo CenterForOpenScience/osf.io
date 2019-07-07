@@ -1051,24 +1051,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         Unlike remove_tag, this optimization method assumes that the provided
         tags are already present on the node.
         """
-        if not tags:
-            raise InvalidTagError
-
-        for tag in tags:
-            tag_obj = Tag.objects.get(name=tag)
-            self.tags.remove(tag_obj)
-            self.add_log(
-                action=NodeLog.TAG_REMOVED,
-                params={
-                    'parent_node': self.parent_id,
-                    'node': self._id,
-                    'tag': tag,
-                },
-                auth=auth,
-                save=False,
-            )
-        if save:
-            self.save()
+        super(AbstractNode, self).remove_tags(tags, auth, save)
         self.update_search()
         node_tasks.update_node_share(self)
 
@@ -1123,6 +1106,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def log_params(self):
         # Override for ContributorMixin
         return {
+            'parent_node': self.parent_id,
             'project': self.parent_id,
             'node': self._primary_key,
         }

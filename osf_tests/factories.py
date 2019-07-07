@@ -375,7 +375,7 @@ class RegistrationFactory(BaseNodeFactory):
             )
         project.save()
 
-        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, user=user)
+        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, initator=user)
 
         # Default registration parameters
         schema = schema or get_default_metaschema()
@@ -495,17 +495,12 @@ class DraftRegistrationFactory(DjangoModelFactory):
     def _create(cls, *args, **kwargs):
         title = kwargs.pop('title', None)
         description = kwargs.pop('description', None)
-        branched_from = kwargs.get('branched_from')
-        initiator = kwargs.get('initiator')
+        branched_from = kwargs.get('branched_from', None)
         registration_schema = kwargs.get('registration_schema')
         registration_metadata = kwargs.get('registration_metadata')
         provider = kwargs.get('provider')
-        if not branched_from:
-            project_params = {}
-            if initiator:
-                project_params['creator'] = initiator
-            branched_from = ProjectFactory(**project_params)
-        initiator = branched_from.creator
+        initiator = branched_from.creator if branched_from else kwargs.get('initiator', None)
+        initiator = initiator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')

@@ -13,19 +13,10 @@ def get_campaign_schema(campaign):
     return RegistrationSchema.objects.get(name=schema_name, schema_version=2)
 
 def drafts_for_user(user, campaign=None):
-    from osf.models import DraftRegistration, Node
-    from osf.utils.permissions import ADMIN_NODE
-
     if not user or user.is_anonymous:
         return None
 
-    node_qs = Node.objects.get_nodes_for_user(user, ADMIN_NODE).values_list('id', flat=True)
-    drafts = DraftRegistration.objects.filter(
-        approval=None,
-        registered_node=None,
-        deleted__isnull=True,
-        branched_from__in=node_qs,
-    )
+    drafts = user.draft_registrations_active
 
     if campaign:
         drafts = drafts.filter(

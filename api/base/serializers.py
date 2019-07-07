@@ -14,6 +14,7 @@ from rest_framework.fields import get_attribute as get_nested_attributes
 from rest_framework.mixins import RetrieveModelMixin
 
 from api.base import utils
+from osf.models import DraftRegistration
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
 from osf.utils import functional
@@ -196,6 +197,19 @@ class HideIfPreprint(ConditionalField):
         return isinstance(instance, Preprint) \
             or isinstance(getattr(instance, 'target', None), Preprint) \
             or isinstance(getattr(instance, 'preprint', False), Preprint)
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
+
+
+class HideIfDraft(ConditionalField):
+    """
+    If object is a draft registration, or related to a draft registration, hide the field.
+    """
+
+    def should_hide(self, instance):
+        return isinstance(instance, DraftRegistration) \
+            or isinstance(getattr(instance, 'draft_registration', False), DraftRegistration)
 
     def should_be_none(self, instance):
         return not isinstance(self.field, RelationshipField)

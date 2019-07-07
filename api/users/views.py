@@ -26,7 +26,7 @@ from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
-from api.nodes.serializers import DraftRegistrationSerializer
+from api.nodes.serializers import DraftRegistrationSerializerLegacy
 from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
@@ -496,7 +496,7 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = DraftRegistrationSerializer
+    serializer_class = DraftRegistrationSerializerLegacy
     view_category = 'users'
     view_name = 'user-draft-registrations'
 

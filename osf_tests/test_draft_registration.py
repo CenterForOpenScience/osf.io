@@ -4,7 +4,7 @@ import datetime
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from osf.exceptions import UserNotAffiliatedError
+from osf.exceptions import UserNotAffiliatedError, DraftRegistrationStateError
 from osf.models import RegistrationSchema, DraftRegistration, DraftRegistrationContributor, NodeLicense, Node
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeLicenses, TestNodeSubjects
@@ -246,6 +246,47 @@ class TestDraftRegistrations:
         assert len(draft_tags) == 0
         assert draft.subjects.count() == 0
         assert draft.affiliated_institutions.count() == 0
+
+    def test_branched_from_must_be_a_node_or_draft_node(self):
+        with pytest.raises(DraftRegistrationStateError):
+            DraftRegistration.create_from_node(
+                user=user,
+                node=factories.RegistrationFactory(),
+                schema=factories.get_default_metaschema()
+            )
+
+        with pytest.raises(DraftRegistrationStateError):
+            DraftRegistration.create_from_node(
+                user=user,
+                node=factories.CollectionFactory(),
+                schema=factories.get_default_metaschema()
+            )
+
+    def test_can_view_property(self, user):
+        project = factories.ProjectFactory(creator=user)
+
+        write_contrib = factories.UserFactory()
+        read_contrib = factories.UserFactory()
+        non_contrib = factories.UserFactory()
+
+        draft = DraftRegistration.create_from_node(
+            user=user,
+            node=project,
+            schema=factories.get_default_metaschema()
+        )
+        project.add_contributor(non_contrib, ADMIN, save=True)
+        draft.add_contributor(write_contrib, WRITE, save=True)
+        draft.add_contributor(read_contrib, READ, save=True)
+
+        assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
+        assert draft.get_permissions(write_contrib) == [READ, WRITE]
+        assert draft.get_permissions(read_contrib) == [READ]
+
+        assert draft.can_view(Auth(user)) is True
+        assert draft.can_view(Auth(write_contrib)) is True
+        assert draft.can_view(Auth(read_contrib)) is True
+
+        assert draft.can_view(Auth(non_contrib)) is False
 
 
 class TestSetDraftRegistrationEditableFields(TestNodeEditableFieldsMixin):
