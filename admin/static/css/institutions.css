@@ -64,3 +64,7 @@ form p label {
 #id_custom_taxonomy_json {
     width: 100%;
 }
+
+.googledrive-modal-message {
+    font-weight: 600;
+}
