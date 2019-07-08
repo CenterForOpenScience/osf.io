@@ -128,8 +128,25 @@ def test_connection(request):
     }, status=httplib.BAD_REQUEST)
 
 def save_credentials(request):
+    institution_id = request.user.affiliated_institutions.first()._id
     data = json.loads(request.body)
 
+    provider_short_name = data.get('provider_short_name', None)
+    if not provider_short_name:
+        response = {
+            'message': 'Provider is missing.'
+        }
+        return JsonResponse(response, status=httplib.BAD_REQUEST)
+
+    if provider_short_name == 's3':
+        return utils.save_s3_credentials(
+            institution_id,
+            data.get('storage_name'),
+            data.get('s3_access_key'),
+            data.get('s3_secret_key'),
+            data.get('s3_bucket'),
+        )
+
     return JsonResponse({
-        'message': 'Route is working, good job!'
-    })
+        'message': 'Invalid provider.'
+    }, status=httplib.BAD_REQUEST)

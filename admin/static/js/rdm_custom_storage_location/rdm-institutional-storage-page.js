@@ -156,10 +156,18 @@ var afterRequest = {
     },
     'save_credentials': {
         'success': function (id, data) {
-            console.log(data.message);
+            $('#' + id + '_message').html(data.message);
+            $('.modal').modal('hide');
         },
         'fail': function (id, message) {
-            console.log('Failed... ' + message);
+            $('#' + id + '_message').html(message);
+            $('#' + id + '_save').attr('disabled', true);
+            $('#' + id + '_save').removeClass('btn-success').addClass('btn-default ');
+            $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success ');
+            if (!$('#' + id + '_message').hasClass('text-danger')) {
+                $('#' + id + '_message').addClass('text-danger ');
+                $('#' + id + '_message').removeClass('text-success ');
+            }
         }
     }
 };
@@ -168,6 +176,7 @@ var afterRequest = {
 function getParameters(params) {
     var providerClass = params.provider_short_name + '-params';
     var allParameters = $('.' + providerClass);
+    params.storage_name = $('#storage_name').val();
     $.each(allParameters, function (key, value) {
         if (!value.disabled) {
             params[value.id] = value.value;
