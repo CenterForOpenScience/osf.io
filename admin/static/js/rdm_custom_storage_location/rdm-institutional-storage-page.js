@@ -89,8 +89,10 @@ function testConnection(thisObject) {
             break;
         case 'swift':
             getParameters(params);
+            break;
         case 'nextcloud':
             getParameters(params);
+            break;
     }
 
     ajaxRequest(params, providerShortName);
