@@ -1757,6 +1757,32 @@ class TestNodeCreate:
         actual_perms = set([contributor.permission for contributor in new_component.contributor_set.all()])
         assert actual_perms == expected_perms
 
+    def test_create_component_inherit_contributors_with_blacklisted_email(
+            self, app, user_one, title, category):
+        parent_project = ProjectFactory(creator=user_one)
+        parent_project.add_unregistered_contributor(
+            fullname='far', email='foo@bar.baz',
+            permissions=permissions.READ,
+            auth=Auth(user=user_one), save=True)
+        contributor = parent_project.contributors.filter(fullname='far').first()
+        contributor.username = 'foo@example.com'
+        contributor.save()
+        url = '/{}nodes/{}/children/?inherit_contributors=true'.format(
+            API_BASE, parent_project._id)
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': title,
+                    'category': category,
+                }
+            }
+        }
+        res = app.post_json_api(url, component_data, auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Unregistered contributor email address domain is blacklisted.'
+
     def test_create_project_with_region_relationship(
             self, app, user_one, region, institution_one, private_project, url):
         private_project['data']['relationships'] = {
