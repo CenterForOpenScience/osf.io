@@ -775,10 +775,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                     'visible': contributor.visible,
                 })
                 if not contributor.user.is_registered:
-                    node.add_unregistered_contributor(
-                        fullname=contributor.user.fullname, email=contributor.user.email, auth=auth,
-                        permissions=contributor.permission, existing_user=contributor.user,
-                    )
+                    try:
+                        node.add_unregistered_contributor(
+                            fullname=contributor.user.fullname, email=contributor.user.email, auth=auth,
+                            permissions=contributor.permission, existing_user=contributor.user,
+                        )
+                    except ValidationError as e:
+                        raise InvalidModelValueError(detail=str(e[0]))
             node.add_contributors(contributors, auth=auth, log=True, save=True)
             for group in parent.osf_groups:
                 if group.is_manager(user):
