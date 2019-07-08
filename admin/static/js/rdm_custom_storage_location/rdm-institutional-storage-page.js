@@ -79,17 +79,29 @@ $('#swift_auth_version').change(function () {
     validateRequiredFields('swift');
 });
 
-function testConnection(thisObject) {
-    var modalId = $(thisObject).attr('id');
-    var providerShortName = modalId.replace('_connect', '');
+$('.test-connection').click(function () {
+    buttonClicked(this, 'test_connection');
+});
+
+$('.save-credentials').click(function () {
+    buttonClicked(this, 'save_credentials');
+});
+
+function buttonClicked(button, route) {
+    var action = {
+        'test_connection': 'connect',
+        'save_credentials': 'save'
+    };
+
+    var providerShortName = $(button).attr('id').replace('_' + action[route], '');
     var params = {
         'provider_short_name': providerShortName
     };
     getParameters(params);
-    ajaxRequest(params, providerShortName);
+    ajaxRequest(params, providerShortName, route);
 }
 
-function ajaxRequest(params, providerShortName) {
+function ajaxRequest(params, providerShortName, route) {
     var csrftoken = Cookie.get('admin-csrf');
 
     function csrfSafeMethod(method) {
@@ -104,49 +116,54 @@ function ajaxRequest(params, providerShortName) {
             }
         }
     });
-    var request = $.ajax({
-        url: '../test_connection',
+    $.ajax({
+        url: '../' + route,
         type: 'POST',
         data: JSON.stringify(params),
         contentType: 'application/json; charset=utf-8',
         custom: providerShortName,
-    });
-
-    request.done(function (data) {
-        testConnectionSucceed(this.custom, data);
-    });
-
-    request.fail(function (jqXHR) {
-        testConnectionFailed(this.custom, jqXHR.responseJSON.message);
+        success: function (data) {
+            afterRequest[route].success(this.custom, data);
+        },
+        error: function (jqXHR) {
+            afterRequest[route].fail(this.custom, jqXHR.responseJSON.message);
+        }
     });
 }
 
-$('.test-connection').click(function () {
-    testConnection(this);
-});
-
-
-function testConnectionSucceed(id, data) {
-    $('#' + id + '_save').attr('disabled', false);
-    $('#' + id + '_save').removeClass('btn-default').addClass('btn-success ');
-    $('#' + id + '_connect').removeClass('btn-success').addClass('btn-default ');
-    $('#' + id + '_message').html(data.message);
-    if (!$('#' + id + '_message').hasClass('text-success')) {
-        $('#' + id + '_message').addClass('text-success ');
-        $('#' + id + '_message').removeClass('text-danger ');
+var afterRequest = {
+    'test_connection': {
+        'success': function (id, data) {
+            $('#' + id + '_save').attr('disabled', false);
+            $('#' + id + '_save').removeClass('btn-default').addClass('btn-success ');
+            $('#' + id + '_connect').removeClass('btn-success').addClass('btn-default ');
+            $('#' + id + '_message').html(data.message);
+            if (!$('#' + id + '_message').hasClass('text-success')) {
+                $('#' + id + '_message').addClass('text-success ');
+                $('#' + id + '_message').removeClass('text-danger ');
+            }
+        },
+        'fail': function (id, message) {
+            $('#' + id + '_message').html(message);
+            $('#' + id + '_save').attr('disabled', true);
+            $('#' + id + '_save').removeClass('btn-success').addClass('btn-default ');
+            $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success ');
+            if (!$('#' + id + '_message').hasClass('text-danger')) {
+                $('#' + id + '_message').addClass('text-danger ');
+                $('#' + id + '_message').removeClass('text-success ');
+            }
+        }
+    },
+    'save_credentials': {
+        'success': function (id, data) {
+            console.log(data.message);
+        },
+        'fail': function (id, message) {
+            console.log('Failed... ' + message);
+        }
     }
-}
+};
 
-function testConnectionFailed(id, message) {
-    $('#' + id + '_message').html(message);
-    $('#' + id + '_save').attr('disabled', true);
-    $('#' + id + '_save').removeClass('btn-success').addClass('btn-default ');
-    $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success ');
-    if (!$('#' + id + '_message').hasClass('text-danger')) {
-        $('#' + id + '_message').addClass('text-danger ');
-        $('#' + id + '_message').removeClass('text-success ');
-    }
-}
 
 function getParameters(params) {
     var providerClass = params.provider_short_name + '-params';
