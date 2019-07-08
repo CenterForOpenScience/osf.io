@@ -184,7 +184,6 @@ $('.auth-permission-button').click(function(e) {
 
     authPermissionSucceed(providerShortName, authorizedBy, currentToken);
     authSaveButton(providerShortName);
-    e.preventDefault();
 });
 
 function authPermissionSucceed(providerShortName, authorizedBy, currentToken){

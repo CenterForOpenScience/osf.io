@@ -56,6 +56,7 @@ class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTes
     def get(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
         institution_id = int(kwargs['institution_id'])
+        is_custom = kwargs.get('is_custom', False)
 
         # Session
         if not request.session.session_key:
@@ -69,6 +70,7 @@ class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTes
         auth_url = provider.auth_url
         session = self.get_session(addon_name)
         session.data['oauth_states'][addon_name]['institution_id'] = institution_id
+        session.data['oauth_states'][addon_name]['is_custom'] = is_custom
         session.save()
 
         return redirect(auth_url)

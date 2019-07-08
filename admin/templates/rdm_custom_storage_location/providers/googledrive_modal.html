@@ -23,7 +23,7 @@
                     </div>
                     <div class="col-sm-6">
                         <div class="form-group text-center">
-                            <a href="{% url 'oauth:connect'   'googledrive' institution.id   %}"
+                            <a href="{% url 'oauth:connect'   'googledrive' institution.id 'true'   %}"
                                 class="btn btn-primary auth-permission-button" role="button"
                                 id='googledrive_auth_hyperlink' target="_blank">Get OAuth permission</a>
                         </div>
