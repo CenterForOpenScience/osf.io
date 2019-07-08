@@ -173,3 +173,19 @@ Docstring:
 Options:
    none
 ```
+
+### mAP core API操作用ロック処理のテスト
+
+mAP core API操作用のロック機構が機能しているかどうか確認する。
+
+```
+Usage: inv[oke] [--core-opts] mapcore_test_lock [other tasks here ...]
+```
+
+複数プロセスで同時にsleep処理をロックしてから実行する。もし、ロック機
+構が効かない場合、並列に実行できてしまい、期待する実行時間よりも短くな
+ることで、エラーを検出する。
+エラーの場合は「ERROR: mapcore_test_lock」が表示される。
+
+nii_tests/test_mapcore.py などのテストにはマルチプロセスによる並列実行
+のテストを実装できないため、このテスト実行方法を用意した。

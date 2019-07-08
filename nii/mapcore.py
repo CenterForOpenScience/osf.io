@@ -657,18 +657,17 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
         logger.error(msg)
         return None
 
-    # create new RDM group
-    node = Node(title=utf8dec(map_group['group_name']), creator=creator,
-                is_public=True, category='project',
-                map_group_key=group_key,
-                description=utf8dec(group_info_ext['introduction']))
-    node.map_group_key = group_key
-    node.save()
+    node, created = Node.objects.get_or_create(
+        title=utf8dec(map_group['group_name']),
+        creator=creator,
+        is_public=True, category='project',
+        map_group_key=group_key,
+        description=utf8dec(group_info_ext['introduction']))
     logger.info('New node [' + utf8(node.title) + '] owned by [' + utf8(creator.eppn) + '] is created.')
     return node
 
 
-def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=False):
+def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=False, lock_node=True):
     '''
     mAP coreグループの情報をRDM Nodeに同期する
     :param node: Node object
@@ -685,7 +684,8 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
     logger.debug('mapcore_sync_rdm_project0(' + utf8(node.title) + ') start')
 
     try:
-        locker.lock_node(node)
+        if lock_node:
+            locker.lock_node(node)
         # take mAP group info
         group_key = node.map_group_key
         map_group = mapcore_get_extended_group_info(access_user, node, group_key)
@@ -748,13 +748,14 @@ def mapcore_sync_rdm_project0(access_user, node, title_desc=False, contributors=
 
         node.save()
     finally:
-        locker.unlock_node(node)
+        if lock_node:
+            locker.unlock_node(node)
     return True
 
-def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=False, use_raise=False):
+def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=False, use_raise=False, lock_node=True):
     error = None
     try:
-        mapcore_sync_rdm_project0(access_user, node, title_desc=title_desc, contributors=contributors)
+        mapcore_sync_rdm_project0(access_user, node, title_desc=title_desc, contributors=contributors, lock_node=lock_node)
     except MAPCoreException as e:
         if e.group_does_not_exist():
             node.remove_node(Auth(user=node.creator))
@@ -784,13 +785,14 @@ def mapcore_resign_map_group(node, user):
     return mapcore.remove_from_group(node.map_group_key, user.eppn)
 
 
-def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=True):
+def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=True, lock_node=True):
     '''
     RDM Nodeの情報をmAPグループに同期する
+    :param access_user:  OSFUser for access user
     :param node: Node object
     :param title_desc:  boolean that indicate group info sync
     :param contributors:  boolean that indicate contribuors
-    :param mapcore:  MAPCore object to call mAP API with AccessCode in it
+    :param lock_node: True ... use locker.lock_node()
     :return: True on success, False on sync skip condition
     '''
 
@@ -802,7 +804,8 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
         return False
 
     try:
-        locker.lock_node(node)
+        if lock_node:
+            locker.lock_node(node)
         group_key = node.map_group_key
 
         # sync group info
@@ -859,13 +862,14 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
                 mapcore_edit_member(access_user, node, group_key, u['eppn'], MAPCore.MODE_MEMBER)
                 logger.info('mAP group [' + map_group['group_name'] + '] member [' + u['eppn'] + '] is a new admin')
     finally:
-        locker.unlock_node(node)
+        if lock_node:
+            locker.unlock_node(node)
 
     return True
 
-def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True, use_raise=False):
+def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True, use_raise=False, lock_node=True):
     try:
-        ret = mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors)
+        ret = mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors, lock_node=lock_node)
     except Exception as e:
         logger.warning('GRDM project [{} ({})] cannot be uploaded to mAP. (retry later), reason={}'.format(utf8(node.title), node._id, utf8(str(e))))
         add_log(NodeLog.MAPCORE_MAP_GROUP_NOT_UPDATED, node, access_user, e,
@@ -1097,19 +1101,24 @@ def mapcore_sync_rdm_project_or_map_group0(access_user, node, use_raise=False):
             node.save()
             mapcore_sync_map_group(access_user, node,
                                    title_desc=True, contributors=True,
-                                   use_raise=use_raise)
+                                   use_raise=use_raise, lock_node=False)
     elif mapcore_is_on_standby_to_upload(node):
         mapcore_sync_map_group(access_user, node,
                                title_desc=True, contributors=True,
-                               use_raise=use_raise)
+                               use_raise=use_raise, lock_node=False)
     else:
         mapcore_sync_rdm_project(access_user, node,
                                  title_desc=True, contributors=True,
-                                 use_raise=use_raise)
+                                 use_raise=use_raise, lock_node=False)
     mapcore_set_sync_time(node)
 
 def mapcore_sync_rdm_project_or_map_group(access_user, node, use_raise=False):
-    mapcore_sync_rdm_project_or_map_group0(access_user, node, use_raise=use_raise)
+    try:
+        locker.lock_node(node)
+        mapcore_sync_rdm_project_or_map_group0(access_user, node,
+                                               use_raise=use_raise)
+    finally:
+        locker.unlock_node(node)
 
 #
 # debugging utilities
@@ -1145,12 +1154,10 @@ def add_contributor_to_project(node_name, eppn):
     return
 
 
-sleep_sec = 10
-
-def user_lock_test(user):
+def user_lock_test(user, sleep_sec):
     try:
         locker.lock_user(user)
-        print('User ePPN: ' + user.eppn + ' is locked.')
+        print('User (GUID: ' + user._id + ') is locked.')
         print('locked: sleep {}'.format(sleep_sec))
         time.sleep(sleep_sec)
     except KeyboardInterrupt:
@@ -1159,18 +1166,18 @@ def user_lock_test(user):
         pass
     finally:
         locker.unlock_user(user)
-    print('User ePPN: ' + user.eppn + ' is unlocked.')
+    print('User (GUID: ' + user._id + ') is unlocked.')
 
-def node_lock_test(node):
+def node_lock_test(node, sleep_sec):
     try:
         locker.lock_node(node)
         print('Node (GUID=' + node._id + ') is locked.')
         print('locked: sleep {}'.format(sleep_sec))
-        #time.sleep(sleep_sec)
-        for i in range(sleep_sec):
-            print('mapcore_api_locked={}'.format(
-                Node.objects.get(guids___id=node._id).mapcore_api_locked))
-            time.sleep(1)
+        time.sleep(sleep_sec)
+        # for i in range(sleep_sec):
+        #     print('mapcore_api_locked={}'.format(
+        #         Node.objects.get(guids___id=node._id).mapcore_api_locked))
+        #     time.sleep(1)
     except KeyboardInterrupt:
         print('interrupted!')
     except Exception:
@@ -1297,11 +1304,11 @@ if __name__ == '__main__':
 
     if False:
         me = OSFUser.objects.get(eppn=sys.argv[1])
-        user_lock_test(me)
+        user_lock_test(me, 10)
 
     if False:
         node = Node.objects.get(guids___id=sys.argv[1])
-        node_lock_test(node)
+        node_lock_test(node, 10)
 
     if False:
         node = Node.objects.get(guids___id=sys.argv[1])

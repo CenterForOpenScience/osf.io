@@ -91,17 +91,18 @@
 
 1. GRDM ProjectからmAPグループへの同期を行う
     ```
-    def mapcore_sync_map_group(node, title_desc=True, contributors=True, mapcore=None):
+    def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True, lock_node=True):
     ```
+    - access_user
+    アクセスするユーザー。そのユーザーのアクセストークンを優先的に使う。
     - node
     同期を行うProjectをNodeオブジェクトで指定する
     - title_desc
     グループ情報(グループ名と説明)を同期する場合にTrueを指定する
     - contirbutors
     メンバー情報(Contributor)を同期する場合にTrueを指定する
-    - mapcore
-    MAPCoreオブジェクト。ここに含まれるユーザーのトークンを使用してmAP coreにアクセスする。
-    省略した場合はNodeのCreatorのトークンが使用される
+    - lock_node
+    Nodeでロックするかどうか。
 
 1. mAPグループのメンバー情報にアクセスできるユーザーをGRDM Projectのcontributorから探す
     ```

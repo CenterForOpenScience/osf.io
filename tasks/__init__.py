@@ -989,3 +989,58 @@ def mapcore_unlock_all(ctx):
 
     from nii import mapcore
     mapcore.mapcore_unlock_all()
+
+
+@task
+def mapcore_test_lock(ctx):
+    '''test lock functions for mapcore.py'''
+    from multiprocessing import Process
+    from website.app import init_app
+    import time
+
+    sleep_sec = 5
+    n_proc = 3
+
+    def test_lock_user(idx):
+        print('start: test_lock_user[{}]'.format(idx))
+        init_app(routes=False, set_backends=False)
+        from nii.mapcore import user_lock_test
+        from osf.models import OSFUser
+
+        u = OSFUser.objects.order_by('id').first()
+        user_lock_test(u, sleep_sec)
+
+    def test_lock_node(idx):
+        print('start: test_lock_node[{}]'.format(idx))
+        init_app(routes=False, set_backends=False)
+        from nii.mapcore import node_lock_test
+        from osf.models import Node
+
+        n = Node.objects.order_by('id').first()
+        node_lock_test(n, sleep_sec)
+
+    def test_base(func, name):
+        procs = []
+        for i in range(n_proc):
+            p = Process(target=func, args=(i,))
+            procs.append(p)
+
+        t1 = time.time()
+        for p in procs:
+            p.start()
+        for p in procs:
+            p.join()
+        t2 = time.time()
+        print('total time: {} sec.'.format(t2 - t1))
+        if ((t2 - t1) >= sleep_sec * n_proc):
+            print('*** OK: ' + name)
+            return True
+        else:
+            print('*** NG: ' + name)
+            return False
+
+    r1 = test_base(test_lock_user, 'test lock user')
+    r2 = test_base(test_lock_node, 'test lock node')
+
+    if not (r1 and r2):
+        print('ERROR: mapcore_test_lock')
