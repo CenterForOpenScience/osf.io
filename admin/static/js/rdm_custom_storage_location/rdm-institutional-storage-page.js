@@ -4,6 +4,10 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Cookie = require('js-cookie');
 
+$('[name=options]').change(function () {
+    $('#storage_name').attr('disabled', this.value === 'osfstorage');
+});
+
 $('#institutional_storage_form').submit(function (e) {
     if ($('#institutional_storage_form')[0].checkValidity()) {
         var selectedProvider = $('input[name=\'options\']:checked').val();
