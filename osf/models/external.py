@@ -28,7 +28,7 @@ OAUTH2 = 2
 
 generate_client_secret = functools.partial(random_string, length=40)
 
-class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
+class ExternalAccountBase(base.ObjectIDMixin, base.BaseModel):
     """An account on an external service.
 
     Note that this object is not and should not be aware of what other objects
@@ -84,8 +84,12 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
         unique_together = [
             ('provider', 'provider_id',)
         ]
+        abstract = True
 
-class ExternalAccountTemporary(ExternalAccount):
+class ExternalAccount(ExternalAccountBase):
+    pass
+
+class ExternalAccountTemporary(ExternalAccountBase):
     pass
 
 
