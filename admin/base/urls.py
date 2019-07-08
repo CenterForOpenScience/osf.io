@@ -33,6 +33,7 @@ urlpatterns = [
                                       namespace='metrics')),
             url(r'^desk/', include('admin.desk.urls',
                                    namespace='desk')),
+            url(r'^osf_groups/', include('admin.osf_groups.urls', namespace='osf_groups')),
             url(r'^announcement/', include('admin.rdm_announcement.urls', namespace='announcement')),
             url(r'^addons/', include('admin.rdm_addons.urls', namespace='addons')),
             url(r'^oauth/', include('admin.rdm_addons.oauth.urls', namespace='oauth')),

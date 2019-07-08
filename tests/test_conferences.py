@@ -127,7 +127,7 @@ class ContextTestCase(OsfTestCase):
         data.update(kwargs.pop('data', {}))
         data = {
             key: value
-            for key, value in data.iteritems()
+            for key, value in data.items()
             if value is not None
         }
         return self.app.app.test_request_context(method=method, data=data, **kwargs)

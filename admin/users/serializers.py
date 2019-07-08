@@ -3,22 +3,40 @@ Serialize user
 """
 
 
+def serialize_group_for_user(group, user):
+    return {
+        'name': group.name,
+        'id': group._id,
+        'role': user.group_role(group)
+    }
+
 def serialize_user(user):
+
+    potential_spam_profile_content = {
+        'schools': user.schools,
+        'jobs': user.jobs
+    }
+
     return {
         'username': user.username,
         'name': user.fullname,
         'id': user._id,
-        'nodes': map(serialize_simple_node, user.contributor_to),
+        'nodes': list(map(serialize_simple_node, user.contributor_or_group_member_to)),
         'emails': user.emails.values_list('address', flat=True),
         'last_login': user.date_last_login,
         'confirmed': user.date_confirmed,
         'registered': user.date_registered,
+        'deleted': user.deleted,
         'disabled': user.date_disabled if user.is_disabled else False,
         'two_factor': user.has_addon('twofactor'),
         'osf_link': user.absolute_url,
         'system_tags': user.system_tags,
+        'is_spammy': user.is_spammy,
+        'spam_status': user.spam_status,
         'unclaimed': bool(user.unclaimed_records),
-        'requested_deactivation': bool(user.requested_deactivation)
+        'requested_deactivation': bool(user.requested_deactivation),
+        'osf_groups': [serialize_group_for_user(group, user) for group in user.osf_groups],
+        'potential_spam_profile_content': user._get_spam_content(potential_spam_profile_content),
     }
 
 

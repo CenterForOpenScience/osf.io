@@ -1,7 +1,8 @@
 from datetime import datetime
 import httplib as http
-import logging
 import json
+import logging
+import mock
 import time
 import urlparse
 
@@ -9,11 +10,13 @@ import responses
 from nose.tools import *  # noqa
 import pytz
 from oauthlib.oauth2 import OAuth2Error
+from requests_oauthlib import OAuth2Session
 
 from framework.auth import authenticate
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sessions import session
 from osf.models.external import ExternalAccount, ExternalProvider, OAUTH1, OAUTH2
+from website.settings import ADDONS_OAUTH_NO_REDIRECT
 from website.util import api_url_for, web_url_for
 
 from tests.base import OsfTestCase
@@ -339,17 +342,21 @@ class TestExternalProviderOAuth2(OsfTestCase):
         # OAuth 2.0 is the default version
         assert_is(self.provider._oauth_version, OAUTH2)
 
-    def test_start_flow(self):
-        # Generate the appropriate URL and state token
+    def test_start_flow_oauth_standard(self):
+        # Generate the appropriate URL and state token - addons that follow standard OAuth protocol
+
+        # Make sure that the mock oauth2 provider is a standard one.  The test would fail early here
+        # if `test_start_flow_oauth_no_redirect()` was ran before this test and failed in the middle
+        # without resetting the `ADDONS_OAUTH_NO_REDIRECT` list.
+        assert self.provider.short_name not in ADDONS_OAUTH_NO_REDIRECT
 
         with self.app.app.test_request_context('/oauth/connect/mock2/'):
 
-            # make sure the user is logged in
+            # Make sure the user is logged in
             authenticate(user=self.user, access_token=None, response=None)
 
-            # auth_url is a property method - it calls out to the external
-            #   service to get a temporary key and secret before returning the
-            #   auth url
+            # `auth_url` is a property method - it calls out to the external service to get a
+            # temporary key and secret before returning the auth url
             url = self.provider.auth_url
 
             # Temporary credentials are added to the session
@@ -360,26 +367,114 @@ class TestExternalProviderOAuth2(OsfTestCase):
             parsed = urlparse.urlparse(url)
             params = urlparse.parse_qs(parsed.query)
 
-            # check parameters
-            assert_equal(
-                params,
-                {
-                    'state': [creds['state']],
-                    'response_type': ['code'],
-                    'client_id': [self.provider.client_id],
-                    'redirect_uri': [
-                        web_url_for('oauth_callback',
-                                    service_name=self.provider.short_name,
-                                    _absolute=True)
-                    ]
-                }
+            # Check parameters
+            expected_params = {
+                'state': [creds['state']],
+                'response_type': ['code'],
+                'client_id': [self.provider.client_id],
+                'redirect_uri': [
+                    web_url_for(
+                        'oauth_callback',
+                        service_name=self.provider.short_name,
+                        _absolute=True
+                    )
+                ]
+            }
+            assert_equal(params, expected_params)
+
+            # Check base URL
+            assert_equal(url.split('?')[0], 'https://mock2.com/auth')
+
+    def test_start_flow_oauth_no_redirect(self):
+        # Generate the appropriate URL and state token - addons that do not allow `redirect_uri`
+
+        # Temporarily add the mock provider to the `ADDONS_OAUTH_NO_REDIRECT` list
+        ADDONS_OAUTH_NO_REDIRECT.append(self.provider.short_name)
+
+        with self.app.app.test_request_context('/oauth/connect/mock2/'):
+
+            # Make sure the user is logged in
+            authenticate(user=self.user, access_token=None, response=None)
+
+            # `auth_url` is a property method - it calls out to the external service to get a
+            # temporary key and secret before returning the auth url
+            url = self.provider.auth_url
+
+            # Temporary credentials are added to the session
+            creds = session.data['oauth_states'][self.provider.short_name]
+            assert_in('state', creds)
+
+            # The URL to which the user would be redirected
+            parsed = urlparse.urlparse(url)
+            params = urlparse.parse_qs(parsed.query)
+
+            # Check parameters - the only difference from standard OAuth flow is no `redirect_uri`.
+            expected_params = {
+                'state': [creds['state']],
+                'response_type': ['code'],
+                'client_id': [self.provider.client_id]
+            }
+            assert_equal(params, expected_params)
+
+            # Check base URL
+            assert_equal(url.split('?')[0], 'https://mock2.com/auth')
+
+        # Reset the `ADDONS_OAUTH_NO_REDIRECT` list
+        ADDONS_OAUTH_NO_REDIRECT.remove(self.provider.short_name)
+
+    @mock.patch('osf.models.external.OAuth2Session')
+    @mock.patch('osf.models.external.OAuth2Session.fetch_token')
+    def test_callback_oauth_standard(self, mock_fetch_token, mock_oauth2session):
+        # During token exchange, OAuth2Session is initialized w/ redirect_uri for standard addons.
+
+        # Make sure that the mock oauth2 provider is a standard one.
+        assert self.provider.short_name not in ADDONS_OAUTH_NO_REDIRECT
+
+        # Mock OAuth2Session and its property `fetch_token`.
+        mock_oauth2session.return_value = OAuth2Session(self.provider.client_id, None)
+        mock_fetch_token.return_value = {'access_token': 'mock_access_token'}
+
+        user = UserFactory()
+
+        with self.app.app.test_request_context(path='/oauth/callback/mock2/',
+                                               query_string='code=mock_code&state=mock_state'):
+            authenticate(user=self.user, access_token=None, response=None)
+            session.data['oauth_states'] = {self.provider.short_name: {'state': 'mock_state'}}
+            session.save()
+            self.provider.auth_callback(user=user)
+            redirect_uri = web_url_for(
+                'oauth_callback',
+                service_name=self.provider.short_name,
+                _absolute=True
             )
 
-            # check base URL
-            assert_equal(
-                url.split('?')[0],
-                'https://mock2.com/auth',
-            )
+        mock_oauth2session.assert_called_with(self.provider.client_id, redirect_uri=redirect_uri)
+
+    @mock.patch('osf.models.external.OAuth2Session')
+    @mock.patch('osf.models.external.OAuth2Session.fetch_token')
+    def test_callback_oauth_no_redirect(self, mock_fetch_token, mock_oauth2session):
+        # During token exchange, OAuth2Session is initialize w/o redirect_uri for non-standard ones.
+
+        # Temporarily add the mock provider to the `ADDONS_OAUTH_NO_REDIRECT` list.
+        ADDONS_OAUTH_NO_REDIRECT.append(self.provider.short_name)
+
+        # Mock OAuth2Session and its property `fetch_token`.
+        mock_oauth2session.return_value = OAuth2Session(self.provider.client_id, None)
+        mock_fetch_token.return_value = {'access_token': 'mock_access_token'}
+
+        user = UserFactory()
+
+        with self.app.app.test_request_context(path='/oauth/callback/mock2/',
+                                               query_string='code=mock_code&state=mock_state'):
+            authenticate(user=self.user, access_token=None, response=None)
+            session.data['oauth_states'] = {self.provider.short_name: {'state': 'mock_state'}}
+            session.save()
+            self.provider.auth_callback(user=user)
+
+        mock_oauth2session.assert_called_with(self.provider.client_id, redirect_uri=None)
+
+        # Reset the `ADDONS_OAUTH_NO_REDIRECT` list.
+        ADDONS_OAUTH_NO_REDIRECT.remove(self.provider.short_name)
 
     @responses.activate
     def test_callback(self):

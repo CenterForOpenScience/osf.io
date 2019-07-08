@@ -16,6 +16,7 @@ from addons.github.serializer import GitHubSerializer
 from addons.github.utils import verify_hook_signature, MESSAGES
 
 from osf.models import NodeLog
+from osf.utils.permissions import WRITE
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
@@ -61,7 +62,7 @@ github_deauthorize_node = generic_views.deauthorize_node(
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
-@must_have_permission('write')
+@must_have_permission(WRITE)
 def github_set_config(auth, **kwargs):
     node_settings = kwargs.get('node_addon', None)
     node = kwargs.get('node', None)
@@ -147,7 +148,7 @@ def github_download_starball(node_addon, **kwargs):
     )
 
     resp = make_response(data)
-    for key, value in headers.iteritems():
+    for key, value in headers.items():
         resp.headers[key] = value
 
     return resp
@@ -186,7 +187,7 @@ def github_folder_list(node_addon, **kwargs):
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
-@must_have_permission('write')
+@must_have_permission(WRITE)
 def github_create_repo(**kwargs):
     repo_name = request.json.get('name')
     if not repo_name:

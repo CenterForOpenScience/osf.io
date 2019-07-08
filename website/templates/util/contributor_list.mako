@@ -1,5 +1,5 @@
 <%def name="render_contributor_dict(contributor)">
-  % if contributor['user_is_claimed']:
+  % if contributor['user_is_registered']:
       <a class="overflow"
               rel="tooltip"
               href="${contributor['user_profile_url']}"

@@ -20,7 +20,7 @@ var BULK_DELETE_LIMIT = 100;
  * @type {QuickDeleteViewModel}
  */
 
-var QuickDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
+var QuickDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl) {
     var self = this;
 
     self.confirmationString = $osf.getConfirmationString();
@@ -32,14 +32,15 @@ var QuickDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
     self.canDelete = ko.observable(false);
     self.nodeType = nodeType;
     self.nodeApiUrl = nodeApiUrl;
-    self.isPreprint = isPreprint;
-    self.preprintMessage = '<br><br>This ' + self.nodeType +
-      ' also contains a <strong>preprint</strong>. Deleting this ' + self.nodeType +
-      ' will also delete your <strong>preprint</strong>. This action is irreversible.';
+    self.isSupplementalProject = isSupplementalProject;
+    self.preprintMessage = 'This ' + self.nodeType +
+     ' also contains supplemental materials for a <strong>preprint</strong>.  It will' +
+     ' no longer be available to contributors or connected to the preprint.';
 
     self.message = ko.computed(function () {
-        return 'It will no longer be available to other contributors on the project.' +
-          (self.isPreprint ? self.preprintMessage : '');
+        return (self.isSupplementalProject ? self.preprintMessage :
+            'It will no longer be available to other contributors on the project.');
+
     });
     self.atMaxLength = ko.observable(false);
     self.nodesDeleted = ko.observable(true);
@@ -94,9 +95,9 @@ QuickDeleteViewModel.prototype.confirmChanges = function () {
  * @type {NodesDeleteViewModel}
  */
 
-var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
+var NodesDeleteViewModel = function (nodeType, isSupplementalProject, nodeApiUrl) {
     var self = this;
-    QuickDeleteViewModel.call(self, nodeType, isPreprint, nodeApiUrl);
+    QuickDeleteViewModel.call(self, nodeType, isSupplementalProject, nodeApiUrl);
 
     self.confirmationString = '';
     self.tbCache = null;
@@ -108,24 +109,18 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
         return self.nodeType === 'project' ? 'components' : 'subcomponents';
     });
     self.nodesState = ko.observableArray();
-    self.hasPreprints = ko.observable(false);
+    self.hasSupplementalProjects = ko.observable(false);
     self.preprintMessage = ko.computed(function() {
-        if (self.isPreprint && self.hasPreprints()) {
-            return '<br><br>This ' + self.nodeType + ' contains a <strong>preprint</strong>, and one or more of its ' +
-               self.termForChildren() + ' also contains a <strong>preprint</strong>. Deleting this ' +
-               self.nodeType + ' will delete your <strong>preprint</strong> and any <strong>preprints</strong> in its ' +
-               self.termForChildren() + '. This action is irreversible.';
+        if (self.isSupplementalProject && self.hasSupplementalProjects()) {
+            return '<br><br>This ' + self.nodeType + ' also contains supplemental materials for a <strong>preprint</strong>, and one or more of its ' +
+               self.termForChildren() + ' contains supplemental materials for a <strong>preprint</strong>.';
         }
-
-        if (self.isPreprint && !self.hasPreprints()) {
-            return '<br><br>This ' + self.nodeType + ' contains a <strong>preprint</strong>. Deleting this ' +
-                self.nodeType + ' will delete your <strong>preprint</strong>. This action is irreversible.';
+         if (self.isSupplementalProject && !self.hasSupplementalProjects()) {
+            return '<br><br>This ' + self.nodeType + ' also contains supplemental materials for a <strong>preprint</strong>.';
         }
-
-        if (!self.isPreprint && self.hasPreprints()) {
-            return '<br><br>This ' + self.nodeType + ' has one or more ' + self.termForChildren() +
-                ' that contain <strong>preprints</strong>. Deleting this ' + self.nodeType + ' will delete all <strong>preprints</strong> in its ' +
-                self.termForChildren() + '. This action is irreversible.';
+         if (!self.isSupplementalProject && self.hasSupplementalProjects()) {
+            return '<br><br>This ' + self.nodeType + ' also has one or more ' + self.termForChildren() +
+                ' that contain supplemental materials for a <strong>preprint</strong>.';
         }
     });
 
@@ -165,15 +160,16 @@ var NodesDeleteViewModel = function (nodeType, isPreprint, nodeApiUrl) {
         var confirm_message = ' The following ' + self.nodeType + ' and ' + self.termForChildren() + ' will be deleted.';
 
         return {
-            select: message + ((self.isPreprint || self.hasPreprints()) ? self.preprintMessage() : ' This action is irreversible.'),
+            select: message + ((self.isSupplementalProject || self.hasSupplementalProjects()) ? self.preprintMessage() : ' This action is irreversible.'),
             confirm: confirm_message
         }[self.page()];
     });
 
     self.warning = ko.computed(function () {
-        return 'Please note that deleting your ' + self.nodeType + ' will erase all your ' +
-          self.nodeType + ' data and this process is IRREVERSIBLE. Deleted '+ self.nodeType +  ' and ' +
-          self.termForChildren() + ' will no longer be available to other contributors on the ' + self.nodeType + '.';
+        var message = 'Please note that deleting your ' + self.nodeType + ' will erase all your ' +
+            self.nodeType + ' data and this process is IRREVERSIBLE. Deleted '+ self.nodeType +  ' and ' +
+            self.termForChildren() + ' will no longer be available to other contributors on the ' + self.nodeType;
+        return self.hasSupplementalProjects() ? message + ' and will be disconnected from your preprints.' : message + '.';
     });
 };
 
@@ -293,12 +289,11 @@ function getNodesOriginal(nodeTree) {
             title: nodeMeta.node.title,
             isAdmin: nodeMeta.node.is_admin,
             changed: false,
-            isPreprint: nodeMeta.node.is_preprint,
+            isSupplementalProject: nodeMeta.node.is_supplemental_project,
         };
-
-        !self.hasPreprints() &&
-          (nodeMeta.node.is_preprint && nodeMeta.node.id !== nodeTree.node.id) &&
-            self.hasPreprints(true);
+        !self.hasSupplementalProjects() &&
+          (nodeMeta.node.is_supplemental_project && nodeMeta.node.id !== nodeTree.node.id) &&
+            self.hasSupplementalProjects(true);
     });
     self.nodesOriginal[nodeTree.node.id].isRoot = true;
 }
@@ -357,20 +352,20 @@ function batchNodesDelete(nodes) {
         });
 }
 
-function NodesDelete(childExists, nodeType, isPreprint, nodeApiUrl) {
+function NodesDelete(childExists, nodeType, isSupplementalProject, nodeApiUrl) {
     var self = this;
 
     self.selector = '#nodesDelete';
     self.$element = $(self.selector);
 
     if (childExists) {
-        self.viewModel = new NodesDeleteViewModel(nodeType, isPreprint, nodeApiUrl);
+        self.viewModel = new NodesDeleteViewModel(nodeType, isSupplementalProject, nodeApiUrl);
         self.viewModel.fetchNodeTree().done(function (response) {
             self.viewModel.tbCache = response;
             new NodesDeleteTreebeard('nodesDeleteTreebeard', response, self.viewModel.nodesState, self.viewModel.nodesOriginal);
         });
     } else {
-        self.viewModel = new QuickDeleteViewModel(nodeType, isPreprint, nodeApiUrl);
+        self.viewModel = new QuickDeleteViewModel(nodeType, isSupplementalProject, nodeApiUrl);
     }
 
     return self.viewModel;
@@ -380,8 +375,8 @@ var NodesDeleteManager = function () {
     var self = this;
 
     self.modal = ko.observable();
-    self.delete = function (childExists, nodeType, isPreprint, nodeApiUrl) {
-        return self.modal(new NodesDelete(childExists, nodeType, isPreprint, nodeApiUrl));
+    self.delete = function (childExists, nodeType, isSupplementalProject, nodeApiUrl) {
+        return self.modal(new NodesDelete(childExists, nodeType, isSupplementalProject, nodeApiUrl));
     };
 };
 

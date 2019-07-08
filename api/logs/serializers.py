@@ -11,7 +11,7 @@ from api.base.serializers import (
     HideIfNotRegistrationPointerLog,
 )
 
-from osf.models import OSFUser, AbstractNode, PreprintService
+from osf.models import OSFUser, AbstractNode, Preprint
 from osf.utils.names import impute_names_model
 from osf.utils import permissions as osf_permissions
 
@@ -37,7 +37,7 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
     def get_node_title(self, obj):
         user = self.context['request'].user
         node_title = obj['node']['title']
-        node = AbstractNode.load(obj['node']['_id'])
+        node = AbstractNode.load(obj['node']['_id']) or Preprint.load(obj['node']['_id'])
         if not user.is_authenticated:
             if node.is_public:
                 return node_title
@@ -60,6 +60,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     bitbucket_repo = ser.CharField(read_only=True, source='bitbucket.repo')
     gitlab_user = ser.CharField(read_only=True, source='gitlab.user')
     gitlab_repo = ser.CharField(read_only=True, source='gitlab.repo')
+    group = ser.CharField(read_only=True)
     file = ser.DictField(read_only=True)
     filename = ser.CharField(read_only=True)
     kind = ser.CharField(read_only=True)
@@ -187,7 +188,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     def get_preprint_provider(self, obj):
         preprint_id = obj.get('preprint', None)
         if preprint_id:
-            preprint = PreprintService.load(preprint_id)
+            preprint = Preprint.load(preprint_id)
             if preprint:
                 provider = preprint.provider
                 return {'url': provider.external_url, 'name': provider.name}
@@ -244,6 +245,11 @@ class NodeLogSerializer(JSONAPISerializer):
     template_node = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<params.template_node.id>'},
+    )
+
+    group = RelationshipField(
+        related_view='groups:group-detail',
+        related_view_kwargs={'group_id': '<params.group>'},
     )
 
     def get_absolute_url(self, obj):

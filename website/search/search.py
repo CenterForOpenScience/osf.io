@@ -7,7 +7,7 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 if settings.SEARCH_ENGINE == 'elastic':
-    import elastic_search as search_engine
+    import website.search.elastic_search as search_engine
 else:
     search_engine = None
     logger.warn('Elastic search is not set to load')
@@ -25,12 +25,12 @@ def search(query, index=None, doc_type=None, raw=None):
     return search_engine.search(query, index=index, doc_type=doc_type, raw=raw)
 
 @requires_search
-def update_node(node, index=None, bulk=False, async=True, saved_fields=None):
+def update_node(node, index=None, bulk=False, async_update=True, saved_fields=None):
     kwargs = {
         'index': index,
         'bulk': bulk
     }
-    if async:
+    if async_update:
         node_id = node._id
         # We need the transaction to be committed before trying to run celery tasks.
         # For example, when updating a Node's privacy, is_public must be True in the
@@ -45,9 +45,43 @@ def update_node(node, index=None, bulk=False, async=True, saved_fields=None):
         return search_engine.update_node(node, **kwargs)
 
 @requires_search
-def bulk_update_nodes(serialize, nodes, index=None):
+def update_preprint(preprint, index=None, bulk=False, async_update=True, saved_fields=None):
+    kwargs = {
+        'index': index,
+        'bulk': bulk
+    }
+    if async_update:
+        preprint_id = preprint._id
+        # We need the transaction to be committed before trying to run celery tasks.
+        if settings.USE_CELERY:
+            enqueue_task(search_engine.update_preprint_async.s(preprint_id=preprint_id, **kwargs))
+        else:
+            search_engine.update_preprint_async(preprint_id=preprint_id, **kwargs)
+    else:
+        index = index or settings.ELASTIC_INDEX
+        return search_engine.update_preprint(preprint, **kwargs)
+
+@requires_search
+def update_group(group, index=None, bulk=False, async_update=True, saved_fields=None, deleted_id=None):
+    kwargs = {
+        'index': index,
+        'bulk': bulk,
+        'deleted_id': deleted_id
+    }
+    if async_update:
+        # We need the transaction to be committed before trying to run celery tasks.
+        if settings.USE_CELERY:
+            enqueue_task(search_engine.update_group_async.s(group_id=group._id, **kwargs))
+        else:
+            search_engine.update_group_async(group_id=group._id, **kwargs)
+    else:
+        index = index or settings.ELASTIC_INDEX
+        return search_engine.update_group(group, **kwargs)
+
+@requires_search
+def bulk_update_nodes(serialize, nodes, index=None, category=None):
     index = index or settings.ELASTIC_INDEX
-    search_engine.bulk_update_nodes(serialize, nodes, index=index)
+    search_engine.bulk_update_nodes(serialize, nodes, index=index, category=category)
 
 @requires_search
 def delete_node(node, index=None):
@@ -55,8 +89,6 @@ def delete_node(node, index=None):
     doc_type = node.project_or_component
     if node.is_registration:
         doc_type = 'registration'
-    elif node.is_preprint:
-        doc_type = 'preprint'
     search_engine.delete_doc(node._id, node, index=index, category=doc_type)
 
 @requires_search
@@ -68,9 +100,9 @@ def update_contributors_async(user_id):
         search_engine.update_contributors_async(user_id)
 
 @requires_search
-def update_user(user, index=None, async=True):
+def update_user(user, index=None, async_update=True):
     index = index or settings.ELASTIC_INDEX
-    if async:
+    if async_update:
         user_id = user.id
         if settings.USE_CELERY:
             enqueue_task(search_engine.update_user_async.s(user_id, index=index))

@@ -6,7 +6,7 @@ from website.util import api_v2_url
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, ValidationError
 
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 
@@ -15,7 +15,8 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
     category = models.CharField(max_length=255, null=True, blank=True)
-    active = models.BooleanField(default=True)
+    active = models.BooleanField(default=True)  # whether or not the schema accepts submissions
+    visible = models.BooleanField(default=True)  # whether or not the schema should be visible in the API and registries search
 
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = models.IntegerField()
@@ -75,7 +76,35 @@ class RegistrationSchema(AbstractSchema):
         try:
             jsonschema.validate(metadata, schema)
         except jsonschema.ValidationError as e:
-            raise ValidationValueError(e.message)
+            for page in self.schema['pages']:
+                for question in page['questions']:
+                    if e.relative_schema_path[0] == 'required':
+                        raise ValidationError(
+                            'For your registration the \'{}\' field is required'.format(question['title'])
+                        )
+                    elif e.relative_schema_path[0] == 'additionalProperties':
+                        raise ValidationError(
+                            'For your registration the \'{}\' field is extraneous and not permitted in your response.'.format(question['qid'])
+                        )
+                    elif e.relative_path[0] == question['qid']:
+                        if 'options' in question:
+                            raise ValidationError(
+                                'For your registration your response to the \'{}\' field is invalid, your response must be one of the provided options.'.format(
+                                    question['title'],
+                                ),
+                            )
+                        raise ValidationError(
+                            'For your registration your response to the \'{}\' field is invalid.'.format(question['title']),
+                        )
+            raise ValidationError(e.message)
         except jsonschema.SchemaError as e:
             raise ValidationValueError(e.message)
         return
+
+
+class FileMetadataSchema(AbstractSchema):
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/schemas/files/{}/'.format(self._id)
+        return api_v2_url(path)

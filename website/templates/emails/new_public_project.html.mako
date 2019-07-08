@@ -17,9 +17,9 @@
             !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
         </script>
         <br>
-        If you would like to learn more about how to take advantage of any of these features, visit our <a href="https://meatwiki.nii.ac.jp/confluence/display/gakuninrdmusers" target="_blank" rel="noreferrer">Guides</a> or <a href="mailto:${osf_support_email}">drop us a line</a>.
+        If you would like to learn more about how to take advantage of any of these features, visit our <a href="https://openscience.zendesk.com/hc/en-us/?utm_source=notification&utm_medium=email&utm_campaign=new_public_project" target="_blank" rel="noreferrer">Guides</a>.</a>.
         <br><br>
-        Best wishes,
+        Sincerely,
         <br>
         NII Support Team
 

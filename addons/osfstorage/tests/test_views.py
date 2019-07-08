@@ -7,6 +7,7 @@ import datetime
 
 import pytest
 import responses
+from waffle.testutils import override_flag
 from nose.tools import *  # noqa
 from dateutil.parser import parse as parse_datetime
 from website import settings
@@ -23,7 +24,9 @@ from addons.osfstorage.tests.utils import make_payload
 from framework.auth import signing
 from website.util import rubeus, api_url_for
 from framework.auth import cas
+from api.caching.utils import storage_usage_cache
 
+from osf import features
 from osf.models import Tag, QuickFilesNode
 from osf.models import files as models
 from addons.osfstorage.apps import osf_storage_root
@@ -31,13 +34,14 @@ from addons.osfstorage import utils
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 from api_tests.utils import create_test_file
+from api.caching.settings import STORAGE_USAGE_KEY
 
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
-    node_settings.get_root().append_file(path)
-    record.versions.append(version)
+    record = node_settings.get_root().append_file(path)
+    record.versions.add(version)
     record.save()
     return record
 
@@ -53,6 +57,7 @@ class HookTestCase(StorageTestCase):
             signing.sign_data(signing.default_signer, payload),
             **kwargs
         )
+
 
 @pytest.mark.django_db
 class TestGetMetadataHook(HookTestCase):
@@ -78,6 +83,21 @@ class TestGetMetadataHook(HookTestCase):
             {'fid': record.parent._id},
             {},
             self.node
+        )
+        assert_true(isinstance(res.json, dict))
+        assert_equal(res.json, record.parent.serialize(True))
+
+    def test_preprint_primary_file_metadata(self):
+        preprint = PreprintFactory()
+        record = preprint.primary_file
+        version = factories.FileVersionFactory()
+        record.versions.add(version)
+        record.save()
+        res = self.send_hook(
+            'osfstorage_get_metadata',
+            {'fid': record.parent._id},
+            {},
+            preprint
         )
         assert_true(isinstance(res.json, dict))
         assert_equal(res.json, record.parent.serialize(True))
@@ -117,6 +137,40 @@ class TestGetMetadataHook(HookTestCase):
         assert_equal(res_date_created, expected_date_created)
         assert_equal(res_data, expected_data)
 
+    def test_children_metadata_preprint(self):
+        preprint = PreprintFactory()
+        record = preprint.primary_file
+        version = factories.FileVersionFactory()
+        record.versions.add(version)
+        record.save()
+        res = self.send_hook(
+            'osfstorage_get_children',
+            {'fid': record.parent._id, 'user_id': self.user._id},
+            {},
+            preprint
+        )
+        assert_equal(len(res.json), 1)
+        res_data = res.json[0]
+        expected_data = record.serialize()
+
+        # Datetimes in response might not be exactly the same as in record.serialize
+        # because of the way Postgres serializes dates. For example,
+        # '2017-06-05T17:32:20.964950+00:00' will be
+        # serialized as '2017-06-05T17:32:20.96495+00:00' by postgres
+        # Therefore, we parse the dates then compare them
+        expected_date_modified = parse_datetime(expected_data.pop('modified'))
+        expected_date_created = parse_datetime(expected_data.pop('created'))
+
+        res_date_modified = parse_datetime(res_data.pop('modified'))
+        res_date_created = parse_datetime(res_data.pop('created'))
+
+        # latestVersionSeen should not be present in record.serialize, because it has to do
+        # with the user making the request itself, which isn't important when serializing the record
+        expected_data['latestVersionSeen'] = None
+
+        assert_equal(res_date_modified, expected_date_modified)
+        assert_equal(res_date_created, expected_date_created)
+
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
         result = osf_storage_root(self.node_settings.config, self.node_settings, auth)
@@ -137,6 +191,13 @@ class TestGetMetadataHook(HookTestCase):
 
         assert_equal(res.json['fullPath'], '/')
         assert_equal(res.json['id'], self.node_settings.get_root()._id)
+
+    def test_root_preprint_default(self):
+        preprint = PreprintFactory()
+        res = self.send_hook('osfstorage_get_metadata', {}, {}, preprint)
+
+        assert_equal(res.json['fullPath'], '/')
+        assert_equal(res.json['id'], preprint.root_folder._id)
 
     def test_metadata_not_found(self):
         res = self.send_hook(
@@ -375,6 +436,198 @@ class TestUploadFileHook(HookTestCase):
     # def test_upload_update_deleted(self):
     #     pass
 
+    def test_add_file_updates_cache(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        parent = self.node_settings.get_root()
+        key = STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        assert storage_usage_cache.get(key) is None
+
+        with override_flag(features.STORAGE_USAGE, active=True):
+            self.send_upload_hook(parent, payload=self.make_payload(name=name))
+        assert storage_usage_cache.get(key) == 123
+
+        # Don't update the cache for duplicate uploads
+        with override_flag(features.STORAGE_USAGE, active=True):
+            self.send_upload_hook(parent, payload=self.make_payload(name=name))
+        assert storage_usage_cache.get(key) == 123
+
+        # Do update the cache for new versions
+        payload = self.make_payload(name=name)
+        payload['metadata']['name'] = 'new hash'
+        with override_flag(features.STORAGE_USAGE, active=True):
+            self.send_upload_hook(parent, payload=payload)
+        assert storage_usage_cache.get(key) == 246
+
+
+@pytest.mark.django_db
+class TestUploadFileHookPreprint(TestUploadFileHook):
+
+    def setUp(self):
+        super(TestUploadFileHookPreprint, self).setUp()
+        self.preprint = PreprintFactory(creator=self.user)
+        self.name = self.preprint.primary_file.name
+        self.record = self.preprint.primary_file
+        self.auth = make_auth(self.user)
+
+    def test_upload_create(self):
+        name = 'slightly-mad'
+
+        res = self.send_upload_hook(self.preprint.root_folder, self.preprint, self.make_payload(name=name))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+
+        record = self.preprint.root_folder.find_child_by_name(name)
+        version = models.FileVersion.load(res.json['version'])
+
+        assert_equal(version.size, 123)
+        assert_equal(version.location_hash, 'file')
+
+        assert_equal(version.location, {
+            'object': 'file',
+            'uname': 'testmachine',
+            'service': 'filesystem',
+            'provider': 'filesystem',
+            storage_settings.WATERBUTLER_RESOURCE: 'blah',
+        })
+        assert_equal(version.metadata, {
+            'size': 123,
+            'name': 'file',
+            'base64': '==',
+            'provider': 'filesystem',
+            'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+        })
+
+        assert_is_not(version, None)
+        assert_equal([version], list(record.versions.all()))
+        assert_not_in(version, self.record.versions.all())
+        assert_equal(record.serialize(), res.json['data'])
+        assert_equal(res.json['data']['downloads'], self.record.get_download_count())
+
+    def test_upload_update(self):
+        delta = Delta(lambda: self.record.versions.count(), lambda value: value + 1)
+        with AssertDeltas(delta):
+            res = self.send_upload_hook(self.preprint.root_folder, self.preprint, self.make_payload())
+            self.record.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        version = models.FileVersion.load(res.json['version'])
+        assert_is_not(version, None)
+        assert_in(version, self.record.versions.all())
+
+    def test_upload_duplicate(self):
+        location = {
+            'service': 'cloud',
+            storage_settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'file',
+        }
+        version = self.record.create_version(self.user, location)
+        with AssertDeltas(Delta(lambda: self.record.versions.count())):
+            res = self.send_upload_hook(self.preprint.root_folder, self.preprint, self.make_payload())
+            self.record.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        version = models.FileVersion.load(res.json['version'])
+        assert_is_not(version, None)
+        assert_in(version, self.record.versions.all())
+
+    def test_upload_create_child(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        parent = self.preprint.root_folder.append_folder('cheesey')
+        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+        assert_equal(res.json['data']['downloads'], self.record.get_download_count())
+
+        version = models.FileVersion.load(res.json['version'])
+
+        assert_is_not(version, None)
+        assert_not_in(version, self.record.versions.all())
+
+        record = parent.find_child_by_name(name)
+        assert_in(version, record.versions.all())
+        assert_equals(record.name, name)
+        assert_equals(record.parent, parent)
+
+    def test_upload_create_child_with_same_name(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        self.preprint.root_folder.append_file(name)
+        parent = self.preprint.root_folder.append_folder('cheesey')
+        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+        assert_equal(res.json['data']['downloads'], self.record.get_download_count())
+
+        version = models.FileVersion.load(res.json['version'])
+
+        assert_is_not(version, None)
+        assert_not_in(version, self.record.versions.all())
+
+        record = parent.find_child_by_name(name)
+        assert_in(version, record.versions.all())
+        assert_equals(record.name, name)
+        assert_equals(record.parent, parent)
+
+    def test_upload_fail_to_create_version_due_to_checkout(self):
+        user = factories.AuthUserFactory()
+        name = 'Gunter\'s noise.mp3'
+        self.preprint.root_folder.append_file(name)
+        root = self.preprint.root_folder
+        file = root.find_child_by_name(name)
+        file.checkout = user
+        file.save()
+        res = self.send_upload_hook(root, self.preprint, self.make_payload(name=name), expect_errors=True)
+
+        assert_equal(res.status_code, 403)
+
+    def test_update_nested_child(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        parent = self.preprint.root_folder.append_folder('cheesey')
+        old_node = parent.append_file(name)
+
+        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
+
+        old_node.reload()
+        new_node = parent.find_child_by_name(name)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        assert_equal(res.json['data']['downloads'], new_node.get_download_count())
+
+        assert_equal(old_node, new_node)
+
+        version = models.FileVersion.load(res.json['version'])
+
+        assert_is_not(version, None)
+        assert_in(version, new_node.versions.all())
+
+        assert_in(version, new_node.versions.all())
+        assert_equals(new_node.name, name)
+        assert_equals(new_node.parent, parent)
+
+    def test_upload_weird_name(self):
+        name = 'another/dir/carpe.png'
+        parent = self.preprint.root_folder.append_folder('cheesey')
+        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name), expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal(len(parent.children), 0)
+
+    def test_upload_to_file(self):
+        name = 'carpe.png'
+        parent = self.preprint.root_folder.append_file('cheesey')
+        res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name), expect_errors=True)
+
+        assert_true(parent.is_file)
+        assert_equal(res.status_code, 400)
+
+    def test_upload_no_data(self):
+        res = self.send_upload_hook(self.preprint.root_folder, self.preprint, expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+
 
 @pytest.mark.django_db
 class TestUpdateMetadataHook(HookTestCase):
@@ -403,6 +656,80 @@ class TestUpdateMetadataHook(HookTestCase):
             {},
             payload=payload or self.payload,
             target=target or self.node,
+            method='put_json',
+            **kwargs
+        )
+
+    def test_callback(self):
+        self.version.external_modified = None
+        self.version.save()
+        self.send_metadata_hook()
+        self.version.reload()
+        #Test fields are added
+        assert_equal(self.version.metadata['size'], 123)
+        assert_equal(self.version.metadata['md5'], 'askjasdlk;jsadlkjsadf')
+        assert_equal(self.version.metadata['modified'], 'Mon, 16 Feb 2015 18:45:34 GMT')
+
+        #Test attributes are populated
+        assert_equal(self.version.size, 123)
+        assert_true(isinstance(self.version.external_modified, datetime.datetime))
+
+    def test_archived(self):
+        self.send_metadata_hook({
+            'version': self.version._id,
+            'metadata': {
+                'vault': 'osf_storage_prod',
+                'archive': 'Some really long glacier object id here'
+            }
+        })
+        self.version.reload()
+
+        assert_equal(self.version.metadata['vault'], 'osf_storage_prod')
+        assert_equal(self.version.metadata['archive'], 'Some really long glacier object id here')
+
+    def test_archived_record_not_found(self):
+        res = self.send_metadata_hook(
+            payload={
+                'metadata': {'archive': 'glacier'},
+                'version': self.version._id[::-1],
+                'size': 123,
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+            },
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 404)
+        self.version.reload()
+        assert_not_in('archive', self.version.metadata)
+
+
+@pytest.mark.django_db
+class TestUpdateMetadataHookPreprints(HookTestCase):
+
+    def setUp(self):
+        super(TestUpdateMetadataHookPreprints, self).setUp()
+        self.preprint = PreprintFactory()
+        self.record = self.preprint.primary_file
+        self.path = 'greasy/pízza.png'
+        self.version = factories.FileVersionFactory()
+        self.record.versions = [self.version]
+        self.record.save()
+        self.payload = {
+            'metadata': {
+                'size': 123,
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
+                'md5': 'askjasdlk;jsadlkjsadf',
+                'sha256': 'sahduashduahdushaushda',
+            },
+            'version': self.version._id,
+            'size': 321,  # Just to make sure the field is ignored
+        }
+
+    def send_metadata_hook(self, payload=None, target=None, **kwargs):
+        return self.send_hook(
+            'osfstorage_update_metadata',
+            {},
+            payload=payload or self.payload,
+            target=target or self.preprint,
             method='put_json',
             **kwargs
         )
@@ -555,10 +882,10 @@ class TestCreateFolder(HookTestCase):
 
 
 @pytest.mark.django_db
-class TestDeleteHook(HookTestCase):
+class DeleteHook(HookTestCase):
 
     def setUp(self):
-        super(TestDeleteHook, self).setUp()
+        super(DeleteHook, self).setUp()
         self.root_node = self.node_settings.get_root()
 
     def send_hook(self, view_name, view_kwargs, payload, target, method='get', **kwargs):
@@ -582,6 +909,10 @@ class TestDeleteHook(HookTestCase):
             method='delete',
             **kwargs
         )
+
+
+@pytest.mark.django_db
+class TestDeleteHookNode(DeleteHook):
 
     def test_delete(self):
         file = self.root_node.append_file('Newfile')
@@ -618,43 +949,6 @@ class TestDeleteHook(HookTestCase):
         res = self.delete(file_checked, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_attempt_delete_while_preprint(self):
-        file = self.root_node.append_file('Nights')
-        self.node.preprint_file = file
-        self.node.save()
-        res = self.delete(file, expect_errors=True)
-
-        assert_equal(res.status_code, 403)
-
-    def test_attempt_delete_folder_with_preprint(self):
-        folder = self.root_node.append_folder('Fishes')
-        file = folder.append_file('Fish')
-        self.node.preprint_file = file
-        self.node.save()
-        res = self.delete(folder, expect_errors=True)
-
-        assert_equal(res.status_code, 403)
-
-    def test_delete_folder_while_preprint(self):
-        folder = self.root_node.append_folder('Mr. Yuck')
-        preprint_file = self.root_node.append_file('Thyme Out')
-        self.node.preprint_file = preprint_file
-        self.node.save()
-        res = self.delete(folder)
-
-        assert_equal(res.status_code, 200)
-
-    def test_delete_folder_on_preprint_with_non_preprint_file_inside(self):
-        folder = self.root_node.append_folder('Herbal Crooners')
-        file = folder.append_file('Frank Cilantro')
-        # project having a preprint should not block other moves
-        preprint_file = self.root_node.append_file('Thyme Out')
-        self.node.preprint_file = preprint_file
-        self.node.save()
-        res = self.delete(folder)
-
-        assert_equal(res.status_code, 200)
-
     def test_attempt_delete_folder_with_rented_file(self):
         folder = self.root_node.append_folder('Hotel Events')
         user = factories.AuthUserFactory()
@@ -676,6 +970,65 @@ class TestDeleteHook(HookTestCase):
         res = self.delete(folder, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+
+@pytest.mark.django_db
+class TestDeleteHookProjectOnly(DeleteHook):
+
+    def test_delete_reduces_cache_size(self):
+        key = STORAGE_USAGE_KEY.format(target_id=self.node._id)
+
+        file = create_record_with_version('new file', self.node_settings, size=123)
+        assert self.node.storage_usage == 123
+
+        with override_flag(name=features.STORAGE_USAGE, active=True):
+            resp = self.delete(file)
+
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json, {'status': 'success'})
+
+        assert storage_usage_cache.get(key) == 0
+        assert_is(self.node.storage_usage, 0)
+
+
+@pytest.mark.django_db
+class TestDeleteHookPreprint(TestDeleteHookNode):
+
+    def setUp(self):
+        super(TestDeleteHookPreprint, self).setUp()
+        self.preprint = PreprintFactory(creator=self.user)
+        self.node = self.preprint
+        self.root_node = self.preprint.root_folder
+
+    def test_attempt_delete_while_preprint(self):
+        res = self.delete(self.preprint.primary_file, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_attempt_delete_folder_with_preprint(self):
+        folder = self.root_node.append_folder('Fishes')
+        file = folder.append_file('Fish')
+        self.preprint.primary_file = file
+        self.preprint.save()
+        res = self.delete(folder, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_delete_folder_while_preprint(self):
+        folder = self.root_node.append_folder('Mr. Yuck')
+        preprint_file = self.root_node.append_file('Thyme Out')
+        self.preprint.primary_file = preprint_file
+        self.preprint.save()
+        res = self.delete(folder)
+        assert_equal(res.status_code, 200)
+
+    def test_delete_folder_on_preprint_with_non_preprint_file_inside(self):
+        folder = self.root_node.append_folder('Herbal Crooners')
+        file = folder.append_file('Frank Cilantro')
+        # project having a preprint should not block other moves
+        primary_file = self.root_node.append_file('Thyme Out')
+        self.preprint.primary_file = primary_file
+        self.preprint.save()
+        res = self.delete(folder)
+
+        assert_equal(res.status_code, 200)
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
@@ -784,45 +1137,9 @@ class TestMoveHook(HookTestCase):
         )
         assert_equal(res.status_code, 405)
 
-
-    def test_move_preprint_file_out_of_node(self):
-        folder = self.root_node.append_folder('From Here')
-        file = folder.append_file('No I don\'t wanna go')
-        self.node.preprint_file = file
-        self.node.save()
-
-        project = ProjectFactory(creator=self.user)
-        project_settings = project.get_addon('osfstorage')
-        project_root_node = project_settings.get_root()
-
-        folder_two = project_root_node.append_folder('To There')
-        res = self.send_hook(
-            'osfstorage_move_hook',
-            {'guid': self.root_node.target._id},
-            payload={
-                'source': file._id,
-                'target': self.root_node._id,
-                'user': self.user._id,
-                'destination': {
-                    'parent': folder_two._id,
-                    'target': folder_two.target._id,
-                    'name': folder_two.name,
-                }
-            },
-            target=project,
-            method='post_json',
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, 403)
-
-
     def test_move_file_out_of_node(self):
         folder = self.root_node.append_folder('A long time ago')
         file = folder.append_file('in a galaxy')
-        # project having a preprint should not block other moves
-        preprint_file = self.root_node.append_file('far')
-        self.node.preprint_file = preprint_file
-        self.node.save()
 
         project = ProjectFactory(creator=self.user)
         project_settings = project.get_addon('osfstorage')
@@ -843,32 +1160,6 @@ class TestMoveHook(HookTestCase):
                 }
             },
             target=project,
-            method='post_json',
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, 200)
-
-
-    def test_within_node_move_while_preprint(self):
-
-        file = self.root_node.append_file('Self Control')
-        self.node.preprint_file = file
-        self.node.save()
-        folder = self.root_node.append_folder('Frank Ocean')
-        res = self.send_hook(
-            'osfstorage_move_hook',
-            {'guid': self.root_node.target._id},
-            payload={
-                'source': file._id,
-                'target': self.root_node._id,
-                'user': self.user._id,
-                'destination': {
-                    'parent': folder._id,
-                    'target': folder.target._id,
-                    'name': folder.name,
-                }
-            },
-            target=self.node,
             method='post_json',
             expect_errors=True,
         )
@@ -931,8 +1222,121 @@ class TestMoveHook(HookTestCase):
 
 
 @pytest.mark.django_db
+class TestMoveHookPreprint(TestMoveHook):
+
+    def setUp(self):
+        super(TestMoveHook, self).setUp()
+        self.node = PreprintFactory(creator=self.user)
+        self.root_node = self.node.root_folder
+
+    def test_move_primary_file_out_of_preprint(self):
+        project = ProjectFactory(creator=self.user)
+        project_settings = project.get_addon('osfstorage')
+        project_root_node = project_settings.get_root()
+
+        folder_two = project_root_node.append_folder('To There')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'guid': self.root_node.target._id},
+            payload={
+                'source': self.node.primary_file._id,
+                'target': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder_two._id,
+                    'target': folder_two.target._id,
+                    'name': folder_two.name,
+                }
+            },
+            target=project,
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 403)
+
+
+@pytest.mark.django_db
+class TestMoveHookProjectsOnly(TestMoveHook):
+
+    def test_move_hook_updates_cache_intra_target(self):
+        """
+        Moving within a single target shouldn't update the cache because net storage usage hasn't changed
+        """
+
+        file = create_record_with_version('new file', self.node_settings, size=123)
+        folder = self.root_node.append_folder('Nina Simone')
+
+        with override_flag(features.STORAGE_USAGE, active=True):
+            res = self.send_hook(
+                'osfstorage_move_hook',
+                {'guid': self.root_node.target._id},
+                payload={
+                    'source': file._id,
+                    'target': self.root_node._id,
+                    'user': self.user._id,
+                    'destination': {
+                        'parent': folder._id,
+                        'target': folder.target._id,
+                        'name': folder.name,
+                    }
+                },
+                target=self.node,
+                method='post_json',)
+
+        # Cache should stay untouched because net storage usage hasn't changed
+        key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
+        assert storage_usage_cache.get(key) is None
+
+        assert_equal(res.status_code, 200)
+
+    def test_move_hook_updates_cache_inter_target(self):
+        """
+        Moving from one target to another should update both targets
+        """
+
+        other_target = ProjectFactory()
+        other_root = other_target.get_addon('osfstorage').get_root()
+
+        file = create_record_with_version('new file', self.node_settings, size=123)
+        folder = other_root.append_folder('Nina Simone')
+
+        assert self.project.storage_usage == 123
+        assert other_target.storage_usage == 0
+
+        with override_flag(features.STORAGE_USAGE, active=True):
+            res = self.send_hook(
+                'osfstorage_move_hook',
+                {'guid': self.root_node.target._id},
+                payload={
+                    'source': file._id,
+                    'target': self.root_node._id,
+                    'user': self.user._id,
+                    'destination': {
+                        'parent': folder._id,
+                        'target': folder.target._id,
+                        'name': folder.name,
+                    }
+                },
+                target=self.node,
+                method='post_json',)
+
+        # both caches are updated
+        source_key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
+        assert storage_usage_cache.get(source_key) == 0
+
+        destination = STORAGE_USAGE_KEY.format(target_id=other_target._id)
+        assert storage_usage_cache.get(destination) == 123
+
+        assert_equal(res.status_code, 200)
+
+
+@pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
 class TestCopyHook(HookTestCase):
+
+    def setUp(self):
+        super(TestCopyHook, self).setUp()
+        self.root_node = self.node_settings.get_root()
 
     @pytest.mark.enable_implicit_clean
     def test_can_copy_file_out_of_quickfiles_node(self):
@@ -957,6 +1361,49 @@ class TestCopyHook(HookTestCase):
             method='post_json',
         )
         assert_equal(res.status_code, 201)
+
+    @pytest.mark.enable_implicit_clean
+    def test_copy_hook_updates_cache(self):
+        """
+        Whether intra or inter copying the storage usage cache only has to re-calculate the destination, because if it's
+        a inter-copy the source hasn't changed, but if it's a intra the source IS the destination.
+       """
+
+        other_target = ProjectFactory()
+        other_root = other_target.get_addon('osfstorage').get_root()
+
+        file = create_record_with_version('new file', self.node_settings, size=123)
+        folder = other_root.append_folder('Nina Simone')
+
+        assert self.project.storage_usage == 123
+        assert other_target.storage_usage == 0
+
+        with override_flag(features.STORAGE_USAGE, active=True):
+            res = self.send_hook(
+                'osfstorage_copy_hook',
+                {'guid': self.root_node.target._id},
+                payload={
+                    'source': file._id,
+                    'target': self.root_node._id,
+                    'user': self.user._id,
+                    'destination': {
+                        'parent': folder._id,
+                        'target': folder.target._id,
+                        'name': folder.name,
+                    }
+                },
+                target=self.node,
+                method='post_json',)
+
+        # both caches are updated
+        source_key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
+        assert storage_usage_cache.get(source_key) == 123
+
+        destination = STORAGE_USAGE_KEY.format(target_id=other_target._id)
+        assert storage_usage_cache.get(destination) == 123
+
+        assert_equal(res.status_code, 201)
+
 
 
 @pytest.mark.django_db
@@ -1139,4 +1586,78 @@ class TestFileViews(StorageTestCase):
 
         assert mock_get_client.called
         assert self.node.osfstorage_region.waterbutler_url in redirect.location
+        assert redirect.status_code == 302
+
+
+@pytest.mark.django_db
+class TestPreprintFileViews(StorageTestCase):
+
+    def test_file_views(self):
+        self.preprint = PreprintFactory(creator=self.user)
+        file = self.preprint.primary_file
+        guid = file.get_guid(create=True)
+        url = self.preprint.web_url_for('resolve_guid', guid=guid._id)
+        # File view for preprint file redirects to the preprint
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert res.status_code == 302
+        assert self.preprint._id in res.location
+
+    def test_download_file(self):
+        self.preprint = PreprintFactory(creator=self.user)
+        file = self.preprint.primary_file
+        folder = self.preprint.root_folder.append_folder('Folder')
+
+        base_url = '/download/{}/'
+
+        # Test download works with path
+        url = base_url.format(file._id)
+        redirect = self.app.get(url, auth=self.user.auth)
+        assert redirect.status_code == 302
+
+        # Test download works with guid
+        url = base_url.format(file.get_guid(create=True)._id)
+        redirect = self.app.get(url, auth=self.user.auth)
+        assert redirect.status_code == 302
+
+        # Test nonexistant file 404's
+        url = base_url.format('FakeGuid')
+        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert redirect.status_code == 404
+
+        # Test folder 400's
+        url = base_url.format(folder._id)
+        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert redirect.status_code == 400
+
+    @responses.activate
+    @mock.patch('framework.auth.cas.get_client')
+    def test_download_file_with_token(self, mock_get_client):
+        self.preprint = PreprintFactory(creator=self.user)
+        file = self.preprint.primary_file
+
+        cas_base_url = 'http://accounts.test.test'
+        client = cas.CasClient(cas_base_url)
+
+        mock_get_client.return_value = client
+
+        base_url = '/download/{}/'
+
+        responses.add(
+            responses.Response(
+                responses.GET,
+                '{}/oauth2/profile'.format(cas_base_url),
+                body=json.dumps({'id': '{}'.format(self.user._id)}),
+                status=200,
+            )
+        )
+
+        download_url = base_url.format(file.get_guid(create=True)._id)
+        token = ApiOAuth2PersonalTokenFactory(owner=self.user)
+        headers = {
+            'Authorization': str('Bearer {}'.format(token.token_id))
+        }
+        redirect = self.app.get(download_url, headers=headers)
+
+        assert mock_get_client.called
+        assert settings.WATERBUTLER_URL in redirect.location
         assert redirect.status_code == 302

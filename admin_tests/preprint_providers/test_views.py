@@ -59,18 +59,18 @@ class TestShareSourcePreprintProvider(AdminTestCase):
     @mock.patch.object(views.ShareSourcePreprintProvider, 'share_post')
     def test_update_share_token_and_source(self, share_resp):
         token = 'tokennethbranagh'
-        label = 'sir'
+        source_name = 'sir'
         share_resp.return_value = {
+            'data': {
+                'attributes': {
+                    'longTitle': source_name,
+                },
+            },
             'included': [{
                 'attributes': {
                     'token': token,
                 },
                 'type': 'ShareUser',
-            }, {
-                'attributes': {
-                    'label': label
-                },
-                'type': 'SourceConfig',
             }]
         }
 
@@ -78,7 +78,8 @@ class TestShareSourcePreprintProvider(AdminTestCase):
         self.preprint_provider.refresh_from_db()
 
         assert self.preprint_provider.access_token == token
-        assert self.preprint_provider.share_source == label
+        assert self.preprint_provider.share_source == source_name
+
 
 class TestPreprintProviderChangeForm(AdminTestCase):
     def setUp(self):
@@ -341,7 +342,7 @@ class TestDeletePreprintProvider(DeleteProviderMixinBase):
 
     @pytest.fixture()
     def provider_with_preprint(self, preprint, provider):
-        provider.preprint_services.add(preprint)
+        provider.preprints.add(preprint)
         provider.save()
         return provider
 

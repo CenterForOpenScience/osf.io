@@ -23,12 +23,9 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
         if request.param:
             user.groups.add(preprint.provider.get_group('moderator'))
         else:
-            preprint.node.add_contributor(
+            preprint.add_contributor(
                 user,
-                permissions=[
-                    osf_permissions.READ,
-                    osf_permissions.WRITE,
-                    osf_permissions.ADMIN])
+                permissions=osf_permissions.ADMIN)
         return user
 
     @pytest.fixture()

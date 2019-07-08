@@ -227,4 +227,4 @@ mock_responses = {
         ]
 }
 
-mock_responses = {k:dumps(v) for k,v in mock_responses.iteritems()}
+mock_responses = {k:dumps(v) for k,v in mock_responses.items()}

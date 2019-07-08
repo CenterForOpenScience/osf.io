@@ -20,7 +20,7 @@ from osf.models.admin_log_entry import (
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import PermissionsError
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 
 from osf.models import (
     BaseFileNode,
@@ -235,7 +235,7 @@ class CommentUpdateView(PermissionRequiredMixin, UpdateView):
             draft.update_metadata(data)
             draft.save()
             log_message = list()
-            for key, value in data.iteritems():
+            for key, value in data.items():
                 comments = data.get(key, {}).get('comments', [])
                 for comment in comments:
                     log_message.append('{}: {}'.format(key, comment['value']))

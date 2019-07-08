@@ -13,7 +13,7 @@
         <div class="row no-gutters">
             <div class="col-lg-8 col-md-12 cite-container">
                 % if parent_node['exists']:
-                    % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
+                    % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor_or_group_member']:
                         <h2 class="node-parent-title">
                             <a href="${parent_node['url']}">${parent_node['title']}</a> &nbsp;/
                         </h2>
@@ -35,11 +35,16 @@
             <div class="clearfix visible-md-block"></div>
             <div class="col-lg-4">
                 <div class="btn-toolbar node-control pull-right">
+                    % if node.get('storage_usage'):
+                    <div class="btn-group">
+                        <button style="pointer-events: auto;" class="btn disabled" data-toggle="tooltip" data-placement="bottom" title="This is the amount of OSF Storage used for this project.">${node['storage_usage']}</button>
+                    </div>
+                    % endif
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>
                         % if project_makepublic:
-                        % if 'admin' in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
+                        % if permissions.ADMIN in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
                         <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">
                           Make Public
                           <!-- ko if: nodeIsPendingEmbargoTermination -->
@@ -49,7 +54,7 @@
                         % endif
                         % endif
                     % else:
-                        % if 'admin' in user['permissions'] and not node['is_registration']:
+                        % if permissions.ADMIN in user['permissions'] and not node['is_registration']:
                             <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
@@ -74,7 +79,7 @@
                                     <div class="arrow-up m-b-xs"></div>
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
-                                        <span class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
                                            data-dismiss="modal"
                                            onclick="NodeActions.forkNode();"
                                         >
@@ -83,7 +88,7 @@
                                     </li>
                                     %endif
                                     <li class="p-h-md">
-                                        <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
                                            onclick="NodeActions.useAsTemplate();"
                                         >
                                             ${ language.TEMPLATE_ACTION | n }
@@ -113,7 +118,7 @@
                                         Remove from bookmarks
                                     </a>
                                 </li>
-                                % if 'admin' in user['permissions'] and not node['is_registration']:  ## Create view-only link
+                                % if permissions.ADMIN in user['permissions'] and not node['is_registration']:  ## Create view-only link
                                   % if not use_viewonlylinks:  ## Create view-only link
                                     <div style="display: none;">
                                   % endif
@@ -133,7 +138,7 @@
                                         </a>
                                     </li>
                                 %endif
-                                % if node['access_requests_enabled'] and not user['is_contributor'] and not node['is_registration']:
+                                % if node['access_requests_enabled'] and not user['is_contributor_or_group_member'] and not node['is_registration']:
                                     <li data-bind="css: {'keep-open': user.username}">
                                         <a role="button" href="#" data-bind="
                                                         visible: user.username,
@@ -154,7 +159,7 @@
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
                 <div id="contributorsList" style="height: 25px; overflow: hidden">
-                % if user['is_contributor']:
+                % if user['is_contributor_or_group_member']:
                     <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
                 % else:
                     Contributors:
@@ -168,8 +173,22 @@
                     </ol>
                 % endif
                 </div>
+                % if node['groups']:
+                    <div>
+                        Groups:
+                        %for i, group_name in enumerate(node['groups']):
+                            <ol>
+                                % if i == len(node['groups']) - 1:
+                                    ${group_name}
+                                % else:
+                                    ${group_name},
+                                % endif
+                            </ol>
+                        %endfor
+                    </div>
+                % endif
                 % if enable_institutions and not node['anonymous']:
-                    % if ('admin' in user['permissions'] and not node['is_registration']) and (len(node['institutions']) != 0 or len(user['institutions']) != 0):
+                    % if (permissions.ADMIN in user['permissions'] and not node['is_registration']) and (len(node['institutions']) != 0 or len(user['institutions']) != 0):
                         <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institutions:</a>
                         % if node['institutions'] != []:
                             % for inst in node['institutions']:
@@ -183,7 +202,7 @@
                             <span> None </span>
                         % endif
                     % endif
-                    % if not ('admin' in user['permissions'] and not node['is_registration']) and node['institutions'] != []:
+                    % if not (permissions.ADMIN in user['permissions'] and not node['is_registration']) and node['institutions'] != []:
                         Affiliated institutions:
                         % for inst in node['institutions']:
                             % if inst != node['institutions'][-1]:
@@ -221,7 +240,6 @@
                       <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
-                % if waffle.switch_is_active('ezid'):
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
                     <p>
@@ -236,13 +254,12 @@
                   </p>
                   <!-- /ko -->
                 </span>
-                % endif
                 <p>
                     Category: <span data-bind="css: icon"></span>
                     <span id="nodeCategoryEditable">${node['category']}</span>
                 </p>
 
-                % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
+                % if (node['description']) or (not node['description'] and permissions.WRITE in user['permissions'] and not node['is_registration']):
                     <p>
                     <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">
                         ${node['description']}</span>
@@ -254,7 +271,7 @@
                     % else:
                         <div class="col-xs-6">
                     % endif
-                            % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
+                            % if (permissions.ADMIN in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
                                 <p>
                                   <license-picker params="saveUrl: '${node['update_url']}',
                                                           saveMethod: 'PUT',
@@ -311,9 +328,10 @@
             <div style="margin-top: 5px;">
                 Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
                 <img style="margin: 0px 0px 2px 5px;" height="16", width="16" src="${collection['logo']}">
-            % if any([collection['type'], collection['status']]):
-              &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
-            % endif
+                % if permissions.ADMIN in user['permissions']:
+                  <a href="${collection['url']}${node['id']}/edit"><i class="fa fa-edit" aria-label="Edit in Collection"></i></a>
+                % endif
+            &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
             </div>
             <div id="metadata${i}" class="collection-details collapse">
                 <ul style="margin-left: 30px; padding: 0; margin-bottom: 0;" class="list-unstyled">
@@ -324,6 +342,18 @@
 
                     % if collection['status']:
                       <li>Status:&nbsp;&nbsp;<b>${collection['status']}</b></li>
+                    % endif
+
+                    % if collection['volume']:
+                      <li>Volume:&nbsp;&nbsp;<b>${collection['volume']}</b></li>
+                    % endif
+
+                    % if collection['issue']:
+                      <li>Issue:&nbsp;&nbsp;<b>${collection['issue']}</b></li>
+                    % endif
+
+                    % if collection['program_area']:
+                      <li>Program Area:&nbsp;&nbsp;<b>${collection['program_area']}</b></li>
                     % endif
 
                     % if collection['subjects']:
@@ -348,50 +378,52 @@
     </div>
 % endif
 
-% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']) and node['preprint_state'] != 'withdrawn':
+% for i, preprint in enumerate(node['visible_preprints']):
 <div class="row">
-    <div class="col-xs-12">
-        <div class="pp-notice m-b-md p-md clearfix">
-            % if node['has_moderated_preprint']:
-                This project represents ${'an ' if node['preprint_state'] == 'accepted' else 'a '}
-                ${node['preprint_state']} ${node['preprint_word']} submitted to ${node['preprint_provider']['name']}
-                <% icon_tooltip = ''%>
-                % if node['preprint_state'] == 'pending':
-                    % if node['preprint_provider']['workflow'] == 'post-moderation':
-                        <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
-                        ' removal by a moderator.'.format(preprint_word=node['preprint_word'])%>
-                    % else:
-                        <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
-                        'by a moderator.'.format(preprint_word=node['preprint_word'])%>
-                    % endif
-                % elif node['preprint_state'] == 'accepted':
-                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=node['preprint_word'])%>
-                % else:
-                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
-                % endif
-                <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>.
-            % else:
-                This project represents a ${node['preprint_word']}.
-            % endif
-            <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with ${node['preprint_word']} files.
-            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View ${node['preprint_word']}</a>
-            % if user['is_admin']:
-                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit ${node['preprint_word']}</a>
-            % endif
-        </div>
-    </div>
+   <div class="col-xs-12 col-md-6" style="margin-bottom:5px;">
+       <div style="margin-top: 5px; margin-bottom: 5px;">
+           Has supplemental materials for <a href="${preprint['url']}" target="_blank">${preprint['title']}</a>
+           on ${preprint['provider']['name']}
+         % if user['is_admin_parent_contributor_or_group_member'] or user['is_contributor_or_group_member']:
+            &nbsp;<span id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}"></span>
+        % endif
+       </div>
+       % if user['is_admin_parent_contributor_or_group_member'] or user['is_contributor_or_group_member']:
+           <div id="metadatapreprint${i}" class="collection-details collapse">
+               <ul style="margin-left: 30px; padding: 0; margin-bottom: 5;" class="list-unstyled">
+                    <li>
+                        Status:&nbsp;&nbsp;
+                            <b>
+                                % if preprint['is_withdrawn']:
+                                    Withdrawn
+                                % else:
+                                    ${preprint['state'].capitalize()}
+                                % endif
+                            </b>
+                        % if preprint['is_moderated'] and not preprint['is_withdrawn']:
+                            <% icon_tooltip = ''%>
+                            % if preprint['state'] == 'pending':
+                                % if preprint['provider']['workflow'] == 'post-moderation':
+                                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
+                                    ' removal by a moderator.'.format(preprint_word=preprint['word'])%>
+                                % else:
+                                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
+                                    'by a moderator.'.format(preprint_word=preprint['word'])%>
+                                % endif
+                            % elif preprint['state'] == 'accepted':
+                                <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>
+                            % else:
+                                <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>
+                            % endif
+                            <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
+                        % endif
+                    </li>
+               </ul>
+           </div>
+         % endif
+   </div>
 </div>
-% endif
-
-% if node['is_preprint_orphan'] and user['is_admin']:
-<div class="row">
-    <div class="col-xs-12">
-        <div class="pp-notice pp-warning m-b-md p-md clearfix">
-            This project used to represent a preprint, but the primary preprint file has been moved or deleted. <a href="/preprints/submit/" class="btn btn-default btn-sm m-r-xs pull-right">Create a new preprint</a>
-        </div>
-    </div>
-</div>
-% endif
+% endfor
 
 
 <div class="row">
@@ -410,7 +442,7 @@
                    <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
-            % if not node['is_registration'] and not node['anonymous'] and 'write' in user['permissions']:
+            % if not node['is_registration'] and not node['anonymous'] and permissions.WRITE in user['permissions']:
                 <div class="row">
                     <div class="col-sm-12 m-t-sm m-l-md">
                         <span class="f-w-xl">Click on a storage provider or drag and drop to upload</span>
@@ -472,7 +504,7 @@
                         </div>
                      </div>
                      <div data-bind="visible: page() == 'standard'" style="display: none;">
-                         % if not node['anonymous'] and 'admin' in user['permissions']:
+                         % if not node['anonymous'] and permissions.ADMIN in user['permissions']:
                              <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Customize</a>
                          % endif
                          <div class="m-b-md">
@@ -492,7 +524,7 @@
                          <pre id="citationText" class="formatted-citation"></pre>
                      </div>
                      <div data-bind="visible: page() == 'custom'" style="display: none;">
-                         % if not node['anonymous'] and 'admin' in user['permissions']:
+                         % if not node['anonymous'] and permissions.ADMIN in user['permissions']:
                             <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Edit</a>
                          % endif
 
@@ -538,7 +570,7 @@
         % endif
 
 
-        %if node['tags'] or 'write' in user['permissions']:
+        %if node['tags'] or permissions.WRITE in user['permissions']:
          <div class="tags panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Tags </h3>
@@ -595,12 +627,12 @@
 </div>
 
 <%def name="children()">
-% if ('write' in user['permissions'] and not node['is_registration']) or node['children']:
+% if (permissions.WRITE in user['permissions'] and not node['is_registration']) or node['children']:
     <div class="components panel panel-default">
         <div class="panel-heading clearfix">
             <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Components </h3>
             <div class="pull-right">
-                % if 'write' in user['permissions'] and not node['is_registration']:
+                % if permissions.WRITE in user['permissions'] and not node['is_registration']:
                     <span id="newComponent">
                         <button class="btn btn-sm btn-default" disabled="true">Add Component</button>
                     </span>

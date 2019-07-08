@@ -14,9 +14,9 @@
             <li>You can connect to third-party services like Dropbox or Google Drive</li>
         </ul>
         To get started now, visit your dashboard and click on “Create a project.”
-        If you have specific questions, or would like to set up a free training session for you and your colleagues, please do not hesitate to <a href="mailto:${osf_support_email}">get in touch with us!</a>
+        Need help getting started with a project? Check out the <a href="https://openscience.zendesk.com/hc/en-us?utm_source=notification&utm_medium=email&utm_campaign=no_login">GakuNin RDM Help Guides</a> or one of our recent <a href="https://www.youtube.com/channel/UCGPlVf8FsQ23BehDLFrQa-g">GakuNin RDM 101 webinars</a>.
         <br><br>
-        Best,
+        Sincerely,
         <br>
         NII Support Team
 

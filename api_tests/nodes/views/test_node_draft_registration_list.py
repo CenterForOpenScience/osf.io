@@ -7,8 +7,10 @@ from osf.models import RegistrationSchema
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
+    RegistrationProviderFactory,
     AuthUserFactory,
     CollectionFactory,
+    OSFGroupFactory,
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
@@ -36,15 +38,24 @@ class DraftRegistrationTestCase:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def project_public(self, user, user_write_contrib, user_read_contrib):
+    def group_mem(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def group(self, group_mem):
+        return OSFGroupFactory(creator=group_mem)
+
+    @pytest.fixture()
+    def project_public(self, user, user_write_contrib, user_read_contrib, group, group_mem):
         project_public = ProjectFactory(is_public=True, creator=user)
         project_public.add_contributor(
             user_write_contrib,
-            permissions=[permissions.WRITE])
+            permissions=permissions.WRITE)
         project_public.add_contributor(
             user_read_contrib,
-            permissions=[permissions.READ])
+            permissions=permissions.READ)
         project_public.save()
+        project_public.add_osf_group(group, permissions.ADMIN)
         return project_public
 
     @pytest.fixture()
@@ -54,12 +65,15 @@ class DraftRegistrationTestCase:
             json_schema = create_jsonschema_from_metaschema(
                 draft.registration_schema.schema)
 
-            for key, value in json_schema['properties'].iteritems():
+            for key, value in json_schema['properties'].items():
                 response = 'Test response'
-                if value['properties']['value'].get('enum'):
-                    response = value['properties']['value']['enum'][0]
-
-                if value['properties']['value'].get('properties'):
+                items = value['properties']['value'].get('items')
+                enum = value['properties']['value'].get('enum')
+                if items:  # multiselect
+                    response = [items['enum'][0]]
+                elif enum:  # singleselect
+                    response = enum[0]
+                elif value['properties']['value'].get('properties'):
                     response = {'question': {'value': 'Test Response'}}
 
                 test_metadata[key] = {'value': response}
@@ -90,7 +104,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
             API_BASE, project_public._id)
 
     def test_admin_can_view_draft_list(
-            self, app, user, draft_registration,
+            self, app, user, draft_registration, project_public,
             schema, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
@@ -101,10 +115,20 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
+    #   test_osf_group_with_admin_permissions
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, permissions.ADMIN)
+        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 1
+        assert schema._id in data[0]['relationships']['registration_schema']['links']['related']['href']
+
     def test_cannot_view_draft_list(
-            self, app, user_write_contrib,
+            self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
-            url_draft_registrations):
+            url_draft_registrations, group, group_mem):
 
         #   test_read_only_contributor_cannot_view_draft_list
         res = app.get(
@@ -130,6 +154,12 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     #   test_unauthenticated_user_cannot_view_draft_list
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
+
+    #   test_osf_group_with_read_permissions
+        project_public.remove_osf_group(group)
+        project_public.add_osf_group(group, permissions.READ)
+        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_deleted_draft_registration_does_not_show_up_in_draft_list(
             self, app, user, draft_registration, url_draft_registrations):
@@ -173,13 +203,17 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
+    def provider(self):
+        return RegistrationProviderFactory(_id='osf')
+
+    @pytest.fixture()
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
             schema_version=LATEST_SCHEMA_VERSION)
 
     @pytest.fixture()
-    def payload(self, metaschema_open_ended):
+    def payload(self, metaschema_open_ended, provider):
         return {
             'data': {
                 'type': 'draft_registrations',
@@ -190,7 +224,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': metaschema_open_ended._id
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
@@ -241,8 +280,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def test_cannot_create_draft(
             self, app, user_write_contrib,
             user_read_contrib, user_non_contrib,
-            project_public, payload,
-            url_draft_registrations):
+            project_public, payload, group,
+            url_draft_registrations, group_mem):
 
         #   test_write_only_contributor_cannot_create_draft
         assert user_write_contrib in project_public.contributors.all()
@@ -276,8 +315,26 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
+    #   test_group_admin_cannot_create_draft
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_group_write_contrib_cannot_create_draft
+        project_public.remove_osf_group(group)
+        project_public.add_osf_group(group, permissions.WRITE)
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
     def test_registration_supplement_errors(
-            self, app, user, url_draft_registrations):
+            self, app, user, provider, url_draft_registrations):
 
         #   test_registration_supplement_not_found
         draft_data = {
@@ -290,7 +347,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': 'Invalid schema'
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
@@ -314,32 +376,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': schema._id
                         }
-
-                    }
-                }
-            }
-        }
-        res = app.post_json_api(
-            url_draft_registrations,
-            draft_data, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
-
-    #   test_registration_supplement_must_be_most_recent_metaschema
-        schema = RegistrationSchema.objects.get(
-            name='Open-Ended Registration', schema_version=1)
-        draft_data = {
-            'data': {
-                'type': 'draft_registrations',
-                'attributes': {},
-                'relationships': {
-                    'registration_schema': {
+                    },
+                    'provider': {
                         'data': {
-                            'type': 'registration_schema',
-                            'id': schema._id
+                            'type': 'registration-providers',
+                            'id': provider._id,
                         }
-
                     }
                 }
             }
@@ -386,7 +428,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     def test_required_metaschema_questions_not_required_on_post(
-            self, app, user, project_public, prereg_metadata):
+            self, app, user, provider, project_public, prereg_metadata):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
@@ -417,7 +459,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                             'type': 'registration_schema',
                             'id': prereg_schema._id
                         }
-
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
                     }
                 }
             }
@@ -478,7 +525,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'No, data collection has not begun\' is not of type \'object\''
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' field' \
+                                   ' is invalid, your response must be one of the provided options.'
 
     def test_registration_metadata_question_keys_must_be_value(
             self, app, user, payload, url_draft_registrations):
@@ -497,7 +545,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'incorrect_key\' was unexpected)'
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' ' \
+                                   'field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_metadata_must_be_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -517,7 +566,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'q11\' was unexpected)'
+        assert errors['detail'] == 'For your registration the \'datacompletion\' field is extraneous and not' \
+                                   ' permitted in your response.'
 
     def test_multiple_choice_question_value_must_match_value_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -536,7 +586,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'Nope, data collection has not begun\' is not one of [u\'No, data collection has not begun\', u\'Yes, data collection is underway or complete\']'
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
+                                   ' field is invalid, your response must be one of the provided options.'
 
     def test_reviewer_cannot_create_draft_registration(
             self, app, user_read_contrib, project_public,

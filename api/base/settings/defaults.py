@@ -90,6 +90,7 @@ INSTALLED_APPS = (
     'guardian',
     'storages',
     'waffle',
+    'elasticsearch_metrics',
 
     # OSF
     'osf',
@@ -164,6 +165,10 @@ REST_FRAMEWORK = {
         '2.8',
         '2.9',
         '2.10',
+        '2.11',
+        '2.12',
+        '2.13',
+        '2.14',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -260,6 +265,7 @@ elif osf_settings.DEV_MODE or osf_settings.DEBUG_MODE:
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
 API_BASE = 'v2/'
+API_PRIVATE_BASE = '_/'
 STATIC_URL = '/static/'
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
@@ -297,6 +303,33 @@ TS_REQUESTS_PER_MIN = 30
 
 # salt used for generating hashids
 HASHIDS_SALT = 'pinkhimalayan'
+
+# django-elasticsearch-metrics
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': os.environ.get('ELASTIC6_URI', '127.0.0.1:9201'),
+        'retry_on_timeout': True,
+    },
+}
+# Store yearly indices for time-series metrics
+ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
+
+WAFFLE_CACHE_NAME = 'waffle_cache'
+STORAGE_USAGE_CACHE_NAME = 'storage_usage'
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+    STORAGE_USAGE_CACHE_NAME: {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'osf_cache_table',
+    },
+    WAFFLE_CACHE_NAME: {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+}
 
 ### NII extensions
 LOGIN_BY_EPPN = osf_settings.to_bool('LOGIN_BY_EPPN', False)

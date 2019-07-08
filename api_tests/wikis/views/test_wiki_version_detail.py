@@ -1,21 +1,17 @@
 import mock
-import pytest
 import furl
 import datetime
 import pytz
 from urlparse import urlparse
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
-
-from osf.models import Guid
 
 from addons.wiki.models import WikiVersion, WikiPage
 
 from tests.base import ApiWikiTestCase
 from osf_tests.factories import (ProjectFactory, RegistrationFactory,
-                                 PrivateLinkFactory, CommentFactory)
-from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+                                 PrivateLinkFactory)
 
 
 class TestWikiVersionDetailView(ApiWikiTestCase):

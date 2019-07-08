@@ -47,9 +47,8 @@ class TestReviewActionCreateRoot(object):
             provider=provider,
             is_published=False
         )
-        preprint.node.add_contributor(
-            node_admin, permissions=[
-                osf_permissions.ADMIN]
+        preprint.add_contributor(
+            node_admin, permissions=osf_permissions.ADMIN
         )
         return preprint
 
@@ -248,7 +247,7 @@ class TestReviewActionCreateRoot(object):
                 ('rejected', 'submit', 'pending'),
             ],
         }
-        for workflow, transitions in valid_transitions.items():
+        for workflow, transitions in list(valid_transitions.items()):
             provider.reviews_workflow = workflow
             provider.save()
             for from_state, trigger, to_state in transitions:

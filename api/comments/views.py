@@ -262,4 +262,4 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         try:
             comment.retract_report(user, save=True)
         except ValueError as error:
-            raise ValidationError(error.message)
+            raise ValidationError(str(error))

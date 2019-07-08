@@ -1,5 +1,6 @@
 import os
 from addons.base.apps import BaseAddonAppConfig, generic_root_folder
+from addons.owncloud.settings import MAX_UPLOAD_SIZE
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
@@ -21,6 +22,7 @@ class OwnCloudAddonAppConfig(BaseAddonAppConfig):
     has_hgrid_files = True
     node_settings_template = os.path.join(TEMPLATE_PATH, 'owncloud_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'owncloud_user_settings.mako')
+    max_file_size = MAX_UPLOAD_SIZE
 
     @property
     def get_hgrid_data(self):

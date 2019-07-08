@@ -186,10 +186,10 @@ class TestRemoveContributor(AdminTestCase):
         self.node.save()
         self.view = NodeRemoveContributorView
         self.request = RequestFactory().post('/fake_path')
-        self.url = reverse('nodes:remove_user', kwargs={'node_id': self.node._id, 'user_id': self.user._id})
+        self.url = reverse('nodes:remove_user', kwargs={'guid': self.node._id, 'user_id': self.user._id})
 
     def test_get_object(self):
-        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, guid=self.node._id,
                               user_id=self.user._id)
         node, user = view.get_object()
         nt.assert_is_instance(node, Node)
@@ -199,14 +199,14 @@ class TestRemoveContributor(AdminTestCase):
     def test_remove_contributor(self, mock_remove_contributor):
         user_id = self.user_2._id
         node_id = self.node._id
-        view = setup_log_view(self.view(), self.request, node_id=node_id,
+        view = setup_log_view(self.view(), self.request, guid=node_id,
                               user_id=user_id)
         view.delete(self.request)
         mock_remove_contributor.assert_called_with(self.user_2, None, log=False)
 
     def test_integration_remove_contributor(self):
         nt.assert_in(self.user_2, self.node.contributors)
-        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, guid=self.node._id,
                               user_id=self.user_2._id)
         count = AdminLogEntry.objects.count()
         view.delete(self.request)
@@ -218,7 +218,7 @@ class TestRemoveContributor(AdminTestCase):
             len(list(self.node.get_admin_contributors(self.node.contributors))),
             1
         )
-        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, guid=self.node._id,
                               user_id=self.user._id)
         count = AdminLogEntry.objects.count()
         view.delete(self.request)
@@ -231,7 +231,7 @@ class TestRemoveContributor(AdminTestCase):
         nt.assert_equal(AdminLogEntry.objects.count(), count)
 
     def test_no_log(self):
-        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, guid=self.node._id,
                               user_id=self.user_2._id)
         view.delete(self.request)
         nt.assert_not_equal(self.node.logs.latest().action, NodeLog.CONTRIB_REMOVED)
@@ -242,7 +242,7 @@ class TestRemoveContributor(AdminTestCase):
         request.user = self.user
 
         with nt.assert_raises(PermissionDenied):
-            self.view.as_view()(request, node_id=guid, user_id=self.user)
+            self.view.as_view()(request, guid=guid, user_id=self.user)
 
     def test_correct_view_permissions(self):
         change_permission = Permission.objects.get(codename='change_node')
@@ -254,7 +254,7 @@ class TestRemoveContributor(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        response = self.view.as_view()(request, node_id=self.node._id, user_id=self.user._id)
+        response = self.view.as_view()(request, guid=self.node._id, user_id=self.user._id)
         nt.assert_equal(response.status_code, 200)
 
 
