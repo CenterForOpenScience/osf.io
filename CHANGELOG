@@ -2,6 +2,17 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.17.0 (2019-07-08)
+===================
+- Admin app: paginating nodes and preprints, and adding bulk ham functionality for nodes
+- Testmon - only run tests for code that's changed - except on master/develop merges
+- Fix ampersand displays
+- Prevent clickmashing on Add Contributor modal
+- APIv2: Prevent adding unregistered contributors with blacklisted emails
+- APIv2: Allow OAuth application client secret reset by PATCHing client_secret to null
+- APIv2: Add better parser support for handling application/json content type
+- Fix display of Anonymous VOL citation-related logs
+
 19.16.0 (2019-07-03)
 ===================
 - Fangorn rate limiting - spaces out requests when moving large groups of files
