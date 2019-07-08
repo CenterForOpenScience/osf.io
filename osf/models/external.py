@@ -85,6 +85,63 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
             ('provider', 'provider_id',)
         ]
 
+class ExternalAccountTemporary(base.ObjectIDMixin, base.BaseModel):
+    """An account on an external service.
+
+    Note that this object is not and should not be aware of what other objects
+    are associated with it. This is by design, and this object should be kept as
+    thin as possible, containing only those fields that must be stored in the
+    database.
+
+    The ``provider`` field is a de facto foreign key to an ``ExternalProvider``
+    object, as providers are not stored in the database.
+    """
+
+    # The OAuth credentials. One or both of these fields should be populated.
+    # For OAuth1, this is usually the "oauth_token"
+    # For OAuth2, this is usually the "access_token"
+    oauth_key = EncryptedTextField(blank=True, null=True)
+
+    # For OAuth1, this is usually the "oauth_token_secret"
+    # For OAuth2, this is not used
+    oauth_secret = EncryptedTextField(blank=True, null=True)
+
+    # Used for OAuth2 only
+    refresh_token = EncryptedTextField(blank=True, null=True)
+    date_last_refreshed = NonNaiveDateTimeField(blank=True, null=True)
+    expires_at = NonNaiveDateTimeField(blank=True, null=True)
+    scopes = ArrayField(models.CharField(max_length=128), default=list, blank=True)
+
+    # The `name` of the service
+    # This lets us query for only accounts on a particular provider
+    # TODO We should make provider an actual FK someday.
+    provider = models.CharField(max_length=50, blank=False, null=False)
+    # The proper 'name' of the service
+    # Needed for account serialization
+    provider_name = models.CharField(max_length=255, blank=False, null=False)
+
+    # The unique, persistent ID on the remote service.
+    provider_id = models.CharField(max_length=255, blank=False, null=False)
+
+    # The user's name on the external service
+    display_name = EncryptedTextField(blank=True, null=True)
+    # A link to the user's profile on the external service
+    profile_url = EncryptedTextField(blank=True, null=True)
+
+    def __repr__(self):
+        return '<ExternalAccount: {}/{}>'.format(self.provider,
+                                                 self.provider_id)
+
+    def _natural_key(self):
+        if self.pk:
+            return self.pk
+        return hash(str(self.provider_id) + str(self.provider))
+
+    class Meta:
+        unique_together = [
+            ('provider', 'provider_id',)
+        ]
+
 
 class ExternalProviderMeta(abc.ABCMeta):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""
