@@ -126,3 +126,10 @@ def test_connection(request):
     return JsonResponse({
         'message': 'Invalid provider.'
     }, status=httplib.BAD_REQUEST)
+
+def save_credentials(request):
+    data = json.loads(request.body)
+
+    return JsonResponse({
+        'message': 'Route is working, good job!'
+    })
