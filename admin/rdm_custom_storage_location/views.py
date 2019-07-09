@@ -150,3 +150,18 @@ def save_credentials(request):
     return JsonResponse({
         'message': 'Invalid provider.'
     }, status=httplib.BAD_REQUEST)
+
+def fetch_temporary_token(request):
+    data = json.loads(request.body)
+    provider_short_name = data.get('provider_short_name', None)
+    if not provider_short_name:
+        response = {
+            'message': 'Provider is missing.'
+        }
+        return JsonResponse(response, status=httplib.BAD_REQUEST)
+    institution_id = request.user.affiliated_institutions.first().id
+    data = utils.get_oauth_info_notification(institution_id)
+    data['fullname'] = request.user.fullname
+    return JsonResponse({
+        'response_data': data
+    }, status=httplib.OK)

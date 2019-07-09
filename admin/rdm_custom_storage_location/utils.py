@@ -14,6 +14,7 @@ from addons.s3 import utils as s3_utils
 from addons.swift import utils as swift_utils
 from addons.swift.provider import SwiftProvider
 from website import settings as osf_settings
+from osf.models.external import ExternalAccountTemporary
 
 providers = None
 enabled_providers_list = [
@@ -186,3 +187,16 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
     return JsonResponse({
         'message': ('Saved credentials successfully!!')
     }, status=httplib.OK)
+
+def get_external_temporary_account(institution_id):
+    return ExternalAccountTemporary.objects.get(_id=institution_id)
+
+def get_oauth_info_notification(institution_id):
+    temp_external_accoutn = get_external_temporary_account(institution_id)
+    return {
+        'display_name': temp_external_accoutn.display_name,
+        'oauth_key': temp_external_accoutn.oauth_key,
+        'provider': temp_external_accoutn.provider,
+        'provider_id': temp_external_accoutn.provider_id,
+        'provider_name': temp_external_accoutn.provider_name,
+    }

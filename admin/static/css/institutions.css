@@ -68,3 +68,11 @@ form p label {
 .googledrive-modal-message {
     font-weight: 600;
 }
+
+.truncated {
+    display: inline-flex;
+    max-width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
