@@ -169,9 +169,24 @@ var afterRequest = {
                 $('#' + id + '_message').removeClass('text-success ');
             }
         }
-    }
+    },
+    'fetch_temporary_token': {
+        'success': function (id, data) {
+            var response_data = data.response_data
+            authPermissionSucceed(id, response_data.fullname, response_data.oauth_key);
+        },
+        'fail': function (id, message) {
+            $('#' + id + '_message').html(message);
+            $('#' + id + '_save').attr('disabled', true);
+            $('#' + id + '_save').removeClass('btn-success').addClass('btn-default ');
+            $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success ');
+            if (!$('#' + id + '_message').hasClass('text-danger')) {
+                $('#' + id + '_message').addClass('text-danger ');
+                $('#' + id + '_message').removeClass('text-success ');
+            }
+        }
+    },
 };
-
 
 function getParameters(params) {
     var providerClass = params.provider_short_name + '-params';
@@ -188,12 +203,32 @@ $('.auth-permission-button').click(function(e) {
     $(this).click(false)
     $(this).addClass('disabled')
     var providerShortName = this.id.replace('_auth_hyperlink', '');
-    var authorizedBy = 'Taro';
-    var currentToken = '3fR4ELZK2BfaZom8zRTP1pEc64nLFeNY';
-
-    authPermissionSucceed(providerShortName, authorizedBy, currentToken);
-    authSaveButton(providerShortName);
+    oauthOpener(this.href, providerShortName)
+    e.preventDefault();
 });
+
+function get_token(providerShortName, route) {
+        var params = {
+            'provider_short_name': providerShortName
+        };
+        ajaxRequest(params, providerShortName, route);
+}
+
+function oauthOpener(url,providerShortName){
+    var win = window.open(
+        url,
+        'OAuth');
+    var params = {
+        'provider_short_name': providerShortName
+    };
+    var route = 'fetch_temporary_token';
+    var timer = setInterval(function() {
+        if (win.closed) {
+            clearInterval(timer);
+            get_token(providerShortName, route)
+        }
+    }, 1000, [providerShortName, route]);
+}
 
 function authPermissionSucceed(providerShortName, authorizedBy, currentToken){
     var providerClass = providerShortName + '-auth-callback';
@@ -201,6 +236,7 @@ function authPermissionSucceed(providerShortName, authorizedBy, currentToken){
     allFeedbackFields.removeClass('hidden');
     $('#' + providerShortName + '_authorized_by').text(authorizedBy);
     $('#' + providerShortName + '_current_token').text(currentToken);
+    authSaveButton(providerShortName);
 }
 
 function authPermissionFailed(providerShortName){
@@ -209,6 +245,7 @@ function authPermissionFailed(providerShortName){
     allFeedbackFields.addClass('hidden');
     $('#' + providerShortName + '_authorized_by').text('');
     $('#' + providerShortName + '_current_token').text('');
+    authSaveButton(providerShortName);
 }
 
 function authSaveButton(providerShortName) {
