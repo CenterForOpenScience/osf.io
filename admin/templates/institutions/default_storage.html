@@ -42,18 +42,12 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-8"></div>
-            <div class="col-md-1">
+            <div class="col-md-10">
                 <div class="text-right">
-                    <a href="{% url 'oauth:connect' 'googledrive' institution_pk   %}" class="btn btn-primary" role="button" target="_blank">Google OAuth</a>
-                </div>
-            </div>
-            <div class="col-md-1">
-                <div class="text-left">
+                    <a href="{% url 'oauth:connect' 'googledrive' institution_pk %}" class="btn btn-primary" role="button" target="_blank">Google OAuth</a>
                     <input type="submit" value="Save" class="btn btn-primary" name="_save" />
                 </div>
             </div>
-
         </div>
 
     </form>
