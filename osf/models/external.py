@@ -276,7 +276,7 @@ class ExternalProvider(object):
         info = self._default_handle_callback(response)
         # call the hook for subclasses to parse values from the response
         info.update(self.handle_callback(response))
-        if session.data['oauth_states'][self.short_name]['is_custom']:
+        if session.data['oauth_states'][self.short_name].get('is_custom', False):
             return self._set_external_account_temporary(user, info)
         else:
             return self._set_external_account(user, info)
@@ -329,7 +329,8 @@ class ExternalProvider(object):
             refresh_token=info.get('refresh_token'),
             date_last_refreshed=timezone.now(),
             display_name=info.get('display_name'),
-            profile_url=info.get('profile_url')
+            profile_url=info.get('profile_url'),
+            _id = session.data['oauth_states'][self.short_name]['institution_id'],
         )
 
         if self.short_name in session.data.get('oauth_states', {}):
