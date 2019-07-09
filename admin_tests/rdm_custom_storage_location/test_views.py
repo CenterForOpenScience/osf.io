@@ -459,3 +459,70 @@ class TestSwiftConnectionStorage(AdminTestCase):
         request_post_response = views.test_connection(request_post)
         nt.assert_equals(request_post_response.status_code, httplib.OK)
         nt.assert_in('Credentials are valid', request_post_response.content)
+
+
+class TestS3SaveCredentials(AdminTestCase):
+
+    def setUp(self):
+        super(TestS3SaveCredentials, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.save()
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.save_credentials(request)
+
+    def test_provider_missing(self):
+        response = self.view_post({
+            'storage_name': 'My storage',
+            's3_access_key': 'Non-empty-access-key',
+            's3_secret_key': 'Non-empty-secret-key',
+            's3_bucket': 'Cute bucket',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Provider is missing.', response.content)
+
+    def test_invalid_provider(self):
+        response = self.view_post({
+            'storage_name': 'My storage',
+            's3_access_key': 'Non-empty-access-key',
+            's3_secret_key': 'Non-empty-secret-key',
+            's3_bucket': 'Cute bucket',
+            'provider_short_name': 'invalidprovider',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Invalid provider.', response.content)
+
+    def test_success(self):
+        response = self.view_post({
+            'storage_name': 'My storage',
+            's3_access_key': 'Non-empty-access-key',
+            's3_secret_key': 'Non-empty-secret-key',
+            's3_bucket': 'Cute bucket',
+            'provider_short_name': 's3',
+        })
+
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('Saved credentials successfully!!', response.content)
+
+        institution_storage = Region.objects.filter(_id=self.institution._id).first()
+        nt.assert_is_not_none(institution_storage)
+        nt.assert_equals(institution_storage.name, 'My storage')
+
+        wb_credentials = institution_storage.waterbutler_credentials
+        nt.assert_equals(wb_credentials['storage']['access_key'], 'Non-empty-access-key')
+        nt.assert_equals(wb_credentials['storage']['secret_key'], 'Non-empty-secret-key')
+
+        wb_settings = institution_storage.waterbutler_settings
+        nt.assert_equals(wb_settings['storage']['provider'], 's3')
+        nt.assert_equals(wb_settings['storage']['bucket'], 'Cute bucket')
