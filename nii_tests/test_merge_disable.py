@@ -21,9 +21,10 @@ class TestUpdateUser(OsfTestCase):
         url = api_url_for('update_user')
         email = fake_email()
         header = {'id': self.user._id,
-                  'emails': [{'address': self.user.username, 'primary': True, 'confirmed': True},
-                             {'address': email, 'primary': False, 'confirmed': False}
-                  ]}
+                  'emails': [{'address': self.user.username, 'primary': True,
+                              'confirmed': True},
+                             {'address': email, 'primary': False,
+                              'confirmed': False}]}
         res = self.app.put_json(url, header, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('emails', res.json['profile'])
@@ -37,9 +38,10 @@ class TestUpdateUser(OsfTestCase):
         url = api_url_for('update_user')
         existing_user = AuthUserFactory()
         header = {'id': self.user._id,
-                  'emails': [{'address': self.user.username, 'primary': True, 'confirmed': True},
-                             {'address': existing_user.username, 'primary': False, 'confirmed': False}
-                  ]}
+                  'emails': [{'address': self.user.username, 'primary': True,
+                              'confirmed': True},
+                             {'address': existing_user.username,
+                              'primary': False, 'confirmed': False}]}
         res = self.app.put_json(url, header, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_in(res.json['message_long'], 'Existing email address')
@@ -52,9 +54,10 @@ class TestUpdateUser(OsfTestCase):
         url = api_url_for('update_user')
         existing_user = AuthUserFactory()
         header = {'id': self.user._id,
-                  'emails': [{'address': self.user.username, 'primary': True, 'confirmed': True},
-                             {'address': existing_user.username, 'primary': False, 'confirmed': False}
-                  ]}
+                  'emails': [{'address': self.user.username,
+                              'primary': True, 'confirmed': True},
+                             {'address': existing_user.username,
+                              'primary': False, 'confirmed': False}]}
         res = self.app.put_json(url, header, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
         assert_in('emails', res.json['profile'])
