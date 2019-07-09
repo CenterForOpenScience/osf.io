@@ -10,10 +10,8 @@ def calculate_quota(user):
     storage_type_list = [UserQuota.NII_STORAGE]
 
     institution = user.affiliated_institutions.first()
-    if institution is not None:
-        region = Region.objects.filter(_id=institution._id).first()
-        if region is not None:
-            storage_type_list.append(UserQuota.CUSTOM_STORAGE)
+    if institution is not None and Region.objects.filter(_id=institution._id).exists():
+        storage_type_list.append(UserQuota.CUSTOM_STORAGE)
 
     for storage_type in storage_type_list:
         used = used_quota(user._id, storage_type)
