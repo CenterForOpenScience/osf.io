@@ -330,7 +330,7 @@ class ExternalProvider(object):
             date_last_refreshed=timezone.now(),
             display_name=info.get('display_name'),
             profile_url=info.get('profile_url'),
-            _id = session.data['oauth_states'][self.short_name]['institution_id'],
+            _id=session.data['oauth_states'][self.short_name]['institution_id'],
         )
 
         if self.short_name in session.data.get('oauth_states', {}):
