@@ -1593,7 +1593,8 @@ class SpamOverrideMixin(SpamMixin):
         spam_fields = self.get_spam_fields(saved_fields)
         content = []
         for field in spam_fields:
-            content.append((getattr(self, field, None) or '').encode('utf-8'))
+            values = list(self.__class__.objects.filter(id=self.id).values_list(field, flat=True))
+            content.append((' '.join(values) or '').encode('utf-8'))
         if self.all_tags.exists():
             content.extend([name.encode('utf-8') for name in self.all_tags.values_list('name', flat=True)])
         if not content:

@@ -46,7 +46,7 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
-
+from osf.utils.requests import get_headers_from_request
 
 class RegistrationProviderRelationshipField(RelationshipField):
     def get_object(self, _id):
@@ -890,7 +890,9 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
 class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
 
     def update(self, instance, validated_data):
-        auth = Auth(self.context['request'].user)
+        request = self.context['request']
+        user = request.user
+        auth = Auth(user)
         set_url = 'url' in validated_data
         set_label = 'label' in validated_data
 
@@ -935,6 +937,7 @@ class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
                 auth=auth,
                 save=True,
             )
+            instance.owner.check_spam(user, {'addons_forward_node_settings__url'}, get_headers_from_request(request))
 
         return instance
 

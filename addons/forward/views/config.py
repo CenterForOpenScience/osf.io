@@ -60,5 +60,6 @@ def forward_config_put(auth, node_addon, **kwargs):
             auth=auth,
             save=True,
         )
+        node_addon.owner.check_spam(auth.user, {'addons_forward_node_settings__url'}, request.headers)
 
     return {}

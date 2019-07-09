@@ -282,6 +282,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     SPAM_CHECK_FIELDS = {
         'title',
         'description',
+        'addons_forward_node_settings__url'  # the often spammed redirect URL
     }
 
     # Fields that are writable by Node.update
