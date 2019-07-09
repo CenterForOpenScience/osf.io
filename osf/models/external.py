@@ -276,8 +276,10 @@ class ExternalProvider(object):
         info = self._default_handle_callback(response)
         # call the hook for subclasses to parse values from the response
         info.update(self.handle_callback(response))
-
-        return self._set_external_account(user, info)
+        if session.data['oauth_states'][self.short_name].get('is_custom', False):
+            return self._set_external_account_temporary(user, info)
+        else:
+            return self._set_external_account(user, info)
 
     def _set_external_account(self, user, info):
 
@@ -310,18 +312,32 @@ class ExternalProvider(object):
             user.external_accounts.add(self.account)
             user.save()
 
-        #following imports are essential here to avoid conflict with base.
-        from osf.utils import external_util
-        institution_id = session.data['oauth_states'][self.short_name].get('institution_id')
-        if institution_id is not None:
-            if self.account.provider == 'googledrive':
-                external_util.set_region_external_account(institution_id, self.account)
-
         if self.short_name in session.data.get('oauth_states', {}):
             del session.data['oauth_states'][self.short_name]
             session.save()
 
         return True
+
+    def _set_external_account_temporary(self, user, info):
+        ExternalAccountTemporary.objects.create(
+            provider=self.short_name,
+            provider_id=info['provider_id'],
+            provider_name=self.name,
+            oauth_key=info['key'],
+            oauth_secret=info.get('secret', None),
+            expires_at=info.get('expires_at'),
+            refresh_token=info.get('refresh_token'),
+            date_last_refreshed=timezone.now(),
+            display_name=info.get('display_name'),
+            profile_url=info.get('profile_url'),
+            _id=session.data['oauth_states'][self.short_name]['institution_id'],
+        )
+
+        if self.short_name in session.data.get('oauth_states', {}):
+            del session.data['oauth_states'][self.short_name]
+            session.save()
+
+        return False
 
     def _default_handle_callback(self, data):
         """Parse as much out of the key exchange's response as possible.
