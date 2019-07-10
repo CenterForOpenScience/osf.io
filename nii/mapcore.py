@@ -660,7 +660,7 @@ def mapcore_create_new_node_from_mapgroup(mapcore, map_group):
     node, created = Node.objects.get_or_create(
         title=utf8dec(map_group['group_name']),
         creator=creator,
-        is_public=True, category='project',
+        is_public=False, category='project',
         map_group_key=group_key,
         description=utf8dec(group_info_ext['introduction']))
     logger.info('New node [' + utf8(node.title) + '] owned by [' + utf8(creator.eppn) + '] is created.')

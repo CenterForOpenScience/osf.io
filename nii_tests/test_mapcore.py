@@ -740,6 +740,7 @@ class TestFuncOfMAPCore(OsfTestCase):
             assert_equal(mock_or.call_count, 0)
             assert_equal(mock_sync_rdm.call_count, 1)
         n = AbstractNode.objects.get(map_group_key='fake_group_key2')
+        assert_equal(n.is_public, False)
         assert_equal(n.title, 'fake_group_name2')
         assert_equal(n.map_group_key, 'fake_group_key2')
         assert_equal(n.description, 'fake_introduction2')
