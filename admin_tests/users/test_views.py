@@ -838,6 +838,30 @@ class TestSetUserQuota(AdminTestCase):
         nt.assert_is_not_none(user_quota)
         nt.assert_equal(user_quota.max_quota, 150)
 
+    def test_new_quota_empty(self):
+        response = self.view(
+            RequestFactory().post(
+                reverse('users:quota', kwargs={'guid': self.user._id}),
+                {'maxQuota': ''}),
+            guid=self.user._id
+        )
+
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_false(UserQuota.objects.filter(
+            user=self.user, storage_type=UserQuota.NII_STORAGE
+        ).exists())
+
+    def test_new_quota_missing_parameter(self):
+        response = self.view(
+            RequestFactory().post(reverse('users:quota', kwargs={'guid': self.user._id})),
+            guid=self.user._id
+        )
+
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_false(UserQuota.objects.filter(
+            user=self.user, storage_type=UserQuota.NII_STORAGE
+        ).exists())
+
     def test_update_quota(self):
         UserQuota.objects.create(user=self.user, max_quota=100)
 
