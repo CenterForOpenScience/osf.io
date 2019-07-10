@@ -15,6 +15,8 @@ from addons.swift import utils as swift_utils
 from addons.swift.provider import SwiftProvider
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary
+from django.core.exceptions import ObjectDoesNotExist
+import datetime
 
 providers = None
 enabled_providers_list = [
@@ -188,15 +190,24 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
         'message': ('Saved credentials successfully!!')
     }, status=httplib.OK)
 
-def get_external_temporary_account(institution_id):
-    return ExternalAccountTemporary.objects.get(_id=institution_id)
+def get_external_temporary_account(institution_id, provider_short_name):
+    try:
+        return ExternalAccountTemporary.objects.get(_id=institution_id, provider=provider_short_name)
+    except ObjectDoesNotExist:
+        None
 
-def get_oauth_info_notification(institution_id):
-    temp_external_accoutn = get_external_temporary_account(institution_id)
-    return {
-        'display_name': temp_external_accoutn.display_name,
-        'oauth_key': temp_external_accoutn.oauth_key,
-        'provider': temp_external_accoutn.provider,
-        'provider_id': temp_external_accoutn.provider_id,
-        'provider_name': temp_external_accoutn.provider_name,
-    }
+def get_oauth_info_notification(institution_id, provider_short_name):
+    temp_external_accoutn = get_external_temporary_account(institution_id, provider_short_name)
+    if temp_external_accoutn:
+        if temp_external_accoutn.modified >= datetime.datetime.now(temp_external_accoutn.modified.tzinfo) - datetime.timedelta(seconds=60 * 30):
+            return {
+                'display_name': temp_external_accoutn.display_name,
+                'oauth_key': temp_external_accoutn.oauth_key,
+                'provider': temp_external_accoutn.provider,
+                'provider_id': temp_external_accoutn.provider_id,
+                'provider_name': temp_external_accoutn.provider_name,
+            }
+        else:
+            return None
+    else:
+        return None

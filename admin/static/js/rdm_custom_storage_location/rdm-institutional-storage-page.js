@@ -176,14 +176,7 @@ var afterRequest = {
             authPermissionSucceed(id, response_data.fullname, response_data.oauth_key);
         },
         'fail': function (id, message) {
-            $('#' + id + '_message').html(message);
-            $('#' + id + '_save').attr('disabled', true);
-            $('#' + id + '_save').removeClass('btn-success').addClass('btn-default ');
-            $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success ');
-            if (!$('#' + id + '_message').hasClass('text-danger')) {
-                $('#' + id + '_message').addClass('text-danger ');
-                $('#' + id + '_message').removeClass('text-success ');
-            }
+            authPermissionFailed(id, message)
         }
     },
 };
@@ -239,12 +232,14 @@ function authPermissionSucceed(providerShortName, authorizedBy, currentToken){
     authSaveButton(providerShortName);
 }
 
-function authPermissionFailed(providerShortName){
+function authPermissionFailed(providerShortName, message){
     var providerClass = providerShortName + '-auth-callback';
     var allFeedbackFields = $('.' + providerClass);
     allFeedbackFields.addClass('hidden');
     $('#' + providerShortName + '_authorized_by').text('');
     $('#' + providerShortName + '_current_token').text('');
+    $('#' + providerShortName + '_auth_hyperlink').attr('disabled', false)
+    $('#' + providerShortName + '_auth_hyperlink').removeClass('disabled')
     authSaveButton(providerShortName);
 }
 

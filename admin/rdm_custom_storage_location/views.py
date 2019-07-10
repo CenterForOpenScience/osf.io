@@ -160,8 +160,14 @@ def fetch_temporary_token(request):
         }
         return JsonResponse(response, status=httplib.BAD_REQUEST)
     institution_id = request.user.affiliated_institutions.first().id
-    data = utils.get_oauth_info_notification(institution_id)
-    data['fullname'] = request.user.fullname
-    return JsonResponse({
-        'response_data': data
-    }, status=httplib.OK)
+    data = utils.get_oauth_info_notification(institution_id, provider_short_name)
+    if data:
+        data['fullname'] = request.user.fullname
+        return JsonResponse({
+            'response_data': data
+        }, status=httplib.OK)
+    else:
+        response = {
+            'message': 'Oauth permission procedure was canceled'
+        }
+        return JsonResponse(response, status=httplib.BAD_REQUEST)
