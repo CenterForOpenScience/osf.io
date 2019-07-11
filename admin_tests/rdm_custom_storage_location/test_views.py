@@ -114,6 +114,7 @@ class TestS3ConnectionStorage(AdminTestCase):
         self.mock_can_list = mock.patch('addons.s3.views.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
+
         config = {
             'return_value.id': '12346789',
             'return_value.display_name': 's3.user',
@@ -124,23 +125,29 @@ class TestS3ConnectionStorage(AdminTestCase):
         self.mock_exists = mock.patch('addons.s3.views.utils.bucket_exists')
         self.mock_exists.return_value = True
         self.mock_exists.start()
-        self.institution1 = InstitutionFactory()
-        self.institution2 = InstitutionFactory()
-        self.default_region = Region.objects.first()
 
+        self.institution = InstitutionFactory()
         self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.institution1)
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
         self.user.save()
-        self.url = reverse('custom_storage_location:test_connection')
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.test_connection(request)
 
     def test_without_provider(self):
         params = {
             's3_access_key': '',
             's3_secret_key': ''
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('Provider is missing.', request_post_response.content)
 
@@ -150,9 +157,7 @@ class TestS3ConnectionStorage(AdminTestCase):
             's3_secret_key': '',
             'provider_short_name': '',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('Provider is missing.', request_post_response.content)
 
@@ -162,9 +167,7 @@ class TestS3ConnectionStorage(AdminTestCase):
             's3_secret_key': '',
             'provider_short_name': 'invalidprovider',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('Invalid provider.', request_post_response.content)
 
@@ -174,9 +177,7 @@ class TestS3ConnectionStorage(AdminTestCase):
             's3_secret_key': '',
             'provider_short_name': 's3',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
@@ -186,9 +187,7 @@ class TestS3ConnectionStorage(AdminTestCase):
             's3_secret_key': 'Non-empty-secret-key',
             'provider_short_name': 's3',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
@@ -198,9 +197,7 @@ class TestS3ConnectionStorage(AdminTestCase):
             's3_secret_key': '',
             'provider_short_name': 's3',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
@@ -211,9 +208,7 @@ class TestS3ConnectionStorage(AdminTestCase):
             's3_secret_key': 'Non-empty-secret-key',
             'provider_short_name': 's3',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('Unable to list buckets.', request_post_response.content)
 
@@ -224,9 +219,7 @@ class TestS3ConnectionStorage(AdminTestCase):
             's3_secret_key': 'Non-empty-secret-key',
             'provider_short_name': 's3',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.OK)
         nt.assert_in('Credentials are valid', request_post_response.content)
 
@@ -237,9 +230,7 @@ class TestS3ConnectionStorage(AdminTestCase):
             's3_secret_key': 'Non-empty-secret-key',
             'provider_short_name': 's3',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('Unable to access account.\\n'
                 'Check to make sure that the above credentials are valid,'
@@ -253,16 +244,17 @@ class TestOwncloudConnectionStorage(AdminTestCase):
         self.institution = InstitutionFactory()
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
         self.user.save()
 
-    @staticmethod
-    def view_post(params):
+    def view_post(self, params):
         request = RequestFactory().post(
             'fake_path',
             json.dumps(params),
             content_type='application/json'
         )
         request.is_ajax()
+        request.user = self.user
         return views.test_connection(request)
 
     @mock.patch('owncloud.Client')
@@ -325,9 +317,11 @@ class TestSwiftConnectionStorage(AdminTestCase):
         self.mock_can_list = mock.patch('addons.swift.views.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
+
         self.mock_uid = mock.patch('addons.swift.views.utils.get_user_info')
         self.mock_uid.return_value = {'id': '1234567890', 'display_name': 'swift.user'}
         self.mock_uid.start()
+
         config = {
             'return_value.id': '12346789',
             'return_value.display_name': 'swift.user',
@@ -336,20 +330,27 @@ class TestSwiftConnectionStorage(AdminTestCase):
         self.mock_exists.return_value = True
         self.mock_exists.start()
 
-        self.institution1 = InstitutionFactory()
-        self.institution2 = InstitutionFactory()
-        self.default_region = Region.objects.first()
-
+        self.institution = InstitutionFactory()
         self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.institution1)
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
         self.user.save()
-        self.url = reverse('custom_storage_location:test_connection')
 
     def tearDown(self):
         self.mock_can_list.stop()
         self.mock_uid.stop()
         self.mock_exists.stop()
         super(TestSwiftConnectionStorage, self).tearDown()
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.test_connection(request)
 
     def test_swift_settings_input_empty_keys(self):
         params = {
@@ -362,9 +363,7 @@ class TestSwiftConnectionStorage(AdminTestCase):
             'swift_container': '',
             'provider_short_name': 'swift',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
@@ -381,9 +380,7 @@ class TestSwiftConnectionStorage(AdminTestCase):
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('The field `user_domain_name` is required when you choose identity V3.', request_post_response.content)
 
@@ -400,9 +397,7 @@ class TestSwiftConnectionStorage(AdminTestCase):
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('The field `project_domain_name` is required when you choose identity V3.', request_post_response.content)
 
@@ -420,9 +415,7 @@ class TestSwiftConnectionStorage(AdminTestCase):
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('Unable to access account.\\n'
                 'Check to make sure that the above credentials are valid, '
@@ -442,9 +435,7 @@ class TestSwiftConnectionStorage(AdminTestCase):
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('Unable to list containers.\\n'
                 'Listing containers is required permission.', request_post_response.content)
@@ -462,9 +453,7 @@ class TestSwiftConnectionStorage(AdminTestCase):
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         }
-        request_post = RequestFactory().post(self.url, json.dumps(params), content_type='application/json')
-        request_post.is_ajax()
-        request_post_response = views.test_connection(request_post)
+        request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.OK)
         nt.assert_in('Credentials are valid', request_post_response.content)
 
@@ -476,6 +465,7 @@ class TestS3SaveCredentials(AdminTestCase):
         self.institution = InstitutionFactory()
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
         self.user.save()
 
     def view_post(self, params):
@@ -559,6 +549,7 @@ class TestGoogleDriveConnectionTest(AdminTestCase):
         self.institution = InstitutionFactory()
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
         self.user.save()
         self.seed_data = {
             'provider_name': 'googledrive',

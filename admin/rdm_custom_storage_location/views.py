@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from django.core.exceptions import PermissionDenied
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import HttpResponse, Http404, JsonResponse
 from django.views.generic import TemplateView, View
@@ -82,6 +83,10 @@ class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
         raise Http404
 
 def test_connection(request):
+    if request.user.is_superuser or not request.user.is_staff or \
+            not request.user.affiliated_institutions.exists():
+        raise PermissionDenied
+
     data = json.loads(request.body)
 
     provider_short_name = data.get('provider_short_name')
@@ -132,6 +137,10 @@ def test_connection(request):
     return JsonResponse(result[0], status=result[1])
 
 def save_credentials(request):
+    if request.user.is_superuser or not request.user.is_staff or \
+            not request.user.affiliated_institutions.exists():
+        raise PermissionDenied
+
     institution_id = request.user.affiliated_institutions.first()._id
     data = json.loads(request.body)
 
@@ -158,6 +167,10 @@ def save_credentials(request):
     return JsonResponse(result[0], status=result[1])
 
 def fetch_temporary_token(request):
+    if request.user.is_superuser or not request.user.is_staff or \
+            not request.user.affiliated_institutions.exists():
+        raise PermissionDenied
+
     data = json.loads(request.body)
     provider_short_name = data.get('provider_short_name', None)
     if not provider_short_name:
