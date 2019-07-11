@@ -53,6 +53,67 @@ class IQBRIMSClient(BaseClient):
         )
         return res.json()['alternateLink']
 
+    def get_file_link(self, file_id):
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+            file_id),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()['alternateLink']
+
+    def grant_access_from_anyone(self, file_id):
+        res = self._make_request(
+            'POST',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+            file_id, 'permissions'),
+            headers={
+                'Content-Type': 'application/json',
+            },
+            data=json.dumps({
+                'role': 'writer',
+                'type': 'anyone',
+                'allowFileDiscovery': False,
+            }),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def revoke_access_from_anyone(self, file_id):
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+            file_id, 'permissions'),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        permissions = res.json()['permissions']
+        permissions = [p
+                       for p in permissions
+                       if 'type' in p and p['type'] == 'anyone']
+        for p in permissions:
+            res = self._make_request(
+                'DELETE',
+                self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
+                file_id, 'permissions', p['id']),
+                expects=(200, ),
+                throws=HTTPError(401)
+            )
+        return permissions
+
+    def get_content(self, file_id):
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+            file_id),
+            params={'alt': 'media'},
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.text
+
     def folders(self, folder_id='root'):
         query = ' and '.join([
             "'{0}' in parents".format(folder_id),
@@ -214,6 +275,20 @@ class SpreadsheetClient(BaseClient):
         return self._as_rows(data['values'], data['majorDimension']) \
                if 'values' in data else []
 
+    def get_column_values(self, sheet_id, row_index, col_max):
+        r = u'{0}!A{1}:{2}{1}'.format(sheet_id, row_index,
+                                      self._row_name(col_max))
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
+                            self.resource_id, 'values', r),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        data = res.json()
+        return self._as_columns(data['values'], data['majorDimension']) \
+               if 'values' in data else []
+
     def add_row(self, sheet_id, values):
         r = u'{0}!A1:{1}1'.format(sheet_id, self._row_name(len(values) + 1))
         res = self._make_request(
@@ -310,20 +385,167 @@ class SpreadsheetClient(BaseClient):
         logger.info('Updated: {}'.format(res.json()))
         return ecolumns + new_columns
 
+    def add_files(self, sheet_id, sheet_idx, files):
+        top = {'depth': 0, 'name': None, 'files': [], 'dirs': []}
+        max_depth = 0
+        for f in files:
+            if f.endswith('/'):
+                continue
+            if len(f.strip()) == 0:
+                continue
+            paths = f.split('/')
+            target = top
+            for i, p in enumerate(paths):
+                if i == len(paths) - 1:
+                    target['files'].append(p)
+                    continue
+                next_target = None
+                for d in target['dirs']:
+                    if p == d['name']:
+                        next_target = d
+                        break
+                if next_target is None:
+                    new_depth = target['depth'] + 1
+                    d = {'depth': new_depth, 'name': p, 'files': [], 'dirs': []}
+                    if max_depth < new_depth:
+                        max_depth = new_depth
+                    target['dirs'].append(d)
+                    next_target = d
+                target = next_target
+        c = self.ensure_columns(sheet_id,
+                                ['L{}'.format(i)
+                                 for i in range(0, max_depth + 1)] +
+                                ['Type', 'Persons Involved', 'Remarks',
+                                 'Software Used', 'Filled'])
+        values = self._to_file_list(top, max_depth, [])
+        lastt = None
+        lasti = None
+        file_ranges = []
+        for i, (v, t) in enumerate(values):
+            if lasti is None:
+                lastt = t
+                lasti = i
+            elif t != lastt:
+                if lastt == 'file':
+                    file_ranges.append((lasti, i))
+                lastt = t
+                lasti = i
+        if lastt == 'file':
+            file_ranges.append((lasti, len(values)))
+
+        values = [self._to_file_row(c, t, v) for v, t in values]
+        r = u'{0}!A1:{1}1'.format(sheet_id, self._row_name(max_depth + 1))
+        res = self._make_request(
+            'POST',
+            self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
+                            self.resource_id, 'values', r + ':append'),
+            params={'valueInputOption': 'RAW'},
+            headers={
+                'Content-Type': 'application/json',
+            },
+            data=json.dumps({
+                'range': r,
+                'values': values,
+                'majorDimension': 'ROWS'
+            }),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        logger.info('Inserted: {}'.format(res.json()))
+        res = self._make_request(
+            'POST',
+            self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
+                            self.resource_id + ':batchUpdate'),
+            headers={
+                'Content-Type': 'application/json',
+            },
+            data=json.dumps({
+                'requests': [{
+                    'setDataValidation': {
+                        'range': {'sheetId': sheet_idx,
+                                  'startColumnIndex': c.index('Filled'),
+                                  'endColumnIndex': c.index('Filled') + 1,
+                                  'startRowIndex': r0 + 1,
+                                  'endRowIndex': r1 + 1},
+                        'rule': {
+                            'condition': {
+                                'type': 'BOOLEAN'
+                            }
+                        }
+                    }
+                } for (r0, r1) in file_ranges]
+            }),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        logger.info('DataValidation Updated: {}'.format(res.json()))
+
     def _row_name(self, index):
-        return string.ascii_uppercase[index]
+        if index < len(string.ascii_uppercase):
+            return string.ascii_uppercase[index]
+        base = index // len(string.ascii_uppercase)
+        return string.ascii_uppercase[base - 1] + \
+               string.ascii_uppercase[index % len(string.ascii_uppercase)]
 
     def _as_columns(self, values, major_dimension):
         if major_dimension == 'ROWS':
             return values[0]
         else:
-            return [v[0] for v in values]
+            return [v[0] if len(v) > 0 else '' for v in values]
 
     def _as_rows(self, values, major_dimension):
         if major_dimension == 'COLUMNS':
             return values[0]
         else:
-            return [v[0] for v in values]
+            return [v[0] if len(v) > 0 else '' for v in values]
+
+    def _to_file_row(self, columns, typestr, values):
+        r = []
+        for c in columns:
+            e = ''
+            if c.startswith('L'):
+                index = int(c[1:])
+                e = values[index] if index < len(values) else ''
+            elif c == 'Type':
+                e = typestr
+            r.append(e)
+        return r
+
+    def _to_file_list(self, target, max_depth, blank):
+        ret = []
+        col = target['depth'] + 1
+        for i, d in enumerate(sorted(target['dirs'], key=lambda x:x['name'])):
+            is_last = i == len(target['dirs']) - 1
+            r = ['' for i in range(0, col + 1)]
+            for j in range(col):
+                if j == col - 1:
+                    if is_last and 0 == len(target['files']):
+                        r[j] = '└−−'
+                    else:
+                        r[j] = '├−−'
+                else:
+                    if not blank[j]:
+                        r[j] = '│'
+            r[col] = d['name']
+            ret.append((r, 'directory'))
+            next_blank = list(blank)
+            next_blank.append(is_last and 0 == len(target['files']))
+            ret += self._to_file_list(d, max_depth, next_blank)
+        for i, f in enumerate(sorted(target['files'])):
+            is_last = i == len(target['files']) - 1
+            r = ['' for i in range(0, col + 1)]
+            for j in range(col):
+                if j == col - 1:
+                    if is_last:
+                        r[j] = '└−−'
+                    else:
+                        r[j] = '├−−'
+                else:
+                    if not blank[j]:
+                        r[j] = '│'
+            r[col] = f
+            ret.append((r, 'file'))
+        return ret
 
 
 class IQBRIMSFlowableClient(object):

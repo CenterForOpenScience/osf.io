@@ -116,6 +116,16 @@ api_routes = {
             '/project/<pid>/node/<nid>/iqbrims/storage/<folder>',
         ], 'delete', views.iqbrims_reject_storage, json_renderer),
 
+        Rule([
+            '/project/<pid>/iqbrims/index',
+            '/project/<pid>/node/<nid>/iqbrims/index',
+        ], 'put', views.iqbrims_create_index, json_renderer),
+
+        Rule([
+            '/project/<pid>/iqbrims/index',
+            '/project/<pid>/node/<nid>/iqbrims/index',
+        ], 'delete', views.iqbrims_close_index, json_renderer),
+
     ],
     'prefix': '/api/v1'
 }

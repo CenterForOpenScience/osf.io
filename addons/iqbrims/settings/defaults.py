@@ -46,6 +46,8 @@ APPSHEET_CHECK_COLUMNS = [('Updated', '_updated'),
                           ('Current Status', 'workflow_overall_state'),
                           ('Manuscript', None),
                           ('Folder', '_drive_url')]
+INDEXSHEET_FILENAME = 'Raw Files'
+INDEXSHEET_SHEET_NAME = 'Files'
 
 FLOWABLE_HOST = 'http://localhost:9977/flowable-rest/'
 FLOWABLE_RESEARCH_APP_ID = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'

@@ -223,8 +223,11 @@ def iqbrims_get_storage(**kwargs):
     folder = kwargs['folder']
     folder_name = None
     file_name = None
+    validate = None
     if folder == 'index':
         folder_name = REVIEW_FOLDERS['raw']
+        file_name = settings.INDEXSHEET_FILENAME
+        validate = _iqbrims_filled_index
     else:
         folder_name = REVIEW_FOLDERS[folder]
     try:
@@ -240,7 +243,9 @@ def iqbrims_get_storage(**kwargs):
     files = client.files(folder_id=folders[0]['id'])
     logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
     if file_name is not None:
-        files = [f for f in files if f['title'] == file_name]
+        files = [f for f in files
+                 if f['title'] == file_name and
+                    (validate is None or validate(access_token, f))]
     folder_path = iqbrims.folder_path
     management_node = _get_management_node(node)
     base_folder_path = management_node.get_addon('googledrive').folder_path
@@ -310,6 +315,72 @@ def iqbrims_reject_storage(**kwargs):
 
     return {'status': 'rejected',
             'root_folder': root_folder_path}
+
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_valid_hash()
+def iqbrims_create_index(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    iqbrims = node.get_addon('iqbrims')
+    folder_name = REVIEW_FOLDERS['raw']
+    try:
+        access_token = iqbrims.fetch_access_token()
+    except exceptions.InvalidAuthError:
+        raise HTTPError(403)
+    client = IQBRIMSClient(access_token)
+    folders = client.folders(folder_id=iqbrims.folder_id)
+    folders = [f for f in folders if f['title'] == folder_name]
+    assert len(folders) > 0
+    files = client.files(folder_id=folders[0]['id'])
+    files = [f for f in files if f['title'] == 'files.txt']
+    logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
+    if len(files) == 0:
+        return {'status': 'processing'}
+    files = client.get_content(files[0]['id']).split('\n')
+    _, r = client.create_spreadsheet_if_not_exists(folders[0]['id'],
+                                                   settings.INDEXSHEET_FILENAME)
+    sclient = SpreadsheetClient(r['id'], access_token)
+    sheets = [s
+              for s in sclient.sheets()
+              if s['properties']['title'] == settings.INDEXSHEET_SHEET_NAME]
+    logger.info('Spreadsheet: id={}, sheet={}'.format(r['id'], sheets))
+    if len(sheets) == 0:
+        sclient.add_sheet(settings.INDEXSHEET_SHEET_NAME)
+        sheets = [s
+                  for s in sclient.sheets()
+                  if s['properties']['title'] == settings.INDEXSHEET_SHEET_NAME]
+    assert len(sheets) == 1
+    sheet_id = sheets[0]['properties']['title']
+    sclient.add_files(sheet_id, sheets[0]['properties']['sheetId'], files)
+    result = client.grant_access_from_anyone(r['id'])
+    logger.info('Grant access: {}'.format(result))
+    link = client.get_file_link(r['id'])
+    logger.info('Link: {}'.format(link))
+    return {'status': 'complete', 'url': link}
+
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_valid_hash()
+def iqbrims_close_index(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    iqbrims = node.get_addon('iqbrims')
+    folder_name = REVIEW_FOLDERS['raw']
+    try:
+        access_token = iqbrims.fetch_access_token()
+    except exceptions.InvalidAuthError:
+        raise HTTPError(403)
+    client = IQBRIMSClient(access_token)
+    folders = client.folders(folder_id=iqbrims.folder_id)
+    folders = [f for f in folders if f['title'] == folder_name]
+    assert len(folders) > 0
+    files = client.files(folder_id=folders[0]['id'])
+    files = [f for f in files if f['title'] == settings.INDEXSHEET_FILENAME]
+    logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
+    if len(files) == 0:
+        raise HTTPError(404)
+    result = client.revoke_access_from_anyone(files[0]['id'])
+    logger.info('Revoke access: {}'.format(result))
+    return {'status': 'complete'}
 
 def _iqbrims_import_auth_from_management_node(node, node_addon, management_node):
     """Grant oauth access on user_settings of management_node and
@@ -433,6 +504,26 @@ def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
         v = _iqbrims_fill_spreadsheet_values(node, status, folder_link,
                                              columns, v)
         sclient.update_row(sheet_id, v, row_index)
+
+
+def _iqbrims_filled_index(access_token, f):
+    sclient = SpreadsheetClient(f['id'], access_token)
+    sheets = [s
+              for s in sclient.sheets()
+              if s['properties']['title'] == settings.INDEXSHEET_SHEET_NAME]
+    assert len(sheets) == 1
+    sheet_props = sheets[0]['properties']
+    sheet_id = sheet_props['title']
+    col_count = sheet_props['gridProperties']['columnCount']
+    row_count = sheet_props['gridProperties']['rowCount']
+    logger.info('Grid: {}, {}'.format(col_count, row_count))
+    columns = sclient.get_column_values(sheet_id, 1, col_count)
+    types = sclient.get_row_values(sheet_id, columns.index('Type'), row_count)
+    fills = sclient.get_row_values(sheet_id, columns.index('Filled'),
+                                   row_count)
+    procs = [(t, f) for t, f in zip(types, fills) if t == 'file' and f != 'TRUE']
+    logger.info(procs)
+    return len(procs) == 0
 
 
 def _iqbrims_fill_spreadsheet_values(node, status, folder_link, columns,
