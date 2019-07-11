@@ -319,20 +319,7 @@ class ExternalProvider(object):
         return True
 
     def _set_external_account_temporary(self, user, info):
-        # ExternalAccountTemporary.objects.create(
-        #     provider=self.short_name,
-        #     provider_id=info['provider_id'],
-        #     provider_name=self.name,
-        #     oauth_key=info['key'],
-        #     oauth_secret=info.get('secret', None),
-        #     expires_at=info.get('expires_at'),
-        #     refresh_token=info.get('refresh_token'),
-        #     date_last_refreshed=timezone.now(),
-        #     display_name=info.get('display_name'),
-        #     profile_url=info.get('profile_url'),
-        #     _id=session.data['oauth_states'][self.short_name]['institution_id'],
-        # )
-        obj, created = ExternalAccountTemporary.objects.get_or_create(
+        obj, created = ExternalAccountTemporary.objects.update_or_create(
             provider=self.short_name,
             provider_id=info['provider_id'],
             defaults={
@@ -347,10 +334,10 @@ class ExternalProvider(object):
                 '_id': session.data['oauth_states'][self.short_name]['institution_id'],
             },
         )
-
-        if self.short_name in session.data.get('oauth_states', {}):
-            del session.data['oauth_states'][self.short_name]
-            session.save()
+        # following code will be needed need after box issue is solved.
+        # if self.short_name in session.data.get('oauth_states', {}):
+        #     del session.data['oauth_states'][self.short_name]
+        #     session.save()
 
         return False
 

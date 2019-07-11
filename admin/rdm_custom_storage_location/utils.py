@@ -201,16 +201,11 @@ def get_external_temporary_account(institution_id, provider_short_name):
 
 def get_oauth_info_notification(institution_id, provider_short_name):
     temp_external_account = get_external_temporary_account(institution_id, provider_short_name)
-    if temp_external_account:
-        if temp_external_account.modified >= datetime.datetime.now(temp_external_account.modified.tzinfo) - datetime.timedelta(seconds=60 * 30):
-            return {
-                'display_name': temp_external_account.display_name,
-                'oauth_key': temp_external_account.oauth_key,
-                'provider': temp_external_account.provider,
-                'provider_id': temp_external_account.provider_id,
-                'provider_name': temp_external_account.provider_name,
-            }
-        else:
-            return None
-    else:
-        return None
+    if temp_external_account and temp_external_account.modified >= datetime.datetime.now(temp_external_account.modified.tzinfo) - datetime.timedelta(seconds=60 * 30):
+        return {
+            'display_name': temp_external_account.display_name,
+            'oauth_key': temp_external_account.oauth_key,
+            'provider': temp_external_account.provider,
+            'provider_id': temp_external_account.provider_id,
+            'provider_name': temp_external_account.provider_name,
+        }
