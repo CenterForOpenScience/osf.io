@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory
 from django.http import Http404, HttpResponse
 import json
@@ -98,6 +99,141 @@ class TestIconView(AdminTestCase):
         self.view.kwargs = {'addon_name': 'invalidprovider'}
         with nt.assert_raises(Http404):
             self.view.get(self.request, *args, **self.view.kwargs)
+
+
+class TestPermissionTestConnection(AdminTestCase):
+
+    def setUp(self):
+        self.user = AuthUserFactory()
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.test_connection(request)
+
+    def test_normal_user(self):
+        with self.assertRaises(PermissionDenied):
+            self.view_post({})
+
+    def test_staff_without_institution(self):
+        self.user.is_staff = True
+        self.user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.view_post({})
+
+    def test_staff_with_institution(self):
+        institution = InstitutionFactory()
+
+        self.user.is_staff = True
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+
+        response = self.view_post({})
+        nt.assert_is_instance(response, HttpResponse)
+
+    def test_superuser(self):
+        self.user.is_staff = True
+        self.user.is_superuser = True
+        self.user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.view_post({})
+
+
+class TestPermissionSaveCredentials(AdminTestCase):
+
+    def setUp(self):
+        self.user = AuthUserFactory()
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.save_credentials(request)
+
+    def test_normal_user(self):
+        with self.assertRaises(PermissionDenied):
+            self.view_post({})
+
+    def test_staff_without_institution(self):
+        self.user.is_staff = True
+        self.user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.view_post({})
+
+    def test_staff_with_institution(self):
+        institution = InstitutionFactory()
+
+        self.user.is_staff = True
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+
+        response = self.view_post({})
+        nt.assert_is_instance(response, HttpResponse)
+
+    def test_superuser(self):
+        self.user.is_staff = True
+        self.user.is_superuser = True
+        self.user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.view_post({})
+
+
+class TestPermissionFetchTemporaryToken(AdminTestCase):
+
+    def setUp(self):
+        self.user = AuthUserFactory()
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.fetch_temporary_token(request)
+
+    def test_normal_user(self):
+        with self.assertRaises(PermissionDenied):
+            self.view_post({})
+
+    def test_staff_without_institution(self):
+        self.user.is_staff = True
+        self.user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.view_post({})
+
+    def test_staff_with_institution(self):
+        institution = InstitutionFactory()
+
+        self.user.is_staff = True
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+
+        response = self.view_post({})
+        nt.assert_is_instance(response, HttpResponse)
+
+    def test_superuser(self):
+        self.user.is_staff = True
+        self.user.is_superuser = True
+        self.user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.view_post({})
 
 
 class TestS3ConnectionStorage(AdminTestCase):
