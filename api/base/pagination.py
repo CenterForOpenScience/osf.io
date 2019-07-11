@@ -168,6 +168,29 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             return super(JSONAPIPagination, self).paginate_queryset(queryset, request, view=None)
 
 
+class CursorPagination(pagination.CursorPagination, JSONAPIPagination):
+
+    def get_response_dict(self, data, url):
+        return OrderedDict([
+            ('data', data),
+            (
+                'meta', OrderedDict([
+                    ('total', self.page.paginator.count),
+                    ('per_page', self.page.paginator.per_page),
+                ]),
+            ),
+            (
+                'links', OrderedDict([
+                    ('prev', self.get_previous_link()),
+                    ('next', self.get_next_link()),
+                ]),
+            ),
+        ])
+
+    def get_response_dict_deprecated(self, data, url):
+        return self.get_response_dict(data, url)
+
+
 class MaxSizePagination(JSONAPIPagination):
     page_size = 1000
     max_page_size = None
