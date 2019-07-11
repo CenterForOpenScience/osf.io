@@ -20,12 +20,6 @@ from django.utils import timezone
 from osf.models.external import ExternalAccountTemporary
 
 
-import datetime
-class NewDate(datetime.date):
-    @classmethod
-    def today(cls):
-        return cls(2010, 1, 1)
-
 class TestInstitutionDefaultStorage(AdminTestCase):
     def setUp(self):
         super(TestInstitutionDefaultStorage, self).setUp()
