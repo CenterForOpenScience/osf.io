@@ -7,5 +7,5 @@ class InstitutionForm(forms.ModelForm):
         model = Institution
 
         exclude = [
-            'is_deleted', 'contributors', 'deleted'
+            'is_deleted', 'contributors'
         ]
