@@ -109,44 +109,15 @@ def iqbrims_get_status(**kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 def iqbrims_set_status(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    iqbrims = node.get_addon('iqbrims')
     try:
         status = request.json['data']['attributes']
     except KeyError:
         raise HTTPError(http.BAD_REQUEST)
 
-    with transaction.atomic():
-        all_status = iqbrims.get_status()
-        last_status = all_status.copy()
-        all_status.update(status)
-        logger.info('Status: patch={}, all={}'.format(status, all_status))
-        if all_status['state'] in ['deposit', 'check'] and 'labo_id' in all_status:
-            auth = kwargs['auth']
-            register_type = all_status['state']
-            labo_name = all_status['labo_id']
-
-            if last_status['state'] != register_type:
-                app_id = iqbrims.get_process_definition_id(register_type)
-                flowable = IQBRIMSFlowableClient(app_id)
-                logger.info('Starting...: app_id={} project_id={}'.format(app_id, node._id))
-                flowable.start_workflow(node._id, node.title, all_status,
-                                        iqbrims.get_secret())
-            management_node = _get_management_node(node)
-
-            # import auth
-            _iqbrims_import_auth_from_management_node(node, iqbrims, management_node)
-
-            # create folder
-            root_folder = _iqbrims_init_folders(node, management_node, register_type, labo_name)
-
-            # mount container
-            iqbrims.set_folder(root_folder, auth=auth)
-            iqbrims.save()
-        _iqbrims_update_spreadsheet(node, management_node, register_type, all_status)
-
-        iqbrims.set_status(all_status)
+    auth = kwargs['auth']
+    rstatus = _iqbrims_set_status(node, status, auth)
     return {'data': {'id': node._id, 'type': 'iqbrims-status',
-                     'attributes': iqbrims.get_status()}}
+                     'attributes': rstatus}}
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
@@ -205,14 +176,13 @@ def iqbrims_post_notify(**kwargs):
 @must_have_valid_hash()
 def iqbrims_post_workflow_state(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    iqbrims = node.get_addon('iqbrims')
     part = kwargs['part']
     logger.info('Workflow State: {}, {}'.format(part, request.data))
-    status = iqbrims.get_status()
     reqdata = json.loads(request.data)
+    status = {}
     status['workflow_' + part + '_state'] = reqdata['state']
     status['workflow_' + part + '_permissions'] = reqdata['permissions']
-    iqbrims.set_status(status)
+    _iqbrims_set_status(node, status)
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
@@ -419,6 +389,39 @@ def _get_management_node(node):
     except RdmAddonOption.DoesNotExist:
         raise HTTPError(http.FORBIDDEN)
     return opt.management_node
+
+def _iqbrims_set_status(node, status, auth=None):
+    iqbrims = node.get_addon('iqbrims')
+    with transaction.atomic():
+        all_status = iqbrims.get_status()
+        last_status = all_status.copy()
+        all_status.update(status)
+        logger.info('Status: patch={}, all={}'.format(status, all_status))
+        if all_status['state'] in ['deposit', 'check'] and 'labo_id' in all_status:
+            register_type = all_status['state']
+            labo_name = all_status['labo_id']
+
+            if last_status['state'] != register_type:
+                app_id = iqbrims.get_process_definition_id(register_type)
+                flowable = IQBRIMSFlowableClient(app_id)
+                logger.info('Starting...: app_id={} project_id={}'.format(app_id, node._id))
+                flowable.start_workflow(node._id, node.title, all_status,
+                                        iqbrims.get_secret())
+            management_node = _get_management_node(node)
+
+            # import auth
+            _iqbrims_import_auth_from_management_node(node, iqbrims, management_node)
+
+            # create folder
+            root_folder = _iqbrims_init_folders(node, management_node, register_type, labo_name)
+
+            # mount container
+            iqbrims.set_folder(root_folder, auth=auth)
+            iqbrims.save()
+        _iqbrims_update_spreadsheet(node, management_node, register_type, all_status)
+
+        iqbrims.set_status(all_status)
+    return all_status
 
 def _iqbrims_init_folders(node, management_node, register_type, labo_name):
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
