@@ -174,7 +174,6 @@ def save_credentials(request):
             data.get('swift_auth_url'),
             data.get('swift_folder'),
             data.get('swift_container'),
-            data.get('provider_short_name'),
         )
     else:
         result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
