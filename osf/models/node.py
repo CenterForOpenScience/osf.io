@@ -472,7 +472,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.group is not None:
             # Group-name from isMemberOf is added in project-title.
             import re
-            m = re.match('.+ \[' + self.group + '\]$', value)
+            m = re.match(r'.+ \[' + self.group + r'\]$', value)
             if m is None:
                 value = value + ' [' + self.group + ']'
         return value
