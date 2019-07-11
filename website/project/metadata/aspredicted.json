@@ -68,9 +68,9 @@
             "format": "textarea"
         },
         {
-            "qid": "name",
+            "qid": "study_type",
             "title": "Finally. For record keeping purposes, please tell us the type of study you are pre-registering.",
-            "nav": "Name",
+            "nav": "Study type",
             "type": "choose",
             "format": "singleselect",
             "options": [
@@ -82,7 +82,7 @@
             ]
         },
         {
-            "qid": "study_type",
+            "qid": "study_type_other",
             "title": "Other",
             "nav": "Other",
             "type": "string",
