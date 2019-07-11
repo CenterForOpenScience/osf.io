@@ -157,6 +157,10 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
     }, httplib.OK)
 
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
+    test_connection_result = test_s3_connection(access_key, secret_key)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
     wb_credentials = {
         'storage': {
             'access_key': access_key,

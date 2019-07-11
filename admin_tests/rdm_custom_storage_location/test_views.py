@@ -511,7 +511,9 @@ class TestS3SaveCredentials(AdminTestCase):
         nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('Invalid provider.', response.content)
 
-    def test_success(self):
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_s3_connection')
+    def test_success(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'Nice'}, httplib.OK
         response = self.view_post({
             'storage_name': 'My storage',
             's3_access_key': 'Non-empty-access-key',
@@ -534,6 +536,22 @@ class TestS3SaveCredentials(AdminTestCase):
         wb_settings = institution_storage.waterbutler_settings
         nt.assert_equals(wb_settings['storage']['provider'], 's3')
         nt.assert_equals(wb_settings['storage']['bucket'], 'Cute bucket')
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_s3_connection')
+    def test_invalid_credentials(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'NG'}, httplib.BAD_REQUEST
+
+        response = self.view_post({
+            'storage_name': 'My storage',
+            's3_access_key': 'Wrong-access-key',
+            's3_secret_key': 'Wrong-secret-key',
+            's3_bucket': 'Cute bucket',
+            'provider_short_name': 's3',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('NG', response.content)
+        nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
 
 class TestGoogleDriveConnectionTest(AdminTestCase):
     def setUp(self):
