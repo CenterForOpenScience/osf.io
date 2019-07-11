@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from django.http import JsonResponse
 from furl import furl
 import httplib
 import requests
@@ -49,32 +48,32 @@ def get_modal_path(short_name):
 def test_s3_connection(access_key, secret_key):
     """Verifies new external account credentials and adds to user's list"""
     if not (access_key and secret_key):
-        return JsonResponse({
+        return ({
             'message': 'All the fields above are required.'
-        }, status=httplib.BAD_REQUEST)
+        }, httplib.BAD_REQUEST)
     user_info = s3_utils.get_user_info(access_key, secret_key)
     if not user_info:
-        return JsonResponse({
+        return ({
             'message': ('Unable to access account.\n'
                 'Check to make sure that the above credentials are valid,'
                 'and that they have permission to list buckets.')
-        }, status=httplib.BAD_REQUEST)
+        }, httplib.BAD_REQUEST)
 
     if not s3_utils.can_list(access_key, secret_key):
-        return JsonResponse({
+        return ({
             'message': ('Unable to list buckets.\n'
                 'Listing buckets is required permission that can be changed via IAM')
-        }, status=httplib.BAD_REQUEST)
+        }, httplib.BAD_REQUEST)
     s3_response = {
         'id': user_info.id,
         'display_name': user_info.display_name,
         'Owner': user_info.Owner,
     }
 
-    return JsonResponse({
+    return ({
         'message': ('Credentials are valid'),
         'data': s3_response
-    }, status=httplib.OK)
+    }, httplib.OK)
 
 def test_owncloud_connection(host_url, username, password, folder, provider):
     """ This method is valid for both ownCloud and Nextcloud """
@@ -96,51 +95,51 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
         oc.login(username, password)
         oc.logout()
     except requests.exceptions.ConnectionError:
-        return JsonResponse({
+        return ({
             'message': ('Invalid {} server.').format(provider_name) + host.url
-        }, status=httplib.BAD_REQUEST)
+        }, httplib.BAD_REQUEST)
     except owncloud.owncloud.HTTPResponseError:
-        return JsonResponse({
+        return ({
             'message': ('{} Login failed.').format(provider_name)
-        }, status=httplib.UNAUTHORIZED)
+        }, httplib.UNAUTHORIZED)
 
-    return JsonResponse({
+    return ({
         'message': ('Credentials are valid')
-    }, status=httplib.OK)
+    }, httplib.OK)
 
 def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant_name,
                           user_domain_name, project_domain_name, folder, container):
     """Verifies new external account credentials and adds to user's list"""
     if not (auth_version and auth_url and access_key and secret_key and tenant_name and folder and container):
-        return JsonResponse({
+        return ({
             'message': 'All the fields above are required.'
-        }, status=httplib.BAD_REQUEST)
+        }, httplib.BAD_REQUEST)
     if auth_version == '3' and not user_domain_name:
-        return JsonResponse({
+        return ({
             'message': 'The field `user_domain_name` is required when you choose identity V3.'
-        }, status=httplib.BAD_REQUEST)
+        }, httplib.BAD_REQUEST)
     if auth_version == '3' and not project_domain_name:
-        return JsonResponse({
+        return ({
             'message': 'The field `project_domain_name` is required when you choose identity V3.'
-        }, status=httplib.BAD_REQUEST)
+        }, httplib.BAD_REQUEST)
 
     user_info = swift_utils.get_user_info(auth_version, auth_url, access_key,
                                     user_domain_name, secret_key, tenant_name,
                                     project_domain_name)
 
     if not user_info:
-        return JsonResponse({
+        return ({
             'message': ('Unable to access account.\n'
                 'Check to make sure that the above credentials are valid, '
                 'and that they have permission to list containers.')
-        }, status=httplib.BAD_REQUEST)
+        }, httplib.BAD_REQUEST)
 
     if not swift_utils.can_list(auth_version, auth_url, access_key, user_domain_name,
                           secret_key, tenant_name, project_domain_name):
-        return JsonResponse({
+        return ({
             'message': ('Unable to list containers.\n'
                 'Listing containers is required permission.')
-        }, status=httplib.BAD_REQUEST)
+        }, httplib.BAD_REQUEST)
 
     provider = SwiftProvider(account=None, auth_version=auth_version,
                              auth_url=auth_url, tenant_name=tenant_name,
@@ -152,10 +151,10 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
         'id': provider.account.id,
         'display_name': provider.account.display_name,
     }
-    return JsonResponse({
+    return ({
         'message': ('Credentials are valid'),
         'data': swift_response
-    }, status=httplib.OK)
+    }, httplib.OK)
 
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
     wb_credentials = {
@@ -186,9 +185,9 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
         }
     )
 
-    return JsonResponse({
+    return ({
         'message': ('Saved credentials successfully!!')
-    }, status=httplib.OK)
+    }, httplib.OK)
 
 def get_external_temporary_account(institution_id, provider_short_name):
     try:

@@ -83,19 +83,23 @@ class IconView(RdmPermissionMixin, UserPassesTestMixin, View):
 
 def test_connection(request):
     data = json.loads(request.body)
-    provider_short_name = data.get('provider_short_name', None)
+
+    provider_short_name = data.get('provider_short_name')
     if not provider_short_name:
         response = {
             'message': 'Provider is missing.'
         }
         return JsonResponse(response, status=httplib.BAD_REQUEST)
 
+    result = None
+
     if provider_short_name == 's3':
-        s3_access_key = data.get('s3_access_key', None)
-        s3_secret_key = data.get('s3_secret_key', None)
-        return utils.test_s3_connection(s3_access_key, s3_secret_key)
+        result = utils.test_s3_connection(
+            data.get('s3_access_key'),
+            data.get('s3_secret_key')
+        )
     elif provider_short_name == 'owncloud':
-        return utils.test_owncloud_connection(
+        result = utils.test_owncloud_connection(
             data.get('owncloud_host'),
             data.get('owncloud_username'),
             data.get('owncloud_password'),
@@ -103,7 +107,7 @@ def test_connection(request):
             provider_short_name,
         )
     elif provider_short_name == 'nextcloud':
-        return utils.test_owncloud_connection(
+        result = utils.test_owncloud_connection(
             data.get('nextcloud_host'),
             data.get('nextcloud_username'),
             data.get('nextcloud_password'),
@@ -111,7 +115,7 @@ def test_connection(request):
             provider_short_name,
         )
     elif provider_short_name == 'swift':
-        return utils.test_swift_connection(
+        result = utils.test_swift_connection(
             data.get('swift_auth_version'),
             data.get('swift_auth_url'),
             data.get('swift_access_key'),
@@ -122,34 +126,36 @@ def test_connection(request):
             data.get('swift_folder', None),
             data.get('swift_container', None),
         )
+    else:
+        result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
 
-    return JsonResponse({
-        'message': 'Invalid provider.'
-    }, status=httplib.BAD_REQUEST)
+    return JsonResponse(result[0], status=result[1])
 
 def save_credentials(request):
     institution_id = request.user.affiliated_institutions.first()._id
     data = json.loads(request.body)
 
-    provider_short_name = data.get('provider_short_name', None)
+    provider_short_name = data.get('provider_short_name')
     if not provider_short_name:
         response = {
             'message': 'Provider is missing.'
         }
         return JsonResponse(response, status=httplib.BAD_REQUEST)
 
+    result = None
+
     if provider_short_name == 's3':
-        return utils.save_s3_credentials(
+        result = utils.save_s3_credentials(
             institution_id,
             data.get('storage_name'),
             data.get('s3_access_key'),
             data.get('s3_secret_key'),
             data.get('s3_bucket'),
         )
+    else:
+        result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
 
-    return JsonResponse({
-        'message': 'Invalid provider.'
-    }, status=httplib.BAD_REQUEST)
+    return JsonResponse(result[0], status=result[1])
 
 def fetch_temporary_token(request):
     data = json.loads(request.body)
