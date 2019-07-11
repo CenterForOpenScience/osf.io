@@ -193,6 +193,52 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
         'message': ('Saved credentials successfully!!')
     }, httplib.OK)
 
+
+def save_swift_credentials(institution_id, storage_name, auth_version, access_key, secret_key,
+                           tenant_name, user_domain_name, project_domain_name, auth_url,
+                           folder, container):
+
+    test_connection_result = test_swift_connection(auth_version, auth_url, access_key, secret_key,
+        tenant_name, user_domain_name, project_domain_name, folder, container)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    wb_credentials = {
+        'storage': {
+            'auth_version': auth_version,
+            'username': access_key,
+            'password': secret_key,
+            'tenant_name': tenant_name,
+            'user_domain_name': user_domain_name,
+            'project_domain_name': project_domain_name,
+            'auth_url': auth_url,
+        },
+    }
+    wb_settings = {
+        'storage': {
+            'folder': folder,
+            'container': container,
+            'provider': 'swift',
+        }
+
+    }
+
+    default_region = Region.objects.first()
+    Region.objects.update_or_create(
+        _id=institution_id,
+        defaults={
+            'name': storage_name,
+            'waterbutler_credentials': wb_credentials,
+            'waterbutler_url': default_region.waterbutler_url,
+            'mfr_url': default_region.mfr_url,
+            'waterbutler_settings': wb_settings
+        }
+    )
+
+    return ({
+        'message': ('Saved credentials successfully!!')
+    }, httplib.OK)
+
 def get_external_temporary_account(institution_id, provider_short_name):
     try:
         return ExternalAccountTemporary.objects.get(_id=institution_id, provider=provider_short_name)

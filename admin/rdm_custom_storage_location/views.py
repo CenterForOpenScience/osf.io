@@ -161,6 +161,20 @@ def save_credentials(request):
             data.get('s3_secret_key'),
             data.get('s3_bucket'),
         )
+    elif provider_short_name == 'swift':
+        result = utils.save_swift_credentials(
+            institution_id,
+            data.get('storage_name'),
+            data.get('swift_auth_version'),
+            data.get('swift_access_key'),
+            data.get('swift_secret_key'),
+            data.get('swift_tenant_name'),
+            data.get('swift_user_domain_name'),
+            data.get('swift_project_domain_name'),
+            data.get('swift_auth_url'),
+            data.get('swift_folder'),
+            data.get('swift_container'),
+        )
     else:
         result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
 
