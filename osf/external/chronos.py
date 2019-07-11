@@ -78,6 +78,7 @@ class ChronosSerializer(object):
                 }
             ],
             'UNDERLYING_DATASET_URL': preprint.node.absolute_url if preprint.node else '',
+            'LICENSE': preprint.license.node_license.name.upper() if preprint.license.node_license.name != 'No license' else 'NL',
         }
 
     @classmethod
