@@ -42,6 +42,7 @@ from osf.models import (BaseFileNode, TrashedFileNode,
                         NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata, FileVersion)
 from osf.metrics import PreprintView, PreprintDownload
+from osf.utils import permissions
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -104,7 +105,7 @@ This content has been removed."""}
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
 
-@decorators.must_have_permission('write')
+@decorators.must_have_permission(permissions.WRITE)
 @decorators.must_not_be_registration
 def disable_addon(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -135,20 +136,20 @@ def get_addon_user_config(**kwargs):
 
 
 permission_map = {
-    'create_folder': 'write',
-    'revisions': 'read',
-    'metadata': 'read',
-    'download': 'read',
-    'render': 'read',
-    'export': 'read',
-    'upload': 'write',
-    'delete': 'write',
-    'copy': 'write',
-    'move': 'write',
-    'copyto': 'write',
-    'moveto': 'write',
-    'copyfrom': 'read',
-    'movefrom': 'write',
+    'create_folder': permissions.WRITE,
+    'revisions': permissions.READ,
+    'metadata': permissions.READ,
+    'download': permissions.READ,
+    'render': permissions.READ,
+    'export': permissions.READ,
+    'upload': permissions.WRITE,
+    'delete': permissions.WRITE,
+    'copy': permissions.WRITE,
+    'move': permissions.WRITE,
+    'copyto': permissions.WRITE,
+    'moveto': permissions.WRITE,
+    'copyfrom': permissions.READ,
+    'movefrom': permissions.WRITE,
 }
 
 def check_access(node, auth, action, cas_resp):
@@ -160,7 +161,7 @@ def check_access(node, auth, action, cas_resp):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if cas_resp:
-        if permission == 'read':
+        if permission == permissions.READ:
             if node.can_view_files(auth=None):
                 return True
             required_scope = node.file_read_scope
@@ -171,14 +172,14 @@ def check_access(node, auth, action, cas_resp):
            or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
             raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
-    if permission == 'read':
+    if permission == permissions.READ:
         if node.can_view_files(auth):
             return True
         # The user may have admin privileges on a parent node, in which
         # case they should have read permissions
         if getattr(node, 'is_registration', False) and node.registered_from.can_view(auth):
             return True
-    if permission == 'write' and node.can_edit(auth):
+    if permission == permissions.WRITE and node.can_edit(auth):
         return True
 
     # Users attempting to register projects with components might not have
@@ -324,7 +325,7 @@ def get_auth(auth, **kwargs):
                 if auth.user:
                     # mark fileversion as seen
                     FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
-                if not node.is_contributor(auth.user):
+                if not node.is_contributor_or_group_member(auth.user):
                     from_mfr = download_is_from_mfr(request, payload=data)
                     # version index is 0 based
                     version_index = version - 1
@@ -735,6 +736,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         if not file_node.pk:
             file_node = BaseFileNode.load(path)
 
+            if not file_node:
+                raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
+                    'message_short': 'File Not Found',
+                    'message_long': 'The requested file could not be found.'
+                })
+
             if file_node.kind == 'folder':
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                     'message_short': 'Bad Request',
@@ -742,7 +749,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
                 })
 
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
-            if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
+            if file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
                     file_node.target.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
                 )

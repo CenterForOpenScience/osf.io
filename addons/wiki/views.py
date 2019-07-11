@@ -30,7 +30,7 @@ from website.project.decorators import (
 )
 
 from osf.exceptions import ValidationError, NodeStateError
-
+from osf.utils.permissions import ADMIN, WRITE
 from .exceptions import (
     NameEmptyError,
     NameInvalidError,
@@ -153,7 +153,7 @@ def wiki_page_content(wname, wver=None, **kwargs):
     return _wiki_page_content(wname, wver=wver, **kwargs)
 
 @must_be_valid_project  # injects project
-@must_have_permission('write')  # injects user, project
+@must_have_permission(WRITE)  # injects user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_delete(auth, wname, **kwargs):
@@ -185,7 +185,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     can_edit = (
         auth.logged_in and not
         node.is_registration and (
-            node.has_permission(auth.user, 'write') or
+            node.has_permission(auth.user, WRITE) or
             wiki_settings.is_publicly_editable
         )
     )
@@ -316,7 +316,7 @@ def project_wiki_edit_post(auth, wname, **kwargs):
     return ret, http_status.HTTP_302_FOUND, None, redirect_url
 
 @must_be_valid_project  # injects node or project
-@must_have_permission('admin')
+@must_have_permission(ADMIN)
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def edit_wiki_settings(node, auth, **kwargs):
@@ -395,7 +395,7 @@ def project_wiki_compare(wname, wver, **kwargs):
 
 
 @must_not_be_registration
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @must_have_addon('wiki', 'node')
 def project_wiki_rename(auth, wname, **kwargs):
     """View that handles user the X-editable input for wiki page renaming.
@@ -439,7 +439,7 @@ def project_wiki_rename(auth, wname, **kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_have_permission('write')  # returns user, project
+@must_have_permission(WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_validate_name(wname, auth, node, **kwargs):
@@ -501,7 +501,7 @@ def format_home_wiki_page(node):
 
 def format_project_wiki_pages(node, auth):
     pages = []
-    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    can_edit = node.has_permission(auth.user, WRITE) and not node.is_registration
     project_wiki_pages = _get_wiki_pages_latest(node)
     home_wiki_page = format_home_wiki_page(node)
     pages.append(home_wiki_page)
@@ -546,7 +546,7 @@ def serialize_component_wiki(node, auth):
         }
     }
 
-    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    can_edit = node.has_permission(auth.user, WRITE) and not node.is_registration
     if can_edit or home_has_content:
         children.append(component_home_wiki)
 

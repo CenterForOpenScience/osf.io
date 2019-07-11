@@ -1,0 +1,110 @@
+{% load node_extras %}
+{% block content %}
+
+    <div class="pagination pagination-lg">
+        <span>
+            {% if items_paginator.has_previous %}
+                <a href="?{{resource_type}}_page=1{{ current_other_param }}"
+                   class="btn btn-primary">
+                    |
+                </a>
+                <a href="?{{resource_type}}_page={{ items_paginator.previous_page_number }}{{ current_other_param }}"
+                   class="btn btn-primary">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+            {% else %}
+                <div class="btn btn-primary disabled">
+                    |
+                </div>
+                <div class="btn btn-primary disabled">
+                    <i class="fa fa-angle-left"></i>
+                </div>
+            {% endif %}
+
+            <span class="current">
+                Page {{ items_paginator.number }} of {{ items_paginator.paginator.num_pages }}
+            </span>
+            {% if items_paginator.has_next %}
+
+                <a href="?{{resource_type}}_page={{ items_paginator.next_page_number }}{{ current_other_param }}"
+                   class="btn btn-primary">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                <a href="?{{resource_type}}_page={{ items_paginator.paginator.num_pages }}{{ current_other_param }}"
+                   class="btn btn-primary">
+                    |
+                </a>
+            {% else %}
+                <div class="btn btn-primary disabled">
+                    <i class="fa fa-angle-right"></i>
+                </div>
+                <div class="btn btn-primary disabled">
+                    |
+                </div>
+            {% endif %}
+        </span>
+    </div>
+    <table class="table table-hover table-bordered">
+        <thead>
+            <tr>
+                <th>GUID</th>
+                <th>Name</th>
+                {% if resource_type == "preprint" %}
+                    <th>Public*</th>
+                {% else %}
+                    <th>Public</th>
+                {% endif %}
+                {% if resource_type == "node" %}
+                    <th>Registration</th>
+                {% endif %}
+                <th># of Contributors</th>
+                <th>SPAM Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+            <tr>
+                <td>
+                    {% if resource_type == "node" %}
+                        <a href="{{ item.id | reverse_node }}">
+                            {{ item.id }}
+                        </a>
+                    {% else %}
+                        <a href="{{ item.id | reverse_preprint }}">
+                            {{ item.id }}
+                        </a>
+                    {% endif %}
+                </td>
+                <td>{{ item.title | truncatechars:20 }}</td>
+                <td>{{ item.public }}</td>
+                {% if resource_type == "node" %}
+                    <td>{{ item.is_registration }}</td>
+                {% endif %}
+                <td>{{ item.number_contributors }}</td>
+                <td>{% include "nodes/spam_status.html" with resource=item %}</td>
+                {%  if perms.osf.delete_node %}
+                <td>
+                    {% if item.number_contributors < 2 and resource_type == "preprint" or not item.is_registration %}
+                        {% if not item.deleted %}
+                        <a href="{% url resource_type|add:"s:remove" guid=item.id %}"
+                           data-toggle="modal" data-target="#deleteModal{{ item.id }}"
+                           class="btn btn-danger">
+                            Delete {{ resource_type|capfirst }}
+                        </a>
+                        <div class="modal" id="deleteModal{{ item.id }}">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock content %}

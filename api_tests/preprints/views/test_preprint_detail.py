@@ -7,10 +7,12 @@ from rest_framework import exceptions
 from waffle.testutils import override_switch
 
 from osf import features
+from osf.utils.permissions import READ
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from framework.auth.core import Auth
 from osf.models import NodeLicense, PreprintContributor
+from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
     PreprintFactory,
@@ -264,7 +266,7 @@ class TestPreprintUpdate:
         assert res.status_code == 401
 
         read_contrib = AuthUserFactory()
-        preprint.add_contributor(read_contrib, 'read', save=True)
+        preprint.add_contributor(read_contrib, READ, save=True)
         res = app.patch_json_api(
             url,
             update_doi_payload,
@@ -276,7 +278,7 @@ class TestPreprintUpdate:
     def test_update_original_publication_date_to_none(self, app, preprint, url):
         # Original pub date accidentally set, need to remove
         write_contrib = AuthUserFactory()
-        preprint.add_contributor(write_contrib, 'write', save=True)
+        preprint.add_contributor(write_contrib, WRITE, save=True)
         preprint.original_publication_date = '2013-12-11 10:09:08.070605+00:00'
         preprint.save()
         update_payload = build_preprint_update_payload(
@@ -297,7 +299,7 @@ class TestPreprintUpdate:
 
     def test_update_preprint_permission_write_contrib(self, app, preprint, url):
         write_contrib = AuthUserFactory()
-        preprint.add_contributor(write_contrib, 'write', save=True)
+        preprint.add_contributor(write_contrib, WRITE, save=True)
 
         doi = '10.123/456/789'
         original_publication_date = '2013-12-11 10:09:08.070605+00:00'
@@ -351,7 +353,7 @@ class TestPreprintUpdate:
         preprint.save()
 
         write_contrib = AuthUserFactory()
-        preprint.add_contributor(write_contrib, 'write', save=True)
+        preprint.add_contributor(write_contrib, WRITE, save=True)
 
         update_payload = build_preprint_update_payload(
             preprint._id, attributes={
@@ -650,7 +652,7 @@ class TestPreprintUpdate:
             'data': {
                 'attributes': {
                     'bibliographic': True,
-                    'permission': 'write',
+                    'permission': WRITE,
                     'send_email': False
                 },
                 'type': 'contributors',
@@ -674,7 +676,7 @@ class TestPreprintUpdate:
 
         assert res.status_code == 201
         assert new_user in preprint.contributors
-        assert preprint.has_permission(new_user, 'write')
+        assert preprint.has_permission(new_user, WRITE)
         assert PreprintContributor.objects.get(preprint=preprint, user=new_user).visible is True
         assert mock_update_doi_metadata.called
 
@@ -685,7 +687,7 @@ class TestPreprintUpdate:
         read_write_contrib = AuthUserFactory()
         preprint.add_contributor(
             read_write_contrib,
-            permissions='write',
+            permissions=WRITE,
             auth=Auth(user), save=True)
         new_file = test_utils.create_test_preprint_file(
             preprint, user, filename='lovechild_reason.pdf')
@@ -747,7 +749,7 @@ class TestPreprintUpdate:
         write_contrib = AuthUserFactory()
         preprint.add_contributor(
             write_contrib,
-            permissions='write',
+            permissions=WRITE,
             auth=Auth(user), save=True)
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
@@ -769,7 +771,7 @@ class TestPreprintUpdate:
         read_contrib = AuthUserFactory()
         preprint.add_contributor(
             read_contrib,
-            permissions='read',
+            permissions=READ,
             auth=Auth(user), save=True)
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
@@ -881,11 +883,11 @@ class TestPreprintUpdateLicense:
         preprint = PreprintFactory(
             creator=admin_contrib,
             provider=preprint_provider)
-        preprint.add_contributor(write_contrib, permissions='write', auth=Auth(admin_contrib))
+        preprint.add_contributor(write_contrib, permissions=WRITE, auth=Auth(admin_contrib))
         preprint.add_contributor(
             read_contrib,
             auth=Auth(admin_contrib),
-            permissions='read')
+            permissions=READ)
         preprint.save()
         return preprint
 
@@ -1364,7 +1366,7 @@ class TestPreprintDetailPermissions:
             is_published=True,
             is_public=False,
             machine_state='accepted')
-        fact.add_contributor(write_contrib, permissions='write')
+        fact.add_contributor(write_contrib, permissions=WRITE)
         fact.is_public = False
         fact.save()
         return fact
@@ -1379,7 +1381,7 @@ class TestPreprintDetailPermissions:
             is_published=True,
             is_public=True,
             machine_state='accepted')
-        fact.add_contributor(write_contrib, permissions='write')
+        fact.add_contributor(write_contrib, permissions=WRITE)
         return fact
 
     @pytest.fixture()
@@ -1562,7 +1564,7 @@ class TestPreprintDetailPermissions:
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
-        unpublished.add_contributor(write_contrib, permissions='write', save=True)
+        unpublished.add_contributor(write_contrib, permissions=WRITE, save=True)
         res = app.get(url, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -1608,7 +1610,7 @@ class TestReviewsPreprintDetailPermissions:
             subjects=[[subject._id]],
             is_published=False,
             machine_state=DefaultStates.PENDING.value)
-        preprint.add_contributor(write_contrib, permissions='write')
+        preprint.add_contributor(write_contrib, permissions=WRITE)
         preprint.save()
         return preprint
 
@@ -1634,7 +1636,7 @@ class TestReviewsPreprintDetailPermissions:
             is_published=False,
             is_public=False,
             machine_state=DefaultStates.PENDING.value)
-        preprint.add_contributor(write_contrib, permissions='write')
+        preprint.add_contributor(write_contrib, permissions=WRITE)
         return preprint
 
     @pytest.fixture()

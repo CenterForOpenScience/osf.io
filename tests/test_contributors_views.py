@@ -6,6 +6,7 @@ from nose.tools import *  # noqa; PEP8 asserts
 
 from osf_tests.factories import ProjectFactory, NodeFactory, AuthUserFactory, NodeRequestFactory
 from osf.utils import workflows
+from osf.utils import permissions
 from tests.base import OsfTestCase
 
 from framework.auth.decorators import Auth
@@ -22,7 +23,7 @@ class TestContributorUtils(OsfTestCase):
     def test_serialize_user(self):
         serialized = utils.serialize_user(self.project.creator, self.project)
         assert_true(serialized['visible'])
-        assert_equal(serialized['permission'], 'admin')
+        assert_equal(serialized['permission'], permissions.ADMIN)
 
     def test_serialize_user_full_does_not_include_emails_by_default(self):
         serialized = utils.serialize_user(self.project.creator, self.project, full=True)
@@ -40,7 +41,7 @@ class TestContributorUtils(OsfTestCase):
     def test_serialize_user_admin(self):
         serialized = utils.serialize_user(self.project.creator, self.project, admin=True)
         assert_false(serialized['visible'])
-        assert_equal(serialized['permission'], 'read')
+        assert_equal(serialized['permission'], permissions.READ)
 
     def test_serialize_access_requests(self):
         new_user = AuthUserFactory()

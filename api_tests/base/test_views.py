@@ -9,7 +9,7 @@ from nose.tools import *  # noqa:
 
 from tests.base import ApiTestCase
 from osf_tests import factories
-
+from osf.utils.permissions import READ, WRITE
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.settings.defaults import API_BASE
@@ -93,12 +93,12 @@ class TestApiBaseViews(ApiTestCase):
                         view.permission_classes,
                         '{0} lacks the appropriate permission classes'.format(view)
                     )
-            for key in ['read', 'write']:
+            for key in [READ, WRITE]:
                 scopes = getattr(view, 'required_{}_scopes'.format(key), None)
                 assert_true(bool(scopes))
                 for scope in scopes:
                     assert_is_not_none(scope)
-                if key == 'write':
+                if key == WRITE:
                     assert_not_in(CoreScopes.ALWAYS_PUBLIC, scopes)
 
     def test_view_classes_support_embeds(self):

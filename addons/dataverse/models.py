@@ -7,6 +7,7 @@ from django.db import models
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 from osf.models.files import File, Folder, BaseFileNode
+from osf.utils.permissions import WRITE
 from framework.auth.core import _get_current_user
 from addons.base import exceptions
 from addons.dataverse.client import connect_from_settings_or_401
@@ -40,7 +41,7 @@ class DataverseFile(DataverseFileNode, File):
         version.identifier = revision
 
         user = user or _get_current_user()
-        if not user or not self.target.has_permission(user, 'write'):
+        if not user or not self.target.has_permission(user, WRITE):
             try:
                 # Users without edit permission can only see published files
                 if not data['extra']['hasPublishedVersion']:

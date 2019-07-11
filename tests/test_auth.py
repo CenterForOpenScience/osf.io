@@ -340,11 +340,11 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         self.non_contrib = AuthUserFactory()
         admin = UserFactory()
         self.public_project = ProjectFactory(is_public=True)
-        self.public_project.add_contributor(admin, auth=Auth(self.public_project.creator), permissions=['read', 'write', 'admin'])
+        self.public_project.add_contributor(admin, auth=Auth(self.public_project.creator), permissions=permissions.ADMIN)
         self.private_project = ProjectFactory(is_public=False)
         self.public_project.add_contributor(self.contrib, auth=Auth(self.public_project.creator))
         self.private_project.add_contributor(self.contrib, auth=Auth(self.private_project.creator))
-        self.private_project.add_contributor(admin, auth=Auth(self.private_project.creator), permissions=['read', 'write', 'admin'])
+        self.private_project.add_contributor(admin, auth=Auth(self.private_project.creator), permissions=permissions.ADMIN)
         self.public_project.save()
         self.private_project.save()
 
@@ -420,7 +420,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
     def test_must_be_contributor_parent_write_public_project(self):
         user = UserFactory()
         node = NodeFactory(parent=self.public_project, creator=user)
-        self.public_project.set_permissions(self.public_project.creator, ['read', 'write'])
+        self.public_project.set_permissions(self.public_project.creator, permissions.WRITE)
         self.public_project.save()
         with assert_raises(HTTPError) as exc_info:
             view_that_needs_contributor(
@@ -433,7 +433,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
     def test_must_be_contributor_parent_write_private_project(self):
         user = UserFactory()
         node = NodeFactory(parent=self.private_project, creator=user)
-        self.private_project.set_permissions(self.private_project.creator, ['read', 'write'])
+        self.private_project.set_permissions(self.private_project.creator, permissions.WRITE)
         self.private_project.save()
         with assert_raises(HTTPError) as exc_info:
             view_that_needs_contributor(
@@ -529,7 +529,7 @@ class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
         user = UserFactory()
         node = NodeFactory(parent=self.public_project, creator=user)
         contrib = UserFactory()
-        self.public_project.add_contributor(contrib, auth=Auth(self.public_project.creator), permissions=['read', 'write'])
+        self.public_project.add_contributor(contrib, auth=Auth(self.public_project.creator), permissions=permissions.WRITE)
         self.public_project.save()
         with assert_raises(HTTPError) as exc_info:
             view_that_needs_contributor_or_public(
@@ -543,7 +543,7 @@ class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
         user = UserFactory()
         node = NodeFactory(parent=self.private_project, creator=user)
         contrib = UserFactory()
-        self.private_project.add_contributor(contrib, auth=Auth(self.private_project.creator), permissions=['read', 'write'])
+        self.private_project.add_contributor(contrib, auth=Auth(self.private_project.creator), permissions=permissions.WRITE)
         self.private_project.save()
         with assert_raises(HTTPError) as exc_info:
             view_that_needs_contributor_or_public(
@@ -566,9 +566,9 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         self.non_contrib = AuthUserFactory()
         admin = UserFactory()
         self.public_project = ProjectFactory(is_public=True)
-        self.public_project.add_contributor(admin, auth=Auth(self.public_project.creator), permissions=['read', 'write', 'admin'])
+        self.public_project.add_contributor(admin, auth=Auth(self.public_project.creator), permissions=permissions.ADMIN)
         self.private_project = ProjectFactory(is_public=False)
-        self.private_project.add_contributor(admin, auth=Auth(self.private_project.creator), permissions=['read', 'write', 'admin'])
+        self.private_project.add_contributor(admin, auth=Auth(self.private_project.creator), permissions=permissions.ADMIN)
         self.public_project.add_contributor(self.contrib, auth=Auth(self.public_project.creator))
         self.private_project.add_contributor(self.contrib, auth=Auth(self.private_project.creator))
         self.public_project.save()
@@ -653,7 +653,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
     def test_must_be_contributor_parent_write_public_project(self):
         user = UserFactory()
         node = NodeFactory(parent=self.public_project, creator=user)
-        self.public_project.set_permissions(self.public_project.creator, ['read', 'write'])
+        self.public_project.set_permissions(self.public_project.creator, permissions.WRITE)
         self.public_project.save()
         with assert_raises(HTTPError) as exc_info:
             view_that_needs_contributor_or_public_but_not_anonymized(
@@ -666,7 +666,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
     def test_must_be_contributor_parent_write_private_project(self):
         user = UserFactory()
         node = NodeFactory(parent=self.private_project, creator=user)
-        self.private_project.set_permissions(self.private_project.creator, ['read', 'write'])
+        self.private_project.set_permissions(self.private_project.creator, permissions.WRITE)
         self.private_project.save()
         with assert_raises(HTTPError) as exc_info:
             view_that_needs_contributor_or_public_but_not_anonymized(
@@ -697,7 +697,7 @@ def protected(**kwargs):
     return 'open sesame'
 
 
-@must_have_permission('admin')
+@must_have_permission(permissions.ADMIN)
 def thriller(**kwargs):
     return 'chiller'
 
@@ -723,7 +723,7 @@ class TestPermissionDecorators(AuthAppTestCase):
     def test_must_have_permission_true(self, mock_from_kwargs, mock_to_nodes):
         project = ProjectFactory()
         user = UserFactory()
-        project.add_contributor(user, permissions=[permissions.READ, permissions.WRITE, permissions.ADMIN],
+        project.add_contributor(user, permissions=permissions.ADMIN,
                                 auth=Auth(project.creator))
         mock_from_kwargs.return_value = Auth(user=user)
         mock_to_nodes.return_value = (None, project)

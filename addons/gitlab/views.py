@@ -18,6 +18,7 @@ from addons.gitlab.serializer import GitLabSerializer
 from addons.gitlab.utils import verify_hook_signature, MESSAGES
 from framework.auth.decorators import must_be_logged_in
 from osf.models import ExternalAccount, NodeLog
+from osf.utils.permissions import WRITE
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
@@ -132,7 +133,7 @@ def gitlab_add_user_account(auth, **kwargs):
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
-@must_have_permission('write')
+@must_have_permission(WRITE)
 def gitlab_set_config(auth, **kwargs):
     node_settings = kwargs.get('node_addon', None)
     node = kwargs.get('node', None)

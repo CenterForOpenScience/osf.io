@@ -684,7 +684,7 @@ class TestPreprintContributorUpdate:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert set(preprint.get_permissions(contrib)) == set(['read_preprint', 'write_preprint'])
+        assert preprint.get_permissions(contrib) == [permissions.READ, permissions.WRITE]
         assert preprint.get_visible(contrib)
 
     #   test_change_contributor_not_logged_in
@@ -702,7 +702,7 @@ class TestPreprintContributorUpdate:
         assert res.status_code == 401
 
         preprint.reload()
-        assert set(preprint.get_permissions(contrib)) == set(['read_preprint', 'write_preprint'])
+        assert preprint.get_permissions(contrib) == [permissions.READ, permissions.WRITE]
         assert preprint.get_visible(contrib)
 
     #   test_change_contributor_non_admin_auth
@@ -723,7 +723,7 @@ class TestPreprintContributorUpdate:
         assert res.status_code == 403
 
         preprint.reload()
-        assert set(preprint.get_permissions(contrib)) == set(['read_preprint', 'write_preprint'])
+        assert preprint.get_permissions(contrib) == [permissions.READ, permissions.WRITE]
         assert preprint.get_visible(contrib)
 
     def test_change_admin_self_without_other_admin(
@@ -746,7 +746,7 @@ class TestPreprintContributorUpdate:
         assert res.status_code == 400
 
         preprint.reload()
-        assert set(preprint.get_permissions(user)) == set(['read_preprint', 'write_preprint', 'admin_preprint'])
+        assert preprint.get_permissions(user) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
 
     def test_node_update_invalid_data(self, app, user, url_creator):
         res = app.put_json_api(
@@ -827,8 +827,7 @@ class TestPreprintContributorUpdate:
             assert attributes['permission'] == permissions.ADMIN
 
             preprint.reload()
-            assert set(preprint.get_permissions(contrib)) == set([
-                'read_preprint', 'write_preprint', 'admin_preprint'])
+            assert preprint.get_permissions(contrib) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
 
         with assert_latest_log(PreprintLog.PERMISSIONS_UPDATED, preprint):
             data = {
@@ -847,8 +846,7 @@ class TestPreprintContributorUpdate:
             assert attributes['permission'] == permissions.WRITE
 
             preprint.reload()
-            assert set(preprint.get_permissions(contrib)) == set([
-                'read_preprint', 'write_preprint'])
+            assert preprint.get_permissions(contrib) == [permissions.READ, permissions.WRITE]
 
         with assert_latest_log(PreprintLog.PERMISSIONS_UPDATED, preprint):
             data = {
@@ -867,7 +865,7 @@ class TestPreprintContributorUpdate:
             assert attributes['permission'] == permissions.READ
 
             preprint.reload()
-            assert set(preprint.get_permissions(contrib)) == set(['read_preprint'])
+            assert preprint.get_permissions(contrib) == [permissions.READ]
 
     def test_change_contributor_bibliographic(
             self, app, user, contrib, preprint, url_contrib):
@@ -929,7 +927,7 @@ class TestPreprintContributorUpdate:
             assert not attributes['bibliographic']
 
             preprint.reload()
-            assert set(preprint.get_permissions(contrib)) == set(['read_preprint'])
+            assert preprint.get_permissions(contrib) == [permissions.READ]
             assert not preprint.get_visible(contrib)
 
     # @assert_not_logs(PreprintLog.PERMISSIONS_UPDATED, 'preprint')
@@ -954,8 +952,7 @@ class TestPreprintContributorUpdate:
             assert attributes['bibliographic']
 
             preprint.reload()
-            assert set(preprint.get_permissions(contrib)) == set([
-                'read_preprint', 'write_preprint'])
+            assert preprint.get_permissions(contrib) == [permissions.READ, permissions.WRITE]
             assert preprint.get_visible(contrib)
 
     def test_change_admin_self_with_other_admin(
@@ -979,8 +976,7 @@ class TestPreprintContributorUpdate:
             assert attributes['permission'] == permissions.WRITE
 
             preprint.reload()
-            assert set(preprint.get_permissions(user)) == set([
-                'read_preprint', 'write_preprint'])
+            assert preprint.get_permissions(user) == [permissions.READ, permissions.WRITE]
 
 
 @pytest.mark.django_db
@@ -1025,8 +1021,7 @@ class TestPreprintContributorPartialUpdate:
         res = app.patch_json_api(url_creator, data, auth=user.auth)
         assert res.status_code == 200
         preprint.reload()
-        assert set(preprint.get_permissions(user)) == set([
-            'read_preprint', 'write_preprint', 'admin_preprint'])
+        assert preprint.get_permissions(user) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
         assert not preprint.get_visible(user)
 
     def test_patch_permission_only(self, app, user, preprint):
@@ -1051,7 +1046,7 @@ class TestPreprintContributorPartialUpdate:
         res = app.patch_json_api(url_read_contrib, data, auth=user.auth)
         assert res.status_code == 200
         preprint.reload()
-        assert set(preprint.get_permissions(user_read_contrib)) == set(['read_preprint'])
+        assert preprint.get_permissions(user_read_contrib) == [permissions.READ]
         assert not preprint.get_visible(user_read_contrib)
 
 

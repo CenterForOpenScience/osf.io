@@ -1,6 +1,6 @@
 import pytest
 
-from api.base.parsers import JSONAPIMultipleRelationshipsParser
+from api.base.parsers import JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON
 
 
 SINGLE_RELATIONSHIP = {
@@ -100,3 +100,6 @@ class TestMultipleRelationshipsParser:
     def test_flatten_relationships(self, relationship, expected):
         parser = JSONAPIMultipleRelationshipsParser()
         assert JSONAPIMultipleRelationshipsParser.flatten_relationships(parser, relationship) == expected
+
+        parser = JSONAPIMultipleRelationshipsParserForRegularJSON()
+        assert JSONAPIMultipleRelationshipsParserForRegularJSON.flatten_relationships(parser, relationship) == expected

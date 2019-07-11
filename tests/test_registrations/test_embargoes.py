@@ -63,9 +63,9 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
     def test__initiate_embargo_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
-        Contributor.objects.create(user=unconfirmed_user, node=self.registration)
-        self.registration.add_permission(unconfirmed_user, 'admin', save=True)
-        assert_true(self.registration.has_permission(unconfirmed_user, 'admin'))
+        contrib = Contributor.objects.create(user=unconfirmed_user, node=self.registration)
+        self.registration.add_permission(unconfirmed_user, permissions.ADMIN, save=True)
+        assert_equal(Contributor.objects.get(node=self.registration, user=unconfirmed_user).permission, permissions.ADMIN)
 
         embargo = self.registration._initiate_embargo(
             self.user,
@@ -115,7 +115,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
     # Node#embargo_registration tests
     def test_embargo_from_non_admin_raises_PermissionsError(self):
-        self.registration.remove_permission(self.user, 'admin')
+        self.registration.remove_permission(self.user, permissions.ADMIN)
         self.registration.save()
         self.registration.reload()
         with assert_raises(PermissionsError):
@@ -218,7 +218,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
     def test_one_approval_with_two_admins_stays_pending(self):
         admin2 = UserFactory()
         Contributor.objects.create(user=admin2, node=self.registration)
-        self.registration.add_permission(admin2, 'admin', save=True)
+        self.registration.add_permission(admin2, permissions.ADMIN, save=True)
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10)
@@ -554,7 +554,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def test_GET_approve_with_wrong_token_returns_HTTPBad_Request(self):
         admin2 = UserFactory()
         Contributor.objects.create(user=admin2, node=self.registration)
-        self.registration.add_permission(admin2, 'admin', save=True)
+        self.registration.add_permission(admin2, permissions.ADMIN, save=True)
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10)
@@ -573,7 +573,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def test_GET_approve_with_wrong_admins_token_returns_HTTPBad_Request(self):
         admin2 = UserFactory()
         Contributor.objects.create(user=admin2, node=self.registration)
-        self.registration.add_permission(admin2, 'admin', save=True)
+        self.registration.add_permission(admin2, permissions.ADMIN, save=True)
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10)
@@ -638,7 +638,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def test_GET_disapprove_with_wrong_admins_token_returns_HTTPBad_Request(self):
         admin2 = UserFactory()
         Contributor.objects.create(user=admin2, node=self.registration)
-        self.registration.add_permission(admin2, 'admin', save=True)
+        self.registration.add_permission(admin2, permissions.ADMIN, save=True)
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10)
@@ -830,7 +830,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def test_GET_approve_with_wrong_token_returns_HTTPBad_Request(self):
         admin2 = UserFactory()
         Contributor.objects.create(user=admin2, node=self.registration)
-        self.registration.add_permission(admin2, 'admin', save=True)
+        self.registration.add_permission(admin2, permissions.ADMIN, save=True)
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10)
@@ -849,7 +849,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def test_GET_approve_with_wrong_admins_token_returns_HTTPBad_Request(self):
         admin2 = UserFactory()
         Contributor.objects.create(user=admin2, node=self.registration)
-        self.registration.add_permission(admin2, 'admin', save=True)
+        self.registration.add_permission(admin2, permissions.ADMIN, save=True)
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10)
@@ -914,7 +914,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def test_GET_disapprove_with_wrong_admins_token_returns_HTTPBad_Request(self):
         admin2 = UserFactory()
         Contributor.objects.create(user=admin2, node=self.registration)
-        self.registration.add_permission(admin2, 'admin', save=True)
+        self.registration.add_permission(admin2, permissions.ADMIN, save=True)
         self.registration.embargo_registration(
             self.user,
             timezone.now() + datetime.timedelta(days=10)
@@ -1120,7 +1120,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Initiate and approve embargo
         for i in range(3):
             c = AuthUserFactory()
-            self.registration.add_contributor(c, [permissions.ADMIN], auth=Auth(self.user))
+            self.registration.add_contributor(c, permissions.ADMIN, auth=Auth(self.user))
         self.registration.save()
         self.registration.embargo_registration(
             self.user,
@@ -1154,7 +1154,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Initiate and approve embargo
         for i in range(3):
             c = AuthUserFactory()
-            self.registration.add_contributor(c, [permissions.ADMIN], auth=Auth(self.user))
+            self.registration.add_contributor(c, permissions.ADMIN, auth=Auth(self.user))
         self.registration.save()
         self.registration.embargo_registration(
             self.user,
@@ -1166,7 +1166,11 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         self.registration.save()
 
         self.registration.set_privacy('public', Auth(self.registration.creator))
-        for admin in self.registration.admin_contributors:
+        admin_contributors = []
+        for contributor in self.registration.contributors:
+            if Contributor.objects.get(user_id=contributor.id, node_id=self.registration.id).permission == permissions.ADMIN:
+                admin_contributors.append(contributor)
+        for admin in admin_contributors:
             assert_true(any([each[0][0] == admin.username for each in mock_send_mail.call_args_list]))
 
     @mock.patch('osf.models.sanctions.TokenApprovableSanction.ask')

@@ -4,7 +4,7 @@ from rest_framework import status as http_status
 
 from flask import request
 from osf.exceptions import ValidationValueError
-
+from osf.utils.permissions import WRITE
 from framework.exceptions import HTTPError
 
 from website.project.decorators import (
@@ -24,7 +24,7 @@ def forward_config_get(node, node_addon, **kwargs):
     return res
 
 
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @must_not_be_registration
 @must_have_addon('forward', 'node')
 def forward_config_put(auth, node_addon, **kwargs):
