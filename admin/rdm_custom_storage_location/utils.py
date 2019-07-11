@@ -7,6 +7,7 @@ import requests
 import os
 import owncloud
 
+from addons.osfstorage.models import Region
 from addons.owncloud import settings as owncloud_settings
 from addons.nextcloud import settings as nextcloud_settings
 from addons.s3 import utils as s3_utils
@@ -151,4 +152,42 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
     return JsonResponse({
         'message': ('Credentials are valid'),
         'data': swift_response
+    }, status=httplib.OK)
+
+def save_swift_credentials(institution_id, storage_name, auth_version, access_key, secret_key, tenant_name, user_domain_name, project_domain_name, auth_url, folder, container, provider_short_name):
+    print('credentials not actually saved!')
+
+    wb_credentials = {
+        "storage": {
+            "auth_version": auth_version , 
+            "username": access_key, 
+            "password": secret_key, 
+            "tenant_name": tenant_name, 
+            "user_domain_name": user_domain_name, 
+            "project_domain_name": project_domain_name,
+            "auth_url": auth_url, 
+        },
+    }
+    wb_settings = {
+        "storage": {
+            "folder": folder, 
+            "container": container,
+            "provider": provider_short_name,
+        }
+    }
+
+    default_region = Region.objects.first()
+    Region.objects.update_or_create(
+        _id=institution_id,
+        defaults={
+            'name': storage_name,
+            'waterbutler_credentials': wb_credentials,
+            'waterbutler_url': default_region.waterbutler_url,
+            'mfr_url': default_region.mfr_url,
+            'waterbutler_settings': wb_settings
+        }
+    )
+
+    return JsonResponse({
+        'message': ('Saved credentials successfully!!')
     }, status=httplib.OK)

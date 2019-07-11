@@ -168,6 +168,7 @@ var afterRequest = {
 function getParameters(params) {
     var providerClass = params.provider_short_name + '-params';
     var allParameters = $('.' + providerClass);
+    params.storage_name = $('#storage_name').val();
     $.each(allParameters, function (key, value) {
         if (!value.disabled) {
             params[value.id] = value.value;

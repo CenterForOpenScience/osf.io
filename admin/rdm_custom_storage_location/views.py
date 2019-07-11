@@ -128,8 +128,37 @@ def test_connection(request):
     }, status=httplib.BAD_REQUEST)
 
 def save_credentials(request):
+    institution_id = request.user.affiliated_institutions.first()._id
     data = json.loads(request.body)
 
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info('*** Credential data! ***')
+    logger.info(data)
+
+    provider_short_name = data.get('provider_short_name', None)
+    if not provider_short_name:
+        response = {
+            'message': 'Provider is missing.'
+        }
+        return JsonResponse(response, status=httplib.BAD_REQUEST)
+
+    if provider_short_name == 'swift':
+        return utils.save_swift_credentials(
+            institution_id,
+            data.get('storage_name'),
+            data.get('swift_auth_version'),
+            data.get('swift_access_key'),
+            data.get('swift_secret_key'),
+            data.get('swift_tenant_name'),
+            data.get('swift_user_domain_name'),
+            data.get('swift_project_domain_name'),
+            data.get('swift_auth_url'),
+            data.get('swift_folder'),
+            data.get('swift_container'),
+            data.get('provider_short_name'),
+        )
+
     return JsonResponse({
-        'message': 'Route is working, good job!'
-    })
+        'message': 'Invalid provider.'
+    }, status=httplib.BAD_REQUEST)
