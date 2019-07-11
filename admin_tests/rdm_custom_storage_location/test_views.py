@@ -10,7 +10,6 @@ from nose import tools as nt
 from admin_tests.utilities import setup_user_view
 from admin.rdm_custom_storage_location import views
 from addons.osfstorage.models import Region
-from django.urls import reverse
 from tests.base import AdminTestCase
 from osf_tests.factories import (
     AuthUserFactory,
