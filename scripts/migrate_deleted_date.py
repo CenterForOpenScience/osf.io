@@ -12,13 +12,13 @@ logger = logging.getLogger(__name__)
 POPULATE_COLUMNS =[
 	'SET statement_timeout = 10000; UPDATE osf_comment SET deleted=modified WHERE id IN (SELECT id FROM osf_comment WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING id;',
 	#Assuming that the last time this comment was modified was when it was being deleted
-	"SET statement_timeout = 10000; UPDATE osf_reviewaction SET deleted='epoch' WHERE id IN (SELECT id FROM osf_reviewaction WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING id;",
-	"SET statement_timeout = 10000; UPDATE osf_noderequestaction SET deleted='epoch' WHERE id IN (SELECT id FROM osf_noderequestaction WHERE IS TRUE AND deleted IS NULL LIMIT 1000) RETURNING id;",
-	"SET statement_timeout = 10000; UPDATE osf_preprintrequestaction SET deleted='epoch' WHERE id IN (SELECT id FROM osf_preprintrequestaction WHERE IS TRUE AND deleted IS NULL LIMIT 1000) RETURNING id;",
+	'SET statement_timeout = 10000; UPDATE osf_reviewaction SET deleted='epoch' WHERE id IN (SELECT id FROM osf_reviewaction WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING id;',
+	'SET statement_timeout = 10000; UPDATE osf_noderequestaction SET deleted='epoch' WHERE id IN (SELECT id FROM osf_noderequestaction WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING id;',
+	'SET statement_timeout = 10000; UPDATE osf_preprintrequestaction SET deleted='epoch' WHERE id IN (SELECT id FROM osf_preprintrequestaction WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING id;',
 	#Requests are not deleted when rejected, just a new record is created with a 'type' of reject
-	'SET statement_timeout = 10000; UPDATE osf_basefilenode SET deleted = deleted_on WHERE id IN (SELECT id FROM osf_basefilenode WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING id;',
+	'SET statement_timeout = 10000; UPDATE osf_basefilenode SET deleted = deleted_on WHERE id IN (SELECT id FROM osf_basefilenode WHERE deleted_on IS NOT NULL AND deleted IS NULL LIMIT 1000) RETURNING id;',
 	'SET statement_timeout = 10000; UPDATE osf_abstractnode CASE WHEN deleted_date IS NOT NULL THEN SET deleted=deleted_date ELSE SET deleted_date = last_logged END WHERE id IN (SELECT id FROM osf_abstractnode WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING id;',
-	'SET statement_timeout = 10000; UPDATE osf_privatelink PL set PL.deleted = NLdate from osf_nodelog NL, osf_privatelink_nodes pl_n WHERE NL.node_id=pl_n.abstractnode_id AND pl_n.privatelink_id = pl.id and id in (SELECT id FROM osf_privatelink WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING id;',
+	'SET statement_timeout = 10000; UPDATE osf_privatelink PL set deleted = NL.date from osf_nodelog NL, osf_privatelink_nodes pl_n WHERE NL.node_id=pl_n.abstractnode_id AND pl_n.privatelink_id = pl.id and PL.id in (SELECT id FROM osf_privatelink WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING PL.id;',
 
 	'SET statement_timeout = 10000; UPDATE addons_zotero_usersettings SET deleted = modified WHERE id IN (SELECT id FROM addons_zotero_usersettings WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING id;',
 	'SET statement_timeout = 10000; UPDATE addons_dropbox_usersettings SET deleted = modified WHERE id IN (SELECT id FROM addons_dropbox_usersettings WHERE is_deleted AND deleted IS NULL LIMIT 1000) RETURNING id;',
