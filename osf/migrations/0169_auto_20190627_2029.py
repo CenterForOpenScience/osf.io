@@ -48,9 +48,4 @@ class Migration(migrations.Migration):
             name='deleted',
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
         ),
-        migrations.AddField(
-            model_name='institution',
-            name='deleted',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
-        ),
     ]

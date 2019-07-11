@@ -404,8 +404,8 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :return:
         """
         self.deleted_by = user
+        #This will need to be removed
         self.deleted_on = deleted_on = deleted_on or timezone.now()
-        #This will need
         self.deleted = deleted_on = deleted_on or timezone.now()
 
         if not self.is_file:
@@ -617,10 +617,13 @@ class UnableToDelete(Exception):
 
 class TrashedFileNode(BaseFileNode):
     is_deleted = True
-    deleted = timezone.now()
+    #deleted = timezone.now()
     _provider = None
 
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
+        self.deleted = deleted_on or timezone.now()
+        if save:
+            self.save()
         if isinstance(self, TrashedFileNode):  # TODO Why is this needed
             raise UnableToDelete('You cannot delete things that are deleted.')
 

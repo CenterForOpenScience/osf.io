@@ -2221,7 +2221,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
 
-        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
+        bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
         if len(hierarchy.filter(is_public=True)):
             AbstractNode.bulk_update_search(hierarchy.filter(is_public=True))
