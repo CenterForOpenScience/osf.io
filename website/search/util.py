@@ -1,4 +1,5 @@
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -8,9 +9,26 @@ DESCRIPTION_WEIGHT = 1.2
 JOB_SCHOOL_BOOST = 1
 ALL_JOB_SCHOOL_BOOST = 0.125
 
-def build_query(qs='*', start=0, size=10, sort=None):
+def build_query(qs='*', start=0, size=10, sort=None, user_guid=None):
+    query_body = build_query_string(qs)
+    if user_guid is not None:
+        query_body = {
+            'bool': {
+                'should': [
+                    query_body,
+                    {
+                        'match': {
+                            'id': {
+                                'query': user_guid,
+                                'boost': 10.0
+                            }
+                        }
+                    }
+                ]
+            }
+        }
     query = {
-        'query': build_query_string(qs),
+        'query': query_body,
         'from': start,
         'size': size,
     }
@@ -53,3 +71,13 @@ def clean_splitters(text):
     if new_text == text:
         return ''
     return new_text
+
+
+def es_escape(text):
+    # see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#_reserved_characte
+    text = re.sub(r'(?P<ES>[+\-=&|!(){}\[\]^"~*?:\\/])', r'\\\g<ES>', text)
+
+    # NOTE: < and > cannot be escaped at all. The only way to prevent
+    # them from attempting to create a range query is to remove them
+    # from the query string entirely.
+    return re.sub(r'(?P<ES>[><])', ' ', text)

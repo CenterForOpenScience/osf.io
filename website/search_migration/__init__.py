@@ -591,6 +591,11 @@ SELECT json_agg(
                                AND value != '[]'
             )
             , 'boost', 2
+            , 'user_affiliated_institutions', (SELECT array_agg(INST._id)
+                                      FROM osf_institution AS INST
+                                        INNER JOIN osf_osfuser_affiliated_institutions
+                                          ON (INST.id = osf_osfuser_affiliated_institutions.institution_id)
+                                      WHERE osf_osfuser_affiliated_institutions.osfuser_id = U.id)
         )
     )
 )
