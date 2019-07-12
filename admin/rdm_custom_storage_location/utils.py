@@ -244,11 +244,9 @@ def save_osfstorage_credentials(institution_id):
         'message': ('NII storage was set successfully')
     }, httplib.OK)
 
-def get_external_temporary_account(institution_id, provider_short_name):
-    return ExternalAccountTemporary.objects.get(_id=institution_id, provider=provider_short_name)
 
 def get_oauth_info_notification(institution_id, provider_short_name):
-    temp_external_account = get_external_temporary_account(institution_id, provider_short_name)
+    temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
     if temp_external_account and temp_external_account.modified >= datetime.datetime.now(temp_external_account.modified.tzinfo) - datetime.timedelta(seconds=60 * 30):
         return {
             'display_name': temp_external_account.display_name,

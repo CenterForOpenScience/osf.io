@@ -320,8 +320,7 @@ class ExternalProvider(object):
 
     def _set_external_account_temporary(self, user, info):
         obj, created = ExternalAccountTemporary.objects.update_or_create(
-            provider=self.short_name,
-            provider_id=info['provider_id'],
+            _id=session.data['oauth_states'][self.short_name]['institution_id'],
             defaults={
                 'provider_name': self.name,
                 'oauth_key': info['key'],
@@ -331,7 +330,8 @@ class ExternalProvider(object):
                 'date_last_refreshed': timezone.now(),
                 'display_name': info.get('display_name'),
                 'profile_url': info.get('profile_url'),
-                '_id': session.data['oauth_states'][self.short_name]['institution_id'],
+                'provider': self.short_name,
+                'provider_id': info['provider_id'],
             },
         )
         # following code will be needed need after box issue is solved.
