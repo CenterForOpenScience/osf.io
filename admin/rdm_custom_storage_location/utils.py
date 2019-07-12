@@ -14,7 +14,6 @@ from addons.swift import utils as swift_utils
 from addons.swift.provider import SwiftProvider
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary
-from django.core.exceptions import ObjectDoesNotExist
 import datetime
 
 providers = None
