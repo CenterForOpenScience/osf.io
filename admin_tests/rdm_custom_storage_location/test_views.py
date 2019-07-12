@@ -819,3 +819,38 @@ class TestBoxConnectionTest(AdminTestCase):
         nt.assert_equals(response_temp_account['provider_id'], temp_account.provider_id)
         nt.assert_equals(response_temp_account['provider_name'], temp_account.provider_name)
         nt.assert_equals(response_temp_account['fullname'], self.user.fullname)
+
+class TestNiiStorageTest(AdminTestCase):
+    def setUp(self):
+        super(TestNiiStorageTest, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
+        self.user.save()
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.save_credentials(request)
+
+    def test_provider_missing(self):
+        response = self.view_post({
+            'no_pro': 'osfstorage',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Provider is missing.', response.content)
+
+    def test_success(self):
+        response = self.view_post({
+            'provider_short_name': 'osfstorage',
+        })
+
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('NII storage was set successfully', response.content)
