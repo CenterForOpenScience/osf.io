@@ -239,11 +239,14 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
         'message': ('Saved credentials successfully!!')
     }, httplib.OK)
 
+def save_osfstorage_credentials(institution_id):
+    Region.objects.filter(_id=institution_id).delete()
+    return ({
+        'message': ('NII storage was set successfully')
+    }, httplib.OK)
+
 def get_external_temporary_account(institution_id, provider_short_name):
-    try:
-        return ExternalAccountTemporary.objects.get(_id=institution_id, provider=provider_short_name)
-    except ObjectDoesNotExist:
-        None
+    return ExternalAccountTemporary.objects.get(_id=institution_id, provider=provider_short_name)
 
 def get_oauth_info_notification(institution_id, provider_short_name):
     temp_external_account = get_external_temporary_account(institution_id, provider_short_name)

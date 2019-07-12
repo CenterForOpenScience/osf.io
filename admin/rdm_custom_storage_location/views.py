@@ -175,6 +175,10 @@ def save_credentials(request):
             data.get('swift_folder'),
             data.get('swift_container'),
         )
+    elif provider_short_name == 'osfstorage':
+        result = utils.save_osfstorage_credentials(
+            institution_id,
+        )
     else:
         result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
 
