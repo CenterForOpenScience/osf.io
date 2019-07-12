@@ -11,7 +11,7 @@ TABLES_TO_POPULATE_WITH_MODIFIED = [
     'osf_comment',
     'addons_zotero_usersettings',
     'addons_dropbox_usersettings',
-    'addons_dropbox_nodesettings'
+    'addons_dropbox_nodesettings',
     'addons_figshare_nodesettings',
     'addons_figshare_usersettings',
     'addons_forward_nodesettings',
@@ -42,27 +42,19 @@ TABLES_TO_POPULATE_WITH_MODIFIED = [
     'addons_zotero_nodesettings'
 ]
 
-TABLES_TO_POPULATE_WITH_EPOCH = [
-    'osf_reviewaction',
-    'osf_noderequestaction',
-    'osf_preprintrequestaction'
-]
-
 POPULATE_COLUMNS = [
-    'SET statement_timeout = 10000; UPDATE osf_basefilenode SET deleted = deleted_on WHERE id IN (SELECT id FROM osf_basefilenode WHERE deleted_on IS NOT NULL AND deleted IS NULL LIMIT {}) RETURNING id;',
-    'SET statement_timeout = 10000; UPDATE osf_abstractnode CASE WHEN deleted_date IS NOT NULL THEN SET deleted=deleted_date ELSE SET deleted_date = last_logged END WHERE id IN (SELECT id FROM osf_abstractnode WHERE is_deleted AND deleted IS NULL LIMIT {}) RETURNING id;',
-    'SET statement_timeout = 10000; UPDATE osf_privatelink PL set deleted = NL.date from osf_nodelog NL, osf_privatelink_nodes pl_n WHERE NL.node_id=pl_n.abstractnode_id AND pl_n.privatelink_id = pl.id and PL.id in (SELECT id FROM osf_privatelink WHERE is_deleted AND deleted IS NULL LIMIT {}) RETURNING PL.id;',
+    'SET statement_timeout = 10000; UPDATE osf_basefilenode SET deleted = deleted_on WHERE id IN (SELECT id FROM osf_basefilenode WHERE deleted_on IS NOT NULL AND deleted IS NULL LIMIT %s) RETURNING id;',
+    'SET statement_timeout = 10000; UPDATE osf_abstractnode SET deleted= CASE WHEN deleted_date IS NOT NULL THEN deleted_date ELSE last_logged END WHERE id IN (SELECT id FROM osf_abstractnode WHERE is_deleted AND deleted IS NULL LIMIT %s) RETURNING id;',
+    'SET statement_timeout = 10000; UPDATE osf_privatelink PL set deleted = NL.date from osf_nodelog NL, osf_privatelink_nodes pl_n WHERE NL.node_id=pl_n.abstractnode_id AND pl_n.privatelink_id = pl.id and PL.id in (SELECT id FROM osf_privatelink WHERE is_deleted AND deleted IS NULL LIMIT %s) RETURNING PL.id;',
 ]
 
 UPDATE_DELETED_WITH_MODIFIED = 'SET statement_timeout = 10000; UPDATE {} SET deleted=modified WHERE id IN (SELECT id FROM {} WHERE is_deleted AND deleted IS NULL LIMIT {}) RETURNING id;'
-UPDATE_DELETED_WITH_EPOCH = 'SET statement_timeout = 10000; UPDATE {} SET deleted="epoch" WHERE id IN (SELECT id FROM {} WHERE is_deleted AND deleted IS NULL LIMIT {}) RETURNING id;',
+
 
 @celery_app.task(name='management.commands.migrate_deleted_date')
 def populate_deleted(dry_run=False, page_size=1000):
         for table in TABLES_TO_POPULATE_WITH_MODIFIED:
             run_statements(UPDATE_DELETED_WITH_MODIFIED, page_size, table)
-        for table in TABLES_TO_POPULATE_WITH_EPOCH:
-            run_statements(UPDATE_DELETED_WITH_EPOCH, page_size, table)
         for statement in POPULATE_COLUMNS:
             run_sql(statement, page_size)
 
@@ -73,17 +65,17 @@ def run_statements(statement, page_size, table):
             cursor.execute(statement.format(table, table, page_size))
             rows = cursor.fetchall()
             if not rows:
-                raise Exception('Sentry notification that {} is populated'.format(table))
+                logger.info('Sentry notification that {} is populated'.format(table))
 
 def run_sql(statement, page_size):
     table = statement.split(' ')[5]
     logger.info('Populating deleted column in table {}'.format(table))
     with transaction.atomic():
         with connection.cursor() as cursor:
-            cursor.execute(statement.format(page_size))
+            cursor.execute(statement, [page_size])
             rows = cursor.fetchall()
             if not rows:
-                raise Exception('Sentry notification that {} is populated'.format(table))
+                logger.info('Sentry notification that {} is populated'.format(table))
 
 class Command(BaseCommand):
     help = '''Populates new deleted field for various models. Ensure you have run migrations
@@ -91,7 +83,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--dry',
+            '--dry_run',
             type=bool,
             default=False,
             help='Run queries but do not write files',
