@@ -10,6 +10,7 @@ from os.path import splitext
 from flask import Request as FlaskRequest
 from framework import analytics
 from guardian.shortcuts import get_perms
+from past.builtins import basestring
 
 # OSF imports
 import itsdangerous
