@@ -19,7 +19,7 @@ from framework.auth import Auth
 from website.mails import Mail, send_mail
 from framework.exceptions import HTTPError
 
-from osf.models import RdmAddonOption, BaseFileNode
+from osf.models import RdmAddonOption
 from website.project.decorators import (
     must_have_addon,
     must_be_valid_project,
@@ -214,8 +214,7 @@ def iqbrims_get_storage(**kwargs):
     logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
     if file_name is not None:
         files = [f for f in files
-                 if f['title'] == file_name and
-                    (validate is None or validate(access_token, f))]
+                 if f['title'] == file_name and (validate is None or validate(access_token, f))]
     folder_path = iqbrims.folder_path
     management_node = _get_management_node(node)
     base_folder_path = management_node.get_addon('googledrive').folder_path
@@ -227,9 +226,9 @@ def iqbrims_get_storage(**kwargs):
     if len(files) > 0:
         for f in files:
             url = website_settings.DOMAIN.rstrip('/') + '/' + node._id + \
-                  '/files/iqbrims/' + \
-                  urllib.quote(folders[0]['title'].encode('utf8')) + '/' + \
-                  urllib.quote(f['title'].encode('utf8'))
+                '/files/iqbrims/' + \
+                urllib.quote(folders[0]['title'].encode('utf8')) + '/' + \
+                urllib.quote(f['title'].encode('utf8'))
             node_urls.append({'title': f['title'], 'url': url})
             url = website_settings.DOMAIN.rstrip('/') + '/' + management_node._id + \
                   '/files/googledrive' + \
@@ -253,7 +252,6 @@ def iqbrims_reject_storage(**kwargs):
     iqbrims = node.get_addon('iqbrims')
     folder = kwargs['folder']
     folder_name = None
-    file_name = None
     if folder == 'index':
         folder_name = REVIEW_FOLDERS['raw']
     else:
@@ -485,7 +483,7 @@ def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
                if register_type == 'deposit' \
                else settings.APPSHEET_CHECK_COLUMNS
     columns = sclient.ensure_columns(sheet_id,
-                                     [c for c, _ in acolumns])
+                                     [c for c, __ in acolumns])
     column_index = columns.index([c for c, cid in acolumns
                                   if cid == '_node_id'][0])
     row_max = sheets[0]['properties']['gridProperties']['rowCount']
@@ -503,7 +501,7 @@ def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
         logger.info('Updating: {}'.format(node._id))
         row_index = values.index(node._id)
         v = sclient.get_row(sheet_id, row_index, len(columns))
-        v += ['' for _ in range(len(v), len(columns))]
+        v += ['' for __ in range(len(v), len(columns))]
         v = _iqbrims_fill_spreadsheet_values(node, status, folder_link,
                                              columns, v)
         sclient.update_row(sheet_id, v, row_index)
@@ -524,8 +522,7 @@ def _iqbrims_filled_index(access_token, f):
     types = sclient.get_row_values(sheet_id, columns.index('Type'), row_count)
     fills = sclient.get_row_values(sheet_id, columns.index('Filled'),
                                    row_count)
-    procs = [(t, f) for t, f in zip(types, fills) if t == 'file' and f != 'TRUE']
-    logger.info(procs)
+    procs = [(t, fill) for t, fill in zip(types, fills) if t == 'file' and fill != 'TRUE']
     return len(procs) == 0
 
 

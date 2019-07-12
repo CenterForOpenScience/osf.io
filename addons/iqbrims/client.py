@@ -364,8 +364,7 @@ class SpreadsheetClient(BaseClient):
             return ecolumns
         new_r = u'{}!{}1:{}1'.format(sheet_id,
                                      self._row_name(len(ecolumns)),
-                                     self._row_name(len(ecolumns) +
-                                                    len(new_columns)))
+                                     self._row_name(len(ecolumns) + len(new_columns)))
         res = self._make_request(
             'PUT',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -412,11 +411,10 @@ class SpreadsheetClient(BaseClient):
                     target['dirs'].append(d)
                     next_target = d
                 target = next_target
+        fcolumns = ['Type', 'Persons Involved', 'Remarks', 'Software Used', 'Filled']
         c = self.ensure_columns(sheet_id,
                                 ['L{}'.format(i)
-                                 for i in range(0, max_depth + 1)] +
-                                ['Type', 'Persons Involved', 'Remarks',
-                                 'Software Used', 'Filled'])
+                                 for i in range(0, max_depth + 1)] + fcolumns)
         values = self._to_file_list(top, max_depth, [])
         lastt = None
         lasti = None
@@ -514,7 +512,7 @@ class SpreadsheetClient(BaseClient):
     def _to_file_list(self, target, max_depth, blank):
         ret = []
         col = target['depth'] + 1
-        for i, d in enumerate(sorted(target['dirs'], key=lambda x:x['name'])):
+        for i, d in enumerate(sorted(target['dirs'], key=lambda x: x['name'])):
             is_last = i == len(target['dirs']) - 1
             r = ['' for i in range(0, col + 1)]
             for j in range(col):

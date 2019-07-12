@@ -292,9 +292,9 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def get_secret(self):
         if self.secret is not None:
             return self.secret
-        self.secret = ''.join([random.choice(string.ascii_letters +
-                                             string.digits)
-                               for i in range(0, 16)])
+        secret = [random.choice(string.ascii_letters + string.digits)
+                  for i in range(0, 16)]
+        self.secret = ''.join(secret)
         self.save()
         return self.secret
 
