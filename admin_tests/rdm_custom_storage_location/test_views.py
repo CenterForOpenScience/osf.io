@@ -744,10 +744,6 @@ class TestSwiftSaveCredentials(AdminTestCase):
             'provider_short_name': 'swift',
         })
 
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(response)
-
         nt.assert_equals(response.status_code, httplib.OK)
         nt.assert_in('Saved credentials successfully!!', response.content)
 
