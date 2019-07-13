@@ -24,7 +24,8 @@ function IQBRIMSWidget() {
   self.checkHelp = ko.observable(language.checkHelp);
   self.formEntries = ko.observableArray();
 
-  self.isSubmitted = ko.pureComputed(function() {
+  self.isSubmitted = ko.observable(false);
+  self.isModeSelected = ko.pureComputed(function() {
       return this.modeDeposit() || this.modeCheck();
   }, this);
 
@@ -75,17 +76,20 @@ function IQBRIMSWidget() {
       var status = data['data']['attributes'];
       self.modeAdmin(status['is_admin']);
       self.flowableTaskUrl(status['task_url']);
-      if (status['state'] == 'deposit') {
+      if (status['state'] == 'deposit' || status['edit'] == 'deposit') {
         self.modeDeposit(true);
         self.modeCheck(false);
+        self.isSubmitted(status['state'] == status['edit']);
         self.updateFormEntries(status);
-      } else if (status['state'] == 'check') {
+      } else if (status['state'] == 'check' || status['edit'] == 'check') {
         self.modeDeposit(false);
         self.modeCheck(true);
+        self.isSubmitted(status['state'] == status['edit']);
         self.updateFormEntries(status);
       } else {
         self.modeDeposit(false);
         self.modeCheck(false);
+        self.isSubmitted(false);
       }
       self.loading(false);
       self.loadCompleted(true);
@@ -103,11 +107,11 @@ function IQBRIMSWidget() {
   };
 
   self.gotoCheckForm = function() {
-    window.location.href = './iqbrims#check';
+    window.location.href = './iqbrims?edit=check';
   };
 
   self.gotoDepositForm = function() {
-    window.location.href = './iqbrims#deposit';
+    window.location.href = './iqbrims?edit=deposit';
   };
 
   self.clearModal = function() {

@@ -75,6 +75,12 @@ iqbrims_deauthorize_node = generic_views.deauthorize_node(
 @must_be_valid_project
 @must_have_addon('iqbrims', 'node')
 def project_iqbrims(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    iqbrims = node.get_addon('iqbrims')
+    status = iqbrims.get_status()
+    edit = request.args.get('edit', None)
+    if edit is not None and 'edit' not in status:
+        _iqbrims_set_status(node, {'edit': edit})
     return use_ember_app()
 
 @must_have_addon(SHORT_NAME, 'node')
@@ -416,7 +422,7 @@ def _iqbrims_set_status(node, status, auth=None):
             # mount container
             iqbrims.set_folder(root_folder, auth=auth)
             iqbrims.save()
-        _iqbrims_update_spreadsheet(node, management_node, register_type, all_status)
+            _iqbrims_update_spreadsheet(node, management_node, register_type, all_status)
 
         iqbrims.set_status(all_status)
     return all_status

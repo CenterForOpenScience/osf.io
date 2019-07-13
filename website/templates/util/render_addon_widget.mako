@@ -219,17 +219,35 @@
                           </div>
                         <!-- /ko -->
                         <!-- ko ifnot: modeAdmin -->
-                          <!-- ko if: isSubmitted -->
-                          <div style="margin: 0.5em;">
-                              <div data-bind="foreach: formEntries">
-                                  <div class="col-sm-4 col-md-4" style="font-weight: bold;" data-bind="text: title">
-                                  </div>
-                                  <div class="col-sm-8 col-md-8" data-bind="text: value">
-                                  </div>
+                          <!-- ko if: isModeSelected -->
+                            <!-- ko if: (!isSubmitted() && modeDeposit()) -->
+                              <div class="form-group">
+                                <button type="button" class="btn btn-primary"
+                                        data-bind="click: gotoDepositForm">Deposit Manuscript & Data</button>
+                                <small class="form-text text-muted" data-bind="text: depositHelp">
+                                </small>
                               </div>
-                          </div>
+                            <!-- /ko -->
+                            <!-- ko if: (!isSubmitted() && modeCheck()) -->
+                              <div class="form-group">
+                                <button type="button" class="btn btn-primary"
+                                        data-bind="click: gotoCheckForm">Image Scan Service</button>
+                                <small class="form-text text-muted" data-bind="text: checkHelp">
+                                </small>
+                              </div>
+                            <!-- /ko -->
+                            <!-- ko if: isSubmitted -->
+                              <div style="margin: 0.5em;">
+                                <div data-bind="foreach: formEntries">
+                                    <div class="col-sm-4 col-md-4" style="font-weight: bold;" data-bind="text: title">
+                                    </div>
+                                    <div class="col-sm-8 col-md-8" data-bind="text: value">
+                                    </div>
+                                </div>
+                              </div>
+                            <!-- /ko -->
                           <!-- /ko -->
-                          <!-- ko ifnot: isSubmitted -->
+                          <!-- ko ifnot: isModeSelected -->
                           <div class="form-group">
                             <button type="button" class="btn btn-primary"
                                     data-bind="click: gotoDepositForm">Deposit Manuscript & Data</button>
