@@ -188,6 +188,8 @@ def iqbrims_post_workflow_state(**kwargs):
     status = {}
     status['workflow_' + part + '_state'] = reqdata['state']
     status['workflow_' + part + '_permissions'] = reqdata['permissions']
+    if 'updated' in reqdata:
+        status['workflow_' + part + '_updated'] = reqdata['updated']
     _iqbrims_set_status(node, status)
 
 @must_be_valid_project
