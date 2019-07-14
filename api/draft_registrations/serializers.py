@@ -21,12 +21,26 @@ from osf.exceptions import DraftRegistrationStateError
 from website import settings
 
 
+class NodeRelationshipField(RelationshipField):
+
+    def to_internal_value(self, node_id):
+        node = self.context['view'].get_node(node_id=node_id) if node_id else None
+        return {'branched_from': node}
+
+
 class DraftRegistrationSerializer(DraftRegistrationSerializerLegacy, TaxonomizableSerializerMixin):
-    title = ser.CharField(required=False)
+    """
+    New DraftRegistrationSerializer - instead of the node_id being provided in the URL, an optional
+    node is passed in under `branched_from`.
+
+    DraftRegistrations have several fields that can be edited that are persisted to the final registration.
+    """
     category_choices = settings.NODE_CATEGORY_MAP.items()
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
+    title = ser.CharField(required=False, allow_blank=False)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
+
     category = ser.ChoiceField(required=False, choices=category_choices, help_text='Choices: ' + category_choices_string)
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
@@ -34,17 +48,6 @@ class DraftRegistrationSerializer(DraftRegistrationSerializerLegacy, Taxonomizab
     links = LinksField({
         'self': 'get_self_url',
     })
-
-    license = NodeLicenseRelationshipField(
-        related_view='licenses:license-detail',
-        related_view_kwargs={'license_id': '<license.node_license._id>'},
-        read_only=False,
-    )
-
-    contributors = RelationshipField(
-        related_view='draft_registrations:draft-registration-contributors',
-        related_view_kwargs={'draft_id': '<_id>'},
-    )
 
     affiliated_institutions = RelationshipField(
         related_view='draft_registrations:draft-registration-institutions',
@@ -54,6 +57,24 @@ class DraftRegistrationSerializer(DraftRegistrationSerializerLegacy, Taxonomizab
         read_only=False,
         many=True,
         required=False,
+    )
+
+    branched_from = NodeRelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<branched_from._id>'},
+        read_only=False,
+        required=False,
+    )
+
+    contributors = RelationshipField(
+        related_view='draft_registrations:draft-registration-contributors',
+        related_view_kwargs={'draft_id': '<_id>'},
+    )
+
+    license = NodeLicenseRelationshipField(
+        related_view='licenses:license-detail',
+        related_view_kwargs={'license_id': '<license.node_license._id>'},
+        read_only=False,
     )
 
     @property
@@ -81,6 +102,7 @@ class DraftRegistrationSerializer(DraftRegistrationSerializerLegacy, Taxonomizab
 
     # Overrides DraftRegistrationSerializerLegacy
     def get_node(self, validated_data):
+        # Node comes from branched_from relationship rather than from URL
         return validated_data.pop('branched_from', None)
 
     def expect_subjects_as_relationships(self, request):
@@ -91,6 +113,7 @@ class DraftRegistrationSerializer(DraftRegistrationSerializerLegacy, Taxonomizab
         :param object request: Request object
         :return bool: Subjects should be serialized as relationships
         """
+        # Overrides TaxonomizableSerializerMixin
         return True
 
 

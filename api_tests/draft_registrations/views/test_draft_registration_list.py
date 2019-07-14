@@ -12,6 +12,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
     ProjectFactory,
+    AuthUserFactory,
 )
 from osf.utils.permissions import READ, WRITE
 
@@ -25,7 +26,7 @@ class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
     # Overrides TestDraftRegistrationList
     def test_osf_group_with_admin_permissions_can_view(self):
         # DraftRegistration endpoints permissions are not calculated from the node
-        pass
+        return
 
     # Overrides TestDraftRegistrationList
     def test_cannot_view_draft_list(
@@ -134,6 +135,9 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
     def test_draft_registration_attributes_copied_from_node(self, app, project_public,
             url_draft_registrations, user, payload):
 
+        write_contrib = AuthUserFactory()
+        read_contrib = AuthUserFactory()
+
         GPL3 = NodeLicense.objects.get(license_id='GPL3')
         project_public.set_node_license(
             {
@@ -144,6 +148,14 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
             auth=Auth(user),
             save=True
         )
+
+        project_public.add_contributor(write_contrib, WRITE)
+        project_public.add_contributor(read_contrib, READ)
+
+        res = app.post_json_api(url_draft_registrations, payload, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        res = app.post_json_api(url_draft_registrations, payload, auth=read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
 
         res = app.post_json_api(url_draft_registrations, payload, auth=user.auth)
         assert res.status_code == 201
@@ -225,7 +237,7 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
     # Overrides TestDraftRegistrationList
     def test_cannot_create_draft_errors(self):
         # The original test assumes a node is being passed in
-        pass
+        return
 
     def test_draft_registration_attributes_not_copied_from_node(self, app, project_public,
             url_draft_registrations, user, payload):

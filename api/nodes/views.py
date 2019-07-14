@@ -624,6 +624,9 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
+
+    This endpoint supports the older registries submission workflow and will soon be deprecated.
+    Use DraftRegistrationDetail endpoint instead.
     """
     permission_classes = (
         IsAdminContributorOrReviewer,

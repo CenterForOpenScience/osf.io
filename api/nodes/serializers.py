@@ -55,15 +55,6 @@ class RegistrationProviderRelationshipField(RelationshipField):
         provider = self.get_object(data)
         return {'provider': provider}
 
-
-class NodeRelationshipField(RelationshipField):
-
-    def to_internal_value(self, data):
-        node_id = data
-        node = self.context['view'].get_node(node_id=node_id) if node_id else None
-        return {'branched_from': node}
-
-
 def get_institutions_to_add_remove(institutions, new_institutions):
     diff = relationship_diff(
         current_items={inst._id: inst for inst in institutions.all()},
@@ -1441,16 +1432,14 @@ class DraftRegistrationSerializerLegacy(JSONAPISerializer):
     datetime_initiated = VersionedDateTimeField(read_only=True)
     datetime_updated = VersionedDateTimeField(read_only=True)
 
-    branched_from = NodeRelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<branched_from._id>'},
-        read_only=False,
-        required=False,
-    )
-
     initiator = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<initiator._id>'},
+    )
+
+    branched_from = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<branched_from._id>'},
     )
 
     registration_schema = RegistrationSchemaRelationshipField(

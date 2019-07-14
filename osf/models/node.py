@@ -1318,6 +1318,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.add_permission(contrib.user, permission, save=True)
         Contributor.objects.bulk_create(contribs)
 
+    def subscribe_contributors_to_node(self):
+        """
+        Upon registering a DraftNode, subscribe all registered contributors to notifications -
+        and send emails to users that they have been added to the project.
+        (DraftNodes are hidden until registration).
+        """
+        for user in self.contributors.filter(is_registered=True):
+            perm = self.contributor_set.get(user=user).permission
+            project_signals.contributor_added.send(self,
+                contributor=user,
+                auth=None, email_template='default', permissions=perm)
+
     def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None):
         """Make a frozen copy of a node.
 

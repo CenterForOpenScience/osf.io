@@ -6,9 +6,7 @@ from api.base import permissions as base_permissions
 from api.base.pagination import DraftRegistrationContributorPagination
 from api.base.views import JSONAPIBaseView
 from api.draft_registrations.permissions import (
-    IsAdminContributor,
-    IsAdminContributorOrReviewer,
-    IsContributor,
+    IsContributorOrAdminContributor,
     DraftContributorDetailPermissions,
 )
 from api.draft_registrations.serializers import (
@@ -51,7 +49,7 @@ class DraftRegistrationMixin(DraftMixin):
 
 class DraftRegistrationList(NodeDraftRegistrationsList):
     permission_classes = (
-        IsAdminContributor,
+        IsContributorOrAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -72,7 +70,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
 
 class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
     permission_classes = (
-        IsAdminContributorOrReviewer,
+        IsContributorOrAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -85,7 +83,7 @@ class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixi
 
 class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
     permission_classes = (
-        IsAdminContributorOrReviewer,
+        IsContributorOrAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -100,9 +98,18 @@ class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
         return self.get_draft()
 
 
+class DraftInstitutionsRelationship(NodeInstitutionsRelationship, DraftRegistrationMixin):
+    view_category = 'draft_registrations'
+    view_name = 'draft-registration-relationships-institutions'
+
+    # Overrides NodeInstitutionsRelationship
+    def get_resource(self):
+        return self.get_draft(check_object_permissions=False)
+
+
 class DraftSubjectsList(BaseResourceSubjectsList, DraftRegistrationMixin):
     permission_classes = (
-        IsContributor,
+        IsContributorOrAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -113,12 +120,13 @@ class DraftSubjectsList(BaseResourceSubjectsList, DraftRegistrationMixin):
     view_name = 'draft-registration-subjects'
 
     def get_resource(self):
+        # Overrides BaseResourceSubjectsList
         return self.get_draft()
 
 
 class DraftSubjectsRelationship(SubjectRelationshipBaseView, DraftRegistrationMixin):
     permission_classes = (
-        IsContributor,
+        IsContributorOrAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -132,12 +140,13 @@ class DraftSubjectsRelationship(SubjectRelationshipBaseView, DraftRegistrationMi
     ordering = ('-id',)
 
     def get_resource(self, check_object_permissions=True):
+        # Overrides SubjectRelationshipBaseView
         return self.get_draft(check_object_permissions=check_object_permissions)
 
 
 class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
     permission_classes = (
-        IsContributor,
+        IsContributorOrAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -152,6 +161,7 @@ class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
     serializer_class = DraftRegistrationContributorsSerializer
 
     def get_default_queryset(self):
+        # Overrides NodeContributorsList
         draft = self.get_draft()
         return draft.draftregistrationcontributor_set.all().include('user__guids')
 
@@ -208,12 +218,3 @@ class DraftContributorDetail(NodeContributorDetail, DraftRegistrationMixin):
         context['resource'] = self.get_draft()
         context['default_email'] = 'draft'
         return context
-
-
-class DraftInstitutionsRelationship(NodeInstitutionsRelationship, DraftRegistrationMixin):
-    view_category = 'draft_registrations'
-    view_name = 'draft-registration-relationships-institutions'
-
-    # Overrides NodeInstitutionsRelationship
-    def get_resource(self):
-        return self.get_draft(check_object_permissions=False)

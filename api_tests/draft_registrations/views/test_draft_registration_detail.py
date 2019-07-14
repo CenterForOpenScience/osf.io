@@ -1,5 +1,6 @@
 import pytest
 
+from django.contrib.auth.models import Permission
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_detail import (
     TestDraftRegistrationDetail,
@@ -31,6 +32,37 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
 
         res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
+
+    # Overrides TestDraftRegistrationDetail
+    def test_cannot_view_draft(
+            self, app, user_write_contrib, project_public,
+            user_read_contrib, user_non_contrib,
+            url_draft_registrations, group, group_mem):
+
+        #   test_read_only_contributor_can_view_draft
+        res = app.get(
+            url_draft_registrations,
+            auth=user_read_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+    #   test_read_write_contributor_can_view_draft
+        res = app.get(
+            url_draft_registrations,
+            auth=user_write_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+    #   test_logged_in_non_contributor_cannot_view_draft
+        res = app.get(
+            url_draft_registrations,
+            auth=user_non_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_unauthenticated_user_cannot_view_draft
+        res = app.get(url_draft_registrations, expect_errors=True)
+        assert res.status_code == 401
 
     def test_detail_view_returns_editable_fields(self, app, user, draft_registration,
             url_draft_registrations, project_public):
@@ -97,6 +129,18 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         assert draft_registration.has_permission(draft_admin, ADMIN) is True
         res = app.get(url_draft_registrations, auth=draft_admin.auth)
         assert res.status_code == 200
+
+    # Overrides TestDraftRegistrationDetail
+    def test_reviewer_can_see_draft_registration(
+            self, app, schema, draft_registration, url_draft_registrations):
+        user = AuthUserFactory()
+        administer_permission = Permission.objects.get(
+            codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
+        user.save()
+        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
+        # New workflows aren't accommodating old prereg challenge
+        assert res.status_code == 403
 
 
 class TestUpdateEditableFieldsTestCase:
@@ -224,9 +268,32 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         # Override - not required
         assert res.status_code == 200
 
-    # def test_invalid_editable_field_updates
+    def test_invalid_editable_title(
+            self, app, user, editable_fields_payload, url_draft_registrations):
 
-    # def test node perms
+        # test blank title
+        editable_fields_payload['data']['attributes']['title'] = ''
+        res = app.put_json_api(
+            url_draft_registrations, editable_fields_payload,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # test null title
+        editable_fields_payload['data']['attributes']['title'] = None
+        res = app.put_json_api(
+            url_draft_registrations, editable_fields_payload,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+    def test_invalid_editable_category(
+            self, app, user, editable_fields_payload, url_draft_registrations):
+
+        # test blank title
+        editable_fields_payload['data']['attributes']['category'] = 'Not a category'
+        res = app.put_json_api(
+            url_draft_registrations, editable_fields_payload,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
 
     # def test cannot update node, schema,
 
