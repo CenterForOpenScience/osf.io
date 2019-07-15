@@ -2,7 +2,6 @@ import waffle
 from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
@@ -33,9 +32,9 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
 
     def get_default_queryset(self):
         if waffle.switch_is_active(ENABLE_INACTIVE_SCHEMAS):
-            return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, visible=True)
+            return RegistrationSchema.objects.get_latest_versions(only_active=False)
         else:
-            return RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True, visible=True)
+            return RegistrationSchema.objects.get_latest_versions()
 
     # overrides ListAPIView
     def get_queryset(self):
