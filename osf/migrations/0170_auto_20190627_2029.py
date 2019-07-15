@@ -29,22 +29,12 @@ class Migration(migrations.Migration):
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='noderequestaction',
-            name='deleted',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='preprintrequestaction',
-            name='deleted',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
-        ),
-        migrations.AddField(
             model_name='privatelink',
             name='deleted',
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='reviewaction',
+            model_name='institution',
             name='deleted',
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
         ),

@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 TABLES_TO_POPULATE_WITH_MODIFIED = [
     'osf_comment',
+    'osf_institution',
     'addons_zotero_usersettings',
     'addons_dropbox_usersettings',
     'addons_dropbox_nodesettings',
@@ -53,29 +54,30 @@ UPDATE_DELETED_WITH_MODIFIED = 'SET statement_timeout = 10000; UPDATE {} SET del
 
 @celery_app.task(name='management.commands.migrate_deleted_date')
 def populate_deleted(dry_run=False, page_size=1000):
+    with transaction.atomic():
         for table in TABLES_TO_POPULATE_WITH_MODIFIED:
             run_statements(UPDATE_DELETED_WITH_MODIFIED, page_size, table)
         for statement in POPULATE_COLUMNS:
             run_sql(statement, page_size)
+        if dry_run:
+            raise RuntimeError('Dry Run -- Transaction rolled back')
 
 def run_statements(statement, page_size, table):
     logger.info('Populating deleted column in table {}'.format(table))
-    with transaction.atomic():
-        with connection.cursor() as cursor:
-            cursor.execute(statement.format(table, table, page_size))
-            rows = cursor.fetchall()
-            if not rows:
-                logger.info('Sentry notification that {} is populated'.format(table))
+    with connection.cursor() as cursor:
+        cursor.execute(statement.format(table, table, page_size))
+        rows = cursor.fetchall()
+        if not rows:
+            logger.info('Sentry notification that {} is populated'.format(table))
 
 def run_sql(statement, page_size):
     table = statement.split(' ')[5]
     logger.info('Populating deleted column in table {}'.format(table))
-    with transaction.atomic():
-        with connection.cursor() as cursor:
-            cursor.execute(statement, [page_size])
-            rows = cursor.fetchall()
-            if not rows:
-                logger.info('Sentry notification that {} is populated'.format(table))
+    with connection.cursor() as cursor:
+        cursor.execute(statement, [page_size])
+        rows = cursor.fetchall()
+        if not rows:
+            logger.info('Sentry notification that {} is populated'.format(table))
 
 class Command(BaseCommand):
     help = '''Populates new deleted field for various models. Ensure you have run migrations
@@ -102,6 +104,9 @@ class Command(BaseCommand):
 
         dry_run = options['dry_run']
         page_size = options['page_size']
+
+        if dry_run:
+            logger.info('DRY RUN')
 
         populate_deleted(dry_run, page_size)
 
