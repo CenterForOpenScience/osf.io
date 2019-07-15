@@ -10,6 +10,7 @@ from framework.auth import Auth
 from osf.models import Comment, NotificationDigest, NotificationSubscription, Guid, OSFUser
 
 from website.notifications.tasks import get_users_emails, send_users_email, group_by_node, remove_notifications
+from website.notifications.exceptions import InvalidSubscriptionError
 from website.notifications import constants
 from website.notifications import emails
 from website.notifications import utils
@@ -216,6 +217,11 @@ class TestNotificationsModels(OsfTestCase):
         for event_name in constants.USER_SUBSCRIPTIONS_AVAILABLE:
             assert_in(event_name, subscription_event_names)
 
+    def test_subscribe_user_to_registration_notifications(self):
+        registration = factories.RegistrationFactory()
+        with assert_raises(InvalidSubscriptionError):
+            utils.subscribe_user_to_notifications(registration, self.user)
+
     def test_new_project_creator_is_subscribed_with_default_global_settings(self):
         user = factories.UserFactory()
 
@@ -409,6 +415,7 @@ class TestSubscriptionView(OsfTestCase):
         super(TestSubscriptionView, self).setUp()
         self.node = factories.NodeFactory()
         self.user = self.node.creator
+        self.registration = factories.RegistrationFactory(creator=self.user)
 
     def test_create_new_subscription(self):
         payload = {
@@ -439,6 +446,16 @@ class TestSubscriptionView(OsfTestCase):
         s.reload()
         assert_false(self.node.creator in getattr(s, payload['notification_type']).all())
         assert_in(self.node.creator, getattr(s, new_payload['notification_type']).all())
+
+    def test_cannot_create_registration_subscription(self):
+        payload = {
+            'id': self.registration._id,
+            'event': 'comments',
+            'notification_type': 'email_transactional'
+        }
+        url = api_url_for('configure_subscription')
+        res = self.app.post_json(url, payload, auth=self.registration.creator.auth, expect_errors=True)
+        assert res.status_code == 400
 
     def test_adopt_parent_subscription_default(self):
         payload = {

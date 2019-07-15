@@ -2,6 +2,16 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.18.0 (2019-07-15)
+===================
+- Remove any Notification Subscriptions attached to Registrations
+- Add file counts to registrations
+- Stop locking rows when fetching registration schemas
+- Update AsPredicted schema to the latest version
+- Correctly set registration states when auto-approving embargo termination requests
+- APIv2: Serialize collected_metadata relationship on Collection serializer
+- Fix preprint metrics counts and include source info.
+
 19.17.0 (2019-07-08)
 ===================
 - Admin app: paginating nodes and preprints, and adding bulk ham functionality for nodes

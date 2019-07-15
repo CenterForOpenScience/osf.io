@@ -66,4 +66,5 @@ class TestApproveEmbargoTerminations(OsfTestCase):
         for node in self.registration2.node_and_primary_descendants():
             node.reload()
             assert_true(node.is_public)
+            assert_equal(node.embargo_termination_approval.state, Sanction.APPROVED)
             assert_false(node.is_embargoed)
