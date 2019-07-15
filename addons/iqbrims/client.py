@@ -2,6 +2,7 @@
 import json
 import requests
 import logging
+import os
 import string
 
 from framework.exceptions import HTTPError
@@ -346,8 +347,8 @@ class SpreadsheetClient(BaseClient):
         return self._as_columns(data['values'], data['majorDimension']) \
                if 'values' in data else []
 
-    def ensure_columns(self, sheet_id, columns):
-        r = u'{}!A1:W1'.format(sheet_id)
+    def ensure_columns(self, sheet_id, columns, row=1):
+        r = u'{0}!A{1}:W{1}'.format(sheet_id, row)
         res = self._make_request(
             'GET',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -362,9 +363,10 @@ class SpreadsheetClient(BaseClient):
         new_columns = [c for c in columns if c not in ecolumns]
         if len(new_columns) == 0:
             return ecolumns
-        new_r = u'{}!{}1:{}1'.format(sheet_id,
-                                     self._row_name(len(ecolumns)),
-                                     self._row_name(len(ecolumns) + len(new_columns)))
+        new_r = u'{0}!{1}{3}:{2}{3}'.format(sheet_id,
+                                            self._row_name(len(ecolumns)),
+                                            self._row_name(len(ecolumns) + len(new_columns)),
+                                            row)
         res = self._make_request(
             'PUT',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -411,28 +413,23 @@ class SpreadsheetClient(BaseClient):
                     target['dirs'].append(d)
                     next_target = d
                 target = next_target
-        fcolumns = ['Type', 'Persons Involved', 'Remarks', 'Software Used', 'Filled']
+        self.ensure_columns(sheet_id, ['Filled'], row=1)
+        fcolumns = ['Persons Involved', 'Remarks', 'Software Used']
         c = self.ensure_columns(sheet_id,
                                 ['L{}'.format(i)
-                                 for i in range(0, max_depth + 1)] + fcolumns)
+                                 for i in range(0, max_depth + 1)] +
+                                ['{}(File)'.format(col) for col in fcolumns] +
+                                ['Extension'] +
+                                ['{}(Extension)'.format(col) for col in fcolumns],
+                                row=3)
         values = self._to_file_list(top, max_depth, [])
-        lastt = None
-        lasti = None
-        file_ranges = []
-        for i, (v, t) in enumerate(values):
-            if lasti is None:
-                lastt = t
-                lasti = i
-            elif t != lastt:
-                if lastt == 'file':
-                    file_ranges.append((lasti, i))
-                lastt = t
-                lasti = i
-        if lastt == 'file':
-            file_ranges.append((lasti, len(values)))
-
-        values = [self._to_file_row(c, t, v) for v, t in values]
-        r = u'{0}!A1:{1}1'.format(sheet_id, self._row_name(max_depth + 1))
+        exts = sorted(set([os.path.splitext(v[-1])[-1]
+                           for v, t in values if t == 'file']))
+        exts = [e for e in exts if len(e) > 0]
+        exts += ['' for i in range(0, len(values) - len(exts))]
+        values = [self._to_file_row(c, t, v, ex)
+                  for (v, t), ex in zip(values, exts)]
+        r = u'{0}!A3:{1}3'.format(sheet_id, self._row_name(max_depth + 1))
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -461,17 +458,17 @@ class SpreadsheetClient(BaseClient):
                 'requests': [{
                     'setDataValidation': {
                         'range': {'sheetId': sheet_idx,
-                                  'startColumnIndex': c.index('Filled'),
-                                  'endColumnIndex': c.index('Filled') + 1,
-                                  'startRowIndex': r0 + 1,
-                                  'endRowIndex': r1 + 1},
+                                  'startColumnIndex': 0,
+                                  'endColumnIndex': 1,
+                                  'startRowIndex': 1,
+                                  'endRowIndex': 2},
                         'rule': {
                             'condition': {
                                 'type': 'BOOLEAN'
                             }
                         }
                     }
-                } for (r0, r1) in file_ranges]
+                }]
             }),
             expects=(200, ),
             throws=HTTPError(401)
@@ -497,15 +494,15 @@ class SpreadsheetClient(BaseClient):
         else:
             return [v[0] if len(v) > 0 else '' for v in values]
 
-    def _to_file_row(self, columns, typestr, values):
+    def _to_file_row(self, columns, typestr, values, ext):
         r = []
         for c in columns:
             e = ''
             if c.startswith('L'):
                 index = int(c[1:])
                 e = values[index] if index < len(values) else ''
-            elif c == 'Type':
-                e = typestr
+            elif c == 'Extension':
+                e = ext
             r.append(e)
         return r
 

@@ -514,7 +514,6 @@ def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
                                              columns, v)
         sclient.update_row(sheet_id, v, row_index)
 
-
 def _iqbrims_filled_index(access_token, f):
     sclient = SpreadsheetClient(f['id'], access_token)
     sheets = [s
@@ -527,12 +526,9 @@ def _iqbrims_filled_index(access_token, f):
     row_count = sheet_props['gridProperties']['rowCount']
     logger.info('Grid: {}, {}'.format(col_count, row_count))
     columns = sclient.get_column_values(sheet_id, 1, col_count)
-    types = sclient.get_row_values(sheet_id, columns.index('Type'), row_count)
-    fills = sclient.get_row_values(sheet_id, columns.index('Filled'),
-                                   row_count)
-    procs = [(t, fill) for t, fill in zip(types, fills) if t == 'file' and fill != 'TRUE']
+    fills = sclient.get_row_values(sheet_id, columns.index('Filled'), 2)
+    procs = [fill for fill in fills if fill != 'TRUE']
     return len(procs) == 0
-
 
 def _iqbrims_fill_spreadsheet_values(node, status, folder_link, columns,
                                      values):
