@@ -8,9 +8,8 @@ from api.base.permissions import TokenHasScope
 from osf.metrics import PreprintDownload, PreprintView
 from api.metrics.permissions import IsPreprintMetricsUser
 from api.metrics.serializers import PreprintMetricSerializer
+from api.metrics.utils import parse_datetimes
 from api.base.views import JSONAPIBaseView
-
-from .utils import parse_datetimes
 
 
 class PreprintMetricMixin(JSONAPIBaseView):
@@ -52,11 +51,11 @@ class PreprintMetricMixin(JSONAPIBaseView):
     def format_response(self, response, query_params):
         data = []
         if getattr(response, 'aggregations') and response.aggregations:
-            for result in response.aggregations.preprints_per_day.buckets:
+            for result in response.aggregations.dates.buckets:
                 guid_results = {}
-                for preprint_result in result.per_preprint.buckets:
-                    guid_results[preprint_result['key']] = preprint_result['doc_count']
-                # return 0 for the guids with no results for consistent payloads
+                for preprint_result in result.preprints.buckets:
+                    guid_results[preprint_result['key']] = preprint_result['total']['value']
+                    # return 0 for the guids with no results for consistent payloads
                 guids = query_params['guids'].split(',')
                 if guid_results.keys() != guids:
                     for guid in guids:
@@ -90,8 +89,9 @@ class PreprintMetricMixin(JSONAPIBaseView):
 
         search = self.metric.search(after=start_datetime)
         search = search.filter('range', timestamp={'gte': start_datetime, 'lt': end_datetime})
-        search.aggs.bucket('preprints_per_day', 'date_histogram', field='timestamp', interval=interval)
-        search.aggs['preprints_per_day'].metric('per_preprint', 'terms', field='preprint_id')
+        search.aggs.bucket('dates', 'date_histogram', field='timestamp', interval=interval) \
+            .bucket('preprints', 'terms', field='preprint_id') \
+            .metric('total', 'sum', field='count')
         search = self.add_search(search, query_params, **kwargs)
         response = self.execute_search(search)
         resp_dict = self.format_response(response, query_params)
