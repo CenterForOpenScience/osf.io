@@ -61,6 +61,7 @@
     "retraction_initiated":     "${user} initiated withdrawal of registration of ${node}",
     "retraction_initiated_no_user": "A withdrawal of registration of ${node} is proposed",
     "retraction_approved":  "${user} approved withdrawal of registration of ${node}",
+    "retraction_approved_no_user":  "A withdrawal of registration of ${node} approved",
     "retraction_cancelled":     "${user} cancelled withdrawal of registration of ${node}",
     "registration_initiated":   "${user} initiated registration of ${node}",
     "registration_approved":    "${user} approved registration of ${node}",
