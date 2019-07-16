@@ -5,9 +5,21 @@ READ = 'read'
 WRITE = 'write'
 ADMIN = 'admin'
 # NOTE: Ordered from most-restrictive to most permissive
-PERMISSIONS = [READ, WRITE, ADMIN]
-CREATOR_PERMISSIONS = [READ, WRITE, ADMIN]
-DEFAULT_CONTRIBUTOR_PERMISSIONS = [READ, WRITE]
+READ_NODE = 'read_node'
+WRITE_NODE = 'write_node'
+ADMIN_NODE = 'admin_node'
+PERMISSIONS = [READ_NODE, WRITE_NODE, ADMIN_NODE]
+CONTRIB_PERMISSIONS = {ADMIN_NODE: ADMIN, WRITE_NODE: WRITE, READ_NODE: READ}
+API_CONTRIBUTOR_PERMISSIONS = [READ, WRITE, ADMIN]
+CREATOR_PERMISSIONS = ADMIN
+DEFAULT_CONTRIBUTOR_PERMISSIONS = WRITE
+
+# Roles
+MANAGER = 'manager'
+MEMBER = 'member'
+
+MANAGE = 'manage'
+GROUP_ROLES = [MANAGER, MEMBER]
 
 # Permissions for ReviewableProviderMixin(GuardianMixin)
 REVIEW_PERMISSIONS = (
@@ -40,24 +52,25 @@ REVIEW_GROUPS = {
     # 'reviewer': (),  # TODO Implement reviewers
 }
 
-def expand_permissions(permission):
-    if not permission:
-        return []
-    index = PERMISSIONS.index(permission) + 1
-    return PERMISSIONS[:index]
-
 
 def reduce_permissions(permissions):
-    for permission in PERMISSIONS[::-1]:
+    """
+    Works if technical permissions are passed ['read_node', 'write_node'],
+    or short form are passed ['read', 'write']
+    """
+    for permission in API_CONTRIBUTOR_PERMISSIONS[::-1]:
         if permission in permissions:
             return permission
+    for permission in PERMISSIONS[::-1]:
+        if permission in permissions:
+            return CONTRIB_PERMISSIONS[permission]
     raise ValueError('Permissions not in permissions list')
 
 
 def check_private_key_for_anonymized_link(private_key):
     from osf.models import PrivateLink
     try:
-        link = PrivateLink.objects.get(key=private_key)
+        link = PrivateLink.objects.get(key=private_key, is_deleted=False)
     except PrivateLink.DoesNotExist:
         return False
     return link.anonymous

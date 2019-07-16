@@ -10,12 +10,13 @@ from framework import sentry
 from framework.auth.decorators import Auth
 
 from django.apps import apps
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Case, When, Value, IntegerField
 
 from website import settings
 from website.util import paths
 from website.settings import DISK_SAVING_MODE
 from osf.utils import sanitize
+from osf.utils.permissions import WRITE_NODE
 
 
 logger = logging.getLogger(__name__)
@@ -174,16 +175,20 @@ class NodeFileCollector(object):
         Returns a generator of first descendant node(s) readable by <user>
         in each descendant branch.
         """
+        Node = apps.get_model('osf.node')
+
         new_branches = []
-        Contributor = apps.get_model('osf.Contributor')
 
         linked_node_sqs = node.node_relations.filter(is_node_link=True, child=OuterRef('pk'))
-        has_write_perm_sqs = Contributor.objects.filter(node=OuterRef('pk'), write=True, user=self.auth.user)
+        if self.auth and self.auth.user:
+            can_write = Node.objects.get_nodes_for_user(self.auth.user, WRITE_NODE, node._nodes.all())
+        else:
+            can_write = node._nodes.none()
         descendants_qs = (
             node._nodes
             .filter(is_deleted=False)
             .annotate(is_linked_node=Exists(linked_node_sqs))
-            .annotate(has_write_perm=Exists(has_write_perm_sqs))
+            .annotate(has_write_perm=Case(When(id__in=can_write, then=Value(1)), default=Value(0), output_field=IntegerField()))
             .order_by('_parents')
         )
 

@@ -5,7 +5,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
-
+from osf.utils.permissions import ADMIN
 
 @pytest.mark.django_db
 class TestUserCanReview:
@@ -17,7 +17,7 @@ class TestUserCanReview:
     @pytest.fixture()
     def moderator(self, provider):
         user = AuthUserFactory()
-        provider.add_to_group(user, 'admin')
+        provider.add_to_group(user, ADMIN)
         return user
 
     @pytest.fixture()

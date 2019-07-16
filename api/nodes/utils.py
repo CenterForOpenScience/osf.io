@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 from distutils.version import StrictVersion
-
+from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery, CharField, Value, BooleanField
-from django.contrib.postgres.aggregates.general import ArrayAgg
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
 
-from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, NodeSettings, Region
 from addons.wiki.models import NodeSettings as WikiNodeSettings
 from osf.models import AbstractNode, Preprint, Guid, NodeRelation, Contributor
+from osf.models.node import NodeGroupObjectPermission
+from osf.utils import permissions
 
 from api.base.exceptions import ServiceUnavailableError
 from api.base.utils import get_object_or_error, waterbutler_api_url_for, get_user_auth, has_admin_scope
@@ -74,22 +76,38 @@ def enforce_no_children(request):
 class NodeOptimizationMixin(object):
     """Mixin with convenience method for optimizing serialization of nodes.
     Annotates the node queryset with several properties to reduce number of queries.
+
+    ***Use with caution - while # of queries are reduced, at scale, this can
+    slow down the request significantly**
     """
     def optimize_node_queryset(self, queryset):
+        OSFUserGroup = apps.get_model('osf', 'osfuser_groups')
+
         auth = get_user_auth(self.request)
         admin_scope = has_admin_scope(self.request)
         abstract_node_contenttype_id = ContentType.objects.get_for_model(AbstractNode).id
         guid = Guid.objects.filter(content_type_id=abstract_node_contenttype_id, object_id=OuterRef('parent_id'))
         parent = NodeRelation.objects.annotate(parent__id=Subquery(guid.values('_id')[:1])).filter(child=OuterRef('pk'), is_node_link=False)
         wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), deleted=False)
-        contribs = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
+        preprints = Preprint.objects.can_view(user=auth.user).filter(node_id=OuterRef('pk'))
+        region = Region.objects.filter(id=OuterRef('region_id'))
+        node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('_id')[:1])).filter(owner_id=OuterRef('pk'))
+
+        admin_permission = Permission.objects.get(codename=permissions.ADMIN_NODE)
+        write_permission = Permission.objects.get(codename=permissions.WRITE_NODE)
+        read_permission = Permission.objects.get(codename=permissions.READ_NODE)
+        contrib = Contributor.objects.filter(user=auth.user, node=OuterRef('pk'))
+        user_group = OSFUserGroup.objects.filter(osfuser_id=auth.user.id if auth.user else None, group_id=OuterRef('group_id'))
+        node_group = NodeGroupObjectPermission.objects.annotate(user_group=Subquery(user_group.values_list('group_id')[:1])).filter(user_group__isnull=False, content_object_id=OuterRef('pk'))
+        # user_is_contrib means user is a traditional contributor, while has_read/write/admin are permissions the user has either through group membership or contributorship
         return queryset.prefetch_related('root').prefetch_related('subjects').annotate(
-            user_is_contrib=Exists(contribs),
-            contrib_read=Subquery(contribs.values('read')[:1]),
-            contrib_write=Subquery(contribs.values('write')[:1]),
-            contrib_admin=Subquery(contribs.values('admin')[:1]),
+            user_is_contrib=Exists(contrib),
+            has_read=Exists(node_group.filter(permission_id=read_permission.id)),
+            has_write=Exists(node_group.filter(permission_id=write_permission.id)),
+            has_admin=Exists(node_group.filter(permission_id=admin_permission.id)),
             has_wiki_addon=Exists(wiki_addon),
             annotated_parent_id=Subquery(parent.values('parent__id')[:1], output_field=CharField()),
-            annotated_tags=ArrayAgg('tags__name'),
+            has_viewable_preprints=Exists(preprints),
             has_admin_scope=Value(admin_scope, output_field=BooleanField()),
+            region=Subquery(node_settings.values('region_abbrev')[:1]),
         )

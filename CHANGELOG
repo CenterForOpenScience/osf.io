@@ -2,6 +2,56 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.18.0 (2019-07-15)
+===================
+- Remove any Notification Subscriptions attached to Registrations
+- Add file counts to registrations
+- Stop locking rows when fetching registration schemas
+- Update AsPredicted schema to the latest version
+- Correctly set registration states when auto-approving embargo termination requests
+- APIv2: Serialize collected_metadata relationship on Collection serializer
+- Fix preprint metrics counts and include source info.
+
+19.17.0 (2019-07-08)
+===================
+- Admin app: paginating nodes and preprints, and adding bulk ham functionality for nodes
+- Testmon - only run tests for code that's changed - except on master/develop merges
+- Fix ampersand displays
+- Prevent clickmashing on Add Contributor modal
+- APIv2: Prevent adding unregistered contributors with blacklisted emails
+- APIv2: Allow OAuth application client secret reset by PATCHing client_secret to null
+- APIv2: Add better parser support for handling application/json content type
+- Fix display of Anonymous VOL citation-related logs
+
+19.16.0 (2019-07-03)
+===================
+- Fangorn rate limiting - spaces out requests when moving large groups of files
+
+19.15.0 (2019-06-27)
+===================
+- Add a management command for measuring data storage usage metrics
+
+19.14.0 (2019-06-26)
+===================
+- Chronos: Limit Submission URL visibility
+- APIv2: Private meetings endpoints optimizations.
+- Modifications to how meetings and submissions are related - instead of using
+tags, using a m2m field.
+
+19.13.0 (2019-06-17)
+===================
+- "Groups-guardian" release.  Switches to django-guardian for permissions on AbstractNodes
+- Switches Preprints to using guardian direct foreign keys for performance improvements
+- APIv2: OSF Groups functionality, allows groups of users to be added to projects
+
+19.12.0 (2019-06-10)
+===================
+- APIv2: View-only Links/Anonymous VOL's for Registrations improvements
+
+19.11.0 (2019-06-06)
+===================
+- APIv2: Private endpoints for meetings backend
+
 19.10.0 (2019-06-04)
 ===================
 - Update retired Bitbucket endpoints

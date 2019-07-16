@@ -6,12 +6,11 @@ import waffle
 from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
-from django.db.models import Q
 from django.utils import timezone
 from flask import request, redirect
 import pytz
 
-from framework.database import get_or_http_error, autoload
+from framework.database import autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
@@ -23,18 +22,27 @@ from osf.models import NodeLog, RegistrationSchema, DraftRegistration, Sanction
 
 from website.project.decorators import (
     must_be_valid_project,
+    must_be_contributor_and_not_group_member,
     must_have_permission,
 )
 from website import language, settings
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_ORDERING
+from website.project.metadata.schemas import METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 
-get_schema_or_fail = lambda query: get_or_http_error(RegistrationSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
+
+def get_schema_or_fail(schema_name, schema_version):
+    try:
+        meta_schema = RegistrationSchema.objects.get(name=schema_name, schema_version=schema_version)
+    except RegistrationSchema.DoesNotExist:
+        raise HTTPError(http.NOT_FOUND, data=dict(
+            message_long='No RegistrationSchema record matching that query could be found'
+        ))
+    return meta_schema
 
 def must_be_branched_from_node(func):
     @autoload_draft
@@ -111,6 +119,7 @@ def check_draft_state(draft):
         })
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     """Submit for approvals and/or notifications
@@ -181,6 +190,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     }, http.ACCEPTED
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def draft_before_register_page(auth, node, draft, *args, **kwargs):
     """Allow the user to select an embargo period and confirm registration
@@ -223,6 +233,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
+@must_be_contributor_and_not_group_member
 @ember_flag_is_active(features.EMBER_CREATE_DRAFT_REGISTRATION)
 def new_draft_registration(auth, node, *args, **kwargs):
     """Create a new draft registration for the node
@@ -250,7 +261,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
     schema_version = data.get('schema_version', 2)
 
-    meta_schema = get_schema_or_fail(Q(name=schema_name, schema_version=int(schema_version)))
+    meta_schema = get_schema_or_fail(schema_name, int(schema_version))
     draft = DraftRegistration.create_from_node(
         node,
         user=auth.user,
@@ -261,6 +272,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @ember_flag_is_active(features.EMBER_EDIT_DRAFT_REGISTRATION)
 @must_be_branched_from_node
 def edit_draft_registration_page(auth, node, draft, **kwargs):
@@ -275,6 +287,7 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
     return ret
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def update_draft_registration(auth, node, draft, *args, **kwargs):
     """Update an existing draft registration
@@ -292,7 +305,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     schema_name = data.get('schema_name')
     schema_version = data.get('schema_version', 1)
     if schema_name:
-        meta_schema = get_schema_or_fail(Q(name=schema_name, schema_version=schema_version))
+        meta_schema = get_schema_or_fail(schema_name, schema_version)
         existing_schema = draft.registration_schema
         if (existing_schema.name, existing_schema.schema_version) != (meta_schema.name, meta_schema.schema_version):
             draft.registration_schema = meta_schema
@@ -302,6 +315,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     return serialize_draft_registration(draft, auth), http.OK
 
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_be_branched_from_node
 def delete_draft_registration(auth, node, draft, *args, **kwargs):
     """Permanently delete a draft registration
@@ -333,7 +347,7 @@ def get_metaschemas(*args, **kwargs):
 
     meta_schemas = RegistrationSchema.objects.filter(active=True)
     if include == 'latest':
-        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
+        meta_schemas = RegistrationSchema.objects.get_latest_versions()
 
     meta_schemas = sorted(meta_schemas, key=lambda x: METASCHEMA_ORDERING.index(x.name))
 
