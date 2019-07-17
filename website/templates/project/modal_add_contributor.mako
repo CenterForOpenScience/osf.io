@@ -22,6 +22,7 @@
                                         <input type="submit" value="Search" class="btn btn-default">
                                     </span>
                                 </div>
+                                <a href="#" data-bind="click: gotoInviteFromExplicitLink">Invite new contributor by e-mail</a>
                                 <div class="row search-contributor-links">
                                     <div class="col-md-12">
                                         <div style='margin-left: 5px'>
