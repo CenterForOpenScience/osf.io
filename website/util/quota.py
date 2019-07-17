@@ -150,6 +150,8 @@ def file_modified(target, user, payload, file_node, storage_type):
 def update_default_storage(user):
     if user is not None:
         user_settings = user.get_addon('osfstorage')
+        if user_settings is None:
+            user_settings = user.add_addon('osfstorage')
         institution = user.affiliated_institutions.first()
         if institution is not None:
             try:
