@@ -34,6 +34,7 @@ class SubmissionAcceptedOrPublishedOrPreprintAdmin(permissions.BasePermission):
             # If the request is a GET, then check whether the user is a CONTRIBUTOR
             # Because it is okay for us to show contributors detail of all submissions of this preprint
             if request.method == 'GET':
+                # Preprints don't have group membership - hence "is_contributor" usage
                 is_preprint_contributor = obj.preprint.is_contributor(auth.user)
                 user_has_perm = is_preprint_contributor or is_submission_published or is_submission_accepted
                 if not user_has_perm:

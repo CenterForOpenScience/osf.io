@@ -193,7 +193,7 @@ class CommentPagination(JSONAPIPagination):
             node_id = kwargs.get('node_id', None)
             node = AbstractNode.load(node_id)
             user = self.request.user
-            if target_id and not user.is_anonymous and node.is_contributor(user):
+            if target_id and not user.is_anonymous and node.is_contributor_or_group_member(user):
                 root_target = Guid.load(target_id)
                 if root_target:
                     page = getattr(root_target.referent, 'root_target_page', None)

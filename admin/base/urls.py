@@ -33,6 +33,7 @@ urlpatterns = [
                                       namespace='metrics')),
             url(r'^desk/', include('admin.desk.urls',
                                    namespace='desk')),
+            url(r'^osf_groups/', include('admin.osf_groups.urls', namespace='osf_groups')),
         ]),
     ),
 ]

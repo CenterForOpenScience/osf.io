@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Registration, OSFUser
+from osf.utils.permissions import WRITE_NODE
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
 from api.base.filters import ListFilterMixin
@@ -138,8 +139,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                has_permission = registrations.filter(contributor__user_id=auth.user.id, contributor__write=True).values_list('guids___id', flat=True)
-                return Registration.objects.filter(guids___id__in=has_permission)
+                return Registration.objects.get_nodes_for_user(auth.user, WRITE_NODE, registrations)
 
             for registration in registrations:
                 if not registration.can_edit(auth):

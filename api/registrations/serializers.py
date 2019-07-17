@@ -23,7 +23,6 @@ from api.base.serializers import (
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError, NodeStateError
 from osf.models import Node, RegistrationSchema
-from osf.utils import permissions
 from website.settings import ANONYMIZED_TITLES
 from framework.sentry import log_exception
 
@@ -177,6 +176,7 @@ class RegistrationSerializer(NodeSerializer):
     files = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-storage-providers',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_files_count'},
     ))
 
     wikis = HideIfWithdrawal(RelationshipField(
@@ -210,6 +210,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-forks',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_forks_count'},
+    ))
+
+    groups = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-groups',
+        related_view_kwargs={'node_id': '<_id>'},
     ))
 
     node_links = ShowIfVersion(
@@ -361,6 +366,9 @@ class RegistrationSerializer(NodeSerializer):
     def get_total_comments_count(self, obj):
         return obj.comment_set.filter(page='node', is_deleted=False).count()
 
+    def get_files_count(self, obj):
+        return obj.files_count or 0
+
     def anonymize_registered_meta(self, obj):
         """
         Looks at every question on every page of the schema, for any titles
@@ -379,11 +387,13 @@ class RegistrationSerializer(NodeSerializer):
     def check_admin_perms(self, registration, user, validated_data):
         """
         While admin/write users can make both make modifications to registrations,
-        most fields are restricted to admin-only edits
+        most fields are restricted to admin-only edits.  You must be an admin
+        contributor on the registration; you cannot have gotten your admin
+        permissions through group membership.
 
         Add fields that need admin perms to admin_only_editable_fields
         """
-        user_is_admin = registration.has_permission(user, permissions.ADMIN)
+        user_is_admin = registration.is_admin_contributor(user)
         for field in validated_data:
             if field in self.admin_only_editable_fields and not user_is_admin:
                 raise exceptions.PermissionDenied()

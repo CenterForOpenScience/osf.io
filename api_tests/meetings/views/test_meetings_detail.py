@@ -29,7 +29,7 @@ class TestMeetingDetail:
     @pytest.fixture()
     def meeting_submission_one(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=True)
-        submission.add_tag(meeting.endpoint, Auth(user))
+        meeting.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         api_utils.create_test_file(submission, submission.creator, create_guid=False)
         return submission
@@ -37,7 +37,7 @@ class TestMeetingDetail:
     @pytest.fixture()
     def private_meeting_submission(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=False)
-        submission.add_tag(meeting.endpoint, Auth(user))
+        meeting.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         return submission
 
