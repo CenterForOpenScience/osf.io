@@ -67,13 +67,13 @@ def report_stuck_dois(dry_run=True):
 
     if preprints_with_pending_dois:
         guids = ', '.join(preprints_with_pending_dois.values_list('guids___id', flat=True))
-        content = 'DOIs for the following preprints have been pending at least {} days: {}'.format(time_since_published.days, guids)
         if not dry_run:
             mails.send_mail(
                 to_addr=settings.OSF_SUPPORT_EMAIL,
                 mail=mails.CROSSREF_DOIS_PENDING,
                 pending_doi_count=preprints_with_pending_dois.count(),
-                email_content=content,
+                time_since_published=time_since_published.days,
+                guids=guids,
             )
         else:
             logger.info('DRY RUN')

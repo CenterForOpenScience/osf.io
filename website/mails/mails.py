@@ -437,7 +437,7 @@ CROSSREF_ERROR = Mail(
 
 CROSSREF_DOIS_PENDING = Mail(
     'crossref_doi_pending',
-    subject='There are ${pending_doi_count} pending.'
+    subject='There are ${pending_doi_count} preprints with crossref DOI pending.'
 )
 
 PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
