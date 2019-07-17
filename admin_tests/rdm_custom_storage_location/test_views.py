@@ -672,6 +672,115 @@ class TestS3SaveCredentials(AdminTestCase):
         nt.assert_in('NG', response.content)
         nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
 
+class TestSwiftSaveCredentials(AdminTestCase):
+
+    def setUp(self):
+        super(TestSwiftSaveCredentials, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
+        self.user.save()
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.save_credentials(request)
+
+    def test_provider_missing(self):
+        response = self.view_post({
+            'storage_name': 'Rando Randerson\'s storage',
+            'auth_version': '3 I guess?',
+            'access_key': 'Non-empty-access-key',
+            'secret_key': 'Non-empty-secret-key',
+            'tenant_name': 'Non-empty-tenant-name',
+            'user_domain_name': 'Non-empty-user-domain-name',
+            'project_domain_name': 'Non-empty-project-domain-name',
+            'auth_url': 'Non-empty-auth-url',
+            'folder': 'Non-empty-folder',
+            'container': 'Non-empty-container',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Provider is missing.', response.content)
+
+    def test_invalid_provider(self):
+        response = self.view_post({
+            'storage_name': 'Rando Randerson\'s storage',
+            'auth_version': '3 I guess?',
+            'access_key': 'Non-empty-access-key',
+            'secret_key': 'Non-empty-secret-key',
+            'tenant_name': 'Non-empty-tenant-name',
+            'user_domain_name': 'Non-empty-user-domain-name',
+            'project_domain_name': 'Non-empty-project-domain-name',
+            'auth_url': 'Non-empty-auth-url',
+            'folder': 'Non-empty-folder',
+            'container': 'Non-empty-container',
+            'provider_short_name': 'invalidprovider',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Invalid provider.', response.content)
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_swift_connection')
+    def test_success(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'Nice'}, httplib.OK
+        response = self.view_post({
+            'storage_name': 'My storage',
+            'swift_auth_version': '3 I guess?',
+            'swift_access_key': 'Non-empty-access-key',
+            'swift_secret_key': 'Non-empty-secret-key',
+            'swift_tenant_name': 'Non-empty-tenant-name',
+            'swift_user_domain_name': 'Non-empty-user-domain-name',
+            'swift_project_domain_name': 'Non-empty-project-domain-name',
+            'swift_auth_url': 'Non-empty-auth-url',
+            'swift_folder': 'Non-empty-folder',
+            'swift_container': 'Non-empty-container',
+            'provider_short_name': 'swift',
+        })
+
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('Saved credentials successfully!!', response.content)
+
+        institution_storage = Region.objects.filter(_id=self.institution._id).first()
+        nt.assert_is_not_none(institution_storage)
+        nt.assert_equals(institution_storage.name, 'My storage')
+
+        wb_credentials = institution_storage.waterbutler_credentials
+        nt.assert_equals(wb_credentials['storage']['username'], 'Non-empty-access-key')
+        nt.assert_equals(wb_credentials['storage']['password'], 'Non-empty-secret-key')
+
+        wb_settings = institution_storage.waterbutler_settings
+        nt.assert_equals(wb_settings['storage']['provider'], 'swift')
+        nt.assert_equals(wb_settings['storage']['container'], 'Non-empty-container')
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_swift_connection')
+    def test_invalid_credentials(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'NG'}, httplib.BAD_REQUEST
+
+        response = self.view_post({
+            'storage_name': 'My storage',
+            'swift_auth_version': '3 I guess?',
+            'swift_access_key': 'Wrong access key',
+            'swift_secret_key': 'Wrong secret key',
+            'swift_tenant_name': 'Non-empty-tenant-name',
+            'swift_user_domain_name': 'Non-empty-user-domain-name',
+            'swift_project_domain_name': 'Non-empty-project-domain-name',
+            'swift_auth_url': 'Non-empty-auth-url',
+            'swift_folder': 'Non-empty-folder',
+            'swift_container': 'Non-empty-container',
+            'provider_short_name': 'swift',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('NG', response.content)
+        nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
+
 class TestGoogleDriveConnectionTest(AdminTestCase):
     def setUp(self):
         super(TestGoogleDriveConnectionTest, self).setUp()
