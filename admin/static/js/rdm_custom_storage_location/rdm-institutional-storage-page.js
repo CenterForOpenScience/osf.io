@@ -49,10 +49,10 @@ $('#nextcloud_modal input').keyup(function () {
 });
 
 $('#googledrive_modal input').keyup(function () {
-    authSaveButton('googledrive');
+    authSaveButtonState('googledrive');
 });
 $('#box_modal input').keyup(function () {
-    authSaveButton('box');
+    authSaveButtonState('box');
 });
 
 function validateRequiredFields(providerShortName) {
@@ -229,7 +229,7 @@ function authPermissionSucceed(providerShortName, authorizedBy, currentToken){
     allFeedbackFields.removeClass('hidden');
     $('#' + providerShortName + '_authorized_by').text(authorizedBy);
     $('#' + providerShortName + '_current_token').text(currentToken);
-    authSaveButton(providerShortName);
+    authSaveButtonState(providerShortName);
 }
 
 function authPermissionFailed(providerShortName, message){
@@ -240,11 +240,19 @@ function authPermissionFailed(providerShortName, message){
     $('#' + providerShortName + '_current_token').text('');
     $('#' + providerShortName + '_auth_hyperlink').attr('disabled', false)
     $('#' + providerShortName + '_auth_hyperlink').removeClass('disabled')
-    authSaveButton(providerShortName);
+    authSaveButtonState(providerShortName);
 }
 
-function authSaveButton(providerShortName) {
+function authSaveButtonState(providerShortName) {
     var is_folder_valid = $('#' + providerShortName + '_folder').val() != '';
     var is_token_valid = $('#' + providerShortName + '_current_token').text().length>0;
     $('#' + providerShortName + '_save').attr('disabled', !(is_folder_valid && is_token_valid))
+}
+
+function authSave(providerShortName) {
+    var params = {
+        'provider_short_name': providerShortName
+    };
+    var route = 'auth_save';
+    ajaxRequest(params, providerShortName, route);
 }
