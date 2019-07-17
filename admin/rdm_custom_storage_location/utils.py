@@ -13,7 +13,8 @@ from addons.s3 import utils as s3_utils
 from addons.swift import utils as swift_utils
 from addons.swift.provider import SwiftProvider
 from website import settings as osf_settings
-from osf.models.external import ExternalAccountTemporary
+from osf.models.external import ExternalAccountTemporary, ExternalAccount
+from admin.rdm_addons.utils import get_rdm_addon_option
 import datetime
 
 providers = None
@@ -255,3 +256,68 @@ def get_oauth_info_notification(institution_id, provider_short_name):
             'provider_id': temp_external_account.provider_id,
             'provider_name': temp_external_account.provider_name,
         }
+
+def save_auth_credentials(user, data):
+    provider_short_name = data.get('provider_short_name', None)
+    storage_name = data.get('storage_name', None)
+    id = data.get('googledrive_folder', None)
+    if not provider_short_name:
+        return ({
+            'message': ('Provider is missing.')
+        }, httplib.BAD_REQUEST)
+    institution_id = user.affiliated_institutions.first().id
+    temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
+    account, created = ExternalAccount.objects.get_or_create(
+        provider=temp_external_account.provider,
+        provider_id=temp_external_account.provider_id,
+    )
+    # ensure that provider_name is correct
+    account.provider_name = temp_external_account.provider_name
+    # required
+    account.oauth_key = temp_external_account.oauth_key
+    # only for OAuth1
+    account.oauth_secret = temp_external_account.oauth_secret
+    # only for OAuth2
+    account.expires_at = temp_external_account.expires_at
+    account.refresh_token = temp_external_account.refresh_token
+    account.date_last_refreshed = temp_external_account.date_last_refreshed
+    # additional information
+    account.display_name = temp_external_account.display_name
+    account.profile_url = temp_external_account.profile_url
+    account.save()
+    # add it to the user's list of ``ExternalAccounts``
+    if not user.external_accounts.filter(id=account.id).exists():
+        user.external_accounts.add(account)
+        user.save()
+    rdm_addon_option = get_rdm_addon_option(institution_id, provider_short_name)
+    if rdm_addon_option.external_accounts.filter(id=account.id).exists():
+        rdm_addon_option.external_accounts.add(account)
+        rdm_addon_option.save()
+
+    wb_credentials = {
+        'storage': {
+            'token': account.oauth_key,
+        },
+    }
+    wb_settings = {
+        'storage': {
+            'folder': {
+                'id': id
+            },
+            'provider': 'googledrive',
+        }
+    }
+    default_region = Region.objects.first()
+    Region.objects.update_or_create(
+        _id=institution_id,
+        defaults={
+            'name': storage_name,
+            'waterbutler_credentials': wb_credentials,
+            'waterbutler_url': default_region.waterbutler_url,
+            'mfr_url': default_region.mfr_url,
+            'waterbutler_settings': wb_settings
+        }
+    )
+    return ({
+        'message': ('OAuth was set successfully')
+    }, httplib.OK)
