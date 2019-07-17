@@ -340,8 +340,8 @@ CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error 
 ECSARXIV_CROSSREF_USERNAME = None
 ECSARXIV_CROSSREF_PASSWORD = None
 
-# if our DOIs cannot be comfirmed after X amount of days email the admin
-DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 5
+# if our DOIs cannot be confirmed after X amount of days email the admin
+DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 2
 
 # Crossref has a second metadata api that uses JSON with different features
 CROSSREF_JSON_API_URL = 'https://api.crossref.org/'
