@@ -963,3 +963,69 @@ class TestNiiStorageTest(AdminTestCase):
 
         nt.assert_equals(response.status_code, httplib.OK)
         nt.assert_in('NII storage was set successfully', response.content)
+
+
+class TestOwnCloudStorageSaveCredentials(AdminTestCase):
+    def setUp(self):
+        super(TestOwnCloudStorageSaveCredentials, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
+        self.user.save()
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.save_credentials(request)
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
+    def test_connection_fail(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'NG'}, httplib.BAD_REQUEST
+
+        response = self.view_post({
+            'storage_name': 'My storage',
+            'owncloud_host': 'drop database;',
+            'owncloud_username': 'invalid-user',
+            'owncloud_password': 'invalid-password',
+            'owncloud_folder': 'Hello World',
+            'provider_short_name': 'owncloud',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('NG', response.content)
+        nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
+    def test_success(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'Nice'}, httplib.OK
+
+        response = self.view_post({
+            'storage_name': 'My storage',
+            'owncloud_host': 'valid.owncloud.net',
+            'owncloud_username': 'admin',
+            'owncloud_password': '1234',
+            'owncloud_folder': 'reserved_for_osf',
+            'provider_short_name': 'owncloud',
+        })
+
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('Saved credentials successfully!!', response.content)
+
+        institution_storage = Region.objects.filter(_id=self.institution._id).first()
+        nt.assert_is_not_none(institution_storage)
+        nt.assert_equals(institution_storage.name, 'My storage')
+
+        wb_credentials = institution_storage.waterbutler_credentials
+        nt.assert_equals(wb_credentials['storage']['host'], 'https://valid.owncloud.net')
+        nt.assert_equals(wb_credentials['storage']['username'], 'admin')
+        nt.assert_equals(wb_credentials['storage']['password'], '1234')
+
+        wb_settings = institution_storage.waterbutler_settings
+        nt.assert_equals(wb_settings['storage']['provider'], 'owncloud')
+        nt.assert_equals(wb_settings['storage']['folder'], '/reserved_for_osf/')
