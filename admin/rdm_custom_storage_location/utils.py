@@ -155,6 +155,19 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
         'data': swift_response
     }, httplib.OK)
 
+def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
+    default_region = Region.objects.first()
+    Region.objects.update_or_create(
+        _id=institution_id,
+        defaults={
+            'name': storage_name,
+            'waterbutler_credentials': wb_credentials,
+            'waterbutler_url': default_region.waterbutler_url,
+            'mfr_url': default_region.mfr_url,
+            'waterbutler_settings': wb_settings
+        }
+    )
+
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
     test_connection_result = test_s3_connection(access_key, secret_key)
     if test_connection_result[1] != httplib.OK:
@@ -176,17 +189,7 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
         },
     }
 
-    default_region = Region.objects.first()
-    Region.objects.update_or_create(
-        _id=institution_id,
-        defaults={
-            'name': storage_name,
-            'waterbutler_credentials': wb_credentials,
-            'waterbutler_url': default_region.waterbutler_url,
-            'mfr_url': default_region.mfr_url,
-            'waterbutler_settings': wb_settings
-        }
-    )
+    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
 
     return ({
         'message': ('Saved credentials successfully!!')
@@ -222,26 +225,50 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
 
     }
 
-    default_region = Region.objects.first()
-    Region.objects.update_or_create(
-        _id=institution_id,
-        defaults={
-            'name': storage_name,
-            'waterbutler_credentials': wb_credentials,
-            'waterbutler_url': default_region.waterbutler_url,
-            'mfr_url': default_region.mfr_url,
-            'waterbutler_settings': wb_settings
-        }
-    )
+    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
 
     return ({
         'message': ('Saved credentials successfully!!')
     }, httplib.OK)
 
+
 def save_osfstorage_credentials(institution_id):
     Region.objects.filter(_id=institution_id).delete()
     return ({
         'message': ('NII storage was set successfully')
+    }, httplib.OK)
+
+
+def save_owncloud_credentials(institution_id, storage_name, host_url, username, password,
+                              folder, provider):
+    test_connection_result = test_owncloud_connection(host_url, username, password, folder,
+                                                      provider)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    host = furl()
+    host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
+    host.scheme = 'https'
+
+    wb_credentials = {
+        'storage': {
+            'host': host.url,
+            'username': username,
+            'password': password,
+        },
+    }
+    wb_settings = {
+        'storage': {
+            'folder': '/{}/'.format(folder.strip('/')),
+            'verify_ssl': True,
+            'provider': provider
+        },
+    }
+
+    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+
+    return ({
+        'message': ('Saved credentials successfully!!')
     }, httplib.OK)
 
 

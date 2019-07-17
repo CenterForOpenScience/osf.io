@@ -179,6 +179,16 @@ def save_credentials(request):
         result = utils.save_osfstorage_credentials(
             institution_id,
         )
+    elif provider_short_name == 'owncloud':
+        result = utils.save_owncloud_credentials(
+            institution_id,
+            data.get('storage_name'),
+            data.get('owncloud_host'),
+            data.get('owncloud_username'),
+            data.get('owncloud_password'),
+            data.get('owncloud_folder'),
+            'owncloud'
+        )
     else:
         result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
 
