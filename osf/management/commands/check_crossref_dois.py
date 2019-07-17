@@ -53,7 +53,7 @@ def check_crossref_dois(dry_run=True):
         guid = preprint['DOI'].split('/')[-1]
         pending_preprint = preprints_with_pending_dois.get(guids___id=guid)
         if not dry_run:
-            pending_preprint.set_identifier_values(preprint['DOI'])
+            pending_preprint.set_identifier_values(preprint['DOI'], save=True)
         else:
             logger.info('DRY RUN')
 
