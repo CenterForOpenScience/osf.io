@@ -101,5 +101,5 @@ class Command(BaseCommand):
 
     # Management command handler
     def handle(self, *args, **options):
-        dry_run = options.get('dry_run', False)
+        dry_run = options.get('dry_run', True)
         main(dry_run=dry_run)
