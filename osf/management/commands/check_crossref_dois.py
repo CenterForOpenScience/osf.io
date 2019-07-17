@@ -78,7 +78,7 @@ def report_stuck_dois(dry_run=True):
         else:
             logger.info('DRY RUN')
 
-        logger.error('There were {} stuck registrations for CrossRef, email sent to help desk'.format(preprints_with_pending_dois.count()))
+        logger.info('There were {} stuck registrations for CrossRef, email sent to help desk'.format(preprints_with_pending_dois.count()))
 
 
 @celery_app.task(name='management.commands.check_crossref_dois')
