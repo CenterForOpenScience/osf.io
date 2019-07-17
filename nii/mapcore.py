@@ -137,7 +137,7 @@ class MAPCoreLocker():
     def unlock_node(self, node):
         with transaction.atomic():
             n = Node.objects.select_for_update().get(guids___id=node._id)
-            print('n.mapcore_api_locked={}'.format(n.mapcore_api_locked))
+            #print('n.mapcore_api_locked={}'.format(n.mapcore_api_locked))
             n.mapcore_api_locked = False
             n.save()
             logger.debug('Node(' + n._id + ').mapcore_api_locked=False')
@@ -577,7 +577,12 @@ def mapcore_get_extended_group_info(access_user, node, group_key, base_grp=None,
         admins = []
         members = []
         for usr in member_list:
-            if usr['admin'] == 2 or usr['admin'] == 1:
+            if usr.get('eppn') is None:  # skip unconfirmed invited members
+                continue
+            admin = usr.get('admin')
+            if admin is None:  # unexpected
+                continue
+            if admin == 2 or admin == 1:
                 usr['is_admin'] = True
                 admins.append(usr['eppn'])
             else:

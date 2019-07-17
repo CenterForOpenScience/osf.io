@@ -34,7 +34,7 @@ from osf_tests.factories import (fake_email,
                                  BookmarkCollectionFactory,
                                  InstitutionFactory)
 
-ENABLE_DEBUG = True
+ENABLE_DEBUG = False
 
 def DEBUG(msg):
     if ENABLE_DEBUG:
@@ -362,6 +362,36 @@ class TestFuncOfMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
     @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
+    @mock.patch('nii.mapcore.mapcore_get_group_by_key')
+    @mock.patch('nii.mapcore.mapcore_get_group_members')
+    @mock.patch('nii.mapcore.mapcore_add_to_group')
+    @mock.patch('nii.mapcore.mapcore_remove_from_group')
+    @mock.patch('nii.mapcore.mapcore_edit_member')
+    def test_sync_map_ignore_unconfirmed_invited_member(self, mock_edit, mock_remove, mock_add, mock_get_members, mock_get_group):
+        from nii.mapcore import mapcore_sync_map_group
+
+        mock_get_group.return_value = {
+            'result': {'groups': [{
+                'group_key': 'fake_group_key', 'group_name': 'fake_group_name',
+                'active': 1, 'public': 1, 'open_member': OPEN_MEMBER_PUBLIC}]}}
+        mock_get_members.return_value = {
+            'result': {'accounts': [
+                {'eppn': self.me.eppn, 'admin': MAPCore.MODE_ADMIN},
+                {'eppn': None, 'admin': MAPCore.MODE_MEMBER},
+                {'admin': MAPCore.MODE_MEMBER},
+                {}]}}
+        mapcore_sync_map_group(self.me, self.project,
+                               title_desc=False, contributors=True,
+                               use_raise=True)
+        assert_equal(mock_get_group.call_count, 1)
+        assert_equal(mock_get_members.call_count, 1)
+        assert_equal(mock_add.call_count, 0)
+        assert_equal(mock_remove.call_count, 0)
+        assert_equal(mock_edit.call_count, 0)
+
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
     @mock.patch('requests.get')
     def test_mapcore_get_extended_group_info(self, mock_get):
         from nii.mapcore import mapcore_get_extended_group_info
@@ -641,6 +671,36 @@ class TestFuncOfMAPCore(OsfTestCase):
         node_copy = AbstractNode.objects.get(guids___id=self.project._id)
         assert_equal(node_copy.logs.latest().action,
                      NodeLog.MAPCORE_RDM_UNKNOWN_USER)
+
+    @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
+    @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
+    @mock.patch('nii.mapcore_api.MAPCORE_API_PATH', '/fake_api_path')
+    @mock.patch('nii.mapcore.mapcore_get_group_by_key')
+    @mock.patch('nii.mapcore.mapcore_get_group_members')
+    @mock.patch('osf.models.node.AbstractNode.add_contributor')
+    @mock.patch('osf.models.node.AbstractNode.remove_contributor')
+    @mock.patch('osf.models.node.AbstractNode.set_permissions')
+    def test_sync_rdm_ignore_unconfirmed_invited_member(self, mock_edit, mock_remove, mock_add, mock_get_members, mock_get_group):
+        from nii.mapcore import mapcore_sync_rdm_project
+
+        mock_get_group.return_value = {
+            'result': {'groups': [{
+                'group_key': 'fake_group_key', 'group_name': 'fake_group_name',
+                'active': 1, 'public': 1, 'open_member': OPEN_MEMBER_PUBLIC}]}}
+        mock_get_members.return_value = {
+            'result': {'accounts': [
+                {'eppn': self.me.eppn, 'admin': MAPCore.MODE_ADMIN},
+                {'eppn': None, 'admin': MAPCore.MODE_MEMBER},
+                {'admin': MAPCore.MODE_MEMBER},
+                {}]}}
+        mapcore_sync_rdm_project(self.me, self.project,
+                                 title_desc=False, contributors=True,
+                                 use_raise=True)
+        assert_equal(mock_get_group.call_count, 1)
+        assert_equal(mock_get_members.call_count, 1)
+        assert_equal(mock_add.call_count, 0)
+        assert_equal(mock_remove.call_count, 0)
+        assert_equal(mock_edit.call_count, 0)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')

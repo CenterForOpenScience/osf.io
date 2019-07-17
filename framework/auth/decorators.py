@@ -64,7 +64,7 @@ def must_be_confirmed(func):
     return wrapped
 
 
-MAPCORE_SYNC_IGNORE_ERROR = False
+MAPCORE_SYNC_IGNORE_ERROR = True
 
 # for GakuNin mAP Core (API v2)
 # If node is not None, mapcore_sync_rdm_project_or_map_group() is called.
@@ -105,8 +105,6 @@ def mapcore_check_token(auth, node, use_mapcore=True):
                 return redirect(mapcore_request_authcode(
                     next_url=request.url))
         except Exception as e:
-            if MAPCORE_SYNC_IGNORE_ERROR:
-                return None
             emsg = ''
             if node_page:
                 emsg += '<pre>Administrators of this project may not have valid access token for mAP core API.</pre>'
@@ -118,6 +116,10 @@ def mapcore_check_token(auth, node, use_mapcore=True):
 
             mapcore_log_error('{}: {}'.format(
                 e.__class__.__name__, emsg))
+
+            if MAPCORE_SYNC_IGNORE_ERROR:
+                return None
+
             raise HTTPError(httplib.SERVICE_UNAVAILABLE, data={
                 'message_short': 'mAP core API Error',
                 'message_long': emsg
