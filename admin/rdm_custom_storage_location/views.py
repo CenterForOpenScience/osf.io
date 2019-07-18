@@ -180,7 +180,12 @@ def save_credentials(request):
             institution_id,
         )
     elif provider_short_name == 'googledrive':
-        result = utils.save_auth_credentials(request.user, data)
+        result = utils.save_googledrive_credentials(
+            request.user,
+            data.get('storage_name', None),
+            data.get('provider_short_name', None),
+            data.get('googledrive_folder', None),
+        )
     elif provider_short_name == 'owncloud':
         result = utils.save_owncloud_credentials(
             institution_id,

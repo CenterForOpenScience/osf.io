@@ -284,15 +284,7 @@ def get_oauth_info_notification(institution_id, provider_short_name):
             'provider_name': temp_external_account.provider_name,
         }
 
-def save_auth_credentials(user, data):
-    provider_short_name = data.get('provider_short_name', None)
-    storage_name = data.get('storage_name', None)
-    id = data.get('googledrive_folder', None)
-    if not provider_short_name:
-        return ({
-            'message': ('Provider is missing.')
-        }, httplib.BAD_REQUEST)
-    institution_id = user.affiliated_institutions.first().id
+def transfer_to_external_account(user, institution_id, provider_short_name):
     temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
     account, created = ExternalAccount.objects.get_or_create(
         provider=temp_external_account.provider,
@@ -320,7 +312,9 @@ def save_auth_credentials(user, data):
     if rdm_addon_option.external_accounts.filter(id=account.id).exists():
         rdm_addon_option.external_accounts.add(account)
         rdm_addon_option.save()
+    return account
 
+def googledrive_region_update(institution_id, storage_name, account, googledrive_folder_id):
     wb_credentials = {
         'storage': {
             'token': account.oauth_key,
@@ -329,7 +323,7 @@ def save_auth_credentials(user, data):
     wb_settings = {
         'storage': {
             'folder': {
-                'id': id
+                'id': googledrive_folder_id
             },
             'provider': 'googledrive',
         }
@@ -345,6 +339,23 @@ def save_auth_credentials(user, data):
             'waterbutler_settings': wb_settings
         }
     )
+
+def save_googledrive_credentials(user, storage_name, provider_short_name, googledrive_folder_id):
+    if not provider_short_name:
+        return ({
+            'message': ('Provider is missing.')
+        }, httplib.BAD_REQUEST)
+    elif not storage_name:
+        return ({
+            'message': ('Storage name is missing.')
+        }, httplib.BAD_REQUEST)
+    elif not googledrive_folder_id:
+        return ({
+            'message': ('Folder ID is missing.')
+        }, httplib.BAD_REQUEST)
+    institution_id = user.affiliated_institutions.first().id
+    account = transfer_to_external_account(user, institution_id, provider_short_name)
+    googledrive_region_update(institution_id, storage_name, account, googledrive_folder_id)
     return ({
         'message': ('OAuth was set successfully')
     }, httplib.OK)
