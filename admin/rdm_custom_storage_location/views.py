@@ -232,17 +232,9 @@ def fetch_temporary_token(request):
         }
         return JsonResponse(response, status=httplib.BAD_REQUEST)
 
-def auth_save(request):
-    if request.user.is_superuser or not request.user.is_staff or \
-            not request.user.affiliated_institutions.exists():
-        raise PermissionDenied
-
-    data = json.loads(request.body)
-    provider_short_name = data.get('provider_short_name', None)
-    if not provider_short_name:
-        response = {
-            'message': 'Provider is missing.'
-        }
-        return JsonResponse(response, status=httplib.BAD_REQUEST)
-    institution_id = request.user.affiliated_institutions.first().id
-    return utils.save_auth_credentials(institution_id, provider_short_name, request.user)
+def remove_auth_data_temporary(request):
+    utils.remove_temporary_external_account(request.user.affiliated_institutions.first()._id)
+    response = {
+        'message': 'Garbage data removed!!'
+    }
+    return JsonResponse(response, status=httplib.OK)
