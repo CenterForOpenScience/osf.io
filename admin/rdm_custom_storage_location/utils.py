@@ -14,7 +14,6 @@ from addons.swift import utils as swift_utils
 from addons.swift.provider import SwiftProvider
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
-from admin.rdm_addons.utils import get_rdm_addon_option
 import datetime
 
 providers = None
@@ -310,10 +309,13 @@ def transfer_to_external_account(user, institution_id, provider_short_name):
     if not user.external_accounts.filter(id=account.id).exists():
         user.external_accounts.add(account)
         user.save()
-    rdm_addon_option = get_rdm_addon_option(user.affiliated_institutions.first().id, provider_short_name)
-    if rdm_addon_option.external_accounts.filter(id=account.id).exists():
-        rdm_addon_option.external_accounts.add(account)
-        rdm_addon_option.save()
+
+    '''Following code might be needed later on'''
+    #from admin.rdm_addons.utils import get_rdm_addon_option
+    #rdm_addon_option = get_rdm_addon_option(user.affiliated_institutions.first().id, provider_short_name)
+    # if rdm_addon_option.external_accounts.filter(id=account.id).exists():
+    #     rdm_addon_option.external_accounts.add(account)
+    #     rdm_addon_option.save()
     return account
 
 def googledrive_region_update(institution_id, storage_name, account, googledrive_folder_id):
@@ -344,11 +346,7 @@ def googledrive_region_update(institution_id, storage_name, account, googledrive
     )
 
 def save_googledrive_credentials(user, storage_name, provider_short_name, googledrive_folder_id):
-    if not provider_short_name:
-        return ({
-            'message': ('Provider is missing.')
-        }, httplib.BAD_REQUEST)
-    elif not storage_name:
+    if not storage_name:
         return ({
             'message': ('Storage name is missing.')
         }, httplib.BAD_REQUEST)
@@ -390,11 +388,7 @@ def box_region_update(institution_id, storage_name, account, box_folder):
     )
 
 def save_box_credentials(user, storage_name, provider_short_name, box_folder):
-    if not provider_short_name:
-        return ({
-            'message': ('Provider is missing.')
-        }, httplib.BAD_REQUEST)
-    elif not storage_name:
+    if not storage_name:
         return ({
             'message': ('Storage name is missing.')
         }, httplib.BAD_REQUEST)
