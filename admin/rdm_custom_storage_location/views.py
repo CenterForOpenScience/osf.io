@@ -179,10 +179,8 @@ def save_credentials(request):
         result = utils.save_osfstorage_credentials(
             institution_id,
         )
-<<<<<<< HEAD
     elif provider_short_name == 'googledrive':
-       result = utils.save_auth_credentials(request.user, data)
-=======
+        result = utils.save_auth_credentials(request.user, data)
     elif provider_short_name == 'owncloud':
         result = utils.save_owncloud_credentials(
             institution_id,
@@ -193,7 +191,6 @@ def save_credentials(request):
             data.get('owncloud_folder'),
             'owncloud'
         )
->>>>>>> 74b7bc9d727c866e99f5a25135b646e30c9d450d
     else:
         result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
     from pprint import pprint
