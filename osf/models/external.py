@@ -20,6 +20,7 @@ from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.util import web_url_for
+from osf.models.institution import Institution
 
 logger = logging.getLogger(__name__)
 
@@ -320,7 +321,7 @@ class ExternalProvider(object):
 
     def _set_external_account_temporary(self, user, info):
         obj, created = ExternalAccountTemporary.objects.update_or_create(
-            _id=session.data['oauth_states'][self.short_name]['institution_id'],
+            _id=Institution.objects.get(pk=int(session.data['oauth_states'][self.short_name]['institution_id']))._id,
             defaults={
                 'provider_name': self.name,
                 'oauth_key': info['key'],
@@ -334,10 +335,9 @@ class ExternalProvider(object):
                 'provider_id': info['provider_id'],
             },
         )
-        # following code will be needed need after box issue is solved.
-        # if self.short_name in session.data.get('oauth_states', {}):
-        #     del session.data['oauth_states'][self.short_name]
-        #     session.save()
+        if self.short_name in session.data.get('oauth_states', {}):
+            del session.data['oauth_states'][self.short_name]
+            session.save()
 
         return False
 
