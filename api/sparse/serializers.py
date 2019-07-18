@@ -4,7 +4,7 @@ from api.base.serializers import (
 )
 from api.nodes.serializers import NodeSerializer
 
-
+# Todo: Return relationships as relationships
 class SparseNodeSerializer(NodeSerializer):
     filterable_fields = frozenset([
         'title',
@@ -29,9 +29,6 @@ class SparseNodeSerializer(NodeSerializer):
         fieldset = [
             'category',
             'contributors',
-            'current_user_is_contributor',
-            'current_user_is_contributor_or_group_member',
-            'current_user_permissions',
             'date_created',
             'date_modified',
             'description',

@@ -1,3 +1,5 @@
+import logging
+
 from django.utils import six
 from collections import OrderedDict
 from django.core.urlresolvers import reverse
@@ -17,6 +19,8 @@ from api.base.utils import absolute_reverse
 from osf.models import AbstractNode, Comment, Preprint, Guid
 from website.search.elastic_search import DOC_TYPE_TO_MODEL
 
+
+logger = logging.getLogger(__name__)
 
 class JSONAPIPagination(pagination.PageNumberPagination):
     """
@@ -88,6 +92,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         ])
 
     def get_response_dict(self, data, url):
+
         return OrderedDict([
             ('data', data),
             (
@@ -135,6 +140,53 @@ class JSONAPIPagination(pagination.PageNumberPagination):
                 response_dict['meta'] = {'anonymous': True}
         return Response(response_dict)
 
+
+class CursorPagination(pagination.CursorPagination):
+    page_size_query_param = 'page[size]'
+    max_page_size = MAX_PAGE_SIZE
+    total = 0
+
+    def get_response_dict(self, data, url):
+        return OrderedDict([
+            ('data', data),
+            (
+                'meta', OrderedDict([
+                    ('total', self.total),
+                    ('per_page', self.get_page_size(self.request)),
+                ]),
+            ),
+            (
+                'links', OrderedDict([
+                    ('prev', self.get_previous_link()),
+                    ('next', self.get_next_link()),
+                ]),
+            ),
+        ])
+
+    def get_paginated_response(self, data):
+        """
+        Formats paginated response in accordance with JSON API, as of version 2.1.
+        Version 2.0 uses the response_dict_deprecated function,
+        which does not return JSON API compliant pagination links.
+
+        Creates pagination links from the view_name if embedded resource,
+        rather than the location used in the request.
+        """
+        kwargs = self.request.parser_context['kwargs'].copy()
+        embedded = kwargs.pop('is_embedded', None)
+        view_name = self.request.parser_context['view'].view_fqn
+        reversed_url = None
+        if embedded:
+            reversed_url = reverse(view_name, kwargs=kwargs)
+        response_dict = self.get_response_dict(data, reversed_url)
+
+        if is_anonymized(self.request):
+            if response_dict.get('meta', False):
+                response_dict['meta'].update({'anonymous': True})
+            else:
+                response_dict['meta'] = {'anonymous': True}
+        return Response(response_dict)
+
     def paginate_queryset(self, queryset, request, view=None):
         """
         Custom pagination of queryset. Returns page object or `None` if not configured for view.
@@ -160,35 +212,13 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             if paginator.count > 1 and self.template is not None:
                 # The browsable API should display pagination controls.
                 self.display_page_controls = True
-
-            self.request = request
-            return list(self.page)
-
+            response = list(self.page)
         else:
-            return super(JSONAPIPagination, self).paginate_queryset(queryset, request, view=None)
+            response = super(CursorPagination, self).paginate_queryset(queryset, request, view=None)
 
-
-class CursorPagination(pagination.CursorPagination, JSONAPIPagination):
-
-    def get_response_dict(self, data, url):
-        return OrderedDict([
-            ('data', data),
-            (
-                'meta', OrderedDict([
-                    ('total', self.page.paginator.count),
-                    ('per_page', self.page.paginator.per_page),
-                ]),
-            ),
-            (
-                'links', OrderedDict([
-                    ('prev', self.get_previous_link()),
-                    ('next', self.get_next_link()),
-                ]),
-            ),
-        ])
-
-    def get_response_dict_deprecated(self, data, url):
-        return self.get_response_dict(data, url)
+        self.request = request
+        self.total = queryset.count()
+        return response
 
 
 class MaxSizePagination(JSONAPIPagination):

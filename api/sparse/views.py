@@ -1,11 +1,12 @@
 from rest_framework.exceptions import MethodNotAllowed
-from api.sparse.serializers import SparseNodeSerializer
+from osf.models.node import Node
 from api.nodes.views import NodeList, NodeChildrenList
+from api.sparse.serializers import SparseNodeSerializer
 from api.users.views import UserNodes
 
 from api.base.pagination import CursorPagination
 
-
+# Todo: detail view. Return sparse views when available. No joins if at all possible
 class SparseNodeMixin(object):
     view_category = 'sparse'
     view_name = 'sparse-node-list'
@@ -29,7 +30,6 @@ class SparseNodeMixin(object):
 
 class SparseNodeList(SparseNodeMixin, NodeList):
     pass
-
 
 class SparseUserNodeList(SparseNodeMixin, UserNodes):
     pass
