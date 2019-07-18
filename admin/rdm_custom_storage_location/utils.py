@@ -362,3 +362,48 @@ def save_googledrive_credentials(user, storage_name, provider_short_name, google
     return ({
         'message': ('OAuth was set successfully')
     }, httplib.OK)
+
+def box_region_update(institution_id, storage_name, account, box_folder):
+    wb_credentials = {
+        'storage': {
+            'token': account.oauth_key,
+        },
+    }
+    wb_settings = {
+        'storage': {
+            'bucket': '',
+            'folder': box_folder,
+            'provider': 'box',
+        }
+    }
+    default_region = Region.objects.first()
+    Region.objects.update_or_create(
+        _id=institution_id,
+        defaults={
+            'name': storage_name,
+            'waterbutler_credentials': wb_credentials,
+            'waterbutler_url': default_region.waterbutler_url,
+            'mfr_url': default_region.mfr_url,
+            'waterbutler_settings': wb_settings
+        }
+    )
+
+def save_box_credentials(user, storage_name, provider_short_name, box_folder):
+    if not provider_short_name:
+        return ({
+            'message': ('Provider is missing.')
+        }, httplib.BAD_REQUEST)
+    elif not storage_name:
+        return ({
+            'message': ('Storage name is missing.')
+        }, httplib.BAD_REQUEST)
+    elif not box_folder:
+        return ({
+            'message': ('Folder is missing.')
+        }, httplib.BAD_REQUEST)
+    institution_id = user.affiliated_institutions.first().id
+    account = transfer_to_external_account(user, institution_id, provider_short_name)
+    box_region_update(institution_id, storage_name, account, box_folder)
+    return ({
+        'message': ('OAuth was set successfully')
+    }, httplib.OK)

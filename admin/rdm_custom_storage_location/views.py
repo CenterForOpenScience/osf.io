@@ -197,7 +197,12 @@ def save_credentials(request):
             'owncloud'
         )
     elif provider_short_name == 'box':
-        result = ({'message': 'Not yet implemented'}, httplib.NOT_IMPLEMENTED)
+        result = utils.save_box_credentials(
+            request.user,
+            data.get('storage_name', None),
+            data.get('provider_short_name', None),
+            data.get('box_folder', None),
+        )
     else:
         result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
     return JsonResponse(result[0], status=result[1])
