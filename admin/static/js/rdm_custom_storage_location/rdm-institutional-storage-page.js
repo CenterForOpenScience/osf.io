@@ -51,6 +51,7 @@ $('#nextcloud_modal input').keyup(function () {
 $('#googledrive_modal input').keyup(function () {
     authSaveButtonState('googledrive');
 });
+
 $('#box_modal input').keyup(function () {
     authSaveButtonState('box');
 });
