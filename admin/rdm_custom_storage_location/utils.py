@@ -359,6 +359,7 @@ def save_googledrive_credentials(user, storage_name, provider_short_name, google
     institution_id = user.affiliated_institutions.first().id
     account = transfer_to_external_account(user, institution_id, provider_short_name)
     googledrive_region_update(institution_id, storage_name, account, googledrive_folder_id)
+    remove_temporary_external_account(institution_id)
     return ({
         'message': ('OAuth was set successfully')
     }, httplib.OK)
@@ -404,6 +405,10 @@ def save_box_credentials(user, storage_name, provider_short_name, box_folder):
     institution_id = user.affiliated_institutions.first().id
     account = transfer_to_external_account(user, institution_id, provider_short_name)
     box_region_update(institution_id, storage_name, account, box_folder)
+    remove_temporary_external_account(institution_id)
     return ({
         'message': ('OAuth was set successfully')
     }, httplib.OK)
+
+def remove_temporary_external_account(institution_id):
+    ExternalAccountTemporary.objects.filter(_id=institution_id).delete()
