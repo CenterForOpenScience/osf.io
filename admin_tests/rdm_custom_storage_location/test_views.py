@@ -1047,7 +1047,7 @@ class TestGoogleDriveStorageSaveCredentials(AdminTestCase):
             'date_last_refreshed': timezone.now(),
             'display_name': 'google drive display name is here',
             'profile_url': 'example.com',
-            '_id': self.user.affiliated_institutions.first().id,
+            '_id': self.user.affiliated_institutions.first()._id,
             'provider_id': '88080800880',
         }
 
@@ -1060,6 +1060,22 @@ class TestGoogleDriveStorageSaveCredentials(AdminTestCase):
         request.is_ajax()
         request.user = self.user
         return views.save_credentials(request)
+
+    def view_post_cancel(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.remove_auth_data_temporary(request)
+
+    def test_cancel(self):
+        response = self.view_post_cancel({
+            'provider_short_name': 'googledrive',
+        })
+        nt.assert_equals(response.status_code, httplib.OK)
 
     def test_provider_missing(self):
         response = self.view_post({
