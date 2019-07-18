@@ -219,6 +219,7 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
     }
     wb_settings = {
         'storage': {
+            'bucket': '',
             'folder': folder,
             'container': container,
             'provider': 'swift',
@@ -260,6 +261,7 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
     }
     wb_settings = {
         'storage': {
+            'bucket': '',
             'folder': '/{}/'.format(folder.strip('/')),
             'verify_ssl': True,
             'provider': provider
