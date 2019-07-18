@@ -91,7 +91,7 @@ $('.save-credentials').click(function () {
 function buttonClicked(button, route) {
     var action = {
         'test_connection': 'connect',
-        'save_credentials': 'save'
+        'save_credentials': 'save',
     };
 
     var providerShortName = $(button).attr('id').replace('_' + action[route], '');
@@ -180,6 +180,14 @@ var afterRequest = {
             authPermissionFailed(id, message)
         }
     },
+    'remove_auth_data_temporary': {
+        'success': function (id, data) {
+            authPermissionFailed(id, data.message)
+        },
+        'fail': function (id, message) {
+            authPermissionFailed(id, message)
+        }
+    },
 };
 
 function getParameters(params) {
@@ -200,6 +208,14 @@ $('.auth-permission-button').click(function(e) {
     oauthOpener(this.href, providerShortName)
     e.preventDefault();
 });
+
+$('.auth-cancel').click(function(e) {
+    var providerShortName = this.id.replace('_cancel', '');
+    authPermissionFailed(providerShortName, '')
+    var route = 'remove_auth_data_temporary';
+    cancel_auth(providerShortName)
+});
+
 
 function get_token(providerShortName, route) {
         var params = {
@@ -250,10 +266,10 @@ function authSaveButtonState(providerShortName) {
     $('#' + providerShortName + '_save').attr('disabled', !(is_folder_valid && is_token_valid))
 }
 
-function authSave(providerShortName) {
+function cancel_auth(providerShortName) {
     var params = {
         'provider_short_name': providerShortName
     };
-    var route = 'auth_save';
+    var route = 'remove_auth_data_temporary';
     ajaxRequest(params, providerShortName, route);
 }
