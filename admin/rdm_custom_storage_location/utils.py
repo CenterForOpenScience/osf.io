@@ -324,6 +324,7 @@ def googledrive_region_update(institution_id, storage_name, account, googledrive
     }
     wb_settings = {
         'storage': {
+            'bucket': '',
             'folder': {
                 'id': googledrive_folder_id
             },
