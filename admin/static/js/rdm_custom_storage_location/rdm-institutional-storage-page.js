@@ -36,6 +36,15 @@ $('#s3_modal input').keyup(function () {
     validateRequiredFields('s3');
 });
 
+document.getElementById('s3_compatible_service').addEventListener('change', function (e) {
+    if (document.getElementById('s3_compatible_service').value == 'Other') {
+        $('#s3_endpoint_url_collapse').collapse('show');
+    }
+    else {
+        $('#s3_endpoint_url_collapse').collapse('hide');
+    }
+});
+
 $('#swift_modal input').keyup(function () {
     validateRequiredFields('swift');
 });
