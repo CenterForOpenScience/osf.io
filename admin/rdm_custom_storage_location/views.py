@@ -219,7 +219,7 @@ def fetch_temporary_token(request):
             'message': 'Provider is missing.'
         }
         return JsonResponse(response, status=httplib.BAD_REQUEST)
-    institution_id = request.user.affiliated_institutions.first().id
+    institution_id = request.user.affiliated_institutions.first()._id
     data = utils.get_oauth_info_notification(institution_id, provider_short_name)
     if data:
         data['fullname'] = request.user.fullname

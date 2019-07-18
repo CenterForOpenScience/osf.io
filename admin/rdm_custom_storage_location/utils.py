@@ -310,7 +310,7 @@ def transfer_to_external_account(user, institution_id, provider_short_name):
     if not user.external_accounts.filter(id=account.id).exists():
         user.external_accounts.add(account)
         user.save()
-    rdm_addon_option = get_rdm_addon_option(institution_id, provider_short_name)
+    rdm_addon_option = get_rdm_addon_option(user.affiliated_institutions.first().id, provider_short_name)
     if rdm_addon_option.external_accounts.filter(id=account.id).exists():
         rdm_addon_option.external_accounts.add(account)
         rdm_addon_option.save()
@@ -356,7 +356,7 @@ def save_googledrive_credentials(user, storage_name, provider_short_name, google
         return ({
             'message': ('Folder ID is missing.')
         }, httplib.BAD_REQUEST)
-    institution_id = user.affiliated_institutions.first().id
+    institution_id = user.affiliated_institutions.first()._id
     account = transfer_to_external_account(user, institution_id, provider_short_name)
     googledrive_region_update(institution_id, storage_name, account, googledrive_folder_id)
     remove_temporary_external_account(institution_id)
@@ -402,7 +402,7 @@ def save_box_credentials(user, storage_name, provider_short_name, box_folder):
         return ({
             'message': ('Folder is missing.')
         }, httplib.BAD_REQUEST)
-    institution_id = user.affiliated_institutions.first().id
+    institution_id = user.affiliated_institutions.first()._id
     account = transfer_to_external_account(user, institution_id, provider_short_name)
     box_region_update(institution_id, storage_name, account, box_folder)
     remove_temporary_external_account(institution_id)
