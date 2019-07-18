@@ -8,7 +8,7 @@ from addons.osfstorage.models import Region
 from website.filters import profile_image_url
 from osf.utils.permissions import READ
 from osf.utils import workflows
-from website.ember_osf_web.decorators import storage_i18n_flag_active
+from api.waffle.utils import storage_i18n_flag_active
 from website.util import quota
 
 
