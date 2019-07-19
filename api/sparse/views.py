@@ -1,7 +1,7 @@
 from rest_framework.exceptions import MethodNotAllowed
 from api.sparse.serializers import SparseNodeSerializer, SparseRegistrationSerializer
-from api.nodes.views import NodeList, NodeChildrenList
-from api.registrations.views import RegistrationList, RegistrationChildrenList
+from api.nodes.views import NodeDetail, NodeChildrenList, NodeList
+from api.registrations.views import RegistrationDetail, RegistrationChildrenList, RegistrationList
 from api.users.views import UserNodes, UserRegistrations
 
 from api.base.pagination import CursorPagination
@@ -15,6 +15,11 @@ class BaseSparseMixin(object):
     # overrides NodeList because these endpoints don't allow writing
     @staticmethod
     def perform_create():
+        raise MethodNotAllowed
+
+    # overrides NodeDetail because these endpoints don't allow writing
+    @staticmethod
+    def perform_destroy():
         raise MethodNotAllowed
 
     # overrides NodeList because these endpoints don't allow writing
@@ -45,7 +50,19 @@ class SparseUserNodeList(SparseNodeMixin, UserNodes):
     pass
 
 
+class SparseNodeDetail(SparseNodeMixin, NodeDetail):
+    view_name = 'sparse-node-detail'
+
+    pass
+
+
 class SparseNodeChildrenList(SparseNodeMixin, NodeChildrenList):
+    pass
+
+
+class SparseRegistrationDetail(SparseRegistrationMixin, RegistrationDetail):
+    view_name = 'sparse-registration-detail'
+
     pass
 
 

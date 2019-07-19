@@ -10,7 +10,12 @@ class SparseNodeSerializer(NodeSerializer):
     filterable_fields = frozenset([
         'title',
     ])
-
+    relationship_views = {
+            'bibliographic_contributors': 'nodes:node-bibliographic-contributors',
+            'contributors': 'nodes:node-contributors',
+            'detail': 'sparse-nodes:sparse-node-detail',
+            'children': 'sparse-nodes:sparse-node-children',
+    }
     links = LinksField({
         'self': None,  # self links will break ember data unless we make a specific sparse detail serializer
         'html': 'get_absolute_html_url',
@@ -28,6 +33,7 @@ class SparseNodeSerializer(NodeSerializer):
         but we only want to return a subset of fields specific to meetings
         """
         fieldset = [
+            'bibliographic_contributors',
             'category',
             'contributors',
             'date_created',
