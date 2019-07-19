@@ -138,7 +138,7 @@ class TestCiteprocpyMLA(OsfTestCase):
         citation = render_citation(self.preprint, 'modern-language-association')
         assert_equal(citation, u'Tordoff, John. “{}” {}, {}. Web.'.format(
                 self.preprint.title,
-                'OSF Preprints',
+                'GakuNin RDM',
                 self.formated_date)
         )
 
