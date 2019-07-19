@@ -11,7 +11,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 from osf_tests.factories import PreprintFactory
 from website import settings, mails
 
-from scripts.periodic.check_crossref_dois import check_crossref_dois, report_stuck_dois
+from osf.management.commands.check_crossref_dois import check_crossref_dois, report_stuck_dois
 
 
 @pytest.mark.django_db
@@ -24,8 +24,7 @@ class TestCheckCrossrefDOIs:
     @pytest.fixture()
     def stuck_preprint(self):
         preprint = PreprintFactory(set_doi=False)
-        published_date = preprint.date_published - timedelta(days=settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL + 1)
-        preprint.date_published = published_date
+        preprint.date_published = preprint.date_published - timedelta(days=settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL + 1)
         # match guid to the fixture crossref_works_response.json
         guid = preprint.guids.first()
         provider = preprint.provider
@@ -48,7 +47,7 @@ class TestCheckCrossrefDOIs:
         responses.add(
             responses.Response(
                 responses.GET,
-                url='{}/works?filter=doi:{}'.format(settings.CROSSREF_JSON_API_URL, doi),
+                url='{}works?filter=doi:{}'.format(settings.CROSSREF_JSON_API_URL, doi),
                 json=crossref_response,
                 status=200
             )
@@ -66,9 +65,11 @@ class TestCheckCrossrefDOIs:
     def test_report_stuck_dois(self, mock_email, stuck_preprint):
         report_stuck_dois(dry_run=False)
         guid = stuck_preprint.guids.first()._id
-        email_content = 'DOIs for the following preprints have been pending at least {} days: {}'.format(settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL, guid)
 
-        mock_email.assert_called_with(email_content=email_content,
-                                      mail=mails.CROSSREF_DOIS_PENDING,
-                                      pending_doi_count=1,
-                                      to_addr=settings.OSF_SUPPORT_EMAIL)
+        mock_email.assert_called_with(
+            guids=guid,
+            time_since_published=2,
+            mail=mails.CROSSREF_DOIS_PENDING,
+            pending_doi_count=1,
+            to_addr=settings.OSF_SUPPORT_EMAIL
+        )

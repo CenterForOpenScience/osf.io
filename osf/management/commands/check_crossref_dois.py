@@ -17,6 +17,8 @@ from osf.models import Preprint
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+time_since_published = timedelta(days=settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL)
+
 
 def check_crossref_dois(dry_run=True):
     """
@@ -26,12 +28,11 @@ def check_crossref_dois(dry_run=True):
     :return:
     """
     # Create one enormous url to check if all our pending crossref DOIs are good, then set all identifers
-    time_since_published = timedelta(days=settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL)
 
     preprints_with_pending_dois = Preprint.objects.filter(
         preprint_doi_created__isnull=True,
         is_published=True
-    ).exclude(date_published__lt=timezone.now() - time_since_published)
+    ).exclude(date_published__gt=timezone.now() - time_since_published)
 
     if not preprints_with_pending_dois:
         return
@@ -63,7 +64,6 @@ def check_crossref_dois(dry_run=True):
 
 
 def report_stuck_dois(dry_run=True):
-    time_since_published = timedelta(days=settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL)
 
     preprints_with_pending_dois = Preprint.objects.filter(preprint_doi_created__isnull=True,
                                                           is_published=True,
