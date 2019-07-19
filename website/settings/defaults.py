@@ -409,6 +409,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
         'scripts.remove_after_use.end_prereg_challenge',
+        'osf.management.commands.check_crossref_dois',
     }
 
     med_pri_modules = {
