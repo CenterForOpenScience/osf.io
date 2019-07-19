@@ -196,6 +196,16 @@ def save_credentials(request):
             data.get('owncloud_folder'),
             'owncloud'
         )
+    elif provider_short_name == 'nextcloud':
+        result = utils.save_nextcloud_credentials(
+            institution_id,
+            data.get('storage_name'),
+            data.get('nextcloud_host'),
+            data.get('nextcloud_username'),
+            data.get('nextcloud_password'),
+            data.get('nextcloud_folder'),
+            'nextcloud',
+        )
     elif provider_short_name == 'box':
         result = utils.save_box_credentials(
             request.user,

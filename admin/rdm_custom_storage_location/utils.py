@@ -273,6 +273,38 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
         'message': ('Saved credentials successfully!!')
     }, httplib.OK)
 
+def save_nextcloud_credentials(institution_id, storage_name, host_url, username, password,
+                              folder, provider):
+    test_connection_result = test_owncloud_connection(host_url, username, password, folder,
+                                                      provider)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    host = furl()
+    host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
+    host.scheme = 'https'
+
+    wb_credentials = {
+        'storage': {
+            'host': host.url,
+            'username': username,
+            'password': password,
+        },
+    }
+    wb_settings = {
+        'storage': {
+            'bucket': '',
+            'folder': '/{}/'.format(folder.strip('/')),
+            'verify_ssl': False,
+            'provider': provider
+        },
+    }
+
+    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+
+    return ({
+        'message': ('Saved credentials successfully!!')
+    }, httplib.OK)
 
 def get_oauth_info_notification(institution_id, provider_short_name):
     temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
