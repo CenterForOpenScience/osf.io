@@ -13,6 +13,7 @@ $('#institutional_storage_form').submit(function (e) {
         var selectedProvider = $('input[name=\'options\']:checked').val();
         var showModal = function () {
             $('#' + selectedProvider + '_modal').modal('show');
+            validateRequiredFields(selectedProvider);
         };
         if (selectedProvider === 'osfstorage') {
             showModal();
@@ -36,14 +37,21 @@ $('#s3_modal input').keyup(function () {
     validateRequiredFields('s3');
 });
 
-document.getElementById('s3_compatible_service').addEventListener('change', function (e) {
+function s3SelectChange(e) {
     if (document.getElementById('s3_compatible_service').value == 'Other') {
+        document.getElementById('s3_endpoint_url').required = true;
         $('#s3_endpoint_url_collapse').collapse('show');
     }
     else {
+        document.getElementById('s3_endpoint_url').required = false;
         $('#s3_endpoint_url_collapse').collapse('hide');
     }
-});
+    validateRequiredFields('s3');
+};
+
+document.getElementById('s3_compatible_service').addEventListener('change', s3SelectChange);
+
+$('#s3_modal').on('show.bs.modal', s3SelectChange);
 
 $('#swift_modal input').keyup(function () {
     validateRequiredFields('swift');
