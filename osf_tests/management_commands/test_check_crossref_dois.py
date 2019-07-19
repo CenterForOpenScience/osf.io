@@ -55,7 +55,6 @@ class TestCheckCrossrefDOIs:
 
         check_crossref_dois(dry_run=False)
 
-
         assert preprint.identifiers.count() == 1
 
         assert stuck_preprint.identifiers.count() == 1
