@@ -42,7 +42,7 @@ def provision_node(conference, message, node, user):
     if not message.is_spam and conference.public_projects:
         node.set_privacy('public', meeting_creation=True, auth=auth)
 
-    node.add_tag(message.conference_name, auth=auth)
+    conference.submissions.add(node)
     node.add_tag(message.conference_category, auth=auth)
     for systag in ['emailed', message.conference_name, message.conference_category]:
         node.add_system_tag(systag, save=False)

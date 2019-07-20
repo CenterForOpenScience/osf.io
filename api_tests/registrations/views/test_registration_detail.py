@@ -28,6 +28,7 @@ from osf_tests.factories import (
 
 from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
 from tests.utils import assert_latest_log
+from api_tests.utils import create_test_file
 
 
 @pytest.fixture()
@@ -47,7 +48,12 @@ class TestRegistrationDetail:
 
     @pytest.fixture()
     def private_project(self, user):
-        return ProjectFactory(title='Private Project', creator=user)
+        private_project = ProjectFactory(title='Private Project', creator=user)
+        create_test_file(private_project, user, filename='sake recipe')
+        create_test_file(private_project, user, filename='sake rice wine recipe')
+        deleted_file = create_test_file(private_project, user, filename='No sake')
+        deleted_file.delete()
+        return private_project
 
     @pytest.fixture()
     def public_registration(self, user, public_project):
@@ -188,6 +194,8 @@ class TestRegistrationDetail:
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
         assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 2
         assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['files']['links']['related']['meta']['count'] == 2
+
         registration_comment_reply.is_deleted = True
         registration_comment_reply.save()
         res = app.get(url, auth=user.auth)
