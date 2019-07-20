@@ -43,7 +43,6 @@ def migrate_scopes_from_char_to_m2m(state, schema):
     ApiOAuth2Scope = state.get_model('osf', 'apioauth2scope')
 
     tokens = ApiOAuth2PersonalToken.objects.all()
-    # Loop inside loop? How many tokens do we have on prod?
     for token in tokens:
         string_scopes = token.scopes.split(' ')
         for scope in string_scopes:
@@ -54,7 +53,7 @@ def migrate_scopes_from_char_to_m2m(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0169_apioauth2scope_is_public'),
+        ('osf', '0174_apioauth2scope_is_public'),
     ]
 
     # AlterField migration added to set null=True because when reverting 0171_finalize_token_scopes_mig,

@@ -1,6 +1,7 @@
 import mock
 import pytest
 
+from api.scopes.serializers import SCOPES_RELATIONSHIP_VERSION
 from osf_tests.factories import (
     ApiOAuth2PersonalTokenFactory,
     ApiOAuth2ScopeFactory,
@@ -54,12 +55,12 @@ class TestTokenDetailScopesAsRelationships:
 
     @pytest.fixture()
     def url_token_detail(self, user_one, token_user_one):
-        path = 'tokens/{}/?version=2.15'.format(token_user_one._id)
+        path = 'tokens/{}/?version={}'.format(token_user_one._id, SCOPES_RELATIONSHIP_VERSION)
         return api_v2_url(path, base_route='/')
 
     @pytest.fixture()
     def url_token_list(self):
-        return api_v2_url('tokens/?version=2.15', base_route='/')
+        return api_v2_url('tokens/?version={}'.format(SCOPES_RELATIONSHIP_VERSION), base_route='/')
 
     @pytest.fixture()
     def read_scope(self):

@@ -2,6 +2,7 @@ import copy
 import mock
 import pytest
 
+from api.scopes.serializers import SCOPES_RELATIONSHIP_VERSION
 from osf_tests.factories import (
     ApiOAuth2PersonalTokenFactory,
     ApiOAuth2ScopeFactory,
@@ -35,7 +36,7 @@ class TestTokenListScopesasRelationships:
 
     @pytest.fixture()
     def url_token_list(self):
-        return api_v2_url('tokens/?version=2.15', base_route='/')
+        return api_v2_url('tokens/?version={}'.format(SCOPES_RELATIONSHIP_VERSION), base_route='/')
 
     @pytest.fixture()
     def read_scope(self):
@@ -174,7 +175,7 @@ class TestTokenListScopesasRelationships:
             expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'User requested invalid scope'
+        assert res.json['errors'][0]['detail'] == 'User requested invalid scope.'
 
     def test_add_multiple_scopes_when_creating_token(
             self, app, url_token_list, data_sample, user_one, read_scope):
@@ -363,4 +364,4 @@ class TestTokenListScopesAsAttributes:
             expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'User requested invalid scope'
+        assert res.json['errors'][0]['detail'] == 'User requested invalid scope.'

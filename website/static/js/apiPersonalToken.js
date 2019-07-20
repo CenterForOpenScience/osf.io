@@ -19,6 +19,8 @@ var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
 
+var ScopesRelationshipVersion = 2.16;
+
 
 /*
  *  Store the data related to a single API Personal Token
@@ -89,7 +91,7 @@ var TokenDataClient = oop.defclass({
     },
     _fetchData: function (url) {
         var ret = $.Deferred();
-        var request = $osf.ajaxJSON('GET', url + '?version=2.15', {isCors: true});
+        var request = $osf.ajaxJSON('GET', url + '?version=' + ScopesRelationshipVersion, {isCors: true});
 
         request.done(function (data) {
             ret.resolve(this.unserialize(data));
@@ -123,15 +125,15 @@ var TokenDataClient = oop.defclass({
     },
     createOne: function (tokenData) {
         var url = this.apiListUrl;
-        return this._sendData(tokenData, url + '?version=2.15', 'POST');
+        return this._sendData(tokenData, url + '?version=' + ScopesRelationshipVersion, 'POST');
     },
     updateOne: function (tokenData) {
         var url = tokenData.apiDetailUrl;
-        return this._sendData(tokenData, url + '?version=2.15', 'PATCH');
+        return this._sendData(tokenData, url + '?version=' + ScopesRelationshipVersion, 'PATCH');
     },
     deleteOne: function (tokenData) {
         var url = tokenData.apiDetailUrl;
-        return $osf.ajaxJSON('DELETE', url + '?version=2.15', {isCors: true});
+        return $osf.ajaxJSON('DELETE', url + '?version=' + ScopesRelationshipVersion, {isCors: true});
     },
     unserialize: function (apiData) {
         var result;
