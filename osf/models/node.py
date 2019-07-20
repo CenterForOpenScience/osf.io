@@ -45,7 +45,7 @@ from osf.models.sanctions import RegistrationApproval
 from osf.models.private_link import PrivateLink
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
-from osf.models.validators import validate_title
+from osf.models.validators import validate_title, validate_doi
 from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
@@ -59,6 +59,8 @@ from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
+
+
 from osf.utils.permissions import ADMIN, CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, expand_permissions
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
@@ -327,6 +329,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     related_name='parent_nodes')
 
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
+
+    article_doi = models.CharField(max_length=128,
+                                        validators=[validate_doi],
+                                        null=True, blank=True)
 
     class Meta:
         base_manager_name = 'objects'
@@ -1971,6 +1977,33 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 'node': self._primary_key,
                 'category_new': self.category,
                 'category_original': original
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+        return None
+
+    def set_article_doi(self, article_doi, auth, save=False):
+        """Set the article_doi and log the event.
+
+        :param str article_doi: The new article doi
+        :param auth: All the auth informtion including user, API key.
+        :param bool save: Save self after updating.
+        """
+        original = self.article_doi
+        new_doi = article_doi
+        if original == new_doi:
+            return False
+        self.article_doi = new_doi
+        self.add_log(
+            action=NodeLog.ARTICLE_DOI_UPDATED,
+            params={
+                'parent_node': self.parent_id,
+                'node': self._primary_key,
+                'article_doi_new': self.article_doi,
+                'article_doi_original': original
             },
             auth=auth,
             save=False,

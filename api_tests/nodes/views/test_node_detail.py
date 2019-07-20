@@ -862,7 +862,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.json['data']['attributes']['title'] == title_new
         assert res.json['data']['attributes']['description'] == description_new
         assert res.json['data']['attributes']['category'] == category_new
-        log_actions = [log.action for log in project_public.logs.all()]
+        log_actions = project_public.logs.values_list('action', flat=True)
         assert NodeLog.EDITED_TITLE in log_actions
         assert NodeLog.EDITED_DESCRIPTION in log_actions
         assert NodeLog.CATEGORY_UPDATED in log_actions

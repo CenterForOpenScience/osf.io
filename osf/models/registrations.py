@@ -25,7 +25,6 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
-from osf.models.validators import validate_doi
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -40,10 +39,6 @@ class Registration(AbstractNode):
         'node_license',
         'category',
     ]
-
-    article_doi = models.CharField(max_length=128,
-                                        validators=[validate_doi],
-                                        null=True, blank=True)
     provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
@@ -216,33 +211,6 @@ class Registration(AbstractNode):
     @property
     def withdrawal_justification(self):
         return getattr(self.root.retraction, 'justification', None)
-
-    def set_article_doi(self, article_doi, auth, save=False):
-        """Set the article_doi and log the event.
-
-        :param str article_doi: The new article doi
-        :param auth: All the auth informtion including user, API key.
-        :param bool save: Save self after updating.
-        """
-        original = self.article_doi
-        new_doi = article_doi
-        if original == new_doi:
-            return False
-        self.article_doi = new_doi
-        self.add_log(
-            action=NodeLog.ARTICLE_DOI_UPDATED,
-            params={
-                'parent_node': self.parent_id,
-                'node': self._primary_key,
-                'article_doi_new': self.article_doi,
-                'article_doi_original': original
-            },
-            auth=auth,
-            save=False,
-        )
-        if save:
-            self.save()
-        return None
 
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):
