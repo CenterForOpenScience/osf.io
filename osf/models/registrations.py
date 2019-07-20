@@ -245,7 +245,7 @@ class Registration(AbstractNode):
         :raises: PermissionsError if user is not an admin for the Node
         :raises: ValidationError if end_date is not within time constraints
         """
-        if not self.has_permission(user, 'admin'):
+        if not self.is_admin_contributor(user):
             raise PermissionsError('Only admins may embargo a registration')
         if not self._is_embargo_date_valid(end_date):
             if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:

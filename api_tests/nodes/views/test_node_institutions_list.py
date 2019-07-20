@@ -1,6 +1,7 @@
 import pytest
 
-from osf_tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory
+from osf_tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory, OSFGroupFactory
+from osf.utils.permissions import READ
 from api.base.settings.defaults import API_BASE
 
 
@@ -57,6 +58,13 @@ class TestNodeInstitutionList:
         )
         assert res.status_code == 200
         assert len(res.json['data']) == 0
+
+    #   test_osf_group_member_can_view_node_institutions
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_one.add_osf_group(group, READ)
+        res = app.get(node_one_url)
+        assert res.status_code == 200
 
     #   test_non_contrib
         node_one.is_public = False

@@ -94,7 +94,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         url = '/{}nodes/{}/requests/'.format(API_BASE, component._id)
         res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
-        assert component.admin_contributors.count() == 2
+        assert component.parent_admin_contributors.count() == 1
         assert component.contributors.count() == 1
         assert mock_mail.call_count == 1
 

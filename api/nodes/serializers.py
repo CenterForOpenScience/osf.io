@@ -14,6 +14,7 @@ from api.base.serializers import (
     ShowIfVersion, TargetTypeField, TypeField,
     WaterbutlerLink, relationship_diff, BaseAPISerializer,
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
+    ValuesListField,
 )
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (
@@ -35,7 +36,7 @@ from osf.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, Institution,
     RegistrationSchema, AbstractNode, PrivateLink,
-    RegistrationProvider,
+    RegistrationProvider, OSFGroup,
 )
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
@@ -105,7 +106,7 @@ def update_institutions(node, new_institutions, user, post=False):
 
     if not post:
         for inst in remove:
-            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, 'admin'):
+            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied(
                     detail='User needs to be affiliated with {}'.format(inst.name),
                 )
@@ -171,6 +172,14 @@ class NodeLicenseRelationshipField(RelationshipField):
 
 
 class NodeCitationSerializer(JSONAPISerializer):
+    non_anonymized_fields = [
+        'doi',
+        'id',
+        'links',
+        'publisher',
+        'title',
+        'type',
+    ]
     id = IDField(read_only=True)
     title = ser.CharField(allow_blank=True, read_only=True)
     author = ser.ListField(read_only=True)
@@ -236,28 +245,53 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'subjects',
     ])
 
+    # If you add a field to this serializer, be sure to add to this
+    # list if it doesn't expose user data
     non_anonymized_fields = [
-        'id',
-        'title',
-        'description',
+        'access_requests_enabled',
+        'affiliated_institutions',
+        'analytics_key',
         'category',
+        'children',
+        'collection',
+        'comments',
+        'current_user_is_contributor',
+        'current_user_is_contributor_or_group_member',
+        'current_user_permissions',
         'date_created',
         'date_modified',
-        'registration',
-        'tags',
-        'public',
-        'license',
-        'links',
-        'children',
-        'comments',
-        'contributors',
+        'description',
+        'draft_registrations',
         'files',
+        'fork',
+        'forked_from',
+        'id',
+        'identifiers',
+        'license',
+        'linked_by_nodes',
+        'linked_by_registrations',
+        'linked_nodes',
+        'linked_registrations',
+        'links',
+        'logs',
         'node_links',
         'parent',
+        'preprint',
+        'preprints',
+        'public',
+        'region',
+        'registration',
         'root',
-        'logs',
-        'wikis',
+        'settings',
         'subjects',
+        'tags',
+        'template_from',
+        'template_node',
+        'title',
+        'type',
+        'view_only_links',
+        'wiki_enabled',
+        'wikis',
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -276,7 +310,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     preprint = ser.SerializerMethodField()
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
-    tags = ser.ListField(source='tag_names', child=ser.CharField(), required=False)
+    tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
@@ -297,6 +331,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     )
     current_user_is_contributor = ser.SerializerMethodField(
         help_text='Whether the current user is a contributor on this node.',
+    )
+    current_user_is_contributor_or_group_member = ser.SerializerMethodField(
+        help_text='Whether the current user is a contributor or group member on this node.',
     )
     wiki_enabled = ser.SerializerMethodField(help_text='Whether the wiki addon is enabled')
 
@@ -379,6 +416,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-forks',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_forks_count'},
+    )
+
+    groups = RelationshipField(
+        related_view='nodes:node-groups',
+        related_view_kwargs={'node_id': '<_id>'},
     )
 
     node_links = ShowIfVersion(
@@ -501,46 +543,58 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return 'nodes:node-relationships-subjects'
 
     def get_current_user_permissions(self, obj):
+        """
+        Returns the logged-in user's permissions to the
+        current node.  Implicit admin factored in.
+        Can have contributor or group member permissions.
+        """
+        user = self.context['request'].user
         request_version = self.context['request'].version
-        default_perm = ['read'] if StrictVersion(request_version) < StrictVersion('2.11') else []
-        if hasattr(obj, 'contrib_admin'):
-            if obj.contrib_admin:
-                return ['admin', 'write', 'read']
-            elif obj.contrib_write:
-                return ['write', 'read']
-            elif obj.contrib_read:
-                return ['read']
-            else:
-                return default_perm
+        default_perm = [osf_permissions.READ] if StrictVersion(request_version) < StrictVersion('2.11') else []
+        if user.is_anonymous:
+            return default_perm
+
+        if hasattr(obj, 'has_admin'):
+            user_perms = []
+            if obj.has_admin:
+                user_perms = [osf_permissions.ADMIN, osf_permissions.WRITE, osf_permissions.READ]
+            elif obj.has_write:
+                user_perms = [osf_permissions.WRITE, osf_permissions.READ]
+            elif obj.has_read:
+                user_perms = [osf_permissions.READ]
         else:
-            user = self.context['request'].user
-            if user.is_anonymous:
-                return default_perm
-            permissions = obj.get_permissions(user=user) or default_perm
-            if not permissions and user in obj.parent_admin_contributors:
-                permissions += ['read']
-            return permissions
+            user_perms = obj.get_permissions(user)[::-1]
+
+        user_perms = user_perms or default_perm
+        if not user_perms and user in obj.parent_admin_users:
+            user_perms = [osf_permissions.READ]
+        return user_perms
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
         auth = Auth(user if not user.is_anonymous else None)
 
-        if hasattr(obj, 'contrib_read'):
+        if hasattr(obj, 'has_read'):
             if obj.comment_level == 'public':
                 return auth.logged_in and (
                     obj.is_public or
-                    (auth.user and obj.contrib_read)
+                    (auth.user and obj.has_read)
                 )
-            return obj.contrib_read or False
+            return obj.has_read or False
         else:
             return obj.can_comment(auth)
 
     def get_preprint(self, obj):
         # Whether the node has supplemental material for a preprint the user can view
-        user = self.context['request'].user if not self.context['request'].user.is_anonymous else None
-        return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
+        if hasattr(obj, 'has_viewable_preprints'):
+            # if queryset has been annotated with "has_viewable_preprints", use this value
+            return obj.has_viewable_preprints
+        else:
+            user = self.context['request'].user
+            return Preprint.objects.can_view(base_queryset=obj.preprints, user=user).exists()
 
     def get_current_user_is_contributor(self, obj):
+        # Returns whether user is a contributor (does not include group members)
         if hasattr(obj, 'user_is_contrib'):
             return obj.user_is_contrib
 
@@ -548,6 +602,16 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if user.is_anonymous:
             return False
         return obj.is_contributor(user)
+
+    def get_current_user_is_contributor_or_group_member(self, obj):
+        # Returns whether user is a contributor -or- a group member
+        if hasattr(obj, 'has_read'):
+            return obj.has_read
+
+        user = self.context['request'].user
+        if user.is_anonymous:
+            return False
+        return obj.is_contributor_or_group_member(user)
 
     class Meta:
         type_ = 'nodes'
@@ -561,6 +625,10 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return obj.logs.count()
 
     def get_node_count(self, obj):
+        """
+        Returns the count of a node's direct children that the user has permission to view.
+        Implict admin and group membership are factored in when determining perms.
+        """
         auth = get_user_auth(self.context['request'])
         user_id = getattr(auth.user, 'id', None)
         with connection.cursor() as cursor:
@@ -574,20 +642,39 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   SELECT osf_noderelation.parent_id, parents.parent_id AS child_id
                   FROM parents JOIN osf_noderelation ON parents.PARENT_ID = osf_noderelation.child_id
                   WHERE osf_noderelation.is_node_link IS FALSE
-                ), has_admin AS (SELECT * FROM osf_contributor WHERE (node_id IN (SELECT parent_id FROM parents) OR node_id = %s) AND user_id = %s AND admin IS TRUE LIMIT 1)
+                ), has_admin AS (SELECT EXISTS(
+                    SELECT P.codename
+                    FROM auth_permission AS P
+                    INNER JOIN osf_nodegroupobjectpermission AS G ON (P.id = G.permission_id)
+                    INNER JOIN osf_osfuser_groups AS UG ON (G.group_id = UG.group_id)
+                    WHERE (P.codename = 'admin_node'
+                           AND (G.content_object_id IN (
+                                SELECT parent_id
+                                FROM parents
+                           ) OR G.content_object_id = %s)
+                           AND UG.osfuser_id = %s)
+                ))
                 SELECT COUNT(DISTINCT child_id)
                 FROM
                   osf_noderelation
                 JOIN osf_abstractnode ON osf_noderelation.child_id = osf_abstractnode.id
-                JOIN osf_contributor ON osf_abstractnode.id = osf_contributor.node_id
                 LEFT JOIN osf_privatelink_nodes ON osf_abstractnode.id = osf_privatelink_nodes.abstractnode_id
                 LEFT JOIN osf_privatelink ON osf_privatelink_nodes.privatelink_id = osf_privatelink.id
                 WHERE parent_id = %s AND is_node_link IS FALSE
                 AND osf_abstractnode.is_deleted IS FALSE
                 AND (
                   osf_abstractnode.is_public
-                  OR (TRUE IN (SELECT TRUE FROM has_admin))
-                  OR (osf_contributor.user_id = %s AND osf_contributor.read IS TRUE)
+                  OR (SELECT exists from has_admin) = TRUE
+                  OR (SELECT EXISTS(
+                      SELECT P.codename
+                      FROM auth_permission AS P
+                      INNER JOIN osf_nodegroupobjectpermission AS G ON (P.id = G.permission_id)
+                      INNER JOIN osf_osfuser_groups AS UG ON (G.group_id = UG.group_id)
+                      WHERE (P.codename = 'read_node'
+                             AND G.content_object_id = osf_abstractnode.id
+                             AND UG.osfuser_id = %s)
+                      )
+                  )
                   OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
                 );
             """, [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key],
@@ -665,8 +752,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             affiliated_institutions = validated_data.pop('affiliated_institutions')
         if 'region_id' in validated_data:
             region_id = validated_data.pop('region_id')
-        if 'tag_names' in validated_data:
-            tags = validated_data.pop('tag_names')
+        if 'tags' in validated_data:
+            tags = validated_data.pop('tags')
             for tag in tags:
                 tag_instance, created = Tag.objects.get_or_create(name=tag, defaults=dict(system=False))
                 tag_instances.append(tag_instance)
@@ -675,7 +762,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             template_node = Node.load(template_from)
             if template_node is None:
                 raise exceptions.NotFound
-            if not template_node.has_permission(user, 'read', check_parent=False):
+            if not template_node.has_permission(user, osf_permissions.READ, check_parent=False):
                 raise exceptions.PermissionDenied
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
@@ -693,23 +780,26 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if len(tag_instances):
             for tag in tag_instances:
                 node.tags.add(tag)
-        if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
+        if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, osf_permissions.WRITE):
             auth = get_user_auth(request)
             parent = validated_data['parent']
             contributors = []
             for contributor in parent.contributor_set.exclude(user=user):
                 contributors.append({
                     'user': contributor.user,
-                    'permissions': parent.get_permissions(contributor.user),
+                    'permissions': contributor.permission,
                     'visible': contributor.visible,
                 })
                 if not contributor.user.is_registered:
                     node.add_unregistered_contributor(
                         fullname=contributor.user.fullname, email=contributor.user.email, auth=auth,
-                        permissions=parent.get_permissions(contributor.user), existing_user=contributor.user,
+                        permissions=contributor.permission, existing_user=contributor.user,
                     )
             node.add_contributors(contributors, auth=auth, log=True, save=True)
-        if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, 'write'):
+            for group in parent.osf_groups:
+                if group.is_manager(user):
+                    node.add_osf_group(group, group.get_permission_to_node(parent), auth=auth)
+        if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, osf_permissions.WRITE):
             parent = validated_data['parent']
             node.subjects.add(parent.subjects.all())
             node.save()
@@ -734,8 +824,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if validated_data:
             if 'custom_citation' in validated_data:
                 node.update_custom_citation(validated_data.pop('custom_citation'), auth)
-            if 'tag_names' in validated_data:
-                new_tags = set(validated_data.pop('tag_names', []))
+            if 'tags' in validated_data:
+                new_tags = set(validated_data.pop('tags', []))
                 node.update_tags(new_tags, auth=auth)
             if 'region' in validated_data:
                 validated_data.pop('region')
@@ -988,33 +1078,36 @@ class NodeForksSerializer(NodeSerializer):
         return fork
 
 
-class ContributorIDField(IDField):
-    """ID field to use with the contributor resource. Contributor IDs have the form "<node-id>-<user-id>"."""
+class CompoundIDField(IDField):
+    """ID field to use with another resource related to the node. CompoundIDField IDs have the form "<resource-id>-<related-id>"."""
 
     def __init__(self, *args, **kwargs):
         kwargs['source'] = kwargs.pop('source', '_id')
-        kwargs['help_text'] = kwargs.get('help_text', 'Unique contributor ID. Has the form "<node-id>-<user-id>". Example: "abc12-xyz34"')
-        super(ContributorIDField, self).__init__(*args, **kwargs)
+        kwargs['help_text'] = kwargs.get('help_text', 'Unique ID that is a compound of two objects. Has the form "<resource-id>-<related-id>". Example: "abc12-xyz34"')
+        super(CompoundIDField, self).__init__(*args, **kwargs)
 
-    def _get_node_id(self):
+    def _get_resource_id(self):
         return self.context['request'].parser_context['kwargs']['node_id']
 
     # override IDField
     def get_id(self, obj):
-        node_id = self._get_node_id()
-        user_id = obj._id
-        return '{}-{}'.format(node_id, user_id)
+        resource_id = self._get_resource_id()
+        related_id = obj._id
+        return '{}-{}'.format(resource_id, related_id)
 
     def to_representation(self, value):
-        node_id = self._get_node_id()
-        user_id = super(ContributorIDField, self).to_representation(value)
-        return '{}-{}'.format(node_id, user_id)
+        resource_id = self._get_resource_id()
+        related_id = super(CompoundIDField, self).to_representation(value)
+        return '{}-{}'.format(resource_id, related_id)
 
 
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
-    non_anonymized_fields = ['bibliographic', 'permission']
+    non_anonymized_fields = [
+        'bibliographic',
+        'permission',
+    ]
     filterable_fields = frozenset([
         'id',
         'bibliographic',
@@ -1031,8 +1124,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
         default=True,
     )
     permission = ser.ChoiceField(
-        choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
-        default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
+        choices=osf_permissions.API_CONTRIBUTOR_PERMISSIONS, required=False, allow_null=True,
+        default=osf_permissions.WRITE,
         help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".',
     )
     unregistered_contributor = ser.SerializerMethodField()
@@ -1095,7 +1188,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     email_preferences = ['default', 'false']
 
     def get_proposed_permissions(self, validated_data):
-        return osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        return validated_data.get('permission') or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
         if not user_id and not full_name:
@@ -1517,13 +1610,10 @@ class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
     def update(self, link, validated_data):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
 
-        name = validated_data.get('name')
-        anonymous = validated_data.get('anonymous')
-
-        if name:
-            link.name = name
-        if anonymous:
-            link.anonymous = anonymous
+        if 'name' in validated_data:
+            link.name = validated_data.get('name')
+        if 'anonymous' in validated_data:
+            link.anonymous = validated_data.get('anonymous')
 
         link.save()
         return link
@@ -1610,7 +1700,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
             'wiki_enabled',
         ]
 
-        if set(validated_data.keys()).intersection(set(admin_only_field_names)) and not obj.has_permission(user, 'admin'):
+        if set(validated_data.keys()).intersection(set(admin_only_field_names)) and not obj.has_permission(user, osf_permissions.ADMIN):
             raise exceptions.PermissionDenied
 
         self.update_node_fields(obj, validated_data, auth)
@@ -1697,3 +1787,120 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         if type(addon) == bool:
             addon = None
         return addon
+
+
+class NodeGroupsSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'name',
+        'permission',
+        'date_created',
+    ])
+
+    writeable_method_fields = frozenset([
+        'permission',
+    ])
+
+    non_anonymized_fields = [
+        'type',
+        'permission',
+    ]
+
+    id = CompoundIDField(source='_id', read_only=True)
+    type = TypeField()
+    permission = ser.SerializerMethodField()
+    name = ser.CharField(read_only=True)
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
+
+    groups = RelationshipField(
+        related_view='groups:group-detail',
+        related_view_kwargs={'group_id': '<_id>'},
+        required=False,
+    )
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        node = self.context['node']
+        return absolute_reverse(
+            'nodes:node-group-detail', kwargs={
+                'group_id': obj._id,
+                'node_id': node._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def get_permission(self, obj):
+        node = self.context['node']
+        return obj.get_permission_to_node(node)
+
+    class Meta:
+        type_ = 'node-groups'
+
+
+class NodeGroupsCreateSerializer(NodeGroupsSerializer):
+    """
+    Overrides NodeGroupSerializer so groups relationship is properly parsed
+    (JSONAPIParser will flatten groups relationship into {'_id': 'group_id'},
+    so _id field needs to be writeable so it's not dropped from validated_data)
+
+    """
+    id = IDField(source='_id', required=False, allow_null=True)
+
+    groups = RelationshipField(
+        related_view='groups:group-detail',
+        related_view_kwargs={'group_id': '<_id>'},
+        required=False,
+    )
+
+    def load_osf_group(self, _id):
+        if not _id:
+            raise exceptions.ValidationError(detail='Group relationship must be specified.')
+        try:
+            osf_group = OSFGroup.objects.get(_id=_id)
+        except OSFGroup.DoesNotExist:
+            raise exceptions.NotFound(detail='Group {} is invalid.'.format(_id))
+        return osf_group
+
+    def create(self, validated_data):
+        auth = get_user_auth(self.context['request'])
+        node = self.context['node']
+        permission = validated_data.get('permission', osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS)
+        group = self.load_osf_group(validated_data.get('_id'))
+        if group in node.osf_groups:
+            raise exceptions.ValidationError(
+                'The group {} has already been added to the node {}'.format(group._id, node._id),
+            )
+
+        try:
+            node.add_osf_group(group, permission, auth)
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=str(e))
+        except ValueError as e:
+            # permission is in writeable_method_fields, so validation happens on OSF Group model
+            raise exceptions.ValidationError(detail=str(e.message))
+        return group
+
+
+class NodeGroupsDetailSerializer(NodeGroupsSerializer):
+    """
+    Overrides NodeGroupsSerializer to make id required.  Adds update method here.
+    """
+    id = CompoundIDField(source='_id', required=True)
+
+    def update(self, obj, validated_data):
+        auth = get_user_auth(self.context['request'])
+        node = self.context['node']
+        permission = validated_data.get('permission')
+        if not permission:
+            return obj
+        try:
+            node.update_osf_group(obj, permission, auth)
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=str(e.message))
+        except ValueError as e:
+            # permission is in writeable_method_fields, so validation happens on OSF Group model
+            raise exceptions.ValidationError(detail=str(e.message))
+        return obj

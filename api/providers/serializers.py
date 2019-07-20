@@ -9,7 +9,7 @@ from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
-from osf.utils.permissions import REVIEW_GROUPS
+from osf.utils.permissions import REVIEW_GROUPS, ADMIN
 from website import mails
 from website.settings import DOMAIN
 
@@ -271,7 +271,7 @@ class ModeratorSerializer(JSONAPISerializer):
         context['notification_settings_url'] = '{}reviews/preprints/{}/notifications'.format(DOMAIN, provider._id)
         context['provider_name'] = provider.name
         context['is_reviews_moderator_notification'] = True
-        context['is_admin'] = perm_group == 'admin'
+        context['is_admin'] = perm_group == ADMIN
 
         provider.add_to_group(user, perm_group)
         setattr(user, 'permission_group', perm_group)  # Allows reserialization
