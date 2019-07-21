@@ -130,6 +130,9 @@ PERMISSIBLE_ADDONS = {
 }
 
 def complete_archive_target(reg, addon_short_name):
+    # Cache registration files count
+    reg.update_files_count()
+
     archive_job = reg.archive_job
     target = archive_job.get_target(addon_short_name)
     target.status = ARCHIVER_SUCCESS
