@@ -566,6 +566,11 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
                 'kwargs': {'dry_run': False}
             },
+            'registration_schema_metrics': {
+                'task': 'management.commands.registration_schema_metrics',
+                'schedule': crontab(minute=45, hour=7, day_of_month=3),  # Third day of month 2:45 a.m.
+                'kwargs': {'dry_run': False}
+            },
             'run_keen_summaries': {
                 'task': 'scripts.analytics.run_keen_summaries',
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
@@ -1904,3 +1909,5 @@ CHRONOS_SUBMISSION_UPDATE_TIME = timedelta(minutes=5)
 
 DS_METRICS_OSF_TOKEN = None
 DS_METRICS_BASE_FOLDER = None
+REG_METRICS_OSF_TOKEN = None
+REG_METRICS_BASE_FOLDER = None
