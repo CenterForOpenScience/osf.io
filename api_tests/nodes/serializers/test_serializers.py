@@ -4,6 +4,7 @@ from urlparse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeSerializer
+from api.sparse.serializers import SparseNodeSerializer, SparseRegistrationSerializer
 from api.registrations.serializers import RegistrationSerializer
 from framework.auth import Auth
 from osf_tests.factories import (
@@ -89,6 +90,50 @@ class TestNodeSerializer:
         templated_from = relationships['template_node']['links']['related']['href']
         assert urlparse(
             templated_from).path == '/{}nodes/{}/'.format(API_BASE, node._id)
+
+
+@pytest.mark.django_db
+class TestSparseNodeSerializer:
+
+    def test_sparse_node_serializer(self, user):
+
+        #   test_node_serialization
+        parent = ProjectFactory(creator=user)
+        node = NodeFactory(creator=user, parent=parent)
+        req = make_drf_request_with_version(version='2.15')
+        result = SparseNodeSerializer(node, context={'request': req}).data
+        data = result['data']
+        assert data['id'] == node._id
+        assert data['type'] == 'sparse-nodes'
+
+        # Attributes
+        attributes = data['attributes']
+        assert attributes['title'] == node.title
+        assert attributes['description'] == node.description
+        assert attributes['public'] == node.is_public
+        assert set(attributes['tags']) == set(node.tags.values_list('name', flat=True))
+        assert 'current_user_can_comment' not in attributes
+        assert 'license' not in attributes
+        assert attributes['category'] == node.category
+        assert 'registration' not in attributes
+        assert attributes['fork'] == node.is_fork
+
+        # Relationships
+        relationships = data['relationships']
+        assert 'region' not in relationships
+        assert 'children' in relationships
+        assert 'detail' in relationships
+        assert 'contributors' in relationships
+        assert 'files' not in relationships
+        assert 'parent' in relationships
+        assert 'affiliated_institutions' not in relationships
+        assert 'registrations' not in relationships
+        assert 'forked_from' not in relationships
+        parent_link = relationships['parent']['links']['related']['href']
+        assert urlparse(parent_link).path == '/{}sparse/nodes/{}/'.format(API_BASE, parent._id)
+        assert 'sparse' not in relationships['detail']['links']['related']['href']
+        assert 'sparse' in relationships['children']['links']['related']['href']
+
 
 
 @pytest.mark.django_db

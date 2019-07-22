@@ -2,29 +2,47 @@ from api.base.serializers import (
     LinksField,
     RelationshipField,
 )
+from api.base.utils import absolute_reverse
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
+
 
 # Todo: Return relationships as relationships
 class SparseNodeSerializer(NodeSerializer):
     filterable_fields = frozenset([
         'title',
     ])
-    relationship_views = {
-            'bibliographic_contributors': 'nodes:node-bibliographic-contributors',
-            'contributors': 'nodes:node-contributors',
-            'detail': 'sparse-nodes:sparse-node-detail',
-            'children': 'sparse-nodes:sparse-node-children',
-    }
     links = LinksField({
-        'self': None,  # self links will break ember data unless we make a specific sparse detail serializer
+        'self': 'get_absolute_url',  # self links will break ember data unless we make a specific sparse detail serializer
         'html': 'get_absolute_html_url',
     })
-
     detail = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<_id>'},
     )
+    children = RelationshipField(
+        related_view='sparse:node-children',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_node_count'},
+    )
+    parent = RelationshipField(
+        related_view='sparse:node-detail',
+        related_view_kwargs={'node_id': '<parent_id>'},
+        filter_key='parent_node',
+    )
+    root = RelationshipField(
+        related_view='sparse:node-detail',
+        related_view_kwargs={'node_id': '<root._id>'},
+    )
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'sparse:node-detail',
+            kwargs={
+                'node_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
     # Overrides SparseFieldsetMixin
     def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
@@ -35,6 +53,7 @@ class SparseNodeSerializer(NodeSerializer):
         fieldset = [
             'bibliographic_contributors',
             'category',
+            'children',
             'contributors',
             'date_created',
             'date_modified',
@@ -72,7 +91,7 @@ class SparseRegistrationSerializer(RegistrationSerializer):
     })
 
     detail = RelationshipField(
-        related_view='nodes:node-detail',
+        related_view='sparse:node-detail',
         related_view_kwargs={'node_id': '<_id>'},
     )
 

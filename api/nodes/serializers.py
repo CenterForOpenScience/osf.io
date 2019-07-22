@@ -350,13 +350,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     links = LinksField({'html': 'get_absolute_html_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
-    relationship_views = {
-            'bibliographic_contributors': 'nodes:node-bibliographic-contributors',
-            'contributors': 'nodes:node-contributors',
-            'detail': 'nodes:node-detail',
-            'children': 'nodes:node-children',
-    }
-
     license = NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<license.node_license._id>'},
@@ -364,7 +357,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     )
 
     children = RelationshipField(
-        related_view=relationship_views['children'],
+        related_view='nodes:node-children',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_node_count'},
     )
@@ -377,13 +370,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     )
 
     contributors = RelationshipField(
-        related_view=relationship_views['contributors'],
+        related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'},
     )
 
     bibliographic_contributors = RelationshipField(
-        related_view=relationship_views['bibliographic_contributors'],
+        related_view='nodes:node-bibliographic-contributors',
         related_view_kwargs={'node_id': '<_id>'},
     )
 
@@ -452,7 +445,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     )
 
     parent = RelationshipField(
-        related_view=relationship_views['detail'],
+        related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<parent_id>'},
         filter_key='parent_node',
     )
@@ -491,7 +484,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     )
 
     root = RelationshipField(
-        related_view=relationship_views['detail'],
+        related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<root._id>'},
     )
 

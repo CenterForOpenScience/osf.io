@@ -1,6 +1,13 @@
 from rest_framework.exceptions import MethodNotAllowed
 from api.sparse.serializers import SparseNodeSerializer, SparseRegistrationSerializer
-from api.nodes.views import NodeDetail, NodeChildrenList, NodeList
+from api.nodes.views import (
+    NodeDetail,
+    NodeChildrenList,
+    NodeList,
+    LinkedNodesList,
+    NodeLinkedRegistrationsList,
+)
+
 from api.registrations.views import RegistrationDetail, RegistrationChildrenList, RegistrationList
 from api.users.views import UserNodes, UserRegistrations
 
@@ -11,6 +18,7 @@ class BaseSparseMixin(object):
     view_category = 'sparse'
 
     pagination_class = CursorPagination
+    serializer_class = None
 
     # overrides NodeList because these endpoints don't allow writing
     @staticmethod
@@ -27,22 +35,27 @@ class BaseSparseMixin(object):
     def allow_bulk_destroy_resources():
         raise MethodNotAllowed
 
+    def get_serializer_class(self):
+        return self.serializer_class
+
 
 class SparseNodeMixin(BaseSparseMixin):
-    view_name = 'sparse-node-list'
-
-    def get_serializer_class(self):
-        return SparseNodeSerializer
+    serializer_class = SparseNodeSerializer
 
 
 class SparseRegistrationMixin(BaseSparseMixin):
-    view_name = 'sparse-registration-list'
-
-    def get_serializer_class(self):
-        return SparseRegistrationSerializer
+    serializer_class = SparseRegistrationSerializer
 
 
 class SparseNodeList(SparseNodeMixin, NodeList):
+    pass
+
+
+class SparseLinkedNodesList(SparseNodeMixin, LinkedNodesList):
+    pass
+
+
+class SparseNodeLinkedRegistrationsList(SparseRegistrationMixin, NodeLinkedRegistrationsList):
     pass
 
 
@@ -51,8 +64,6 @@ class SparseUserNodeList(SparseNodeMixin, UserNodes):
 
 
 class SparseNodeDetail(SparseNodeMixin, NodeDetail):
-    view_name = 'sparse-node-detail'
-
     pass
 
 
@@ -61,7 +72,7 @@ class SparseNodeChildrenList(SparseNodeMixin, NodeChildrenList):
 
 
 class SparseRegistrationDetail(SparseRegistrationMixin, RegistrationDetail):
-    view_name = 'sparse-registration-detail'
+    view_name = 'registration-detail'
 
     pass
 
