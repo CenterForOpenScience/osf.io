@@ -28,7 +28,7 @@ CAST(osf_retraction.date_retracted AS DATE),
         FROM osf_abstractnode
         LEFT JOIN osf_retraction
         ON osf_abstractnode.retraction_id = osf_retraction.id
-        WHERE osf_abstractnode.type LIKE '%osf.registration%'
+        WHERE osf_abstractnode.type = 'osf.registration'
         AND ((osf_abstractnode.registered_date >= date_trunc('month', current_date - interval '1' month)
             AND osf_abstractnode.registered_date < date_trunc('month', current_date))
             OR (osf_retraction.date_retracted >= date_trunc('month', current_date - interval '1' month)
@@ -100,6 +100,14 @@ def upload_to_storage(file_path, upload_url, params):
         )
 
 
+def encode_row(row):
+    row_to_write = []
+    for s in row:
+        item = s.encode('utf-8') if isinstance(s, (str, unicode)) else s
+        row_to_write.append(item)
+    return row_to_write
+
+
 def write_raw_data(cursor, filename):
     file_path = '{}{}'.format(TEMP_FOLDER, filename)
     params = {
@@ -111,11 +119,7 @@ def write_raw_data(cursor, filename):
         writer = csv.writer(new_file, delimiter=',', lineterminator='\n', quoting=csv.QUOTE_ALL)
         writer.writerow(list(VALUES))
         for row in cursor.fetchall():
-            row_to_write = []
-            for s in row:
-                item = s.encode('utf-8') if isinstance(s, (str, unicode)) else s
-                row_to_write.append(item)
-            writer.writerow(row_to_write)
+            writer.writerow(encode_row(row))
     upload_to_storage(file_path=file_path, upload_url=REG_METRICS_BASE_FOLDER, params=params)
 
 
@@ -130,11 +134,7 @@ def gather_metrics(dry_run=False):
         cursor.execute(REGISTRATION_METRICS_SQL)
         if dry_run:
             for row in cursor.fetchall():
-                row_to_write = []
-                for s in row:
-                    item = s.encode('utf-8') if isinstance(s, (str, unicode)) else s
-                    row_to_write.append(item)
-                logger.info(row_to_write)
+                logger.info(encode_row(row))
         else:
             write_raw_data(cursor=cursor, filename=filename)
 
