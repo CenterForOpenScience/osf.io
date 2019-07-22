@@ -8,8 +8,6 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.sanitize import unescape_entities
 from osf.utils.fields import NonNaiveDateTimeField
 
-
-
 class PrivateLink(ObjectIDMixin, BaseModel):
     key = models.CharField(max_length=512, null=False, unique=True, blank=False)
     name = models.CharField(max_length=255, blank=True, null=True)

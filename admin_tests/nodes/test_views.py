@@ -3,7 +3,6 @@ import pytest
 import mock
 import pytz
 import datetime
-from django.utils import timezone
 
 from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
 from admin.nodes.views import (

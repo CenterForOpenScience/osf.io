@@ -1,5 +1,4 @@
 import mock
-import pytz
 import pytest
 import datetime
 
