@@ -80,6 +80,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     preprint_provider = ser.SerializerMethodField(read_only=True)
     previous_institution = NodeLogInstitutionSerializer(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
+    storage_name = ser.SerializerMethodField(read_only=True)
     study = ser.CharField(read_only=True)
     tag = ser.CharField(read_only=True)
     tags = ser.CharField(read_only=True)
@@ -191,6 +192,11 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             if preprint:
                 provider = preprint.provider
                 return {'url': provider.external_url, 'name': provider.name}
+        return None
+
+    def get_storage_name(self, obj):
+        if obj.get('path') is not None:
+            return 'Institutional Storage'
         return None
 
 class NodeLogSerializer(JSONAPISerializer):
