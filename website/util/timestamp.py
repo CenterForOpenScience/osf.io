@@ -524,7 +524,7 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     verify_data.upload_file_size = file_info['size']
     verify_data.save()
 
-def file_node_moved(project_id, provider, src_path, dest_path):
+def file_node_moved(project_id, src_provider, dest_provider, src_path, dest_path):
     src_path = src_path if src_path[0] == '/' else '/' + src_path
     dest_path = dest_path if dest_path[0] == '/' else '/' + dest_path
     target_object_id = Guid.objects.get(_id=project_id,
@@ -532,27 +532,28 @@ def file_node_moved(project_id, provider, src_path, dest_path):
     deleted_files = RdmFileTimestamptokenVerifyResult.objects.filter(
         path__startswith=dest_path,
         project_id=project_id,
-        provider=provider
+        provider=dest_provider
     ).exclude(
         inspection_result_status=api_settings.FILE_NOT_EXISTS
     ).all()
     for deleted_file in deleted_files:
-        file_node_overwitten(project_id, target_object_id, provider, dest_path)
+        file_node_overwitten(project_id, target_object_id, dest_provider, dest_path)
 
     moved_files = RdmFileTimestamptokenVerifyResult.objects.filter(
         path__startswith=src_path,
         project_id=project_id,
-        provider=provider
+        provider=src_provider
     ).exclude(
         inspection_result_status__in=STATUS_NOT_ACCESSIBLE
     ).all()
     for moved_file in moved_files:
         moved_file.path = moved_file.path.replace(src_path, dest_path, 1)
+        moved_file.provider = dest_provider
         moved_file.save()
 
-    if provider != 'osfstorage' and src_path[-1:] == '/':
+    if src_provider != 'osfstorage' and src_path[-1:] == '/':
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
-                                                 provider=provider,
+                                                 provider=src_provider,
                                                  deleted_on__isnull=True,
                                                  _path__startswith=src_path).all()
         for file_node in file_nodes:
@@ -561,7 +562,7 @@ def file_node_moved(project_id, provider, src_path, dest_path):
             file_node.save()
     else:
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
-                                                 provider=provider,
+                                                 provider=src_provider,
                                                  deleted_on__isnull=True,
                                                  _path=src_path).all()
         for file_node in file_nodes:
