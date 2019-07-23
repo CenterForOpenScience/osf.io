@@ -24,6 +24,7 @@ from osf.admin import OSFUserAdmin
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+pytestmark = pytest.mark.django_db
 
 
 class TestSubjectRules(AdminTestCase):
@@ -168,34 +169,65 @@ class TestNodeChanges(AdminTestCase):
 
 site = AdminSite()
 
-class TestGroupCollectionsPreprints(AdminTestCase):
+class TestGroupCollectionsPreprints:
+    @pytest.fixture()
+    def user(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def admin_url(self, user):
+        return '/admin/osf/osfuser/{}/change/'.format(user.id)
+
+    @pytest.fixture()
+    def preprint(self, user):
+        return PreprintFactory(creator=user)
+
+    @pytest.fixture()
+    def get_request(self, admin_url, user):
+        request = RequestFactory().get(admin_url)
+        request.user = user
+        return request
+
+    @pytest.fixture()
+    def post_request(self, admin_url, user):
+        request = RequestFactory().post(admin_url)
+        request.user = user
+        return request
+
+    @pytest.fixture()
+    def osf_user_admin(self):
+        return OSFUserAdmin(OSFUser, site)
 
     @pytest.mark.enable_bookmark_creation
-    def test_admin_app_groups(self):
-        user = UserFactory()
-        user.save()
-        request = RequestFactory()
-        get_request = request.get('/admin/osf/osfuser/{}/change'.format(user.id))
-        get_request.user = user
-        post_request = request.post('/admin/osf/osfuser/{}/change'.format(user.id))
-        post_request.user = user
-        preprint = PreprintFactory(creator=user)
-        preprint.save()
-        admin = OSFUserAdmin(OSFUser, site)
-        formfield = (admin.formfield_for_manytomany(OSFUser.groups.field, request=get_request))
+    def test_admin_app_formfield_collections(self, preprint, user, get_request, osf_user_admin):
+        """ Testing OSFUserAdmin.formfield_many_to_many.
+        This should not return any bookmark collections or preprint groups, even if the user is a member.
+        """
+
+        formfield = (osf_user_admin.formfield_for_manytomany(OSFUser.groups.field, request=get_request))
         queryset = formfield.queryset
 
-        collections_group = Group.objects.filter(name__startswith='collections_')[0]
+        collections_group = Group.objects.filter(name='collections_{}_admin'.format(user.id))[0]
         assert(collections_group not in queryset)
 
-        preprint_group = Group.objects.filter(name__startswith='preprint_')[0]
+        preprint_group = Group.objects.filter(name='preprint_{}_admin'.format(preprint.id))[0]
         assert(preprint_group not in queryset)
 
-        form = admin.get_form(request=post_request, obj=user)
+    @pytest.mark.enable_bookmark_creation
+    def test_admin_app_save_related_collections(self, post_request, osf_user_admin, user, preprint):
+        """ Testing OSFUserAdmin.save_related
+        This should maintain the bookmark collections and preprint groups the user is a member of
+        even though they aren't explicitly returned by the form.
+        """
+
+        form = osf_user_admin.get_form(request=post_request, obj=user)
         data_dict = model_to_dict(user)
         post_form = form(data_dict, instance=user)
 
-        #Removing any fields which are causing JSON related errors
+        # post_form.errors.keys() generates a list of fields causing JSON Related errors
+        # which are preventing the form from being valid (which is required for the form to be saved).
+        # By setting the field to '{}', this makes the form valid and resolves JSON errors.
+
         for field in post_form.errors.keys():
             if field == 'groups':
                 data_dict['groups'] = []
@@ -207,6 +239,10 @@ class TestGroupCollectionsPreprints(AdminTestCase):
         qdict = QueryDict('', mutable=True)
         qdict.update(data_dict)
         post_request.POST = qdict
-        admin.save_related(request=post_request, form=post_form, formsets=[], change=True)
-        assert(len(list(user.groups.filter(name__startswith='collections_'))) > 0)
-        assert(len(list(user.groups.filter(name__startswith='preprint_'))) > 0)
+        osf_user_admin.save_related(request=post_request, form=post_form, formsets=[], change=True)
+
+        collections_group = Group.objects.filter(name='collections_{}_admin'.format(user.id))[0]
+        assert(collections_group in user.groups.all())
+
+        preprint_group = Group.objects.filter(name='preprint_{}_admin'.format(preprint.id))[0]
+        assert(preprint_group in user.groups.all())
