@@ -19,48 +19,61 @@ logging.basicConfig(level=logging.INFO)
 
 time_since_published = timedelta(days=settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL)
 
+CHECK_DOIS_BATCH_SIZE = 20
+
+
+def pop_slice(lis, n):
+    tem = lis[:n]
+    del lis[:n]
+    return tem
+
 
 def check_crossref_dois(dry_run=True):
     """
     This script is to check for any DOI confirmation messages we may have missed during downtime and alert admins to any
-    DOIs that have been pending for X number of days.
+    DOIs that have been pending for X number of days. It creates url to check with crossref if all our pending crossref
+    DOIs are minted, then sets all identifiers which are confirmed minted.
+
     :param dry_run:
     :return:
     """
-    # Create one enormous url to check if all our pending crossref DOIs are good, then set all identifers
 
     preprints_with_pending_dois = Preprint.objects.filter(
         preprint_doi_created__isnull=True,
         is_published=True
     ).exclude(date_published__gt=timezone.now() - time_since_published)
 
-    if not preprints_with_pending_dois:
+    if not preprints_with_pending_dois.exists():
         return
 
-    pending_dois = []
+    preprints = list(preprints_with_pending_dois)
 
-    for preprint in preprints_with_pending_dois:
-        prefix = preprint.provider.doi_prefix
-        pending_dois.append('doi:{}'.format(settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)))
+    while preprints:
+        preprint_batch = pop_slice(preprints, CHECK_DOIS_BATCH_SIZE)
 
-    url = '{}works?filter={}'.format(settings.CROSSREF_JSON_API_URL, ','.join(pending_dois))
+        pending_dois = []
+        for preprint in preprint_batch:
+            prefix = preprint.provider.doi_prefix
+            pending_dois.append('doi:{}'.format(settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)))
 
-    try:
-        resp = requests.get(url)
-        resp.raise_for_status()
-    except requests.exceptions.HTTPError as exc:
-        logger.error('Could not contact crossref to check for DOIs, response returned with exception {}'.format(exc))
-        raise exc
+        url = '{}works?filter={}'.format(settings.CROSSREF_JSON_API_URL, ','.join(pending_dois))
 
-    preprints = resp.json()['message']['items']
+        try:
+            resp = requests.get(url)
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as exc:
+            logger.error('Could not contact crossref to check for DOIs, response returned with exception {}'.format(exc))
+            raise exc
 
-    for preprint in preprints:
-        guid = preprint['DOI'].split('/')[-1]
-        pending_preprint = preprints_with_pending_dois.get(guids___id=guid)
-        if not dry_run:
-            pending_preprint.set_identifier_values(preprint['DOI'], save=True)
-        else:
-            logger.info('DRY RUN')
+        preprints_response = resp.json()['message']['items']
+
+        for preprint in preprints_response:
+            guid = preprint['DOI'].split('/')[-1]
+            pending_preprint = preprints_with_pending_dois.get(guids___id=guid)
+            if not dry_run:
+                pending_preprint.set_identifier_values(preprint['DOI'], save=True)
+            else:
+                logger.info('DRY RUN')
 
 
 def report_stuck_dois(dry_run=True):
