@@ -14,7 +14,6 @@ from flask import send_from_directory
 from flask import Response
 from flask import stream_with_context
 from flask import g
-from django.core.urlresolvers import reverse
 from django.conf import settings as api_settings
 from django.utils.encoding import smart_str
 from werkzeug.http import dump_cookie
@@ -101,11 +100,6 @@ def get_globals():
     else:
         request_login_url = request.url
 
-    try:
-        waffle_url = reverse('wafflejs')  # TODO: fix bug only effects Travis
-    except (KeyError, SyntaxError):
-        waffle_url = '/_/wafflejs'
-
     return {
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
@@ -168,7 +162,6 @@ def get_globals():
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=waffle_url),
         'footer_links': settings.FOOTER_LINKS,
         'features': features,
         'waffle': waffle,
