@@ -1,7 +1,6 @@
 import re
 from distutils.version import StrictVersion
 
-from django.utils import timezone
 from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
