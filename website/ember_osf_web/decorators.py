@@ -14,7 +14,6 @@ def ember_flag_is_active(flag_name):
     def decorator(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            # Waffle does not enjoy NoneTypes as user values.
             if flag_is_active(request, flag_name):
                 return use_ember_app()
             else:
