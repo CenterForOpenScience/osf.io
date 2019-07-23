@@ -31,11 +31,12 @@ def pop_slice(lis, n):
 def check_crossref_dois(dry_run=True):
     """
     This script is to check for any DOI confirmation messages we may have missed during downtime and alert admins to any
-    DOIs that have been pending for X number of days.
+    DOIs that have been pending for X number of days. It creates url to check with crossref if all our pending crossref
+    DOIs are minted, then sets all identifiers which are confirmed minted.
+
     :param dry_run:
     :return:
     """
-    # Create one enormous url to check if all our pending crossref DOIs are good, then set all identifers
 
     preprints_with_pending_dois = Preprint.objects.filter(
         preprint_doi_created__isnull=True,
