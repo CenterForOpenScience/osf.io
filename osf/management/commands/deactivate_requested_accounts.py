@@ -1,8 +1,3 @@
-"""
-This script runs nightly and emails users who want to delete there account with info on how to do so. Users who don't
-have any content can be automatically deleted.
-"""
-import sys
 import logging
 
 from website import mails
@@ -13,8 +8,7 @@ from website.app import setup_django
 setup_django()
 from osf.models import OSFUser
 from website.settings import OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
-
-from scripts.utils import add_file_logger
+from django.core.management.base import BaseCommand
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -43,15 +37,39 @@ def deactivate_requested_accounts(dry_run=True):
 
         user.contacted_deactivation = True
         user.email_last_sent = timezone.now()
-        user.save()
+        if not dry_run:
+            user.save()
+
+    if dry_run:
+        logger.info('Dry run complete')
 
 
-@celery_app.task(name='scripts.periodic.deactivate_requested_accounts')
-def run_main(dry_run=True):
-    if not dry_run:
-        add_file_logger(logger, __file__)
+@celery_app.task(name='management.commands.check_crossref_dois')
+def main(dry_run=False):
+    """
+    This task runs nightly and emails users who want to delete there account with info on how to do so. Users who don't
+    have any content can be automatically deleted.
+    """
+
     deactivate_requested_accounts(dry_run=dry_run)
 
 
-if __name__ == '__main__':
-    run_main(dry_run='--dry' in sys.argv)
+class Command(BaseCommand):
+    help = '''
+    If there are any users who want to be deactivated we will either: immediately deactivate, or if they have active
+    resources (undeleted nodes, preprints etc) we contact admin to guide the user through the deactivation process.
+    '''
+
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser)
+        parser.add_argument(
+            '--dry',
+            action='store_true',
+            dest='dry_run',
+            help='Dry run',
+        )
+
+    # Management command handler
+    def handle(self, *args, **options):
+        dry_run = options.get('dry_run', True)
+        main(dry_run=dry_run)

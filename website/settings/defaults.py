@@ -478,7 +478,7 @@ class CeleryConfig:
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
-        'scripts.periodic.deactivate_requested_accounts',
+        'management.commands.deactivate_requested_accounts',
     )
 
     # Modules that need metrics and release requirements
@@ -595,7 +595,7 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
             },
             'deactivate_requested_accounts': {
-                'task': 'scripts.periodic.deactivate_requested_accounts',
+                'task': 'management.commands.deactivate_requested_accounts',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
             },
         }

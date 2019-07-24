@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0161_add_spam_fields_to_user'),
+        ('osf', '0173_ensure_schemas'),
     ]
 
     operations = [
