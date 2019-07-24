@@ -17,9 +17,10 @@ from osf_tests.factories import (
 )
 from osf_tests.utils import mock_archive
 from website import settings
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.search import elastic_search
 from website.search import search
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.django_db
@@ -542,7 +543,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
     def schema(self):
         schema = RegistrationSchema.objects.filter(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=LATEST_SCHEMA_VERSION).first()
+            schema_version=SCHEMA_VERSION).first()
         return schema
 
     @pytest.fixture()
