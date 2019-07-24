@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.19.0 (2019-07-24)
+===================
+- Add periodic task that checks for and sets stuck Crossref DOIs
+- Add script that gathers monthly metrics on the number of registrations and retractions created
+- Chronos: Send license info
+- Chronos: Use sync_manuscript for ChronosSubmissionDetailSerializer
+
 19.18.0 (2019-07-15)
 ===================
 - Remove any Notification Subscriptions attached to Registrations
