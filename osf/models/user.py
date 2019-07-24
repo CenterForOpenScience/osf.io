@@ -454,6 +454,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def social_links(self):
+        """
+        Returns a dictionary of formatted social links for a user.
+
+        Social account values which are stored as account names are
+        formatted into appropriate social links. The 'type' of each
+        respective social field value is dictated by self.SOCIAL_FIELDS.
+
+        I.e. If a string is expected for a specific social field that
+        permits multiple accounts, a single account url will be provided for
+        the social field to ensure adherence with self.SOCIAL_FIELDS.
+        """
         social_user_fields = {}
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
@@ -461,13 +472,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     if isinstance(val, basestring):
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
                     else:
-                        # Provide a single account url for services which we allow multiple-accounts
+                        # Only provide the first url for services where multiple accounts are allowed
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val[0])
                 else:
-                    if not isinstance(val, basestring):
-                        social_user_fields[key] = val
-                    else:
+                    if isinstance(val, basestring):
                         social_user_fields[key] = [val]
+                    else:
+                        social_user_fields[key] = val
         return social_user_fields
 
     @property
