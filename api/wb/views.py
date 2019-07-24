@@ -100,11 +100,6 @@ class CopyFileMetadataView(FileMetadataView):
     view_name = 'metadata-copy'
 
     def perform_file_action(self, source, destination, name):
-        dest_target = destination.target
-        source_target = source.target
         ret = source.copy_under(destination, name)
-
-        if dest_target != source_target:
-            update_storage_usage(destination.target)
-
+        update_storage_usage(destination.target)
         return ret
