@@ -559,6 +559,8 @@ def file_node_moved(project_id, src_provider, dest_provider, src_path, dest_path
         for file_node in file_nodes:
             file_node._path = re.sub(r'^' + src_path, dest_path, file_node._path)
             file_node._materialized_path = re.sub(r'^' + src_path, dest_path, file_node._path)
+            file_node.type = file_node.type.replace(file_node._meta.model._provider, dest_provider)
+            file_node._meta.model._provider = dest_provider
             file_node.save()
     else:
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
@@ -568,6 +570,8 @@ def file_node_moved(project_id, src_provider, dest_provider, src_path, dest_path
         for file_node in file_nodes:
             file_node._path = dest_path
             file_node._materialized_path = dest_path
+            file_node.type = file_node.type.replace(file_node._meta.model._provider, dest_provider)
+            file_node._meta.model._provider = dest_provider
             file_node.save()
 
 def file_node_overwitten(project_id, target_object_id, addon_name, src_path):
