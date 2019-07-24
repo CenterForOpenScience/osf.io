@@ -16,7 +16,6 @@ from osf_tests import factories
 from tests.utils import make_drf_request_with_version
 
 from osf.models import RegistrationSchema
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
 from api.base.settings.defaults import API_BASE
 from api.schemas.serializers import SchemaSerializer
@@ -130,7 +129,7 @@ class TestSerializerMetaType(ApiTestCase):
         url = '/{}nodes/{}/draft_registrations/?version=2.15'.format(API_BASE, node._id)
         schema = RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=2)
         payload = {
             'data': {
                 'type': 'draft_registrations',
