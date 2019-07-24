@@ -46,7 +46,6 @@ class TestEmberFlagIsActive(OsfTestCase):
         ember_flag_is_active('active_flag')(self.mock_func)()
 
         api.waffle.utils.waffle.flag_is_active.assert_called_with(request, 'active_flag')
-        assert request.user == user
         mock_use_ember_app.assert_called_with()
 
     @mock.patch('api.waffle.utils._get_current_user', return_value=None)
@@ -62,5 +61,4 @@ class TestEmberFlagIsActive(OsfTestCase):
         self.flag.groups.add(group)
 
         api.waffle.utils.waffle.flag_is_active.assert_called_with(request, 'active_flag')
-        assert not request.user.is_authenticated
         mock_use_ember_app.assert_called_with()
