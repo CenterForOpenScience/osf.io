@@ -840,7 +840,7 @@ class TestCopy():
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid Payload'
 
-    def test_storage_usage_move_within_node(self, app, node, signed_payload, copy_url):
+    def test_storage_usage_copy_within_node(self, app, node, signed_payload, copy_url):
         """
         Checking copys within a node, since the net size of the node hasn't changed the cache will remain expired at None
         """
@@ -851,7 +851,7 @@ class TestCopy():
         assert res.status_code == 201
         assert node.storage_usage is None  # this is intentional the cache shouldn't be touched
 
-    def test_storage_usage_move_between_nodes(self, app, node, node_two, file, user, node_two_root_node, copy_url):
+    def test_storage_usage_copy_between_nodes(self, app, node, node_two, file, user, node_two_root_node, copy_url):
         """
         Checking storage usage when copying files to outside a node means only the destination should be recalculated.
         """
