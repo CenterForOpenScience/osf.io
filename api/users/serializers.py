@@ -12,7 +12,7 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
-from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
+from api.base.utils import default_node_list_queryset
 from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
@@ -115,6 +115,11 @@ class UserSerializer(JSONAPISerializer):
         },
     ))
 
+    groups = HideIfDisabled(RelationshipField(
+        related_view='users:user-groups',
+        related_view_kwargs={'user_id': '<_id>'},
+    ))
+
     quickfiles = HideIfDisabled(QuickFilesRelationshipField(
         related_view='users:user-quickfiles',
         related_view_kwargs={'user_id': '<_id>'},
@@ -164,7 +169,7 @@ class UserSerializer(JSONAPISerializer):
     def get_projects_in_common(self, obj):
         user = get_user_auth(self.context['request']).user
         if obj == user:
-            return user.contributor_to.count()
+            return user.contributor_or_group_member_to.count()
         return obj.n_projects_in_common(user)
 
     def absolute_url(self, obj):
@@ -181,11 +186,11 @@ class UserSerializer(JSONAPISerializer):
         )
 
     def get_node_count(self, obj):
+        default_queryset = obj.nodes_contributor_or_group_member_to
         auth = get_user_auth(self.context['request'])
         if obj != auth.user:
-            return default_node_list_permission_queryset(user=auth.user, model_cls=Node).filter(contributor__user__id=obj.id).count()
-
-        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=obj.id).count()
+            return Node.objects.get_nodes_for_user(auth.user, base_queryset=default_queryset, include_public=True).count()
+        return default_queryset.count()
 
     def get_quickfiles_count(self, obj):
         return QuickFilesNode.objects.get(contributor__user__id=obj.id).files.filter(type='osf.osfstoragefile').count()

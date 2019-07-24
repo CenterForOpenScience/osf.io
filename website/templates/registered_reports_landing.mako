@@ -144,7 +144,7 @@
       </table>
     </div>
     <div class="text-center">
-        You can learn more about Registered Reports <a href="https://cos.io/rr"> here</a>. If you do not have IPA from a journal, you can still preregister your research. Learn more <a href="https://cos.io/prereg"> here</a>.
+        You can learn more about Registered Reports <a href="https://cos.io/rr">here</a> and search the OSF Registry of submitted studies <a href="https://osf.io/registries/discover?provider=OSF&type=Registered%20Report%20Protocol%20Preregistration">here</a>. If you do not have IPA from a journal, you can still preregister your research. Learn more <a href="https://cos.io/prereg"> here</a>.
     </div>
 
 </div>

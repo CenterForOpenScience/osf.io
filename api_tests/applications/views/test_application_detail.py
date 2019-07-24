@@ -50,10 +50,15 @@ class TestApplicationDetail:
 
         return payload
 
-    def test_owner_can_view(self, app, user, user_app, user_app_url):
+    def test_can_view(self, app, user, user_app, user_app_url):
+        # owner can view
         res = app.get(user_app_url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['client_id'] == user_app.client_id
+
+        # reset link absent for version 2.15 and later
+        res = app.get(user_app_url + '?version=2.15', auth=user.auth)
+        assert 'reset' not in res.json['data']['links'].keys()
 
     def test_non_owner_cant_view(self, app, user_app_url):
         non_owner = AuthUserFactory()
