@@ -103,7 +103,7 @@ def create_or_update_external_account_with_other(other_external_account):
             provider=IQBRIMSAddonConfig.short_name,
             provider_id=other_external_account.provider_id
         )
-    except:
+    except BaseException:
         logger.exception('Unexpected error')
         external_account = None
 
