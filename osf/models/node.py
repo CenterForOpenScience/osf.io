@@ -2216,8 +2216,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         for node in hierarchy:
             # Add log to parents
             node.is_deleted = True
-            node.deleted_date = date
-            node.deleted = date
+            node.deleted_date = log_date
+            node.deleted = log_date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
 
