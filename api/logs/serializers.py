@@ -1,5 +1,6 @@
 from rest_framework import serializers as ser
 
+from addons.osfstorage.models import Region
 from api.base.serializers import (
     JSONAPISerializer,
     RelationshipField,
@@ -11,9 +12,12 @@ from api.base.serializers import (
     HideIfNotRegistrationPointerLog,
 )
 
-from osf.models import OSFUser, AbstractNode, PreprintService
+from osf.models import OSFUser, AbstractNode, PreprintService, ProjectStorageType, Institution
 from osf.utils.names import impute_names_model
 from osf.utils import permissions as osf_permissions
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -196,7 +200,25 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 
     def get_storage_name(self, obj):
         if obj.get('path') is not None:
-            return 'Institutional Storage'
+            node = AbstractNode.load(obj['node'])
+            try:
+                storage_type = ProjectStorageType.objects.get(node=node).storage_type
+            except (ProjectStorageType.DoesNotExist):
+                # On old projects we still didn't have project storage types yet,
+                # so we will assume the project is using NII Storage.
+                return 'NII Storage'
+
+            if storage_type == ProjectStorageType.NII_STORAGE:
+                return 'NII Storage'
+
+            try:
+                institution = node.creator.affiliated_institutions.get()
+                return Region.objects.get(_id=institution._id).name
+            except (Institution.DoesNotExist, Region.DoesNotExist):
+                # On rare cases we may be unable to retrieve the storage name.
+                # We will use a fallback name when that happens.
+                logger.warning('Institution ID {}: Unable to retrieve storage name'.format(institution.id))
+                return 'Institutional Storage'
         return None
 
 class NodeLogSerializer(JSONAPISerializer):
