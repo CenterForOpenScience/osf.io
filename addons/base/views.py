@@ -502,7 +502,7 @@ def create_waterbutler_log(payload, **kwargs):
             dest_path = payload['destination']['materialized']
             src_provider = payload['source']['provider']
             dest_provider = payload['destination']['provider']
-            timestamp.file_node_moved(node._id, src_provider, dest_provider, src_path, dest_path)
+            timestamp.file_node_moved(auth.user.id, node._id, src_provider, dest_provider, src_path, dest_path)
         # Update status of deleted timestamp records
         elif action in (NodeLog.FILE_REMOVED):
             src_path = metadata['materialized']
