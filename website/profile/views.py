@@ -823,5 +823,6 @@ def request_deactivation(auth):
 def cancel_request_deactivation(auth):
     user = auth.user
     user.requested_deactivation = False
+    user.contacted_deactivation = False  # In case we've already contacted them once.
     user.save()
     return {'message': 'You have canceled your deactivation request'}
