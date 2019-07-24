@@ -5,6 +5,8 @@ language: python
 python:
     - "2.7"
 
+dist: 'trusty'
+
 sudo: false
 
 # TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved

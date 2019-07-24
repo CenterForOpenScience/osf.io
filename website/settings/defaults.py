@@ -340,6 +340,13 @@ CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error 
 ECSARXIV_CROSSREF_USERNAME = None
 ECSARXIV_CROSSREF_PASSWORD = None
 
+# if our DOIs cannot be confirmed after X amount of days email the admin
+DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 2
+
+# Crossref has a second metadata api that uses JSON with different features
+CROSSREF_JSON_API_URL = 'https://api.crossref.org/'
+
+
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None
 
@@ -402,6 +409,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
         'scripts.remove_after_use.end_prereg_challenge',
+        'osf.management.commands.check_crossref_dois',
     }
 
     med_pri_modules = {
@@ -592,6 +600,10 @@ class CeleryConfig:
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+            },
+            'check_crossref_doi': {
+                'task': 'management.commands.check_crossref_dois',
+                'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
             },
         }
 
