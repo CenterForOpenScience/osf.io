@@ -1777,6 +1777,9 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         if save_forward:
             forward_addon.save()
 
+            request = self.context['request']
+            forward_addon.owner.check_spam(request.user, {'addons_forward_node_settings__url'}, get_headers_from_request(request))
+
     def enable_or_disable_addon(self, obj, should_enable, addon_name, auth):
         """
         Returns addon, if exists, otherwise returns None
