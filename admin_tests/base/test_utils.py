@@ -170,6 +170,7 @@ class TestNodeChanges(AdminTestCase):
 site = AdminSite()
 
 class TestGroupCollectionsPreprints:
+    @pytest.mark.enable_bookmark_creation
     @pytest.fixture()
     def user(self):
         return UserFactory()
