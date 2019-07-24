@@ -1,6 +1,5 @@
 import jsonschema
 from django.utils import timezone
-from distutils.version import StrictVersion
 
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -27,6 +26,7 @@ from website.profile.views import update_osf_help_mails_subscription, update_mai
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
+from api.base.versioning import get_kebab_snake_case_field
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -290,9 +290,7 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'user_addons'
-            return 'user-addons'
+            return get_kebab_snake_case_field(request.version, 'user-addons')
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -489,9 +487,7 @@ class UserSettingsSerializer(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'user_settings'
-            return 'user-settings'
+            return get_kebab_snake_case_field(request.version, 'user-settings')
 
 
 class UserSettingsUpdateSerializer(UserSettingsSerializer):
@@ -615,9 +611,7 @@ class UserEmailsSerializer(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'user_emails'
-            return 'user-emails'
+            return get_kebab_snake_case_field(request.version, 'user-emails')
 
     def create(self, validated_data):
         user = self.context['request'].user

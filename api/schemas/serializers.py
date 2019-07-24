@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 from api.base.serializers import (JSONAPISerializer, IDField, TypeField, LinksField)
-from distutils.version import StrictVersion
+from api.base.versioning import get_kebab_snake_case_field
 
 class SchemaSerializer(JSONAPISerializer):
 
@@ -30,9 +30,7 @@ class RegistrationSchemaSerializer(SchemaSerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'registration_schemas'
-            return 'registration-schemas'
+            return get_kebab_snake_case_field(request.version, 'registration-schemas')
 
 
 class FileMetadataSchemaSerializer(SchemaSerializer):
@@ -40,9 +38,7 @@ class FileMetadataSchemaSerializer(SchemaSerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'file_metadata_schemas'
-            return 'file-metadata-schemas'
+            return get_kebab_snake_case_field(request.version, 'file-metadata-schemas')
 
 
 class DeprecatedMetaSchemaSerializer(SchemaSerializer):

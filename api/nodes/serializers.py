@@ -21,6 +21,7 @@ from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
 )
+from api.base.versioning import get_kebab_snake_case_field
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
@@ -888,9 +889,7 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'node_addons'
-            return 'node-addons'
+            return get_kebab_snake_case_field(request.version, 'node-addons')
 
     id = ser.CharField(source='config.short_name', read_only=True)
     node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
@@ -1319,9 +1318,7 @@ class NodeLinksSerializer(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'node_links'
-            return 'node-links'
+            return get_kebab_snake_case_field(request.version, 'node-links')
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -1530,9 +1527,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'draft_registrations'
-            return 'draft-registrations'
+            return get_kebab_snake_case_field(request.version, 'draft-registrations')
 
 
 class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
@@ -1643,9 +1638,7 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'view_only_links'
-            return 'view-only-links'
+            return get_kebab_snake_case_field(request.version, 'view-only-links')
 
 
 class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):

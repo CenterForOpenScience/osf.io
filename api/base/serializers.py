@@ -23,6 +23,7 @@ from framework.auth import core as auth_core
 from osf.models import AbstractNode, MaintenanceState, Preprint
 from website import settings
 from website.project.model import has_anonymous_link
+from api.base.versioning import KEBAB_CASE_VERSION, get_kebab_snake_case_field
 
 
 def get_meta_type(serializer_class, request):
@@ -404,17 +405,12 @@ class TypeField(ser.CharField):
             type_ = get_meta_type(self.root.child, request)
         else:
             type_ = get_meta_type(self.root, request)
-        if StrictVersion(request.version) != StrictVersion('2.15'):
-            if type_ != data:
-                raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
+        kebab_case = str(type_).replace('-', '_')
+        if type_ != data and kebab_case == data:
+            type_ = kebab_case
+            self.context['request'].META.setdefault('warning', 'As of API Version {0}, all types are now Kebab-case. {0} will accept snake_case, but this will be deprecated in future versions.'.format(KEBAB_CASE_VERSION))
         else:
-            kebab_case = str(type_).replace('-', '_')
-            if type_ != data:
-                if kebab_case == data:
-                    type_ = kebab_case
-                    self.context['request'].META.setdefault('warning', 'As of API Version 2.15, all types are now Kebab-case. 2.15 will accept snake_case, but this will be deprecated in future versions.')
-                else:
-                    raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
+            raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
         return super(TypeField, self).to_internal_value(data)
 
 
@@ -1588,9 +1584,7 @@ class AddonAccountSerializer(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'external_accounts'
-            return 'external-accounts'
+            return get_kebab_snake_case_field(request.version, 'external-accounts')
 
     def get_absolute_url(self, obj):
         kwargs = self.context['request'].parser_context['kwargs']

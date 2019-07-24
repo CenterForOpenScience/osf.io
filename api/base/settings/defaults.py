@@ -166,11 +166,9 @@ REST_FRAMEWORK = {
         '2.13',
         '2.14',
         '2.15',
-<<<<<<< HEAD
         '2.16',
         '2.17',
-=======
->>>>>>> Modified types on serializers to use kebab-case in serializers rather than snake_case for version 2.15 and above. Modified TypeField to accept both kebab and snake cases, and throw a deprecation warning when snake case is used. Modified renderer.py to display this deprecation warning in the meta section of the json response.
+        '2.18',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',

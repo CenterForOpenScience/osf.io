@@ -1,5 +1,4 @@
 import bleach
-from distutils.version import StrictVersion
 
 from rest_framework import serializers as ser
 from osf.exceptions import ValidationError as ModelValidationError
@@ -18,6 +17,7 @@ from api.base.serializers import (
     AnonymizedRegexField,
     VersionedDateTimeField,
 )
+from api.base.versioning import get_kebab_snake_case_field
 
 
 class CommentReport(object):
@@ -226,9 +226,7 @@ class CommentReportSerializer(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'comment_reports'
-            return 'comment-reports'
+            return get_kebab_snake_case_field(request.version, 'comment-reports')
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

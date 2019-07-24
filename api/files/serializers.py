@@ -5,7 +5,6 @@ from django.core.urlresolvers import resolve, reverse
 import furl
 import pytz
 import jsonschema
-from distutils.version import StrictVersion
 
 from framework.auth.core import Auth
 from osf.models import BaseFileNode, OSFUser, Comment, Preprint, AbstractNode
@@ -36,6 +35,7 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.exceptions import Conflict, InvalidModelValueError
 from api.base.schemas.utils import from_json
+from api.base.versioning import get_kebab_snake_case_field
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -426,9 +426,7 @@ class FileVersionSerializer(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'file_versions'
-            return 'file-versions'
+            return get_kebab_snake_case_field(request.version, 'file-versions')
 
     def self_url(self, obj):
         return absolute_reverse(
@@ -521,9 +519,7 @@ class FileMetadataRecordSerializer(JSONAPISerializer):
     class Meta:
         @staticmethod
         def get_type(request):
-            if StrictVersion(request.version) < StrictVersion('2.15'):
-                return 'metadata_records'
-            return 'metadata-records'
+            return get_kebab_snake_case_field(request.version, 'metadata-records')
 
 
 def get_file_download_link(obj, version=None, view_only=None):
