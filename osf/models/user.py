@@ -1798,13 +1798,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         :return bool: does the user have any active node, preprints, groups, quickfiles etc?
         """
+        from osf.models import Preprint
+
         # TODO: Update once quickfolders in merged
 
-        nodes = self.nodes.exclude(type='osf.quickfilesnode').filter(deleted__isnull=True).exists()
+        nodes = self.nodes.exclude(type='osf.quickfilesnode', is_deleted=True).exists()
         quickfiles = self.nodes.get(type='osf.quickfilesnode').files.exists()
-        groups = self.osf_groups.exists(_contributors=self, ever_public=True, deleted__isnull=True)
+        groups = self.osf_groups.exists()
+        preprints = Preprint.objects.filter(_contributors=self,
+                                            ever_public=True,
+                                            deleted__isnull=True,
+                                            withdrawal_justification__isnull=False)
 
-        return groups or nodes or quickfiles or self.preprints.exists()
+        return groups or nodes or quickfiles or preprints
 
     class Meta:
         # custom permissions for use in the OSF Admin App
