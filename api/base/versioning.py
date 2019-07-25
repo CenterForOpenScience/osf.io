@@ -10,6 +10,8 @@ from api.base import utils
 from api.base.renderers import BrowsableAPIRendererNoForms
 from api.base.settings import LATEST_VERSIONS
 
+# KEBAB_CASE_VERSION determines the API version in which kebab-case will begin being accepted.
+# Note that this version will not deprecate snake_case yet.
 KEBAB_CASE_VERSION = '2.16'
 
 def get_major_version(version):
