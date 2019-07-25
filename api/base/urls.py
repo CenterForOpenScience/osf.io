@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from django.conf.urls import include, url
 from django.views.generic.base import RedirectView
 
