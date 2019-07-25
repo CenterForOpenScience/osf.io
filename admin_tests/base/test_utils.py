@@ -15,7 +15,7 @@ from tests.base import AdminTestCase
 
 from osf_tests.factories import SubjectFactory, UserFactory, RegistrationFactory, PreprintFactory
 
-from osf.models import Subject, OSFUser
+from osf.models import Subject, OSFUser, Collection
 from osf.models.provider import rules_to_subjects
 from admin.base.utils import get_subject_rules, change_embargo_date
 from osf.admin import OSFUserAdmin
@@ -208,11 +208,10 @@ class TestGroupCollectionsPreprints:
         formfield = (osf_user_admin.formfield_for_manytomany(OSFUser.groups.field, request=get_request))
         queryset = formfield.queryset
 
-        collections_group = Group.objects.filter(name='collections_{}_admin'.format(user.id))[0]
+        collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
         assert(collections_group not in queryset)
 
-        preprint_group = Group.objects.filter(name='preprint_{}_admin'.format(preprint.id))[0]
-        assert(preprint_group not in queryset)
+        assert(preprint.get_group('admin') not in queryset)
 
     @pytest.mark.enable_bookmark_creation
     def test_admin_app_save_related_collections(self, post_request, osf_user_admin, user, preprint):
@@ -242,8 +241,7 @@ class TestGroupCollectionsPreprints:
         post_request.POST = qdict
         osf_user_admin.save_related(request=post_request, form=post_form, formsets=[], change=True)
 
-        collections_group = Group.objects.filter(name='collections_{}_admin'.format(user.id))[0]
+        collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
         assert(collections_group in user.groups.all())
 
-        preprint_group = Group.objects.filter(name='preprint_{}_admin'.format(preprint.id))[0]
-        assert(preprint_group in user.groups.all())
+        assert(preprint.get_group('admin') in user.groups.all())
