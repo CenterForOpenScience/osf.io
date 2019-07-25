@@ -64,13 +64,7 @@ class TestConfigViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, 
         mock_about.return_value = {'rootFolderId': '24601'}
         super(TestConfigViews, self).test_folder_list()
 
-class TestStatusViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
-    folder = {
-        'path': 'Drive/Camera Uploads',
-        'id': '1234567890'
-    }
-    Serializer = IQBRIMSSerializer
-    client = IQBRIMSClient
+class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
 
     def setUp(self):
         super(TestStatusViews, self).setUp()
@@ -171,11 +165,13 @@ class TestStatusViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, 
         })
 
     @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
+    @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
     @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
     @mock.patch.object(iqbrims_views, '_iqbrims_import_auth_from_management_node')
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_set_status_to_deposit(self, mock_get_management_node, mock_import_auth_from_management_node,
-                                   mock_iqbrims_init_folders, mock_flowable_start_workflow):
+                                   mock_iqbrims_init_folders, mock_update_spreadsheet,
+                                   mock_flowable_start_workflow):
         status = {
             'state': 'deposit',
             'labo_id': 'fake_labo_name',
@@ -189,6 +185,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, 
         mock_get_management_node.return_value = fake_management_project
         mock_import_auth_from_management_node.return_value = None
         mock_iqbrims_init_folders.return_value = fake_folder
+        mock_update_spreadsheet.return_value = None
         mock_flowable_start_workflow.return_value = None
 
         url = self.project.api_url_for('iqbrims_set_status')
@@ -229,6 +226,14 @@ class TestStatusViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, 
             status['labo_id']
         ])
 
+        assert_equal(mock_update_spreadsheet.call_count, 1)
+        assert_items_equal(mock_update_spreadsheet.call_args[0], [
+            self.project,
+            fake_management_project,
+            status['state'],
+            payload['data']['attributes']
+        ])
+
         assert_equal(mock_flowable_start_workflow.call_count, 1)
         assert_items_equal(mock_flowable_start_workflow.call_args[0], [
             self.project._id,
@@ -238,11 +243,13 @@ class TestStatusViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, 
         ])
 
     @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
+    @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
     @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
     @mock.patch.object(iqbrims_views, '_iqbrims_import_auth_from_management_node')
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_set_status_to_check(self, mock_get_management_node, mock_import_auth_from_management_node,
-                                 mock_iqbrims_init_folders, mock_flowable_start_workflow):
+                                 mock_iqbrims_init_folders, mock_update_spreadsheet,
+                                 mock_flowable_start_workflow):
         status = {
             'state': 'check',
             'labo_id': 'fake_labo_name',
@@ -256,6 +263,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, 
         mock_get_management_node.return_value = fake_management_project
         mock_import_auth_from_management_node.return_value = None
         mock_iqbrims_init_folders.return_value = fake_folder
+        mock_update_spreadsheet.return_value = None
         mock_flowable_start_workflow.return_value = None
 
         url = self.project.api_url_for('iqbrims_set_status')
@@ -294,6 +302,14 @@ class TestStatusViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, 
             fake_management_project,
             status['state'],
             status['labo_id']
+        ])
+
+        assert_equal(mock_update_spreadsheet.call_count, 1)
+        assert_items_equal(mock_update_spreadsheet.call_args[0], [
+            self.project,
+            fake_management_project,
+            status['state'],
+            payload['data']['attributes']
         ])
 
         assert_equal(mock_flowable_start_workflow.call_count, 1)
