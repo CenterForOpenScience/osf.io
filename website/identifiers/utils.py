@@ -32,11 +32,7 @@ def request_identifiers(target_object):
     """Request identifiers for the target object using the appropriate client.
 
     :param target_object: object to request identifiers for
-    :return: dict with keys relating to the status of the identifier
-                 response - response from the DOI client
-                 already_exists - the DOI has already been registered with a client
-                 only_doi - boolean; only include the DOI (and not the ARK) identifier
-                            when processing this response in get_or_create_identifiers
+    :return: dict with DOI
     """
     from website.identifiers.clients import exceptions
 
