@@ -562,6 +562,8 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
             file_node.type = file_node.type.replace(file_node._meta.model._provider, dest_provider)
             file_node._meta.model._provider = dest_provider
             file_node.save()
+            if src_provider != dest_provider:
+                provider_change_update_timestampverification(uid, file_node)
     else:
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
@@ -573,24 +575,19 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
             file_node.type = file_node.type.replace(file_node._meta.model._provider, dest_provider)
             file_node._meta.model._provider = dest_provider
             file_node.save()
+            if src_provider != dest_provider:
+                provider_change_update_timestampverification(uid, file_node)
 
-    if src_provider != dest_provider:
-        for moved_file in moved_files:
-            provider_change_timestampverification(uid, moved_file.file_id, moved_file.project_id)
-
-def provider_change_timestampverification(uid, file_id, node_id):
-    basefile_node = BaseFileNode.objects.get(_id=file_id)
+def provider_change_update_timestampverification(uid, file_node):
     file_info = {
-        'file_id': basefile_node._id,
-        'file_name': basefile_node.name,
-        'file_path': basefile_node._path,
-        'size': '147671',
-        'created': basefile_node.created,
-        'modified': basefile_node.modified,
-        'provider': basefile_node.provider,
-        'file_version': ''
+        'file_id': file_node._id,
+        'file_name': file_node.name,
+        'file_path': file_node._path,
+        'created': file_node.created,
+        'modified': file_node.modified,
+        'provider': file_node.provider,
     }
-    check_file_timestamp(uid, basefile_node.target, file_info)
+    check_file_timestamp(uid, file_node.target, file_info)
 
 def file_node_overwitten(project_id, target_object_id, addon_name, src_path):
     src_path = src_path if src_path[0] == '/' else '/' + src_path
