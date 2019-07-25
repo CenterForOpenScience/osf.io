@@ -22,7 +22,6 @@ def use_ember_app(**kwargs):
         resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
         resp = Response(stream_with_context(resp.iter_content()), resp.status_code)
     else:
-        raise Exception(os.getcwd(), __file__)
         resp = send_from_directory(ember_osf_web_dir, 'index.html')
 
     messages = pop_status_messages()
