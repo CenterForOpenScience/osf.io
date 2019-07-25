@@ -8,7 +8,7 @@ from flask import send_from_directory, Response, stream_with_context
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
-ember_osf_web_dir = os.path.abspath(os.path.join(__file__, EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
+ember_osf_web_dir = os.path.abspath(os.getcwd() + '/website' + EXTERNAL_EMBER_APPS['ember_osf_web']['path'])
 
 routes = [
     '/quickfiles/',
