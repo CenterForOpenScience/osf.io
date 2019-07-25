@@ -21,12 +21,14 @@ from osf_tests.factories import (
     AuthUserFactory,
     UnregUserFactory,
     WithdrawnRegistrationFactory,
+    OSFGroupFactory,
     CommentFactory,
     InstitutionFactory,
 )
 
 from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
 from tests.utils import assert_latest_log
+from api_tests.utils import create_test_file
 
 
 @pytest.fixture()
@@ -46,7 +48,12 @@ class TestRegistrationDetail:
 
     @pytest.fixture()
     def private_project(self, user):
-        return ProjectFactory(title='Private Project', creator=user)
+        private_project = ProjectFactory(title='Private Project', creator=user)
+        create_test_file(private_project, user, filename='sake recipe')
+        create_test_file(private_project, user, filename='sake rice wine recipe')
+        deleted_file = create_test_file(private_project, user, filename='No sake')
+        deleted_file.delete()
+        return private_project
 
     @pytest.fixture()
     def public_registration(self, user, public_project):
@@ -187,6 +194,8 @@ class TestRegistrationDetail:
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
         assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 2
         assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['files']['links']['related']['meta']['count'] == 2
+
         registration_comment_reply.is_deleted = True
         registration_comment_reply.save()
         res = app.get(url, auth=user.auth)
@@ -263,11 +272,9 @@ class TestRegistrationUpdateTestCase:
         private_registration = RegistrationFactory(
             project=private_project, creator=user)
         private_registration.add_contributor(
-            read_only_contributor, permissions=[
-                permissions.READ])
+            read_only_contributor, permissions=permissions.READ)
         private_registration.add_contributor(
-            read_write_contributor, permissions=[
-                permissions.WRITE])
+            read_write_contributor, permissions=permissions.WRITE)
         private_registration.save()
         return private_registration
 
@@ -315,7 +322,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
     def test_update_registration(
             self, app, user, read_only_contributor,
             read_write_contributor, public_registration,
-            public_url, private_url, make_payload):
+            public_url, private_url, make_payload, public_project):
 
         private_registration_payload = make_payload()
         non_contributor = AuthUserFactory()
@@ -370,6 +377,27 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+    #   test_osf_group_member_write_cannot_update_registration
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        public_project.add_osf_group(group, permissions.WRITE)
+        res = app.put_json_api(
+            public_url,
+            public_to_private_payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_osf_group_member_admin_cannot_update_registration
+        public_project.remove_osf_group(group)
+        public_project.add_osf_group(group, permissions.ADMIN)
+        res = app.put_json_api(
+            public_url,
+            public_to_private_payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
 
     def test_fields(
             self, app, user, public_registration,
@@ -645,7 +673,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert res.status_code == 401
 
         # test set pending_withdrawal from a read write contrib
-        public_registration.add_contributor(read_write_contributor, permissions=[permissions.WRITE])
+        public_registration.add_contributor(read_write_contributor, permissions=permissions.WRITE)
         public_registration.save()
         res = app.put_json_api(public_url, public_payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
@@ -726,7 +754,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
                 unreg.fullname,
                 unreg.email,
                 auth=Auth(user),
-                permissions=['read', 'write', 'admin'],
+                permissions=permissions.ADMIN,
                 existing_user=unreg,
                 save=True
             )
@@ -1018,7 +1046,7 @@ class TestUpdateRegistrationLicense(TestNodeUpdateLicense):
         node.add_contributor(
             user_read_contrib,
             auth=Auth(user_admin_contrib),
-            permissions=['read'])
+            permissions=permissions.READ)
         node.save()
         return node
 

@@ -325,6 +325,15 @@ class RegistrationProviderFactory(DjangoModelFactory):
         return obj
 
 
+class OSFGroupFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    created = factory.LazyFunction(timezone.now)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    class Meta:
+        model = models.OSFGroup
+
+
 class RegistrationFactory(BaseNodeFactory):
 
     creator = None
@@ -349,7 +358,7 @@ class RegistrationFactory(BaseNodeFactory):
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
-        if project.has_permission(user, 'admin'):
+        if project.is_admin_contributor(user):
             project.add_contributor(
                 contributor=user,
                 permissions=permissions.CREATOR_PERMISSIONS,
@@ -394,6 +403,7 @@ class RegistrationFactory(BaseNodeFactory):
                 reg.sanction.save()
         if is_public:
             reg.is_public = True
+        reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
         reg.save()
         return reg
 
@@ -627,6 +637,7 @@ class PreprintFactory(DjangoModelFactory):
         set_doi = kwargs.pop('set_doi', True)
         is_published = kwargs.pop('is_published', True)
         instance = cls._build(target_class, *args, **kwargs)
+        file_size = kwargs.pop('file_size', 1337)
 
         doi = kwargs.pop('doi', None)
         license_details = kwargs.pop('license_details', None)
@@ -653,7 +664,7 @@ class PreprintFactory(DjangoModelFactory):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
-            'size': 1337,
+            'size': file_size,
             'contentType': 'img/png'
         }).save()
         update_task_patcher.stop()

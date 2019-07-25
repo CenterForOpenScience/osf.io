@@ -135,6 +135,7 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
 
     class Meta:
         abstract = True
+        source = metrics.MetaField(enabled=True)
 
     @classmethod
     def record_for_preprint(cls, preprint, user=None, **kwargs):

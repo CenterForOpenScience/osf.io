@@ -10,6 +10,7 @@ from osf.models import (
     Institution,
     Node,
     NodeRelation,
+    OSFGroup,
     OSFUser,
     Preprint,
     PrivateLink,
@@ -22,7 +23,7 @@ from api.base.utils import get_user_auth, is_deprecated, assert_resource_type
 
 class ContributorOrPublic(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, NodeRelation, Preprint)
+    acceptable_models = (AbstractNode, NodeRelation, Preprint,)
 
     def has_object_permission(self, request, view, obj):
         from api.nodes.views import NodeStorageProvider
@@ -50,6 +51,25 @@ class IsPublic(permissions.BasePermission):
         return obj.is_public or obj.can_view(auth)
 
 
+class IsAdminContributor(permissions.BasePermission):
+    """
+    Use on API views where the requesting user needs to be an
+    admin contributor to make changes.  Admin group membership
+    is not sufficient.
+    """
+    acceptable_models = (AbstractNode, DraftRegistration,)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        if isinstance(obj, DraftRegistration):
+            obj = obj.branched_from
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.has_permission(auth.user, osf_permissions.ADMIN)
+        else:
+            return obj.is_admin_contributor(auth.user)
+
+
 class EditIfPublic(permissions.BasePermission):
 
     acceptable_models = (AbstractNode,)
@@ -62,7 +82,7 @@ class EditIfPublic(permissions.BasePermission):
 
 
 class IsAdmin(permissions.BasePermission):
-    acceptable_models = (AbstractNode, PrivateLink)
+    acceptable_models = (AbstractNode, PrivateLink,)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
@@ -86,17 +106,17 @@ class NodeDeletePermissions(permissions.BasePermission):
         return True
 
 
-class IsContributor(permissions.BasePermission):
+class IsContributorOrGroupMember(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, AbstractNode), 'obj must be an Node, got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_contributor(auth.user)
+            return obj.is_contributor_or_group_member(auth.user)
         else:
-            return obj.has_permission(auth.user, 'write')
+            return obj.has_permission(auth.user, osf_permissions.WRITE)
 
 
-class IsAdminOrReviewer(permissions.BasePermission):
+class IsAdminContributorOrReviewer(IsAdminContributor):
     """
     Prereg admins can update draft registrations.
     """
@@ -106,9 +126,7 @@ class IsAdminOrReviewer(permissions.BasePermission):
         auth = get_user_auth(request)
         if request.method != 'DELETE' and is_prereg_admin(auth.user):
             return True
-        if isinstance(obj, DraftRegistration):
-            obj = obj.branched_from
-        return obj.has_permission(auth.user, osf_permissions.ADMIN)
+        return super(IsAdminContributorOrReviewer, self).has_object_permission(request, view, obj)
 
 
 class AdminOrPublic(permissions.BasePermission):
@@ -126,6 +144,21 @@ class AdminOrPublic(permissions.BasePermission):
             return obj.is_public or obj.can_view(auth)
         else:
             return obj.has_permission(auth.user, osf_permissions.ADMIN)
+
+class AdminContributorOrPublic(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode, DraftRegistration,)
+
+    def has_object_permission(self, request, view, obj):
+        """
+        To make changes, user must be an admin contributor. Admin group membership is not sufficient.
+        """
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.is_public or obj.can_view(auth)
+        else:
+            return obj.is_admin_contributor(auth.user)
 
 
 class ExcludeWithdrawals(permissions.BasePermission):
@@ -154,7 +187,7 @@ class ReadOnlyIfWithdrawn(permissions.BasePermission):
 class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
 
-    acceptable_models = (AbstractNode, OSFUser, Contributor)
+    acceptable_models = (AbstractNode, OSFUser, Contributor,)
 
     def load_resource(self, context, view):
         return AbstractNode.load(context[view.node_lookup_url_kwarg])
@@ -173,9 +206,32 @@ class ContributorDetailPermissions(permissions.BasePermission):
             return node.has_permission(auth.user, osf_permissions.ADMIN)
 
 
+class NodeGroupDetailPermissions(permissions.BasePermission):
+    """Permissions for node group detail - involving who can update the relationship
+    between a node and an OSF Group."""
+
+    acceptable_models = (OSFGroup, AbstractNode,)
+
+    def load_resource(self, context, view):
+        return AbstractNode.load(context[view.node_lookup_url_kwarg])
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        node = self.load_resource(request.parser_context['kwargs'], view)
+        if request.method in permissions.SAFE_METHODS:
+            return node.is_public or node.can_view(auth)
+        elif request.method == 'DELETE':
+            # If deleting an OSF group from a node, you either need admin perms
+            # or you need to be an OSF group manager
+            return node.has_permission(auth.user, osf_permissions.ADMIN) or obj.has_permission(auth.user, 'manage')
+        else:
+            return node.has_permission(auth.user, osf_permissions.ADMIN)
+
+
 class ContributorOrPublicForPointers(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, NodeRelation)
+    acceptable_models = (AbstractNode, NodeRelation,)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)

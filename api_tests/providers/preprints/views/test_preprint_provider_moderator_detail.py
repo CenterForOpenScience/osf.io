@@ -5,6 +5,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
+from osf.utils import permissions
 
 
 @pytest.mark.django_db
@@ -24,7 +25,7 @@ class TestPreprintProviderModeratorDetail:
     @pytest.fixture()
     def admin(self, provider):
         user = AuthUserFactory()
-        provider.get_group('admin').user_set.add(user)
+        provider.get_group(permissions.ADMIN).user_set.add(user)
         return user
 
     @pytest.fixture()
@@ -62,20 +63,20 @@ class TestPreprintProviderModeratorDetail:
 
         # Must be admin to edit
         res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group='admin'),
+                                 self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
                                  auth=nonmoderator.auth,
                                  expect_errors=True)
         assert res.status_code == 403
 
         # Must be logged in
         res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group='admin'),
+                                 self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
                                  expect_errors=True)
         assert res.status_code == 401
 
         # Must be admin to edit
         res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group='admin'),
+                                 self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
                                  auth=moderator.auth,
                                  expect_errors=True)
         assert res.status_code == 403
@@ -89,7 +90,7 @@ class TestPreprintProviderModeratorDetail:
         res = app.get(url.format(admin._id), auth=moderator.auth)
         assert res.status_code == 200
         assert res.json['data']['id'] == admin._id
-        assert res.json['data']['attributes']['permission_group'] == 'admin'
+        assert res.json['data']['attributes']['permission_group'] == permissions.ADMIN
 
         res = app.get(url.format(moderator._id), auth=admin.auth)
         assert res.status_code == 200
@@ -99,15 +100,15 @@ class TestPreprintProviderModeratorDetail:
         res = app.get(url.format(admin._id), auth=admin.auth)
         assert res.status_code == 200
         assert res.json['data']['id'] == admin._id
-        assert res.json['data']['attributes']['permission_group'] == 'admin'
+        assert res.json['data']['attributes']['permission_group'] == permissions.ADMIN
 
     def test_detail_updates(self, app, url, nonmoderator, moderator, admin, provider):
         # Admin makes moderator a new admin
         res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group='admin'),
+                                 self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
                                  auth=admin.auth)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['permission_group'] == 'admin'
+        assert res.json['data']['attributes']['permission_group'] == permissions.ADMIN
 
         # Admin makes new admin a moderator again
         res = app.patch_json_api(url.format(moderator._id),
@@ -171,9 +172,9 @@ class TestPreprintProviderModeratorDetail:
     def test_admin_delete_admin(self, app, url, moderator, admin, provider):
         # Make mod an admin
         res = app.patch_json_api(url.format(moderator._id),
-                                 self.update_payload(user_id=moderator._id, permission_group='admin'),
+                                 self.update_payload(user_id=moderator._id, permission_group=permissions.ADMIN),
                                  auth=admin.auth)
-        assert res.json['data']['attributes']['permission_group'] == 'admin'  # Sanity check
+        assert res.json['data']['attributes']['permission_group'] == permissions.ADMIN  # Sanity check
 
         # Admin delete admin
         res = app.delete_json_api(url.format(moderator._id), auth=admin.auth)

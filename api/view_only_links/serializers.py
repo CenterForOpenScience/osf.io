@@ -11,7 +11,7 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse
 
 from osf.models import AbstractNode
-
+from osf.utils.permissions import ADMIN
 
 class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
     key = ser.CharField(read_only=True)
@@ -114,7 +114,7 @@ class ViewOnlyLinkNodesSerializer(BaseAPISerializer):
         eligible_nodes = self.get_eligible_nodes(nodes)
 
         for node in add:
-            if not node.has_permission(user, 'admin'):
+            if not node.has_permission(user, ADMIN):
                 raise PermissionDenied
             if node not in eligible_nodes:
                 raise NonDescendantNodeError(node_id=node._id)
@@ -136,7 +136,7 @@ class ViewOnlyLinkNodesSerializer(BaseAPISerializer):
         )
 
         for node in remove:
-            if not node.has_permission(user, 'admin'):
+            if not node.has_permission(user, ADMIN):
                 raise PermissionDenied
             view_only_link.nodes.remove(node)
         view_only_link.save()
@@ -145,7 +145,7 @@ class ViewOnlyLinkNodesSerializer(BaseAPISerializer):
         eligible_nodes = self.get_eligible_nodes(nodes)
 
         for node in add:
-            if not node.has_permission(user, 'admin'):
+            if not node.has_permission(user, ADMIN):
                 raise PermissionDenied
             if node not in eligible_nodes:
                 raise NonDescendantNodeError(node_id=node._id)

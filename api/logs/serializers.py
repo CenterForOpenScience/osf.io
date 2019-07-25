@@ -60,6 +60,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     bitbucket_repo = ser.CharField(read_only=True, source='bitbucket.repo')
     gitlab_user = ser.CharField(read_only=True, source='gitlab.user')
     gitlab_repo = ser.CharField(read_only=True, source='gitlab.repo')
+    group = ser.CharField(read_only=True)
     file = ser.DictField(read_only=True)
     filename = ser.CharField(read_only=True)
     kind = ser.CharField(read_only=True)
@@ -244,6 +245,11 @@ class NodeLogSerializer(JSONAPISerializer):
     template_node = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<params.template_node.id>'},
+    )
+
+    group = RelationshipField(
+        related_view='groups:group-detail',
+        related_view_kwargs={'group_id': '<params.group>'},
     )
 
     def get_absolute_url(self, obj):

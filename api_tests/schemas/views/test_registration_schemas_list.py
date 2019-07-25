@@ -8,7 +8,6 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from osf.features import ENABLE_INACTIVE_SCHEMAS
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
 
 @pytest.mark.django_db
@@ -18,18 +17,17 @@ class TestSchemaList:
 
         user = AuthUserFactory()
         url = '/{}schemas/registrations/?version=2.11'.format(API_BASE)
-        schemas = RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
         # test_pass_authenticated_user_can_view_schemas
 
         with override_switch(ENABLE_INACTIVE_SCHEMAS, active=False):
             res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['meta']['total'] == schemas.filter(active=True, visible=True).count()
+        assert res.json['meta']['total'] == RegistrationSchema.objects.get_latest_versions().count()
 
         with override_switch(ENABLE_INACTIVE_SCHEMAS, active=True):
             res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['meta']['total'] == schemas.filter(visible=True).count()
+        assert res.json['meta']['total'] == RegistrationSchema.objects.get_latest_versions(only_active=False).count()
 
         # test_cannot_update_metaschemas
         res = app.put_json_api(url, auth=user.auth, expect_errors=True)
@@ -49,4 +47,4 @@ class TestSchemaList:
             res = app.get(url)
 
         assert res.status_code == 200
-        assert res.json['meta']['total'] == schemas.filter(active=True).count()
+        assert res.json['meta']['total'] == RegistrationSchema.objects.get_latest_versions().count()

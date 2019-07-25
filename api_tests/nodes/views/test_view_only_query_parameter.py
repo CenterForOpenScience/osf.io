@@ -13,6 +13,9 @@ from osf.utils import permissions
 def admin():
     return AuthUserFactory()
 
+@pytest.fixture()
+def base_url():
+    return '/{}nodes/'.format(API_BASE)
 
 @pytest.fixture()
 def read_contrib():
@@ -40,13 +43,10 @@ def private_node_one(admin, read_contrib, write_contrib):
         creator=admin,
         title='Private One')
     private_node_one.add_contributor(
-        read_contrib, permissions=[
-            permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     private_node_one.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return private_node_one
 
@@ -79,12 +79,10 @@ def private_node_two(admin, read_contrib, write_contrib):
         creator=admin,
         title='Private Two')
     private_node_two.add_contributor(
-        read_contrib, permissions=[permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     private_node_two.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return private_node_two
 
@@ -99,12 +97,10 @@ def public_node_one(admin, read_contrib, write_contrib):
     public_node_one = ProjectFactory(
         is_public=True, creator=admin, title='Public One')
     public_node_one.add_contributor(
-        read_contrib, permissions=[permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     public_node_one.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return public_node_one
 
@@ -135,12 +131,10 @@ def public_node_two(admin, read_contrib, write_contrib):
     public_node_two = ProjectFactory(
         is_public=True, creator=admin, title='Public Two')
     public_node_two.add_contributor(
-        read_contrib, permissions=[permissions.READ], save=True)
+        read_contrib, permissions=permissions.READ, save=True)
     public_node_two.add_contributor(
         write_contrib,
-        permissions=[
-            permissions.READ,
-            permissions.WRITE],
+        permissions=permissions.WRITE,
         save=True)
     return public_node_two
 
@@ -188,7 +182,7 @@ class TestNodeDetailViewOnlyLinks:
             {'view_only': private_node_one_private_link.key})
         assert res_linked.status_code == 200
         assert res_linked.json['data']['attributes']['current_user_permissions'] == [
-            'read']
+            permissions.READ]
 
         # Remove any keys that will be different for view-only responses
         res_normal_json = res_normal.json
@@ -211,9 +205,8 @@ class TestNodeDetailViewOnlyLinks:
             'embed': 'contributors',
         })
         assert res.status_code == 200
-        contributors = res.json['data']['embeds']['contributors']['data']
-        for contributor in contributors:
-            assert contributor['id'] == ''
+        embeds = res.json['data'].get('embeds', None)
+        assert embeds is None or 'contributors' not in embeds
 
     #   test_private_node_with_link_non_anonymous_does_expose_contributor_id
         res = app.get(private_node_one_url, {
@@ -241,9 +234,8 @@ class TestNodeDetailViewOnlyLinks:
             'embed': 'contributors',
         })
         assert res.status_code == 200
-        contributors = res.json['data']['embeds']['contributors']['data']
-        for contributor in contributors:
-            assert contributor['id'] == ''
+        embeds = res.json['data'].get('embeds', None)
+        assert embeds is None or 'contributors' not in embeds
 
     #   test_public_node_with_link_non_anonymous_does_expose_contributor_id
         res = app.get(public_node_one_url, {
@@ -298,15 +290,43 @@ class TestNodeDetailViewOnlyLinks:
             'view_only': private_node_one_anonymous_link.key,
         })
         assert res.status_code == 200
+        attributes = res.json['data']['attributes']
         relationships = res.json['data']['relationships']
         if 'embeds' in res.json['data']:
             embeds = res.json['data']['embeds']
         else:
             embeds = {}
+
+        assert 'current_user_can_comment' not in attributes
+        assert 'citation' not in relationships
+        assert 'custom_citation' not in attributes
+        assert 'node_license' not in attributes
         assert 'registrations' not in relationships
-        assert 'forks' not in relationships, 'Add forks view to blacklist in hide_view_when_anonymous().'
+        assert 'forks' not in relationships
         assert 'registrations' not in embeds
-        assert 'forks' not in embeds, 'Add forks view to blacklist in hide_view_when_anonymous().'
+        assert 'forks' not in embeds
+
+    #   test_deleted_anonymous_VOL_gives_401_for_unauthorized
+        private_node_one_anonymous_link.is_deleted = True
+        private_node_one_anonymous_link.save()
+        res = app.get(private_node_one_url, {
+            'view_only': private_node_one_anonymous_link.key,
+        }, expect_errors=True)
+        assert res.status_code == 401
+
+    #   test_deleted_anonymous_VOL_does_not_anonymize_data_for_authorized
+        res = app.get(private_node_one_url, {
+            'view_only': private_node_one_anonymous_link.key,
+        }, auth=admin.auth)
+        assert res.status_code == 200
+        assert 'anonymous' not in res.json['meta']
+        attributes = res.json['data']['attributes']
+        relationships = res.json['data']['relationships']
+        assert 'current_user_can_comment' in attributes
+        assert 'citation' in relationships
+        assert 'custom_citation' in attributes
+        assert 'node_license' in attributes
+        assert 'forks' in relationships
 
     #   test_bad_view_only_link_does_not_modify_permissions
         res = app.get(private_node_one_url + 'logs/', {
@@ -374,10 +394,11 @@ class TestNodeListViewOnlyLinks:
             self, app, valid_contributors,
             private_node_one,
             private_node_one_private_link,
-            private_node_one_anonymous_link):
+            private_node_one_anonymous_link,
+            base_url):
 
         #   test_private_link_does_not_show_node_in_list
-        res = app.get('/{}nodes/'.format(API_BASE), {
+        res = app.get(base_url, {
             'view_only': private_node_one_private_link.key,
         })
         assert res.status_code == 200
@@ -388,7 +409,7 @@ class TestNodeListViewOnlyLinks:
         assert private_node_one._id not in node_ids
 
     #   test_anonymous_link_does_not_show_contributor_id_in_node_list
-        res = app.get('/{}nodes/'.format(API_BASE), {
+        res = app.get(base_url, {
             'view_only': private_node_one_anonymous_link.key,
             'embed': 'contributors',
         })
@@ -396,14 +417,13 @@ class TestNodeListViewOnlyLinks:
         nodes = res.json['data']
         assertions = 0
         for node in nodes:
-            contributors = node['embeds']['contributors']['data']
-            for contributor in contributors:
-                assertions += 1
-                assert contributor['id'] == ''
+            embeds = node.get('embeds', None)
+            assert embeds is None or 'contributors' not in embeds
+            assertions += 1
         assert assertions != 0
 
     #   test_non_anonymous_link_does_show_contributor_id_in_node_list
-        res = app.get('/{}nodes/'.format(API_BASE), {
+        res = app.get(base_url, {
             'view_only': private_node_one_private_link.key,
             'embed': 'contributors',
         })

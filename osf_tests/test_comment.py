@@ -22,7 +22,8 @@ from .factories import (
     NodeFactory,
     UserFactory,
     UnregUserFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    OSFGroupFactory,
 )
 
 # All tests will require a databse
@@ -64,7 +65,7 @@ def unreg_contributor(project):
     unreg_user = UnregUserFactory()
     unreg_user.save()
     project.add_unregistered_contributor(unreg_user.fullname, unreg_user.email, Auth(project.creator),
-                                         permissions=[permissions.READ], save=True)
+                                         permissions=permissions.READ, save=True)
     return unreg_user
 
 
@@ -139,16 +140,13 @@ def comment_mention_non_contributor(user_without_nodes):
 
 
 @pytest.fixture()
-def comment_mention_edited_twice(comment):
-    comment.ever_mentioned.add(comment.user)
-    comment.save()
+def comment_mention_edited_twice(comment, node):
     return 'This is a new comment [@User](http://localhost:5000/{}/).'.format(comment.user)
 
 
 @pytest.fixture()
 def comment_mentioned_with_contributors(user):
     return 'This is a new comment [@User](http://localhost:5000/{}/).'.format(user._id)
-
 
 def test_comments_have_longer_guid():
     comment = CommentFactory()
@@ -201,7 +199,7 @@ class TestCommentModel:
         {
             'comment_content': comment_mention_non_contributor,
             'expected_signals': set(),
-            'expected_error_msg': "[u'Mentioned user is not a contributor.']",
+            'expected_error_msg': "[u'Mentioned user is not a contributor or group member.']",
         },
         # Make sure mentions with invalid guids don't send signals
         {
@@ -253,7 +251,7 @@ class TestCommentModel:
             'comment_content': comment_too_long_with_mention,
             'expected_signals': set(),
             'expected_error_msg': "{'content': [u'Ensure this field has no more than 1000 characters.']}",
-        }
+        },
     ]
     edit_cases = [
         # Send if mention is valid
@@ -351,6 +349,21 @@ class TestCommentModel:
         assert comment.node.logs.count() == 2
         assert comment.node.logs.latest().action == NodeLog.COMMENT_UPDATED
 
+    def test_create_sends_mention_added_signal_if_group_member_mentions(self, node, user, auth):
+        manager = AuthUserFactory()
+        group = OSFGroupFactory(creator=manager)
+        node.add_osf_group(group)
+        assert node.is_contributor_or_group_member(manager) is True
+        with capture_signals() as mock_signals:
+            Comment.create(
+                auth=auth,
+                user=user,
+                node=node,
+                target=node.guids.all()[0],
+                content='This is a comment with a group member mention [@Group Member](http://localhost:5000/' + manager._id + '/).'
+            )
+        assert mock_signals.signals_sent() == ({comment_added, mention_added})
+
     def test_delete(self, node):
         comment = CommentFactory(node=node)
         auth = Auth(comment.user)
@@ -373,7 +386,7 @@ class TestCommentModel:
         project = ProjectFactory()
         user = UserFactory()
         project.set_privacy('private')
-        project.add_contributor(user, permissions=[permissions.READ])
+        project.add_contributor(user, permissions=permissions.READ)
         project.save()
 
         assert project.can_comment(Auth(user=user))
