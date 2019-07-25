@@ -864,7 +864,7 @@ def claim_user_form(auth, **kwargs):
 
 def _add_related_claimed_tag_to_user(pid, user):
     """
-    Adds claimed tag to incoming users, depending on whether the user has related source tags
+    Adds claimed tag to incoming users, depending on whether the resource has related source tags
     :param pid: guid of either the node or the preprint
     :param user: the claiming user
     """
@@ -879,7 +879,7 @@ def _add_related_claimed_tag_to_user(pid, user):
                 user.add_system_tag(claimed_tag)
     elif preprint:
         provider_id = preprint.provider._id
-        preprint_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag('preprint', provider_id),
+        preprint_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(provider_id, 'preprint'),
                                                                    system=True)
         user.add_system_tag(preprint_claimed_tag)
 

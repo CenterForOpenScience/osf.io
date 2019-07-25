@@ -87,8 +87,8 @@ def backfill_source_tags_for_nodes_and_preprints_unregistered_contributors(dry_r
     # Two cases: pre-NPD and post-NPD
     all_providers = PreprintProvider.objects.all()
     for provider in all_providers:
-        source_tag, created = Tag.all_tags.get_or_create(name=provider_source_tag('preprint', provider._id), system=True)
-        osf_provider_source_tag = Tag.all_tags.get(name=provider_source_tag(None, 'osf'), system=True)
+        source_tag, created = Tag.all_tags.get_or_create(name=provider_source_tag(provider._id, 'preprint'), system=True)
+        osf_provider_source_tag = Tag.all_tags.get(name=provider_source_tag('osf'), system=True)
 
         # For post-NPD preprints
         logger.info('Finding post-NPD preprints for {}'.format(provider._id))

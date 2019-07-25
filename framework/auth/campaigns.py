@@ -62,7 +62,7 @@ def get_campaigns():
                     url_path = 'preprints/{}'.format(provider._id)
                     external_url = provider.domain
                 campaign = '{}-preprints'.format(provider._id)
-                system_tag = provider_source_tag('preprint', provider._id)
+                system_tag = provider_source_tag(provider._id, 'preprint')
                 newest_campaigns.update({
                     campaign: {
                         'system_tag': system_tag,
@@ -206,7 +206,7 @@ def get_external_domains():
 
 NODE_SOURCE_TAG_CLAIMED_TAG_RELATION = {
     CampaignSourceTags.ErpChallenge.value: CampaignClaimedTags.ErpChallenge.value,
-    CampaignSourceTags.PreregChallenge.value: CampaignClaimedTags.ErpChallenge.value,
+    CampaignSourceTags.PreregChallenge.value: CampaignClaimedTags.PreregChallenge.value,
     CampaignSourceTags.Prereg.value: CampaignClaimedTags.Prereg.value,
     CampaignSourceTags.OsfRegisteredReports.value: CampaignClaimedTags.OsfRegisteredReports.value,
     CampaignSourceTags.Osf4m.value: CampaignClaimedTags.Osf4m.value,

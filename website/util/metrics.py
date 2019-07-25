@@ -10,7 +10,7 @@ def get_entry_point(user):
         CampaignSourceTags.Osf4m.value,
         CampaignSourceTags.PreregChallenge.value,
         'institution_campaign',
-        ProviderSourceTags.OsfRegistries.value
+        ProviderSourceTags.OsfPreprints.value
     ]
     for i in user.system_tags:
         if i in entry_points:
@@ -19,7 +19,7 @@ def get_entry_point(user):
         return 'osf'
 
 
-def provider_source_tag(service, provider_id):
+def provider_source_tag(provider_id, service=None):
     if service:
         return 'source:provider|{}|{}'.format(service, provider_id)
     else:
@@ -30,7 +30,7 @@ def campaign_source_tag(campaign_name):
     return 'source:campaign|{}'.format(campaign_name)
 
 
-def provider_claimed_tag(service, provider_id):
+def provider_claimed_tag(provider_id, service=None):
     if service:
         return 'claimed:provider|{}|{}'.format(service, provider_id)
     else:
@@ -41,35 +41,37 @@ def campaign_claimed_tag(campaign_name):
     return 'claimed:campaign|{}'.format(campaign_name)
 
 
+# Needs to be updated when new providers are added.
 class ProviderSourceTags(Enum):
-    AfricarxivPreprints = provider_source_tag('preprint', 'africarxiv')
-    AgrixivPreprints = provider_source_tag('preprint', 'agrixiv')
-    ArabixivPreprints = provider_source_tag('preprint', 'arabixiv')
-    MetaarxivPreprints = provider_source_tag('preprint', 'metaarxiv')
-    EartharxivPreprints = provider_source_tag('preprint', 'eartharxiv')
-    EcoevorxivPreprints = provider_source_tag('preprint', 'ecoevorxiv')
-    EcsarxivPreprints = provider_source_tag('preprint', 'ecsarxiv')
-    EngrxivPreprints = provider_source_tag('preprint', 'engrxiv')
-    FocusarchivePreprints = provider_source_tag('preprint', 'focusarchive')
-    FrenxivPreprints = provider_source_tag('preprint', 'frenxiv')
-    InarxivPreprints = provider_source_tag('preprint', 'inarxiv')
-    LawarxivPreprints = provider_source_tag('preprint', 'lawarxiv')
-    LissaPreprints = provider_source_tag('preprint', 'lissa')
-    MarxivPreprints = provider_source_tag('preprint', 'marxiv')
-    MediarxivPreprints = provider_source_tag('preprint', 'mediarxiv')
-    MindrxivPreprints = provider_source_tag('preprint', 'mindrxiv')
-    NutrixivPreprints = provider_source_tag('preprint', 'nutrixiv')
-    OsfPreprints = provider_source_tag('preprint', 'osf')
-    PaleorxivPreprints = provider_source_tag('preprint', 'paleorxiv')
-    PsyarxivPreprints = provider_source_tag('preprint', 'psyarxiv')
-    SocarxivPreprints = provider_source_tag('preprint', 'socarxiv')
-    SportrxivPreprints = provider_source_tag('preprint', 'sportrxiv')
-    ThesiscommonsPreprints = provider_source_tag('preprint', 'thesiscommons')
-    BodoarxivPreprints = provider_source_tag('preprint', 'bodoarxiv')
-    OsfRegistries = provider_source_tag('registry', 'osf')
-    Osf = provider_source_tag(None, 'osf')
+    AfricarxivPreprints = provider_source_tag('africarxiv', 'preprint')
+    AgrixivPreprints = provider_source_tag('agrixiv', 'preprint')
+    ArabixivPreprints = provider_source_tag('arabixiv', 'preprint')
+    MetaarxivPreprints = provider_source_tag('metaarxiv', 'preprint')
+    EartharxivPreprints = provider_source_tag('eartharxiv', 'preprint')
+    EcoevorxivPreprints = provider_source_tag('ecoevorxiv', 'preprint')
+    EcsarxivPreprints = provider_source_tag('ecsarxiv', 'preprint')
+    EngrxivPreprints = provider_source_tag('engrxiv', 'preprint')
+    FocusarchivePreprints = provider_source_tag('focusarchive', 'preprint')
+    FrenxivPreprints = provider_source_tag('frenxiv', 'preprint')
+    InarxivPreprints = provider_source_tag('inarxiv', 'preprint')
+    LawarxivPreprints = provider_source_tag('lawarxiv', 'preprint')
+    LissaPreprints = provider_source_tag('lissa', 'preprint')
+    MarxivPreprints = provider_source_tag('marxiv', 'preprint')
+    MediarxivPreprints = provider_source_tag('mediarxiv', 'preprint')
+    MindrxivPreprints = provider_source_tag('mindrxiv', 'preprint')
+    NutrixivPreprints = provider_source_tag('nutrixiv', 'preprint')
+    OsfPreprints = provider_source_tag('osf', 'preprint')
+    PaleorxivPreprints = provider_source_tag('paleorxiv', 'preprint')
+    PsyarxivPreprints = provider_source_tag('psyarxiv', 'preprint')
+    SocarxivPreprints = provider_source_tag('socarxiv', 'preprint')
+    SportrxivPreprints = provider_source_tag('sportrxiv', 'preprint')
+    ThesiscommonsPreprints = provider_source_tag('thesiscommons', 'preprint')
+    BodoarxivPreprints = provider_source_tag('bodoarxiv', 'preprint')
+    OsfRegistries = provider_source_tag('osf', 'registry')
+    Osf = provider_source_tag('osf')
 
 
+# Needs to be updated when new providers are added.
 class CampaignSourceTags(Enum):
     ErpChallenge = campaign_source_tag('erp_challenge')
     PreregChallenge = campaign_source_tag('prereg_challenge')
@@ -78,35 +80,37 @@ class CampaignSourceTags(Enum):
     Osf4m = campaign_source_tag('osf4m')
 
 
+# Needs to be updated when new providers are added.
 class ProviderClaimedTags(Enum):
-    AfricarxivPreprints = provider_claimed_tag('preprint', 'africarxiv')
-    AgrixivPreprints = provider_claimed_tag('preprint', 'agrixiv')
-    ArabixivPreprints = provider_claimed_tag('preprint', 'arabixiv')
-    MetaarxivPreprints = provider_claimed_tag('preprint', 'metaarxiv')
-    EartharxivPreprints = provider_claimed_tag('preprint', 'eartharxiv')
-    EcoevorxivPreprints = provider_claimed_tag('preprint', 'ecoevorxiv')
-    EcsarxivPreprints = provider_claimed_tag('preprint', 'ecsarxiv')
-    EngrxivPreprints = provider_claimed_tag('preprint', 'engrxiv')
-    FocusarchivePreprints = provider_claimed_tag('preprint', 'focusarchive')
-    FrenxivPreprints = provider_claimed_tag('preprint', 'frenxiv')
-    InarxivPreprints = provider_claimed_tag('preprint', 'inarxiv')
-    LawarxivPreprints = provider_claimed_tag('preprint', 'lawarxiv')
-    LissaPreprints = provider_claimed_tag('preprint', 'lissa')
-    MarxivPreprints = provider_claimed_tag('preprint', 'marxiv')
-    MediarxivPreprints = provider_claimed_tag('preprint', 'mediarxiv')
-    MindrxivPreprints = provider_claimed_tag('preprint', 'mindrxiv')
-    NutrixivPreprints = provider_claimed_tag('preprint', 'nutrixiv')
-    OsfPreprints = provider_claimed_tag('preprint', 'osf')
-    PaleorxivPreprints = provider_claimed_tag('preprint', 'paleorxiv')
-    PsyarxivPreprints = provider_claimed_tag('preprint', 'psyarxiv')
-    SocarxivPreprints = provider_claimed_tag('preprint', 'socarxiv')
-    SportrxivPreprints = provider_claimed_tag('preprint', 'sportrxiv')
-    ThesiscommonsPreprints = provider_claimed_tag('preprint', 'thesiscommons')
-    BodoarxivPreprints = provider_claimed_tag('preprint', 'bodoarxiv')
-    OsfRegistries = provider_claimed_tag('registry', 'osf')
-    Osf = provider_claimed_tag(None, 'osf')
+    AfricarxivPreprints = provider_claimed_tag('africarxiv', 'preprint')
+    AgrixivPreprints = provider_claimed_tag('agrixiv', 'preprint')
+    ArabixivPreprints = provider_claimed_tag('arabixiv', 'preprint')
+    MetaarxivPreprints = provider_claimed_tag('metaarxiv', 'preprint')
+    EartharxivPreprints = provider_claimed_tag('eartharxiv', 'preprint')
+    EcoevorxivPreprints = provider_claimed_tag('ecoevorxiv', 'preprint')
+    EcsarxivPreprints = provider_claimed_tag('ecsarxiv', 'preprint')
+    EngrxivPreprints = provider_claimed_tag('engrxiv', 'preprint')
+    FocusarchivePreprints = provider_claimed_tag('focusarchive', 'preprint')
+    FrenxivPreprints = provider_claimed_tag('frenxiv', 'preprint')
+    InarxivPreprints = provider_claimed_tag('inarxiv', 'preprint')
+    LawarxivPreprints = provider_claimed_tag('lawarxiv', 'preprint')
+    LissaPreprints = provider_claimed_tag('lissa', 'preprint')
+    MarxivPreprints = provider_claimed_tag('marxiv', 'preprint')
+    MediarxivPreprints = provider_claimed_tag('mediarxiv', 'preprint')
+    MindrxivPreprints = provider_claimed_tag('mindrxiv', 'preprint')
+    NutrixivPreprints = provider_claimed_tag('nutrixiv', 'preprint')
+    OsfPreprints = provider_claimed_tag('osf', 'preprint')
+    PaleorxivPreprints = provider_claimed_tag('paleorxiv', 'preprint')
+    PsyarxivPreprints = provider_claimed_tag('psyarxiv', 'preprint')
+    SocarxivPreprints = provider_claimed_tag('socarxiv', 'preprint')
+    SportrxivPreprints = provider_claimed_tag('sportrxiv', 'preprint')
+    ThesiscommonsPreprints = provider_claimed_tag('thesiscommons', 'preprint')
+    BodoarxivPreprints = provider_claimed_tag('bodoarxiv', 'preprint')
+    OsfRegistries = provider_claimed_tag('osf', 'registry')
+    Osf = provider_claimed_tag('osf')
 
 
+# Needs to be updated when new providers are added.
 class CampaignClaimedTags(Enum):
     ErpChallenge = campaign_claimed_tag('erp_challenge')
     PreregChallenge = campaign_claimed_tag('prereg_challenge')
