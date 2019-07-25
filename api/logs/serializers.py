@@ -17,7 +17,6 @@ from osf.utils.names import impute_names_model
 from osf.utils import permissions as osf_permissions
 
 import logging
-logger = logging.getLogger(__name__)
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -214,10 +213,11 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             try:
                 institution = node.creator.affiliated_institutions.get()
                 return Region.objects.get(_id=institution._id).name
-            except (Institution.DoesNotExist, Region.DoesNotExist):
-                # On rare cases we may be unable to retrieve the storage name.
-                # We will use a fallback name when that happens.
-                logger.warning('Institution ID {}: Unable to retrieve storage name'.format(institution.id))
+            except Institution.DoesNotExist:
+                logging.warning('Unable to retrieve storage name: Institution not found')
+                return 'Institutional Storage'
+            except Region.DoesNotExist:
+                logging.warning('Unable to retrieve storage name from institution ID {}'.format(institution.id))
                 return 'Institutional Storage'
         return None
 
