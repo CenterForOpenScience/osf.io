@@ -349,7 +349,7 @@ class MAPCore(object):
         j = self.req_api(method_name, (group_name,),
                          requests.post, path, parameters)
         group_key = j['result']['groups'][0]['group_key']
-        logger.debug('  New geoup has been created (group_key=' + group_key + ')')
+        logger.debug('  New group has been created (group_key=' + group_key + ')')
         # to set description (Empty description is invalid on CG)
         j = self.edit_group(group_key, group_name, group_name)
         return j

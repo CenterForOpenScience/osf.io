@@ -25,6 +25,7 @@ if __name__ == '__main__':
 from osf.models.user import OSFUser
 from osf.models.node import Node
 from django.core.exceptions import ObjectDoesNotExist
+from nii.mapcore import remove_node
 from nii.mapcore_api import (MAPCore, MAPCoreException)
 import argparse
 
@@ -187,10 +188,12 @@ def remove_one_group(node, options):
         except MAPCoreException as e:
             if e.group_does_not_exist():
                 flag = 'R'  # GRDM only
+    else:
+        flag = 'R'  # GRDM only
 
     # display group info
     if options.interactive:
-        msg1 = u'{}, title="{}", gr_key="{}"'.format(flag, node.title, node.map_group_key)
+        msg1 = u'{}, title="{}", grp_key="{}"'.format(flag, node.title, node.map_group_key)
         msg2 = u', desc="{}", creator="{}", created={}'.format(
             node.description, creator.username, node.created.strftime('%Y/%m/%d'))
     else:
@@ -248,7 +251,7 @@ def remove_one_group(node, options):
             print('-->(dryrun) GRDM group is deleted!')
         else:
             from framework.auth import Auth
-            node.remove_node(Auth(user=node.creator))
+            remove_node(node)
             if options.verbose:
                 print('--> GRDM group is deleted!')
     return

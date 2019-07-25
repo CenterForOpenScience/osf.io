@@ -330,6 +330,17 @@ def mapcore_remove_token(user):
 def query_contributors(node):
     return node.contributors.exclude(eppn=None)
 
+def remove_node(node):
+    last_e = None
+    for admin in node.get_admin_contributors(node.contributors):
+        try:
+            node.remove_node(Auth(user=admin))
+            break
+        except Exception as e:
+            last_e = e
+    if last_e:
+        logger.error('GRDM project[{}] cannot be deleted: {}'.format(node._id, utr8(str(e))))
+
 # OSFuser essential feild keeper for comparing member
 class RDMmember(object):
     def __init__(self, node, user):
@@ -763,8 +774,8 @@ def mapcore_sync_rdm_project(access_user, node, title_desc=False, contributors=F
         mapcore_sync_rdm_project0(access_user, node, title_desc=title_desc, contributors=contributors, lock_node=lock_node)
     except MAPCoreException as e:
         if e.group_does_not_exist():
-            node.remove_node(Auth(user=node.creator))
             logger.info('GRDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(utf8(node.title), node._id))
+            remove_node(node)
             return
         error = e
         if use_raise:
@@ -874,7 +885,14 @@ def mapcore_sync_map_group0(access_user, node, title_desc=True, contributors=Tru
 
 def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True, use_raise=False, lock_node=True):
     try:
-        ret = mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors, lock_node=lock_node)
+        try:
+            ret = mapcore_sync_map_group0(access_user, node, title_desc=title_desc, contributors=contributors, lock_node=lock_node)
+        except MAPCoreException as e:
+            if e.group_does_not_exist():
+                logger.info('GRDM project [{} ({})] is deleted because linked mAP group does not exist.'.format(utf8(node.title), node._id))
+                remove_node(node)
+                return False
+            raise
     except Exception as e:
         logger.warning('GRDM project [{} ({})] cannot be uploaded to mAP. (retry later), reason={}'.format(utf8(node.title), node._id, utf8(str(e))))
         add_log(NodeLog.MAPCORE_MAP_GROUP_NOT_UPDATED, node, access_user, e,
@@ -1007,14 +1025,12 @@ def mapcore_sync_rdm_my_projects0(user):
 
         for group_key, project in my_rdm_projects.items():
             if project.is_deleted:
-                logger.info('GRDM project [{} ({})] was deleted. (skipped)'.format(utf8(project.title), project._id))
+                #logger.info('GRDM project [{} ({})] was deleted. (skipped)'.format(utf8(project.title), project._id))
                 continue
             if project._id in sync_id_list:
                 continue
-            if project.map_group_key is None:
-                logger.info('GRDM project [{} ({})] does not have map_group_key. (skipped, synchronized at the time of access)'.format(utf8(project.title), project._id))
 
-            grp = my_map_groups.get(project.map_group_key)
+            grp = my_map_groups.get(group_key)
             if grp:
                 if project.title == utf8dec(grp['group_name']):
                     # already synchronized project
@@ -1025,6 +1041,12 @@ def mapcore_sync_rdm_my_projects0(user):
             else:
                 # Project contributors is different from mAP group members.
                 mapcore_sync_rdm_project_or_map_group(user, project)
+
+        ### to create new mAP groups at /myprojects/
+        # for project in Node.objects.filter(contributor__user__id=user.id):
+        #     if project.map_group_key is None:
+        #         mapcore_sync_rdm_project_or_map_group(user, project)
+
     finally:
         locker.unlock_user(user)
 
