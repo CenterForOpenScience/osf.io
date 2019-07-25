@@ -409,7 +409,7 @@ class TypeField(ser.CharField):
         if type_ != data and kebab_case == data:
             type_ = kebab_case
             self.context['request'].META.setdefault('warning', 'As of API Version {0}, all types are now Kebab-case. {0} will accept snake_case, but this will be deprecated in future versions.'.format(KEBAB_CASE_VERSION))
-        else:
+        elif type_ != data:
             raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
         return super(TypeField, self).to_internal_value(data)
 
