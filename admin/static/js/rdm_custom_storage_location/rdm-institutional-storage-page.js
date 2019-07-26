@@ -37,21 +37,21 @@ $('#s3_modal input').keyup(function () {
     validateRequiredFields('s3');
 });
 
-function s3SelectChange(e) {
-    if (document.getElementById('s3_compatible_service').value == 'Other') {
-        document.getElementById('s3_endpoint_url').required = true;
-        $('#s3_endpoint_url_collapse').collapse('show');
+function s3compatSelectChange(e) {
+    if (document.getElementById('s3compat_compatible_service').value == 'Other') {
+        document.getElementById('s3compat_endpoint_url').required = true;
+        $('#s3compat_endpoint_url_collapse').collapse('show');
     }
     else {
-        document.getElementById('s3_endpoint_url').required = false;
-        $('#s3_endpoint_url_collapse').collapse('hide');
+        document.getElementById('s3compat_endpoint_url').required = false;
+        $('#s3compat_endpoint_url_collapse').collapse('hide');
     }
-    validateRequiredFields('s3');
+    validateRequiredFields('s3compat');
 };
 
-document.getElementById('s3_compatible_service').addEventListener('change', s3SelectChange);
+document.getElementById('s3compat_compatible_service').addEventListener('change', s3compatSelectChange);
 
-$('#s3_modal').on('show.bs.modal', s3SelectChange);
+$('#s3compat_modal').on('show.bs.modal', s3compatSelectChange);
 
 $('#swift_modal input').keyup(function () {
     validateRequiredFields('swift');
