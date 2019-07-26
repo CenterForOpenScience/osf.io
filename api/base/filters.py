@@ -51,6 +51,7 @@ class OSFOrderingFilter(OrderingFilter):
     # override
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
+        # self.check_serializer_field(queryset, request.query_params, view.serializer_class)
         if isinstance(queryset, DjangoQuerySet):
             if queryset.ordered:
                 return queryset
@@ -65,6 +66,18 @@ class OSFOrderingFilter(OrderingFilter):
                 return sorted_list
             return queryset.sort(*ordering)
         return queryset
+
+    def check_serializer_field(self, queryset, field, serializer_class):
+        fields = field.query_params.getlist('sort')
+        # Getting a list of fields from the model
+        source_field_list = [f.name for f in queryset[0]._meta.get_fields()]
+        for field in fields:
+            if field in source_field_list:
+                return field
+
+    def get_source(self, field):
+        #recursive search for field in source
+        pass
 
 
 class FilterMixin(object):
