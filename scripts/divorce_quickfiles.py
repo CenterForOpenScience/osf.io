@@ -114,7 +114,7 @@ def reverse_repoint_guids():
     users = OSFUser.objects.all().prefetch_related('guids')
 
     for user in users:
-        guid = user.guids.last()
+        guid = user.quickfolder.guids.last()
         node = QuickFilesNode.objects.get_for_user(user)
         if guid:
             node.guids.add(guid)

@@ -65,16 +65,13 @@ class TestQuickFilesMigration(MigrationTestCase):
         assert node_log.params == log.params
         assert node_log.action == log.action
 
-    @pytest.mark.enable_quickfiles_creation
-    def test_reverse_quickfiles_divorce(self):
-        self.add_users(self.number_of_users)
-        self.sprinkle_quickfiles(QuickFolder, self.number_of_quickfiles)
+        # Now that we did everything and test the reverse migration
 
         # this is our canary user
         user = OSFUser.objects.last()
         user_log = UserLogFactory(user=user)
         user.user_logs.add(user_log)
-        guid_values = set(OSFUser.objects.all().values_list('guids___id', flat=True))
+        guid_values = set(QuickFolder.objects.all().values_list('guids___id', flat=True))
 
         reverse_create_quickfolders()
 
