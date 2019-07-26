@@ -511,7 +511,7 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
         log.save()
 
-        self._complete_add_log(log, action, user, save)
+        self._complete_add_log(log, self.logs, action, user, save)
         return log
 
     def update_search(self, deleted_id=None):

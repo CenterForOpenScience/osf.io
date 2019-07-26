@@ -110,16 +110,16 @@ class Loggable(models.Model):
             log.date = log_date
         log.save()
 
-        self._complete_add_log(log, action, user, save)
+        self._complete_add_log(log, self.logs, action, user, save)
 
         return log
 
-    def _complete_add_log(self, log, action, user=None, save=True):
-        if self.logs.count() == 1:
+    def _complete_add_log(self, log, logs, action, user=None, save=True):
+        if logs.count() == 1:
             log_date = log.date if hasattr(log, 'date') else log.created
             self.last_logged = log_date.replace(tzinfo=pytz.utc)
         else:
-            recent_log = self.logs.first()
+            recent_log = logs.first()
             log_date = recent_log.date if hasattr(log, 'date') else recent_log.created
             self.last_logged = log_date
 

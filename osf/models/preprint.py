@@ -410,7 +410,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         log.save()
 
-        self._complete_add_log(log, action, user, save)
+        self._complete_add_log(log, self.logs, action, user, save)
         return log
 
     # Overrides FileTargetMixin

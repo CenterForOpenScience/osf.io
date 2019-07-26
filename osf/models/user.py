@@ -1823,7 +1823,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def add_log(self, action, params, auth):
         user = auth.user
         log = UserLog(action=action, user=user, params=params)
-        self._complete_add_log(log, action, user, save=True)
+        log.save()
+        self._complete_add_log(log, self.user_logs, action, user, save=True)
 
     # Overrides FileTargetMixin
     def can_edit(self, auth):
