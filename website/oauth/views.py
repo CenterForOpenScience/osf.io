@@ -2,10 +2,11 @@
 
 import httplib as http
 
-from flask import redirect
+from flask import redirect, request
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
+from framework.sessions import session
 from osf.models import ExternalAccount
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
@@ -76,34 +77,22 @@ def osf_oauth_callback(service_name, auth):
     return {}
 
 def oauth_callback(service_name):
-    # OSFAdmin
-    osfadmin_callback_url = osfadmin_oauth_callback(service_name)
-    # if OAuth autherization failed on the GakuNin RDM Admin side,
-    # consider it that the request was for OSF.
-    if osfadmin_callback_url:
-        try:
-            return redirect(osfadmin_callback_url)
-        except ConnectionError:
-            pass
-    # OSF
-    return osf_oauth_callback(service_name)
+    try:
+        session_oauth_state = session.data['oauth_states'][service_name]['state']
+    except KeyError:
+        session_oauth_state = None
+
+    if request.args['state'] == session_oauth_state:
+        # Request was created from web
+        return osf_oauth_callback(service_name)
+
+    # Not from web, so let's consider it was from admin
+    return redirect(osfadmin_oauth_callback(service_name))
 
 def osfadmin_oauth_callback(service_name):
     from furl import furl
-    import requests
-    import flask
-    from website.settings import ADMIN_INTERNAL_DOCKER_URL, ADMIN_URL
-    f = furl(ADMIN_INTERNAL_DOCKER_URL)
-    f.path = '/addons/oauth/callback/{}/'.format(service_name)
-    f.args = flask.request.args.to_dict(flat=False)
-    try:
-        headers = dict(flask.request.headers)
-        headers['Content-Length'] = str(0)
-        r = requests.get(f.url, headers=headers)
-    except ConnectionError:
-        return None
-    if not r.ok:
-        return None
+    from website.settings import ADMIN_URL
     f = furl(ADMIN_URL)
-    f.path = '/addons/oauth/complete/{}/'.format(service_name)
+    f.path = '/addons/oauth/callback/{}/'.format(service_name)
+    f.args = request.args.to_dict(flat=False)
     return f.url

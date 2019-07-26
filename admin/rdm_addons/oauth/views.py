@@ -7,8 +7,8 @@ from django.views.generic import View, TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.shortcuts import redirect
-from django.http import HttpResponse
 from django.utils.decorators import method_decorator
+from django.urls import reverse
 import flask
 from werkzeug.datastructures import ImmutableMultiDict
 
@@ -123,7 +123,7 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
             except IndexError:
                 pass
 
-        return HttpResponse('OK')
+        return redirect(reverse('addons:oauth:complete', kwargs={'addon_name': addon_name}))
 
 
 class CompleteView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
