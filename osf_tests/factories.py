@@ -404,6 +404,7 @@ class RegistrationFactory(BaseNodeFactory):
                 reg.sanction.save()
         if is_public:
             reg.is_public = True
+        reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
         reg.save()
         return reg
 
