@@ -2325,6 +2325,36 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return node_addon.create_waterbutler_log(auth, action, metadata)
 
+    # Overrides Loggable
+    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
+        AbstractNode = apps.get_model('osf.AbstractNode')
+        user = None
+        if auth:
+            user = auth.user
+        elif request:
+            user = request.user
+
+        params['node'] = params.get('node') or params.get('project') or self._id
+        original_node = self if self._id == params['node'] else AbstractNode.load(params.get('node'))
+
+        log_params = {
+            'action': action,
+            'user': user,
+            'foreign_user': foreign_user,
+            'params': params,
+            'node': self,
+            'original_node': original_node,
+        }
+
+        log = NodeLog(**log_params)
+
+        if log_date:
+            log.date = log_date
+        log.save()
+
+        self._complete_add_log(log, action, user, save)
+
+        return log
     @property
     def file_read_scope(self):
         return oauth_scopes.CoreScopes.NODE_FILE_READ

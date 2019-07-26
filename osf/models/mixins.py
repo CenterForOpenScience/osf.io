@@ -89,7 +89,6 @@ class Loggable(models.Model):
     last_logged = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
-        AbstractNode = apps.get_model('osf.AbstractNode')
         user = None
         if auth:
             user = auth.user
@@ -97,7 +96,6 @@ class Loggable(models.Model):
             user = request.user
 
         params['node'] = params.get('node') or params.get('project') or self._id
-        original_node = self if self._id == params['node'] else AbstractNode.load(params.get('node'))
 
         log_params = {
             'action': action,
@@ -105,10 +103,6 @@ class Loggable(models.Model):
             'foreign_user': foreign_user,
             'params': params,
         }
-
-        if isinstance(self, AbstractNode):
-            log_params['node'] = self
-            log_params['original_node'] = original_node
 
         log = NodeLog(**log_params)
 
