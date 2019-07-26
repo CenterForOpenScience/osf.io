@@ -639,7 +639,7 @@ class InstitutionDefaultStorageDisplay(AdminTestCase):
         self.user.affiliated_institutions.add(self.institution)
         self.us = RegionFactory()
         self.request = RequestFactory().get('/fake_path')
-        self.view = views.InstitutionDefaultStorageDisplay()
+        self.view = views.InstitutionDefaultStorageDetail()
         self.view = setup_user_view(self.view, self.request, user=self.user)
         self.view.kwargs = {'institution_id': self.institution.id}
 

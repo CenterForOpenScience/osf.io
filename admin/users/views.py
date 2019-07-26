@@ -627,6 +627,11 @@ class BaseUserQuotaView(View):
     """
 
     def update_quota(self, max_quota, storage_type):
+        try:
+            max_quota = int(max_quota)
+        except (ValueError, TypeError):
+            return
+
         if max_quota <= 0:
             max_quota = 1
 
@@ -645,7 +650,7 @@ class UserQuotaView(BaseUserQuotaView):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
-        self.update_quota(int(request.POST.get('maxQuota')), UserQuota.NII_STORAGE)
+        self.update_quota(request.POST.get('maxQuota'), UserQuota.NII_STORAGE)
         return redirect(reverse_user(self.kwargs.get('guid')))
 
 
@@ -681,5 +686,5 @@ class UserInstitutionQuotaView(RdmPermissionMixin, UserPassesTestMixin, BaseUser
             and self.request.user.affiliated_institutions.exists()
 
     def post(self, request, *args, **kwargs):
-        self.update_quota(int(request.POST.get('maxQuota')), UserQuota.CUSTOM_STORAGE)
+        self.update_quota(request.POST.get('maxQuota'), UserQuota.CUSTOM_STORAGE)
         return redirect('users:user_details', guid=self.kwargs.get('guid'))

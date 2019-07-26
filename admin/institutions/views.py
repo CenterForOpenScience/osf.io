@@ -98,11 +98,15 @@ class InstitutionDetail(PermissionRequiredMixin, View):
         view = InstitutionChangeForm.as_view()
         return view(request, *args, **kwargs)
 
-class InstitutionDefaultStorageDisplay(RdmPermissionMixin, TemplateView):
+
+class InstitutionDefaultStorageDetail(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
     model = Institution
     template_name = 'institutions/default_storage.html'
-    permission_required = 'osf.view_institution'
-    raise_exception = True
+
+    def test_func(self):
+        """check user permissions"""
+        return not self.is_super_admin and self.is_admin and \
+            self.request.user.affiliated_institutions.exists()
 
     def get_context_data(self, *args, **kwargs):
         kwargs['institution'] = self.request.user.affiliated_institutions.first()._id
@@ -115,26 +119,20 @@ class InstitutionDefaultStorageDisplay(RdmPermissionMixin, TemplateView):
         kwargs['region'].waterbutler_settings = json.dumps(kwargs['region'].waterbutler_settings)
         return kwargs
 
-class InstitutionDefaultStorageDetail(RdmPermissionMixin, UserPassesTestMixin, View):
-    raise_exception = False
-    template_name = 'institutions/default_storage.html'
-
-    def test_func(self):
-        """check user permissions"""
-        return not self.is_super_admin and self.is_admin and \
-            self.request.user.affiliated_institutions.exists()
-
-    def get(self, request, *args, **kwargs):
-        view = InstitutionDefaultStorageDisplay.as_view()
-        return view(request, *args, **kwargs)
-
     def post(self, request, *args, **kwargs):
-        post_data = request.POST
-        waterbutler_settings = eval(post_data['waterbutler_settings'])
-        waterbutler_credentials = eval(post_data['waterbutler_credentials'])
-        values_to_update = {'_id': post_data['_id'], 'name': post_data['name'], 'waterbutler_credentials': waterbutler_credentials, 'waterbutler_url': post_data['waterbutler_url'], 'mfr_url': post_data['mfr_url'], 'waterbutler_settings': waterbutler_settings}
-        obj_store, created = Region.objects.update_or_create(_id=post_data['_id'], defaults=values_to_update)
+        default_region = Region.objects.first()
+        Region.objects.update_or_create(
+            _id=self.request.user.affiliated_institutions.first()._id,
+            defaults={
+                'name': request.POST.get('name'),
+                'waterbutler_credentials': eval(request.POST.get('waterbutler_credentials')),
+                'waterbutler_url': default_region.waterbutler_url,
+                'mfr_url': default_region.mfr_url,
+                'waterbutler_settings': eval(request.POST.get('waterbutler_settings'))
+            }
+        )
         return HttpResponseRedirect(self.request.path_info)
+
 
 class ImportInstitution(PermissionRequiredMixin, View):
     permission_required = 'osf.change_institution'
