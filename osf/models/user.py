@@ -811,6 +811,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self._merge_users_preprints(user)
         self._merge_users_logs(user)
 
+        # transfer group membership
+        for group in user.osf_groups:
+            if not group.is_manager(self):
+                if group.has_permission(user, MANAGE):
+                    group.make_manager(self)
+                else:
+                    group.make_member(self)
+            group.remove_member(user)
+
         # finalize the merge
 
         remove_sessions_for_user(user)
@@ -855,30 +864,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             merging_user_file.move_under(self.quickfolder)
             merging_user_file.save()
-
-        # Transfer user's preprints
-        self._merge_users_preprints(user)
-
-        # transfer group membership
-        for group in user.osf_groups:
-            if not group.is_manager(self):
-                if group.has_permission(user, MANAGE):
-                    group.make_manager(self)
-                else:
-                    group.make_member(self)
-            group.remove_member(user)
-
-        # finalize the merge
-
-        remove_sessions_for_user(user)
-
-        # - username is set to the GUID so the merging user can set it primary
-        #   in the future (note: it cannot be set to None due to non-null constraint)
-        user.set_unusable_username()
-        user.set_unusable_password()
-        user.verification_key = None
-        user.osf_mailing_lists = {}
-        user.merged_by = self
 
     def _merge_users_preprints(self, user):
         """
