@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 from osf.models import TrashedFileNode
 from addons.osfstorage.models import OsfStorageFolder
 
+from osf.models.legacy_quickfiles import get_quickfiles_project_title
+
 
 class QuickFolder(OsfStorageFolder):
     """
@@ -23,9 +25,7 @@ class QuickFolder(OsfStorageFolder):
 
     @property
     def title(self):
-        fullname = self.target.fullname
-        possessive_title_name = fullname + "'s" if fullname[-1] != 's' else fullname + "'"
-        return '{} Quick Files'.format(possessive_title_name)
+        return get_quickfiles_project_title(self.target)
 
     def append_folder(self, name):
         raise NotImplementedError('Folder creation is illegal for Quickfiles')
