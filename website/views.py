@@ -7,7 +7,6 @@ import math
 import os
 import requests
 import urllib
-import waffle
 
 from django.apps import apps
 from flask import request, send_from_directory, Response, stream_with_context
@@ -28,10 +27,12 @@ from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, 
 from addons.osfstorage.models import Region
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
-from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
+
+from api.waffle.utils import flag_is_active, storage_i18n_flag_active
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
@@ -319,7 +320,7 @@ def resolve_guid(guid, suffix=None):
         if isinstance(referent, Registration) and (
                 not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components')
         ):
-            if waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+            if flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
                 # Route only the base detail view to ember
                 if PROXY_EMBER_APPS:
                     resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
