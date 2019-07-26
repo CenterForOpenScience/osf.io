@@ -52,6 +52,9 @@ function s3compatSelectChange(e) {
 document.getElementById('s3compat_compatible_service').addEventListener('change', s3compatSelectChange);
 
 $('#s3compat_modal').on('show.bs.modal', s3compatSelectChange);
+$('#s3compat_modal input').keyup(function () {
+    validateRequiredFields('s3compat');
+});
 
 $('#swift_modal input').keyup(function () {
     validateRequiredFields('swift');
