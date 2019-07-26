@@ -1837,16 +1837,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Overrides Loggable
     def add_log(self, action, params, auth):
         user = auth.user
-
         log = UserLog(action=action, user=user, params=params)
-        log.save()
-
-        if self.user_logs.count() == 1:
-            self.last_logged = log.created.replace(tzinfo=pytz.utc)
-        else:
-            self.last_logged = self.user_logs.first().created
-
-        return log
+        self._complete_add_log(log, action, user, save=True)
 
     # Overrides FileTargetMixin
     def can_edit(self, auth):
