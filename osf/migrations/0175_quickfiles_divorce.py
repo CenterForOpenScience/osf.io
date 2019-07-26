@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0170_auto_20190614_1429')
+        ('osf', '0174_auto_20190614_1429')
     ]
 
     operations = [
