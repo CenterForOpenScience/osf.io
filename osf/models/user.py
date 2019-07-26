@@ -810,15 +810,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self._merge_users_quickfiles(user)
         self._merge_users_preprints(user)
         self._merge_users_logs(user)
-
-        # transfer group membership
-        for group in user.osf_groups:
-            if not group.is_manager(self):
-                if group.has_permission(user, MANAGE):
-                    group.make_manager(self)
-                else:
-                    group.make_member(self)
-            group.remove_member(user)
+        self._merge_users_groups(user)
 
         # finalize the merge
 
@@ -907,6 +899,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def _merge_users_logs(self, user):
         user.user_logs.update(user=self)
+
+    def _merge_users_groups(self, user):
+        # transfer group membership
+        for group in user.osf_groups:
+            if not group.is_manager(self):
+                if group.has_permission(user, MANAGE):
+                    group.make_manager(self)
+                else:
+                    group.make_member(self)
+            group.remove_member(user)
 
     def disable_account(self):
         """
