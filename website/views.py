@@ -351,7 +351,7 @@ def redirect_help(**kwargs):
     return redirect('/faq/')
 
 def redirect_faq(**kwargs):
-    return redirect('http://help.osf.io/m/faqs/')
+    return redirect('https://help.osf.io/hc/en-us/articles/360019737894-FAQs')
 
 # redirect osf.io/howosfworks to osf.io/getting-started/
 def redirect_howosfworks(**kwargs):
