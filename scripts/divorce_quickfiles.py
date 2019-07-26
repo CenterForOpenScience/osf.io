@@ -60,7 +60,7 @@ def create_quickfolders():
 
 def reverse_create_quickfolders():
     """
-    Bulk creates a Quickfolder for every user.
+    Bulk creates a Quickfilesnodes for every user and removes their Quickfolder.
     :return:
     """
     users = OSFUser.objects.all()
