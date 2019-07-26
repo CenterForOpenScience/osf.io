@@ -50,7 +50,7 @@ def request_identifiers(target_object):
     except exceptions.ClientResponseError as error:
         raise HTTPError(error.response.status_code)
     return {
-        'doi': identifiers['doi']
+        'doi': identifiers.get('doi')
     }
 
 
