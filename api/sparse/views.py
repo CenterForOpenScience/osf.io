@@ -72,8 +72,6 @@ class SparseNodeChildrenList(SparseNodeMixin, NodeChildrenList):
 
 
 class SparseRegistrationDetail(SparseRegistrationMixin, RegistrationDetail):
-    view_name = 'registration-detail'
-
     pass
 
 

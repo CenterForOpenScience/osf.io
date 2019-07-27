@@ -10,7 +10,18 @@ from api.registrations.serializers import RegistrationSerializer
 # Todo: Return relationships as relationships
 class SparseNodeSerializer(NodeSerializer):
     filterable_fields = frozenset([
+        'id',
         'title',
+        'description',
+        'public',
+        'tags',
+        'category',
+        'date_created',
+        'date_modified',
+        'root',
+        'parent',
+        'contributors',
+        'subjects',
     ])
     links = LinksField({
         'self': 'get_absolute_url',  # self links will break ember data unless we make a specific sparse detail serializer
@@ -66,7 +77,6 @@ class SparseNodeSerializer(NodeSerializer):
             'root',
             'tags',
             'title',
-
         ]
         for field_name in self.fields.fields.copy().keys():
             if field_name in ('id', 'links', 'type'):
@@ -82,7 +92,19 @@ class SparseNodeSerializer(NodeSerializer):
 
 class SparseRegistrationSerializer(RegistrationSerializer):
     filterable_fields = frozenset([
+        'id',
         'title',
+        'description',
+        'public',
+        'tags',
+        'category',
+        'date_created',
+        'date_modified',
+        'root',
+        'parent',
+        'contributors',
+        'preprint',
+        'subjects',
     ])
 
     links = LinksField({
