@@ -26,8 +26,8 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 name, args, kwargs = mkreq.mock_calls[0]
                 assert_equal(json.loads(kwargs['data']), {
                   'range': 'sheet01!A3:J3',
-                  'values': [[u"\u251c\u2212\u2212", "file1.txt", "", "", "", ".txt", "", "", ""],
-                             [u"\u2514\u2212\u2212", "file2.txt", "", "", "", "", "", "", ""]],
+                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '.txt', '', '', ''],
+                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
             with mock.patch.object(client, '_make_request',
@@ -39,9 +39,9 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 print(kwargs['data'])
                 assert_equal(json.loads(kwargs['data']), {
                   'range': 'sheet01!A3:K3',
-                  'values': [[u"\u251c\u2212\u2212", "test", "", "", "", "", ".txt", "", "", ""],
-                             [u"\u2502", u"\u2514\u2212\u2212", "file3.txt", "", "", "", "", "", "", ""],
-                             [u"\u251c\u2212\u2212", "file1.txt", "", "", "", "", "", "", "", ""],
-                             [u"\u2514\u2212\u2212", "file2.txt", "", "", "", "", "", "", "", ""]],
+                  'values': [[u'\u251c\u2212\u2212', 'test', '', '', '', '', '.txt', '', '', ''],
+                             [u'\u2502', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', '', '', ''],
+                             [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '', '', '', '', ''],
+                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
