@@ -26,8 +26,6 @@ class TestEmberFlagIsActive(OsfTestCase):
     @mock.patch('website.ember_osf_web.decorators.use_ember_app')
     def test_dont_use_ember_app(self, mock_use_ember_app):
         # mock over external module 'waflle.flag_is_active` not ours
-        import api.waffle.utils
-        api.waffle.utils.waffle.flag_is_active = mock.Mock(return_value=False)
 
         ember_flag_is_active('inactive_flag')(self.mock_func)()
 
@@ -37,8 +35,6 @@ class TestEmberFlagIsActive(OsfTestCase):
     @mock.patch('website.ember_osf_web.decorators.use_ember_app')
     def test_ember_flag_is_active_authenticated_user(self, mock_use_ember_app, mock__get_current_user):
         # mock over external module 'waflle.flag_is_active` not ours
-        import api.waffle.utils
-        api.waffle.utils.waffle.flag_is_active = mock.Mock(return_value=True)
 
         user = UserFactory()
         mock__get_current_user.return_value = user
@@ -52,8 +48,6 @@ class TestEmberFlagIsActive(OsfTestCase):
     @mock.patch('website.ember_osf_web.decorators.use_ember_app')
     def test_ember_flag_is_active_unauthenticated_user(self, mock_use_ember_app, mock__get_current_user):
         # mock over external module 'waflle.flag_is_active` not ours
-        import api.waffle.utils
-        api.waffle.utils.waffle.flag_is_active = mock.Mock(return_value=True)
 
         ember_flag_is_active('active_flag')(self.mock_func)()
         group = Group.objects.create(name='foo')
