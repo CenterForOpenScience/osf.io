@@ -32,8 +32,9 @@ class TestEmberFlagIsActive(OsfTestCase):
         assert not mock_use_ember_app.called
 
     @mock.patch('api.waffle.utils._get_current_user')
+    @mock.patch('website.ember_osf_web.decorators.waffle.flag_is_active')
     @mock.patch('website.ember_osf_web.decorators.use_ember_app')
-    def test_ember_flag_is_active_authenticated_user(self, mock_use_ember_app, mock__get_current_user):
+    def test_ember_flag_is_active_authenticated_user(self, mock_use_ember_app, mock_flag_is_active, mock__get_current_user):
         # mock over external module 'waflle.flag_is_active` not ours
 
         user = UserFactory()
@@ -41,12 +42,13 @@ class TestEmberFlagIsActive(OsfTestCase):
 
         ember_flag_is_active('active_flag')(self.mock_func)()
 
-        api.waffle.utils.waffle.flag_is_active.assert_called_with(request, 'active_flag')
+        mock_flag_is_active.assert_called_with(request, 'active_flag')
         mock_use_ember_app.assert_called_with()
 
     @mock.patch('api.waffle.utils._get_current_user', return_value=None)
+    @mock.patch('website.ember_osf_web.decorators.waffle.flag_is_active')
     @mock.patch('website.ember_osf_web.decorators.use_ember_app')
-    def test_ember_flag_is_active_unauthenticated_user(self, mock_use_ember_app, mock__get_current_user):
+    def test_ember_flag_is_active_unauthenticated_user(self, mock_use_ember_app, mock_flag_is_active, mock__get_current_user):
         # mock over external module 'waflle.flag_is_active` not ours
 
         ember_flag_is_active('active_flag')(self.mock_func)()
@@ -54,5 +56,5 @@ class TestEmberFlagIsActive(OsfTestCase):
 
         self.flag.groups.add(group)
 
-        api.waffle.utils.waffle.flag_is_active.assert_called_with(request, 'active_flag')
+        mock_flag_is_active.assert_called_with(request, 'active_flag')
         mock_use_ember_app.assert_called_with()
