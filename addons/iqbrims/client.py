@@ -417,19 +417,19 @@ class SpreadsheetClient(BaseClient):
         fcolumns = ['Persons Involved', 'Remarks', 'Software Used']
         c = self.ensure_columns(sheet_id,
                                 ['L{}'.format(i)
-                                 for i in range(0, max_depth + 1)] +
+                                 for i in range(0, max_depth + 2)] +
                                 ['{}(File)'.format(col) for col in fcolumns] +
                                 ['Extension'] +
                                 ['{}(Extension)'.format(col) for col in fcolumns],
                                 row=3)
-        values = self._to_file_list(top, max_depth, [])
+        values = self._to_file_list(top, [])
         exts = sorted(set([os.path.splitext(v[-1])[-1]
                            for v, t in values if t == 'file']))
         exts = [e for e in exts if len(e) > 0]
         exts += ['' for i in range(0, len(values) - len(exts))]
         values = [self._to_file_row(c, t, v, ex)
                   for (v, t), ex in zip(values, exts)]
-        r = u'{0}!A3:{1}3'.format(sheet_id, self._row_name(max_depth + 1))
+        r = u'{0}!A3:{1}3'.format(sheet_id, self._row_name(len(c)))
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -506,7 +506,7 @@ class SpreadsheetClient(BaseClient):
             r.append(e)
         return r
 
-    def _to_file_list(self, target, max_depth, blank):
+    def _to_file_list(self, target, blank):
         ret = []
         col = target['depth'] + 1
         for i, d in enumerate(sorted(target['dirs'], key=lambda x: x['name'])):
@@ -525,7 +525,7 @@ class SpreadsheetClient(BaseClient):
             ret.append((r, 'directory'))
             next_blank = list(blank)
             next_blank.append(is_last and 0 == len(target['files']))
-            ret += self._to_file_list(d, max_depth, next_blank)
+            ret += self._to_file_list(d, next_blank)
         for i, f in enumerate(sorted(target['files'])):
             is_last = i == len(target['files']) - 1
             r = ['' for i in range(0, col + 1)]

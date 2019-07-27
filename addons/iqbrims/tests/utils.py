@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
 from addons.iqbrims.models import IQBRIMSProvider
@@ -16,6 +17,15 @@ class IQBRIMSAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
         settings.folder_path = 'Drive/Camera Uploads'
         settings.external_account = self.external_account
         settings.save()
+
+class MockResponse:
+    def __init__(self, content, status_code):
+        self.content = content
+        self.status_code = status_code
+
+    def json(self):
+        return json.loads(self.content)
+
 
 mock_files_folders = {
  'kind': 'drive#fileList',
