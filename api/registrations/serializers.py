@@ -152,6 +152,7 @@ class RegistrationSerializer(NodeSerializer):
         related_meta={
             'unread': 'get_unread_comments_count',
             'total': 'get_total_comments_count',  # total count of top_level, undeleted comments on the registration (node)
+            'count': 'get_comments_count',
         },
         filter={'target': '<_id>'},
     ))
@@ -367,6 +368,9 @@ class RegistrationSerializer(NodeSerializer):
         return {
             'node': obj.comment_set.filter(page='node', target___id=obj._id, is_deleted=False).count(),
         }
+
+    def get_comments_count(self, obj):
+        return obj.comment_set.filter(page='node', is_deleted=False).count()
 
     def get_files_count(self, obj):
         return obj.files_count or 0

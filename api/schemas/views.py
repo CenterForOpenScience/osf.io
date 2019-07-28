@@ -57,7 +57,7 @@ class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = RegistrationSchemaSerializer
-    view_category = 'schemas'
+    view_category = 'registration-schemas'
     view_name = 'registration-schema-detail'
 
     # overrides RetrieveAPIView
@@ -83,7 +83,7 @@ class RegistrationSchemaFormBlocks(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         schema_id = self.kwargs.get('schema_id')
         schema = get_object_or_error(RegistrationSchema, schema_id, self.request)
-        if schema.schema_version != schema.latest_version or not schema.active:
+        if schema.schema_version != RegistrationSchema.objects.get_latest_version(name=schema.name, only_active=False).schema_version:
             raise exceptions.ValidationError('Registration schema must be active.')
         return schema.form_blocks.all()
 

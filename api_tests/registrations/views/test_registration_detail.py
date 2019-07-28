@@ -194,17 +194,19 @@ class TestRegistrationDetail:
 
     #   test_registration_shows_related_counts
         url = '/{}registrations/{}/?related_counts=True'.format(
-            API_BASE, private_registration.test_registration_shows_specific_related_counts_id)
+            API_BASE, private_registration._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
-        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
-        assert res.json['data']['relationships']['comments']['links']['related']['meta']['total']['node'] == 1
-        registration_comment.is_deleted = True
-        registration_comment.save()
+        assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 2
+        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 2
+        assert res.json['data']['relationships']['files']['links']['related']['meta']['count'] == 2
+
+        registration_comment_reply.is_deleted = True
+        registration_comment_reply.save()
         res = app.get(url, auth=user.auth)
-        assert res.json['data']['relationships']['comments']['links']['related']['meta']['total']['node'] == 0
+        assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 1
 
     #   test_registration_shows_specific_related_counts
         url = '/{}registrations/{}/?related_counts=children,wikis'.format(
@@ -213,7 +215,7 @@ class TestRegistrationDetail:
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
         assert res.json['data']['relationships']['contributors']['links']['related']['meta'] == {}
-        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 2
 
     #   test_hide_if_registration
         # Registrations are a HideIfRegistration field
