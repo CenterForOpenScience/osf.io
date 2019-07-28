@@ -5,8 +5,10 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
+    OSFGroupFactory,
     AuthUserFactory,
 )
+from osf.utils.permissions import READ
 
 
 def node_url_for(n_id):
@@ -82,6 +84,13 @@ class TestNodeRegistrationList:
         res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401
         assert 'detail' in res.json['errors'][0]
+
+    #   test_return_private_registration_group_mem_read
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        private_project.add_osf_group(group, READ)
+        res = app.get(private_url, expect_errors=True, auth=group_mem.auth)
+        assert res.status_code == 200
 
     #   test_return_private_registrations_logged_in_contributor
         res = app.get(private_url, auth=user.auth)

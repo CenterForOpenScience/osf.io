@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+import urlparse
+
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 
 from website.conferences.exceptions import ConferenceError
+from website import settings
 
 # leaving this at module scope for any existing imports.
 DEFAULT_FIELD_NAMES = {
@@ -51,16 +54,15 @@ class Conference(ObjectIDMixin, BaseModel):
     is_meeting = models.BooleanField(default=True)
     active = models.BooleanField()
     admins = models.ManyToManyField('OSFUser')
-    #: Whether to make submitted projects public
+    # Temporary field on conference model to link Conferences and AbstractNodes
+    submissions = models.ManyToManyField('AbstractNode', related_name='conferences')
+    # Whether to make submitted projects public
     public_projects = models.BooleanField(default=True)
     poster = models.BooleanField(default=True)
     talk = models.BooleanField(default=True)
     # field_names are used to customize the text on the conference page, the categories
     # of submissions, and the email adress to send material to.
     field_names = DateTimeAwareJSONField(default=get_default_field_names)
-
-    # Cached number of submissions
-    num_submissions = models.IntegerField(default=0)
 
     objects = ConferenceManager()
 
@@ -72,6 +74,17 @@ class Conference(ObjectIDMixin, BaseModel):
     @classmethod
     def get_by_endpoint(cls, endpoint, active):
         return cls.objects.get_by_endpoint(endpoint, active)
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, '/view/{}'.format(self.endpoint))
+
+    @property
+    def valid_submissions(self):
+        """
+        Returns valid conference submissions - nodes can't be public or deleted
+        """
+        return self.submissions.filter(is_public=True, is_deleted=False)
 
     class Meta:
         # custom permissions for use in the OSF Admin App

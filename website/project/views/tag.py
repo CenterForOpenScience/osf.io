@@ -5,7 +5,8 @@ from django.core.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
 from osf.models import AbstractNode
-from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
+from osf.utils.permissions import WRITE
+from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
 )
@@ -29,7 +30,7 @@ def project_tag(tag, auth, **kwargs):
 
 
 @must_be_valid_project  # injects project
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @must_not_be_registration
 def project_add_tag(auth, node, **kwargs):
 
@@ -44,7 +45,7 @@ def project_add_tag(auth, node, **kwargs):
 
 
 @must_be_valid_project  # injects project
-@must_have_permission('write')
+@must_have_permission(WRITE)
 @must_not_be_registration
 def project_remove_tag(auth, node, **kwargs):
     data = request.get_json()

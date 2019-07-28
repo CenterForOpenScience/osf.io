@@ -17,7 +17,7 @@ def populate_blacklisted_domains(state, *args, **kwargs):
 
 def remove_blacklisted_domains(state, *args, **kwargs):
     BlacklistedEmailDomain = state.get_model('osf', 'BlacklistedEmailDomain')
-    BlacklistedEmailDomain.objects.delete()
+    BlacklistedEmailDomain.objects.all().delete()
 
 
 class Migration(migrations.Migration):

@@ -17,12 +17,14 @@ from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     DraftRegistrationFactory,
+    OSFGroupFactory,
 )
 from rest_framework import exceptions
 from tests.base import ApiTestCase
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.views import find_bookmark_collection
 from osf.utils import permissions
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.enable_quickfiles_creation
@@ -523,7 +525,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def project_public_child(self, project_public):
@@ -651,7 +653,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     def test_cannot_create_registration(
             self, app, user_write_contrib, user_read_contrib,
-            payload, url_registrations):
+            payload, url_registrations, project_public):
 
         # def test_write_only_contributor_cannot_create_registration(self):
         res = app.post_json_api(
@@ -672,6 +674,13 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     # def test_non_authenticated_user_cannot_create_registration(self):
         res = app.post_json_api(url_registrations, payload, expect_errors=True)
         assert res.status_code == 401
+
+        # admin via a group cannot create registration
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        project_public.add_osf_group(group, permissions.ADMIN)
+        res = app.post_json_api(url_registrations, payload, auth=group_mem.auth, expect_errors=True)
+        assert res.status_code == 403
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_registration_draft_must_be_specified(
@@ -749,7 +758,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -778,7 +787,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'u\'q1\' is a required property'
+        assert res.json['errors'][0]['detail'] == 'For your registration the \'Title\' field is required'
 
     @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
@@ -786,7 +795,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -814,7 +823,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'u\'question\' is a required property'
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Manipulated variables\' field is invalid.'
 
     @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
@@ -823,7 +832,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -852,7 +861,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '\'value\' is a required property'
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Manipulated variables\' field is invalid.'
 
     @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
@@ -875,8 +884,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert (
-            res.json['errors'][0]['detail'] == 'u\'success!\' is not one of [u\'success\', u\'informative failure to replicate\','
-            ' u\'practical failure to replicate\', u\'inconclusive\']')
+            res.json['errors'][0]['detail'] == 'For your registration your response to the \'I judge the replication to be a(n)\''
+                                               ' field is invalid, your response must be one of the provided options.')
 
     def test_invalid_registration_choice(
             self, app, user, draft_registration, url_registrations):
@@ -1344,11 +1353,9 @@ class TestRegistrationBulkUpdate:
             self, app, user, registration_one, registration_two, public_payload, url):
         read_contrib = AuthUserFactory()
         registration_one.add_contributor(
-            read_contrib, permissions=[
-                permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
         registration_two.add_contributor(
-            read_contrib, permissions=[
-                permissions.READ], save=True)
+            read_contrib, permissions=permissions.READ, save=True)
 
         res = app.put_json_api(
             url,
@@ -1362,8 +1369,8 @@ class TestRegistrationBulkUpdate:
     def test_bulk_update_embargo_logged_in_contrib(
             self, app, user, registration_one, registration_two,
             public_payload, url):
-        assert registration_one.embargo_termination_approval is None
-        assert registration_two.embargo_termination_approval is None
+        assert registration_one.is_pending_embargo_termination is False
+        assert registration_two.is_pending_embargo_termination is False
 
         res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
         assert res.status_code == 200
@@ -1373,13 +1380,15 @@ class TestRegistrationBulkUpdate:
         # Needs confirmation before it will become public
         assert res.json['data'][0]['attributes']['public'] is False
         assert res.json['data'][1]['attributes']['public'] is False
+        assert res.json['data'][0]['attributes']['pending_embargo_termination_approval'] is True
+        assert res.json['data'][1]['attributes']['pending_embargo_termination_approval'] is True
 
         registration_one.refresh_from_db()
         registration_two.refresh_from_db()
 
         # registrations should have pending terminations
-        assert registration_one.embargo_termination_approval and registration_one.embargo_termination_approval.is_pending_approval
-        assert registration_two.embargo_termination_approval and registration_two.embargo_termination_approval.is_pending_approval
+        assert registration_one.is_pending_embargo_termination is True
+        assert registration_two.is_pending_embargo_termination is True
 
 
 class TestRegistrationListFiltering(

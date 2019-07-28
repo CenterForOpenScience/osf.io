@@ -19,7 +19,6 @@ MAX_RENDER_SIZE = None
 
 CACHE = False
 
-BITBUCKET_V1_API_URL = 'https://api.bitbucket.org/1.0'
 BITBUCKET_V2_API_URL = 'https://api.bitbucket.org/2.0'
 
 REFRESH_TIME = 5 * 60

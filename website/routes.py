@@ -33,6 +33,7 @@ from framework.auth.core import _get_current_user
 from osf import features
 from osf.models import Institution
 from osf.utils import sanitize
+from osf.utils import permissions
 from website import util
 from website import prereg
 from website import settings
@@ -160,6 +161,7 @@ def get_globals():
         'features': features,
         'waffle': waffle,
         'csrf_cookie_name': api_settings.CSRF_COOKIE_NAME,
+        'permissions': permissions
     }
 
 
@@ -406,13 +408,6 @@ def make_url_map(app):
         Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
         Rule(
-            '/explore/',
-            'get',
-            discovery_views.redirect_explore_to_activity,
-            notemplate
-        ),
-
-        Rule(
             [
                 '/messages/',
             ],
@@ -422,10 +417,17 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/view/<meeting>/',
+            '/meetings/<meeting>/',
             'get',
             conference_views.conference_results,
             OsfWebRenderer('public/pages/meeting.mako', trust=False),
+        ),
+
+        Rule(
+            '/view/<meeting>/',
+            'get',
+            conference_views.redirect_to_conference_results,
+            notemplate
         ),
 
         Rule(
@@ -634,19 +636,11 @@ def make_url_map(app):
     ### Discovery ###
 
     process_rules(app, [
-
         Rule(
-            '/explore/activity/',
+            ['/activity/', '/explore/activity/', '/explore/'],
             'get',
-            discovery_views.redirect_explore_activity_to_activity,
+            discovery_views.redirect_activity_to_search,
             notemplate
-        ),
-
-        Rule(
-            '/activity/',
-            'get',
-            discovery_views.activity,
-            OsfWebRenderer('public/pages/active_nodes.mako', trust=False)
         ),
     ])
 
@@ -1093,6 +1087,17 @@ def make_url_map(app):
             OsfWebRenderer('project/project.mako', trust=False)
         ),
 
+        # Process token action
+        Rule(
+            [
+                '/token_action/<pid>/',
+            ],
+            'get',
+            project_views.node.token_action,
+            notemplate,
+        ),
+
+
         # Create a new subproject/component
         Rule(
             '/project/<pid>/newnode/',
@@ -1173,7 +1178,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.node_registrations,
-            OsfWebRenderer('project/registrations.mako', trust=False)
+            notemplate,
         ),
         Rule(
             [
@@ -1579,10 +1584,6 @@ def make_url_map(app):
             '/project/<pid>/beforeregister/',
             '/project/<pid>/node/<nid>/beforeregister',
         ], 'get', project_views.register.project_before_register, json_renderer),
-        Rule([
-            '/project/<pid>/drafts/<draft_id>/register/',
-            '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
-        ], 'post', project_views.drafts.register_draft_registration, json_renderer),
         Rule([
             '/project/<pid>/withdraw/',
             '/project/<pid>/node/<nid>/withdraw/'

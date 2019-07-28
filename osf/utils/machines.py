@@ -105,7 +105,7 @@ class ReviewsMachine(BaseMachine):
         # Returns True if the submitter of the request is a moderator or admin for the provider.
         provider = self.machineable.provider
         return provider.get_group('moderator').user_set.filter(id=submitter.id).exists() or \
-               provider.get_group('admin').user_set.filter(id=submitter.id).exists()
+               provider.get_group(permissions.ADMIN).user_set.filter(id=submitter.id).exists()
 
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
@@ -143,6 +143,7 @@ class ReviewsMachine(BaseMachine):
         reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
                                            template='reviews_submission_status',
                                            action=self.action)
+
     def notify_edit_comment(self, ev):
         context = self.get_context()
         context['comment'] = self.action.comment
@@ -153,8 +154,9 @@ class ReviewsMachine(BaseMachine):
 
     def notify_withdraw(self, ev):
         context = self.get_context()
+        context['ever_public'] = self.machineable.ever_public
         try:
-            preprint_request_action = PreprintRequestAction.objects.get(target__id=self.machineable.id,
+            preprint_request_action = PreprintRequestAction.objects.get(target__target__id=self.machineable.id,
                                                                    from_state='pending',
                                                                    to_state='accepted',
                                                                    trigger='accept')
@@ -200,7 +202,7 @@ class NodeRequestMachine(BaseMachine):
                 self.machineable.target.add_contributor(
                     self.machineable.creator,
                     auth=Auth(ev.kwargs['user']),
-                    permissions=permissions.expand_permissions(contributor_permissions),
+                    permissions=contributor_permissions,
                     visible=ev.kwargs.get('visible', True),
                     send_email='{}_request'.format(self.machineable.request_type))
 
@@ -214,7 +216,8 @@ class NodeRequestMachine(BaseMachine):
         context = self.get_context()
         context['contributors_url'] = '{}contributors/'.format(self.machineable.target.absolute_url)
         context['project_settings_url'] = '{}settings/'.format(self.machineable.target.absolute_url)
-        for admin in self.machineable.target.contributors.filter(contributor__admin=True, contributor__node=self.machineable.target):
+
+        for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
             mails.send_mail(
                 admin.username,
                 mails.ACCESS_REQUEST_SUBMITTED,
@@ -285,7 +288,16 @@ class PreprintRequestMachine(BaseMachine):
             reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
-        pass
+        if ev.event.name == DefaultTriggers.REJECT.value:
+            context = self.get_context()
+            mails.send_mail(
+                self.machineable.creator.username,
+                mails.PREPRINT_WITHDRAWAL_REQUEST_DECLINED,
+                mimetype='html',
+                **context
+            )
+        else:
+            pass
 
     def notify_edit_comment(self, ev):
         """ Not presently required to notify for this event

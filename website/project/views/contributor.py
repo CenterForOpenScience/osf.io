@@ -18,9 +18,10 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import AbstractNode, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
+from osf.exceptions import NodeStateError
+from osf.models import AbstractNode, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
 from osf.utils import sanitize
-from osf.utils.permissions import expand_permissions, ADMIN
+from osf.utils.permissions import ADMIN
 from website import mails, language, settings
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
@@ -30,7 +31,6 @@ from website.project.views.node import serialize_preprints
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import web_url_for, is_json_request
-from website.exceptions import NodeStateError
 
 
 @collect_auth
@@ -193,7 +193,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
         contribs.append({
             'user': contributor,
             'visible': visible,
-            'permissions': expand_permissions(contrib_dict.get('permission'))
+            'permissions': contrib_dict.get('permission')
         })
     return contribs
 
@@ -287,7 +287,7 @@ def project_manage_contributors(auth, node, **kwargs):
 
     # If user has removed herself from project, alert; redirect to
     # node summary if node is public, else to user's dashboard page
-    if not node.is_contributor(auth.user):
+    if not node.is_contributor_or_group_member(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
             kind='success',
@@ -331,7 +331,7 @@ def project_remove_contributor(auth, **kwargs):
         node = AbstractNode.load(node_id)
 
         # Forbidden unless user is removing herself
-        if not node.has_permission(auth.user, 'admin'):
+        if not node.has_permission(auth.user, ADMIN):
             if auth.user != contributor:
                 raise HTTPError(http.FORBIDDEN)
 
@@ -349,7 +349,7 @@ def project_remove_contributor(auth, **kwargs):
 
         # On parent node, if user has removed herself from project, alert; redirect to
         # node summary if node is public, else to user's dashboard page
-        if not node.is_contributor(auth.user) and node_id == parent_id:
+        if not node.is_contributor_or_group_member(auth.user) and node_id == parent_id:
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
                 kind='success',
@@ -399,7 +399,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         uid=unclaimed_user._primary_key,
         pid=node._primary_key,
         token=unclaimed_record['token'],
-        _external=True,
+        _absolute=True,
     )
 
     # Send mail to referrer, telling them to forward verification link to claimer
@@ -665,7 +665,7 @@ def check_external_auth(user):
 
 @block_bing_preview
 @collect_auth
-@must_be_valid_project(preprints_valid=True)
+@must_be_valid_project(preprints_valid=True, groups_valid=True)
 def claim_user_registered(auth, node, **kwargs):
     """
     View that prompts user to enter their password in order to claim being a contributor on a project.
@@ -679,11 +679,20 @@ def claim_user_registered(auth, node, **kwargs):
         return redirect(sign_out_url)
 
     # Logged in user should not be a contributor the project
-    if node.is_contributor(current_user):
+    if hasattr(node, 'is_contributor') and node.is_contributor(current_user):
         data = {
             'message_short': 'Already a contributor',
             'message_long': ('The logged-in user is already a contributor to this '
                 'project. Would you like to <a href="{}">log out</a>?').format(sign_out_url)
+        }
+        raise HTTPError(http.BAD_REQUEST, data=data)
+
+    # Logged in user is already a member of the OSF Group
+    if hasattr(node, 'is_member') and node.is_member(current_user):
+        data = {
+            'message_short': 'Already a member',
+            'message_long': ('The logged-in user is already a member of this OSF Group. '
+                'Would you like to <a href="{}">log out</a>?').format(sign_out_url)
         }
         raise HTTPError(http.BAD_REQUEST, data=data)
 
@@ -717,11 +726,18 @@ def claim_user_registered(auth, node, **kwargs):
     if should_claim:
         node.replace_contributor(old=unreg_user, new=current_user)
         node.save()
-        status.push_status_message(
-            'You are now a contributor to this project.',
-            kind='success',
-            trust=False
-        )
+        if isinstance(node, OSFGroup):
+            status.push_status_message(
+                'You are now a member of this OSFGroup.',
+                kind='success',
+                trust=False
+            )
+        else:
+            status.push_status_message(
+                'You are now a contributor to this project.',
+                kind='success',
+                trust=False
+            )
         return redirect(node.url)
     if is_json_request():
         form_ret = forms.utils.jsonify(form)

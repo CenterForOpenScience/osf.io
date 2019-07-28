@@ -7,6 +7,15 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row">
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    <div class="row">
         <div class="col-md-12">
             <div class="btn-group" role="group">
                 <a href="{% url 'users:search' %}" class="btn btn-default"><i class="fa fa-search"></i></a>
@@ -39,6 +48,9 @@
     <div class="row">
         <div class="col-md-12">
             <div class="btn-group padded" role="group">
+                {% if not user.deleted %}
+                    <a href="{% url 'users:GDPR_delete' user.id %}" data-toggle="modal" data-target="#deleteModal" class="btn btn-danger">GDPR Delete Account</a>
+                {% endif %}
                 {% if not user.disabled %}
                     {% if user.requested_deactivation %}
                         <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger">Requested account deactivation</a>
@@ -47,14 +59,14 @@
                     {% endif %}
                     <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger">Force disable account</a>
                 {% elif 'deac_confirmed' not in user.system_tags %}
-                    <form method="post" action="{% url 'users:reactivate' user.id %}">
+                    <form method="post" action="{% url 'users:reactivate' user.id %}" style="display: inherit;">
                         {% csrf_token %}
                         <input class="btn btn-success" type="submit" value="Reactivate account"/>
                     </form>
                 {% endif %}
-                {% if not user.disabled or 'spam_flagged' in user.system_tags %}
+                {% if not user.disabled or user.spam_status == SPAM_STATUS.FLAGGED %}
                     <a href="{% url 'users:spam_disable' user.id %}" data-toggle="modal" data-target="#disableSpamModal" class="btn btn-danger">Disable Spam account</a>
-                {% elif 'spam_confirmed' in user.system_tags %}
+                {% elif user.spam_status == SPAM_STATUS.SPAM %}
                     <a href="{% url 'users:ham_enable' user.id %}" data-toggle="modal" data-target="#enableHamModal" class="btn btn-success">Re-enable Ham account</a>
                 {% endif %}
                 <a href="{% url 'users:reset_password' user.id %}" data-toggle="modal" data-target="#resetModal" class="btn btn-primary">
@@ -107,6 +119,11 @@
                 </div>
             </div>
             <div class="modal" id="disableModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+            <div class="modal" id="deleteModal">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>
@@ -216,77 +233,59 @@
                         {% for system_tag in user.system_tags %}
                             {{ system_tag }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
+                    <a href="{% url 'users:add_system_tag' user.id %}"
+                        class="btn btn-default"
+                        data-toggle="modal"
+                        data-target="#systemTagModal">
+                         add system tag
+                     </a>
+                     <div class="modal" id="systemTagModal">
+                         <div class="modal-dialog">
+                             <div class="modal-content"></div>
+                         </div>
+                     </div>
                     </td>
+                </tr>
+                {% if user.osf_groups %}
+                    <tr>
+                        <td>
+                            OSF Groups
+                        </td>
+                        <td>
+                            <select class="form-control" style="width:90%; display:inherit;" id="groups-select">
+                                {% for group in user.osf_groups %}
+                                    <option value="{{ group.id | reverse_osf_group }}">{{ group.name }} ({{ group.role }})</option>
+                                {% endfor %}
+                            </select>
+                            <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('groups-select').value;" />
+                        </td>
+                    </tr>
+                {% endif %}
+                <tr>
+                    <td>User is spammy</td>
+                    <td>
+                        {{ user.is_spammy }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>SPAM Status</td>
+                    <td>{% include "nodes/spam_status.html" with resource=user %}</td>
+                </tr>
+                <tr>
+                    <td>Profile content checked for spam</td>
+                    <td>{{ user.potential_spam_profile_content }}</td>
                 </tr>
                 <tr>
                     <td>Nodes</td>
                     <td>
-                        <table class="table table-hover table-bordered">
-                        <thead>
-                            <tr>
-                                <th>GUID</th>
-                                <th>Name</th>
-                                <th>Public</th>
-                                <th>Registration</th>
-                                <th># of Contributors</th>
-                                <th>SPAM Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for node in user.nodes %}
-                            <tr>
-                                <td>
-                                    <a href="{{ node.id | reverse_node }}">
-                                        {{ node.id }}
-                                    </a>
-                                </td>
-                                <td>{{ node.title | truncatechars:20 }}</td>
-                                <td>{{ node.public }}</td>
-                                <td>{{ node.is_registration }}</td>
-                                <td>{{ node.number_contributors }}</td>
-                                <td>
-                                    {% if node.spam_status == SPAM_STATUS.UNKNOWN %}
-                                        <span class="label label-default">Unknown</span>
-                                    {% elif node.spam_status == SPAM_STATUS.FLAGGED %}
-                                        <span class="label label-warning">Flagged</span>
-                                    {% elif node.spam_status == SPAM_STATUS.SPAM %}
-                                        <span class="label label-danger">Spam</span>
-                                    {% elif node.spam_status == SPAM_STATUS.HAM %}
-                                        <span class="label label-success">Ham</span>
-                                    {% endif %}
-                                </td>
-                                {%  if perms.osf.delete_node %}
-                                <td>
-                                    {% if node.number_contributors < 2 and not node.is_registration %}
-                                        {% if node.deleted %}
-                                            <form method="post"
-                                                  action="{% url 'nodes:restore' guid=node.id %}">
-                                                {% csrf_token %}
-                                                <input class="btn btn-success"
-                                                       type="submit"
-                                                       value="Restore Node" />
-                                            </form>
-                                        {% else %}
-                                        <a href="{% url 'nodes:remove' guid=node.id %}"
-                                           data-toggle="modal" data-target="#deleteModal{{ node.id }}"
-                                           class="btn btn-danger">
-                                            Delete Node
-                                        </a>
-                                        <div class="modal" id="deleteModal{{ node.id }}">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    {% endif %}
-                                    </td>
-                                {% endif %}
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                        </table>
+                        {% include "util/node_preprint_paginated_list.html" with items=nodes items_paginator=node_page resource_type="node" current_other_param=current_preprint %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Preprints</td>
+                    <td>
+                        {% include "util/node_preprint_paginated_list.html" with items=preprints items_paginator=preprint_page resource_type="preprint" current_other_param=current_node %}
+                        * In Preprints, public means Verified Publishable.
                     </td>
                 </tr>
             </tbody>

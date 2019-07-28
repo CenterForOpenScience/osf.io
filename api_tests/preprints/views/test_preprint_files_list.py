@@ -9,6 +9,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory
 )
+from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 from addons.osfstorage.models import OsfStorageFile
 
@@ -31,7 +32,7 @@ class TestPreprintProvidersList(ApiTestCase):
         assert res.status_code == 200
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth)
         assert res.status_code == 200
 
@@ -52,7 +53,7 @@ class TestPreprintProvidersList(ApiTestCase):
         assert res.status_code == 403
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth)
         assert res.status_code == 200
 
@@ -73,7 +74,7 @@ class TestPreprintProvidersList(ApiTestCase):
         assert res.status_code == 403
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth)
         assert res.status_code == 200
 
@@ -94,7 +95,7 @@ class TestPreprintProvidersList(ApiTestCase):
         assert res.status_code == 403
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -115,7 +116,7 @@ class TestPreprintProvidersList(ApiTestCase):
         assert res.status_code == 403
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth)
         assert res.status_code == 200
 
@@ -136,7 +137,7 @@ class TestPreprintProvidersList(ApiTestCase):
         assert res.status_code == 404
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -157,7 +158,7 @@ class TestPreprintProvidersList(ApiTestCase):
         assert res.status_code == 403
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -238,7 +239,7 @@ class TestPreprintFilesList(ApiTestCase):
         assert res.status_code == 200
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth)
         assert res.status_code == 200
 
@@ -259,7 +260,7 @@ class TestPreprintFilesList(ApiTestCase):
         assert res.status_code == 403
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth)
         assert res.status_code == 200
 
@@ -280,7 +281,7 @@ class TestPreprintFilesList(ApiTestCase):
         assert res.status_code == 403
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth)
         assert res.status_code == 200
 
@@ -301,7 +302,7 @@ class TestPreprintFilesList(ApiTestCase):
         assert res.status_code == 403
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -322,7 +323,7 @@ class TestPreprintFilesList(ApiTestCase):
         assert res.status_code == 403
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth)
         assert res.status_code == 200
 
@@ -343,7 +344,7 @@ class TestPreprintFilesList(ApiTestCase):
         assert res.status_code == 404
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -364,7 +365,7 @@ class TestPreprintFilesList(ApiTestCase):
         assert res.status_code == 403
 
         # Write contributor
-        self.preprint.add_contributor(self.user_two, 'write', save=True)
+        self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
         assert res.status_code == 403
 

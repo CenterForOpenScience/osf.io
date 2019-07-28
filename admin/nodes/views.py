@@ -349,23 +349,34 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
     template_name = 'nodes/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
-        if not request.user.has_perm('auth.mark_spam'):
+        if (('spam_confirm' in list(request.POST.keys()) and not request.user.has_perm('auth.mark_spam')) or
+                ('ham_confirm' in list(request.POST.keys()) and not request.user.has_perm('auth.mark_ham'))):
             raise PermissionDenied('You do not have permission to update a node flagged as spam.')
         node_ids = [
-            nid for nid in request.POST.keys()
-            if nid != 'csrfmiddlewaretoken'
+            nid for nid in list(request.POST.keys())
+            if nid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
         ]
         for nid in node_ids:
             node = Node.load(nid)
             osf_admin_change_status_identifier(node)
-            node.confirm_spam(save=True)
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=nid,
-                object_repr='Node',
-                message='Confirmed SPAM: {}'.format(nid),
-                action_flag=CONFIRM_SPAM
-            )
+            if ('spam_confirm' in list(request.POST.keys())):
+                node.confirm_spam(save=True)
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=nid,
+                    object_repr='Node',
+                    message='Confirmed SPAM: {}'.format(nid),
+                    action_flag=CONFIRM_SPAM
+                )
+            elif ('ham_confirm' in list(request.POST.keys())):
+                node.confirm_ham(save=True)
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=nid,
+                    object_repr='Node',
+                    message='Confirmed HAM: {}'.format(nid),
+                    action_flag=CONFIRM_HAM
+                )
         return redirect('nodes:flagged-spam')
 
 

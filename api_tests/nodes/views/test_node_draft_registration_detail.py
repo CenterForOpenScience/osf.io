@@ -12,9 +12,11 @@ from osf_tests.factories import (
     AuthUserFactory,
     RegistrationFactory,
 )
+from osf.utils.permissions import WRITE, READ
 from rest_framework import exceptions
 from test_node_draft_registration_list import DraftRegistrationTestCase
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.django_db
@@ -24,7 +26,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -44,8 +46,8 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
             API_BASE, project_public._id, draft_registration._id)
 
     def test_admin_can_view_draft(
-            self, app, user, draft_registration,
-            schema, url_draft_registrations):
+            self, app, user, draft_registration, project_public,
+            schema, url_draft_registrations, group_mem):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
@@ -53,10 +55,14 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['id'] == draft_registration._id
         assert data['attributes']['registration_metadata'] == {}
 
+    #   test_group_mem_admin_can_view
+        res = app.get(url_draft_registrations, auth=group_mem.auth)
+        assert res.status_code == 200
+
     def test_cannot_view_draft(
-            self, app, user_write_contrib,
+            self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
-            url_draft_registrations):
+            url_draft_registrations, group, group_mem):
 
         #   test_read_only_contributor_cannot_view_draft
         res = app.get(
@@ -82,6 +88,12 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
     #   test_unauthenticated_user_cannot_view_draft
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
+
+    #   test_group_mem_read_cannot_view
+        project_public.remove_osf_group(group)
+        project_public.add_osf_group(group, READ)
+        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_cannot_view_deleted_draft(
             self, app, user, url_draft_registrations):
@@ -125,7 +137,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -139,7 +151,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
     def schema_prereg(self):
         return RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration_prereg(self, user, project_public, schema_prereg):
@@ -208,7 +220,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert errors['detail'] == 'This field may not be null.'
 
     def test_admin_can_update_draft(
-            self, app, user, schema,
+            self, app, user, schema, project_public,
             payload, url_draft_registrations):
         res = app.put_json_api(
             url_draft_registrations,
@@ -230,9 +242,9 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert errors['detail'] == 'This draft registration is not created from the given node.'
 
     def test_cannot_update_draft(
-            self, app, user_write_contrib,
+            self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
-            payload, url_draft_registrations):
+            payload, url_draft_registrations, group, group_mem):
 
         #   test_read_only_contributor_cannot_update_draft
         res = app.put_json_api(
@@ -263,6 +275,24 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             url_draft_registrations,
             payload, expect_errors=True)
         assert res.status_code == 401
+
+    #   test_osf_group_member_admin_cannot_update_draft
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload, expect_errors=True,
+            auth=group_mem.auth
+        )
+        assert res.status_code == 403
+
+    #   test_osf_group_member_write_cannot_update_draft
+        project_public.remove_osf_group(group)
+        project_public.add_osf_group(group, WRITE)
+        res = app.put_json_api(
+            url_draft_registrations,
+            payload, expect_errors=True,
+            auth=group_mem.auth
+        )
+        assert res.status_code == 403
 
     def test_registration_metadata_must_be_supplied(
             self, app, user, payload, url_draft_registrations):
@@ -300,7 +330,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'No, data collection has not begun\' is not of type \'object\''
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
+                                   ' field is invalid, your response must be one of the provided options.'
 
     def test_registration_metadata_question_keys_must_be_value(
             self, app, user, payload, url_draft_registrations):
@@ -313,7 +344,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'incorrect_key\' was unexpected)'
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\'' \
+                                   ' field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_metadata_must_be_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -327,7 +359,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'Additional properties are not allowed (u\'q11\' was unexpected)'
+        assert errors['detail'] == 'For your registration the \'datacompletion\' field is extraneous and not' \
+                                   ' permitted in your response.'
 
     def test_multiple_choice_question_value_must_match_value_in_schema(
             self, app, user, payload, url_draft_registrations):
@@ -340,7 +373,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
-        assert errors['detail'] == 'u\'Nope, data collection has not begun\' is not one of [u\'No, data collection has not begun\', u\'Yes, data collection is underway or complete\']'
+        assert errors['detail'] == 'For your registration your response to the \'Has data collection begun for this project?\' field' \
+                                   ' is invalid, your response must be one of the provided options.'
 
     def test_cannot_update_registration_schema(
             self, app, user, schema, payload,
@@ -454,7 +488,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'value\' was unexpected)'
+            'detail'] == 'For your registration your response to the \'Authors\' field is invalid.'
 
     def test_reviewer_can_update_nested_comment_fields_draft_registration(
             self, app, project_public, draft_registration_prereg, administer_permission):
@@ -522,7 +556,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'value\' was unexpected)'
+            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
 
 @pytest.mark.django_db
@@ -532,7 +566,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -546,7 +580,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
     def schema_prereg(self):
         return RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration_prereg(self, user, project_public, schema_prereg):
@@ -607,7 +641,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
     def test_cannot_update_draft(
             self, app, user_write_contrib,
             user_read_contrib, user_non_contrib,
-            payload, url_draft_registrations):
+            payload, url_draft_registrations, group_mem):
 
         #   test_read_only_contributor_cannot_update_draft
         res = app.patch_json_api(
@@ -639,6 +673,13 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
             payload, expect_errors=True)
         assert res.status_code == 401
 
+        # group admin cannot update draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 403
 
 @pytest.mark.django_db
 class TestDraftRegistrationDelete(DraftRegistrationTestCase):
@@ -647,7 +688,7 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -666,14 +707,14 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         return '/{}nodes/{}/draft_registrations/{}/'.format(
             API_BASE, project_public._id, draft_registration._id)
 
-    def test_admin_can_delete_draft(self, app, user, url_draft_registrations):
+    def test_admin_can_delete_draft(self, app, user, url_draft_registrations, project_public):
         res = app.delete_json_api(url_draft_registrations, auth=user.auth)
         assert res.status_code == 204
 
     def test_cannot_delete_draft(
-            self, app, user_write_contrib,
+            self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
-            url_draft_registrations):
+            url_draft_registrations, group, group_mem):
 
         #   test_read_only_contributor_cannot_delete_draft
         res = app.delete_json_api(
@@ -699,6 +740,16 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
     #   test_unauthenticated_user_cannot_delete_draft
         res = app.delete_json_api(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
+
+    #   test_group_member_admin_cannot_delete_draft
+        res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
+        assert res.status_code == 403
+
+    #   test_group_member_write_cannot_delete_draft
+        project_public.remove_osf_group(group)
+        project_public.add_osf_group(group, WRITE)
+        res = app.delete_json_api(url_draft_registrations, expect_errors=True, auth=group_mem.auth)
+        assert res.status_code == 403
 
     def test_draft_that_has_been_registered_cannot_be_deleted(
             self, app, user, project_public, draft_registration, url_draft_registrations):
@@ -735,7 +786,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
     def schema_prereg(self):
         return RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration_prereg(self, user, project_public, schema_prereg):
@@ -790,7 +841,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'values\' was unexpected)'
+            'detail'] == 'For your registration your response to the \'Title\' field is invalid.'
 
     def test_first_level_open_ended_answer_must_be_of_correct_type(
             self, app, user, payload, url_draft_registrations):
@@ -802,7 +853,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '12345 is not of type \'string\''
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Title\' field is invalid.'
 
     def test_first_level_open_ended_answer_not_expecting_more_nested_data(
             self, app, user, payload, url_draft_registrations):
@@ -818,7 +869,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '{u\'question\': {u\'value\': u\'This is my answer.\'}} is not of type \'string\''
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Title\' field is invalid.'
 
     def test_second_level_answers(
             self, app, user, payload, url_draft_registrations):
@@ -850,7 +901,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'questions\' was unexpected)'
+            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
     def test_third_level_open_ended_answer_must_have_correct_key(
             self, app, user, payload, url_draft_registrations):
@@ -867,7 +918,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == \
-               'Additional properties are not allowed (u\'values\' was unexpected)'
+               'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
     def test_second_level_open_ended_answer_must_have_correct_type(
             self, app, user, payload, url_draft_registrations):
@@ -881,7 +932,8 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'u\'This is my answer\' is not of type \'object\''
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Data collection procedures\'' \
+                                                  ' field is invalid.'
 
     def test_third_level_open_ended_answer_must_have_correct_type(
             self, app, user, payload, url_draft_registrations):
@@ -897,7 +949,8 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'True is not of type \'string\''
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Data collection procedures\'' \
+                                                  ' field is invalid.'
 
     def test_uploader_metadata(
             self, app, user, project_public,
@@ -951,7 +1004,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'selectedFileNames\' was unexpected)'
+            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
 
     def test_multiple_choice_questions_incorrect_choice(
             self, app, user, payload, url_draft_registrations):
@@ -963,11 +1016,8 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert (
-            res.json['errors'][0]['detail'] == 'u\'This is my answer.\' is not one of [u\'No blinding is involved in this study.\', '
-            'u\'For studies that involve human subjects, they will not know the treatment group to which they have been assigned.\', '
-            'u\'Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.\', '
-            'u\'Research personnel who analyze the data collected from the study are not aware of the treatment applied to any given group.\']')
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Blinding\' field is invalid, your ' \
+                                                  'response must be one of the provided options.'
 
     def test_multiple_choice_questions(
             self, app, user, payload, url_draft_registrations):
