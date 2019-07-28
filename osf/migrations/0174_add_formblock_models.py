@@ -13,7 +13,7 @@ import osf.utils.datetime_aware_jsonfield
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0138_ensure_subjects_and_providers'),
+        ('osf', '0173_ensure_schemas'),
     ]
 
     operations = [

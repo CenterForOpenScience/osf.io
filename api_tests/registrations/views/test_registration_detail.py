@@ -194,7 +194,7 @@ class TestRegistrationDetail:
 
     #   test_registration_shows_related_counts
         url = '/{}registrations/{}/?related_counts=True'.format(
-            API_BASE, private_registration._id)
+            API_BASE, private_registration.test_registration_shows_specific_related_counts_id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0

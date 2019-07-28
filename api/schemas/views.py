@@ -67,6 +67,11 @@ class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class RegistrationSchemaFormBlocks(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
     required_read_scopes = [CoreScopes.SCHEMA_FORM_BLOCKS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
@@ -104,6 +109,11 @@ class FileMetadataSchemaList(JSONAPIBaseView, generics.ListAPIView):
 
 
 class RegistrationSchemaFormBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
     required_read_scopes = [CoreScopes.SCHEMA_FORM_BLOCKS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
