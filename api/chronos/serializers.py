@@ -86,7 +86,7 @@ class ChronosSubmissionDetailSerializer(ChronosSubmissionSerializer):
     id = ser.CharField(source='publication_id', required=True)
 
     def update(self, instance, validated_data):
-        return ChronosClient().update_manuscript(instance)
+        return ChronosClient().sync_manuscript(instance)
 
 
 class ChronosSubmissionCreateSerializer(ChronosSubmissionSerializer):
