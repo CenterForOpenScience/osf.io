@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.20.0 (2019-07-29)
+===================
+- Waffle cookies - Override to allow cookies to be set for waffle flags
+- Add ab_testing_home_page_version_b waffle flag for A/B testing of home page
+- APIv2: Allow preprint admins to view preprint request actions
+
 19.19.0 (2019-07-24)
 ===================
 - Add periodic task that checks for and sets stuck Crossref DOIs
