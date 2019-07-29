@@ -90,20 +90,24 @@ CAMPAIGN_CLAIMED_TAGS = [
 def migrate_source_tags(tags):
     Tag = apps.get_model('osf', 'Tag')
     for tag_name in tags:
-        try:
-            tag = Tag.all_tags.get(name=tag_name[0], system=True)
+        tag, created = Tag.all_tags.get_or_create(name=tag_name[0], system=True)
+        if not created:
+            # If the old source tag exists, we rename it
             tag.name = tag_name[1]
             tag.save()
             logger.info(tag_name[0] + ' migrated to ' + tag_name[1])
-        except Tag.DoesNotExist:
-            logger.info('Ca find tag with name {}'.format(tag_name[0]))
+        else:
+            # If the old source tag does not exist, we also create the new source tag.
+            new_source_tag, created = Tag.all_tags.get_or_create(name=tag_name[1], system=True)
+            logger.info('Created tag with name {}'.format(tag_name[0]))
+            logger.info('Created tag with name {}'.format(tag_name[1]))
 
 
 def add_tags(tags):
     Tag = apps.get_model('osf', 'Tag')
     for tag_name in tags:
         tag, created = Tag.all_tags.get_or_create(name=tag_name, system=True)
-        if created:
+        if not created:
             logger.info('System tag {} already exists, skipping.'.format(tag_name))
         else:
             tag.save()
@@ -142,13 +146,23 @@ def add_prereg_campaign_tags():
     """
     Tag = apps.get_model('osf', 'Tag')
     OSFUser = apps.get_model('osf', 'OSFuser')
+
     try:
+        # Try to the the prereg challenge source tag
         prereg_challenge_source_tag = Tag.all_tags.get(name=CampaignSourceTags.PreregChallenge.value, system=True)
+    except Tag.DoesNotExist:
+        # If prereg challenge source tag doesn't exist, create the prereg source tag and we are done.
+        prereg_source_tag, created = Tag.all_tags.get_or_create(name=CampaignSourceTags.Prereg.value, system=True)
+        logger.info('Added tag ' + prereg_source_tag.name)
+    else:
+        # Otherwise, we create the prereg source tag, and then migrate the users.
         prereg_source_tag, created = Tag.all_tags.get_or_create(name=CampaignSourceTags.Prereg.value, system=True)
         logger.info('Added tag ' + prereg_source_tag.name)
         prereg_challenge_cutoff_date = pytz.utc.localize(datetime(2019, 01, 01, 05, 59))
-        prereg_users_registered_after_january_first = OSFUser.objects.filter(tags__id=prereg_challenge_source_tag.id, date_registered__gt=prereg_challenge_cutoff_date)
-        logger.info('Number of OSFUsers created on/after 2019-01-01: ' + str(len(prereg_users_registered_after_january_first)))
+        prereg_users_registered_after_january_first = OSFUser.objects.filter(tags__id=prereg_challenge_source_tag.id,
+                                                                             date_registered__gt=prereg_challenge_cutoff_date)
+        logger.info(
+            'Number of OSFUsers created on/after 2019-01-01: ' + str(len(prereg_users_registered_after_january_first)))
         for user in prereg_users_registered_after_january_first:
             user.tags.through.objects.filter(tag=prereg_challenge_source_tag, osfuser=user).delete()
             user.add_system_tag(prereg_source_tag)
@@ -157,9 +171,6 @@ def add_prereg_campaign_tags():
             if user.merged_by is not None:
                 user.merged_by.add_system_tag(prereg_source_tag)
         logger.info('Migrated users from ' + prereg_challenge_source_tag.name + ' to ' + prereg_source_tag.name)
-    except Tag.DoesNotExist:
-        prereg_source_tag, created = Tag.all_tags.get_or_create(name=CampaignSourceTags.Prereg.value, system=True)
-        logger.info('Added tag ' + prereg_source_tag.name)
 
 
 def main():
