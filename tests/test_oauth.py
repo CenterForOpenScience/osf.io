@@ -1,4 +1,5 @@
 from datetime import datetime
+import flask
 import httplib as http
 import logging
 import json
@@ -16,7 +17,9 @@ from framework.exceptions import PermissionsError, HTTPError
 from framework.sessions import session
 from osf.models.external import ExternalAccount, ExternalProvider, OAUTH1, OAUTH2
 from addons.osfstorage.models import Region
+from website.oauth import views as oauth_views
 from website.util import api_url_for, web_url_for
+from website.settings import ADMIN_URL
 
 from tests.base import OsfTestCase
 from osf_tests.factories import (
@@ -1358,3 +1361,29 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
         updated_region = Region.objects.get(id=region.id)
         assert_equal(external_account.oauth_key, updated_region.waterbutler_credentials['storage']['token'])
+
+
+class TestCallback(OsfTestCase):
+
+    @mock.patch('website.oauth.views.osf_oauth_callback')
+    def test_web_callback(self, osf_callback_mock):
+        with self.app.app.test_request_context(
+                '/oauth/connect/googledrive/',
+                query_string='state=googledrivestate1'):
+
+            session.data = {'oauth_states': {'googledrive': {'state': 'googledrivestate1'}}}
+            session.save()
+            oauth_views.oauth_callback('googledrive')
+            osf_callback_mock.assert_called_with('googledrive')
+
+    def test_admin_callback(self):
+        with self.app.app.test_request_context(
+                '/oauth/connect/googledrive/',
+                query_string='state=googledrivestate2'):
+
+            response = oauth_views.oauth_callback('googledrive')
+            assert_equal(response.status_code, 302)
+            redirect_url = response.headers['Location']
+            assert_in(ADMIN_URL, redirect_url)
+            assert_in('oauth/callback/googledrive', redirect_url)
+            assert_in('googledrivestate2', redirect_url)
