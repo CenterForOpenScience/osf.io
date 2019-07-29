@@ -124,7 +124,7 @@ class TestSerializerMetaType(ApiTestCase):
                 assert '_' not in json_type
                 assert json_type == json_type.lower()
 
-    def test_deprecation_warning_for_2_15_snake_case(self):
+    def test_deprecation_warning_for_snake_case(self):
         user_auth = factories.AuthUserFactory()
         node = factories.NodeFactory(creator=user_auth)
         url = '/{}nodes/{}/draft_registrations/?version={}'.format(API_BASE, node._id, KEBAB_CASE_VERSION)

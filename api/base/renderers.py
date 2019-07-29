@@ -27,11 +27,10 @@ class JSONAPIRenderer(JSONRendererWithESISupport):
             version = getattr(renderer_context['request'], 'version', None)
             warning = renderer_context['request'].META.get('warning', None)
             if version:
-                meta_dict['version'] = renderer_context['request'].version
-                data.setdefault('meta', {}).update(meta_dict)
+                meta_dict['version'] = version
             if warning:
-                meta_dict['warning'] = renderer_context['request'].META['warning']
-                data.setdefault('meta', {}).update(meta_dict)
+                meta_dict['warning'] = warning
+            data.setdefault('meta', {}).update(meta_dict)
         return super(JSONAPIRenderer, self).render(data, accepted_media_type, renderer_context)
 
 
