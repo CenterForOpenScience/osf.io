@@ -91,16 +91,11 @@ def migrate_source_tags(tags):
     Tag = apps.get_model('osf', 'Tag')
     for tag_name in tags:
         tag, created = Tag.all_tags.get_or_create(name=tag_name[0], system=True)
-        if not created:
-            # If the old source tag exists, we rename it
-            tag.name = tag_name[1]
-            tag.save()
-            logger.info(tag_name[0] + ' migrated to ' + tag_name[1])
-        else:
-            # If the old source tag does not exist, we also create the new source tag.
-            new_source_tag, created = Tag.all_tags.get_or_create(name=tag_name[1], system=True)
-            logger.info('Created tag with name {}'.format(tag_name[0]))
-            logger.info('Created tag with name {}'.format(tag_name[1]))
+        if created:
+            logger.info('Tag with name {} created'.format(tag_name[0]))
+        tag.name = tag_name[1]
+        tag.save()
+        logger.info(tag_name[0] + ' migrated to ' + tag_name[1])
 
 
 def add_tags(tags):
@@ -148,7 +143,7 @@ def add_prereg_campaign_tags():
     OSFUser = apps.get_model('osf', 'OSFuser')
 
     try:
-        # Try to the the prereg challenge source tag
+        # Try to get prereg challenge source tag
         prereg_challenge_source_tag = Tag.all_tags.get(name=CampaignSourceTags.PreregChallenge.value, system=True)
     except Tag.DoesNotExist:
         # If prereg challenge source tag doesn't exist, create the prereg source tag and we are done.
