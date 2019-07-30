@@ -7,7 +7,8 @@ from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from framework.sessions import session
-from osf.models.base import BaseModel
+from osf.models.base import BaseModel, Guid
+from osf.models.files import BaseFileNode
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 logger = logging.getLogger(__name__)
@@ -65,6 +66,11 @@ class PageCounter(BaseModel):
     total = models.PositiveIntegerField(default=0)
     unique = models.PositiveIntegerField(default=0)
 
+    action = models.CharField(max_length=128, null=True, blank=True)
+    resource = models.ForeignKey(Guid, related_name='pagecounters', null=True, blank=True)
+    file = models.ForeignKey('osf.BaseFileNode', null=True, blank=True, related_name='pagecounters')
+    version = models.IntegerField(null=True, blank=True)
+
     DOWNLOAD_ALL_VERSIONS_ID_PATTERN = r'^download:[^:]*:{1}[^:]*$'
 
     @classmethod
@@ -93,15 +99,34 @@ class PageCounter(BaseModel):
             '$', '_'
         )
 
+    @staticmethod
+    def deconstruct_id(page):
+        """
+        Backwards compatible code for use in writing to both _id field and
+        action, resource, file, and version fields simultaneously.
+        """
+        split = page.split(':')
+        action = split[0]
+        resource = Guid.load(split[1])
+        file = BaseFileNode.load(split[2])
+        if len(split) == 3:
+            version = None
+        else:
+            version = split[3]
+        return resource, file, action, version
+
     @classmethod
     def update_counter(cls, page, node_info):
         cleaned_page = cls.clean_page(page)
         date = timezone.now()
         date_string = date.strftime('%Y/%m/%d')
         visited_by_date = session.data.get('visited_by_date', {'date': date_string, 'pages': []})
-
         with transaction.atomic():
-            model_instance, created = cls.objects.select_for_update().get_or_create(_id=cleaned_page)
+            # Temporary backwards compat - when creating new PageCounters, temporarily keep writing to _id field.
+            # After we're sure this is stable, we can stop writing to the _id field, and query on
+            # resource/file/action/version
+            resource, file, action, version = cls.deconstruct_id(cleaned_page)
+            model_instance, created = cls.objects.select_for_update().get_or_create(_id=cleaned_page, resource=resource, file=file, action=action, version=version)
 
             # if they visited something today
             if date_string == visited_by_date['date']:
