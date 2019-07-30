@@ -10,7 +10,6 @@ from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.urls import reverse
 import flask
-from werkzeug.datastructures import ImmutableMultiDict
 
 import osf
 import addons
@@ -20,6 +19,7 @@ from admin.rdm_addons.api_v1.views import disconnect
 from website.oauth.utils import get_service
 from website.routes import make_url_map
 from website import settings as website_settings
+from framework.exceptions import PermissionsError
 from framework.sessions import get_session
 
 class RdmAddonRequestContextMixin(object):
@@ -97,31 +97,28 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
     def get(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
 
-        # Session
-        if not request.session.session_key:
-            request.session.create()
-        session_key = request.session.session_key
-
+        session = self.get_session(addon_name)
         try:
-            session = self.get_session(addon_name)
+            state = session.data['oauth_states'][addon_name]['state']
             institution_id = session.data['oauth_states'][addon_name]['institution_id']
+        except KeyError:
+            raise PermissionsError('Missing session data, probably not an admin Oauth.')
 
-            flask_ctx = self.get_request_context(session_key, institution_id, addon_name)
-            flask_ctx.request.args = ImmutableMultiDict(dict(self.request.GET.iterlists()))
-            provider = get_service(addon_name)
+        provider = get_service(addon_name)
+
+        # The following code uses flask context, so we temporarily create a context
+        # similar to the one we have here in Django
+        with self.app.test_request_context(request.get_full_path()):
+            session.data['oauth_states'] = {addon_name: {'state': state}}
 
             rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
             # Retrieve permanent credentials from provider
             auth_callback_result = provider.auth_callback(user=rdm_addon_option)
-            if auth_callback_result:
-                if provider.account and not rdm_addon_option.external_accounts.filter(id=provider.account.id).exists():
-                    rdm_addon_option.external_accounts.add(provider.account)
-                    rdm_addon_option.save()
-        finally:
-            try:
-                flask_ctx.pop()
-            except IndexError:
-                pass
+            if auth_callback_result and provider.account and \
+                    not rdm_addon_option.external_accounts.filter(id=provider.account.id).exists():
+
+                rdm_addon_option.external_accounts.add(provider.account)
+                rdm_addon_option.save()
 
         return redirect(reverse('addons:oauth:complete', kwargs={'addon_name': addon_name}))
 
