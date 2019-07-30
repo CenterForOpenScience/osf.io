@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import traceback
 import uuid
 from collections import defaultdict
 from requests.compat import urljoin
@@ -84,9 +85,12 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
         institution_id = None
         addon_name = self.kwargs.get('addon_name')
         session_data = {}
-
-        session = get_session()
-        session_data = session.data
+        try:
+            session = get_session()
+            session_data = session.data
+        except RuntimeError:
+            print('Unable to access session data')
+            traceback.print_exc()
 
         if 'oauth_states' in session_data:
             institution_id = int(session_data['oauth_states'][addon_name]['institution_id'])
@@ -97,28 +101,29 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
     def get(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
 
-        session = self.get_session(addon_name)
         try:
+            session = self.get_session(addon_name)
             state = session.data['oauth_states'][addon_name]['state']
             institution_id = session.data['oauth_states'][addon_name]['institution_id']
-        except KeyError:
-            raise PermissionsError('Missing session data, probably not an admin Oauth.')
 
-        provider = get_service(addon_name)
+            provider = get_service(addon_name)
 
-        # The following code uses flask context, so we temporarily create a context
-        # similar to the one we have here in Django
-        with self.app.test_request_context(request.get_full_path()):
-            session.data['oauth_states'] = {addon_name: {'state': state}}
+            # The following code uses flask context, so we temporarily create a context
+            # similar to the one we have here in Django
+            with self.app.test_request_context(request.get_full_path()):
+                session.data['oauth_states'] = {addon_name: {'state': state}}
 
-            rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
-            # Retrieve permanent credentials from provider
-            auth_callback_result = provider.auth_callback(user=rdm_addon_option)
-            if auth_callback_result and provider.account and \
-                    not rdm_addon_option.external_accounts.filter(id=provider.account.id).exists():
+                rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
+                # Retrieve permanent credentials from provider
+                auth_callback_result = provider.auth_callback(user=rdm_addon_option)
+                if auth_callback_result and provider.account and \
+                        not rdm_addon_option.external_accounts.filter(id=provider.account.id).exists():
 
-                rdm_addon_option.external_accounts.add(provider.account)
-                rdm_addon_option.save()
+                    rdm_addon_option.external_accounts.add(provider.account)
+                    rdm_addon_option.save()
+        except Exception:
+            traceback.print_exc()
+            raise
 
         return redirect(reverse('addons:oauth:complete', kwargs={'addon_name': addon_name}))
 
