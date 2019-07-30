@@ -69,6 +69,9 @@ class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTes
         }
         auth_url = None
 
+        # To generate auth_url we need a Flask context, so here we temporarily create one.
+        # The generated state goes to Flask's session, and to be able to use it on the
+        # callback, we copy it to the Django session.
         with self.app.test_request_context(request.get_full_path()):
             from framework.sessions import session
             auth_url = provider.auth_url
