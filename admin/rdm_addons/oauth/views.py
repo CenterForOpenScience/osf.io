@@ -59,20 +59,25 @@ class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTes
         institution_id = int(kwargs['institution_id'])
         is_custom = kwargs.get('is_custom', False)
 
-        # Session
-        if not request.session.session_key:
-            request.session.create()
-        session_key = request.session.session_key
-
-        flask_ctx = self.get_request_context(session_key, institution_id, addon_name)
-        flask_ctx.push()
         provider = get_service(addon_name)
 
-        auth_url = provider.auth_url
-        session = self.get_session(addon_name)
-        session.data['oauth_states'][addon_name]['institution_id'] = institution_id
-        session.data['oauth_states'][addon_name]['is_custom'] = is_custom
-        session.save()
+        if request.session.get('oauth_states') is None:
+            request.session['oauth_states'] = {}
+
+        request.session['oauth_states'][addon_name] = {
+            'institution_id': institution_id,
+            'is_custom': is_custom
+        }
+        auth_url = None
+
+        with self.app.test_request_context(request.get_full_path()):
+            from framework.sessions import session
+            auth_url = provider.auth_url
+            state = session.data['oauth_states'][addon_name]['state']
+            request.session['oauth_states'][addon_name]['state'] = state
+
+        print('Django Session:')
+        print(request.session['oauth_states'])
 
         return redirect(auth_url)
 
@@ -84,6 +89,10 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
         """check user permissions"""
         institution_id = None
         addon_name = self.kwargs.get('addon_name')
+
+        print('Django Session:')
+        print(self.request.session['oauth_states'])
+
         session_data = {}
         try:
             session = get_session()
