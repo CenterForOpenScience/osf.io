@@ -42,7 +42,6 @@ def _kwargs_to_nodes(kwargs):
         if not node:
             node = _load_node_or_fail(pid)
     elif nid and not pid:
-
         node = _load_node_or_fail(nid)
     elif not pid and not nid:
         raise HTTPError(
