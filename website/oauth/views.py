@@ -10,7 +10,6 @@ from framework.sessions import session
 from osf.models import ExternalAccount
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
-from requests.exceptions import ConnectionError
 from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 
