@@ -22,9 +22,10 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import ApiTestCase
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.views import find_bookmark_collection
 from osf.utils import permissions
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.enable_quickfiles_creation
@@ -525,7 +526,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def project_public_child(self, project_public):
@@ -758,7 +759,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -795,7 +796,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -832,7 +833,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             prereg_metadata, url_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
