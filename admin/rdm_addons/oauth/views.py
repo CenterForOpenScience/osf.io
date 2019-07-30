@@ -82,11 +82,9 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
         institution_id = None
         addon_name = self.kwargs.get('addon_name')
         session_data = {}
-        try:
-            session = get_session()
-            session_data = session.data
-        except RuntimeError:
-            print('Unable to access session data')
+
+        session = get_session()
+        session_data = session.data
 
         if 'oauth_states' in session_data:
             institution_id = int(session_data['oauth_states'][addon_name]['institution_id'])
