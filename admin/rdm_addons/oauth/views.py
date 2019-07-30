@@ -20,7 +20,7 @@ from website.oauth.utils import get_service
 from website.routes import make_url_map
 from website import settings as website_settings
 from framework.exceptions import PermissionsError
-from framework.sessions import get_session
+
 
 class RdmAddonRequestContextMixin(object):
     app = flask.Flask(__name__)
@@ -56,20 +56,30 @@ class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTes
     def get(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
         institution_id = int(kwargs['institution_id'])
+        is_custom = kwargs.get('is_custom', False)
 
-        # Session
-        if not request.session.session_key:
-            request.session.create()
-        session_key = request.session.session_key
-
-        flask_ctx = self.get_request_context(session_key, institution_id, addon_name)
-        flask_ctx.push()
         provider = get_service(addon_name)
 
-        auth_url = provider.auth_url
-        session = self.get_session(addon_name)
-        session.data['oauth_states'][addon_name]['institution_id'] = institution_id
-        session.save()
+        if request.session.get('oauth_states') is None:
+            request.session['oauth_states'] = {}
+
+        request.session['oauth_states'][addon_name] = {
+            'institution_id': institution_id,
+            'is_custom': is_custom
+        }
+        auth_url = None
+
+        # To generate auth_url we need a Flask context, so here we temporarily create one.
+        # The generated state goes to Flask's session, and to be able to use it on the
+        # callback, we copy it to the Django session.
+        with self.app.test_request_context(request.get_full_path()):
+            from framework.sessions import session
+            auth_url = provider.auth_url
+            state = session.data['oauth_states'][addon_name]['state']
+            request.session['oauth_states'][addon_name]['state'] = state
+
+        # Force saving the session
+        request.session.modified = True
 
         return redirect(auth_url)
 
@@ -79,34 +89,26 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
 
     def test_func(self):
         """check user permissions"""
-        institution_id = None
         addon_name = self.kwargs.get('addon_name')
-        session_data = {}
 
-        session = get_session()
-        session_data = session.data
+        try:
+            institution_id = self.request.session['oauth_states'][addon_name]['institution_id']
+        except KeyError:
+            raise PermissionsError('Missing session data, probably not an admin Oauth.')
 
-        if 'oauth_states' in session_data:
-            institution_id = int(session_data['oauth_states'][addon_name]['institution_id'])
-        elif 'institution_id' in self.kwargs:
-            institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
     def get(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
 
-        session = self.get_session(addon_name)
-        try:
-            state = session.data['oauth_states'][addon_name]['state']
-            institution_id = session.data['oauth_states'][addon_name]['institution_id']
-        except KeyError:
-            raise PermissionsError('Missing session data, probably not an admin Oauth.')
-
+        state = request.session['oauth_states'][addon_name]['state']
+        institution_id = request.session['oauth_states'][addon_name]['institution_id']
         provider = get_service(addon_name)
 
         # The following code uses flask context, so we temporarily create a context
         # similar to the one we have here in Django
         with self.app.test_request_context(request.get_full_path()):
+            from framework.sessions import session
             session.data['oauth_states'] = {addon_name: {'state': state}}
 
             rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
