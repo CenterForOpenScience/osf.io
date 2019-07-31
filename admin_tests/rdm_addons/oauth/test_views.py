@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import flask
+import mock
 from nose import tools as nt
 from django.test import RequestFactory
 from django.contrib.sessions.middleware import SessionMiddleware
 
 from tests.base import AdminTestCase
+from osf.models.external import ExternalAccount
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
@@ -112,7 +114,7 @@ class TestCallbackView(AdminTestCase):
         self.ctx = app.test_request_context()
         self.ctx.push()
 
-        self.request = RequestFactory().get('/fake_path')
+        self.request = RequestFactory().get('/fake_path', {'state': 'oauthstate', 'code': '123'})
         add_session_to_request(self.request)
         self.view0 = views.ConnectView()
         self.view0 = setup_user_view(self.view0, self.request, user=self.user)
@@ -165,6 +167,31 @@ class TestCallbackView(AdminTestCase):
         """test unregistered user login"""
         self.request.user.is_registered = False
         nt.assert_equal(self.view.test_func(), False)
+
+    @mock.patch('osf.models.external.OAuth2Session')
+    def test_get(self, mock_oauthsession, *args, **kwargs):
+        mock_oauthsession.return_value.fetch_token.return_value = {
+            'access_token': '123',
+            'refresh_token': 'myrefreshtoken',
+            'expires_at': 8000000,
+            'scope': 'oauthstate'
+        }
+
+        self.request.user.is_superuser = False
+        self.request.user.is_staff = True
+        self.request.session['oauth_states'] = {
+            self.external_account.provider: {
+                'state': 'oauthstate',
+                'institution_id': self.institution.id,
+                'is_custom': True
+            }
+        }
+        res = self.view.get(self.request, *args, **self.view.kwargs)
+        nt.assert_equal(res.status_code, 302)
+
+        external_account = ExternalAccount.objects.last()
+        nt.assert_equal(external_account.oauth_key, '123')
+        nt.assert_equal(external_account.refresh_token, 'myrefreshtoken')
 
 
 class TestCompleteView(AdminTestCase):
