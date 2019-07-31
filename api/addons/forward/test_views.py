@@ -68,3 +68,14 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
         assert author == self.user.fullname
         assert author_email == self.user.username
         assert content == 'http://possiblyspam.com'
+
+    def test_invalid_url(self):
+        res = self.django_app.put_json_api(
+            '/v2/nodes/{}/addons/forward/'.format(self.project._id),
+            {'data': {'attributes': {'url': 'bad url'}}},
+            auth=self.user.auth, expect_errors=True,
+        )
+        assert res.status_code == 400
+        error = res.json['errors'][0]
+
+        assert error['detail'] == 'Enter a valid URL.'

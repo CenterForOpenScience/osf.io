@@ -863,7 +863,7 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
 
     # Forward-specific
     label = ser.CharField(required=False, allow_blank=True)
-    url = ser.CharField(required=False, allow_blank=True)
+    url = ser.URLField(required=False, allow_blank=True)
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -920,8 +920,10 @@ class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
             instance.url = url
             instance.label = label
             url_changed = True
-
-        instance.save()
+        try:
+            instance.save()
+        except ValidationError as e:
+            raise exceptions.ValidationError(detail=str(e))
 
         if url_changed:
             # add log here because forward architecture isn't great
@@ -1774,7 +1776,10 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
             save_forward = True
 
         if save_forward:
-            forward_addon.save()
+            try:
+                forward_addon.save()
+            except ValidationError as e:
+                raise exceptions.ValidationError(detail=str(e))
 
             request = self.context['request']
             forward_addon.owner.check_spam(request.user, {'addons_forward_node_settings__url'}, get_headers_from_request(request))
