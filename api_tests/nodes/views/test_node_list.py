@@ -1443,7 +1443,7 @@ class TestNodeCreate:
 
     @pytest.fixture()
     def sparse_url(self):
-        return '/{}nodes/'.format(API_BASE)
+        return '/{}sparse/nodes/'.format(API_BASE)
 
     @pytest.fixture()
     def title(self):
@@ -1533,11 +1533,12 @@ class TestNodeCreate:
         assert 'detail' in res.json['errors'][0]
 
     #   test_does_not_create_project_on_sparse_endpoint
+        public_project['data']['type'] = 'sparse-nodes'
         res = app.post_json_api(
             sparse_url, public_project,
             expect_errors=True,
             auth=user_one.auth)
-        assert res.status_code == 201
+        assert res.status_code == 405
 
     def test_creates_public_project_logged_in(
             self, app, user_one, public_project, url, institution_one):
@@ -1549,8 +1550,8 @@ class TestNodeCreate:
         assert res.json['data']['attributes']['title'] == public_project['data']['attributes']['title']
         assert res.json['data']['attributes']['description'] == public_project['data']['attributes']['description']
         assert res.json['data']['attributes']['category'] == public_project['data']['attributes']['category']
-        assert res.json['data']['relationships']['affiliated_institutions']['links']['self']['href'] ==  \
-               '{}relationships/institutions/'.format(self_link)
+        assert res.json['data']['relationships']['affiliated_institutions']['links']['self']['href'] == \
+            '{}relationships/institutions/'.format(self_link)
         assert res.content_type == 'application/vnd.api+json'
         pid = res.json['data']['id']
         project = AbstractNode.load(pid)

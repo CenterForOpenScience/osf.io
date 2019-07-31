@@ -21,19 +21,20 @@ class BaseSparseMixin(object):
     serializer_class = None
 
     # overrides NodeList because these endpoints don't allow writing
-    @staticmethod
-    def perform_create():
-        raise MethodNotAllowed
-
-    # overrides NodeDetail because these endpoints don't allow writing
-    @staticmethod
-    def perform_destroy():
-        raise MethodNotAllowed
+    def perform_create(self, *args):
+        raise MethodNotAllowed(method=self.request.method)
 
     # overrides NodeList because these endpoints don't allow writing
-    @staticmethod
-    def allow_bulk_destroy_resources():
-        raise MethodNotAllowed
+    def perform_update(self, *args):
+        raise MethodNotAllowed(method=self.request.method)
+
+    # overrides NodeDetail because these endpoints don't allow writing
+    def perform_destroy(self, *args):
+        raise MethodNotAllowed(method=self.request.method)
+
+    # overrides NodeList because these endpoints don't allow writing
+    def allow_bulk_destroy_resources(self, *args):
+        raise MethodNotAllowed(method=self.request.method)
 
     def get_serializer_class(self):
         return self.serializer_class
@@ -85,4 +86,3 @@ class SparseRegistrationChildrenList(SparseRegistrationMixin, RegistrationChildr
 
 class SparseUserRegistrationList(SparseRegistrationMixin, UserRegistrations):
     pass
-

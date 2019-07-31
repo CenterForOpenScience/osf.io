@@ -189,3 +189,54 @@ class TestNodeRegistrationSerializer:
             else:
                 assert api_registrations_url in relationship_urls[relationship], 'For key {}'.format(
                     relationship)
+
+
+@pytest.mark.django_db
+class TestSparseRegistrationSerializer:
+
+    def test_sparse_registration_serializer(self, user):
+        user = UserFactory()
+        versioned_request = make_drf_request_with_version(version='2.2')
+        registration = RegistrationFactory(creator=user)
+        result = SparseRegistrationSerializer(
+            registration, context={
+                'request': versioned_request}).data
+        data = result['data']
+        assert data['id'] == registration._id
+        assert data['type'] == 'sparse-registrations'
+
+
+        # Attributes
+        attributes = data['attributes']
+        assert attributes['withdrawn'] == registration.is_retracted
+
+        # Relationships
+        relationships = data['relationships']
+        assert 'registered_by' not in relationships
+        assert 'registered_from' not in relationships
+
+
+        # Attributes
+        attributes = data['attributes']
+        assert attributes['title'] == registration.title
+        assert attributes['description'] == registration.description
+        assert attributes['public'] == registration.is_public
+        assert set(attributes['tags']) == set(registration.tags.values_list('name', flat=True))
+        assert 'current_user_can_comment' not in attributes
+        assert 'license' not in attributes
+        assert attributes['category'] == registration.category
+        assert attributes['fork'] == registration.is_fork
+
+        # Relationships
+        relationships = data['relationships']
+        assert 'region' not in relationships
+        assert 'children' in relationships
+        assert 'detail' in relationships
+        assert 'contributors' in relationships
+        assert 'files' not in relationships
+        assert 'parent' in relationships
+        assert 'affiliated_institutions' not in relationships
+        assert 'registrations' not in relationships
+        assert 'forked_from' not in relationships
+        assert 'sparse' not in relationships['detail']['links']['related']['href']
+        assert 'sparse' in relationships['children']['links']['related']['href']
