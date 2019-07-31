@@ -116,6 +116,13 @@ class TestCallbackView(AdminTestCase):
 
         self.request = RequestFactory().get('/fake_path', {'state': 'oauthstate', 'code': '123'})
         add_session_to_request(self.request)
+        self.request.session['oauth_states'] = {
+            self.external_account.provider: {
+                'state': 'oauthstate',
+                'institution_id': self.institution.id,
+                'is_custom': True
+            }
+        }
         self.view0 = views.ConnectView()
         self.view0 = setup_user_view(self.view0, self.request, user=self.user)
         self.view0.kwargs = {
@@ -179,13 +186,6 @@ class TestCallbackView(AdminTestCase):
 
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        self.request.session['oauth_states'] = {
-            self.external_account.provider: {
-                'state': 'oauthstate',
-                'institution_id': self.institution.id,
-                'is_custom': True
-            }
-        }
         res = self.view.get(self.request, *args, **self.view.kwargs)
         nt.assert_equal(res.status_code, 302)
 
