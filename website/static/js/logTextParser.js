@@ -440,6 +440,9 @@ var LogPieces = {
     source: {
         view: function (ctrl, logObject) {
             var source = logObject.attributes.params.source;
+            if (source.addon === 'NII Storage' && logObject.attributes.params.storage_name) {
+                source.addon = logObject.attributes.params.storage_name;
+            }
             if(paramIsReturned(source, logObject)){
                 var sourceMaterialized = stripBackslash(source.materialized);
                 return m('span', [sourceMaterialized, ' in ', source.addon]);
@@ -451,6 +454,9 @@ var LogPieces = {
     destination: {
         view: function (ctrl, logObject) {
             var destination = logObject.attributes.params.destination;
+            if (destination.addon === 'NII Storage' && logObject.attributes.params.storage_name) {
+                destination.addon = logObject.attributes.params.storage_name;
+            }
             if(paramIsReturned(destination, logObject)){
                 var destinationMaterialized = destination.materialized;
                 if (destinationMaterialized.endsWith('/')){
