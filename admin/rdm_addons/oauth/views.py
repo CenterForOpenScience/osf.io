@@ -109,7 +109,13 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
         # similar to the one we have here in Django
         with self.app.test_request_context(request.get_full_path()):
             from framework.sessions import session
-            session.data['oauth_states'] = {addon_name: {'state': state}}
+            session.data['oauth_states'] = {
+                addon_name: {
+                    'state': state,
+                    'institution_id': institution_id,
+                    'is_custom': request.session['oauth_states'][addon_name]['is_custom']
+                }
+            }
 
             rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
             # Retrieve permanent credentials from provider
