@@ -45,7 +45,7 @@ from website.project import new_private_link
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
-from osf.utils.requests import get_headers_from_request
+
 
 class RegistrationProviderRelationshipField(RelationshipField):
     def get_object(self, _id):
@@ -920,8 +920,9 @@ class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
             instance.url = url
             instance.label = label
             url_changed = True
+
         try:
-            instance.save()
+            instance.save(request=request)
         except ValidationError as e:
             raise exceptions.ValidationError(detail=str(e))
 
@@ -938,8 +939,6 @@ class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
                 auth=auth,
                 save=True,
             )
-            instance.owner.check_spam(user, {'addons_forward_node_settings__url'}, get_headers_from_request(request))
-
         return instance
 
 
@@ -1777,12 +1776,9 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
 
         if save_forward:
             try:
-                forward_addon.save()
+                forward_addon.save(request=self.context['request'])
             except ValidationError as e:
                 raise exceptions.ValidationError(detail=str(e))
-
-            request = self.context['request']
-            forward_addon.owner.check_spam(request.user, {'addons_forward_node_settings__url'}, get_headers_from_request(request))
 
     def enable_or_disable_addon(self, obj, should_enable, addon_name, auth):
         """
