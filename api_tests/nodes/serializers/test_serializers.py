@@ -205,19 +205,9 @@ class TestSparseRegistrationSerializer:
         assert data['id'] == registration._id
         assert data['type'] == 'sparse-registrations'
 
-
         # Attributes
         attributes = data['attributes']
         assert attributes['withdrawn'] == registration.is_retracted
-
-        # Relationships
-        relationships = data['relationships']
-        assert 'registered_by' not in relationships
-        assert 'registered_from' not in relationships
-
-
-        # Attributes
-        attributes = data['attributes']
         assert attributes['title'] == registration.title
         assert attributes['description'] == registration.description
         assert attributes['public'] == registration.is_public
@@ -229,14 +219,16 @@ class TestSparseRegistrationSerializer:
 
         # Relationships
         relationships = data['relationships']
+        assert 'registered_by' not in relationships
+        assert 'registered_from' not in relationships
         assert 'region' not in relationships
         assert 'children' in relationships
         assert 'detail' in relationships
         assert 'contributors' in relationships
         assert 'files' not in relationships
-        assert 'parent' in relationships
         assert 'affiliated_institutions' not in relationships
         assert 'registrations' not in relationships
         assert 'forked_from' not in relationships
         assert 'sparse' not in relationships['detail']['links']['related']['href']
         assert 'sparse' in relationships['children']['links']['related']['href']
+
