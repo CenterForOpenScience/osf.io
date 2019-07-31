@@ -6,13 +6,10 @@ from nose.tools import assert_equal
 from addons.forward.tests.utils import ForwardAddonTestCase
 from tests.base import OsfTestCase
 from website import settings
-from tests.json_api_test_app import JSONAPITestApp
 
 pytestmark = pytest.mark.django_db
 
 class TestForward(ForwardAddonTestCase, OsfTestCase):
-
-    django_app = JSONAPITestApp()
 
     def setUp(self):
         super(TestForward, self).setUp()
