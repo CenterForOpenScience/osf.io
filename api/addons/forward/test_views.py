@@ -4,7 +4,6 @@ import pytest
 from addons.forward.tests.utils import ForwardAddonTestCase
 from tests.base import OsfTestCase
 from website import settings
-from tests.json_api_test_app import JSONAPITestApp
 
 pytestmark = pytest.mark.django_db
 
@@ -13,8 +12,6 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
     Forward (the redirect url has two v2 routes, one is addon based `/v2/nodes/{}/addons/forward/` one is node settings
     based `/v2/nodes/{}/settings/` they both need to be checked for spam each time they are used to modify a redirect url.
     """
-
-    django_app = JSONAPITestApp()
 
     def setUp(self):
         super(TestForward, self).setUp()
