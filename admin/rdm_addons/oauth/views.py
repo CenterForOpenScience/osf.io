@@ -113,12 +113,7 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
 
             rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
             # Retrieve permanent credentials from provider
-            auth_callback_result = provider.auth_callback(user=rdm_addon_option)
-            if auth_callback_result and provider.account and \
-                    not rdm_addon_option.external_accounts.filter(id=provider.account.id).exists():
-
-                rdm_addon_option.external_accounts.add(provider.account)
-                rdm_addon_option.save()
+            provider.auth_callback(user=rdm_addon_option)
 
         return redirect(reverse('addons:oauth:complete', kwargs={'addon_name': addon_name}))
 
