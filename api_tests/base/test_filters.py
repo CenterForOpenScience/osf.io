@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 import datetime
 import re
-
+import pytest
 import pytz
+
 from dateutil import parser
 from django.utils import timezone
 
 from nose.tools import *  # noqa:
 
 from rest_framework import serializers as ser
+from framework.auth.core import Auth
 
 from unittest import TestCase
 
@@ -22,7 +24,12 @@ from api.base.exceptions import (
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
 )
-
+from osf_tests.factories import (
+    NodeFactory,
+    AuthUserFactory,
+    ExternalAccountFactory,
+)
+from api.base.settings.defaults import API_BASE
 from api.base.serializers import RelationshipField
 
 
@@ -394,7 +401,7 @@ class TestListFilterMixin(ApiTestCase):
         assert_equal(parsed_field['value'], False)
         assert_equal(parsed_field['op'], 'eq')
 
-
+@pytest.mark.django_db
 class TestOSFOrderingFilter(ApiTestCase):
     class query:
         title = ' '
@@ -466,6 +473,56 @@ class TestOSFOrderingFilter(ApiTestCase):
                 objs, cmp=filters.sort_multiple(['title', '-number'])
             )]
         assert_equal(actual, [40, 30, 10, 20])
+
+    def test_sort_by_serializer_field(self):
+        user = AuthUserFactory()
+        node_one = NodeFactory(creator=user)
+        node_two = NodeFactory(creator=user)
+
+        # Ensuring that sorting by the serializer field returns the same result
+        # as using the source field
+        res_created = self.app.get('/{}nodes/?sort=created'.format(API_BASE), auth=user.auth)
+        res_date_created = self.app.get('/{}nodes/?sort=date_created'.format(API_BASE), auth=user.auth)
+        assert res_created.status_code == 200
+        assert res_created.json['data'] == res_date_created.json['data']
+        assert res_created.json['data'][0]['id'] == str(node_one._id)
+        assert res_date_created.json['data'][0]['id'] == node_one._id
+        assert res_created.json['data'][1]['id'] == node_two._id
+        assert res_date_created.json['data'][1]['id'] == node_two._id
+
+        # Testing both are capable of using the inverse sort sign '-'
+        res_created = self.app.get('/{}nodes/?sort=-created'.format(API_BASE), auth=user.auth)
+        res_date_created = self.app.get('/{}nodes/?sort=-date_created'.format(API_BASE), auth=user.auth)
+        assert res_created.status_code == 200
+        assert res_created.json['data'] == res_date_created.json['data']
+        assert res_created.json['data'][1]['id'] == node_one._id
+        assert res_date_created.json['data'][1]['id'] == node_one._id
+        assert res_created.json['data'][0]['id'] == node_two._id
+        assert res_date_created.json['data'][0]['id'] == node_two._id
+
+    def test_sort_by_serializer_multi_level_field(self):
+        user = AuthUserFactory()
+        node = NodeFactory(creator=user)
+
+        # external_account_id is a source field on a foreign key.
+        # This test ensures you can sort on a foreign key field both ascending and descending
+
+        # Ascending
+        s3_addon = node.get_or_add_addon('s3', Auth(user))
+        node.get_or_add_addon('github', Auth(user))
+        s3_addon.external_account_id = ExternalAccountFactory()
+        node.save()
+        s3_addon.save()
+        res_addon = self.app.get('/{}nodes/{}/addons/?sort=external_account_id'.format(API_BASE, node._id), auth=user.auth)
+        assert res_addon.status_code == 200
+        assert res_addon.json['data'][1]['id'] == 's3'
+        assert res_addon.json['data'][0]['id'] == 'github'
+
+        # Descending
+        res_addon = self.app.get('/{}nodes/{}/addons/?sort=-external_account_id'.format(API_BASE, node._id), auth=user.auth)
+        assert res_addon.status_code == 200
+        assert res_addon.json['data'][0]['id'] == 's3'
+        assert res_addon.json['data'][1]['id'] == 'github'
 
 
 class TestQueryPatternRegex(TestCase):

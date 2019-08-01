@@ -51,8 +51,10 @@ class OSFOrderingFilter(OrderingFilter):
     # override
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
-        # self.check_serializer_field(queryset, request.query_params, view.serializer_class)
-        if isinstance(queryset, DjangoQuerySet):
+        field_order = self.check_serializer_fields(queryset, request.query_params, view.serializer_class, ordering)
+        if field_order:
+            ordering = tuple(field_order)
+        if isinstance(queryset, DjangoQuerySet) and not field_order:
             if queryset.ordered:
                 return queryset
             elif ordering and getattr(queryset.query, 'distinct_fields', None):
@@ -67,17 +69,30 @@ class OSFOrderingFilter(OrderingFilter):
             return queryset.sort(*ordering)
         return queryset
 
-    def check_serializer_field(self, queryset, field, serializer_class):
-        fields = field.query_params.getlist('sort')
+    def check_serializer_fields(self, queryset, query_params, serializer_class, ordering):
+        if not queryset:
+            return []
         # Getting a list of fields from the model
         source_field_list = [f.name for f in queryset[0]._meta.get_fields()]
-        for field in fields:
+        sorting_params = []
+        for i, field in enumerate(query_params.getlist(self.ordering_param)):
+            if field in ordering:
+                sorting_params.append(field)
+            preserve_order = ''
+            if field[0] == '-':
+                preserve_order = '-'
+                field = field[1:]
             if field in source_field_list:
-                return field
-
-    def get_source(self, field):
-        #recursive search for field in source
-        pass
+                sorting_params.append(preserve_order + field)
+            else:
+                for serializer_field in serializer_class().fields.items():
+                    if serializer_field[0] == field:
+                        # Checking if the field can be sorted on
+                        if getattr(queryset[0], field, 'None') != 'None':
+                            sorting_params.append(preserve_order + field)
+                        elif getattr(queryset[0], serializer_field[1].source, 'None') != 'None':
+                            sorting_params.append(preserve_order + serializer_field[1].source)
+        return sorting_params
 
 
 class FilterMixin(object):
