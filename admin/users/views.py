@@ -352,7 +352,7 @@ class UserFormView(PermissionRequiredMixin, FormView):
             if email:
                 try:
                     user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).get()
-                    guid = user.guids.first()._id
+                    guid = user._id
                 except OSFUser.DoesNotExist:
                     return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
             self.redirect_url = reverse('users:user', kwargs={'guid': guid})
