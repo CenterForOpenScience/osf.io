@@ -427,6 +427,7 @@ class UserSettingsSerializer(JSONAPISerializer):
     subscribe_osf_general_email = ser.SerializerMethodField()
     subscribe_osf_help_email = ser.SerializerMethodField()
     deactivation_requested = ser.BooleanField(source='requested_deactivation', required=False)
+    contacted_deactivation = ser.BooleanField(required=False)
     secret = ser.SerializerMethodField(read_only=True)
 
     def to_representation(self, instance):
@@ -527,10 +528,10 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
     def request_deactivation(self, instance, requested_deactivation):
         if not requested_deactivation:
             instance.contacted_deactivation = False
-        elif instance.requested_deactivation != requested_deactivation:
+
+        if instance.requested_deactivation != requested_deactivation:
             instance.requested_deactivation = requested_deactivation
-        else:
-            return
+
         instance.save()
 
     def to_representation(self, instance):
