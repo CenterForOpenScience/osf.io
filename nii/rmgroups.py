@@ -250,7 +250,6 @@ def remove_one_group(node, options):
         if options.dryrun:
             print('-->(dryrun) GRDM group is deleted!')
         else:
-            from framework.auth import Auth
             remove_node(node)
             if options.verbose:
                 print('--> GRDM group is deleted!')

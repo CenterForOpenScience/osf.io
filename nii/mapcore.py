@@ -339,7 +339,7 @@ def remove_node(node):
         except Exception as e:
             last_e = e
     if last_e:
-        logger.error('GRDM project[{}] cannot be deleted: {}'.format(node._id, utr8(str(e))))
+        logger.error('GRDM project[{}] cannot be deleted: {}'.format(node._id, utf8(str(e))))
 
 # OSFuser essential feild keeper for comparing member
 class RDMmember(object):
