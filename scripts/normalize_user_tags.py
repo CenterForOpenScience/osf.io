@@ -40,6 +40,7 @@ PROVIDER_SOURCE_TAGS = [
     ('sportrxiv_preprints', provider_source_tag('sportrxiv', 'preprint')),
     ('thesiscommons_preprints', provider_source_tag('thesiscommons', 'preprint')),
     ('bodoarxiv_preprints', provider_source_tag('bodoarxiv', 'preprint')),
+    ('indiarxiv_preprints', provider_source_tag('indiarxiv', 'preprint')),
     ('osf_registries', provider_source_tag('osf', 'registry')),
 ]
 
@@ -75,6 +76,7 @@ PROVIDER_CLAIMED_TAGS = [
     provider_claimed_tag('sportrxiv', 'preprint'),
     provider_claimed_tag('thesiscommons', 'preprint'),
     provider_claimed_tag('bodoarxiv', 'preprint'),
+    provider_claimed_tag('indiarxiv', 'preprint'),
     provider_claimed_tag('osf', 'registry'),
 ]
 
