@@ -11,8 +11,11 @@ from osf_tests.factories import (
     InstitutionFactory,
     UserFactory,
 )
+from flask import Flask
+
 from tests.base import capture_signals
 
+decoratorapp = Flask('decorators')
 
 def make_user(username, fullname):
     return UserFactory(username=username, fullname=fullname)
@@ -47,6 +50,14 @@ class TestInstitutionAuth:
     @pytest.fixture()
     def institution(self):
         return InstitutionFactory()
+
+    @pytest.yield_fixture(autouse=True)
+    def flask_request_context(self):
+        """
+        required for waffle cookies
+        """
+        with decoratorapp.test_request_context():
+            yield
 
     @pytest.fixture()
     def url_auth_institution(self):

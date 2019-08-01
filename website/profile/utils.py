@@ -7,7 +7,7 @@ from addons.osfstorage.models import Region
 from website.filters import profile_image_url
 from osf.utils.permissions import READ
 from osf.utils import workflows
-from website.ember_osf_web.decorators import storage_i18n_flag_active
+from api.waffle.utils import storage_i18n_flag_active
 
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
