@@ -49,7 +49,7 @@ def deactivate_requested_accounts(dry_run=True):
         logger.info('Dry run complete')
 
 
-@celery_app.task(name='management.commands.check_crossref_dois')
+@celery_app.task(name='management.commands.deactivate_requested_accounts')
 def main(dry_run=False):
     """
     This task runs nightly and emails users who want to delete there account with info on how to do so. Users who don't
