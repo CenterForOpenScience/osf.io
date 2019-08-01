@@ -19,22 +19,26 @@ def deactivate_requested_accounts(dry_run=True):
 
     for user in users:
         if user.has_resources:
-            mails.send_mail(
-                to_addr=OSF_SUPPORT_EMAIL,
-                mail=mails.REQUEST_DEACTIVATION,
-                user=user,
-                can_change_preferences=False,
-            )
+            logger.info('User {} was contacted for about deactivation.'.format(user._id))
+            if not dry_run:
+                mails.send_mail(
+                    to_addr=OSF_SUPPORT_EMAIL,
+                    mail=mails.REQUEST_DEACTIVATION,
+                    user=user,
+                    can_change_preferences=False,
+                )
         else:
             user.disable_account()
             user.is_registered = False
-            mails.send_mail(
-                to_addr=user.username,
-                mail=mails.REQUEST_DEACTIVATION_COMPLETE,
-                user=user,
-                contact_email=OSF_CONTACT_EMAIL,
-                can_change_preferences=False,
-            )
+            logger.info('User {} was disabled'.format(user._id))
+            if not dry_run:
+                mails.send_mail(
+                    to_addr=user.username,
+                    mail=mails.REQUEST_DEACTIVATION_COMPLETE,
+                    user=user,
+                    contact_email=OSF_CONTACT_EMAIL,
+                    can_change_preferences=False,
+                )
 
         user.contacted_deactivation = True
         user.email_last_sent = timezone.now()
