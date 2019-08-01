@@ -7,6 +7,8 @@ import uuid
 from copy import deepcopy
 from os.path import splitext
 
+from past.builtins import basestring
+
 from flask import Request as FlaskRequest
 from framework import analytics
 from guardian.shortcuts import get_perms
@@ -1805,10 +1807,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         nodes = self.nodes.exclude(type='osf.quickfilesnode', is_deleted=True).exists()
         quickfiles = self.nodes.get(type='osf.quickfilesnode').files.exists()
         groups = self.osf_groups.exists()
-        preprints = Preprint.objects.filter(_contributors=self,
-                                            ever_public=True,
-                                            deleted__isnull=True,
-                                            withdrawal_justification__isnull=False)
+        preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
 
         return groups or nodes or quickfiles or preprints
 
