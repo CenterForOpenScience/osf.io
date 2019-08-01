@@ -41,7 +41,6 @@ def campaign_claimed_tag(campaign_name):
     return 'claimed:campaign|{}'.format(campaign_name)
 
 
-# Needs to be updated when new providers are added.
 class OsfSourceTags(Enum):
     Osf = provider_source_tag('osf')
 
@@ -55,7 +54,6 @@ class CampaignSourceTags(Enum):
     Osf4m = campaign_source_tag('osf4m')
 
 
-# Needs to be updated when new providers are added.
 class OsfClaimedTags(Enum):
     Osf = provider_claimed_tag('osf')
 
