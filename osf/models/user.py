@@ -1804,7 +1804,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # TODO: Update once quickfolders in merged
 
-        nodes = self.nodes.exclude(type='osf.quickfilesnode', is_deleted=True).exists()
+        nodes = self.nodes.exclude(type='osf.quickfilesnode').filter(is_deleted=True)
         quickfiles = self.nodes.get(type='osf.quickfilesnode').files.exists()
         groups = self.osf_groups.exists()
         preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
