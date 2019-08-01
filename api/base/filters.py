@@ -73,7 +73,9 @@ class OSFOrderingFilter(OrderingFilter):
         if not queryset:
             return []
         # Getting a list of fields from the model
-        source_field_list = [f.name for f in queryset[0]._meta.get_fields()]
+        source_field_list = []
+        if getattr(queryset[0], '_meta', None):
+            source_field_list = [f.name for f in queryset[0]._meta.get_fields()]
         sorting_params = []
         for i, field in enumerate(query_params.getlist(self.ordering_param)):
             if field in ordering:
