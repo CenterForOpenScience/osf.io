@@ -6,7 +6,7 @@ from django.utils import timezone
 from website import mails, settings
 from osf.models import PreprintProvider
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
-from website.util.metrics import ProviderSourceTags, ProviderClaimedTags, CampaignSourceTags, CampaignClaimedTags, provider_source_tag
+from website.util.metrics import OsfSourceTags, OsfClaimedTags, CampaignSourceTags, CampaignClaimedTags, provider_source_tag
 from framework.utils import throttle_period_expired
 
 
@@ -79,7 +79,7 @@ def get_campaigns():
             # TODO: refactor for futher branded registries when there is a model for registries providers
             newest_campaigns.update({
                 'osf-registries': {
-                    'system_tag': ProviderSourceTags.OsfRegistries.value,
+                    'system_tag': provider_source_tag('osf', 'registry'),
                     'redirect_url': furl.furl(DOMAIN).add(path='registries/').url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
@@ -210,5 +210,5 @@ NODE_SOURCE_TAG_CLAIMED_TAG_RELATION = {
     CampaignSourceTags.Prereg.value: CampaignClaimedTags.Prereg.value,
     CampaignSourceTags.OsfRegisteredReports.value: CampaignClaimedTags.OsfRegisteredReports.value,
     CampaignSourceTags.Osf4m.value: CampaignClaimedTags.Osf4m.value,
-    ProviderSourceTags.Osf.value: ProviderClaimedTags.Osf.value,
+    OsfSourceTags.Osf.value: OsfClaimedTags.Osf.value,
 }

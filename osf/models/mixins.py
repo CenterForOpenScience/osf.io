@@ -1214,6 +1214,9 @@ class ContributorMixin(models.Model):
     def update_or_enqueue_on_resource_updated(self):
         raise NotImplementedError()
 
+    def _add_related_source_tags(self):
+        raise NotImplementedError()
+
     @property
     def admin_contributor_or_group_member_ids(self):
         # Return admin contributor ids on current resource or parent
@@ -1434,6 +1437,7 @@ class ContributorMixin(models.Model):
             contributor, permissions=permissions, auth=auth,
             visible=visible, send_email=send_email, log=True, save=False
         )
+        self._add_related_source_tags(contributor)
         self.save()
         return contributor
 

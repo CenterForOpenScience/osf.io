@@ -4,7 +4,7 @@ import sys
 from datetime import timedelta
 from django.apps import apps
 from website.app import init_app
-from website.util.metrics import CampaignSourceTags, provider_source_tag
+from website.util.metrics import CampaignSourceTags, provider_source_tag, OsfSourceTags
 from scripts import utils as script_utils
 import datetime
 from django.core.paginator import Paginator
@@ -132,7 +132,7 @@ def backfill_osf_provider_tags_to_users_not_invited_but_have_no_source_tags(dry_
     Tag = apps.get_model('osf', 'Tag')
     OSFUser = apps.get_model('osf', 'OSFUser')
     ThroughModel = OSFUser.tags.through
-    osf_provider_source_tag = Tag.all_tags.get(name='source:provider|osf', system=True)
+    osf_provider_source_tag = Tag.all_tags.get(name=OsfSourceTags.Osf.value, system=True)
     source_tag_ids = Tag.all_tags.filter(name__icontains='source:', system=True).values_list('id', flat=True)
 
     # Find not invited users with no source tags

@@ -25,7 +25,7 @@ from website import mailchimp_utils
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
-from website.util.metrics import ProviderSourceTags
+from website.util.metrics import OsfSourceTags
 
 from osf.models import (
     AbstractNode,
@@ -2056,7 +2056,7 @@ class TestUserMerging(OsfTestCase):
         # TODO: test security_messages
         # TODO: test mailing_lists
 
-        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed', ProviderSourceTags.Osf.value])
+        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed', OsfSourceTags.Osf.value])
 
         # TODO: test emails
         # TODO: test external_accounts

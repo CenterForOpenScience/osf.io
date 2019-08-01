@@ -75,7 +75,7 @@ from osf.utils.permissions import (
     READ_NODE,
     WRITE
 )
-from website.util.metrics import ProviderSourceTags, CampaignSourceTags
+from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from api.caching.tasks import update_storage_usage
@@ -2379,26 +2379,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return contributor
 
     # Overrides ContributorMixin
-    def add_unregistered_contributor(self, *args, **kwarg):
-        unreg_contrib = super(AbstractNode, self).add_unregistered_contributor(*args, **kwarg)
-        self._add_related_source_tags(unreg_contrib)
-
-        return unreg_contrib
-
     def _add_related_source_tags(self, contributor):
-        prereg_system_tag = self.all_tags.filter(name=CampaignSourceTags.Prereg.value, system=True).first()
-        registered_report_system_tag = self.all_tags.filter(name=CampaignSourceTags.OsfRegisteredReports.value,
-                                                            system=True).first()
-        osf4m_system_tag = self.all_tags.filter(name=CampaignSourceTags.Osf4m.value, system=True).first()
-        if prereg_system_tag:
-            contributor.add_system_tag(prereg_system_tag)
-        elif registered_report_system_tag:
-            contributor.add_system_tag(registered_report_system_tag)
-        elif osf4m_system_tag:
-            contributor.add_system_tag(osf4m_system_tag)
-        else:
-            osf_provider_tag, created = Tag.all_tags.get_or_create(name=ProviderSourceTags.Osf.value, system=True)
-            contributor.add_system_tag(osf_provider_tag)
+        osf_provider_tag, created = Tag.all_tags.get_or_create(name=OsfSourceTags.Osf.value, system=True)
+        source_tag = self.all_tags.filter(
+            system=True,
+            name__in=[
+                CampaignSourceTags.Prereg.value,
+                CampaignSourceTags.OsfRegisteredReports.value,
+                CampaignSourceTags.Osf4m.value
+            ]
+        ).first() or osf_provider_tag
+        contributor.add_system_tag(source_tag)
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):

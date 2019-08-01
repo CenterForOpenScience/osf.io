@@ -5,7 +5,7 @@ from datetime import datetime
 from osf_tests.factories import PreprintFactory, UserFactory, ProjectFactory, TagFactory
 from osf.models import Tag
 from scripts.normalize_user_tags import normalize_source_tags, add_claimed_tags, add_osf_provider_tags, add_prereg_campaign_tags, PROVIDER_SOURCE_TAGS, CAMPAIGN_SOURCE_TAGS, PROVIDER_CLAIMED_TAGS, CAMPAIGN_CLAIMED_TAGS
-from website.util.metrics import ProviderSourceTags, CampaignSourceTags, ProviderClaimedTags, CampaignClaimedTags
+from website.util.metrics import OsfSourceTags, CampaignSourceTags, OsfClaimedTags, CampaignClaimedTags
 
 pytestmark = pytest.mark.django_db
 
@@ -59,8 +59,8 @@ class TestUserSystemTagNormalization:
 
         # Test that osf provider tags are added
         add_osf_provider_tags()
-        assert Tag.all_tags.filter(name=ProviderSourceTags.Osf.value, system=True).exists()
-        assert Tag.all_tags.filter(name=ProviderClaimedTags.Osf.value, system=True).exists()
+        assert Tag.all_tags.filter(name=OsfSourceTags.Osf.value, system=True).exists()
+        assert Tag.all_tags.filter(name=OsfClaimedTags.Osf.value, system=True).exists()
 
         # Test that prereg campaign source tag is created.
         # Also make sure users created after the cutoff date have

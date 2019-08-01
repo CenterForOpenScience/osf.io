@@ -6,7 +6,7 @@ from website.app import init_app
 from scripts import utils as script_utils
 import sys
 from django.db import transaction
-from website.util.metrics import ProviderSourceTags, ProviderClaimedTags, CampaignSourceTags, CampaignClaimedTags
+from website.util.metrics import OsfSourceTags, OsfClaimedTags, CampaignSourceTags, CampaignClaimedTags, provider_source_tag, provider_claimed_tag
 
 logger = logging.getLogger(__name__)
 logger.propagate = False
@@ -16,31 +16,31 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 PROVIDER_SOURCE_TAGS = [
-    ('africarxiv_preprints', ProviderSourceTags.AfricarxivPreprints.value),
-    ('agrixiv_preprints', ProviderSourceTags.AgrixivPreprints.value),
-    ('arabixiv_preprints', ProviderSourceTags.ArabixivPreprints.value),
-    ('bitss_preprints', ProviderSourceTags.MetaarxivPreprints.value),
-    ('eartharxiv_preprints', ProviderSourceTags.EartharxivPreprints.value),
-    ('ecoevorxiv_preprints', ProviderSourceTags.EcoevorxivPreprints.value),
-    ('ecsarxiv_preprints', ProviderSourceTags.EcsarxivPreprints.value),
-    ('engrxiv_preprints', ProviderSourceTags.EngrxivPreprints.value),
-    ('focusarchive_preprints', ProviderSourceTags.FocusarchivePreprints.value),
-    ('frenxiv_preprints', ProviderSourceTags.FrenxivPreprints.value),
-    ('inarxiv_preprints', ProviderSourceTags.InarxivPreprints.value),
-    ('lawarxiv_preprints', ProviderSourceTags.LawarxivPreprints.value),
-    ('lissa_preprints', ProviderSourceTags.LissaPreprints.value),
-    ('marxiv_preprints', ProviderSourceTags.MarxivPreprints.value),
-    ('mediarxiv_preprints', ProviderSourceTags.MediarxivPreprints.value),
-    ('mindrxiv_preprints', ProviderSourceTags.MindrxivPreprints.value),
-    ('nutrixiv_preprints', ProviderSourceTags.NutrixivPreprints.value),
-    ('osf_preprints', ProviderSourceTags.OsfPreprints.value),
-    ('paleorxiv_preprints', ProviderSourceTags.PaleorxivPreprints.value),
-    ('psyarxiv_preprints', ProviderSourceTags.PsyarxivPreprints.value),
-    ('socarxiv_preprints', ProviderSourceTags.SocarxivPreprints.value),
-    ('sportrxiv_preprints', ProviderSourceTags.SportrxivPreprints.value),
-    ('thesiscommons_preprints', ProviderSourceTags.ThesiscommonsPreprints.value),
-    ('bodoarxiv_preprints', ProviderSourceTags.BodoarxivPreprints.value),
-    ('osf_registries', ProviderSourceTags.OsfRegistries.value),
+    ('africarxiv_preprints', provider_source_tag('africarxiv', 'preprint')),
+    ('agrixiv_preprints', provider_source_tag('agrixiv', 'preprint')),
+    ('arabixiv_preprints', provider_source_tag('arabixiv', 'preprint')),
+    ('bitss_preprints', provider_source_tag('bitss', 'preprint')),
+    ('eartharxiv_preprints', provider_source_tag('eartharxiv', 'preprint')),
+    ('ecoevorxiv_preprints', provider_source_tag('ecoevorxiv', 'preprint')),
+    ('ecsarxiv_preprints', provider_source_tag('ecsarxiv', 'preprint')),
+    ('engrxiv_preprints', provider_source_tag('engrxiv', 'preprint')),
+    ('focusarchive_preprints', provider_source_tag('focusarchive', 'preprint')),
+    ('frenxiv_preprints', provider_source_tag('frenxiv', 'preprint')),
+    ('inarxiv_preprints', provider_source_tag('inarxiv', 'preprint')),
+    ('lawarxiv_preprints', provider_source_tag('lawarxiv', 'preprint')),
+    ('lissa_preprints', provider_source_tag('lissa', 'preprint')),
+    ('marxiv_preprints', provider_source_tag('marxiv', 'preprint')),
+    ('mediarxiv_preprints', provider_source_tag('mediarxiv', 'preprint')),
+    ('mindrxiv_preprints', provider_source_tag('mindrxiv', 'preprint')),
+    ('nutrixiv_preprints', provider_source_tag('nutrixiv', 'preprint')),
+    ('osf_preprints', provider_source_tag('osf', 'preprint')),
+    ('paleorxiv_preprints', provider_source_tag('paleorxiv', 'preprint')),
+    ('psyarxiv_preprints', provider_source_tag('psyarxiv', 'preprint')),
+    ('socarxiv_preprints', provider_source_tag('socarxiv', 'preprint')),
+    ('sportrxiv_preprints', provider_source_tag('sportrxiv', 'preprint')),
+    ('thesiscommons_preprints', provider_source_tag('thesiscommons', 'preprint')),
+    ('bodoarxiv_preprints', provider_source_tag('bodoarxiv', 'preprint')),
+    ('osf_registries', provider_source_tag('osf', 'registry')),
 ]
 
 CAMPAIGN_SOURCE_TAGS = [
@@ -51,31 +51,31 @@ CAMPAIGN_SOURCE_TAGS = [
 ]
 
 PROVIDER_CLAIMED_TAGS = [
-    ProviderClaimedTags.AfricarxivPreprints.value,
-    ProviderClaimedTags.AgrixivPreprints.value,
-    ProviderClaimedTags.ArabixivPreprints.value,
-    ProviderClaimedTags.MetaarxivPreprints.value,
-    ProviderClaimedTags.EartharxivPreprints.value,
-    ProviderClaimedTags.EcoevorxivPreprints.value,
-    ProviderClaimedTags.EcsarxivPreprints.value,
-    ProviderClaimedTags.EngrxivPreprints.value,
-    ProviderClaimedTags.FocusarchivePreprints.value,
-    ProviderClaimedTags.FrenxivPreprints.value,
-    ProviderClaimedTags.InarxivPreprints.value,
-    ProviderClaimedTags.LawarxivPreprints.value,
-    ProviderClaimedTags.LissaPreprints.value,
-    ProviderClaimedTags.MarxivPreprints.value,
-    ProviderClaimedTags.MediarxivPreprints.value,
-    ProviderClaimedTags.MindrxivPreprints.value,
-    ProviderClaimedTags.NutrixivPreprints.value,
-    ProviderClaimedTags.OsfPreprints.value,
-    ProviderClaimedTags.PaleorxivPreprints.value,
-    ProviderClaimedTags.PsyarxivPreprints.value,
-    ProviderClaimedTags.SocarxivPreprints.value,
-    ProviderClaimedTags.SportrxivPreprints.value,
-    ProviderClaimedTags.ThesiscommonsPreprints.value,
-    ProviderClaimedTags.BodoarxivPreprints.value,
-    ProviderClaimedTags.OsfRegistries.value,
+    provider_claimed_tag('africarxiv', 'preprint'),
+    provider_claimed_tag('agrixiv', 'preprint'),
+    provider_claimed_tag('arabixiv', 'preprint'),
+    provider_claimed_tag('bitss', 'preprint'),
+    provider_claimed_tag('eartharxiv', 'preprint'),
+    provider_claimed_tag('ecoevorxiv', 'preprint'),
+    provider_claimed_tag('ecsarxiv', 'preprint'),
+    provider_claimed_tag('engrxiv', 'preprint'),
+    provider_claimed_tag('focusarchive', 'preprint'),
+    provider_claimed_tag('frenxiv', 'preprint'),
+    provider_claimed_tag('inarxiv', 'preprint'),
+    provider_claimed_tag('lawarxiv', 'preprint'),
+    provider_claimed_tag('lissa', 'preprint'),
+    provider_claimed_tag('marxiv', 'preprint'),
+    provider_claimed_tag('mediarxiv', 'preprint'),
+    provider_claimed_tag('mindrxiv', 'preprint'),
+    provider_claimed_tag('nutrixiv', 'preprint'),
+    provider_claimed_tag('osf', 'preprint'),
+    provider_claimed_tag('paleorxiv', 'preprint'),
+    provider_claimed_tag('psyarxiv', 'preprint'),
+    provider_claimed_tag('socarxiv', 'preprint'),
+    provider_claimed_tag('sportrxiv', 'preprint'),
+    provider_claimed_tag('thesiscommons', 'preprint'),
+    provider_claimed_tag('bodoarxiv', 'preprint'),
+    provider_claimed_tag('osf', 'registry'),
 ]
 
 CAMPAIGN_CLAIMED_TAGS = [
@@ -128,10 +128,10 @@ def add_osf_provider_tags():
         Add 'claimed:provider|osf' tag instance.
     """
     Tag = apps.get_model('osf', 'Tag')
-    Tag.all_tags.get_or_create(name=ProviderSourceTags.Osf.value, system=True)
-    Tag.all_tags.get_or_create(name=ProviderClaimedTags.Osf.value, system=True)
-    logger.info('Added tag ' + ProviderSourceTags.Osf.value)
-    logger.info('Added tag ' + ProviderClaimedTags.Osf.value)
+    Tag.all_tags.get_or_create(name=OsfSourceTags.Osf.value, system=True)
+    Tag.all_tags.get_or_create(name=OsfClaimedTags.Osf.value, system=True)
+    logger.info('Added tag ' + OsfSourceTags.Osf.value)
+    logger.info('Added tag ' + OsfClaimedTags.Osf.value)
 
 
 def add_prereg_campaign_tags():

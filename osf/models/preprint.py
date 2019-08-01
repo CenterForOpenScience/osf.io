@@ -888,11 +888,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         )
 
     # Overrides ContributorMixin
-    def add_unregistered_contributor(self, *args, **kwargs):
+    def _add_related_source_tags(self, contributor):
         system_tag_to_add, created = Tag.all_tags.get_or_create(name=provider_source_tag(self.provider._id, 'preprint'), system=True)
-        unreg_contrib = super(Preprint, self).add_unregistered_contributor(*args, **kwargs)
-        unreg_contrib.add_system_tag(system_tag_to_add)
-        return unreg_contrib
+        contributor.add_system_tag(system_tag_to_add)
 
 
 @receiver(post_save, sender=Preprint)
