@@ -51,7 +51,7 @@ class OSFOrderingFilter(OrderingFilter):
     # override
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
-        field_order = self.check_serializer_fields(queryset, request.query_params, view.serializer_class, ordering)
+        field_order = self.check_serializer_fields(queryset, request.query_params, view, ordering)
         if field_order:
             ordering = tuple(field_order)
         if isinstance(queryset, DjangoQuerySet) and not field_order:
@@ -69,13 +69,12 @@ class OSFOrderingFilter(OrderingFilter):
             return queryset.sort(*ordering)
         return queryset
 
-    def check_serializer_fields(self, queryset, query_params, serializer_class, ordering):
+    def check_serializer_fields(self, queryset, query_params, view, ordering):
+        serializer_class = view.serializer_class
         if not queryset:
             return []
         # Getting a list of fields from the model
-        source_field_list = []
-        if queryset[0] and getattr(queryset[0], '_meta', None):
-            source_field_list = [f.name for f in queryset[0]._meta.get_fields()]
+        # import ipdb; ipdb.set_trace()
         sorting_params = []
         for i, field in enumerate(query_params.getlist(self.ordering_param)):
             if field in ordering:
@@ -84,16 +83,14 @@ class OSFOrderingFilter(OrderingFilter):
             if field[0] == '-':
                 preserve_order = '-'
                 field = field[1:]
-            if field in source_field_list:
-                sorting_params.append(preserve_order + field)
-            else:
-                for serializer_field in serializer_class().fields.items():
-                    if serializer_field[0] == field:
-                        # Checking if the field can be sorted on
-                        if getattr(queryset[0], field, 'None') != 'None':
-                            sorting_params.append(preserve_order + field)
-                        elif getattr(queryset[0], serializer_field[1].source, 'None') != 'None':
-                            sorting_params.append(preserve_order + serializer_field[1].source)
+            if field in serializer_class._declared_fields:
+                # Checking if the field can be sorted on
+                source_field = serializer_class._declared_fields[field]
+                source_field_name = source_field.source
+                if getattr(queryset[0], field, 'None') != 'None':
+                    sorting_params.append(preserve_order + field)
+                elif getattr(queryset[0], source_field_name, 'None') != 'None':
+                    sorting_params.append(preserve_order + source_field_name)
         return sorting_params
 
 
