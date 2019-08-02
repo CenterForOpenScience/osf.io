@@ -73,13 +73,14 @@ class OSFOrderingFilter(OrderingFilter):
         serializer_class = view.serializer_class
         if not queryset:
             return []
-        # Getting a list of fields from the model
-        # import ipdb; ipdb.set_trace()
         sorting_params = []
         for i, field in enumerate(query_params.getlist(self.ordering_param)):
+            preserve_order = ''
+            # If the field is already a source, it will be returned in the ordering list
             if field in ordering:
                 sorting_params.append(field)
-            preserve_order = ''
+                continue
+            # The field may have a '-' before the name for descending order. This needs to be preserved
             if field[0] == '-':
                 preserve_order = '-'
                 field = field[1:]
@@ -87,8 +88,10 @@ class OSFOrderingFilter(OrderingFilter):
                 # Checking if the field can be sorted on
                 source_field = serializer_class._declared_fields[field]
                 source_field_name = source_field.source
+                # Checking if the original sort param could be used to sort
                 if getattr(queryset[0], field, 'None') != 'None':
                     sorting_params.append(preserve_order + field)
+                # Validating the source field name
                 elif getattr(queryset[0], source_field_name, 'None') != 'None':
                     sorting_params.append(preserve_order + source_field_name)
         return sorting_params
