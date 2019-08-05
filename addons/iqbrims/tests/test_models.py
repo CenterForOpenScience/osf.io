@@ -9,7 +9,7 @@ from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
 
 from addons.iqbrims.models import NodeSettings, IQBRIMSProvider
-from addons.iqbrims.client import IQBRIMSAuthClient
+from addons.iqbrims.client import IQBRIMSClient, IQBRIMSAuthClient
 from addons.iqbrims.tests.factories import (
     IQBRIMSAccountFactory,
     IQBRIMSNodeSettingsFactory,
@@ -58,9 +58,22 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         self.mock_refresh.return_value = True
         self.mock_refresh.start()
         super(TestNodeSettings, self).setUp()
+        self.mock_get_folder_info = mock.patch.object(
+            IQBRIMSClient,
+            'get_folder_info'
+        )
+        self.mock_get_folder_info.return_value = {'title': 'Test-xxxxx'}
+        self.mock_get_folder_info.start()
+        self.mock_rename_folder = mock.patch.object(
+            IQBRIMSClient,
+            'rename_folder'
+        )
+        self.mock_rename_folder.start()
 
     def tearDown(self):
         self.mock_refresh.stop()
+        self.mock_get_folder_info.stop()
+        self.mock_rename_folder.stop()
         super(TestNodeSettings, self).tearDown()
 
     @mock.patch('addons.iqbrims.models.IQBRIMSProvider')

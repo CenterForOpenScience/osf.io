@@ -35,6 +35,17 @@ class TestConfigViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, 
         )
         self.mock_about.return_value = {'rootFolderId': '24601'}
         self.mock_about.start()
+        self.mock_get_folder_info = mock.patch.object(
+            IQBRIMSClient,
+            'get_folder_info'
+        )
+        self.mock_get_folder_info.return_value = {'title': 'Test-xxxxx'}
+        self.mock_get_folder_info.start()
+        self.mock_rename_folder = mock.patch.object(
+            IQBRIMSClient,
+            'rename_folder'
+        )
+        self.mock_rename_folder.start()
         self.mock_fetch = mock.patch.object(
             self.node_settings.__class__,
             'fetch_access_token'
@@ -44,6 +55,8 @@ class TestConfigViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, 
 
     def tearDown(self):
         self.mock_about.stop()
+        self.mock_get_folder_info.stop()
+        self.mock_rename_folder.stop()
         self.mock_fetch.stop()
         super(TestConfigViews, self).tearDown()
 
