@@ -25,7 +25,7 @@ from addons.iqbrims.apps import IQBRIMSAddonConfig
 from addons.iqbrims.client import (IQBRIMSAuthClient,
                                                IQBRIMSClient)
 from addons.iqbrims.serializer import IQBRIMSSerializer
-from addons.iqbrims.utils import to_hgrid
+from addons.iqbrims.utils import to_hgrid, get_folder_title
 from website.util import api_v2_url
 from website import settings as ws_settings
 
@@ -339,7 +339,7 @@ def update_folder_name(sender, instance, created, **kwargs):
         access_token = iqbrims.fetch_access_token()
         client = IQBRIMSClient(access_token)
         folder_info = client.get_folder_info(folder_id=iqbrims.folder_id)
-        new_title = node.title + '-' + node._id
+        new_title = get_folder_title(node)
         current_title = folder_info['title']
         if current_title != new_title:
             logger.info('Update: title={}, current={}'.format(new_title, current_title))

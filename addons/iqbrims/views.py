@@ -34,7 +34,11 @@ from addons.base import generic_views, exceptions
 from addons.iqbrims.serializer import IQBRIMSSerializer
 from addons.iqbrims.models import NodeSettings as IQBRIMSNodeSettings
 from addons.iqbrims.models import REVIEW_FOLDERS
-from addons.iqbrims.utils import get_log_actions, must_have_valid_hash
+from addons.iqbrims.utils import (
+    get_log_actions,
+    must_have_valid_hash,
+    get_folder_title
+)
 
 logger = logging.getLogger(__name__)
 
@@ -444,7 +448,7 @@ def _iqbrims_init_folders(node, management_node, register_type, labo_name):
 
     _, res = client.create_folder_if_not_exists(folder_id, register_type)
     _, res = client.create_folder_if_not_exists(res['id'], labo_name)
-    root_folder_title = u'{0}-{1}'.format(node.title, node._id)
+    root_folder_title = get_folder_title(node)
     _, res = client.create_folder_if_not_exists(res['id'], root_folder_title)
     root_folder_id = res['id']
     for key, title in REVIEW_FOLDERS.items():

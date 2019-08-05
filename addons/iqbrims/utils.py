@@ -129,6 +129,8 @@ def create_or_update_external_account_with_other(other_external_account):
 
     return external_account
 
+def get_folder_title(node):
+    return u'{0}-{1}'.format(node.title.replace('/', '_'), node._id)
 
 def must_have_valid_hash():
     """Decorator factory that ensures that a request have valid X-RDM-Token header.
