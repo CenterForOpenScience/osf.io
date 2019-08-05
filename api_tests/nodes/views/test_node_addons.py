@@ -1366,17 +1366,10 @@ class TestNodeIQBRIMSAddon(
             'rename_folder'
         )
         self.mock_rename_folder.start()
-        self.mock_fetch = mock.patch.object(
-            self.node_settings.__class__,
-            'fetch_access_token'
-        )
-        self.mock_fetch.return_value = self.external_account.oauth_key
-        self.mock_fetch.start()
 
     def tearDown(self):
         self.mock_get_folder_info.stop()
         self.mock_rename_folder.stop()
-        self.mock_fetch.stop()
         super(TestNodeIQBRIMSAddon, self).tearDown()
 
     def _settings_kwargs(self, node, user_settings):
