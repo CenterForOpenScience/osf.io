@@ -29,6 +29,8 @@ volumes:
     external: false
   wb_requirements_local_bin_vol:
     external: false
+  wb_redis_data_vol:
+    external: false
   wb_tmp_vol:
     external: false
   osfstoragecache_vol:
@@ -217,6 +219,16 @@ services:
       - wb_requirements_vol:/usr/local/lib/python3.5
       - osfstoragecache_vol:/code/website/osfstoragecache
       - wb_tmp_vol:/tmp
+    stdin_open: true
+
+  wb_redis:
+    image: redis
+    command: redis-server
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    volumes:
+      - wb_redis_data_vol:/data
     stdin_open: true
 
   # wb_flower:
