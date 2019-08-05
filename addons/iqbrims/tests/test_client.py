@@ -5,7 +5,7 @@ import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 
-from addons.iqbrims.client import SpreadsheetClient
+from addons.iqbrims.client import SpreadsheetClient, IQBRIMSFlowableClient
 from addons.iqbrims.tests.utils import MockResponse
 
 from tests.base import OsfTestCase
@@ -45,3 +45,27 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                              [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
+
+class TestIQBRIMSFlowableClient(OsfTestCase):
+
+    @mock.patch('requests.post')
+    def test_start_workflow(self, mock_post):
+        mock_post.return_value.content = ''
+        mock_post.return_value.status_code = 200
+
+        client = IQBRIMSFlowableClient('0001')
+        status = {'state': 'deposit', 'labo_id': 'labox'}
+        client.start_workflow('x1234', 'XPaper', status, 'key')
+
+        name, args, kwargs = mock_post.mock_calls[0]
+        vars = json.loads(kwargs['data'])['variables']
+        assert_equal([v for v in vars if v['name'] == 'projectId'][0], {
+          'name': 'projectId',
+          'type': 'string',
+          'value': 'x1234'
+        })
+        assert_equal([v for v in vars if v['name'] == 'paperFolderPattern'][0], {
+          'name': 'paperFolderPattern',
+          'type': 'string',
+          'value': 'deposit/labox/%-x1234/'
+        })

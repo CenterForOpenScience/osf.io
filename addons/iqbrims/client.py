@@ -563,6 +563,8 @@ class IQBRIMSFlowableClient(object):
         is_directly_submit_data = status['is_directly_submit_data'] \
                                   if 'is_directly_submit_data' in status \
                                   else False
+        register_type = status['state']
+        labo_name = status['labo_id']
         payload = {'processDefinitionId': self.app_id,
                    'variables': [{'name': 'projectId',
                                   'type': 'string',
@@ -570,6 +572,11 @@ class IQBRIMSFlowableClient(object):
                                  {'name': 'paperTitle',
                                   'type': 'string',
                                   'value': project_title},
+                                 {'name': 'paperFolderPattern',
+                                  'type': 'string',
+                                  'value': '{}/{}/%-{}/'.format(register_type,
+                                                                labo_name,
+                                                                project_id)},
                                  {'name': 'isDirectlySubmitData',
                                   'type': 'boolean',
                                   'value': is_directly_submit_data},
