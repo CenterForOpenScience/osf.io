@@ -465,6 +465,8 @@ class CeleryConfig:
         'framework.celery_tasks',
         'framework.email.tasks',
         'osf.external.tasks',
+        'management.commands.data_storage_usage',
+        'management.commands.registration_schema_metrics',
         'website.mailchimp_utils',
         'website.notifications.tasks',
         'website.archiver.tasks',
@@ -584,19 +586,19 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'yesterday': True}
             },
-            'run_keen_snapshots': {
-                'task': 'scripts.analytics.run_keen_snapshots',
-                'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
-            },
+            # 'run_keen_snapshots': {
+            #     'task': 'scripts.analytics.run_keen_snapshots',
+            #     'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
+            # },
             'run_keen_events': {
                 'task': 'scripts.analytics.run_keen_events',
                 'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
                 'kwargs': {'yesterday': True}
             },
-            # 'data_storage_usage': {
-            #   'task': 'management.commands.data_storage_usage',
-            #   'schedule': crontab(day_of_month=1, minute=30, hour=4),  # Last of the month at 11:30 p.m.
-            # },
+            'data_storage_usage': {
+              'task': 'management.commands.data_storage_usage',
+              'schedule': crontab(day_of_month=1, minute=30, hour=4),  # Last of the month at 11:30 p.m.
+            },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
