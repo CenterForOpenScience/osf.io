@@ -104,6 +104,16 @@ class IQBRIMSClient(BaseClient):
             )
         return permissions
 
+    def get_folder_info(self, folder_id):
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+            folder_id),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
     def get_content(self, file_id):
         res = self._make_request(
             'GET',
