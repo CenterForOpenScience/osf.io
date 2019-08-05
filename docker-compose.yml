@@ -7,6 +7,8 @@ volumes:
     external: false
   mongo_data_vol:
     external: false
+  redis_data_vol:
+    external: false
   elasticsearch_data_vol:
     external: false
   elasticsearch6_data_vol:
@@ -121,6 +123,17 @@ services:
 #      - 5555:5555
 #    environment:
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+
+  redis:
+    image: redis
+    command: redis-server
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data_vol:/data
+    stdin_open: true
+
 
   #########################
   # Modular File Renderer #
