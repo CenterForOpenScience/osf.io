@@ -52,9 +52,7 @@ class TestInvite(OsfTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_in('This URL does not support LOGIN_BY_EPPN=False', res.text)
 
-    @mock.patch('website.project.views.contributor.LOGIN_BY_EPPN', True)
-    def test_redirect_to_claim_user_login_by_eppn(self):
-        user2 = AuthUserFactory()
+    def _common_redirect_to_claim_user_login_by_eppn(self, user2):
         unclaimed_record = self.user.get_unclaimed_record(self.project._primary_key)
         token = unclaimed_record['token']
         # verify_url = '/user/eppn/{uid}/{pid}/claim/verify/{token}/'.format(
@@ -73,6 +71,31 @@ class TestInvite(OsfTestCase):
         assert_in(verify_url, res.headers.get('Location'))
         res2 = res.follow(auth=user2.auth)
         assert_equal(res2.status_code, http.OK)
+        if user2.have_email:  # existing user
+            assert_in(user2.username, res2.text)
+            assert_in(user2.fullname, res2.text)
+            assert_in(self.user.username, res2.text)
+            assert_not_in(self.user.fullname, res2.text)
+        else:
+            assert_in(self.user.username, res2.text)
+            assert_in(self.user.fullname, res2.text)
+            assert_not_in(user2.username, res2.text)
+
+    @mock.patch('website.project.views.contributor.LOGIN_BY_EPPN', True)
+    def test_redirect_by_existing_user_to_claim_user_login_by_eppn(self):
+        user2 = AuthUserFactory()
+        user2.eppn = fake_email()  # fake ePPN
+        user2.have_email = True
+        user2.save()
+        self._common_redirect_to_claim_user_login_by_eppn(user2)
+
+    @mock.patch('website.project.views.contributor.LOGIN_BY_EPPN', True)
+    def test_redirect_by_new_user_to_claim_user_login_by_eppn(self):
+        user2 = AuthUserFactory()
+        user2.fullname = NEW_USER_NO_NAME
+        user2.have_email = False
+        user2.save()
+        self._common_redirect_to_claim_user_login_by_eppn(user2)
 
     @mock.patch('website.project.views.contributor.LOGIN_BY_EPPN', True)
     def test_claim_url_for_eppn_with_bad_token_returns_400(self):
