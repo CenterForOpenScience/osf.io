@@ -210,6 +210,11 @@ var LogText = {
 };
 
 var LogPieces = {
+    storage_name: {
+        view: function (ctrl, logObject) {
+            return m('span', logObject.attributes.params.storage_name);
+        }
+    },
     // User that took the action
     user: {
         view: function (ctrl, logObject) {

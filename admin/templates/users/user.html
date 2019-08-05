@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load node_extras %}
+
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/users.css" />
+{% endblock %}
+
 {% block title %}
     <title>User</title>
 {% endblock title %}
@@ -334,6 +339,18 @@
                         {% endfor %}
                         </tbody>
                         </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Quota for NII Storage (GB)</td>
+                    <td>
+                        <form method="post" action="{% url 'users:quota' user.id %}" class="row">
+                            {% csrf_token %}
+                            <div class="col-xs-2 storageLimitContainer">
+                                <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="1" value="{{ user.quota }}" oninvalid="this.setCustomValidity('Value must be an integer number greater than or equal 1.')"  />
+                            </div>
+                            <input type="submit" id="applyMaxQuota" class="btn btn-success" value="Apply" />
+                        </form>
                     </td>
                 </tr>
             </tbody>

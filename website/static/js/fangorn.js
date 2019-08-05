@@ -935,10 +935,18 @@ function _fangornComplete(treebeard, file) {
  */
 function _fangornDropzoneSuccess(treebeard, file, response) {
     treebeard.options.uploadInProgress = false;
-    var parent = file.treebeardParent,
-        item,
-        revisedItem,
-        child;
+
+    if (response.data.attributes.provider === 'osfstorage') {
+        var usedQuota = window.contextVars.used_quota;
+        var maxQuota = window.contextVars.max_quota;
+        var threshold = window.contextVars.threshold;
+        if (usedQuota > maxQuota * threshold) {
+            $osf.growl('Quota usage alert', 'You have used more than ' + (threshold * 100) + '% of your quota.', 'warning');
+        }
+    }
+
+    var parent = file.treebeardParent, item,revisedItem, child;
+
     for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
         if (!child.data.tmpID){
@@ -1502,8 +1510,19 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 
 function _fangornTitleColumn(item, col) {
     var tb = this;
-    if(item.data.nodeRegion && item.data.provider !== 'osfstorage'){
+    if (item.data.nodeRegion && item.data.provider !== 'osfstorage') {
         return _fangornTitleColumnHelper(tb, item, col, item.data.name + ' (' + item.data.nodeRegion + ')', '/', 'fg-file-links');
+    }
+    if (item.data.nodeRegion) {
+        if (window.contextVars.isCustomStorageLocation) {
+            return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion, '/', 'fg-file-links');
+        }
+        else if (item.data.nodeRegion===item.data.addonFullname) {
+            return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion, '/', 'fg-file-links');
+        }
+        else {
+            return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');
+        }
     }
     return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');
 }

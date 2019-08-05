@@ -1,6 +1,8 @@
 """
 Serialize user
 """
+from osf.models import UserQuota
+from website.util import quota
 
 
 def serialize_group_for_user(group, user):
@@ -16,6 +18,7 @@ def serialize_user(user):
         'schools': user.schools,
         'jobs': user.jobs
     }
+    max_quota, _ = quota.get_quota_info(user, UserQuota.NII_STORAGE)
 
     return {
         'username': user.username,
@@ -37,6 +40,7 @@ def serialize_user(user):
         'requested_deactivation': bool(user.requested_deactivation),
         'osf_groups': [serialize_group_for_user(group, user) for group in user.osf_groups],
         'potential_spam_profile_content': user._get_spam_content(potential_spam_profile_content),
+        'quota': max_quota,
     }
 
 

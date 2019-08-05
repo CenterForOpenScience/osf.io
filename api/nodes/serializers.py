@@ -16,7 +16,7 @@ from api.base.serializers import (
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
     ValuesListField,
 )
-from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
+from api.base.settings import ADDONS_FOLDER_CONFIGURABLE, WARNING_THRESHOLD
 from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
@@ -45,7 +45,9 @@ from website.project import new_private_link
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
+from website.util import quota
 from osf.utils import permissions as osf_permissions
+from api.base import settings as api_settings
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
@@ -356,6 +358,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         read_only=False,
     )
 
+    creator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+    )
+
     children = RelationshipField(
         related_view='nodes:node-children',
         related_view_kwargs={'node_id': '<_id>'},
@@ -526,6 +533,18 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-preprints',
         related_view_kwargs={'node_id': '<_id>'},
     ))
+
+    quota_rate = ser.SerializerMethodField()
+    quota_threshold = ser.SerializerMethodField()
+
+    def get_quota_rate(self, obj):
+        max_quota, used_quota = quota.get_quota_info(
+            obj.creator, quota.get_project_storage_type(obj),
+        )
+        return float(used_quota) / (max_quota * api_settings.SIZE_UNIT_GB)
+
+    def get_quota_threshold(self, obj):
+        return WARNING_THRESHOLD
 
     def get_current_user_permissions(self, obj):
         """

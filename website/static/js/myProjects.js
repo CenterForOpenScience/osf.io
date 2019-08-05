@@ -1435,7 +1435,7 @@ var Collections = {
             for (var i = begin; i < end; i++) {
                 item = ctrl.collections()[i];
                 index = i;
-                dropAcceptClass = index > 2 ? 'acceptDrop' : '';
+                dropAcceptClass = index > 0 ? 'acceptDrop' : '';
                 childCount = item.data.count ? ' (' + item.data.count() + ')' : '';
                 if (args.currentView().collection === item) {
                     selectedCSS = 'active';

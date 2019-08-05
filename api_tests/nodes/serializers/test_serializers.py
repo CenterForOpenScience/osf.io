@@ -6,6 +6,7 @@ from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from framework.auth import Auth
+from osf.models import ProjectStorageType, UserQuota
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
@@ -15,6 +16,7 @@ from osf_tests.factories import (
 )
 from tests.base import assert_datetime_equal
 from tests.utils import make_drf_request_with_version
+from api.base import settings as api_settings
 
 
 @pytest.fixture()
@@ -90,6 +92,72 @@ class TestNodeSerializer:
         assert urlparse(
             templated_from).path == '/{}nodes/{}/'.format(API_BASE, node._id)
 
+    def test_node_serializer_no_project_storage_type(self, user):
+        parent = ProjectFactory(creator=user)
+        node = NodeFactory(creator=user, parent=parent)
+        req = make_drf_request_with_version(version='2.0')
+
+        ProjectStorageType.objects.filter(node=node).delete()
+        UserQuota.objects.create(
+            user=user,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=150,
+            used=75 * api_settings.SIZE_UNIT_GB
+        )
+        UserQuota.objects.create(
+            user=user,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            max_quota=300,
+            used=0
+        )
+
+        data = NodeSerializer(node, context={'request': req}).data['data']
+        assert data['attributes']['quota_rate'] == 0.5
+
+    def test_node_serializer_nii_storage(self, user):
+        parent = ProjectFactory(creator=user)
+        node = NodeFactory(creator=user, parent=parent)
+        req = make_drf_request_with_version(version='2.0')
+
+        ProjectStorageType.objects.filter(node=node).update(storage_type=UserQuota.NII_STORAGE)
+        UserQuota.objects.create(
+            user=user,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=150,
+            used=75 * api_settings.SIZE_UNIT_GB
+        )
+        UserQuota.objects.create(
+            user=user,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            max_quota=300,
+            used=0
+        )
+
+        data = NodeSerializer(node, context={'request': req}).data['data']
+        assert data['attributes']['quota_rate'] == 0.5
+
+    def test_node_serializer_custom_storage(self, user):
+        parent = ProjectFactory(creator=user)
+        node = NodeFactory(creator=user, parent=parent)
+        req = make_drf_request_with_version(version='2.0')
+
+        ProjectStorageType.objects.filter(node=node).update(storage_type=UserQuota.CUSTOM_STORAGE)
+        UserQuota.objects.create(
+            user=user,
+            storage_type=UserQuota.NII_STORAGE,
+            max_quota=150,
+            used=75 * api_settings.SIZE_UNIT_GB
+        )
+        UserQuota.objects.create(
+            user=user,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            max_quota=300,
+            used=0
+        )
+
+        data = NodeSerializer(node, context={'request': req}).data['data']
+        assert data['attributes']['quota_rate'] == 0.0
+
 
 @pytest.mark.django_db
 class TestNodeRegistrationSerializer:
@@ -111,6 +179,7 @@ class TestNodeRegistrationSerializer:
             'region',
             'provider',
             'groups',
+            'creator',
         ]
 
         # Attributes

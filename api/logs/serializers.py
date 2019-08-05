@@ -1,5 +1,6 @@
 from rest_framework import serializers as ser
 
+from addons.osfstorage.models import Region
 from api.base.serializers import (
     JSONAPISerializer,
     RelationshipField,
@@ -12,8 +13,11 @@ from api.base.serializers import (
 )
 
 from osf.models import OSFUser, AbstractNode, Preprint
+from osf.models import OSFUser, AbstractNode, Preprint, ProjectStorageType, Institution
 from osf.utils.names import impute_names_model
 from osf.utils import permissions as osf_permissions
+
+import logging
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -81,6 +85,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     preprint_provider = ser.SerializerMethodField(read_only=True)
     previous_institution = NodeLogInstitutionSerializer(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
+    storage_name = ser.SerializerMethodField(read_only=True)
     study = ser.CharField(read_only=True)
     tag = ser.CharField(read_only=True)
     tags = ser.CharField(read_only=True)
@@ -192,6 +197,30 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             if preprint:
                 provider = preprint.provider
                 return {'url': provider.external_url, 'name': provider.name}
+        return None
+
+    def get_storage_name(self, obj):
+        if obj.get('path') is not None:
+            node = AbstractNode.load(obj['node'])
+            try:
+                storage_type = ProjectStorageType.objects.get(node=node).storage_type
+            except (ProjectStorageType.DoesNotExist):
+                # On old projects we still didn't have project storage types yet,
+                # so we will assume the project is using NII Storage.
+                return 'NII Storage'
+
+            if storage_type == ProjectStorageType.NII_STORAGE:
+                return 'NII Storage'
+
+            try:
+                institution = node.creator.affiliated_institutions.get()
+                return Region.objects.get(_id=institution._id).name
+            except Institution.DoesNotExist:
+                logging.warning('Unable to retrieve storage name: Institution not found')
+                return 'Institutional Storage'
+            except Region.DoesNotExist:
+                logging.warning('Unable to retrieve storage name from institution ID {}'.format(institution.id))
+                return 'Institutional Storage'
         return None
 
 class NodeLogSerializer(JSONAPISerializer):

@@ -71,7 +71,7 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
     msg['From'] = from_addr
     msg['To'] = to_addr
 
-    s = smtplib.SMTP(settings.MAIL_SERVER)
+    s = smtplib.SMTP(settings.MAIL_SERVER, settings.MAIL_PORT)
     s.ehlo()
     if ttls:
         s.starttls()

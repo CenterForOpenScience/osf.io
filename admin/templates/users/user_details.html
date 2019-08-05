@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/users.css" />
+{% endblock %}
+
+{% block title %}
+<title>{{ current_user.name }} - Statistical Status of Institutional Storage</title>
+{% endblock title %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 id="title">Statistical Status of Institutional Storage</h2>
+    <h3 id="sub-title">Institutional Storage > {{ current_user.name }}</h3>
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Projects</td>
+                        <td>
+                            <table class="table table-hover table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>GUID</th>
+                                        <th>Name</th>
+                                        {% comment %}<th>Public</th>{% endcomment %}
+                                        {% comment %}<th>Registration</th>{% endcomment %}
+                                        <th># of Contributors</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for node in current_user.nodes %}
+                                    <tr>
+                                        <td>{{ node.id }}</td>
+                                        <td>{{ node.title | truncatechars:20 }}</td>
+                                        {% comment %}<td>{{ node.public }}</td>{% endcomment %}
+                                        {% comment %}<td>{{ node.is_registration }}</td>{% endcomment %}
+                                        <td>{{ node.number_contributors }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Quota for Institutional Storage (GB)</td>
+                        <td>
+                            <form method="post" action="{% url 'users:institution_quota' current_user.id %}" class="row">
+                                {% csrf_token %}
+                                <div class="col-xs-2 storageLimitContainer">
+                                    <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="1" value="{{ current_user.quota }}" oninvalid="this.setCustomValidity('Value must be an integer number greater than or equal 1.')" />
+                                </div>
+                                <input type="submit" id="applyMaxQuota" class="btn btn-success" value="Apply" />
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}

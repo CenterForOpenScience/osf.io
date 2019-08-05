@@ -57,6 +57,10 @@ form p label {
     width: 75% !important;
 }
 
+.row {
+    margin-bottom: 15px;
+}
+
 #id_custom_taxonomy_json {
     width: 100%;
 }

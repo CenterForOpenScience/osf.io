@@ -56,3 +56,7 @@ from osf.models.rdm_file_timestamptoken_verify_result import RdmFileTimestamptok
 from osf.models.rdm_user_key import RdmUserKey  # noqa
 from osf.models.rdm_timestamp_grant_pattern import RdmTimestampGrantPattern  # noqa
 from osf.models.timestamp_task import TimestampTask  # noqa
+from osf.models.fileinfo import FileInfo  # noqa
+from osf.models.user_quota import UserQuota  # noqa
+from osf.models.project_storage_type import ProjectStorageType  # noqa
+from osf.models.region_external_account import RegionExternalAccount  # noqa
