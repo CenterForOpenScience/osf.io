@@ -74,6 +74,11 @@ def test_s3_connection(access_key, secret_key):
         'data': s3_response
     }, httplib.OK)
 
+def test_s3compat_connection(host_url, access_key, secret_key):
+    return ({
+        'message': ('Not yet implemented')
+    }, httplib.NOT_IMPLEMENTED)
+
 def test_owncloud_connection(host_url, username, password, folder, provider):
     """ This method is valid for both ownCloud and Nextcloud """
     provider_name = None
