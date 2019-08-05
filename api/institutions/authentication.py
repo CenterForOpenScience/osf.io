@@ -17,6 +17,7 @@ from framework.auth.core import get_user
 from osf.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN, to_bool
+from website.util.quota import update_default_storage
 
 import logging
 logger = logging.getLogger(__name__)
@@ -175,6 +176,7 @@ class InstitutionAuthentication(BaseAuthentication):
         if not user.is_affiliated_with_institution(institution):
             user.affiliated_institutions.add(institution)
             user.save()
+            update_default_storage(user)
 
         # update every login.
         init_cloud_gateway_groups(user, provider)

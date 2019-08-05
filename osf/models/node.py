@@ -45,6 +45,7 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.user import CGGroup
+from osf.models.project_storage_type import ProjectStorageType
 from osf.models.validators import validate_doi, validate_title
 from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -52,6 +53,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
 from osf.utils import sanitize
 from osf.utils.workflows import DefaultStates
+from api.base import settings as api_settings
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -2970,6 +2972,17 @@ def remove_addons(auth, resource_object_list):
             for addon in addon_list:
                 addon.after_delete(auth.user)
 
+def set_project_storage_type(instance):
+    from addons.osfstorage.models import NodeSettings  # this import was essential
+    storage_type = ProjectStorageType.CUSTOM_STORAGE
+    nodeSettings = NodeSettings.objects.filter(owner_id=instance.id).first()
+    if nodeSettings is not None:
+        if nodeSettings.region_id == api_settings.NII_STORAGE_REGION_ID:
+            storage_type = ProjectStorageType.NII_STORAGE
+        obj, created = ProjectStorageType.objects.update_or_create(
+            node_id=instance.id, defaults={'node_id': instance.id, 'storage_type': storage_type}
+        )
+
 
 ##### Signal listeners #####
 @receiver(post_save, sender=Node)
@@ -3019,6 +3032,7 @@ def add_default_node_addons(sender, instance, created, **kwargs):
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
+        set_project_storage_type(instance)
 
 
 @receiver(post_save, sender=Node)

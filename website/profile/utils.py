@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from framework import auth
 
+from api.base import settings as api_settings
 from website import settings
-from osf.models import Contributor
+from osf.models import Contributor, UserQuota
 from addons.osfstorage.models import Region
 from website.filters import profile_image_url
 from osf.models.contributor import get_contributor_permissions
@@ -10,6 +11,7 @@ from osf.utils.permissions import reduce_permissions
 
 from osf.utils import workflows
 from website.ember_osf_web.decorators import storage_i18n_flag_active
+from website.util import quota
 
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
@@ -90,6 +92,29 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
 
         default_region = user.get_addon('osfstorage').default_region
         available_regions = [region for region in Region.objects.all().values('_id', 'name')]
+
+        storage_type = UserQuota.NII_STORAGE
+        institution = user.affiliated_institutions.first()
+        if institution is not None and Region.objects.filter(_id=institution._id).exists():
+            storage_type = UserQuota.CUSTOM_STORAGE
+
+        max_quota, used_quota = quota.get_quota_info(user, storage_type)
+        used_quota_abbr = quota.abbreviate_size(used_quota)
+        if used_quota_abbr[1] == 'B':
+            used_quota_abbr = '{:.0f}[{}]'.format(used_quota_abbr[0], used_quota_abbr[1])
+        else:
+            size_unit = used_quota_abbr[1]
+            used_quota_abbr = '{:.1f}[{}]'.format(used_quota_abbr[0], size_unit)
+
+        used_rate = float(used_quota) / (max_quota * api_settings.SIZE_UNIT_GB)
+        icon_name = None
+        if used_rate < api_settings.WARNING_THRESHOLD:
+            icon_name = 'storage_ok.png'
+        elif used_rate < 1.0:
+            icon_name = 'storage_warning.png'
+        else:
+            icon_name = 'storage_error.png'
+
         ret.update({
             'activity_points': user.get_activity_points(),
             'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_LARGE),
@@ -98,6 +123,13 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             'storage_flag_is_active': storage_i18n_flag_active(),
             'default_region': {'name': default_region.name, '_id': default_region._id},
             'merged_by': merged_by,
+            'quota': {
+                'max': max_quota,
+                'used': used_quota_abbr,
+                'rate': '{:.1f}'.format(used_rate * 100),
+                'icon_url': '{}static/img/{}'.format(settings.DOMAIN, icon_name),
+                'is_nii_storage': storage_type == UserQuota.NII_STORAGE
+            }
         })
         if include_node_counts:
             projects = user.nodes.exclude(is_deleted=True).filter(type='osf.node').get_roots()

@@ -303,9 +303,10 @@ class TestAddonLogs(OsfTestCase):
         # assert_true(mock_form_message.called, "form_message not called")
         assert_true(mock_perform.called, 'perform not called')
 
+    @mock.patch('addons.base.views.BaseFileNode')
     @mock.patch('addons.base.views.timestamp')
     @pytest.mark.enable_quickfiles_creation
-    def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self, mock_timestamp):
+    def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self, mock_timestamp, mock_basefilenode):
         quickfiles = QuickFilesNode.objects.get_for_user(self.user)
         materialized_path = 'pizza'
         url = quickfiles.api_url_for('create_waterbutler_log')
@@ -839,8 +840,9 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs)
 
+    @mock.patch('addons.base.views.BaseFileNode')
     @mock.patch('addons.base.views.timestamp')
-    def test_add_file_osfstorage_log(self, mock_timestamp):
+    def test_add_file_osfstorage_log(self, mock_timestamp, mock_basefilenode):
         self.configure_osf_addon()
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
@@ -863,11 +865,12 @@ class TestAddonLogs(OsfTestCase):
         assert_equal(self.node.logs.count(), nlogs + 1)
         assert('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
-    def test_add_folder_osfstorage_log(self):
+    @mock.patch('addons.base.views.BaseFileNode')
+    def test_add_folder_osfstorage_log(self, mock_basefilenode):
         self.configure_osf_addon()
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path, 'size': 1000})
         nlogs = self.node.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
@@ -1463,6 +1466,18 @@ class TestAddonFileViews(OsfTestCase):
         assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
+    def test_delete_action_no_file_node(self):
+        file_node = self.get_test_file()
+        payload = {
+            'provider': file_node.provider,
+            'metadata': {
+                'path': '/test/FileThatDoesNotExists',
+                'materialized': '/test/FileThatDoesNotExists'
+            }
+        }
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
+        assert_false(TrashedFileNode.load(file_node._id))
+
     def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
         file_node = self.get_test_file()
         subfolder = GithubFolder(
@@ -1778,3 +1793,4 @@ class TestViewUtils(OsfTestCase):
         # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
         default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
         assert not any('/{}/'.format(addon) in asset_paths for addon in default_addons)
+
