@@ -856,6 +856,16 @@ def make_url_map(app):
             OsfWebRenderer('claim_account_registered.mako', trust=False)
         ),
 
+        # user claim account (contributor-ship of a project)
+        # user will be required ePPN
+        # claim token must be present in query parameter
+        Rule(
+            ['/user/eppn/<uid>/<pid>/claim/verify/<token>/'],
+            ['get', 'post'],
+            project_views.contributor.claim_user_login_by_eppn,
+            OsfWebRenderer('claim_account_eppn.mako', trust=False)
+        ),
+
         Rule(
             '/settings/',
             'get',

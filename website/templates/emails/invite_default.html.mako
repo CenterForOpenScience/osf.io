@@ -8,11 +8,21 @@
     %>
     Hello ${fullname},<br>
     <br>
-    You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the GakuNin RDM. To set a password for your account, visit:<br>
+    You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the GakuNin RDM.
+% if login_by_eppn:
+To confirm for your account, visit:<br>
+% else:
+To set a password for your account, visit:<br>
+% endif
     <br>
     ${claim_url}<br>
     <br>
-    Once you have set a password, you will be able to make contributions to "${node.title}" and create your own projects. You will automatically be subscribed to notification emails for this project. To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}<br>
+% if login_by_eppn:
+    Once you have continue,
+% else:
+    Once you have set a password,
+% endif
+    you will be able to make contributions to "${node.title}" and create your own projects. You will automatically be subscribed to notification emails for this project. To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}<br>
     <br>
     To preview "${node.title}" click the following link: ${node.absolute_url}<br>
     <br>

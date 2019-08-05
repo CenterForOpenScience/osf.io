@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from framework import forms, status
 from framework.auth import cas
 from framework.auth.core import get_user, generate_verification_key
-from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
+from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in, must_be_logged_in_without_checking_email
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.auth.signals import user_registered
 from framework.auth.utils import validate_email, validate_recaptcha
@@ -17,9 +17,10 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import AbstractNode, OSFUser, PreprintService, PreprintProvider
+from osf.models import AbstractNode, OSFUser, PreprintService, PreprintProvider, NodeLog
 from osf.utils import sanitize
 from osf.utils.permissions import expand_permissions, ADMIN
+from osf.utils.requests import get_current_request
 from website import mails, language, settings
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
@@ -30,6 +31,8 @@ from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import web_url_for, is_json_request
 from website.exceptions import NodeStateError
 
+from api.base.settings import LOGIN_BY_EPPN
+from api.institutions.authentication import NEW_USER_NO_NAME, send_welcome
 
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
@@ -524,6 +527,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         can_change_preferences=False,
         logo=logo if logo else settings.OSF_LOGO,
         osf_contact_email=settings.OSF_CONTACT_EMAIL,
+        login_by_eppn=LOGIN_BY_EPPN,
     )
 
     return to_addr
@@ -694,6 +698,117 @@ def claim_user_registered(auth, node, **kwargs):
     }
 
 
+@block_bing_preview
+@must_be_logged_in_without_checking_email
+@must_be_valid_project
+def claim_user_login_by_eppn(auth, node, **kwargs):
+    """
+    Claim being a contributor on a project.
+    A user must be logged in by ePPN.
+    """
+
+    if not LOGIN_BY_EPPN:
+        error_data = {
+            'message_short': 'Invalid url.',
+            'message_long': 'This URL does not support LOGIN_BY_EPPN=False'
+        }
+        raise HTTPError(http.BAD_REQUEST, data=error_data)
+
+    current_user = auth.user
+
+    uid, token = kwargs['uid'], kwargs['token']
+    unreg_user = OSFUser.load(uid)
+    if not verify_claim_token(unreg_user, token, pid=node._primary_key):
+        error_data = {
+            'message_short': 'Invalid url.',
+            'message_long': 'The token in the URL is invalid or has expired.'
+        }
+        raise HTTPError(http.BAD_REQUEST, data=error_data)
+
+    logout_url = web_url_for('auth_logout', redirect_url=request.url)
+
+    # Logged in user should not be a contributor the project
+    if node.is_contributor(current_user):
+        data = {
+            'message_short': 'Already a contributor',
+            'message_long': ('The logged-in user is already a contributor to this '
+                'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
+        }
+        raise HTTPError(http.BAD_REQUEST, data=data)
+
+    if request.method == 'POST':
+        node.replace_contributor(old=unreg_user, new=current_user)
+        node.save()
+
+        # replace contributor in Recent Activity
+        for log in NodeLog.objects.filter(node__guids___id=node._id):
+            if log.action != NodeLog.CONTRIB_ADDED:
+                continue
+            params = log.params
+            if not params:
+                continue
+            contributors = params.get('contributors')
+            if not contributors:
+                continue
+            for contrib in contributors:
+                if contrib == unreg_user._id:
+                    contributors.remove(contrib)
+                    contributors.append(current_user._id)
+                    log.params['contributors'] = contributors
+                    log.save()
+                    break
+
+        # protect username and fullname
+        username = unreg_user.username
+        fullname = unreg_user.fullname
+
+        # invalidate unreg_user
+        unreg_user.gdpr_delete()
+        unreg_user.save()
+
+        if current_user.have_email:
+            # add to "Alternate Emails"
+            if not current_user.emails.filter(address=username):
+                current_user.emails.create(address=username)
+        else:
+            # register new user
+            if current_user.emails.filter(address=current_user.username).exists():
+                current_user.emails.filter(address=current_user.username).delete()
+            if not current_user.emails.filter(address=username):
+                current_user.emails.create(address=username)
+            current_user.username = username
+            current_user.have_email = True
+            if current_user.fullname == NEW_USER_NO_NAME:
+                current_user.fullname = fullname
+            current_user.save()
+            send_welcome(current_user, get_current_request())
+
+        status.push_status_message(
+            'You are now a contributor to this project.',
+            kind='success',
+            trust=False
+        )
+        return redirect(node.url)
+
+    if current_user.have_email:
+        username = current_user.username
+        fullname = current_user.fullname
+        alternate_email = unreg_user.username
+    else:
+        username = unreg_user.username
+        fullname = current_user.fullname
+        if fullname == NEW_USER_NO_NAME:
+            fullname = unreg_user.fullname
+        alternate_email = None
+
+    return {
+        'username': username,
+        'fullname': fullname,
+        'alternate_email': alternate_email,
+        'signOutUrl': logout_url
+    }
+
+
 @user_registered.connect
 def replace_unclaimed_user_with_registered(user):
     """Listens for the user_registered signal. If unreg_user is stored in the
@@ -734,6 +849,10 @@ def claim_user_form(auth, **kwargs):
             'message_long': 'Claim user does not exists, the token in the URL is invalid or has expired.'
         }
         raise HTTPError(http.BAD_REQUEST, data=error_data)
+
+    if LOGIN_BY_EPPN:
+        return redirect(web_url_for('claim_user_login_by_eppn',
+            uid=uid, pid=pid, token=token))
 
     # If user is logged in, redirect to 're-enter password' page
     if auth.logged_in:
