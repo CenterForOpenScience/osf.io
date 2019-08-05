@@ -43,7 +43,6 @@ from website.project.decorators import must_be_contributor_or_public, must_be_va
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.util import rubeus, timestamp
-from pprint import pprint
 
 
 # import so that associated listener is instantiated and gets emails
@@ -369,7 +368,6 @@ def mark_file_version_as_seen(user, path, version):
 @no_auto_transaction
 @must_be_valid_project(quickfiles_valid=True)
 def create_waterbutler_log(payload, **kwargs):
-    logger.critical('i will now create water butler log')
     with transaction.atomic():
         try:
             auth = payload['auth']
@@ -384,24 +382,18 @@ def create_waterbutler_log(payload, **kwargs):
 
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
-            logger.critical('It is a key error 1')
             raise HTTPError(httplib.BAD_REQUEST)
 
         auth = Auth(user=user)
         node = kwargs['node'] or kwargs['project']
-        logger.critical('so far so good 01')
         if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
-            logger.critical('so far so good 02')
             for bundle in ('source', 'destination'):
                 for key in ('provider', 'materialized', 'name', 'nid'):
                     if key not in payload[bundle]:
-                        logger.critical(key)
-                        logger.critical('for loop key error')
                         raise HTTPError(httplib.BAD_REQUEST)
 
             dest = payload['destination']
             src = payload['source']
-            logger.critical('still no problem')
             if src is not None and dest is not None:
                 dest_path = dest['materialized']
                 src_path = src['materialized']
@@ -415,13 +407,11 @@ def create_waterbutler_log(payload, **kwargs):
                     and dest['name'] != src['name']
                 ):
                     action = LOG_ACTION_MAP['rename']
-            logger.critical('still no problem  in middle 1')
             destination_node = node  # For clarity
             source_node = AbstractNode.load(payload['source']['nid'])
 
             source = source_node.get_addon(payload['source']['provider'])
             destination = node.get_addon(payload['destination']['provider'])
-            logger.critical('still no problem  in middle 2')
             payload['source'].update({
                 'materialized': payload['source']['materialized'].lstrip('/'),
                 'addon': source.config.full_name,
@@ -436,7 +426,6 @@ def create_waterbutler_log(payload, **kwargs):
                     'title': source_node.title,
                 }
             })
-            logger.critical('still no problem  in middle 3')
             payload['destination'].update({
                 'materialized': payload['destination']['materialized'].lstrip('/'),
                 'addon': destination.config.full_name,
@@ -451,20 +440,16 @@ def create_waterbutler_log(payload, **kwargs):
                     'title': destination_node.title,
                 }
             })
-            logger.critical('still no problem  in middle 4')
             payload.update({
                 'node': destination_node._id,
                 'project': destination_node.parent_id,
             })
-            logger.critical('still no problem  in middle 5')
             if not payload.get('errors'):
                 destination_node.add_log(
                     action=action,
                     auth=auth,
                     params=payload
                 )
-            logger.critical(payload)
-            logger.critical('still no problem  in middle 6')
             if payload.get('email') is True or payload.get('errors'):
                 mails.send_mail(
                     user.username,
@@ -478,7 +463,6 @@ def create_waterbutler_log(payload, **kwargs):
                     destination_addon=payload['destination']['addon'],
                     osf_support_email=settings.OSF_SUPPORT_EMAIL
                 )
-            logger.critical('still no problem  in middle 7')  
             if payload.get('errors'):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
@@ -486,20 +470,15 @@ def create_waterbutler_log(payload, **kwargs):
 
         else:
             try:
-                logger.critical('still no problem  in middle 8')
                 metadata = payload['metadata']
                 node_addon = node.get_addon(payload['provider'])
             except KeyError:
-                logger.critical('It is a key error 2')
                 raise HTTPError(httplib.BAD_REQUEST)
 
-            logger.critical('still no problem  in middle 9')
             if node_addon is None:
                 raise HTTPError(httplib.BAD_REQUEST)
-            logger.critical('still no problem  in middle 10')
             metadata['path'] = metadata['path'].lstrip('/')
             node_addon.create_waterbutler_log(auth, action, metadata)
-            logger.critical('still no problem  in middle 11')
         # Create/update timestamp record
         if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
             metadata = payload.get('metadata') or payload.get('destination')
@@ -508,13 +487,12 @@ def create_waterbutler_log(payload, **kwargs):
                 timestamp.file_created_or_updated(node, metadata, user.id, created_flag)
         # Update moved, or renamed timestamp records
         elif action in (NodeLog.FILE_MOVED, NodeLog.FILE_RENAMED):
-            logger.critical('before entering .....')
+            metadata = payload.get('metadata') or payload.get('destination')
             src_path = payload['source']['materialized']
             dest_path = payload['destination']['materialized']
             src_provider = payload['source']['provider']
             dest_provider = payload['destination']['provider']
             metadata = payload.get('metadata') or payload.get('destination')
-            logger.critical('Before entering to my function!!')
             timestamp.file_node_moved(auth.user.id, node._id, src_provider, dest_provider, src_path, dest_path, metadata)
         # Update status of deleted timestamp records
         elif action in (NodeLog.FILE_REMOVED):
@@ -698,10 +676,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
 @must_be_contributor_or_public
 @ember_flag_is_active('ember_file_detail_page')
 def addon_view_or_download_file(auth, path, provider, **kwargs):
-    from pprint import pprint
     extras = request.args.to_dict()
-    pprint("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD")
-    pprint(extras)
     extras.pop('_', None)  # Clean up our url params a bit
     action = extras.get('action', 'view')
     guid = kwargs.get('guid')

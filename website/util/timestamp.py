@@ -32,7 +32,6 @@ from website.util import waterbutler
 from django.contrib.contenttypes.models import ContentType
 from framework.celery_tasks import app as celery_app
 
-
 logger = logging.getLogger(__name__)
 
 RESULT_MESSAGE = {
@@ -292,9 +291,6 @@ def get_full_list(uid, pid, node):
     return provider_list
 
 def check_file_timestamp(uid, node, data):
-    from pprint import pprint
-    pprint("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU")
-    pprint(data)
     user = OSFUser.objects.get(id=uid)
     cookie = user.get_or_create_cookie()
     tmp_dir = None
@@ -302,50 +298,32 @@ def check_file_timestamp(uid, node, data):
 
     try:
         file_node = BaseFileNode.objects.get(_id=data['file_id'])
-        pprint(vars(file_node))
-        pprint('UQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUQUqUq')
         tmp_dir = tempfile.mkdtemp()
 
         if not os.path.exists(tmp_dir):
             os.mkdir(tmp_dir)
-        
-        logger.critical(cookie)
-        logger.critical(tmp_dir)
-        logger.critical(file_node)
         download_file_path = waterbutler.download_file(cookie, file_node, tmp_dir)
-        pprint(file_node)
-
         if download_file_path is None:
             intentional_remove_status = [
                 api_settings.FILE_NOT_EXISTS,
                 api_settings.TIME_STAMP_STORAGE_DISCONNECTED
             ]
             file_data = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=data['file_id'])
-            pprint(data['file_id'])
-            pprint(vars(file_data))
-            pprint('UQ0')
-            pprint(file_data.exists())
-            pprint(file_data.get().inspection_result_status)
             if file_data.exists() and \
                     file_data.get().inspection_result_status not in intentional_remove_status:
                 file_data.update(inspection_result_status=api_settings.FILE_NOT_FOUND)
             return None
-        pprint('UQ1')
         if not userkey_generation_check(user._id):
             userkey_generation(user._id)
-        pprint('UQ2')
         verify_check = TimeStampTokenVerifyCheck()
-        pprint('UQ3')
         result = verify_check.timestamp_check(
             user._id, data, node._id, download_file_path, tmp_dir
         )
-        pprint(result)
 
         shutil.rmtree(tmp_dir)
         return result
 
     except Exception as err:
-        pprint(err)
         if tmp_dir and os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
         logger.exception(err)
@@ -442,7 +420,6 @@ def add_token(uid, node, data):
         # Request To Download File
         tmp_dir = tempfile.mkdtemp()
         download_file_path = waterbutler.download_file(cookie, file_node, tmp_dir)
-
         if download_file_path is None:
             intentional_remove_status = [
                 api_settings.FILE_NOT_EXISTS,
@@ -566,9 +543,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         moved_file.path = moved_file.path.replace(src_path, dest_path, 1)
         moved_file.provider = dest_provider
         moved_file.save()
-    from pprint import pprint
     if src_provider != 'osfstorage' and src_path[-1:] == '/':
-        logger.critical('i am entering to the bug zone....')
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
                                                  deleted_on__isnull=True,
@@ -576,44 +551,16 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         for file_node in file_nodes:
             file_node._path = re.sub(r'^' + src_path, dest_path, file_node._path)
             file_node._materialized_path = re.sub(r'^' + src_path, dest_path, file_node._path)
-            file_node.type = file_node.type.replace(src_provider, dest_provider)
-            logger.critical('src_provider '+str(src_provider))
-            logger.critical('src_path '+str(src_path))
-            logger.critical('target_object_id '+str(target_object_id))
-            logger.critical('dest_provider '+str(dest_provider))
-            logger.critical('new type'+ str(file_node.type.replace(src_provider, dest_provider)))
-            if(dest_provider == 'googledrive'):
-                logger.critical('I am hit: googledrive')
-                from addons.googledrive.models import GoogleDriveFile
-                file_node.__class__ = GoogleDriveFile
-                file_node.provider = dest_provider
-                file_node._meta.model._provider = dest_provider
-                file_node.save()
-            elif(dest_provider == 'owncloud'):
-                logger.critical('I am hit: owncloud')
-                from addons.owncloud.models import OwncloudFile
-                file_node.__class__ = OwncloudFile
-                file_node.provider = dest_provider
-                file_node._meta.model._provider = dest_provider
-                file_node.save()
-            elif(dest_provider == 's3'):
-                logger.critical('I am hit: s3')
-                from addons.s3.models import S3File
-                file_node.__class__ = S3File
-                file_node.provider = dest_provider
-                file_node._meta.model._provider = dest_provider
-                file_node.save()
-            elif(dest_provider == 'osfstorage'):
-                logger.critical('I am hit: osfstorage')
-                from addons.osfstorage.models import OsfStorageFile
-                file_node.__class__ = OsfStorageFile
-                file_node.type = 'osf.osfstoragefile'
-                file_node.save()
-                logger.critical(file_node)
-            # file_node.provider = dest_provider
-            # file_node._meta.model._provider = dest_provider
-            # file_node.save()
+            file_node.type = move_file_node_update(file_node, src_provider, dest_provider)
+            if dest_provider == 'osfstorage':
+                file_node.delete()
+                rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+                file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
+                rft.file_id = file_node._id
+                rft.provider = 'osfstorage'
+                rft.save()
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+
     else:
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
@@ -622,76 +569,43 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         for file_node in file_nodes:
             file_node._path = dest_path
             file_node._materialized_path = dest_path
-            logger.critical('src_provider '+str(src_provider))
-            logger.critical('src_path '+str(src_path))
-            logger.critical('target_object_id '+str(target_object_id))
-            logger.critical('dest_provider '+str(dest_provider))
-            logger.critical('new type' + str(file_node.type.replace(src_provider, dest_provider)))
-            logger.critical('IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII')
-            if(dest_provider == 'googledrive'):
-                logger.critical('I am hit: googledrive')
-                from addons.googledrive.models import GoogleDriveFile
-                file_node.__class__ = GoogleDriveFile
-                file_node.provider = dest_provider
-                file_node._meta.model._provider = dest_provider
-                file_node.save()
-            elif(dest_provider == 'owncloud'):
-                logger.critical('I am hit: owncloud')
-                from addons.owncloud.models import OwncloudFile
-                file_node.__class__ = OwncloudFile
-                file_node.provider = dest_provider
-                file_node._meta.model._provider = dest_provider
-                file_node.save()
-            elif(dest_provider == 's3'):
-                logger.critical('I am hit: s3')
-                from addons.s3.models import S3File
-                file_node.__class__ = S3File
-                file_node.provider = dest_provider
-                file_node._meta.model._provider = dest_provider
-                file_node.save()
-            elif(dest_provider == 'osfstorage'):
-                logger.critical('I am hit: osfstorage')
-                from addons.osfstorage.models import OsfStorageFile
-                file_node.__class__ = OsfStorageFile
-                file_node.type = 'osf.osfstoragefile'
-                file_node.save()
-                logger.critical(file_node)
-                # file_node._path = file_node._id
-                # file_node.materialized_path = dest_path
-                # from pprint import pprint
-                # pprint(file_node.get(file_node._id, file_node.target))
-                # o = OsfStorageFile(
-                #     id = file_node.id,
-                #     _id = file_node._id,
-                #     target = file_node.target,
-                #     name = file_node.name,
-                #     provider = dest_provider,
-                #     type = file_node.type,
-                #     target_content_type_id = file_node.target_content_type_id,
-                #     target_object_id = file_node.target_object_id
-                # )
-                # o.save()
-
-
-            # # logger.critical('ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ')
-            # # logger.critical(file_node.__class__)
-            # file_node.provider = dest_provider
-            # file_node._meta.model._provider = dest_provider
-
-            # file_node.type = file_node.type.replace(src_provider, dest_provider)
-            # logger.critical(file_node._path)
-            # logger.critical(file_node._materialized_path)
-            # file_node.save()
-            # logger.critical('I will print the path and materialized path!!!')
-            # logger.critical(file_node._path)
-            # logger.critical(file_node._materialized_path)
+            file_node = move_file_node_update(file_node, src_provider, dest_provider)
+            if dest_provider == 'osfstorage':
+                file_node.delete()
+                rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+                file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
+                rft.file_id = file_node._id
+                rft.provider = 'osfstorage'
+                rft.save()
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
+    if src_provider == 'osfstorage' and dest_provider != 'osfstorage':
+        node = AbstractNode.objects.get(pk=Guid.objects.filter(_id=metadata['node']['_id']).first().object_id)
+        file_created_or_updated(node, metadata, uid, True)
+
+def move_file_node_update(file_node, src_provider, dest_provider):
+    file_node.type = file_node.type.replace(src_provider, dest_provider)
+    if(dest_provider == 'googledrive'):
+        from addons.googledrive.models import GoogleDriveFile
+        file_node.__class__ = GoogleDriveFile
+    elif(dest_provider == 'owncloud'):
+        from addons.owncloud.models import OwncloudFile
+        file_node.__class__ = OwncloudFile
+    elif(dest_provider == 's3'):
+        from addons.s3.models import S3File
+        file_node.__class__ = S3File
+    elif(dest_provider == 'osfstorage'):
+        from addons.osfstorage.models import OsfStorageFile
+        file_node.__class__ = OsfStorageFile
+        file_node.type = 'osf.osfstoragefile'
+
+    file_node.provider = dest_provider
+    file_node._meta.model._provider = dest_provider
+    file_node.save()
+    return file_node
 
 def provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider):
     last_timestamp_result = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
-    path = file_node._path
-    if dest_provider=='osfstorage':
-        path = file_node.path
+    path = file_node.materialized_path
     if src_provider != dest_provider:
         file_info = {
             'file_id': file_node._id,
@@ -703,11 +617,7 @@ def provider_change_update_timestampverification(uid, file_node, src_provider, d
             'size': last_timestamp_result.verify_file_size,
             'version': 1,
         }
-        from pprint import pprint
-        pprint('Now i will start timestampverification')
         res = check_file_timestamp(uid, file_node.target, file_info)
-        pprint(res)
-        pprint('Now i will start timestampverification done')
         return res
 
 def file_node_overwitten(project_id, target_object_id, addon_name, src_path):
@@ -781,13 +691,6 @@ def waterbutler_folder_file_info(pid, provider, path, node, cookies, headers):
     file_list = []
     child_file_list = []
     for file_data in waterbutler_json_res['data']:
-        from pprint import pprint
-        pprint("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
-        pprint("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
-        pprint("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
-        pprint("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
-        pprint("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
-        pprint(file_data)
         if file_data['attributes']['kind'] == 'folder':
             child_file_list.extend(waterbutler_folder_file_info(
                 pid, provider, file_data['attributes']['path'],
@@ -1020,7 +923,6 @@ class TimeStampTokenVerifyCheck:
         For example, if the file has been deleted, it can set the status
         immediately.
         """
-        logger.critical('HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH')
         ret = 0
         baseFileNode = None
         verify_result_title = None
@@ -1032,9 +934,6 @@ class TimeStampTokenVerifyCheck:
         # get file information, verifyresult table
         if provider == 'osfstorage':
             baseFileNode = BaseFileNode.objects.get(_id=file_id)
-            logger.critical('I am trying to get the file ............................................................................')
-            from pprint import pprint
-            pprint(baseFileNode)
             if baseFileNode.is_deleted and not verify_result:
                 ret = api_settings.FILE_NOT_EXISTS
                 verify_result_title = api_settings.FILE_NOT_EXISTS_MSG  # 'FILE missing'
