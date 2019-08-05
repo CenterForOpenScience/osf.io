@@ -333,6 +333,8 @@ def update_folder_name(sender, instance, created, **kwargs):
     if not node.has_addon(IQBRIMSAddonConfig.short_name):
         return
     iqbrims = node.get_addon(IQBRIMSAddonConfig.short_name)
+    if not iqbrims.has_auth:
+        return
     try:
         access_token = iqbrims.fetch_access_token()
         client = IQBRIMSClient(access_token)
