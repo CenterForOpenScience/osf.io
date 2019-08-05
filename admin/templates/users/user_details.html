@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load node_extras %}
+
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/users.css" />
+{% endblock %}
+
 {% block title %}
 <title>{{ current_user.name }} - Statistical Status of Institutional Storage</title>
 {% endblock title %}
@@ -51,8 +56,8 @@
                         <td>
                             <form method="post" action="{% url 'users:institution_quota' current_user.id %}" class="row">
                                 {% csrf_token %}
-                                <div class="col-xs-2">
-                                    <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="1" value="{{ current_user.quota }}" />
+                                <div class="col-xs-2 storageLimitContainer">
+                                    <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="1" value="{{ current_user.quota }}" oninvalid="this.setCustomValidity('Value must be an integer number greater than or equal 1.')" />
                                 </div>
                                 <input type="submit" id="applyMaxQuota" class="btn btn-success" value="Apply" />
                             </form>
