@@ -342,10 +342,10 @@ def update_folder_name(sender, instance, created, **kwargs):
         new_title = get_folder_title(node)
         current_title = folder_info['title']
         if current_title != new_title:
-            logger.info('Update: title={}, current={}'.format(new_title, current_title))
+            logger.info(u'Update: title={}, current={}'.format(new_title, current_title))
             client.rename_folder(iqbrims.folder_id, new_title)
         else:
-            logger.info('No changes: title={}, current={}'.format(new_title, current_title))
+            logger.info(u'No changes: title={}, current={}'.format(new_title, current_title))
     except exceptions.InvalidAuthError:
         logger.warning('Failed to check description of google drive',
                        exc_info=True)
