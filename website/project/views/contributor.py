@@ -763,7 +763,7 @@ def claim_user_login_by_eppn(auth, node, **kwargs):
         fullname = unreg_user.fullname
 
         # invalidate unreg_user
-        unreg_user.gdpr_delete()
+        unreg_user.gdpr_delete(logout_session=False)
         unreg_user.save()
 
         if current_user.have_email:

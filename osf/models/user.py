@@ -803,7 +803,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         user.save()
 
-    def disable_account(self):
+    def disable_account(self, logout_session=True):
         """
         Disables user account, making is_disabled true, while also unsubscribing user
         from mailchimp emails, remove any existing sessions.
@@ -832,11 +832,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.reload()
         self.is_disabled = True
 
-        # we must call both methods to ensure the current session is cleared and all existing
-        # sessions are revoked.
-        req = get_current_request()
-        if isinstance(req, FlaskRequest):
-            logout()
+        if logout_session:
+            # we must call both methods to ensure the current session is cleared and all existing
+            # sessions are revoked.
+            req = get_current_request()
+            if isinstance(req, FlaskRequest):
+                logout()
         remove_sessions_for_user(self)
 
     def update_is_active(self):
@@ -1581,7 +1582,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
-    def gdpr_delete(self):
+    def gdpr_delete(self, logout_session=True):
         """
         This function does not remove the user object reference from our database, but it does disable the account and
         remove identifying in a manner compliant with GDPR guidelines.
@@ -1631,7 +1632,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.remove_contributor(self, auth=Auth(self), log=False)
 
         # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
-        self.disable_account()
+        self.disable_account(logout_session=logout_session)
 
         # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
         for node in personal_nodes.all():
