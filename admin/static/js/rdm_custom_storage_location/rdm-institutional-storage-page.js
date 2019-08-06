@@ -37,21 +37,6 @@ $('#s3_modal input').keyup(function () {
     validateRequiredFields('s3');
 });
 
-function s3compatSelectChange(e) {
-    if (document.getElementById('s3compat_compatible_service').value == 'Other') {
-        document.getElementById('s3compat_endpoint_url').required = true;
-        $('#s3compat_endpoint_url_collapse').collapse('show');
-    }
-    else {
-        document.getElementById('s3compat_endpoint_url').required = false;
-        $('#s3compat_endpoint_url_collapse').collapse('hide');
-    }
-    validateRequiredFields('s3compat');
-};
-
-document.getElementById('s3compat_compatible_service').addEventListener('change', s3compatSelectChange);
-
-$('#s3compat_modal').on('show.bs.modal', s3compatSelectChange);
 $('#s3compat_modal input').keyup(function () {
     validateRequiredFields('s3compat');
 });

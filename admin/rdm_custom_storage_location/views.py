@@ -104,11 +104,8 @@ def test_connection(request):
             data.get('s3_secret_key')
         )
     elif provider_short_name == 's3compat':
-        endpoint_url = {
-            'Other': data.get('s3compat_endpoint_url')
-        }
         result = utils.test_s3compat_connection(
-            endpoint_url[data['s3compat_compatible_service']],
+            data.get('s3compat_endpoint_url'),
             data.get('s3compat_access_key'),
             data.get('s3compat_secret_key')
         )
