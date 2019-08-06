@@ -8,11 +8,17 @@ $('[name=options]').change(function () {
     $('#storage_name').attr('disabled', this.value === 'osfstorage');
 });
 
+$('.modal').on('hidden.bs.modal', function (e) {
+    $('body').css("overflow", "auto");
+  })
+
 $('#institutional_storage_form').submit(function (e) {
     if ($('#institutional_storage_form')[0].checkValidity()) {
         var selectedProvider = $('input[name=\'options\']:checked').val();
         var showModal = function () {
             $('#' + selectedProvider + '_modal').modal('show');
+            $('body').css("overflow", "hidden");
+            $('.modal').css("overflow", "auto");
             validateRequiredFields(selectedProvider);
         };
         if (selectedProvider === 'osfstorage') {
