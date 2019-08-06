@@ -103,6 +103,12 @@ def test_connection(request):
             data.get('s3_access_key'),
             data.get('s3_secret_key')
         )
+    elif provider_short_name == 's3compat':
+        result = utils.test_s3compat_connection(
+            data.get('s3compat_endpoint_url'),
+            data.get('s3compat_access_key'),
+            data.get('s3compat_secret_key')
+        )
     elif provider_short_name == 'owncloud':
         result = utils.test_owncloud_connection(
             data.get('owncloud_host'),
@@ -160,6 +166,15 @@ def save_credentials(request):
             data.get('s3_access_key'),
             data.get('s3_secret_key'),
             data.get('s3_bucket'),
+        )
+    if provider_short_name == 's3compat':
+        result = utils.save_s3compat_credentials(
+            institution_id,
+            data.get('storage_name'),
+            data.get('s3compat_endpoint_url'),
+            data.get('s3compat_access_key'),
+            data.get('s3compat_secret_key'),
+            data.get('s3compat_bucket'),
         )
     elif provider_short_name == 'swift':
         result = utils.save_swift_credentials(
