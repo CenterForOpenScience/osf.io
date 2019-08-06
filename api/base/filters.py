@@ -54,7 +54,7 @@ class OSFOrderingFilter(OrderingFilter):
         field_order = self.check_serializer_fields(queryset, request.query_params, view, ordering)
         if field_order:
             ordering = tuple(field_order)
-        if isinstance(queryset, DjangoQuerySet) and not field_order:
+       elif isinstance(queryset, DjangoQuerySet):
             if queryset.ordered:
                 return queryset
             elif ordering and getattr(queryset.query, 'distinct_fields', None):
