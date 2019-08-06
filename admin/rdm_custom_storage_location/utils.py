@@ -228,9 +228,34 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
 def save_s3compat_credentials(institution_id, storage_name, host_url, access_key, secret_key,
                               bucket):
 
+    test_connection_result = test_s3compat_connection(host_url, access_key, secret_key)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
+
+    wb_credentials = {
+        'storage': {
+            'access_key': access_key,
+            'secret_key': secret_key,
+            'host': host,
+        }
+    }
+    wb_settings = {
+        'storage': {
+            'folder': {
+                'encrypt_uploads': True,
+            },
+            'bucket': bucket,
+            'provider': 's3compat',
+        }
+    }
+
+    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+
     return ({
-        'message': 'Not yet implemented'
-    }, httplib.NOT_IMPLEMENTED)
+        'message': ('Saved credentials successfully!!')
+    }, httplib.OK)
 
 def save_swift_credentials(institution_id, storage_name, auth_version, access_key, secret_key,
                            tenant_name, user_domain_name, project_domain_name, auth_url,
