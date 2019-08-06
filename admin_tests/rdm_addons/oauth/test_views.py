@@ -188,7 +188,7 @@ class TestCallbackView(AdminTestCase):
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **self.view.kwargs)
         nt.assert_equal(res.status_code, 302)
-        
+
         external_account = ExternalAccountTemporary.objects.last()
         nt.assert_equal(external_account.oauth_key, '123')
         nt.assert_equal(external_account.refresh_token, 'myrefreshtoken')
