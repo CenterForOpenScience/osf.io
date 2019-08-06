@@ -10,6 +10,7 @@ from addons.osfstorage.models import Region
 from addons.owncloud import settings as owncloud_settings
 from addons.nextcloud import settings as nextcloud_settings
 from addons.s3 import utils as s3_utils
+from addons.s3compat import utils as s3compat_utils
 from addons.swift import utils as swift_utils
 from addons.swift.provider import SwiftProvider
 from website import settings as osf_settings
@@ -53,15 +54,15 @@ def test_s3_connection(access_key, secret_key):
     user_info = s3_utils.get_user_info(access_key, secret_key)
     if not user_info:
         return ({
-            'message': ('Unable to access account.\n'
+            'message': 'Unable to access account.\n'
                 'Check to make sure that the above credentials are valid,'
-                'and that they have permission to list buckets.')
+                'and that they have permission to list buckets.'
         }, httplib.BAD_REQUEST)
 
     if not s3_utils.can_list(access_key, secret_key):
         return ({
-            'message': ('Unable to list buckets.\n'
-                'Listing buckets is required permission that can be changed via IAM')
+            'message': 'Unable to list buckets.\n'
+                'Listing buckets is required permission that can be changed via IAM'
         }, httplib.BAD_REQUEST)
     s3_response = {
         'id': user_info.id,
@@ -70,14 +71,38 @@ def test_s3_connection(access_key, secret_key):
     }
 
     return ({
-        'message': ('Credentials are valid'),
+        'message': 'Credentials are valid',
         'data': s3_response
     }, httplib.OK)
 
 def test_s3compat_connection(host_url, access_key, secret_key):
+    host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
+    if not (host and access_key and secret_key):
+        return ({
+            'message': 'All the fields above are required.'
+        }, httplib.BAD_REQUEST)
+
+    user_info = s3compat_utils.get_user_info(host, access_key, secret_key)
+    if not user_info:
+        return {
+            'message': 'Unable to access account.\n'
+                'Check to make sure that the above credentials are valid, '
+                'and that they have permission to list buckets.'
+        }, httplib.BAD_REQUEST
+
+    if not s3compat_utils.can_list(host, access_key, secret_key):
+        return {
+            'message': 'Unable to list buckets.\n'
+                'Listing buckets is required permission that can be changed via IAM'
+        }, httplib.BAD_REQUEST
+
     return ({
-        'message': ('Not yet implemented')
-    }, httplib.NOT_IMPLEMENTED)
+        'message': 'Credentials are valid',
+        'data': {
+            'id': user_info.id,
+            'display_name': user_info.display_name,
+        }
+    }, httplib.OK)
 
 def test_owncloud_connection(host_url, username, password, folder, provider):
     """ This method is valid for both ownCloud and Nextcloud """
