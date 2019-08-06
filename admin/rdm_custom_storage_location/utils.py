@@ -225,6 +225,12 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
         'message': ('Saved credentials successfully!!')
     }, httplib.OK)
 
+def save_s3compat_credentials(institution_id, storage_name, host_url, access_key, secret_key,
+                              bucket):
+
+    return ({
+        'message': 'Not yet implemented'
+    }, httplib.NOT_IMPLEMENTED)
 
 def save_swift_credentials(institution_id, storage_name, auth_version, access_key, secret_key,
                            tenant_name, user_domain_name, project_domain_name, auth_url,
