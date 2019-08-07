@@ -526,13 +526,12 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
         two_factor_addon.save()
 
     def request_deactivation(self, instance, requested_deactivation):
-        if not requested_deactivation:
-            instance.contacted_deactivation = False
 
         if instance.requested_deactivation != requested_deactivation:
             instance.requested_deactivation = requested_deactivation
-
-        instance.save()
+            if not requested_deactivation:
+                instance.contacted_deactivation = False
+            instance.save()
 
     def to_representation(self, instance):
         """
