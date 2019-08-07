@@ -19,7 +19,7 @@ def deactivate_requested_accounts(dry_run=True):
 
     for user in users:
         if user.has_resources:
-            logger.info('User {} was contacted for about deactivation.'.format(user._id))
+            logger.info('OSF support is being emailed about deactivating the account of user {}.'.format(user._id))
             if not dry_run:
                 mails.send_mail(
                     to_addr=OSF_SUPPORT_EMAIL,
