@@ -198,13 +198,25 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return cls(**kwargs)
 
     @classmethod
-    def get_from_target(cls, _id, target):
+    def get_file_from_target(cls, _id, target):
+        """
+        This gets file from a target with the `_id` for that file.
+        :param _id: the file id
+        :param target: the file target model, whether it be Node, Preprint etc.
+        :return: BaseFileNode
+        """
         return cls.active.get(_id=_id,
                               target_object_id=target.id,
                               target_content_type=ContentType.objects.get_for_model(target))
 
     @classmethod
     def get_from_target_guid(cls, _id, target_id):
+        """
+        This gets file from a target with the `_id` for that file using that targets guid.000
+        :param _id: the file id
+        :param target_id: the file target's guid, the target could be Node, Preprint etc.
+        :return: BaseFileNode
+        """
         target = FileTargetMixin.load_target_from_guid(target_id)
         return cls.active.get(_id=_id,
                               target_object_id=target.id,
