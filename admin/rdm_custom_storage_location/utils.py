@@ -55,14 +55,14 @@ def test_s3_connection(access_key, secret_key):
     if not user_info:
         return ({
             'message': 'Unable to access account.\n'
-                'Check to make sure that the above credentials are valid,'
-                'and that they have permission to list buckets.'
+            'Check to make sure that the above credentials are valid,'
+            'and that they have permission to list buckets.'
         }, httplib.BAD_REQUEST)
 
     if not s3_utils.can_list(access_key, secret_key):
         return ({
             'message': 'Unable to list buckets.\n'
-                'Listing buckets is required permission that can be changed via IAM'
+            'Listing buckets is required permission that can be changed via IAM'
         }, httplib.BAD_REQUEST)
     s3_response = {
         'id': user_info.id,
@@ -86,14 +86,14 @@ def test_s3compat_connection(host_url, access_key, secret_key):
     if not user_info:
         return {
             'message': 'Unable to access account.\n'
-                'Check to make sure that the above credentials are valid, '
-                'and that they have permission to list buckets.'
+            'Check to make sure that the above credentials are valid, '
+            'and that they have permission to list buckets.'
         }, httplib.BAD_REQUEST
 
     if not s3compat_utils.can_list(host, access_key, secret_key):
         return {
             'message': 'Unable to list buckets.\n'
-                'Listing buckets is required permission that can be changed via IAM'
+            'Listing buckets is required permission that can be changed via IAM'
         }, httplib.BAD_REQUEST
 
     return ({
