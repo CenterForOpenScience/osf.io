@@ -126,7 +126,12 @@ class PageCounter(BaseModel):
             # After we're sure this is stable, we can stop writing to the _id field, and query on
             # resource/file/action/version
             resource, file, action, version = cls.deconstruct_id(cleaned_page)
-            model_instance, created = cls.objects.select_for_update().get_or_create(_id=cleaned_page, resource=resource, file=file, action=action, version=version)
+            model_instance, created = PageCounter.objects.select_for_update().get_or_create(_id=cleaned_page)
+
+            model_instance.resource = resource
+            model_instance.file = file
+            model_instance.action = action
+            model_instance.version = version
 
             # if they visited something today
             if date_string == visited_by_date['date']:
