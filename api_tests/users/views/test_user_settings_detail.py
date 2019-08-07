@@ -269,16 +269,6 @@ class TestUpdateRequestedDeactivation:
         user_one.reload()
         assert user_one.requested_deactivation is False
 
-        # cancel deactivate request after contacted reset deactivation contacted bool
-        user_one.contacted_deactivation = True
-        user_one.save()
-        payload['data']['attributes']['deactivation_requested'] = False
-        res = app.patch_json_api(url, payload, auth=user_one.auth)
-        assert res.status_code == 200
-        user_one.reload()
-        assert user_one.requested_deactivation is False
-        assert user_one.contacted_deactivation is False
-
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_patch_invalid_type(self, mock_mail, app, user_one, url, payload):
         assert user_one.email_last_sent is None
