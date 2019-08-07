@@ -200,7 +200,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         return None
 
     def get_storage_name(self, obj):
-        if obj.get('path') is not None:
+        if obj.get('path') is not None or obj.get('destination') is not None:
             node = AbstractNode.load(obj['node'])
             try:
                 storage_type = ProjectStorageType.objects.get(node=node).storage_type
