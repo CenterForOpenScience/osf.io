@@ -7,7 +7,7 @@ from nose.tools import *  # noqa
 
 from osf_tests.factories import ProjectFactory, AuthUserFactory
 
-from scripts.periodic.deactivate_requested_accounts import deactivate_requested_accounts
+from osf.management.commands.deactivate_requested_accounts import deactivate_requested_accounts
 
 from website import mails, settings
 
@@ -30,7 +30,7 @@ class TestDeactivateRequestedAccount:
         user.save()
         return user
 
-    @mock.patch('scripts.periodic.deactivate_requested_accounts.mails.send_mail')
+    @mock.patch('osf.management.commands.deactivate_requested_accounts.mails.send_mail')
     def test_deactivate_user_with_no_content(self, mock_mail, user_requested_deactivation):
 
         deactivate_requested_accounts(dry_run=False)
@@ -45,7 +45,7 @@ class TestDeactivateRequestedAccount:
                                      contact_email=settings.OSF_CONTACT_EMAIL,
                                      user=user_requested_deactivation)
 
-    @mock.patch('scripts.periodic.deactivate_requested_accounts.mails.send_mail')
+    @mock.patch('osf.management.commands.deactivate_requested_accounts.mails.send_mail')
     def test_deactivate_user_with_content(self, mock_mail, user_requested_deactivation_with_node):
 
         deactivate_requested_accounts(dry_run=False)
