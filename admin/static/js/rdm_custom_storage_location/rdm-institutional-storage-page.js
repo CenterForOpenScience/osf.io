@@ -15,7 +15,7 @@ $('#institutional_storage_form').submit(function (e) {
             $('#' + selectedProvider + '_modal').modal('show');
             validateRequiredFields(selectedProvider);
         };
-        if (selectedProvider === 'osfstorage') {
+        if (selectedProvider === 'osfstorage' && $('[checked]').val() === 'osfstorage') {
             showModal();
         } else {
             $osf.confirmDangerousAction({
