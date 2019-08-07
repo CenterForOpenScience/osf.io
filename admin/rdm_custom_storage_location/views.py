@@ -167,7 +167,7 @@ def save_credentials(request):
             data.get('s3_secret_key'),
             data.get('s3_bucket'),
         )
-    if provider_short_name == 's3compat':
+    elif provider_short_name == 's3compat':
         result = utils.save_s3compat_credentials(
             institution_id,
             data.get('storage_name'),
