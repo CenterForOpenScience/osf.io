@@ -72,7 +72,6 @@ def mapcore_check_token(auth, node, use_mapcore=True):
     from nii.mapcore_api import MAPCoreTokenExpired
     from nii.mapcore import (mapcore_is_enabled,
                              mapcore_api_is_available,
-                             mapcore_request_authcode,
                              mapcore_log_error,
                              mapcore_url_is_my_projects,
                              mapcore_sync_rdm_my_projects,
@@ -102,8 +101,11 @@ def mapcore_check_token(auth, node, use_mapcore=True):
             except MAPCoreTokenExpired as e:
                 if e.caller is None or e.caller != auth.user:
                     raise
-                return redirect(mapcore_request_authcode(
-                    next_url=request.url))
+                ### to skip /mapcore_oauth_start
+                # return redirect(mapcore_request_authcode(
+                #     auth.user, {'next_url': request.url}))
+                return redirect(web_url_for('mapcore_oauth_start',
+                                            next_url=request.url))
         except Exception as e:
             emsg = ''
             if node_page:
@@ -139,9 +141,12 @@ def _must_be_logged_in_factory(login=True, email=True, use_mapcore=True):
                 auth.user.update_date_last_access()
 
                 if email:  # require have_email=True
-                    if auth.user.have_email:
+                    if auth.user.have_email or \
+                       len(auth.user.unconfirmed_email_info) > 0:  # to confirm
                         # for GakuNin CloudGateway (mAP API v1)
                         setup_cggroups(auth)
+
+                        # for GakuNin mAP Core (API v2)
                         response = mapcore_check_token(auth, None,
                                                        use_mapcore=use_mapcore)
                         return response or func(*args, **kwargs)

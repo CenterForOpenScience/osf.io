@@ -637,7 +637,7 @@ def make_url_map(app):
             '/mapcore_oauth_start',
             'get',
             mapcore_oauth_start,
-            notemplate
+            OsfWebRenderer('mapcore_agree.mako', trust=False)
         ),
 
         # mapcore Oauth result catcher

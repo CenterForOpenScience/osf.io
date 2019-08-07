@@ -52,6 +52,9 @@ class MAPCoreLogger(object):
     def debug(self, msg, *args, **kwargs):
         self.logger.debug('MAPCORE: ' + msg, *args, **kwargs)
 
+    def setLevel(self, level=logging.INFO):
+        self.logger.setLevel(level=level)
+
 class MAPCoreLoggerDebug(object):
     def __init__(self, logger):
         self.logger = logger
@@ -68,12 +71,18 @@ class MAPCoreLoggerDebug(object):
     def debug(self, msg, *args, **kwargs):
         self.logger.error('MAPCORE_DEBUG: ' + msg, *args, **kwargs)
 
+    def setLevel(self, level=logging.INFO):
+        self.logger.setLevel(level=level)
+
 def mapcore_logger(logger):
     if MAPCORE_DEBUG:
         logger = MAPCoreLoggerDebug(logger)
     else:
         logger = MAPCoreLogger(logger)
     return logger
+
+def mapcore_api_disable_log():
+    logger.setLevel(level=logging.CRITICAL)
 
 logger = mapcore_logger(logging.getLogger(__name__))
 

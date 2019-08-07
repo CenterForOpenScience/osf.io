@@ -1659,6 +1659,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.fullname = 'Deleted user'
         self.set_unusable_username()
         self.set_unusable_password()
+        self.eppn = None
         self.given_name = ''
         self.family_name = ''
         self.middle_names = ''
@@ -1685,6 +1686,24 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.external_accounts.clear()
         self.external_identity = {}
         self.deleted = timezone.now()
+
+    def get_idp_entity_ids(self):
+        entity_ids = []
+        try:
+            for inst in self.affiliated_institutions.all():
+                if not inst.login_url:
+                    continue
+                try:
+                    login_url_parsed = urlparse.urlparse(inst.login_url)
+                    q = urlparse.parse_qs(login_url_parsed.query)
+                    entity_id = q.get('entityID')[0]
+                    if entity_id:
+                        entity_ids.append(entity_id)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        return entity_ids
 
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App

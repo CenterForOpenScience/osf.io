@@ -5,23 +5,31 @@ import json
 import requests
 import string
 import random
+import urllib
+from urlparse import urlparse
+
+from django.utils import timezone
 
 import mock
 import pytest
 from nose.tools import *  # noqa PEP8 asserts
-from django.utils import timezone
 
 from framework.auth.core import Auth
-from osf.models import OSFUser, AbstractNode, NodeLog
+from osf.models import AbstractNode, NodeLog
 from osf.models.mapcore import MAPProfile
 from osf.utils.permissions import (CREATOR_PERMISSIONS,
                                    DEFAULT_CONTRIBUTOR_PERMISSIONS)
 from api.base.settings.defaults import API_BASE
+from scripts.populate_institutions import SHIBBOLETH_SP_LOGIN
 from tests.base import fake, OsfTestCase
+from website import settings
 from website.util import web_url_for
 from website.profile.utils import add_contributor_json
-from nii.mapcore import (mapcore_is_enabled,
+from nii.mapcore import (encode_uri_component,
+                         mapcore_disable_log,
+                         mapcore_is_enabled,
                          mapcore_api_is_available,
+                         mapcore_request_authcode,
                          mapcore_receive_authcode)
 from nii.mapcore_api import (MAPCore, MAPCoreTokenExpired, OPEN_MEMBER_PUBLIC)
 
@@ -44,12 +52,20 @@ def randstr(n):
     r = [random.choice(string.ascii_letters + string.digits) for i in range(n)]
     return ''.join(r)
 
+
 @pytest.mark.django_db
 class TestOAuthOfMAPCore(OsfTestCase):
     def setUp(self):
+        mapcore_disable_log()
         OsfTestCase.setUp(self)
         self.me = AuthUserFactory()
         self.me.eppn = fake_email()
+        self.inst = InstitutionFactory()
+        self.entity_id = encode_uri_component(self.inst.login_url)
+        self.inst.login_url = SHIBBOLETH_SP_LOGIN.format(self.entity_id)
+        self.inst.logout_url = None
+        self.inst.save()
+        self.me.affiliated_institutions.add(self.inst)
         self.me.save()
 
     def test_no_map_profile(self):
@@ -57,6 +73,50 @@ class TestOAuthOfMAPCore(OsfTestCase):
         with assert_raises(MAPCoreTokenExpired):
             mapcore_api_is_available(self.me)
 
+    def _common_mapcore_request_authcode_with_next_url(self, next_url):
+        client_id = 'fake_clientid'
+        entity_id = self.entity_id
+        if next_url is not None:
+            state_str = (settings.MAPCORE_AUTHCODE_MAGIC + next_url).encode('utf-8').encode('base64')
+        else:
+            state_str = settings.MAPCORE_AUTHCODE_MAGIC
+        redirect_uri = settings.DOMAIN + web_url_for('mapcore_oauth_complete')[1:]
+        next_params = {'response_type': 'code',
+                    'redirect_uri': redirect_uri,
+                    'client_id': client_id,
+                    'state': state_str}
+        url = settings.MAPCORE_HOSTNAME + settings.MAPCORE_AUTHCODE_PATH
+        target = url + '?' + urllib.urlencode(next_params)
+
+        params = {'next_url': next_url}
+        redirect_url = mapcore_request_authcode(self.me, params)
+        if entity_id:
+            expected_url = '{}/Shibboleth.sso/DS?entityID={}&target={}'.format(
+                settings.MAPCORE_HOSTNAME,
+                entity_id, encode_uri_component(target))
+        else:
+            expected_url = target
+        assert_equal(redirect_url, expected_url)
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'fake_clientid')
+    def test_mapcore_request_authcode_with_next_url(self):
+        next_url = web_url_for('dashboard')
+        self._common_mapcore_request_authcode_with_next_url(next_url)
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'fake_clientid')
+    def test_mapcore_request_authcode_without_next_url(self):
+        next_url = None
+        self._common_mapcore_request_authcode_with_next_url(next_url)
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'fake_clientid')
+    def test_mapcore_request_authcode_without_entity_id(self):
+        self.entity_id = None
+        self.inst.login_url = None
+        self.inst.save()
+        next_url = None
+        self._common_mapcore_request_authcode_with_next_url(next_url)
+
+    # test mapcore_receive_authcode()
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_refresh_token')
     @mock.patch('nii.mapcore.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
@@ -67,13 +127,15 @@ class TestOAuthOfMAPCore(OsfTestCase):
         ACCESS_TOKEN = 'ABCDE'
         REFRESH_TOKEN = '12345'
         mock_token.return_value = (ACCESS_TOKEN, REFRESH_TOKEN)
-        state = 'def'
-        params = {'code': 'abc', 'state': state.encode('base64')}
+        next_url = u'http://nexturl.example.com/\u00c3\u00c3\u00c3'
+        state = settings.MAPCORE_AUTHCODE_MAGIC + next_url
+        params = {'code': 'abc', 'state': state.encode('utf-8').encode('base64')}
         assert_equal(self.me.map_profile, None)
         # set self.me.map_profile
         ret = mapcore_receive_authcode(self.me, params)
-        assert_equal(state, ret)
-        self.me = OSFUser.objects.get(username=self.me.username)  # re-select
+        assert_equal(next_url, ret)
+
+        self.me.reload()
         assert_equal(self.me.map_profile.oauth_access_token, ACCESS_TOKEN)
         assert_equal(self.me.map_profile.oauth_refresh_token, REFRESH_TOKEN)
 
@@ -90,7 +152,7 @@ class TestOAuthOfMAPCore(OsfTestCase):
         mock_post.return_value = refresh_token
 
         mapcore_api_is_available(self.me)
-        self.me = OSFUser.objects.get(username=self.me.username)  # re-select
+        self.me.reload()
         # tokens are not updated (refresh_token() is not called)
         assert_equal(self.me.map_profile.oauth_access_token, ACCESS_TOKEN)
         assert_equal(self.me.map_profile.oauth_refresh_token, REFRESH_TOKEN)
@@ -102,10 +164,12 @@ class TestOAuthOfMAPCore(OsfTestCase):
         mock_req.side_effect = [api_version_e, api_version]  # two times
 
         mapcore_api_is_available(self.me)
-        self.me = OSFUser.objects.get(username=self.me.username)  # re-select
+        self.me.reload()
         # tokens are updated (refresh_token() is called)
         assert_equal(self.me.map_profile.oauth_access_token, ACCESS_TOKEN2)
         assert_equal(self.me.map_profile.oauth_refresh_token, REFRESH_TOKEN2)
+
+
 
 def fake_map_profile():
     p = MAPProfile.objects.create()
@@ -115,10 +179,12 @@ def fake_map_profile():
     p.save()
     return p
 
+
 @pytest.mark.django_db
 class TestFuncOfMAPCore(OsfTestCase):
 
     def setUp(self):
+        mapcore_disable_log()
         OsfTestCase.setUp(self)
 
         self.me = AuthUserFactory()
@@ -139,6 +205,14 @@ class TestFuncOfMAPCore(OsfTestCase):
         )
         self.project_url = self.project.web_url_for('view_project')
         self.project.save()
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', None)
+    def test_disabled(self):
+        assert_equal(mapcore_is_enabled(), False)
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_enabled')
+    def test_enabled(self):
+        assert_equal(mapcore_is_enabled(), True)
 
     def test_sync_rdm_project_or_map_group(self):
         from nii.mapcore import (mapcore_sync_rdm_project_or_map_group,
@@ -873,9 +947,11 @@ class TestFuncOfMAPCore(OsfTestCase):
         args, kwargs = mock_get.call_args
         assert_equal(args[0].endswith('/mygroup'), True)
 
+
 @pytest.mark.django_db
 class TestViewsWithMAPCore(OsfTestCase):
     def setUp(self):
+        mapcore_disable_log()
         OsfTestCase.setUp(self)
         self.me = AuthUserFactory()
         self.me.eppn = fake_email()
@@ -890,19 +966,63 @@ class TestViewsWithMAPCore(OsfTestCase):
         self.project.add_contributor(self.user2, auth=Auth(self.me))
         self.project.save()
 
-    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', None)
-    def test_disabled(self):
-        #DEBUG('MAPCORE_CLIENTID={}'.format(settings.MAPCORE_CLIENTID))
-        assert_equal(mapcore_is_enabled(), False)
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_dashboard')
+    @mock.patch('website.views.use_ember_app')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
+    @mock.patch('website.mapcore.views.mapcore_request_authcode')
+    def test_dashboard_without_token(self, mock_ac, mock_sync, mock_ember):
+        mapcore = MAPCore(self.me)
+        mock_sync.side_effect = MAPCoreTokenExpired(mapcore, 'test message')
 
-    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_enabled')
-    def test_enabled(self):
-        #DEBUG('MAPCORE_CLIENTID={}'.format(settings.MAPCORE_CLIENTID))
-        assert_equal(mapcore_is_enabled(), True)
+        url = web_url_for('dashboard', _absolute=True)
+        res = self.app.get(url, auth=self.me.auth)
+        assert_equal(res.status_code, 302)
+        assert_equal(mock_sync.call_count, 1)
+        assert_equal(mock_ember.call_count, 0)
+        mapcore_oauth_start_url = web_url_for('mapcore_oauth_start')
+        assert_in(mapcore_oauth_start_url + '?next_url=',
+                  res.headers.get('Location'))
+        res2 = res.follow(auth=self.me.auth)
+        assert_equal(mock_ac.call_count, 1)
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_my_projects')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
+    @mock.patch('website.mapcore.views.mapcore_request_authcode')
+    def test_my_projects_without_token(self, mock_ac, mock_sync):
+        mapcore = MAPCore(self.me)
+        mock_sync.side_effect = MAPCoreTokenExpired(mapcore, 'test message')
+
+        url = web_url_for('my_projects', _absolute=True)
+        res = self.app.get(url, auth=self.me.auth)
+        assert_equal(res.status_code, 302)
+        assert_equal(mock_sync.call_count, 1)
+        mapcore_oauth_start_url = web_url_for('mapcore_oauth_start')
+        assert_in(mapcore_oauth_start_url + '?next_url=',
+                  res.headers.get('Location'))
+        res2 = res.follow(auth=self.me.auth)
+        assert_equal(mock_ac.call_count, 1)
+
+    @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_view_project')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
+    @mock.patch('nii.mapcore.mapcore_api_is_available0')
+    @mock.patch('website.mapcore.views.mapcore_request_authcode')
+    def test_view_project_without_token(self, mock_ac, mock_sync2, mock_sync1):
+        mapcore = MAPCore(self.me)
+        mock_sync2.side_effect = MAPCoreTokenExpired(mapcore, 'test message')
+
+        res = self.app.get(self.project_url, auth=self.me.auth)
+        assert_equal(res.status_code, 302)
+        assert_equal(mock_sync1.call_count, 0)
+        assert_equal(mock_sync2.call_count, 1)
+        mapcore_oauth_start_url = web_url_for('mapcore_oauth_start')
+        assert_in(mapcore_oauth_start_url + '?next_url=',
+                  res.headers.get('Location'))
+        res2 = res.follow(auth=self.me.auth)
+        assert_equal(mock_ac.call_count, 1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_dashboard')
-    @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
     @mock.patch('website.views.use_ember_app')
+    @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
     def test_dashboard(self, mock_sync, mock_ember):
         url = web_url_for('dashboard', _absolute=True)
         res = self.app.get(url, auth=self.me.auth)
@@ -1091,6 +1211,7 @@ class TestOSFAPIWithMAPCore:
 
     @pytest.fixture(autouse=True, scope='class')
     def app_init(self):
+        mapcore_disable_log()
         #DEBUG('*** app_init')
         from website.app import init_app
         init_app(routes=False, set_backends=False)
@@ -1213,3 +1334,53 @@ class TestOSFAPIWithMAPCore:
             assert res.json['data']['attributes']['title'] == title_new
             assert res.json['data']['attributes']['description'] == description
             assert res.json['data']['attributes']['category'] == category
+
+# refer to tests/test_views.py:TestAuthViews
+@pytest.mark.enable_quickfiles_creation
+class TestAuthViewsLoginByEppn(OsfTestCase):
+
+    def setUp(self):
+        super(TestAuthViewsLoginByEppn, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+
+    @mock.patch('website.views.use_ember_app')
+    def test_new_user_and_set_email(self, mock_ember):
+        self.user.have_email = False  # new user
+        self.user.save()
+
+        ### redirect to user_account_email
+        url = web_url_for('dashboard', _absolute=True)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 302)
+        user_account_email_url = web_url_for('user_account_email')
+        assert_in(user_account_email_url, res.headers.get('Location'))
+
+        ### set email
+        email = 'test@mail.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token, self.user.username)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 302)
+        cas_redirect_url = '{}/logout?service={}/login?service={}myprojects/'.format(settings.CAS_SERVER_URL, settings.CAS_SERVER_URL, settings.DOMAIN)
+        assert_in(cas_redirect_url, res.headers.get('Location'))
+
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], True)
+        email_verifications = self.user.unconfirmed_email_info
+        assert_equal(email_verifications[0]['address'], 'test@mail.com')
+
+        url = web_url_for('dashboard', _absolute=True)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(mock_ember.call_count, 1)
+
+    @mock.patch('website.mapcore.views.mapcore_receive_authcode')
+    def test_mapcore_oauth_complete(self, mock):
+        url = web_url_for('mapcore_oauth_complete')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 302)
+        assert_equal(mock.call_count, 1)

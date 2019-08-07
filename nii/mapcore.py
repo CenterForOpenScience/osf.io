@@ -9,12 +9,14 @@ import os
 import sys
 import requests
 import urllib
+import re
 from operator import attrgetter
 from pprint import pformat as pp
-
 from urlparse import urlparse
+
 from django.utils import timezone
 from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +42,14 @@ from website.settings import (MAPCORE_HOSTNAME,
                               DOMAIN)
 from nii.mapcore_api import (MAPCore, MAPCoreException, VERIFY,
                              mapcore_logger,
+                             mapcore_api_disable_log,
                              mapcore_group_member_is_private)
-from django.core.exceptions import ObjectDoesNotExist
 
 logger = mapcore_logger(logger)
 
+def mapcore_disable_log():
+    logger.setLevel(level=logging.CRITICAL)
+    mapcore_api_disable_log()
 
 ### Node.{title,description} : unicode
 ### from MAPCore methods : utf-8
@@ -60,6 +65,10 @@ def utf8dec(s):
     if isinstance(s, str):
         return s.decode('utf-8')
     return s
+
+### Do not import from scripts.populate_institutions
+def encode_uri_component(val):
+    return urllib.quote(val, safe='~()*!.\'')
 
 def add_log(action, node, user, exc, save=False):
     if node.logs.count() >= 1:
@@ -159,20 +168,17 @@ def mapcore_unlock_all():
                 logger.info('mapcore_unlock_all(): unlocked: Node={}'.format(node._id))
     logger.info('mapcore_unlock_all() done')
 
-def mapcore_request_authcode(**kwargs):
+def mapcore_request_authcode(user, params):
     '''
     get an authorization code from mAP. this process will redirect some times.
     :param params  dict of GET parameters in request
     '''
 
-    # parameter check
-    if 'request' in kwargs.keys():
-        kwargs = kwargs['request']
     logger.debug('mapcore_request_authcode get params:\n')
-    logger.debug(pp(kwargs))
-    next_url = kwargs.get('next_url')
+    logger.debug(pp(params))
+    next_url = params.get('next_url')
     if next_url is not None:
-        state_str = next_url.encode('base64')
+        state_str = (MAPCORE_AUTHCODE_MAGIC + next_url).encode('utf-8').encode('base64')
     else:
         state_str = MAPCORE_AUTHCODE_MAGIC
 
@@ -180,11 +186,20 @@ def mapcore_request_authcode(**kwargs):
     url = MAPCORE_HOSTNAME + MAPCORE_AUTHCODE_PATH
     redirect_uri = DOMAIN + web_url_for('mapcore_oauth_complete')[1:]
     logger.info('mapcore_request_authcode: redirect_uri is [' + redirect_uri + ']')
-    params = {'response_type': 'code',
+    next_params = {'response_type': 'code',
               'redirect_uri': redirect_uri,
               'client_id': MAPCORE_CLIENTID,
               'state': state_str}
-    query = url + '?' + urllib.urlencode(params)
+
+    target = url + '?' + urllib.urlencode(next_params)
+    entity_ids = user.get_idp_entity_ids()
+    if len(entity_ids) == 1:
+        query = '{}/Shibboleth.sso/DS?entityID={}&target={}'.format(
+            MAPCORE_HOSTNAME,
+            encode_uri_component(entity_ids[0]), encode_uri_component(target))
+    else:
+        query = target
+
     logger.info('redirect to AuthCode request: ' + query)
     return query
 
@@ -239,7 +254,8 @@ def mapcore_receive_authcode(user, params):
     """
 
     if params['state'] != MAPCORE_AUTHCODE_MAGIC:
-        return params['state'].decode('base64')  # user defined state string
+        s = params['state'].decode('base64').decode('utf-8')
+        return re.sub('^' + MAPCORE_AUTHCODE_MAGIC, '', s)  # next_url
     return DOMAIN   # redirect to home -> will redirect to dashboard
 
 
@@ -917,8 +933,9 @@ def mapcore_sync_map_group(access_user, node, title_desc=True, contributors=True
 def mapcore_url_is_my_projects(request_url):
     pages = ['dashboard', 'my_projects']
 
+    request_path = urlparse(request_url).path
     for name in pages:
-        if urlparse(request_url).path == urlparse(web_url_for(name)).path:
+        if request_path == urlparse(web_url_for(name)).path:
             return True
     return False
 
