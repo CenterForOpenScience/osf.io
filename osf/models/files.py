@@ -198,7 +198,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return cls(**kwargs)
 
     @classmethod
-    def get_file_from_target(cls, _id, target):
+    def get_from_target(cls, _id, target):
         """
         This gets file from a target with the `_id` for that file.
         :param _id: the file id
@@ -212,7 +212,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     @classmethod
     def get_from_target_guid(cls, _id, target_id):
         """
-        This gets file from a target with the `_id` for that file using that targets guid.000
+        This gets file from a target with the `_id` for that file using that targets guid.
         :param _id: the file id
         :param target_id: the file target's guid, the target could be Node, Preprint etc.
         :return: BaseFileNode
