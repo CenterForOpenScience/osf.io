@@ -14,6 +14,7 @@ from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import utils
 from osf.models import Institution
+from osf.models.external import ExternalAccountTemporary
 from scripts import refresh_addon_tokens
 
 SITE_KEY = 'rdm_custom_storage_location'
@@ -239,11 +240,13 @@ def fetch_temporary_token(request):
 
     data = json.loads(request.body)
     provider_short_name = data.get('provider_short_name', None)
+
     if not provider_short_name:
         response = {
             'message': 'Provider is missing.'
         }
         return JsonResponse(response, status=httplib.BAD_REQUEST)
+
     institution_id = request.user.affiliated_institutions.first()._id
     data = utils.get_oauth_info_notification(institution_id, provider_short_name)
     if data:
@@ -258,7 +261,8 @@ def fetch_temporary_token(request):
         return JsonResponse(response, status=httplib.BAD_REQUEST)
 
 def remove_auth_data_temporary(request):
-    utils.remove_temporary_external_account(request.user.affiliated_institutions.first()._id)
+    institution_id = request.user.affiliated_institutions.first()._id
+    ExternalAccountTemporary.objects.filter(_id=institution_id).delete()
     response = {
         'message': 'Garbage data removed!!'
     }

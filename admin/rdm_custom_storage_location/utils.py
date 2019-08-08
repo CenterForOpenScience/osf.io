@@ -17,6 +17,7 @@ from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
 import datetime
 
+
 providers = None
 enabled_providers_list = [
     's3', 'box', 'googledrive', 'osfstorage',
@@ -45,6 +46,63 @@ def get_modal_path(short_name):
     base_path = os.path.join('rdm_custom_storage_location', 'providers')
     return os.path.join(base_path, '{}_modal.html'.format(short_name))
 
+def get_oauth_info_notification(institution_id, provider_short_name):
+    temp_external_account = ExternalAccountTemporary.objects.filter(
+        _id=institution_id, provider=provider_short_name
+    ).first()
+    if temp_external_account and \
+            temp_external_account.modified >= datetime.datetime.now(
+                temp_external_account.modified.tzinfo
+            ) - datetime.timedelta(seconds=60 * 30):
+        return {
+            'display_name': temp_external_account.display_name,
+            'oauth_key': temp_external_account.oauth_key,
+            'provider': temp_external_account.provider,
+            'provider_id': temp_external_account.provider_id,
+            'provider_name': temp_external_account.provider_name,
+        }
+
+def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
+    default_region = Region.objects.first()
+    Region.objects.update_or_create(
+        _id=institution_id,
+        defaults={
+            'name': storage_name,
+            'waterbutler_credentials': wb_credentials,
+            'waterbutler_url': default_region.waterbutler_url,
+            'mfr_url': default_region.mfr_url,
+            'waterbutler_settings': wb_settings
+        }
+    )
+
+def transfer_to_external_account(user, institution_id, provider_short_name):
+    temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
+    account, _ = ExternalAccount.objects.get_or_create(
+        provider=temp_external_account.provider,
+        provider_id=temp_external_account.provider_id,
+    )
+
+    # ensure that provider_name is correct
+    account.provider_name = temp_external_account.provider_name
+    # required
+    account.oauth_key = temp_external_account.oauth_key
+    # only for OAuth1
+    account.oauth_secret = temp_external_account.oauth_secret
+    # only for OAuth2
+    account.expires_at = temp_external_account.expires_at
+    account.refresh_token = temp_external_account.refresh_token
+    account.date_last_refreshed = temp_external_account.date_last_refreshed
+    # additional information
+    account.display_name = temp_external_account.display_name
+    account.profile_url = temp_external_account.profile_url
+    account.save()
+
+    # add it to the user's list of ``ExternalAccounts``
+    if not user.external_accounts.filter(id=account.id).exists():
+        user.external_accounts.add(account)
+        user.save()
+    return account
+
 def test_s3_connection(access_key, secret_key):
     """Verifies new external account credentials and adds to user's list"""
     if not (access_key and secret_key):
@@ -55,14 +113,14 @@ def test_s3_connection(access_key, secret_key):
     if not user_info:
         return ({
             'message': 'Unable to access account.\n'
-                'Check to make sure that the above credentials are valid,'
-                'and that they have permission to list buckets.'
+            'Check to make sure that the above credentials are valid,'
+            'and that they have permission to list buckets.'
         }, httplib.BAD_REQUEST)
 
     if not s3_utils.can_list(access_key, secret_key):
         return ({
             'message': 'Unable to list buckets.\n'
-                'Listing buckets is required permission that can be changed via IAM'
+            'Listing buckets is required permission that can be changed via IAM'
         }, httplib.BAD_REQUEST)
     s3_response = {
         'id': user_info.id,
@@ -86,14 +144,14 @@ def test_s3compat_connection(host_url, access_key, secret_key):
     if not user_info:
         return {
             'message': 'Unable to access account.\n'
-                'Check to make sure that the above credentials are valid, '
-                'and that they have permission to list buckets.'
+            'Check to make sure that the above credentials are valid, '
+            'and that they have permission to list buckets.'
         }, httplib.BAD_REQUEST
 
     if not s3compat_utils.can_list(host, access_key, secret_key):
         return {
             'message': 'Unable to list buckets.\n'
-                'Listing buckets is required permission that can be changed via IAM'
+            'Listing buckets is required permission that can be changed via IAM'
         }, httplib.BAD_REQUEST
 
     return ({
@@ -185,19 +243,6 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
         'data': swift_response
     }, httplib.OK)
 
-def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
-    default_region = Region.objects.first()
-    Region.objects.update_or_create(
-        _id=institution_id,
-        defaults={
-            'name': storage_name,
-            'waterbutler_credentials': wb_credentials,
-            'waterbutler_url': default_region.waterbutler_url,
-            'mfr_url': default_region.mfr_url,
-            'waterbutler_settings': wb_settings
-        }
-    )
-
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
     test_connection_result = test_s3_connection(access_key, secret_key)
     if test_connection_result[1] != httplib.OK:
@@ -257,6 +302,110 @@ def save_s3compat_credentials(institution_id, storage_name, host_url, access_key
         'message': ('Saved credentials successfully!!')
     }, httplib.OK)
 
+def save_box_credentials(user, storage_name, provider_short_name, box_folder):
+    if not storage_name:
+        return ({
+            'message': ('Storage name is missing.')
+        }, httplib.BAD_REQUEST)
+    elif not box_folder:
+        return ({
+            'message': ('Folder is missing.')
+        }, httplib.BAD_REQUEST)
+
+    institution_id = user.affiliated_institutions.first()._id
+    account = transfer_to_external_account(user, institution_id, provider_short_name)
+    wb_credentials = {
+        'storage': {
+            'token': account.oauth_key,
+        },
+    }
+    wb_settings = {
+        'storage': {
+            'bucket': '',
+            'folder': box_folder,
+            'provider': 'box',
+        }
+    }
+    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    ExternalAccountTemporary.objects.filter(_id=institution_id).delete()
+
+    return ({
+        'message': ('OAuth was set successfully')
+    }, httplib.OK)
+
+def save_googledrive_credentials(user, storage_name, provider_short_name, folder_id):
+    if not storage_name:
+        return ({
+            'message': ('Storage name is missing.')
+        }, httplib.BAD_REQUEST)
+
+    if not folder_id:
+        return ({
+            'message': 'Folder ID is missing.'
+        }, httplib.BAD_REQUEST)
+
+    institution_id = user.affiliated_institutions.first()._id
+    account = transfer_to_external_account(user, institution_id, provider_short_name)
+    ExternalAccountTemporary.objects.filter(_id=institution_id).delete()
+    wb_credentials = {
+        'storage': {
+            'token': account.oauth_key,
+        },
+    }
+    wb_settings = {
+        'storage': {
+            'bucket': '',
+            'folder': {
+                'id': folder_id
+            },
+            'provider': 'googledrive',
+        }
+    }
+    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+
+    return ({
+        'message': ('OAuth was set successfully')
+    }, httplib.OK)
+
+def save_nextcloud_credentials(institution_id, storage_name, host_url, username, password,
+                              folder, provider):
+    test_connection_result = test_owncloud_connection(host_url, username, password, folder,
+                                                      provider)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    host = furl()
+    host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
+    host.scheme = 'https'
+
+    wb_credentials = {
+        'storage': {
+            'host': host.url,
+            'username': username,
+            'password': password,
+        },
+    }
+    wb_settings = {
+        'storage': {
+            'bucket': '',
+            'folder': '/{}/'.format(folder.strip('/')),
+            'verify_ssl': False,
+            'provider': provider
+        },
+    }
+
+    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+
+    return ({
+        'message': ('Saved credentials successfully!!')
+    }, httplib.OK)
+
+def save_osfstorage_credentials(institution_id):
+    Region.objects.filter(_id=institution_id).delete()
+    return ({
+        'message': ('NII storage was set successfully')
+    }, httplib.OK)
+
 def save_swift_credentials(institution_id, storage_name, auth_version, access_key, secret_key,
                            tenant_name, user_domain_name, project_domain_name, auth_url,
                            folder, container):
@@ -293,14 +442,6 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
         'message': ('Saved credentials successfully!!')
     }, httplib.OK)
 
-
-def save_osfstorage_credentials(institution_id):
-    Region.objects.filter(_id=institution_id).delete()
-    return ({
-        'message': ('NII storage was set successfully')
-    }, httplib.OK)
-
-
 def save_owncloud_credentials(institution_id, storage_name, host_url, username, password,
                               folder, provider):
     test_connection_result = test_owncloud_connection(host_url, username, password, folder,
@@ -333,169 +474,3 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
     return ({
         'message': ('Saved credentials successfully!!')
     }, httplib.OK)
-
-def save_nextcloud_credentials(institution_id, storage_name, host_url, username, password,
-                              folder, provider):
-    test_connection_result = test_owncloud_connection(host_url, username, password, folder,
-                                                      provider)
-    if test_connection_result[1] != httplib.OK:
-        return test_connection_result
-
-    host = furl()
-    host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
-    host.scheme = 'https'
-
-    wb_credentials = {
-        'storage': {
-            'host': host.url,
-            'username': username,
-            'password': password,
-        },
-    }
-    wb_settings = {
-        'storage': {
-            'bucket': '',
-            'folder': '/{}/'.format(folder.strip('/')),
-            'verify_ssl': False,
-            'provider': provider
-        },
-    }
-
-    update_storage(institution_id, storage_name, wb_credentials, wb_settings)
-
-    return ({
-        'message': ('Saved credentials successfully!!')
-    }, httplib.OK)
-
-def get_oauth_info_notification(institution_id, provider_short_name):
-    temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
-    if temp_external_account and temp_external_account.modified >= datetime.datetime.now(temp_external_account.modified.tzinfo) - datetime.timedelta(seconds=60 * 30):
-        return {
-            'display_name': temp_external_account.display_name,
-            'oauth_key': temp_external_account.oauth_key,
-            'provider': temp_external_account.provider,
-            'provider_id': temp_external_account.provider_id,
-            'provider_name': temp_external_account.provider_name,
-        }
-
-def transfer_to_external_account(user, institution_id, provider_short_name):
-    temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
-    account, created = ExternalAccount.objects.get_or_create(
-        provider=temp_external_account.provider,
-        provider_id=temp_external_account.provider_id,
-    )
-    # ensure that provider_name is correct
-    account.provider_name = temp_external_account.provider_name
-    # required
-    account.oauth_key = temp_external_account.oauth_key
-    # only for OAuth1
-    account.oauth_secret = temp_external_account.oauth_secret
-    # only for OAuth2
-    account.expires_at = temp_external_account.expires_at
-    account.refresh_token = temp_external_account.refresh_token
-    account.date_last_refreshed = temp_external_account.date_last_refreshed
-    # additional information
-    account.display_name = temp_external_account.display_name
-    account.profile_url = temp_external_account.profile_url
-    account.save()
-    # add it to the user's list of ``ExternalAccounts``
-    if not user.external_accounts.filter(id=account.id).exists():
-        user.external_accounts.add(account)
-        user.save()
-
-    '''Following code might be needed later on'''
-    #from admin.rdm_addons.utils import get_rdm_addon_option
-    #rdm_addon_option = get_rdm_addon_option(user.affiliated_institutions.first().id, provider_short_name)
-    # if rdm_addon_option.external_accounts.filter(id=account.id).exists():
-    #     rdm_addon_option.external_accounts.add(account)
-    #     rdm_addon_option.save()
-    return account
-
-def googledrive_region_update(institution_id, storage_name, account, googledrive_folder_id):
-    wb_credentials = {
-        'storage': {
-            'token': account.oauth_key,
-        },
-    }
-    wb_settings = {
-        'storage': {
-            'bucket': '',
-            'folder': {
-                'id': googledrive_folder_id
-            },
-            'provider': 'googledrive',
-        }
-    }
-    default_region = Region.objects.first()
-    Region.objects.update_or_create(
-        _id=institution_id,
-        defaults={
-            'name': storage_name,
-            'waterbutler_credentials': wb_credentials,
-            'waterbutler_url': default_region.waterbutler_url,
-            'mfr_url': default_region.mfr_url,
-            'waterbutler_settings': wb_settings
-        }
-    )
-
-def save_googledrive_credentials(user, storage_name, provider_short_name, googledrive_folder_id):
-    if not storage_name:
-        return ({
-            'message': ('Storage name is missing.')
-        }, httplib.BAD_REQUEST)
-    elif not googledrive_folder_id:
-        return ({
-            'message': ('Folder ID is missing.')
-        }, httplib.BAD_REQUEST)
-    institution_id = user.affiliated_institutions.first()._id
-    account = transfer_to_external_account(user, institution_id, provider_short_name)
-    googledrive_region_update(institution_id, storage_name, account, googledrive_folder_id)
-    remove_temporary_external_account(institution_id)
-    return ({
-        'message': ('OAuth was set successfully')
-    }, httplib.OK)
-
-def box_region_update(institution_id, storage_name, account, box_folder):
-    wb_credentials = {
-        'storage': {
-            'token': account.oauth_key,
-        },
-    }
-    wb_settings = {
-        'storage': {
-            'bucket': '',
-            'folder': box_folder,
-            'provider': 'box',
-        }
-    }
-    default_region = Region.objects.first()
-    Region.objects.update_or_create(
-        _id=institution_id,
-        defaults={
-            'name': storage_name,
-            'waterbutler_credentials': wb_credentials,
-            'waterbutler_url': default_region.waterbutler_url,
-            'mfr_url': default_region.mfr_url,
-            'waterbutler_settings': wb_settings
-        }
-    )
-
-def save_box_credentials(user, storage_name, provider_short_name, box_folder):
-    if not storage_name:
-        return ({
-            'message': ('Storage name is missing.')
-        }, httplib.BAD_REQUEST)
-    elif not box_folder:
-        return ({
-            'message': ('Folder is missing.')
-        }, httplib.BAD_REQUEST)
-    institution_id = user.affiliated_institutions.first()._id
-    account = transfer_to_external_account(user, institution_id, provider_short_name)
-    box_region_update(institution_id, storage_name, account, box_folder)
-    remove_temporary_external_account(institution_id)
-    return ({
-        'message': ('OAuth was set successfully')
-    }, httplib.OK)
-
-def remove_temporary_external_account(institution_id):
-    ExternalAccountTemporary.objects.filter(_id=institution_id).delete()
