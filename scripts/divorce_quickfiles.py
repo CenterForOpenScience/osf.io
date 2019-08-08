@@ -44,7 +44,7 @@ def create_quickfolders():
     total_created = 0
     quickfolders_to_create = []
     for user in users:
-        quickfolder = QuickFolder(target_object_id=user,
+        quickfolder = QuickFolder(target_object_id=user.id,
                                   target_content_type_id=user_content_type_id,
                                   provider='osfstorage',
                                   path='/',

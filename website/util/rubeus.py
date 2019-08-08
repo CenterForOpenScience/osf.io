@@ -299,7 +299,7 @@ def collect_addon_js(node, visited=None, filename='files.js', config_entry='file
     """
     js = []
     for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
-        # JS modules configured in each addon's __init__.py file
+        # JS modules configured in each addon's __init__ file
         js.extend(addon_config.include_js.get(config_entry, []))
         # Webpack bundle
         js_path = paths.resolve_addon_path(addon_config, filename)
@@ -316,7 +316,7 @@ def collect_addon_css(node, visited=None):
     """
     css = []
     for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
-        # CSS modules configured in each addon's __init__.py file
+        # CSS modules configured in each addon's __init__ file
         css.extend(addon_config.include_css.get('files', []))
     return css
 
