@@ -236,10 +236,10 @@ class TestPermissionFetchTemporaryToken(AdminTestCase):
             self.view_post({})
 
 
-class TestS3ConnectionStorage(AdminTestCase):
+class TestS3Connection(AdminTestCase):
 
     def setUp(self):
-        super(TestS3ConnectionStorage, self).setUp()
+        super(TestS3Connection, self).setUp()
         self.mock_can_list = mock.patch('addons.s3.views.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
@@ -366,10 +366,10 @@ class TestS3ConnectionStorage(AdminTestCase):
                 'and that they have permission to list buckets.', request_post_response.content)
 
 
-class TestS3CompatConnectionStorage(AdminTestCase):
+class TestS3CompatConnection(AdminTestCase):
 
     def setUp(self):
-        super(TestS3CompatConnectionStorage, self).setUp()
+        super(TestS3CompatConnection, self).setUp()
         self.mock_can_list = mock.patch('addons.s3compat.views.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
@@ -472,10 +472,10 @@ class TestS3CompatConnectionStorage(AdminTestCase):
                 'and that they have permission to list buckets.', request_post_response.content)
 
 
-class TestOwncloudConnectionStorage(AdminTestCase):
+class TestOwncloudConnection(AdminTestCase):
 
     def setUp(self):
-        super(TestOwncloudConnectionStorage, self).setUp()
+        super(TestOwncloudConnection, self).setUp()
         self.institution = InstitutionFactory()
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.add(self.institution)
@@ -544,6 +544,7 @@ class TestOwncloudConnectionStorage(AdminTestCase):
         })
         nt.assert_equals(response.status_code, httplib.UNAUTHORIZED)
         nt.assert_in('ownCloud Login failed.', response.content)
+
 
 class TestSwiftConnectionStorage(AdminTestCase):
 
@@ -869,6 +870,298 @@ class TestS3compatSaveCredentials(AdminTestCase):
         nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
 
 
+class TestBoxSaveCredentials(AdminTestCase):
+    def setUp(self):
+        super(TestBoxSaveCredentials, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
+        self.user.save()
+        self.seed_data = {
+            'provider_name': 'box',
+            'oauth_key': 'pzN7NJr1EDzXDHsoZRqJT6jHVkt7ryhQbOzQjiduLmPw8CHs8lzrUBrBiztMQvxK5KLplhpKuGxeP91W',
+            'oauth_secret': 'qgKnksgBkx76yCl9CqtTP4DOzPYiHLN9LSHFoVsgLgCc6ZqXngWMww5ydxrqY6OzyjUAcP5wL8c58D1Z',
+            'expires_at': timezone.now(),
+            'refresh_token': 'e97DkIMV6B0j6NjD1CYIiAm4',
+            'date_last_refreshed': timezone.now(),
+            'display_name': 'box display name is here',
+            'profile_url': 'example.com',
+            '_id': self.institution._id,
+            'provider_id': '88080800880',
+        }
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.fetch_temporary_token(request)
+
+    def test_provider_missing(self):
+        response = self.view_post({
+            'no_pro': 'box',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Provider is missing.', response.content)
+
+    def test_fail_Oauth_procedure_canceled(self):
+        response = self.view_post({
+            'provider_short_name': 'box',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Oauth permission procedure was canceled', response.content)
+
+    def test_success(self):
+        temp_account = ExternalAccountTemporary.objects.create(
+            provider=self.seed_data['provider_name'],
+            provider_name=self.seed_data['provider_name'],
+            oauth_key=self.seed_data['oauth_key'],
+            oauth_secret=self.seed_data['oauth_secret'],
+            expires_at=self.seed_data['expires_at'],
+            refresh_token=self.seed_data['refresh_token'],
+            date_last_refreshed=self.seed_data['date_last_refreshed'],
+            display_name=self.seed_data['display_name'],
+            profile_url=self.seed_data['profile_url'],
+            _id=self.seed_data['_id'],
+            provider_id=self.seed_data['provider_id'],
+        )
+        response = self.view_post({
+            'provider_short_name': 'box',
+        })
+        nt.assert_equals(response.status_code, httplib.OK)
+        data = json.loads(response.content)
+        response_temp_account = data['response_data']
+        nt.assert_equals(response_temp_account['display_name'], temp_account.display_name)
+        nt.assert_equals(response_temp_account['oauth_key'], temp_account.oauth_key)
+        nt.assert_equals(response_temp_account['provider'], temp_account.provider)
+        nt.assert_equals(response_temp_account['provider_id'], temp_account.provider_id)
+        nt.assert_equals(response_temp_account['provider_name'], temp_account.provider_name)
+        nt.assert_equals(response_temp_account['fullname'], self.user.fullname)
+
+
+class TestGoogleDriveSaveCredentials(AdminTestCase):
+    def setUp(self):
+        super(TestGoogleDriveSaveCredentials, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
+        self.user.save()
+        self.seed_data = {
+            'provider_name': 'googledrive',
+            'oauth_key': 'pzN7NJr1EDzXDHsoZRqJT6jHVkt7ryhQbOzQjiduLmPw8CHs8lzrUBrBiztMQvxK5KLplhpKuGxeP91W',
+            'oauth_secret': 'qgKnksgBkx76yCl9CqtTP4DOzPYiHLN9LSHFoVsgLgCc6ZqXngWMww5ydxrqY6OzyjUAcP5wL8c58D1Z',
+            'expires_at': timezone.now(),
+            'refresh_token': 'e97DkIMV6B0j6NjD1CYIiAm4',
+            'date_last_refreshed': timezone.now(),
+            'display_name': 'google drive display name is here',
+            'profile_url': 'example.com',
+            '_id': self.institution._id,
+            'provider_id': '88080800880',
+        }
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.save_credentials(request)
+
+    def view_post_cancel(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.remove_auth_data_temporary(request)
+
+    def test_cancel(self):
+        response = self.view_post_cancel({
+            'provider_short_name': 'googledrive',
+        })
+        nt.assert_equals(response.status_code, httplib.OK)
+
+    def test_provider_missing(self):
+        response = self.view_post({
+            'no_pro': 'googledrive',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Provider is missing.', response.content)
+
+    def test_storage_name_missing(self):
+        response = self.view_post({
+            'provider_short_name': 'googledrive',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Storage name is missing.', response.content)
+
+    def test_googledrive_folder_missing(self):
+        response = self.view_post({
+            'provider_short_name': 'googledrive',
+            'storage_name': 'storage_name',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Folder ID is missing.', response.content)
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_googledrive_connection')
+    def test_success(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'Nice'}, httplib.OK
+
+        ExternalAccountTemporary.objects.create(
+            provider=self.seed_data['provider_name'],
+            provider_name=self.seed_data['provider_name'],
+            oauth_key=self.seed_data['oauth_key'],
+            oauth_secret=self.seed_data['oauth_secret'],
+            expires_at=self.seed_data['expires_at'],
+            refresh_token=self.seed_data['refresh_token'],
+            date_last_refreshed=self.seed_data['date_last_refreshed'],
+            display_name=self.seed_data['display_name'],
+            profile_url=self.seed_data['profile_url'],
+            _id=self.seed_data['_id'],
+            provider_id=self.seed_data['provider_id'],
+        )
+        response = self.view_post({
+            'provider_short_name': 'googledrive',
+            'storage_name': 'storage_name',
+            'googledrive_folder': 'root',
+        })
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('OAuth was set successfully', response.content)
+
+        external_account = ExternalAccount.objects.get(
+            provider=self.seed_data['provider_name'], provider_id=self.seed_data['provider_id'])
+        nt.assert_equals(external_account.oauth_key, self.seed_data['oauth_key'])
+        nt.assert_equals(external_account.oauth_secret, self.seed_data['oauth_secret'])
+
+        nt.assert_false(ExternalAccountTemporary.objects.filter(_id=self.institution._id))
+
+        institution_storage = Region.objects.filter(_id=self.institution._id).first()
+        nt.assert_is_not_none(institution_storage)
+        nt.assert_equals(institution_storage.name, 'storage_name')
+
+        wb_credentials = institution_storage.waterbutler_credentials
+        nt.assert_equals(wb_credentials['storage']['token'], self.seed_data['oauth_key'])
+
+        wb_settings = institution_storage.waterbutler_settings
+        nt.assert_equals(wb_settings['storage']['folder']['id'], 'root')
+
+
+class TestNextCloudSaveCredentials(AdminTestCase):
+    def setUp(self):
+        super(TestNextCloudSaveCredentials, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
+        self.user.save()
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.save_credentials(request)
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
+    def test_connection_fail(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'NG'}, httplib.BAD_REQUEST
+
+        response = self.view_post({
+            'storage_name': 'My storage',
+            'nextcloud_host': 'drop database;',
+            'nextcloud_username': 'invalid-user',
+            'nextcloud_password': 'invalid-password',
+            'nextcloud_folder': 'Hello World',
+            'provider_short_name': 'nextcloud',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('NG', response.content)
+        nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
+    def test_success(self, mock_testconnection):
+        mock_testconnection.return_value = {'message': 'Nice'}, httplib.OK
+
+        response = self.view_post({
+            'storage_name': 'My storage',
+            'nextcloud_host': 'valid.nextcloud.net',
+            'nextcloud_username': 'admin',
+            'nextcloud_password': '1234',
+            'nextcloud_folder': 'reserved_for_osf',
+            'provider_short_name': 'nextcloud',
+        })
+
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('Saved credentials successfully!!', response.content)
+
+        institution_storage = Region.objects.filter(_id=self.institution._id).first()
+        nt.assert_is_not_none(institution_storage)
+        nt.assert_equals(institution_storage.name, 'My storage')
+
+        wb_credentials = institution_storage.waterbutler_credentials
+        nt.assert_equals(wb_credentials['storage']['host'], 'https://valid.nextcloud.net')
+        nt.assert_equals(wb_credentials['storage']['username'], 'admin')
+        nt.assert_equals(wb_credentials['storage']['password'], '1234')
+
+        wb_settings = institution_storage.waterbutler_settings
+        nt.assert_equals(wb_settings['storage']['provider'], 'nextcloud')
+        nt.assert_equals(wb_settings['storage']['folder'], '/reserved_for_osf/')
+
+
+class TestNiiStorageSaveCredentials(AdminTestCase):
+    def setUp(self):
+        super(TestNiiStorageSaveCredentials, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
+        self.user.save()
+
+    def view_post(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.save_credentials(request)
+
+    def test_provider_missing(self):
+        response = self.view_post({
+            'no_pro': 'osfstorage',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Provider is missing.', response.content)
+
+    def test_success(self):
+        response = self.view_post({
+            'provider_short_name': 'osfstorage',
+        })
+
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('NII storage was set successfully', response.content)
+
+
 class TestSwiftSaveCredentials(AdminTestCase):
 
     def setUp(self):
@@ -978,189 +1271,6 @@ class TestSwiftSaveCredentials(AdminTestCase):
         nt.assert_in('NG', response.content)
         nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
 
-class TestGoogleDriveConnectionTest(AdminTestCase):
-    def setUp(self):
-        super(TestGoogleDriveConnectionTest, self).setUp()
-        self.institution = InstitutionFactory()
-        self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.institution)
-        self.user.is_staff = True
-        self.user.save()
-        self.seed_data = {
-            'provider_name': 'googledrive',
-            'oauth_key': 'pzN7NJr1EDzXDHsoZRqJT6jHVkt7ryhQbOzQjiduLmPw8CHs8lzrUBrBiztMQvxK5KLplhpKuGxeP91W',
-            'oauth_secret': 'qgKnksgBkx76yCl9CqtTP4DOzPYiHLN9LSHFoVsgLgCc6ZqXngWMww5ydxrqY6OzyjUAcP5wL8c58D1Z',
-            'expires_at': timezone.now(),
-            'refresh_token': 'e97DkIMV6B0j6NjD1CYIiAm4',
-            'date_last_refreshed': timezone.now(),
-            'display_name': 'google drive display name is here',
-            'profile_url': 'example.com',
-            '_id': self.institution._id,
-            'provider_id': '88080800880',
-        }
-
-    def view_post(self, params):
-        request = RequestFactory().post(
-            'fake_path',
-            json.dumps(params),
-            content_type='application/json'
-        )
-        request.is_ajax()
-        request.user = self.user
-        return views.fetch_temporary_token(request)
-
-    def test_provider_missing(self):
-        response = self.view_post({
-            'no_pro': 'googledrive',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content)
-
-    def test_fail_Oauth_procedure_canceled(self):
-        response = self.view_post({
-            'provider_short_name': 'googledrive',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Oauth permission procedure was canceled', response.content)
-
-    def test_success(self):
-        temp_account = ExternalAccountTemporary.objects.create(
-            provider=self.seed_data['provider_name'],
-            provider_name=self.seed_data['provider_name'],
-            oauth_key=self.seed_data['oauth_key'],
-            oauth_secret=self.seed_data['oauth_secret'],
-            expires_at=self.seed_data['expires_at'],
-            refresh_token=self.seed_data['refresh_token'],
-            date_last_refreshed=self.seed_data['date_last_refreshed'],
-            display_name=self.seed_data['display_name'],
-            profile_url=self.seed_data['profile_url'],
-            _id=self.seed_data['_id'],
-            provider_id=self.seed_data['provider_id'],
-        )
-        response = self.view_post({
-            'provider_short_name': 'googledrive',
-        })
-        nt.assert_equals(response.status_code, httplib.OK)
-        data = json.loads(response.content)
-        response_temp_account = data['response_data']
-        nt.assert_equals(response_temp_account['display_name'], temp_account.display_name)
-        nt.assert_equals(response_temp_account['oauth_key'], temp_account.oauth_key)
-        nt.assert_equals(response_temp_account['provider'], temp_account.provider)
-        nt.assert_equals(response_temp_account['provider_id'], temp_account.provider_id)
-        nt.assert_equals(response_temp_account['provider_name'], temp_account.provider_name)
-        nt.assert_equals(response_temp_account['fullname'], self.user.fullname)
-
-class TestBoxConnectionTest(AdminTestCase):
-    def setUp(self):
-        super(TestBoxConnectionTest, self).setUp()
-        self.institution = InstitutionFactory()
-        self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.institution)
-        self.user.is_staff = True
-        self.user.save()
-        self.seed_data = {
-            'provider_name': 'box',
-            'oauth_key': 'pzN7NJr1EDzXDHsoZRqJT6jHVkt7ryhQbOzQjiduLmPw8CHs8lzrUBrBiztMQvxK5KLplhpKuGxeP91W',
-            'oauth_secret': 'qgKnksgBkx76yCl9CqtTP4DOzPYiHLN9LSHFoVsgLgCc6ZqXngWMww5ydxrqY6OzyjUAcP5wL8c58D1Z',
-            'expires_at': timezone.now(),
-            'refresh_token': 'e97DkIMV6B0j6NjD1CYIiAm4',
-            'date_last_refreshed': timezone.now(),
-            'display_name': 'box display name is here',
-            'profile_url': 'example.com',
-            '_id': self.institution._id,
-            'provider_id': '88080800880',
-        }
-
-    def view_post(self, params):
-        request = RequestFactory().post(
-            'fake_path',
-            json.dumps(params),
-            content_type='application/json'
-        )
-        request.is_ajax()
-        request.user = self.user
-        return views.fetch_temporary_token(request)
-
-    def test_provider_missing(self):
-        response = self.view_post({
-            'no_pro': 'box',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content)
-
-    def test_fail_Oauth_procedure_canceled(self):
-        response = self.view_post({
-            'provider_short_name': 'box',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Oauth permission procedure was canceled', response.content)
-
-    def test_success(self):
-        temp_account = ExternalAccountTemporary.objects.create(
-            provider=self.seed_data['provider_name'],
-            provider_name=self.seed_data['provider_name'],
-            oauth_key=self.seed_data['oauth_key'],
-            oauth_secret=self.seed_data['oauth_secret'],
-            expires_at=self.seed_data['expires_at'],
-            refresh_token=self.seed_data['refresh_token'],
-            date_last_refreshed=self.seed_data['date_last_refreshed'],
-            display_name=self.seed_data['display_name'],
-            profile_url=self.seed_data['profile_url'],
-            _id=self.seed_data['_id'],
-            provider_id=self.seed_data['provider_id'],
-        )
-        response = self.view_post({
-            'provider_short_name': 'box',
-        })
-        nt.assert_equals(response.status_code, httplib.OK)
-        data = json.loads(response.content)
-        response_temp_account = data['response_data']
-        nt.assert_equals(response_temp_account['display_name'], temp_account.display_name)
-        nt.assert_equals(response_temp_account['oauth_key'], temp_account.oauth_key)
-        nt.assert_equals(response_temp_account['provider'], temp_account.provider)
-        nt.assert_equals(response_temp_account['provider_id'], temp_account.provider_id)
-        nt.assert_equals(response_temp_account['provider_name'], temp_account.provider_name)
-        nt.assert_equals(response_temp_account['fullname'], self.user.fullname)
-
-class TestNiiStorageTest(AdminTestCase):
-    def setUp(self):
-        super(TestNiiStorageTest, self).setUp()
-        self.institution = InstitutionFactory()
-        self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.institution)
-        self.user.is_staff = True
-        self.user.save()
-
-    def view_post(self, params):
-        request = RequestFactory().post(
-            'fake_path',
-            json.dumps(params),
-            content_type='application/json'
-        )
-        request.is_ajax()
-        request.user = self.user
-        return views.save_credentials(request)
-
-    def test_provider_missing(self):
-        response = self.view_post({
-            'no_pro': 'osfstorage',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content)
-
-    def test_success(self):
-        response = self.view_post({
-            'provider_short_name': 'osfstorage',
-        })
-
-        nt.assert_equals(response.status_code, httplib.OK)
-        nt.assert_in('NII storage was set successfully', response.content)
-
 
 class TestOwnCloudStorageSaveCredentials(AdminTestCase):
     def setUp(self):
@@ -1226,275 +1336,3 @@ class TestOwnCloudStorageSaveCredentials(AdminTestCase):
         wb_settings = institution_storage.waterbutler_settings
         nt.assert_equals(wb_settings['storage']['provider'], 'owncloud')
         nt.assert_equals(wb_settings['storage']['folder'], '/reserved_for_osf/')
-
-class TestNextCloudStorageSaveCredentials(AdminTestCase):
-    def setUp(self):
-        super(TestNextCloudStorageSaveCredentials, self).setUp()
-        self.institution = InstitutionFactory()
-        self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.institution)
-        self.user.is_staff = True
-        self.user.save()
-
-    def view_post(self, params):
-        request = RequestFactory().post(
-            'fake_path',
-            json.dumps(params),
-            content_type='application/json'
-        )
-        request.is_ajax()
-        request.user = self.user
-        return views.save_credentials(request)
-
-    @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
-    def test_connection_fail(self, mock_testconnection):
-        mock_testconnection.return_value = {'message': 'NG'}, httplib.BAD_REQUEST
-
-        response = self.view_post({
-            'storage_name': 'My storage',
-            'nextcloud_host': 'drop database;',
-            'nextcloud_username': 'invalid-user',
-            'nextcloud_password': 'invalid-password',
-            'nextcloud_folder': 'Hello World',
-            'provider_short_name': 'nextcloud',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('NG', response.content)
-        nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
-
-    @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
-    def test_success(self, mock_testconnection):
-        mock_testconnection.return_value = {'message': 'Nice'}, httplib.OK
-
-        response = self.view_post({
-            'storage_name': 'My storage',
-            'nextcloud_host': 'valid.nextcloud.net',
-            'nextcloud_username': 'admin',
-            'nextcloud_password': '1234',
-            'nextcloud_folder': 'reserved_for_osf',
-            'provider_short_name': 'nextcloud',
-        })
-
-        nt.assert_equals(response.status_code, httplib.OK)
-        nt.assert_in('Saved credentials successfully!!', response.content)
-
-        institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
-
-        wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['host'], 'https://valid.nextcloud.net')
-        nt.assert_equals(wb_credentials['storage']['username'], 'admin')
-        nt.assert_equals(wb_credentials['storage']['password'], '1234')
-
-        wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'nextcloud')
-        nt.assert_equals(wb_settings['storage']['folder'], '/reserved_for_osf/')
-
-class TestGoogleDriveStorageSaveCredentials(AdminTestCase):
-    def setUp(self):
-        super(TestGoogleDriveStorageSaveCredentials, self).setUp()
-        self.institution = InstitutionFactory()
-        self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.institution)
-        self.user.is_staff = True
-        self.user.save()
-        self.seed_data = {
-            'provider_name': 'googledrive',
-            'oauth_key': 'pzN7NJr1EDzXDHsoZRqJT6jHVkt7ryhQbOzQjiduLmPw8CHs8lzrUBrBiztMQvxK5KLplhpKuGxeP91W',
-            'oauth_secret': 'qgKnksgBkx76yCl9CqtTP4DOzPYiHLN9LSHFoVsgLgCc6ZqXngWMww5ydxrqY6OzyjUAcP5wL8c58D1Z',
-            'expires_at': timezone.now(),
-            'refresh_token': 'e97DkIMV6B0j6NjD1CYIiAm4',
-            'date_last_refreshed': timezone.now(),
-            'display_name': 'google drive display name is here',
-            'profile_url': 'example.com',
-            '_id': self.institution._id,
-            'provider_id': '88080800880',
-        }
-
-    def view_post(self, params):
-        request = RequestFactory().post(
-            'fake_path',
-            json.dumps(params),
-            content_type='application/json'
-        )
-        request.is_ajax()
-        request.user = self.user
-        return views.save_credentials(request)
-
-    def view_post_cancel(self, params):
-        request = RequestFactory().post(
-            'fake_path',
-            json.dumps(params),
-            content_type='application/json'
-        )
-        request.is_ajax()
-        request.user = self.user
-        return views.remove_auth_data_temporary(request)
-
-    def test_cancel(self):
-        response = self.view_post_cancel({
-            'provider_short_name': 'googledrive',
-        })
-        nt.assert_equals(response.status_code, httplib.OK)
-
-    def test_provider_missing(self):
-        response = self.view_post({
-            'no_pro': 'googledrive',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content)
-
-    def test_storage_name_missing(self):
-        response = self.view_post({
-            'provider_short_name': 'googledrive',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Storage name is missing.', response.content)
-
-    def test_googledrive_folder_missing(self):
-        response = self.view_post({
-            'provider_short_name': 'googledrive',
-            'storage_name': 'storage_name',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Folder ID is missing.', response.content)
-
-    def test_success(self):
-        ExternalAccountTemporary.objects.create(
-            provider=self.seed_data['provider_name'],
-            provider_name=self.seed_data['provider_name'],
-            oauth_key=self.seed_data['oauth_key'],
-            oauth_secret=self.seed_data['oauth_secret'],
-            expires_at=self.seed_data['expires_at'],
-            refresh_token=self.seed_data['refresh_token'],
-            date_last_refreshed=self.seed_data['date_last_refreshed'],
-            display_name=self.seed_data['display_name'],
-            profile_url=self.seed_data['profile_url'],
-            _id=self.seed_data['_id'],
-            provider_id=self.seed_data['provider_id'],
-        )
-        response = self.view_post({
-            'provider_short_name': 'googledrive',
-            'storage_name': 'storage_name',
-            'googledrive_folder': 'root',
-        })
-        nt.assert_equals(response.status_code, httplib.OK)
-        nt.assert_in('OAuth was set successfully', response.content)
-
-        external_account = ExternalAccount.objects.get(
-            provider=self.seed_data['provider_name'], provider_id=self.seed_data['provider_id'])
-        nt.assert_equals(external_account.oauth_key, self.seed_data['oauth_key'])
-        nt.assert_equals(external_account.oauth_secret, self.seed_data['oauth_secret'])
-
-        nt.assert_false(ExternalAccountTemporary.objects.filter(_id=self.institution._id))
-
-        institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'storage_name')
-
-        wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['token'], self.seed_data['oauth_key'])
-
-        wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['folder']['id'], 'root')
-
-
-class TestBoxSaveCredentials(AdminTestCase):
-    def setUp(self):
-        super(TestBoxSaveCredentials, self).setUp()
-        self.institution = InstitutionFactory()
-        self.user = AuthUserFactory()
-        self.user.affiliated_institutions.add(self.institution)
-        self.user.is_staff = True
-        self.user.save()
-        self.seed_data = {
-            'provider_name': 'box',
-            'oauth_key': 'pzN7NJr1EDzXDHsoZRqJT6jHVkt7ryhQbOzQjiduLmPw8CHs8lzrUBrBiztMQvxK5KLplhpKuGxeP91W',
-            'oauth_secret': 'qgKnksgBkx76yCl9CqtTP4DOzPYiHLN9LSHFoVsgLgCc6ZqXngWMww5ydxrqY6OzyjUAcP5wL8c58D1Z',
-            'expires_at': timezone.now(),
-            'refresh_token': 'e97DkIMV6B0j6NjD1CYIiAm4',
-            'date_last_refreshed': timezone.now(),
-            'display_name': 'box display name is here',
-            'profile_url': 'example.com',
-            '_id': self.institution._id,
-            'provider_id': '88080800880',
-        }
-
-    def view_post(self, params):
-        request = RequestFactory().post(
-            'fake_path',
-            json.dumps(params),
-            content_type='application/json'
-        )
-        request.is_ajax()
-        request.user = self.user
-        return views.save_credentials(request)
-
-    def test_provider_missing(self):
-        response = self.view_post({
-            'no_pro': 'box',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content)
-
-    def test_storage_name_missing(self):
-        response = self.view_post({
-            'provider_short_name': 'box',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Storage name is missing.', response.content)
-
-    def test_googledrive_folder_missing(self):
-        response = self.view_post({
-            'provider_short_name': 'box',
-            'storage_name': 'storage_name',
-        })
-
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
-        nt.assert_in('Folder is missing.', response.content)
-
-    def test_success(self):
-        ExternalAccountTemporary.objects.create(
-            provider=self.seed_data['provider_name'],
-            provider_name=self.seed_data['provider_name'],
-            oauth_key=self.seed_data['oauth_key'],
-            oauth_secret=self.seed_data['oauth_secret'],
-            expires_at=self.seed_data['expires_at'],
-            refresh_token=self.seed_data['refresh_token'],
-            date_last_refreshed=self.seed_data['date_last_refreshed'],
-            display_name=self.seed_data['display_name'],
-            profile_url=self.seed_data['profile_url'],
-            _id=self.seed_data['_id'],
-            provider_id=self.seed_data['provider_id'],
-        )
-        response = self.view_post({
-            'provider_short_name': 'box',
-            'storage_name': 'storage_name',
-            'box_folder': '0',
-        })
-        nt.assert_equals(response.status_code, httplib.OK)
-        nt.assert_in('OAuth was set successfully', response.content)
-
-        external_account = ExternalAccount.objects.get(
-            provider=self.seed_data['provider_name'], provider_id=self.seed_data['provider_id'])
-        nt.assert_equals(external_account.oauth_key, self.seed_data['oauth_key'])
-        nt.assert_equals(external_account.oauth_secret, self.seed_data['oauth_secret'])
-
-        nt.assert_false(ExternalAccountTemporary.objects.filter(_id=self.institution._id))
-
-        institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'storage_name')
-
-        wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['token'], self.seed_data['oauth_key'])
-
-        wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['folder'], '0')
