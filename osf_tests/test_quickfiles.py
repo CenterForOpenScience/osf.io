@@ -55,7 +55,7 @@ class TestQuickFolder:
 
     def test_new_user_has_quickfolder(self, user):
         assert getattr(user, 'quickfolder', False)
-        assert user.quickfile.is_root
+        assert user.quickfolder.is_root
         assert user.quickfiles.count() == 0
 
         # No QuickFolders in nodes
