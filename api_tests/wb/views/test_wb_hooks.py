@@ -584,6 +584,10 @@ class TestCopy():
         return '/_/wb/hooks/{}/copy/'.format(node._id)
 
     @pytest.fixture()
+    def quickfiles_copy_url(self, user):
+        return '/_/wb/hooks/{}/copy/'.format(user._id)
+
+    @pytest.fixture()
     def payload(self, file, folder, root_node, user):
         return {
             'source': file._id,
@@ -697,6 +701,23 @@ class TestCopy():
             }
         })
         res = app.post_json(copy_url, signed_payload, expect_errors=False)
+        assert res.status_code == 201
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_can_copy_file_out_of_quickfiles(self, app, quickfiles_copy_url, node, user):
+        dest_folder = OsfStorageFolder.objects.get_root(target=node)
+        quickfile = user.quickfolder.append_file('Sprolesfile')
+        signed_payload = sign_payload({
+            'source': user.quickfolder._id,
+            'target': user._id,
+            'user': user._id,
+            'destination': {
+                'parent': dest_folder._id,
+                'target': node._id,
+                'name': quickfile.name,
+            }
+        })
+        res = app.post_json(quickfiles_copy_url, signed_payload, expect_errors=False)
         assert res.status_code == 201
 
     def test_blank_destination_file_name(self, app, copy_url, user, root_node, folder, file):
