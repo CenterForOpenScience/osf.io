@@ -24,7 +24,6 @@ from osf.models import (
     OSFUser,
     Preprint,
     Registration,
-    QuickFolder
 )
 from osf.utils.workflows import DefaultStates
 from scripts.utils import Progress
@@ -78,32 +77,44 @@ def export_metadata(node, current_dir):
         metadata = json.loads(serializers.serialize('json', [node], fields=export_fields))
         json.dump(metadata[0]['fields'], f, indent=4, sort_keys=True)
 
-def export_files(node, user, current_dir):
+def export_files(target, user, current_dir, path_name='files'):
     """
     Creates a "files" directory within the current directory.
     Exports all of the OSFStorage files for a given node.
     Uses WB's download zip functionality to download osfstorage-archive.zip in a single request.
 
     """
-    files_dir = os.path.join(current_dir, 'files')
+    files_dir = os.path.join(current_dir, path_name)
     os.mkdir(files_dir)
-    response = requests.get(
-        url=waterbutler_api_url_for(
-            node_id=node._id,
-            _internal=True,
-            provider='osfstorage',
-            zip='',
-            cookie=user.get_or_create_cookie(),
-            base_url=node.osfstorage_region.waterbutler_url
+    if target == user:  # is quickfile
+        response = requests.get(
+            url=waterbutler_api_url_for(
+                node_id=target._id,
+                _internal=True,
+                provider='osfstorage',
+                zip='',
+                cookie=user.get_or_create_cookie(),
+                base_url=target.get_addon('osfstorage').default_region.waterbutler_url
+            )
         )
-    )
+    else:
+        response = requests.get(
+            url=waterbutler_api_url_for(
+                node_id=target._id,
+                _internal=True,
+                provider='osfstorage',
+                zip='',
+                cookie=user.get_or_create_cookie(),
+                base_url=target.osfstorage_region.waterbutler_url
+            )
+        )
     if response.status_code == 200:
         with open(os.path.join(files_dir, 'osfstorage-archive.zip'), 'wb') as f:
             f.write(response.content)
     else:
         ERRORS.append(
             'Error exporting files for node {}. Waterbutler responded with a {} status code. Response: {}'
-            .format(node._id, response.status_code, response.json())
+            .format(target._id, response.status_code, response.json())
         )
 
 def export_wikis(node, current_dir):
@@ -133,8 +144,9 @@ def export_resource(node, user, current_dir):
     if hasattr(node, 'wikis') and WikiPage.objects.get_wiki_pages_latest(node):
         export_wikis(node, current_dir)
     ctype = ContentType.objects.get_for_model(node.__class__)
-    if OsfStorageFileNode.objects.filter(target_object_id=node.id, target_content_type=ctype):
-        export_files(node, user, current_dir)
+
+    if OsfStorageFileNode.objects.filter(target_object_id=node.id, target_content_type=ctype) or isinstance(node, OsfStorageFile):
+        export_files(node, user, current_dir, 'quickfiles')
 
     if hasattr(node, 'find_readable_descendants'):
         descendants = list(node.find_readable_descendants(Auth(user)))
@@ -184,7 +196,7 @@ def get_preprints_to_export(user):
     )
 
 
-def export_account(user_id, path, only_private=False, only_admin=False, export_files=True, export_wikis=True):
+def export_account(user_id, path, only_private=False, only_admin=False, files_to_export=True, export_wikis=True):
     """
     Exports (as a zip file) all of the projects, registrations, and preprints for which the given user is a contributor.
 
@@ -225,7 +237,7 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
 
     """
     user = OSFUser.objects.get(guids___id=user_id, guids___id__isnull=False)
-    proceed = raw_input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
+    proceed = input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
     if not proceed or proceed.lower() != 'y':
         print('Exiting...')
         exit(1)
@@ -254,14 +266,10 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
         .get_roots()
     )
 
-    quickfiles_to_export = (
-        QuickFolder.objects.filter(target=user)
-    )
-
     export_resources(projects_to_export, user, projects_dir, 'projects')
     export_resources(preprints_to_export, user, preprints_dir, 'preprints')
     export_resources(registrations_to_export, user, registrations_dir, 'registrations')
-    export_resources(quickfiles_to_export, user, quickfiles_dir, 'quickfiles')
+    export_files(user, user, quickfiles_dir, 'quickfiles')
 
     timestamp = dt.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     output = os.path.join(path, '{user_id}-export-{timestamp}'.format(**locals()))
