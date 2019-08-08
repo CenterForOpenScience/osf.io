@@ -1165,6 +1165,29 @@ class TestMoveHook(HookTestCase):
         assert_equal(res.status_code, 200)
 
     @pytest.mark.enable_quickfiles_creation
+    def test_can_move_file_out_of_quickfiles_node(self):
+        quickfiles_file = create_test_quickfile(self.user, filename='slippery.mp3')
+        dest_folder = OsfStorageFolder.objects.get_root(target=self.project)
+
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'guid': self.user._id},
+            payload={
+                'source': quickfiles_file._id,
+                'target': self.user._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': dest_folder._id,
+                    'target': self.project._id,
+                    'name': dest_folder.name,
+                }
+            },
+            target=self.user._id,
+            method='post_json',
+        )
+        assert_equal(res.status_code, 200)
+
+    @pytest.mark.enable_quickfiles_creation
     def test_can_rename_file_in_quickfiles_node_v1(self):
         file_node = create_test_quickfile(self.user, filename='slippery.mp3')
 
