@@ -94,7 +94,7 @@ def must_be_signed(func):
             sig = data['signature']
             payload = signing.unserialize_payload(data['payload'])
             exp_time = payload['time']
-        except (KeyError, ValueError):
+        except (KeyError, ValueError, TypeError):
             raise HTTPError(httplib.BAD_REQUEST, data={
                 'message_short': 'Invalid payload',
                 'message_long': 'The request payload could not be deserialized.'
