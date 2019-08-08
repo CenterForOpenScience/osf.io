@@ -299,6 +299,10 @@ def archive_success(dst_pk, job_pk):
     """
     create_app_context()
     dst = AbstractNode.load(dst_pk)
+
+    # Cache registration files count
+    dst.update_files_count()
+
     # The filePicker extension addded with the Prereg Challenge registration schema
     # allows users to select files in OSFStorage as their response to some schema
     # questions. These files are references to files on the unregistered Node, and

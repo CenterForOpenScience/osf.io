@@ -42,7 +42,6 @@ from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
 from osf.models.preprint import Preprint
 from website.project import new_private_link
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
@@ -791,10 +790,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                     'visible': contributor.visible,
                 })
                 if not contributor.user.is_registered:
-                    node.add_unregistered_contributor(
-                        fullname=contributor.user.fullname, email=contributor.user.email, auth=auth,
-                        permissions=contributor.permission, existing_user=contributor.user,
-                    )
+                    try:
+                        node.add_unregistered_contributor(
+                            fullname=contributor.user.fullname, email=contributor.user.email, auth=auth,
+                            permissions=contributor.permission, existing_user=contributor.user,
+                        )
+                    except ValidationError as e:
+                        raise InvalidModelValueError(detail=str(e[0]))
             node.add_contributors(contributors, auth=auth, log=True, save=True)
             for group in parent.osf_groups:
                 if group.is_manager(user):
@@ -1414,12 +1416,12 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
 
         return self.make_instance_obj(node)
 
-
 class RegistrationSchemaRelationshipField(RelationshipField):
 
     def to_internal_value(self, registration_schema_id):
         schema = get_object_or_error(RegistrationSchema, registration_schema_id, self.context['request'])
-        if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
+        latest_version = RegistrationSchema.objects.get_latest_version(schema.name, only_active=False).schema_version
+        if latest_version != schema.schema_version or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
         return {'registration_schema': schema}
 

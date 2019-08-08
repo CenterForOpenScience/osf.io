@@ -178,6 +178,7 @@ class RegistrationSerializer(NodeSerializer):
     files = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-storage-providers',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_files_count'},
     ))
 
     wikis = HideIfWithdrawal(RelationshipField(
@@ -376,6 +377,9 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_total_comments_count(self, obj):
         return obj.comment_set.filter(page='node', is_deleted=False).count()
+
+    def get_files_count(self, obj):
+        return obj.files_count or 0
 
     def anonymize_registered_meta(self, obj):
         """

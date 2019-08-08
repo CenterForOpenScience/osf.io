@@ -1,9 +1,10 @@
 from django.conf.urls import include, url
 from django.views.generic.base import RedirectView
 
-from . import views
-from . import settings
-from . import versioning
+
+from api.base import views
+from api.base import settings
+from api.base import versioning
 
 default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 

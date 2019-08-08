@@ -3,7 +3,6 @@ import os
 import logging
 import httplib as http
 import math
-import waffle
 from collections import defaultdict
 from itertools import islice
 
@@ -16,10 +15,12 @@ from framework import status
 from framework.utils import iso8601format
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
+from website.ember_osf_web.decorators import ember_flag_is_active
+from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 from osf.utils.functional import rapply
+from osf.utils import sanitize
 from osf import features
 
 from website import language
@@ -280,7 +281,7 @@ def node_forks(auth, node, **kwargs):
 @must_have_permission(READ)
 @ember_flag_is_active(features.EMBER_PROJECT_SETTINGS)
 def node_setting(auth, node, **kwargs):
-    if node.is_registration and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+    if node.is_registration and flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         # Registration settings page obviated during redesign
         return redirect(node.url)
     auth.user.update_affiliated_institutions_by_email_domain()
@@ -727,7 +728,7 @@ def _view_project(node, auth, primary=False,
         'node': {
             'disapproval_link': disapproval_link,
             'id': node._primary_key,
-            'title': node.title,
+            'title': sanitize.unescape_entities(node.title),
             'category': node.category_display,
             'category_short': node.category,
             'node_type': node.project_or_component,
@@ -1026,7 +1027,7 @@ def serialize_child_tree(child_list, user, nested):
                 'node': {
                     'id': child._id,
                     'url': child.url,
-                    'title': child.title,
+                    'title': sanitize.unescape_entities(child.title),
                     'is_public': child.is_public,
                     'contributors': contributors,
                     'is_admin': child.has_permission(user, ADMIN),
@@ -1080,7 +1081,7 @@ def node_child_tree(user, node):
             'node': {
                 'id': node._id,
                 'url': node.url if can_read else '',
-                'title': node.title if can_read else 'Private Project',
+                'title': sanitize.unescape_entities(node.title) if can_read else 'Private Project',
                 'is_public': node.is_public,
                 'contributors': contributors,
                 'is_admin': is_admin,

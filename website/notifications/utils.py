@@ -463,6 +463,9 @@ def subscribe_user_to_notifications(node, user):
     if node.is_deleted:
         raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
 
+    if getattr(node, 'is_registration', False):
+        raise InvalidSubscriptionError('Registrations are invalid targets for subscriptions')
+
     events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
     notification_type = 'email_transactional'
     target_id = node._id

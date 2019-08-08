@@ -14,6 +14,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
+from django.core.paginator import Paginator
 
 from osf.exceptions import UserStateError
 from osf.models.base import Guid
@@ -39,7 +40,7 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 
-from admin.users.serializers import serialize_user
+from admin.users.serializers import serialize_user, serialize_simple_preprint, serialize_simple_node
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
@@ -423,12 +424,31 @@ class UserSearchList(PermissionRequiredMixin, ListView):
 class UserView(PermissionRequiredMixin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
+    paginate_by = 10
     permission_required = 'osf.view_osfuser'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
         kwargs = super(UserView, self).get_context_data(**kwargs)
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
+        user = OSFUser.load(self.kwargs.get('guid'))  # Pull User for Node/Preprints
+
+        preprint_queryset = user.preprints.filter(deleted=None).order_by('title')
+        node_queryset = user.contributor_or_group_member_to.order_by('title')
+        kwargs = self.get_paginated_queryset(preprint_queryset, 'preprint', serialize_simple_preprint, **kwargs)
+        kwargs = self.get_paginated_queryset(node_queryset, 'node', serialize_simple_node, **kwargs)
+
+        return kwargs
+
+    def get_paginated_queryset(self, queryset, resource_type, serializer, **kwargs):
+        page_num = self.request.GET.get('{}_page'.format(resource_type), 1)
+        paginator = Paginator(queryset, self.paginate_by)
+        page_queryset = paginator.page(page_num)
+
+        kwargs.setdefault('{}s'.format(resource_type), list(map(serializer, page_queryset)))
+        kwargs.setdefault('{}_page'.format(resource_type), paginator.page(page_num))
+        kwargs.setdefault('current_{}'.format(resource_type), '&{}_page='.format(resource_type) + str(page_queryset.number))
+
         return kwargs
 
     def get_object(self, queryset=None):
