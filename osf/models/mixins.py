@@ -30,7 +30,6 @@ from osf.models.nodelog import NodeLog
 from osf.models.subject import Subject
 from osf.models.spam import SpamMixin, SpamStatus
 from osf.models.tag import Tag
-from osf.models import Guid
 from osf.models.validators import validate_subject_hierarchy, validate_email
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
@@ -39,7 +38,6 @@ from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, Re
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
 from website import settings, mails, language
-from rest_framework.exceptions import NotFound
 
 
 logger = logging.getLogger(__name__)
@@ -1696,17 +1694,9 @@ class FileTargetMixin(Loggable):
     that's a target needs all these things it's good to require these methods as part of a class to avoid missing any
     aspects of targethood.
     '''
+
     class Meta:
         abstract = True
-
-    @classmethod
-    def load_target_from_guid(cls, _id):
-        valid_model_content_types = [subclass._meta.model_name for subclass in cls.__subclasses__()]
-
-        try:
-            return Guid.objects.get(_id=_id, content_type__model__in=valid_model_content_types).referent
-        except Guid.DoesNotExist:
-            raise NotFound('Unable to find specified guid.')
 
     @property
     def has_node_addon(self):

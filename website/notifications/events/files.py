@@ -16,8 +16,7 @@ from website.notifications.events.base import (
     register, Event, event_registry, RegistryError
 )
 from website.notifications.events import utils as event_utils
-from osf.models import NodeLog, Preprint
-from osf.models.mixins import FileTargetMixin
+from osf.models import NodeLog, Preprint, Guid
 from addons.base.signals import file_updated as signal
 from rest_framework.exceptions import NotFound
 
@@ -123,7 +122,7 @@ class ComplexFileEvent(FileEvent):
 
         source_nid = self.payload['source']['node']['_id']
         try:
-            self.source_node = FileTargetMixin.load_target_from_guid(source_nid)
+            self.source_node = Guid.load(source_nid)
         except NotFound:
             self.source_node = None
 

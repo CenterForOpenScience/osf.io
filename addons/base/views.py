@@ -41,7 +41,6 @@ from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode, Preprint,
                         NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata, FileVersion)
-from osf.models.mixins import FileTargetMixin
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
 from website.profile.utils import get_profile_image_url
@@ -50,8 +49,6 @@ from website.project.decorators import must_be_contributor_or_public, must_be_va
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.util import rubeus
-
-from rest_framework.exceptions import NotFound
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
@@ -295,10 +292,10 @@ def get_auth(auth, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    try:
-        target = FileTargetMixin.load_target_from_guid(node_id)
-    except NotFound:
+    guid = Guid.load(node_id)
+    if guid is None:
         raise HTTPError(httplib.NOT_FOUND)
+    target = guid.referent
 
     check_access(target, auth, action, cas_resp)
     provider_settings = None
@@ -416,8 +413,8 @@ def create_waterbutler_log(payload, **kwargs):
             raise HTTPError(httplib.BAD_REQUEST)
 
         auth = Auth(user=user)
-        target_id = kwargs.get('nid') or kwargs.get('pid')
-        target = kwargs.get('node') or kwargs.get('project') or FileTargetMixin.load_target_from_guid(target_id)
+        target_id = kwargs.get('nid') or kwargs.get('pid') or kwargs.get('node') or kwargs.get('project')
+        target = Guid.load(target_id).referent
 
         if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
 
@@ -444,7 +441,7 @@ def create_waterbutler_log(payload, **kwargs):
                     action = LOG_ACTION_MAP['rename']
 
             destination_target = target  # For clarity
-            source_target = FileTargetMixin.load_target_from_guid(src['nid'])
+            source_target = Guid.load(src['nid']).referent
 
             # We return provider fullname so we need to load node settings, if applicable
             source = None
