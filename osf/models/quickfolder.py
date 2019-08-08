@@ -4,6 +4,7 @@ from osf.models import TrashedFileNode
 from addons.osfstorage.models import OsfStorageFolder
 
 from osf.models.legacy_quickfiles import get_quickfiles_project_title
+from osf.exceptions import UserStateError
 
 
 class QuickFolder(OsfStorageFolder):
@@ -20,6 +21,7 @@ class QuickFolder(OsfStorageFolder):
     6. A Quickfolder's title must reflect user's name in a grammatically correct way.
     7. When a Quickfile is viewed/downloaded it only counts toward the metrics if the view/download is done by a user
     who doesn't own the Quickfolder that file was in.
+    8. Quickfolders can't be deleted.
     """
     _provider = 'osfstorage'
 
@@ -33,3 +35,6 @@ class QuickFolder(OsfStorageFolder):
     # Only used in v1 and tests
     def find_child_by_name(self, name, **kwargs):
         return self._children.exclude(type__in=TrashedFileNode._typedmodels_subtypes).get(name=name)
+
+    def delete(self):
+        raise UserStateError('Cannot delete a user\'s quickfolder.')

@@ -7,6 +7,7 @@ from api_tests.utils import create_test_quickfile, create_test_file, create_test
 
 from django.contrib.contenttypes.models import ContentType
 
+from osf.exceptions import UserStateError
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 
@@ -160,3 +161,8 @@ class TestQuickFolder:
 
         with pytest.raises(MaxRetriesError):
             user.merge_user(user2)
+
+    def test_quickfiles_cannot_be_deleted(self, user):
+        with pytest.raises(UserStateError):
+            user.quickfolder.delete()
+        assert not user.quickfolder.is_deleted
