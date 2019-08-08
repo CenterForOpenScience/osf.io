@@ -54,7 +54,7 @@ class FileMetadataView(APIView):
                 raise NotFound
 
             try:
-                dest_parent = OsfStorageFileNode.get_from_target(destination.get('parent'), dest_target)
+                dest_parent = OsfStorageFileNode.get(destination.get('parent'), dest_target)
             except OsfStorageFileNode.DoesNotExist:
                 raise NotFound
 
