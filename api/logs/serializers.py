@@ -1,3 +1,4 @@
+from past.builtins import basestring
 from rest_framework import serializers as ser
 
 from api.base.serializers import (
@@ -37,13 +38,13 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
 
     def get_node_title(self, obj):
         user = self.context['request'].user
-        title = obj['node']['title']
-        target = FileTargetMixin.load_target_from_guid(obj['node']['_id'])
+        node_title = obj['node']['title']
+        node = FileTargetMixin.load_target_from_guid(obj['node']['_id'])
         if not user.is_authenticated:
-            if target.is_public:
-                return title
-        elif target.is_public or target.has_permission(user, osf_permissions.READ):
-            return title
+            if node.is_public:
+                return node_title
+        elif node.has_permission(user, osf_permissions.READ):
+            return node_title
         return 'Private Component'
 
 class NodeLogParamsSerializer(RestrictedDictSerializer):
