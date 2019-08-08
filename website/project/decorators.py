@@ -12,7 +12,7 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
-from osf.models import AbstractNode, Guid, Preprint, OSFGroup
+from osf.models import AbstractNode, Guid, Preprint, OSFGroup, OSFUser
 from osf.utils.permissions import WRITE
 from website import settings, language
 from website.util import web_url_for
@@ -92,9 +92,13 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
                 kwargs['node'] = OSFGroup.load(kwargs.get('pid'))
                 return func(*args, **kwargs)
 
+            if quickfiles_valid and OSFUser.load(kwargs.get('pid')):
+                kwargs['node'] = OSFUser.load(kwargs.get('pid'))
+                return func(*args, **kwargs)
+
             _inject_nodes(kwargs)
 
-            if getattr(kwargs['node'], 'is_collection', True) or (getattr(kwargs['node'], 'is_quickfiles', True) and not quickfiles_valid):
+            if getattr(kwargs['node'], 'is_collection', True):
                 raise HTTPError(
                     http.NOT_FOUND
                 )
