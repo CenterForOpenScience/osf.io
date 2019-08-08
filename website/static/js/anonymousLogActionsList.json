@@ -18,6 +18,8 @@
     "tag_removed" : "A user removed a tag from a project",
     "edit_title" : "A user changed the title of a project",
     "edit_description" : "A user edited the description of a project",
+    "category_updated": "A user changed the category of a project",
+    "article_doi_updated": "A user changed the article_doi of a project",
     "updated_fields" : "A user changed the ${updated_fields} for a project",
     "external_ids_added" : "A user created external identifiers on a project",
     "citation_custom_added" : "A user created a custom citation for a project",

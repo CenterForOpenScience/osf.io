@@ -491,7 +491,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
     #   test_can_unset_certain_registration_fields
         attribute_list = {
             'public': True,
-            'category': 'instrumentation',
+            'category': '',
             'title': 'New title',
             'description': '',
             'tags': [],
@@ -509,7 +509,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
-        assert res.json['data']['attributes']['category'] == 'instrumentation'
+        assert res.json['data']['attributes']['category'] == ''
         assert res.json['data']['attributes']['description'] == ''
         assert res.json['data']['attributes']['tags'] == []
         assert res.json['data']['attributes']['title'] == private_registration.title
