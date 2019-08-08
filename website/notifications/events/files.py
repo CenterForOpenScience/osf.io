@@ -18,7 +18,6 @@ from website.notifications.events.base import (
 from website.notifications.events import utils as event_utils
 from osf.models import NodeLog, Preprint, Guid
 from addons.base.signals import file_updated as signal
-from rest_framework.exceptions import NotFound
 
 
 @signal.connect
@@ -121,11 +120,8 @@ class ComplexFileEvent(FileEvent):
         super(ComplexFileEvent, self).__init__(user, node, event, payload=payload)
 
         source_nid = self.payload['source']['node']['_id']
-        try:
-            self.source_node = Guid.load(source_nid).referent
-        except NotFound:
-            self.source_node = None
-
+        target = getattr(Guid.load(source_nid), 'referent', None)
+        self.source_node = target
         self.addon = self.node.get_addon(self.payload['destination']['provider'])
 
     def _build_message(self, html=False):
