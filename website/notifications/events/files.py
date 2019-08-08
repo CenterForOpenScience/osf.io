@@ -122,7 +122,7 @@ class ComplexFileEvent(FileEvent):
 
         source_nid = self.payload['source']['node']['_id']
         try:
-            self.source_node = Guid.load(source_nid)
+            self.source_node = Guid.load(source_nid).referent
         except NotFound:
             self.source_node = None
 
