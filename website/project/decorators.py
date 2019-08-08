@@ -19,6 +19,17 @@ from website.util import web_url_for
 _load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
 
 
+def get_non_node_from_pid(kwargs):
+    """
+    Returns resource if kwargs has a `pid` that resolves to a guid that's not a node
+    """
+    pid = kwargs.get('pid')
+
+    guid = Guid.load(pid)
+    if guid:
+        return guid.referent
+
+
 def _kwargs_to_nodes(kwargs):
     """Retrieve project and component objects from keyword arguments.
 
@@ -26,9 +37,7 @@ def _kwargs_to_nodes(kwargs):
     :return: Tuple of parent and target
 
     """
-    target_id = kwargs.get('node') or kwargs.get('project') or kwargs.get('pid')
-    target = Guid.load(target_id).referent
-
+    target = kwargs.get('node') or kwargs.get('project') or get_non_node_from_pid(kwargs)
     parent = kwargs.get('parent')
     if target:
         return parent, target
