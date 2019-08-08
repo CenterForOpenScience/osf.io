@@ -51,6 +51,8 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.util import rubeus
 
+from rest_framework.exceptions import NotFound
+
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
@@ -295,7 +297,7 @@ def get_auth(auth, **kwargs):
 
     try:
         target = FileTargetMixin.load_target_from_guid(node_id)
-    except Guid.DoesNotExist:
+    except NotFound:
         raise HTTPError(httplib.NOT_FOUND)
 
     check_access(target, auth, action, cas_resp)
