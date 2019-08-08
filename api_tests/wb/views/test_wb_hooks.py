@@ -704,7 +704,7 @@ class TestCopy():
         assert res.status_code == 201
 
     @pytest.mark.enable_quickfiles_creation
-    def test_can_copy_file_out_of_quickfiles(self, app, quickfiles_copy_url, node, user):
+    def test_can_copy_file_out_of_quickfiles_node(self, app, quickfiles_copy_url, node, user):
         dest_folder = OsfStorageFolder.objects.get_root(target=node)
         quickfile = user.quickfolder.append_file('Sprolesfile')
         signed_payload = sign_payload({

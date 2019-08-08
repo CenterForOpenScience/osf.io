@@ -47,7 +47,8 @@ def create_quickfolders():
         quickfolder = QuickFolder(target_object_id=user,
                                   target_content_type_id=user_content_type_id,
                                   provider='osfstorage',
-                                  path='/')
+                                  path='/',
+                                  is_root=True)
 
         quickfolders_to_create.append(quickfolder)
         total_created += 1
