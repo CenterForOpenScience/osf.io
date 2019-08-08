@@ -11,7 +11,8 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
-from osf.models import AbstractNode, Guid, Preprint, OSFGroup, OSFUser
+
+from osf.models import AbstractNode, Guid, Preprint, OSFGroup
 from osf.utils.permissions import WRITE
 from website import settings, language
 from website.util import web_url_for
@@ -19,39 +20,29 @@ from website.util import web_url_for
 _load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
 
 
-def get_non_node_from_pid(kwargs):
-    """
-    Returns resource if kwargs has a `pid` that resolves to a guid that's not a node
-    """
-    pid = kwargs.get('pid')
-
-    guid = Guid.load(pid)
-    if guid:
-        return guid.referent
-
-
 def _kwargs_to_nodes(kwargs):
     """Retrieve project and component objects from keyword arguments.
 
     :param dict kwargs: Dictionary of keyword arguments
-    :return: Tuple of parent and target
+    :return: Tuple of parent and node
 
     """
-    target = kwargs.get('node') or kwargs.get('project') or get_non_node_from_pid(kwargs)
+    node = kwargs.get('node') or kwargs.get('project')
     parent = kwargs.get('parent')
-    if target:
-        return parent, target
+    if node:
+        return parent, node
 
     pid = kwargs.get('pid')
     nid = kwargs.get('nid')
-
     if pid and nid:
-        target = _load_node_or_fail(nid)
+        node = _load_node_or_fail(nid)
         parent = _load_node_or_fail(pid)
     elif pid and not nid:
-        target = _load_node_or_fail(pid)
+        node = Preprint.load(pid)
+        if not node:
+            node = _load_node_or_fail(pid)
     elif nid and not pid:
-        target = _load_node_or_fail(nid)
+        node = _load_node_or_fail(nid)
     elif not pid and not nid:
         raise HTTPError(
             http.NOT_FOUND,
@@ -60,7 +51,7 @@ def _kwargs_to_nodes(kwargs):
                 'message_long': 'No Node with that primary key could be found',
             }
         )
-    return parent, target
+    return parent, node
 
 
 def _inject_nodes(kwargs):
@@ -101,13 +92,9 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
                 kwargs['node'] = OSFGroup.load(kwargs.get('pid'))
                 return func(*args, **kwargs)
 
-            if quickfiles_valid and OSFUser.load(kwargs.get('pid')):
-                kwargs['node'] = OSFUser.load(kwargs.get('pid'))
-                return func(*args, **kwargs)
-
             _inject_nodes(kwargs)
 
-            if getattr(kwargs['node'], 'is_collection', True):
+            if getattr(kwargs['node'], 'is_collection', True) or (getattr(kwargs['node'], 'is_quickfiles', True) and not quickfiles_valid):
                 raise HTTPError(
                     http.NOT_FOUND
                 )
@@ -464,7 +451,7 @@ def http_error_if_disk_saving_mode(func):
         return func(*args, **kwargs)
     return wrapper
 
-def check_contributor_auth(target, auth, include_public, include_view_only_anon, include_groups=True):
+def check_contributor_auth(node, auth, include_public, include_view_only_anon, include_groups=True):
     response = None
 
     user = auth.user
@@ -478,13 +465,13 @@ def check_contributor_auth(target, auth, include_public, include_view_only_anon,
         except PrivateLink.DoesNotExist:
             link_anon = None
 
-    if not target.is_public or not include_public:
+    if not node.is_public or not include_public:
         if not include_view_only_anon and link_anon:
-            if not check_can_access(node=target, user=user, include_groups=include_groups):
+            if not check_can_access(node=node, user=user, include_groups=include_groups):
                 raise HTTPError(http.UNAUTHORIZED)
-        elif not getattr(target, 'private_link_keys_active', False) or auth.private_key not in target.private_link_keys_active:
-            if not check_can_access(node=target, user=user, key=auth.private_key, include_groups=include_groups):
-                redirect_url = check_key_expired(key=auth.private_key, node=target, url=request.url)
+        elif not getattr(node, 'private_link_keys_active', False) or auth.private_key not in node.private_link_keys_active:
+            if not check_can_access(node=node, user=user, key=auth.private_key, include_groups=include_groups):
+                redirect_url = check_key_expired(key=auth.private_key, node=node, url=request.url)
                 if request.headers.get('Content-Type') == 'application/json':
                     raise HTTPError(http.UNAUTHORIZED)
                 else:
