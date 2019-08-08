@@ -5135,7 +5135,7 @@ class TestTimestampView(OsfTestCase):
             os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
-    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    @mock.patch('website.util.timestamp.OSFAbortableAsyncResult')
     @mock.patch('website.project.views.node.find_bookmark_collection')
     def test_get_init_timestamp_error_data_list(self, mock_collection, mock_task):
         mock_task.return_value.ready.return_value = True
@@ -5257,7 +5257,7 @@ class TestTimestampView(OsfTestCase):
         assert_equal(mock_getfulllist.call_count, 1)
         assert_equal(mock_checkfilets.call_count, 4)  # 4 files, 3 on osfstorage and 1 on github
 
-    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    @mock.patch('website.util.timestamp.OSFAbortableAsyncResult')
     def test_cancel_success(self, mock_task):
         mock_task.return_value.ready.return_value = False
 
@@ -5272,7 +5272,7 @@ class TestTimestampView(OsfTestCase):
         assert_equal(mock_task.return_value.abort.call_count, 1)
         assert_false(TimestampTask.objects.filter(node=self.project).exists())
 
-    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    @mock.patch('website.util.timestamp.OSFAbortableAsyncResult')
     def test_cancel_fail(self, mock_task):
         mock_task.return_value.ready.return_value = True
 
@@ -5287,7 +5287,7 @@ class TestTimestampView(OsfTestCase):
         assert_equal(mock_task.return_value.abort.call_count, 0)
         assert_false(TimestampTask.objects.filter(node=self.project).exists())
 
-    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    @mock.patch('website.util.timestamp.OSFAbortableAsyncResult')
     def test_get_task_progress_ready(self, mock_task):
         mock_task.return_value.ready.return_value = True
 
@@ -5300,7 +5300,7 @@ class TestTimestampView(OsfTestCase):
         assert_true(status_res.json['ready'])
         assert_false(TimestampTask.objects.filter(node=self.project).exists())
 
-    @mock.patch('website.util.timestamp.AbortableAsyncResult')
+    @mock.patch('website.util.timestamp.OSFAbortableAsyncResult')
     def test_get_task_progress_not_ready(self, mock_task):
         mock_task.return_value.ready.return_value = False
 

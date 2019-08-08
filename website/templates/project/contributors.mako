@@ -155,7 +155,10 @@
     </div>
     % endif
 
-    % if 'admin' in user['permissions'] and use_viewonlylinks:
+    % if 'admin' in user['permissions']:
+      % if not use_viewonlylinks:
+        <div style="display: none;">
+      % endif
         <h3 class="m-t-xl">View-only Links
             <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
               <i class="fa fa-plus"></i> Add
@@ -163,6 +166,9 @@
         </h3>
         <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
         <%include file="project/private_links.mako"/>
+      % if not use_viewonlylinks:
+        </div>
+      % endif
     % endif
 </div>
 

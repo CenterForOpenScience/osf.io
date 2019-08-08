@@ -24,8 +24,12 @@
 
                     % if not node['is_registration']:
                         % if 'admin' in user['permissions']:
-                            % if use_viewonlylinks:
+                            % if not use_viewonlylinks:
+                            <div style="display: none;">
+                            % endif
                             <li><a href="#createVolsAnchor">View-only Links</a></li>
+                            % if not use_viewonlylinks:
+                            </div>
                             % endif
                             <li><a href="#enableRequestAccessAnchor">Access Requests</a></li>
                         % endif
@@ -190,6 +194,9 @@
 
         % if 'admin' in user['permissions'] and use_viewonlylinks:  ## Begin create VOLS
             % if not node['is_registration']:
+              % if not use_viewonlylinks:
+                <div style="display: none;">
+              % endif
                 <div class="panel panel-default">
                     <span id="createVolsAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
@@ -205,6 +212,9 @@
                         <%include file="project/private_links.mako"/>
                     </div>
                 </div>
+              % if not use_viewonlylinks:
+                </div>
+              % endif
             % endif
         % endif ## End create vols
 
