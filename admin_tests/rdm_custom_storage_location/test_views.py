@@ -400,7 +400,6 @@ class TestS3CompatConnectionStorage(AdminTestCase):
         request.user = self.user
         return views.test_connection(request)
 
-
     def test_s3compat_settings_input_empty_keys_with_provider(self):
         params = {
             's3compat_endpoint_url': '',
