@@ -158,12 +158,18 @@ def save_credentials(request):
         }
         return JsonResponse(response, status=httplib.BAD_REQUEST)
 
+    storage_name = data.get('storage_name')
+    if not storage_name and provider_short_name != 'osfstorage':
+        return JsonResponse({
+            'message': 'Storage name is missing.'
+        }, status=httplib.BAD_REQUEST)
+
     result = None
 
     if provider_short_name == 's3':
         result = utils.save_s3_credentials(
             institution_id,
-            data.get('storage_name'),
+            storage_name,
             data.get('s3_access_key'),
             data.get('s3_secret_key'),
             data.get('s3_bucket'),
@@ -171,7 +177,7 @@ def save_credentials(request):
     elif provider_short_name == 's3compat':
         result = utils.save_s3compat_credentials(
             institution_id,
-            data.get('storage_name'),
+            storage_name,
             data.get('s3compat_endpoint_url'),
             data.get('s3compat_access_key'),
             data.get('s3compat_secret_key'),
@@ -180,7 +186,7 @@ def save_credentials(request):
     elif provider_short_name == 'swift':
         result = utils.save_swift_credentials(
             institution_id,
-            data.get('storage_name'),
+            storage_name,
             data.get('swift_auth_version'),
             data.get('swift_access_key'),
             data.get('swift_secret_key'),
@@ -198,14 +204,13 @@ def save_credentials(request):
     elif provider_short_name == 'googledrive':
         result = utils.save_googledrive_credentials(
             request.user,
-            data.get('storage_name', None),
-            data.get('provider_short_name', None),
-            data.get('googledrive_folder', None),
+            storage_name,
+            data.get('googledrive_folder'),
         )
     elif provider_short_name == 'owncloud':
         result = utils.save_owncloud_credentials(
             institution_id,
-            data.get('storage_name'),
+            storage_name,
             data.get('owncloud_host'),
             data.get('owncloud_username'),
             data.get('owncloud_password'),
@@ -215,7 +220,7 @@ def save_credentials(request):
     elif provider_short_name == 'nextcloud':
         result = utils.save_nextcloud_credentials(
             institution_id,
-            data.get('storage_name'),
+            storage_name,
             data.get('nextcloud_host'),
             data.get('nextcloud_username'),
             data.get('nextcloud_password'),
@@ -225,7 +230,7 @@ def save_credentials(request):
     elif provider_short_name == 'box':
         result = utils.save_box_credentials(
             request.user,
-            data.get('storage_name', None),
+            storage_name,
             data.get('provider_short_name', None),
             data.get('box_folder', None),
         )

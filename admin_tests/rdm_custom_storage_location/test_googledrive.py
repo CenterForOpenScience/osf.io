@@ -7,6 +7,7 @@ from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views
+from framework.exceptions import HTTPError
 from osf.models.external import ExternalAccount, ExternalAccountTemporary
 from osf_tests.factories import (
     AuthUserFactory,
@@ -128,3 +129,75 @@ class TestSaveCredentials(AdminTestCase):
 
         wb_settings = institution_storage.waterbutler_settings
         nt.assert_equals(wb_settings['storage']['folder']['id'], 'root')
+
+    # Connection tests
+    def test_folder_id_missing(self):
+        response = self.view_post({
+            'provider_short_name': 'googledrive',
+            'storage_name': 'storage_name',
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Folder ID is missing.', response.content)
+
+    def test_temporary_external_account_missing(self):
+        response = self.view_post({
+            'provider_short_name': 'googledrive',
+            'storage_name': 'storage_name',
+            'googledrive_folder': 'root'
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Oauth data was not found. Please reload the page and try again.', response.content)
+
+    @mock.patch('addons.googledrive.client.GoogleDriveClient.folders')
+    def test_invalid_folder_id(self, mock_folders):
+        mock_folders.side_effect = HTTPError('NG')
+
+        ExternalAccountTemporary.objects.create(
+            provider=self.seed_data['provider_name'],
+            provider_name=self.seed_data['provider_name'],
+            oauth_key=self.seed_data['oauth_key'],
+            oauth_secret=self.seed_data['oauth_secret'],
+            expires_at=self.seed_data['expires_at'],
+            refresh_token=self.seed_data['refresh_token'],
+            date_last_refreshed=self.seed_data['date_last_refreshed'],
+            display_name=self.seed_data['display_name'],
+            profile_url=self.seed_data['profile_url'],
+            _id=self.seed_data['_id'],
+            provider_id=self.seed_data['provider_id'],
+        )
+        response = self.view_post({
+            'provider_short_name': 'googledrive',
+            'storage_name': 'storage_name',
+            'googledrive_folder': 'invalid_folder_id'
+        })
+
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Invalid folder ID.', response.content)
+
+    @mock.patch('addons.googledrive.client.GoogleDriveClient.folders')
+    def test_connection_success(self, mock_folders):
+        mock_folders.return_value = {}
+
+        ExternalAccountTemporary.objects.create(
+            provider=self.seed_data['provider_name'],
+            provider_name=self.seed_data['provider_name'],
+            oauth_key=self.seed_data['oauth_key'],
+            oauth_secret=self.seed_data['oauth_secret'],
+            expires_at=self.seed_data['expires_at'],
+            refresh_token=self.seed_data['refresh_token'],
+            date_last_refreshed=self.seed_data['date_last_refreshed'],
+            display_name=self.seed_data['display_name'],
+            profile_url=self.seed_data['profile_url'],
+            _id=self.seed_data['_id'],
+            provider_id=self.seed_data['provider_id'],
+        )
+        response = self.view_post({
+            'provider_short_name': 'googledrive',
+            'storage_name': 'storage_name',
+            'googledrive_folder': 'invalid_folder_id'
+        })
+
+        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_in('OAuth was set successfully', response.content)

@@ -147,22 +147,22 @@ var afterRequest = {
     'test_connection': {
         'success': function (id, data) {
             $('#' + id + '_save').attr('disabled', false);
-            $('#' + id + '_save').removeClass('btn-default').addClass('btn-success ');
-            $('#' + id + '_connect').removeClass('btn-success').addClass('btn-default ');
+            $('#' + id + '_save').removeClass('btn-default').addClass('btn-success');
+            $('#' + id + '_connect').removeClass('btn-success').addClass('btn-default');
             $('#' + id + '_message').html(data.message);
             if (!$('#' + id + '_message').hasClass('text-success')) {
-                $('#' + id + '_message').addClass('text-success ');
-                $('#' + id + '_message').removeClass('text-danger ');
+                $('#' + id + '_message').addClass('text-success');
+                $('#' + id + '_message').removeClass('text-danger');
             }
         },
         'fail': function (id, message) {
             $('#' + id + '_message').html(message);
             $('#' + id + '_save').attr('disabled', true);
-            $('#' + id + '_save').removeClass('btn-success').addClass('btn-default ');
-            $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success ');
+            $('#' + id + '_save').removeClass('btn-success').addClass('btn-default');
+            $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success');
             if (!$('#' + id + '_message').hasClass('text-danger')) {
-                $('#' + id + '_message').addClass('text-danger ');
-                $('#' + id + '_message').removeClass('text-success ');
+                $('#' + id + '_message').addClass('text-danger');
+                $('#' + id + '_message').removeClass('text-success');
             }
         }
     },
@@ -170,33 +170,35 @@ var afterRequest = {
         'success': function (id, data) {
             $('#' + id + '_message').html(data.message);
             $('.modal').modal('hide');
+            $('#' + id + '_message').addClass('text-success');
+            $('#' + id + '_message').removeClass('text-danger');
         },
         'fail': function (id, message) {
             $('#' + id + '_message').html(message);
             $('#' + id + '_save').attr('disabled', true);
-            $('#' + id + '_save').removeClass('btn-success').addClass('btn-default ');
-            $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success ');
+            $('#' + id + '_save').removeClass('btn-success').addClass('btn-default');
+            $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success');
             if (!$('#' + id + '_message').hasClass('text-danger')) {
-                $('#' + id + '_message').addClass('text-danger ');
-                $('#' + id + '_message').removeClass('text-success ');
+                $('#' + id + '_message').addClass('text-danger');
+                $('#' + id + '_message').removeClass('text-success');
             }
         }
     },
     'fetch_temporary_token': {
         'success': function (id, data) {
-            var response_data = data.response_data
+            var response_data = data.response_data;
             authPermissionSucceed(id, response_data.fullname, response_data.oauth_key);
         },
         'fail': function (id, message) {
-            authPermissionFailed(id, message)
+            authPermissionFailed(id, message);
         }
     },
     'remove_auth_data_temporary': {
         'success': function (id, data) {
-            authPermissionFailed(id, data.message)
+            authPermissionFailed(id, data.message);
         },
         'fail': function (id, message) {
-            authPermissionFailed(id, message)
+            authPermissionFailed(id, message);
         }
     },
 };
@@ -213,26 +215,26 @@ function getParameters(params) {
 }
 
 $('.auth-permission-button').click(function(e) {
-    $(this).click(false)
-    $(this).addClass('disabled')
+    $(this).click(false);
+    $(this).addClass('disabled');
     var providerShortName = this.id.replace('_auth_hyperlink', '');
-    oauthOpener(this.href, providerShortName)
+    oauthOpener(this.href, providerShortName);
     e.preventDefault();
 });
 
 $('.auth-cancel').click(function(e) {
     var providerShortName = this.id.replace('_cancel', '');
-    authPermissionFailed(providerShortName, '')
+    authPermissionFailed(providerShortName, '');
     var route = 'remove_auth_data_temporary';
-    cancel_auth(providerShortName)
+    cancel_auth(providerShortName);
 });
 
 
 function get_token(providerShortName, route) {
-        var params = {
-            'provider_short_name': providerShortName
-        };
-        ajaxRequest(params, providerShortName, route);
+    var params = {
+        'provider_short_name': providerShortName
+    };
+    ajaxRequest(params, providerShortName, route);
 }
 
 function oauthOpener(url,providerShortName){
@@ -246,7 +248,7 @@ function oauthOpener(url,providerShortName){
     var timer = setInterval(function() {
         if (win.closed) {
             clearInterval(timer);
-            get_token(providerShortName, route)
+            get_token(providerShortName, route);
         }
     }, 1000, [providerShortName, route]);
 }
@@ -266,15 +268,15 @@ function authPermissionFailed(providerShortName, message){
     allFeedbackFields.addClass('hidden');
     $('#' + providerShortName + '_authorized_by').text('');
     $('#' + providerShortName + '_current_token').text('');
-    $('#' + providerShortName + '_auth_hyperlink').attr('disabled', false)
-    $('#' + providerShortName + '_auth_hyperlink').removeClass('disabled')
+    $('#' + providerShortName + '_auth_hyperlink').attr('disabled', false);
+    $('#' + providerShortName + '_auth_hyperlink').removeClass('disabled');
     authSaveButtonState(providerShortName);
 }
 
 function authSaveButtonState(providerShortName) {
-    var is_folder_valid = $('#' + providerShortName + '_folder').val() != '';
+    var is_folder_valid = $('#' + providerShortName + '_folder').val() !== '';
     var is_token_valid = $('#' + providerShortName + '_current_token').text().length>0;
-    $('#' + providerShortName + '_save').attr('disabled', !(is_folder_valid && is_token_valid))
+    $('#' + providerShortName + '_save').attr('disabled', !(is_folder_valid && is_token_valid));
 }
 
 function cancel_auth(providerShortName) {

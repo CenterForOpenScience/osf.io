@@ -6,6 +6,7 @@ import requests
 import os
 import owncloud
 
+from addons.googledrive.client import GoogleDriveClient
 from addons.osfstorage.models import Region
 from addons.owncloud import settings as owncloud_settings
 from addons.nextcloud import settings as nextcloud_settings
@@ -13,6 +14,7 @@ from addons.s3 import utils as s3_utils
 from addons.s3compat import utils as s3compat_utils
 from addons.swift import utils as swift_utils
 from addons.swift.provider import SwiftProvider
+from framework.exceptions import HTTPError
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
 import datetime
@@ -162,6 +164,34 @@ def test_s3compat_connection(host_url, access_key, secret_key):
         }
     }, httplib.OK)
 
+def test_googledrive_connection(institution_id, folder_id):
+    if not folder_id:
+        return ({
+            'message': 'Folder ID is missing.'
+        }, httplib.BAD_REQUEST)
+
+    try:
+        access_token = ExternalAccountTemporary.objects.get(
+            _id=institution_id, provider='googledrive'
+        ).oauth_key
+    except ExternalAccountTemporary.DoesNotExist:
+        return ({
+            'message': 'Oauth data was not found. Please reload the page and try again.'
+        }, httplib.BAD_REQUEST)
+
+    client = GoogleDriveClient(access_token)
+
+    try:
+        client.folders(folder_id)
+    except HTTPError:
+        return ({
+            'message': 'Invalid folder ID.'
+        }, httplib.BAD_REQUEST)
+
+    return ({
+        'message': 'Credentials are valid'
+    }, httplib.OK)
+
 def test_owncloud_connection(host_url, username, password, folder, provider):
     """ This method is valid for both ownCloud and Nextcloud """
     provider_name = None
@@ -183,15 +213,15 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
         oc.logout()
     except requests.exceptions.ConnectionError:
         return ({
-            'message': ('Invalid {} server.').format(provider_name) + host.url
+            'message': 'Invalid {} server.'.format(provider_name) + host.url
         }, httplib.BAD_REQUEST)
     except owncloud.owncloud.HTTPResponseError:
         return ({
-            'message': ('{} Login failed.').format(provider_name)
+            'message': '{} Login failed.'.format(provider_name)
         }, httplib.UNAUTHORIZED)
 
     return ({
-        'message': ('Credentials are valid')
+        'message': 'Credentials are valid'
     }, httplib.OK)
 
 def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant_name,
@@ -216,16 +246,16 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
 
     if not user_info:
         return ({
-            'message': ('Unable to access account.\n'
-                'Check to make sure that the above credentials are valid, '
-                'and that they have permission to list containers.')
+            'message': 'Unable to access account.\n'
+            'Check to make sure that the above credentials are valid, '
+            'and that they have permission to list containers.'
         }, httplib.BAD_REQUEST)
 
     if not swift_utils.can_list(auth_version, auth_url, access_key, user_domain_name,
                           secret_key, tenant_name, project_domain_name):
         return ({
-            'message': ('Unable to list containers.\n'
-                'Listing containers is required permission.')
+            'message': 'Unable to list containers.\n'
+            'Listing containers is required permission.'
         }, httplib.BAD_REQUEST)
 
     provider = SwiftProvider(account=None, auth_version=auth_version,
@@ -239,7 +269,7 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
         'display_name': provider.account.display_name,
     }
     return ({
-        'message': ('Credentials are valid'),
+        'message': 'Credentials are valid',
         'data': swift_response
     }, httplib.OK)
 
@@ -267,7 +297,7 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
     update_storage(institution_id, storage_name, wb_credentials, wb_settings)
 
     return ({
-        'message': ('Saved credentials successfully!!')
+        'message': 'Saved credentials successfully!!'
     }, httplib.OK)
 
 def save_s3compat_credentials(institution_id, storage_name, host_url, access_key, secret_key,
@@ -299,17 +329,17 @@ def save_s3compat_credentials(institution_id, storage_name, host_url, access_key
     update_storage(institution_id, storage_name, wb_credentials, wb_settings)
 
     return ({
-        'message': ('Saved credentials successfully!!')
+        'message': 'Saved credentials successfully!!'
     }, httplib.OK)
 
 def save_box_credentials(user, storage_name, provider_short_name, box_folder):
     if not storage_name:
         return ({
-            'message': ('Storage name is missing.')
+            'message': 'Storage name is missing.'
         }, httplib.BAD_REQUEST)
     elif not box_folder:
         return ({
-            'message': ('Folder is missing.')
+            'message': 'Folder is missing.'
         }, httplib.BAD_REQUEST)
 
     institution_id = user.affiliated_institutions.first()._id
@@ -330,22 +360,17 @@ def save_box_credentials(user, storage_name, provider_short_name, box_folder):
     ExternalAccountTemporary.objects.filter(_id=institution_id).delete()
 
     return ({
-        'message': ('OAuth was set successfully')
+        'message': 'OAuth was set successfully'
     }, httplib.OK)
 
-def save_googledrive_credentials(user, storage_name, provider_short_name, folder_id):
-    if not storage_name:
-        return ({
-            'message': ('Storage name is missing.')
-        }, httplib.BAD_REQUEST)
-
-    if not folder_id:
-        return ({
-            'message': 'Folder ID is missing.'
-        }, httplib.BAD_REQUEST)
-
+def save_googledrive_credentials(user, storage_name, folder_id):
     institution_id = user.affiliated_institutions.first()._id
-    account = transfer_to_external_account(user, institution_id, provider_short_name)
+
+    test_connection_result = test_googledrive_connection(institution_id, folder_id)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    account = transfer_to_external_account(user, institution_id, 'googledrive')
     ExternalAccountTemporary.objects.filter(_id=institution_id).delete()
     wb_credentials = {
         'storage': {
@@ -364,7 +389,7 @@ def save_googledrive_credentials(user, storage_name, provider_short_name, folder
     update_storage(institution_id, storage_name, wb_credentials, wb_settings)
 
     return ({
-        'message': ('OAuth was set successfully')
+        'message': 'OAuth was set successfully'
     }, httplib.OK)
 
 def save_nextcloud_credentials(institution_id, storage_name, host_url, username, password,
@@ -397,13 +422,13 @@ def save_nextcloud_credentials(institution_id, storage_name, host_url, username,
     update_storage(institution_id, storage_name, wb_credentials, wb_settings)
 
     return ({
-        'message': ('Saved credentials successfully!!')
+        'message': 'Saved credentials successfully!!'
     }, httplib.OK)
 
 def save_osfstorage_credentials(institution_id):
     Region.objects.filter(_id=institution_id).delete()
     return ({
-        'message': ('NII storage was set successfully')
+        'message': 'NII storage was set successfully'
     }, httplib.OK)
 
 def save_swift_credentials(institution_id, storage_name, auth_version, access_key, secret_key,
@@ -439,7 +464,7 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
     update_storage(institution_id, storage_name, wb_credentials, wb_settings)
 
     return ({
-        'message': ('Saved credentials successfully!!')
+        'message': 'Saved credentials successfully!!'
     }, httplib.OK)
 
 def save_owncloud_credentials(institution_id, storage_name, host_url, username, password,
@@ -472,5 +497,5 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
     update_storage(institution_id, storage_name, wb_credentials, wb_settings)
 
     return ({
-        'message': ('Saved credentials successfully!!')
+        'message': 'Saved credentials successfully!!'
     }, httplib.OK)
