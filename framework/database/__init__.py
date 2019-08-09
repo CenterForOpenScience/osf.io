@@ -55,7 +55,7 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
             message_short='Content removed',
             message_long='This content has been removed'
         ))
-    if not allow_deleted and getattr(instance, 'is_deleted', False):
+    if not allow_deleted and getattr(instance, 'is_deleted', False) or getattr(instance, 'is_disabled', False):
         raise HTTPError(http.GONE)
     return instance
 

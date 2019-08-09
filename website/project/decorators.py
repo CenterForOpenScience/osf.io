@@ -38,9 +38,7 @@ def _kwargs_to_nodes(kwargs):
         node = _load_node_or_fail(nid)
         parent = _load_node_or_fail(pid)
     elif pid and not nid:
-        node = getattr(Guid.load(pid), 'referent', None)
-        if not node or node.is_deleted:
-            node = _load_node_or_fail(pid)
+        node = _load_node_or_fail(pid)
     elif nid and not pid:
         node = _load_node_or_fail(nid)
     elif not pid and not nid:
