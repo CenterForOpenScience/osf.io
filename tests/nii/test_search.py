@@ -35,7 +35,6 @@ class TestContributorSearch(OsfTestCase):
             user = AuthUserFactory(fullname=name)
             for inst in insts:
                 user.affiliated_institutions.add(inst)
-            user.middle_names = 'd'  # WORKAROUND: dirty field for call of OSFUser.update_search. see https://github.com/romgar/django-dirtyfields/issues/73 and https://django-dirtyfields.readthedocs.io/en/develop/#checking-many-to-many-fields for details.
             user.save()
             return user
 

@@ -176,15 +176,6 @@ class InstitutionAuthentication(BaseAuthentication):
             user.affiliated_institutions.add(institution)
             user.save()
 
-            ### --- [GRDM-12452] ---
-            ### Institution is registered into elasticsearch here.
-            ### Because OSFUser.affiliated_institutions (M2M field)
-            ### is not SEARCH_UPDATE_FIELDS for performance reasons.
-            ### See for details:
-            ### https://github.com/romgar/django-dirtyfields/issues/73
-            ### https://django-dirtyfields.readthedocs.io/en/develop/#checking-many-to-many-fields
-            user.update_search()
-
         # update every login.
         init_cloud_gateway_groups(user, provider)
 
