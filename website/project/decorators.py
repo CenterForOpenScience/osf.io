@@ -22,10 +22,8 @@ _load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
 
 def _kwargs_to_nodes(kwargs):
     """Retrieve project and component objects from keyword arguments.
-
     :param dict kwargs: Dictionary of keyword arguments
     :return: Tuple of parent and node
-
     """
     node = kwargs.get('node') or kwargs.get('project')
     parent = kwargs.get('parent')
@@ -38,7 +36,9 @@ def _kwargs_to_nodes(kwargs):
         node = _load_node_or_fail(nid)
         parent = _load_node_or_fail(pid)
     elif pid and not nid:
-        node = _load_node_or_fail(pid)
+        node = Preprint.load(pid)
+        if not node:
+            node = _load_node_or_fail(pid)
     elif nid and not pid:
         node = _load_node_or_fail(nid)
     elif not pid and not nid:
