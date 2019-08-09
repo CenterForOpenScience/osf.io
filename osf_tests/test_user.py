@@ -1262,7 +1262,7 @@ class TestRecentlyAdded:
 # New tests
 class TestTagging:
     def test_add_system_tag(self, user):
-        tag_name = fake.word()
+        tag_name = 'DJaxs is back!'
         user.add_system_tag(tag_name)
         user.save()
 
