@@ -133,10 +133,10 @@ def test_connection(request):
             data.get('swift_access_key'),
             data.get('swift_secret_key'),
             data.get('swift_tenant_name'),
-            data.get('swift_user_domain_name', None),
-            data.get('swift_project_domain_name', None),
-            data.get('swift_folder', None),
-            data.get('swift_container', None),
+            data.get('swift_user_domain_name'),
+            data.get('swift_project_domain_name'),
+            data.get('swift_folder'),
+            data.get('swift_container'),
         )
     else:
         result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
@@ -231,8 +231,7 @@ def save_credentials(request):
         result = utils.save_box_credentials(
             request.user,
             storage_name,
-            data.get('provider_short_name', None),
-            data.get('box_folder', None),
+            data.get('box_folder'),
         )
     else:
         result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
