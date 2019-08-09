@@ -244,9 +244,8 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
     host.scheme = 'https'
 
     try:
-        oc = owncloud.Client(host.url, verify_certs=provider_setting.USE_SSL)
-        oc.login(username, password)
-        oc.logout()
+        client = owncloud.Client(host.url, verify_certs=provider_setting.USE_SSL)
+        client.login(username, password)
     except requests.exceptions.ConnectionError:
         return ({
             'message': 'Invalid {} server.'.format(provider_name) + host.url
@@ -255,6 +254,15 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
         return ({
             'message': '{} Login failed.'.format(provider_name)
         }, httplib.UNAUTHORIZED)
+
+    try:
+        client.list(folder)
+    except owncloud.owncloud.HTTPResponseError:
+        return ({
+            'message': 'Invalid folder ID.'
+        }, httplib.BAD_REQUEST)
+
+    client.logout()
 
     return ({
         'message': 'Credentials are valid'

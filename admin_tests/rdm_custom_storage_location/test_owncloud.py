@@ -89,6 +89,21 @@ class TestConnection(AdminTestCase):
         nt.assert_equals(response.status_code, httplib.UNAUTHORIZED)
         nt.assert_in('ownCloud Login failed.', response.content)
 
+    @mock.patch('owncloud.Client')
+    def test_invalid_folder_id(self, mock_client):
+        res = HttpResponse(status=httplib.BAD_REQUEST)
+        mock_client.return_value.list.side_effect = owncloud.owncloud.HTTPResponseError(res)
+
+        response = self.view_post({
+            'owncloud_host': 'my-valid-host',
+            'owncloud_username': 'my-valid-username',
+            'owncloud_password': 'my-valid-password',
+            'owncloud_folder': 'my-valid-folder',
+            'provider_short_name': 'owncloud',
+        })
+        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Invalid folder ID.', response.content)
+
 
 class TestSaveCredentials(AdminTestCase):
     def setUp(self):
