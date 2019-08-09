@@ -269,18 +269,16 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True, in
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
     whether the current project is public.
-
     :param bool include_public: Check whether current project is public
     :param bool include_view_only_anon: Checks view_only anonymized links
     :return: Authorization decorator
-
     """
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
+            response = None
             target = None
-            guid = kwargs.get('guid') or kwargs.get('pid')
-            guid = Guid.load(guid)
+            guid = Guid.load(kwargs.get('guid'))
             if guid:
                 target = getattr(guid, 'referent', None)
             else:
