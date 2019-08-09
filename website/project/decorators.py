@@ -38,7 +38,7 @@ def _kwargs_to_nodes(kwargs):
         node = _load_node_or_fail(nid)
         parent = _load_node_or_fail(pid)
     elif pid and not nid:
-        node = Preprint.load(pid)
+        node = Guid.load(kwargs.get('guid'))
         if not node:
             node = _load_node_or_fail(pid)
     elif nid and not pid:
