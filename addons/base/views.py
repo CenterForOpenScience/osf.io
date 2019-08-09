@@ -696,7 +696,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
     extras.pop('_', None)  # Clean up our url params a bit
     action = extras.get('action', 'view')
-    guid = kwargs.get('guid')
+    guid = kwargs.get('guid') or kwargs.get('pid')
     guid_target = getattr(Guid.load(guid), 'referent', None)
     target = guid_target or kwargs.get('node') or kwargs['project']
 

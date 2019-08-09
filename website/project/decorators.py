@@ -279,7 +279,8 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True, in
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             target = None
-            guid = Guid.load(kwargs.get('guid'))
+            guid = kwargs.get('guid') or kwargs.get('pid')
+            guid = Guid.load(guid)
             if guid:
                 target = getattr(guid, 'referent', None)
             else:
