@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 
 from framework import sentry
+from framework.celery_tasks import app as celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,28 @@ SELECT count(PC.id)
 where (PC.resource_id IS NULL or PC.file_id IS NULL);
 '''
 
+@celery_app.task(name='management.commands.migrate_pagecounter_data')
+def migrate_page_counters(dry_run=False, rows=10000, reverse=False):
+    script_start_time = datetime.datetime.now()
+    logger.info('Script started time: {}'.format(script_start_time))
+
+    sql_query = REVERSE_SQL_LIMITED if reverse else FORWARD_SQL_LIMITED
+    logger.info('SQL Query: {}'.format(sql_query))
+
+    with connection.cursor() as cursor:
+        if not dry_run:
+            cursor.execute(sql_query, [rows])
+        if not reverse:
+            cursor.execute(COUNT_SQL)
+            number_of_entries_left = cursor.fetchone()[0]
+            logger.info('Entries left: {}'.format(number_of_entries_left))
+            if number_of_entries_left == 0:
+                sentry.log_message('Migrate pagecounter data complete')
+
+    script_finish_time = datetime.datetime.now()
+    logger.info('Script finished time: {}'.format(script_finish_time))
+    logger.info('Run time {}'.format(script_finish_time - script_start_time))
+
 
 class Command(BaseCommand):
     help = '''Does the work of the pagecounter migration so that it can be done incrementally when convenient.
@@ -83,8 +106,6 @@ class Command(BaseCommand):
 
     # Management command handler
     def handle(self, *args, **options):
-        script_start_time = datetime.datetime.now()
-        logger.info('Script started time: {}'.format(script_start_time))
         logger.debug(options)
 
         dry_run = options['dry_run']
@@ -99,18 +120,5 @@ class Command(BaseCommand):
         )
         if dry_run:
             logger.info('DRY RUN')
-        sql_query = REVERSE_SQL_LIMITED if reverse else FORWARD_SQL_LIMITED
-        logger.info('SQL Query: {}'.format(sql_query))
-        with connection.cursor() as cursor:
-            if not dry_run:
-                cursor.execute(sql_query, [rows])
-            if not reverse:
-                cursor.execute(COUNT_SQL)
-                number_of_entries_left = cursor.fetchone()[0]
-                logger.info('Entries left: {}'.format(number_of_entries_left))
-                if number_of_entries_left == 0:
-                    sentry.log_message('Migrate pagecounter data complete')
 
-        script_finish_time = datetime.datetime.now()
-        logger.info('Script finished time: {}'.format(script_finish_time))
-        logger.info('Run time {}'.format(script_finish_time - script_start_time))
+        migrate_page_counters(dry_run, rows, reverse)

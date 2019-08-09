@@ -410,6 +410,7 @@ class CeleryConfig:
         'scripts.clear_sessions',
         'scripts.remove_after_use.end_prereg_challenge',
         'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.migrate_pagecounter_data',
     }
 
     med_pri_modules = {
@@ -598,6 +599,10 @@ class CeleryConfig:
             # 'data_storage_usage': {
             #   'task': 'management.commands.data_storage_usage',
             #   'schedule': crontab(day_of_month=1, minute=30, hour=4),  # Last of the month at 11:30 p.m.
+            # },
+            # 'migrate_pagecounter_data': {
+            #   'task': 'management.commands.migrate_pagecounter_data',
+            #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
             # },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
