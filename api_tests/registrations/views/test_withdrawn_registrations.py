@@ -8,6 +8,7 @@ from osf_tests.factories import (
     ProjectFactory,
     CommentFactory,
     RegistrationFactory,
+    InstitutionFactory,
     WithdrawnRegistrationFactory,
 )
 
@@ -15,8 +16,31 @@ from osf_tests.factories import (
 class TestWithdrawnRegistrations(NodeCRUDTestCase):
 
     @pytest.fixture()
-    def registration(self, user, project_public):
-        return RegistrationFactory(creator=user, project=project_public)
+    def institution_one(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def registration(self, user, project_public, institution_one):
+        registration = RegistrationFactory(creator=user, project=project_public)
+        registration.affiliated_institutions.add(institution_one)
+        return registration
+
+    @pytest.fixture()
+    def registration_with_child(self, user, project_public):
+        project = ProjectFactory(creator=user, is_public=True)
+        child = ProjectFactory(creator=user, is_public=True, parent=project)
+
+        registration = RegistrationFactory(project=project, is_public=True)
+        RegistrationFactory(project=child, is_public=True)
+        return registration
+
+    @pytest.fixture()
+    def withdrawn_registration_with_child(self, user, registration_with_child):
+        withdrawn_registration = WithdrawnRegistrationFactory(
+            registration=registration_with_child, user=registration_with_child.creator)
+        withdrawn_registration.justification = 'We made a major error.'
+        withdrawn_registration.save()
+        return withdrawn_registration
 
     @pytest.fixture()
     def withdrawn_registration(self, registration):
@@ -117,7 +141,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
-    def test_withdrawn_registrations_display_limited_fields(
+    def test_withdrawn_registrations_display_limited_attributes_fields(
             self, app, user, registration, withdrawn_registration, url_withdrawn):
         registration = registration
         res = app.get(url_withdrawn, auth=user.auth)
@@ -141,7 +165,6 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
                 'Z'),
             'withdrawal_justification': registration.retraction.justification,
             'public': None,
-            'category': None,
             'registration': True,
             'fork': None,
             'collection': None,
@@ -163,17 +186,26 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert contributors == '/{}registrations/{}/contributors/'.format(
             API_BASE, registration._id)
 
+    def test_withdrawn_registrations_display_limited_relationship_fields(
+            self, app, user, registration, withdrawn_registration):
+
+        url_withdrawn = '/{}registrations/{}/?version=2.14'.format(API_BASE, registration._id)
+        res = app.get(url_withdrawn, auth=user.auth)
+
         assert 'children' not in res.json['data']['relationships']
         assert 'comments' not in res.json['data']['relationships']
         assert 'node_links' not in res.json['data']['relationships']
         assert 'registrations' not in res.json['data']['relationships']
-        assert 'parent' not in res.json['data']['relationships']
+        assert 'parent' in res.json['data']['relationships']
         assert 'forked_from' not in res.json['data']['relationships']
         assert 'files' not in res.json['data']['relationships']
         assert 'logs' not in res.json['data']['relationships']
         assert 'registered_by' not in res.json['data']['relationships']
-        assert 'registered_from' not in res.json['data']['relationships']
-        assert 'root' not in res.json['data']['relationships']
+        assert 'registered_from' in res.json['data']['relationships']
+        assert 'root' in res.json['data']['relationships']
+        assert 'affiliated_institutions' in res.json['data']['relationships']
+        assert 'license' not in res.json['data']['relationships']
+        assert 'identifiers' in res.json['data']['relationships']
 
     def test_field_specific_related_counts_ignored_if_hidden_field_on_withdrawn_registration(
             self, app, user, registration, withdrawn_registration):
@@ -191,3 +223,14 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
+
+    def test_child_inherits_withdrawl_justication_and_date_withdrawn(
+            self, app, user, withdrawn_registration_with_child, registration_with_child):
+
+        reg_child = registration_with_child.node_relations.first().child
+        url = '/{}registrations/{}/?version=2.2'.format(API_BASE, reg_child._id)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['withdrawal_justification'] == withdrawn_registration_with_child.justification
+        formatted_date_retracted = withdrawn_registration_with_child.date_retracted.isoformat().replace('+00:00', 'Z')
+        assert res.json['data']['attributes']['date_withdrawn'] == formatted_date_retracted

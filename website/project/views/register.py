@@ -3,7 +3,6 @@ import httplib as http
 import itertools
 
 from flask import request
-import waffle
 
 from framework import status
 from framework.exceptions import HTTPError
@@ -15,10 +14,10 @@ from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
 from addons.base.views import DOWNLOAD_ACTIONS
 from website import settings
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
-    must_have_permission,
+    must_have_permission, must_be_contributor_and_not_group_member,
     must_not_be_registration, must_be_registration,
     must_not_be_retracted_registration
 )
@@ -36,6 +35,7 @@ from website.project.model import has_anonymous_link
 from website.archiver.decorators import fail_archive_on_error
 
 from .node import _view_project
+from api.waffle.utils import flag_is_active
 
 @must_be_valid_project
 @must_not_be_retracted_registration
@@ -58,12 +58,14 @@ def node_register_page(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 def node_registration_retraction_redirect(auth, node, **kwargs):
     return redirect(node.web_url_for('node_registration_retraction_get', _guid=True))
 
 @must_be_valid_project
 @must_not_be_retracted_registration
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 def node_registration_retraction_get(auth, node, **kwargs):
     """Prepares node object for registration retraction page.
 
@@ -86,6 +88,7 @@ def node_registration_retraction_get(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 def node_registration_retraction_post(auth, node, **kwargs):
     """Handles retraction of public registrations
 
@@ -124,7 +127,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
 @must_be_contributor_or_public
 @ember_flag_is_active(features.EMBER_REGISTRATION_FORM_DETAIL)
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
-    if waffle.flag_is_active(request, 'ember_registries_detail_page'):
+    if flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         # Registration meta page obviated during redesign
         return redirect(node.url)
     if node.is_registration and bool(node.registered_schema):
@@ -163,6 +166,7 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
 
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)
+@must_be_contributor_and_not_group_member
 @must_not_be_registration
 def project_before_register(auth, node, **kwargs):
     """Returns prompt informing user that addons, if any, won't be registered."""

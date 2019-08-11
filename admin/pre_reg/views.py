@@ -20,7 +20,7 @@ from osf.models.admin_log_entry import (
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import PermissionsError
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 
 from osf.models import (
     BaseFileNode,

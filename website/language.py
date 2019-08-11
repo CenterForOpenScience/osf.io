@@ -13,7 +13,7 @@ from website import settings
 # (upon clicking primary email confirmation link)
 WELCOME_MESSAGE = """
 <h1>Welcome to the OSF!</h1>
-<p>Visit our <a href="http://help.osf.io/" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
+<p>Visit our <a href="https://openscience.zendesk.com/hc/en-us" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
 """
 
 TERMS_OF_SERVICE = """
@@ -157,31 +157,6 @@ BEFORE_FORK_HAS_POINTERS = (
     u'If you wish to fork the linked projects, they need to be forked from the '
     u'original project.'
 )
-
-REGISTRATION_INFO = """
-<p>Registration creates a frozen version of the project that can never be
-edited or deleted but can be withdrawn. You can register your project by
-selecting a registration form, entering information about your project, and
-then confirming. You will be able to continue editing the original project,
-however, and the frozen version with timestamps will always be linked to
-the original. Withdrawing a registration will leave behind metadata about
-when the registration was created and withdrawn but removes the contents
-of the registration.</p>
-
-<ul>
-    <li>A registration can be made public immediately or entered into
-    an embargo period of up to four years. At the end of the embargo period,
-    the registration will automatically become public.</li>
-
-    <li>Before initiating a registration, make sure that the project is
-    in the state that you wish to freeze. Consider turning links into
-    forks.</li>
-
-    <li>Start by selecting a registration form from the list below. You can hit
-    your browser's back button if the selected form is not appropriate for
-    your use.</li>
-</ul>
-"""
 
 REGISTRATION_EMBARGO_INFO = """
 You can choose whether to make your registration public immediately or

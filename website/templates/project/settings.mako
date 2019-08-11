@@ -9,7 +9,7 @@
     <!-- Begin left column -->
     <div class="col-md-3 col-xs-12 affix-parent scrollspy">
 
-        % if 'write' in user['permissions']:
+        % if permissions.WRITE in user['permissions']:
 
             <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="0" data-offset-bottom="263"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
@@ -23,14 +23,14 @@
                     % endif
 
                     % if not node['is_registration']:
-                        % if 'admin' in user['permissions']:
+                        % if permissions.ADMIN in user['permissions']:
                             <li><a href="#createVolsAnchor">View-only Links</a></li>
                             <li><a href="#enableRequestAccessAnchor">Access Requests</a></li>
                         % endif
 
                         <li><a href="#configureWikiAnchor">Wiki</a></li>
 
-                        % if 'admin' in user['permissions']:
+                        % if permissions.ADMIN in user['permissions']:
                             <li><a href="#configureCommentingAnchor">Commenting</a></li>
                         % endif
 
@@ -42,7 +42,7 @@
 
                     % if node['is_registration']:
 
-                        % if (node['is_public'] or node['embargo_end_date']) and 'admin' in user['permissions']:
+                        % if (node['is_public'] or node['embargo_end_date']) and permissions.ADMIN in user['permissions']:
                             <li><a href="#withdrawRegistrationAnchor">Withdraw Public Registration</a></li>
                         % endif
 
@@ -62,7 +62,7 @@
     <!-- Begin right column -->
     <div class="col-md-9 col-xs-12">
 
-        % if 'write' in user['permissions']:  ## Begin Configure Project
+        % if permissions.WRITE in user['permissions']:  ## Begin Configure Project
 
             % if not node['is_registration']:
                 <div class="panel panel-default">
@@ -111,7 +111,7 @@
                         <div class="help-block">
                             <span data-bind="css: messageClass, html: message"></span>
                         </div>
-                    % if 'admin' in user['permissions']:
+                    % if permissions.ADMIN in user['permissions']:
                         <hr />
                             <span data-bind="stopBinding: true">
                                 <span id="deleteNode">
@@ -148,7 +148,7 @@
 
         % endif  ## End Configure Project
 
-        % if 'admin' in user['permissions']:  ## Begin create VOLS
+        % if permissions.ADMIN in user['permissions']:  ## Begin create VOLS
             % if not node['is_registration']:
                 <div class="panel panel-default">
                     <span id="createVolsAnchor" class="anchor"></span>
@@ -168,7 +168,7 @@
             % endif
         % endif ## End create vols
 
-        % if 'admin' in user['permissions']:  ## Begin enable request access
+        % if permissions.ADMIN in user['permissions']:  ## Begin enable request access
             % if not node['is_registration']:
                 <div class="panel panel-default">
                     <span id="enableRequestAccessAnchor" class="anchor"></span>
@@ -200,7 +200,7 @@
             % endif
         % endif ## End enable request access
 
-        % if 'write' in user['permissions']:  ## Begin Wiki Config
+        % if permissions.WRITE in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
                 <div class="panel panel-default">
                     <span id="configureWikiAnchor" class="anchor"></span>
@@ -259,7 +259,7 @@
             %endif
         %endif ## End Wiki Config
 
-        % if 'admin' in user['permissions']:  ## Begin Configure Commenting
+        % if permissions.ADMIN in user['permissions']:  ## Begin Configure Commenting
 
             % if not node['is_registration']:
 
@@ -333,7 +333,7 @@
 
         % endif ## End Configure Email Notifications
 
-        % if 'write' in user['permissions']:  ## Begin Redirect Link Config
+        % if permissions.WRITE in user['permissions']:  ## Begin Redirect Link Config
             % if not node['is_registration']:
 
                 <div class="panel panel-default">
@@ -365,7 +365,7 @@
             %endif
         %endif ## End Redirect Link Config
 
-        % if 'admin' in user['permissions']:  ## Begin Retract Registration
+        % if permissions.ADMIN in user['permissions']:  ## Begin Retract Registration
 
             % if node['is_registration']:
 
@@ -421,7 +421,7 @@
                  </div>
                  <div class="panel-body">
                      <div class="help-block">
-                         % if 'write' not in user['permissions']:
+                         % if permissions.WRITE not in user['permissions']:
                              <p class="text-muted">Contributors with read-only permissions to this project cannot add or remove institutional affiliations.</p>
                          % endif:
                          <!-- ko if: affiliatedInstitutions().length == 0 -->
@@ -431,7 +431,7 @@
                             <li>institutional logos to be displayed on public projects</li>
                             <li>public projects to be discoverable on specific institutional landing pages</li>
                             <li>single sign-on to the OSF with institutional credentials</li>
-                            <li><a href="http://help.osf.io/m/os4i">FAQ</a></li>
+                            <li><a href="https://openscience.zendesk.com/hc/en-us/categories/360001550913">FAQ</a></li>
                          </ul>
                          <!-- /ko -->
                      </div>
@@ -445,9 +445,9 @@
                                  <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
                                  <td><span data-bind="text: item.name"></span></td>
                                  <td>
-                                     % if 'admin' in user['permissions']:
+                                     % if permissions.ADMIN in user['permissions']:
                                          <button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button>
-                                     % elif 'write' in user['permissions']:
+                                     % elif permissions.WRITE in user['permissions']:
                                          <!-- ko if: $parent.userInstitutionsIds.indexOf(item.id) !== -1 -->
                                             <button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button>
                                          <!-- /ko -->
@@ -466,7 +466,7 @@
                              <tr>
                                  <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
                                  <td><span data-bind="text: item.name"></span></td>
-                                 % if 'write' in user['permissions']:
+                                 % if permissions.WRITE in user['permissions']:
                                      <td><button
                                              data-bind="disable: $parent.loading(),
                                              click: $parent.submitInst"

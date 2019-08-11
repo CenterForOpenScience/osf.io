@@ -7,7 +7,7 @@ from website.util import api_v2_url
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError, ValidationError
 
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 
@@ -28,6 +28,31 @@ FORMBLOCK_SIZES = [
 ]
 
 
+class AbstractSchemaManager(models.Manager):
+    def get_latest_version(self, name, only_active=True):
+        """
+        Return the latest version of the given schema
+        :param str only_active: Only returns the latest active schema
+        :return schema
+        """
+        schemas = self.filter(name=name, active=True) if only_active else self.filter(name=name)
+        sorted_schemas = schemas.order_by('schema_version')
+        if sorted_schemas:
+            return sorted_schemas.last()
+        else:
+            return None
+
+    def get_latest_versions(self, only_active=True):
+        """
+        Returns a queryset of the latest version of each schema
+        :param str only_active: Only return active schemas
+        :return queryset
+        """
+        latest_schemas = self.filter(visible=True)
+        if only_active:
+            latest_schemas = latest_schemas.filter(active=True)
+        return latest_schemas.order_by('name', '-schema_version').distinct('name')
+
 class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
@@ -37,6 +62,8 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
 
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = models.IntegerField()
+
+    objects = AbstractSchemaManager()
 
     class Meta:
         abstract = True
@@ -95,10 +122,38 @@ class RegistrationSchema(AbstractSchema):
         try:
             jsonschema.validate(metadata, schema)
         except jsonschema.ValidationError as e:
-            raise ValidationValueError(e.message)
+            for page in self.schema['pages']:
+                for question in page['questions']:
+                    if e.relative_schema_path[0] == 'required':
+                        raise ValidationError(
+                            'For your registration the \'{}\' field is required'.format(question['title'])
+                        )
+                    elif e.relative_schema_path[0] == 'additionalProperties':
+                        raise ValidationError(
+                            'For your registration the \'{}\' field is extraneous and not permitted in your response.'.format(question['qid'])
+                        )
+                    elif e.relative_path[0] == question['qid']:
+                        if 'options' in question:
+                            raise ValidationError(
+                                'For your registration your response to the \'{}\' field is invalid, your response must be one of the provided options.'.format(
+                                    question['title'],
+                                ),
+                            )
+                        raise ValidationError(
+                            'For your registration your response to the \'{}\' field is invalid.'.format(question['title']),
+                        )
+            raise ValidationError(e.message)
         except jsonschema.SchemaError as e:
             raise ValidationValueError(e.message)
         return
+
+
+class FileMetadataSchema(AbstractSchema):
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/schemas/files/{}/'.format(self._id)
+        return api_v2_url(path)
 
 
 class RegistrationFormBlock(ObjectIDMixin, BaseModel):

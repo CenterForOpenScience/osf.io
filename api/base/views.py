@@ -4,7 +4,7 @@ from distutils.version import StrictVersion
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.http import JsonResponse
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics
@@ -17,25 +17,29 @@ from rest_framework.response import Response
 
 from api.base import permissions as base_permissions
 from api.base import utils
-from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.exceptions import RelationshipPostMakesNoChanges, InvalidFilterValue, InvalidFilterOperator
 from api.base.filters import ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
 from api.base.serializers import (
+    get_meta_type,
     MaintenanceStateSerializer,
     LinkedNodesRelationshipSerializer,
     LinkedRegistrationsRelationshipSerializer,
 )
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
-from api.base.utils import is_bulk_request, get_user_auth
+from api.base.utils import is_bulk_request, get_user_auth, default_node_list_queryset
+from api.nodes.filters import NodesFilterMixin
 from api.nodes.utils import get_file_object
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.nodes.permissions import ReadOnlyIfRegistration
+from api.nodes.permissions import ExcludeWithdrawals
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
 from waffle import flag_is_active, sample_is_active
 
@@ -147,9 +151,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds = self.request.query_params.getlist('embed') or self.request.query_params.getlist('embed[]')
 
         fields_check = self.get_serializer_class()._declared_fields.copy()
-        if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
+        serializer_class_type = get_meta_type(self.serializer_class, self.request)
+        if 'fields[{}]'.format(serializer_class_type) in self.request.query_params:
             # Check only requested and mandatory fields
-            sparse_fields = self.request.query_params['fields[{}]'.format(self.serializer_class.Meta.type_)]
+            sparse_fields = self.request.query_params['fields[{}]'.format(serializer_class_type)]
             for field in fields_check.copy().keys():
                 if field not in ('type', 'id', 'links') and field not in sparse_fields:
                     fields_check.pop(field)
@@ -194,7 +199,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -212,7 +217,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -233,7 +238,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_nodes",   # required
+                           "type": "nodes",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -300,7 +305,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -318,7 +323,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -339,7 +344,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         Query Params:  <none>
         Body (JSON):   {
                          "data": [{
-                           "type": "linked_registrations",   # required
+                           "type": "registrations",   # required
                            "id": <node_id>   # required
                          }]
                        }
@@ -406,7 +411,7 @@ def root(request, format=None, **kwargs):
     else:
         current_user = None
 
-    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request, name)]
+    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request._request, name)]
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
 
@@ -452,6 +457,37 @@ def error_404(request, format=None, *args, **kwargs):
     )
 
 
+class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
+    """
+    For use with NodeChildrenList and RegistrationChildrenList views.
+    """
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+        ExcludeWithdrawals,
+    )
+    ordering = ('-modified',)
+
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
+        return default_node_list_queryset(model_cls=self.model_class)
+
+    # overrides GenericAPIView
+    def get_queryset(self):
+        """
+        Returns non-deleted children of the current resource that the user has permission to view -
+        Children could be public, viewable through a view-only link (if provided), or the user
+        is a contributor, or has implicit admin perms.
+        """
+        node = self.get_node()
+        auth = get_user_auth(self.request)
+        node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
+            .values_list('child__pk', flat=True)
+        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link).order_by('-modified')
+
+
 class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     # overrides RetrieveAPIView
@@ -489,6 +525,32 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
                     raise ValidationError('Contributor identifier incorrectly formatted.')
             queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
         return queryset
+
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'bibliographic':
+            operation['source_field_name'] = 'visible'
+
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'permission':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            # operation['value'] should be 'admin', 'write', or 'read'
+            query_val = operation['value'].lower().strip()
+            if query_val not in API_CONTRIBUTOR_PERMISSIONS:
+                raise InvalidFilterValue(value=operation['value'])
+            # This endpoint should only be returning *contributors* not group members
+            resource = self.get_resource()
+            if query_val == READ:
+                # If read, return all contributors
+                return Q(user_id__in=resource.contributors.values_list('id', flat=True))
+            elif query_val == WRITE:
+                # If write, return members of write and admin groups, both groups have write perms
+                return Q(user_id__in=(resource.get_group(WRITE).user_set.values_list('id', flat=True) | resource.get_group(ADMIN).user_set.values_list('id', flat=True)))
+            elif query_val == ADMIN:
+                # If admin, return only members of admin group
+                return Q(user_id__in=resource.get_group(ADMIN).user_set.values_list('id', flat=True))
+        return super(BaseContributorList, self).build_query_from_field(field_name, operation)
 
 
 class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):

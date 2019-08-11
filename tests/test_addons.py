@@ -33,6 +33,7 @@ from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import Session, RegistrationSchema, QuickFilesNode
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
+from osf.utils.permissions import WRITE, READ
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.project.views.node import serialize_addons, collect_node_config_js
@@ -85,6 +86,7 @@ class TestAddonAuth(OsfTestCase):
         options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
             action='download',
             nid=self.node._id,
+            metrics={'uri': settings.MFR_SERVER_URL},
             provider=self.node_addon.config.short_name), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
@@ -158,6 +160,71 @@ class TestAddonAuth(OsfTestCase):
         url = self.build_url()
         res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+    def test_action_downloads_marks_version_as_seen(self):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path)
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        # Add a new version, make sure that does not have a record
+        version = FileVersionFactory()
+        test_file.versions.add(version)
+        test_file.save()
+
+        versions = test_file.versions.order_by('created')
+        assert versions.first().seen_by.filter(guids___id=noncontrib._id).exists()
+        assert not versions.last().seen_by.filter(guids___id=noncontrib._id).exists()
+
+    def test_action_download_contrib(self):
+        test_file = create_test_file(self.node, self.user)
+        url = self.build_url(action='download', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = self.node.logs.count()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_download_count(), 0) # contribs don't count as downloads
+        assert_equal(self.node.logs.count(), nlogs) # don't log downloads
+
+    def test_action_download_non_contrib(self):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='download', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = node.logs.count()
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_download_count(), 1)
+        assert_equal(node.logs.count(), nlogs) # don't log views
+
+    def test_action_download_mfr_views_contrib(self):
+        test_file = create_test_file(self.node, self.user)
+        url = self.build_url(action='render', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = self.node.logs.count()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_view_count(), 0) # contribs don't count as views
+        assert_equal(self.node.logs.count(), nlogs) # don't log views
+
+    def test_action_download_mfr_views_non_contrib(self):
+        noncontrib = AuthUserFactory()
+        node = ProjectFactory(is_public=True)
+        test_file = create_test_file(node, self.user)
+        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path, version=1)
+        nlogs = node.logs.count()
+        res = self.app.get(url, auth=noncontrib.auth)
+        assert_equal(res.status_code, 200)
+
+        test_file.reload()
+        assert_equal(test_file.get_view_count(), 1)
+        assert_equal(node.logs.count(), nlogs) # don't log views
 
 
 class TestAddonLogs(OsfTestCase):
@@ -425,7 +492,7 @@ class TestCheckAuth(OsfTestCase):
 
         component_registration = registration._nodes.first()
 
-        assert_false(component_registration.has_permission(self.user, 'write'))
+        assert_false(component_registration.has_permission(self.user, WRITE))
         res = views.check_access(component_registration, Auth(user=self.user), 'upload', None)
         assert_true(res)
 
@@ -435,7 +502,7 @@ class TestCheckAuth(OsfTestCase):
 
         component_registration = RegistrationFactory(project=component, creator=component_admin)
 
-        assert_false(component_registration.has_permission(self.user, 'read'))
+        assert_false(component_registration.has_permission(self.user, READ))
         res = views.check_access(component_registration, Auth(user=self.user), 'metadata', None)
         assert_true(res)
 
@@ -443,7 +510,7 @@ class TestCheckAuth(OsfTestCase):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, parent=self.node)
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError):
             views.check_access(component, Auth(user=self.user), 'upload', None)
 
@@ -451,7 +518,7 @@ class TestCheckAuth(OsfTestCase):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'copyfrom', None)
         assert_true(res)
 
@@ -507,7 +574,7 @@ class TestCheckPreregAuth(OsfTestCase):
     def test_has_permission_write_prereg_challenge_admin(self):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.draft_registration.branched_from,
-                Auth(user=self.prereg_challenge_admin_user), 'write', None)
+                Auth(user=self.prereg_challenge_admin_user), WRITE, None)
             assert_equal(exc_info.exception.code, http.FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
@@ -522,7 +589,7 @@ class TestCheckOAuth(OsfTestCase):
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
         cas_resp = cas.CasResponse(authenticated=False)
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_equal(exc_info.exception.code, 403)
@@ -533,7 +600,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_equal(exc_info.exception.code, 403)
@@ -544,7 +611,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.users.all_read'}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_true(res)
 
@@ -554,7 +621,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.users.all_read'}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_equal(exc_info.exception.code, 403)
@@ -568,7 +635,7 @@ class TestCheckOAuth(OsfTestCase):
                                        'osf.nodes.data_read',
                                    }})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_true(res)
 
@@ -578,7 +645,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.nodes.data_write'}})
 
-        assert_false(component.has_permission(self.user, 'write'))
+        assert_false(component.has_permission(self.user, WRITE))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
         assert_true(res)
 
@@ -587,7 +654,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {'osf.nodes.data_read'}})
 
-        assert_true(component.has_permission(self.user, 'write'))
+        assert_true(component.has_permission(self.user, WRITE))
         with assert_raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'upload', cas_resp)
         assert_equal(exc_info.exception.code, 403)

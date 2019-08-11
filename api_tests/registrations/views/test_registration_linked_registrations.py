@@ -9,6 +9,7 @@ from osf_tests.factories import (
     NodeFactory,
     RegistrationFactory,
 )
+from osf.utils.permissions import READ
 from tests.base import ApiTestCase, get_default_metaschema
 
 
@@ -37,7 +38,7 @@ class LinkedRegistrationsTestCase(ApiTestCase):
             self.rw_contributor, auth=Auth(self.admin_contributor))
         public_node.add_contributor(
             self.read_contributor,
-            permissions=['read'],
+            permissions=READ,
             auth=Auth(self.admin_contributor))
         public_node.add_pointer(
             self.public_linked_registration,
@@ -57,7 +58,7 @@ class LinkedRegistrationsTestCase(ApiTestCase):
             auth=Auth(self.admin_contributor))
         private_node.add_contributor(
             self.read_contributor,
-            permissions=['read'],
+            permissions=READ,
             auth=Auth(self.admin_contributor))
         private_node.add_pointer(
             self.public_linked_registration,
@@ -168,9 +169,11 @@ class TestRegistrationsLinkedRegistrationsRelationship(
             API_BASE, self.public_registration._id)
 
     def make_request(
-            self, registration_id=None, auth=None, expect_errors=False):
+            self, registration_id=None, auth=None, expect_errors=False, version=None):
         url = '/{}registrations/{}/relationships/linked_registrations/'.format(
             API_BASE, registration_id)
+        if version:
+            url = '{}?version={}'.format(url, version)
         if auth:
             return self.app.get(url, auth=auth, expect_errors=expect_errors)
         return self.app.get(url, expect_errors=expect_errors)
@@ -184,6 +187,18 @@ class TestRegistrationsLinkedRegistrationsRelationship(
         assert_not_in(
             self.private_linked_registration._id,
             linked_registration_ids)
+        assert res.json['data'][0]['type'] == 'linked_registrations'
+
+    def test_public_registration_unauthenticated_user_can_view_linked_registrations_relationship_2_13(
+            self):
+        res = self.make_request(registration_id=self.public_registration._id, version='2.13')
+        assert_equal(res.status_code, 200)
+        linked_registration_ids = [r['id'] for r in res.json['data']]
+        assert_in(self.public_linked_registration._id, linked_registration_ids)
+        assert_not_in(
+            self.private_linked_registration._id,
+            linked_registration_ids)
+        assert res.json['data'][0]['type'] == 'registrations'
 
     def test_private_registration_admin_contributor_can_view_linked_registrations_relationship(
             self):

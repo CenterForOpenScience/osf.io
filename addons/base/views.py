@@ -21,6 +21,7 @@ from elasticsearch import exceptions as es_exceptions
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.utils import update_analytics
 
 from framework import sentry
 from framework.auth import Auth
@@ -28,12 +29,11 @@ from framework.auth import cas
 from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
-from framework.routing import json_renderer, proxy_url
 from framework.sentry import log_exception
+from framework.routing import json_renderer, proxy_url
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
-from addons.base import exceptions
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
@@ -42,6 +42,7 @@ from osf.models import (BaseFileNode, TrashedFileNode,
                         NodeLog, DraftRegistration, RegistrationSchema,
                         Guid, FileVersionUserMetadata, FileVersion)
 from osf.metrics import PreprintView, PreprintDownload
+from osf.utils import permissions
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -104,7 +105,7 @@ This content has been removed."""}
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
 
-@decorators.must_have_permission('write')
+@decorators.must_have_permission(permissions.WRITE)
 @decorators.must_not_be_registration
 def disable_addon(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -135,20 +136,20 @@ def get_addon_user_config(**kwargs):
 
 
 permission_map = {
-    'create_folder': 'write',
-    'revisions': 'read',
-    'metadata': 'read',
-    'download': 'read',
-    'render': 'read',
-    'export': 'read',
-    'upload': 'write',
-    'delete': 'write',
-    'copy': 'write',
-    'move': 'write',
-    'copyto': 'write',
-    'moveto': 'write',
-    'copyfrom': 'read',
-    'movefrom': 'write',
+    'create_folder': permissions.WRITE,
+    'revisions': permissions.READ,
+    'metadata': permissions.READ,
+    'download': permissions.READ,
+    'render': permissions.READ,
+    'export': permissions.READ,
+    'upload': permissions.WRITE,
+    'delete': permissions.WRITE,
+    'copy': permissions.WRITE,
+    'move': permissions.WRITE,
+    'copyto': permissions.WRITE,
+    'moveto': permissions.WRITE,
+    'copyfrom': permissions.READ,
+    'movefrom': permissions.WRITE,
 }
 
 def check_access(node, auth, action, cas_resp):
@@ -160,7 +161,7 @@ def check_access(node, auth, action, cas_resp):
         raise HTTPError(httplib.BAD_REQUEST)
 
     if cas_resp:
-        if permission == 'read':
+        if permission == permissions.READ:
             if node.can_view_files(auth=None):
                 return True
             required_scope = node.file_read_scope
@@ -171,14 +172,14 @@ def check_access(node, auth, action, cas_resp):
            or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
             raise HTTPError(httplib.FORBIDDEN)
 
-    if permission == 'read':
+    if permission == permissions.READ:
         if node.can_view_files(auth):
             return True
         # The user may have admin privileges on a parent node, in which
         # case they should have read permissions
         if getattr(node, 'is_registration', False) and node.registered_from.can_view(auth):
             return True
-    if permission == 'write' and node.can_edit(auth):
+    if permission == permissions.WRITE and node.can_edit(auth):
         return True
 
     # Users attempting to register projects with components might not have
@@ -228,12 +229,26 @@ def make_auth(user):
         }
     return {}
 
-def get_metric_class_for_action(action):
+def download_is_from_mfr(req, payload):
+    metrics_data = payload['metrics']
+    uri = metrics_data['uri']
+    is_render_uri = furl.furl(uri or '').query.params.get('mode') == 'render'
+    return (
+        # This header is sent for download requests that
+        # originate from MFR, e.g. for the code pygments renderer
+        req.headers.get('X-Cos-Mfr-Render-Request', None) or
+        # Need to check the URI in order to account
+        # for renderers that send XHRs from the
+        # rendered content, e.g. PDFs
+        is_render_uri
+    )
+
+
+def get_metric_class_for_action(action, from_mfr):
     metric_class = None
-    download_is_from_mfr = request.headers.get('X-Cos-Mfr-Render-Request', None)
     if action == 'render':
         metric_class = PreprintView
-    elif action == 'download' and not download_is_from_mfr:
+    elif action == 'download' and not from_mfr:
         metric_class = PreprintDownload
     return metric_class
 
@@ -288,61 +303,60 @@ def get_auth(auth, **kwargs):
         if not provider_settings:
             raise HTTPError(httplib.BAD_REQUEST)
 
-    try:
-        path = data.get('path')
-        version = data.get('version')
-        credentials = None
-        waterbutler_settings = None
-        fileversion = None
-        if provider_name == 'osfstorage':
-            if path and version:
-                # check to see if this is a file or a folder
-                filenode = OsfStorageFileNode.load(path.strip('/'))
-                if filenode and filenode.is_file:
-                    try:
-                        fileversion = FileVersion.objects.filter(
-                            basefilenode___id=path.strip('/'),
-                            identifier=version
-                        ).select_related('region').get()
-                    except FileVersion.DoesNotExist:
-                        raise HTTPError(httplib.BAD_REQUEST)
-            # path and no version, use most recent version
-            elif path:
-                filenode = OsfStorageFileNode.load(path.strip('/'))
-                if filenode and filenode.is_file:
-                    fileversion = FileVersion.objects.filter(
-                        basefilenode=filenode
-                    ).select_related('region').order_by('-created').first()
-            if fileversion:
-                region = fileversion.region
-                credentials = region.waterbutler_credentials
-                waterbutler_settings = fileversion.serialize_waterbutler_settings(
-                    node_id=provider_settings.owner._id if provider_settings else node._id,
-                    root_id=provider_settings.root_node._id if provider_settings else node.root_folder._id,
-                )
-        # If they haven't been set by version region, use the NodeSettings region
-        if not (credentials and waterbutler_settings):
-            credentials = node.serialize_waterbutler_credentials(provider_name)
-            waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
-    except exceptions.AddonError:
-        log_exception()
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    # TODO: Add a signal here?
-    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
-        user = auth.user
-        if isinstance(node, Preprint) and not node.is_contributor(user):
-            metric_class = get_metric_class_for_action(action)
-            if metric_class:
+    path = data.get('path')
+    credentials = None
+    waterbutler_settings = None
+    fileversion = None
+    if provider_name == 'osfstorage':
+        if path:
+            file_id = path.strip('/')
+            # check to see if this is a file or a folder
+            filenode = OsfStorageFileNode.load(path.strip('/'))
+            if filenode and filenode.is_file:
+                # default to most recent version if none is provided in the response
+                version = int(data['version']) if data.get('version') else filenode.versions.count()
                 try:
-                    metric_class.record_for_preprint(
-                        preprint=node,
-                        user=user,
-                        version=fileversion.identifier if fileversion else None,
-                        path=path
-                    )
-                except es_exceptions.ConnectionError:
-                    log_exception()
+                    fileversion = FileVersion.objects.filter(
+                        basefilenode___id=file_id,
+                        identifier=version
+                    ).select_related('region').get()
+                except FileVersion.DoesNotExist:
+                    raise HTTPError(httplib.BAD_REQUEST)
+                if auth.user:
+                    # mark fileversion as seen
+                    FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
+                if not node.is_contributor_or_group_member(auth.user):
+                    from_mfr = download_is_from_mfr(request, payload=data)
+                    # version index is 0 based
+                    version_index = version - 1
+                    if action == 'render':
+                        update_analytics(node, file_id, version_index, 'view')
+                    elif action == 'download' and not from_mfr:
+                        update_analytics(node, file_id, version_index, 'download')
+                    if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
+                        if isinstance(node, Preprint):
+                            metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
+                            if metric_class:
+                                try:
+                                    metric_class.record_for_preprint(
+                                        preprint=node,
+                                        user=auth.user,
+                                        version=fileversion.identifier if fileversion else None,
+                                        path=path
+                                    )
+                                except es_exceptions.ConnectionError:
+                                    log_exception()
+        if fileversion and provider_settings:
+            region = fileversion.region
+            credentials = region.waterbutler_credentials
+            waterbutler_settings = fileversion.serialize_waterbutler_settings(
+                node_id=provider_settings.owner._id,
+                root_id=provider_settings.root_node._id,
+            )
+    # If they haven't been set by version region, use the NodeSettings or Preprint directly
+    if not (credentials and waterbutler_settings):
+        credentials = node.serialize_waterbutler_credentials(provider_name)
+        waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
@@ -374,22 +388,6 @@ DOWNLOAD_ACTIONS = set([
     'download_zip',
 ])
 
-
-# TODO: Use this to mark file versions as seen when
-# MFR callback endpoint is implemented
-def mark_file_version_as_seen(user, path, version):
-    """
-    Mark a file version as seen by the given user.
-    If no version is included, default to the most recent version.
-    """
-    file_to_update = OsfStorageFile.objects.get(_id=path)
-    if version:
-        file_version = file_to_update.versions.get(identifier=version)
-    else:
-        file_version = file_to_update.versions.order_by('-created').first()
-    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
-
-
 @must_be_signed
 @no_auto_transaction
 @must_be_valid_project(quickfiles_valid=True, preprints_valid=True)
@@ -397,7 +395,7 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            # Don't log download actions, but do update analytics
+            # Don't log download actions
             if payload['action'] in DOWNLOAD_ACTIONS:
                 guid = Guid.load(payload['metadata'].get('nid'))
                 if guid:
@@ -738,6 +736,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         if not file_node.pk:
             file_node = BaseFileNode.load(path)
 
+            if not file_node:
+                raise HTTPError(httplib.NOT_FOUND, data={
+                    'message_short': 'File Not Found',
+                    'message_long': 'The requested file could not be found.'
+                })
+
             if file_node.kind == 'folder':
                 raise HTTPError(httplib.BAD_REQUEST, data={
                     'message_short': 'Bad Request',
@@ -745,7 +749,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
                 })
 
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
-            if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
+            if file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
                     file_node.target.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
                 )

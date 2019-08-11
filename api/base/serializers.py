@@ -25,6 +25,19 @@ from website import settings
 from website.project.model import has_anonymous_link
 
 
+def get_meta_type(serializer_class, request):
+    meta = getattr(serializer_class, 'Meta', None)
+    if meta is None:
+        return None
+    resource_type = getattr(meta, 'type_', None)
+    if resource_type is not None:
+        return resource_type
+    try:
+        return meta.get_type(request)
+    except AttributeError:
+        return None
+
+
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
     """
     Properly handles formatting of self and related links according to JSON API.
@@ -69,8 +82,9 @@ class ConditionalField(ser.Field):
 
     def __init__(self, field, **kwargs):
         super(ConditionalField, self).__init__(**kwargs)
-        self.field = field
-        self.source = self.field.source
+        self.field = getattr(field, 'child_relation', field)
+        # source is intentionally field.source and not self.field.source
+        self.source = field.source
         self.required = self.field.required
         self.read_only = self.field.read_only
 
@@ -341,7 +355,7 @@ class VersionedDateTimeField(ser.DateTimeField):
     def to_representation(self, value):
         request = self.context.get('request')
         if request:
-            if request.version >= '2.2':
+            if StrictVersion(request.version) >= '2.2':
                 self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
             else:
                 self.format = '%Y-%m-%dT%H:%M:%S.%f' if value.microsecond else '%Y-%m-%dT%H:%M:%S'
@@ -385,10 +399,11 @@ class TypeField(ser.CharField):
 
     # Overrides CharField
     def to_internal_value(self, data):
+        request = self.context.get('request', None)
         if isinstance(self.root, JSONAPIListSerializer):
-            type_ = self.root.child.Meta.type_
+            type_ = get_meta_type(self.root.child, request)
         else:
-            type_ = self.root.Meta.type_
+            type_ = get_meta_type(self.root, request)
 
         if type_ != data:
             raise api_exceptions.Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
@@ -717,7 +732,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 else:
                     if callable(view):
                         view = view(getattr(obj, self.field_name))
-                    kwargs.update({'version': request.parser_context['kwargs']['version']})
+                    if request.parser_context['kwargs'].get('version', False):
+                        kwargs.update({'version': request.parser_context['kwargs']['version']})
                     url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
                         formatted_filters = self.format_filter(obj)
@@ -866,11 +882,11 @@ class TypedRelationshipField(RelationshipField):
         if len(view_name.split(':')) == 2:
             untyped_view = view_name
             view_parts = view_name.split(':')
-            try:
-                view_parts.insert(1, self.root.Meta.type_.replace('_', '-'))
-            except AttributeError:
-                # List Serializer, use the child's type
-                view_parts.insert(1, self.root.child.Meta.type_.replace('_', '-'))
+            request = self.context.get('request', None)
+            if isinstance(self.root, JSONAPIListSerializer):
+                view_parts.insert(1, get_meta_type(self.root.child, request).replace('_', '-'))
+            else:
+                view_parts.insert(1, get_meta_type(self.root, request).replace('_', '-'))
             self.view_name = view_name = ':'.join(view_parts)
             for k, v in self.views.items():
                 if v == untyped_view:
@@ -878,11 +894,11 @@ class TypedRelationshipField(RelationshipField):
         return super(TypedRelationshipField, self).get_url(obj, view_name, request, format)
 
 
-class FileCommentRelationshipField(RelationshipField):
+class FileRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):
         if obj.kind == 'folder':
             raise SkipField
-        return super(FileCommentRelationshipField, self).get_url(obj, view_name, request, format)
+        return super(FileRelationshipField, self).get_url(obj, view_name, request, format)
 
 
 class TargetField(ser.Field):
@@ -1161,7 +1177,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
     def update(self, instance, validated_data):
 
         # avoiding circular import
-        from api.nodes.serializers import ContributorIDField
+        from api.nodes.serializers import CompoundIDField
 
         # if PATCH request, the child serializer's partial attribute needs to be True
         if self.context['request'].method == 'PATCH':
@@ -1175,7 +1191,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         id_lookup = self.child.fields['id'].source
         data_mapping = {item.get(id_lookup): item for item in validated_data}
 
-        if isinstance(self.child.fields['id'], ContributorIDField):
+        if isinstance(self.child.fields['id'], CompoundIDField):
             instance_mapping = {self.child.fields['id'].get_id(item): item for item in instance}
         else:
             instance_mapping = {getattr(item, id_lookup): item for item in instance}
@@ -1229,7 +1245,7 @@ class SparseFieldsetMixin(object):
     def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
         request = kwargs.get('context', {}).get('request', None)
         if request and (allow_unsafe or request.method in permissions.SAFE_METHODS):
-            sparse_fieldset_query_param = 'fields[{}]'.format(self.Meta.type_)
+            sparse_fieldset_query_param = 'fields[{}]'.format(get_meta_type(self, request))
             if sparse_fieldset_query_param in request.query_params:
                 fieldset = request.query_params[sparse_fieldset_query_param].split(',')
                 for field_name in self.fields.fields.copy().keys():
@@ -1293,14 +1309,26 @@ class JSONAPISerializer(BaseAPISerializer):
         # failsafe, let python do it if something bad happened in the ESI construction
         return super(JSONAPISerializer, self).to_representation(data)
 
-    def run_validation(self, *args, **kwargs):
+    def run_validation(self, data):
         # Overrides construtor for validated_data to allow writes to a SerializerMethodField
         # Validation for writeable SMFs is expected to happen in the model
-        _validated_data = super(JSONAPISerializer, self).run_validation(*args, **kwargs)
+        _validated_data = super(JSONAPISerializer, self).run_validation(data)
         for field in self.writeable_method_fields:
-            if field in self.initial_data:
-                _validated_data[field] = self.initial_data[field]
+            if field in data:
+                _validated_data[field] = data[field]
         return _validated_data
+
+    def get_unwrapped_field(self, field):
+        """
+        Returns the lowest nested field. If no nesting, returns the original field.
+        :param field, highest field
+
+        Assumes nested structures like the following:
+        - field, field.field, field.child_relation, field.field.child_relation, etc.
+        """
+        while hasattr(field, 'field'):
+            field = field.field
+        return getattr(field, 'child_relation', field)
 
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
@@ -1310,9 +1338,9 @@ class JSONAPISerializer(BaseAPISerializer):
         :param envelope: Key for resource object.
         """
         ret = {}
-        meta = getattr(self, 'Meta', None)
-        type_ = getattr(meta, 'type_', None)
-        assert type_ is not None, 'Must define Meta.type_'
+        request = self.context.get('request')
+        type_ = get_meta_type(self, request)
+        assert type_ is not None, 'Must define Meta.type_ or Meta.get_type()'
         self.parse_sparse_fields(allow_unsafe=True, context=self.context)
 
         data = {
@@ -1353,6 +1381,7 @@ class JSONAPISerializer(BaseAPISerializer):
             )
 
         for field in fields:
+            nested_field = self.get_unwrapped_field(field)
             try:
                 if hasattr(field, 'child_relation'):
                     attribute = field.child_relation.get_attribute(obj)
@@ -1360,15 +1389,10 @@ class JSONAPISerializer(BaseAPISerializer):
                     attribute = field.get_attribute(obj)
             except SkipField:
                 continue
-
-            if hasattr(field, 'child_relation'):
-                nested_field = field.child_relation
-            else:
-                nested_field = getattr(field, 'field', None)
             if attribute is None:
                 # We skip `to_representation` for `None` values so that
                 # fields do not have to explicitly deal with that case.
-                if getattr(field, 'field', None) and isinstance(field.field, RelationshipField):
+                if isinstance(nested_field, RelationshipField):
                     # if this is a RelationshipField, serialize as a null relationship
                     data['relationships'][field.field_name] = {'data': None}
                 else:
@@ -1486,9 +1510,9 @@ class JSONAPIRelationshipSerializer(BaseAPISerializer):
     type = TypeField(required=False, allow_null=True)
 
     def to_representation(self, obj):
-        meta = getattr(self, 'Meta', None)
-        type_ = getattr(meta, 'type_', None)
-        assert type_ is not None, 'Must define Meta.type_'
+        request = self.context.get('request')
+        type_ = get_meta_type(self, request)
+        assert type_ is not None, 'Must define Meta.type_ or Meta.get_type()'
         relation_id_field = self.fields['id']
         attribute = relation_id_field.get_attribute(obj)
         relationship = relation_id_field.to_representation(attribute)
@@ -1570,19 +1594,31 @@ class LinkedNode(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
-        type_ = 'linked_nodes'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_nodes'
+            return 'nodes'
 
 
 class LinkedRegistration(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
-        type_ = 'linked_registrations'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_registrations'
+            return 'registrations'
 
 
 class LinkedPreprint(LinkedNode):
     class Meta:
-        type_ = 'linked_preprints'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_preprints'
+            return 'preprints'
 
 
 class LinkedNodesRelationshipSerializer(BaseAPISerializer):
@@ -1599,7 +1635,11 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
         return obj['self'].linked_nodes_related_url
 
     class Meta:
-        type_ = 'linked_nodes'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_nodes'
+            return 'nodes'
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
@@ -1668,7 +1708,11 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
         return obj['self'].linked_registrations_related_url
 
     class Meta:
-        type_ = 'linked_registrations'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_registrations'
+            return 'registrations'
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
@@ -1733,7 +1777,11 @@ class LinkedPreprintsRelationshipSerializer(LinkedNodesRelationshipSerializer):
         return obj['self'].linked_preprints_related_url
 
     class Meta:
-        type_ = 'linked_preprints'
+        @staticmethod
+        def get_type(request):
+            if StrictVersion(request.version) < StrictVersion('2.13'):
+                return 'linked_preprints'
+            return 'preprints'
 
     def make_instance_obj(self, obj):
         # Convenience method to format instance based on view's get_object

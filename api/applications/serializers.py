@@ -1,10 +1,14 @@
-from django.core.validators import URLValidator
-from rest_framework import serializers as ser
+from distutils.version import StrictVersion
 
+from django.core.validators import URLValidator
+from rest_framework import exceptions, serializers as ser
+
+from osf.exceptions import ValidationError
 from osf.models import ApiOAuth2Application
 
 from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField, VersionedDateTimeField
 from api.base.utils import absolute_reverse
+from api.base.exceptions import format_validation_error
 
 
 class ApiOAuthApplicationBaseSerializer(JSONAPISerializer):
@@ -35,12 +39,13 @@ class ApiOAuthApplicationBaseSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     def reset_url(self, obj):
-        return absolute_reverse(
-            'applications:application-reset', kwargs={
-                'client_id': obj.client_id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
+        if StrictVersion(self.context['request'].version) < StrictVersion('2.15'):
+            return absolute_reverse(
+                'applications:application-reset', kwargs={
+                    'client_id': obj.client_id,
+                    'version': self.context['request'].parser_context['kwargs']['version'],
+                },
+            )
 
     class Meta:
         type_ = 'applications'
@@ -90,23 +95,41 @@ class ApiOAuth2ApplicationSerializer(ApiOAuthApplicationBaseSerializer):
 
     def create(self, validated_data):
         instance = ApiOAuth2Application(**validated_data)
-        instance.save()
-        return instance
-
-    def update(self, instance, validated_data):
-        assert isinstance(instance, ApiOAuth2Application), 'instance must be an ApiOAuth2Application'
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
+        try:
+            instance.save()
+        except ValidationError as e:
+            detail = format_validation_error(e)
+            raise exceptions.ValidationError(detail=detail)
         return instance
 
 
 class ApiOAuth2ApplicationDetailSerializer(ApiOAuth2ApplicationSerializer):
     """
-    Overrides ApiOAuth2ApplicationSerializer to make id required.
+    Overrides ApiOAuth2ApplicationSerializer to make id required
+    and client_secret writable to reset the secret via API patch request
     """
 
     id = IDField(source='client_id', required=True, help_text='The client ID for this application (automatically generated)')
+
+    client_secret = ser.CharField(
+        help_text='The client secret for this application (automatically generated)',
+        allow_null=True,
+        required=False,
+    )
+
+    def update(self, instance, validated_data):
+        assert isinstance(instance, ApiOAuth2Application), 'instance must be an ApiOAuth2Application'
+        client_secret = validated_data.pop('client_secret', None)
+        if client_secret == '':
+            instance.reset_secret(save=True)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        try:
+            instance.save()
+        except ValidationError as e:
+            detail = format_validation_error(e)
+            raise exceptions.ValidationError(detail=detail)
+        return instance
 
 
 class ApiOAuth2ApplicationResetSerializer(ApiOAuth2ApplicationDetailSerializer):
