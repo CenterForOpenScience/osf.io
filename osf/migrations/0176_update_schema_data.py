@@ -234,7 +234,7 @@ def noop(*args, **kwargs):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0139_add_formblock_models'),
+        ('osf', '0175_add_formblock_models'),
     ]
 
     operations = [
