@@ -22,4 +22,4 @@ class TestsSerializeMeeting(AdminTestCase):
         nt.assert_equal(res['public_projects'], self.conf.public_projects)
         nt.assert_equal(res['poster'], self.conf.poster)
         nt.assert_equal(res['talk'], self.conf.talk)
-        nt.assert_equal(res['num_submissions'], self.conf.num_submissions)
+        nt.assert_equal(res['num_submissions'], self.conf.valid_submissions.count())

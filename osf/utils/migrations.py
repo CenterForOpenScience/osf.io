@@ -3,9 +3,11 @@ import itertools
 import json
 import logging
 import warnings
+from math import ceil
 
 from contextlib import contextmanager
 from django.apps import apps
+from django.db import connection
 from django.db.migrations.operations.base import Operation
 
 from website import settings
@@ -13,6 +15,9 @@ from osf.models import NodeLicense, RegistrationSchema
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
 logger = logging.getLogger(__file__)
+
+
+increment = 100000
 
 
 def get_osf_models():
@@ -292,3 +297,25 @@ class DeleteWaffleSwitches(Operation):
 
     def describe(self):
         return 'Removes waffle switches: {}'.format(', '.join(self.switch_names))
+
+def batch_node_migrations(state, migrations):
+    AbstractNode = state.get_model('osf', 'abstractnode')
+    max_nid = getattr(AbstractNode.objects.last(), 'id', 0)
+
+    for migration in migrations:
+        total_pages = int(ceil(max_nid / float(increment)))
+        page_start = 0
+        page_end = 0
+        page = 0
+        logger.info('{}'.format(migration['description']))
+        while page_end <= (max_nid):
+            page += 1
+            page_end += increment
+            if page <= total_pages:
+                logger.info('Updating page {} / {}'.format(page_end / increment, total_pages))
+            with connection.cursor() as cursor:
+                cursor.execute(migration['sql'].format(
+                    start=page_start,
+                    end=page_end
+                ))
+            page_start = page_end

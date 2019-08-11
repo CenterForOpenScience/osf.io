@@ -7,6 +7,7 @@ from rest_framework import serializers as ser
 from api.base import utils
 from api.base.exceptions import Conflict
 from api.base.exceptions import JSONAPIAttributeException
+from api.base.serializers import get_meta_type
 from api.base.serializers import JSONAPISerializer
 from api.base.serializers import LinksField
 from api.base.serializers import RelationshipField
@@ -73,7 +74,10 @@ class TargetRelationshipField(RelationshipField):
 class PreprintRequestTargetRelationshipField(TargetRelationshipField):
     def to_representation(self, value):
         ret = super(TargetRelationshipField, self).to_representation(value)
-        ret['data']['type'] = PreprintRequestSerializer.Meta.type_
+        ret['data']['type'] = get_meta_type(
+            PreprintRequestSerializer,
+            self.context.get('request'),
+        )
         return ret
 
 class BaseActionSerializer(JSONAPISerializer):
@@ -218,7 +222,7 @@ class NodeRequestActionSerializer(BaseActionSerializer):
         related_view_kwargs={'request_id': '<target._id>'},
     )
 
-    permissions = ser.ChoiceField(choices=permissions.PERMISSIONS, required=False)
+    permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
     visible = ser.BooleanField(default=True, required=False)
 
 

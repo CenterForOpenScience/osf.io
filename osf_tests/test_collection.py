@@ -5,7 +5,7 @@ from django.db import IntegrityError
 from framework.auth import Auth
 
 from osf.models import Collection
-from website.exceptions import NodeStateError
+from osf.exceptions import NodeStateError
 from website.views import find_bookmark_collection
 from .factories import (
     UserFactory,

@@ -41,6 +41,8 @@ class CoreScopes(object):
     SUBSCRIPTIONS_READ = 'subscriptions_read'
     SUBSCRIPTIONS_WRITE = 'subscriptions_write'
 
+    MEETINGS_READ = 'meetings.base_read'
+
     NODE_BASE_READ = 'nodes.base_read'
     NODE_BASE_WRITE = 'nodes.base_write'
 
@@ -52,6 +54,9 @@ class CoreScopes(object):
 
     NODE_CONTRIBUTORS_READ = 'nodes.contributors_read'
     NODE_CONTRIBUTORS_WRITE = 'nodes.contributors_write'
+
+    OSF_GROUPS_READ = 'osf_groups.groups_read'
+    OSF_GROUPS_WRITE = 'osf_groups.groups_write'
 
     PREPRINT_CONTRIBUTORS_READ = 'preprints.contributors_read'
     PREPRINT_CONTRIBUTORS_WRITE = 'preprints.contributors_write'
@@ -73,6 +78,9 @@ class CoreScopes(object):
 
     NODE_PREPRINTS_READ = 'node.preprints_read'
     NODE_PREPRINTS_WRITE = 'node.preprints_write'
+
+    NODE_OSF_GROUPS_READ = 'node.osf_groups_read'
+    NODE_OSF_GROUPS_WRITE = 'node.osf_groups_write'
 
     PREPRINTS_READ = 'preprint.preprints_read'
     PREPRINTS_WRITE = 'preprint.preprints_write'
@@ -136,6 +144,9 @@ class CoreScopes(object):
 
     PROVIDERS_WRITE = 'providers_write'
 
+    CHRONOS_SUBMISSION_READ = 'chronos_submission_read'
+    CHRONOS_SUBMISSION_WRITE = 'chronos_submission_write'
+
     WAFFLE_READ = 'waffle_read'
 
     NULL = 'null'
@@ -159,7 +170,10 @@ class CoreScopes(object):
     WIKI_BASE_WRITE = 'wikis.base_write'
 
     IDENTIFIERS_READ = 'identifiers.data_read'
+    IDENTIFIERS_WRITE = 'identifiers.data_write'
 
+    METRICS_BASIC = 'metrics_basic'
+    METRICS_RESTRICTED = 'metrics_restricted'
 
 class ComposedScopes(object):
     """
@@ -197,8 +211,13 @@ class ComposedScopes(object):
     DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, )
     DRAFT_WRITE = (CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE, )
 
+    # OSF Groups
+    GROUP_READ = (CoreScopes.OSF_GROUPS_READ, )
+    GROUP_WRITE = (CoreScopes.OSF_GROUPS_WRITE, )
+
     # Identifier views
     IDENTIFIERS_READ = (CoreScopes.IDENTIFIERS_READ, )
+    IDENTIFIERS_WRITE = (CoreScopes.IDENTIFIERS_WRITE, )
 
     # Comment reports collection
     COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
@@ -211,13 +230,14 @@ class ComposedScopes(object):
                           CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
                           CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
-                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
+                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.IDENTIFIERS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
                      CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
 
     # Preprints collection
-    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ,)
-    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE,)
+    # TODO: Move Metrics scopes to their own restricted composed scope once the Admin app can manage scopes on tokens/apps
+    PREPRINT_METADATA_READ = (CoreScopes.PREPRINTS_READ, CoreScopes.PREPRINT_CITATIONS_READ, CoreScopes.IDENTIFIERS_READ, CoreScopes.METRICS_BASIC,)
+    PREPRINT_METADATA_WRITE = PREPRINT_METADATA_READ + (CoreScopes.PREPRINTS_WRITE, CoreScopes.PREPRINT_CITATIONS_WRITE, CoreScopes.METRICS_RESTRICTED,)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
@@ -237,11 +257,11 @@ class ComposedScopes(object):
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
                         CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
-                        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ)
+                        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ, CoreScopes.NODE_OSF_GROUPS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
                             (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
                              CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
-                             CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE)
+                             CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE, CoreScopes.NODE_OSF_GROUPS_WRITE)
 
     # Privileges relating to who can access a preprint via contributors
     PREPRINT_ACCESS_READ = (CoreScopes.PREPRINT_CONTRIBUTORS_READ,)
@@ -261,8 +281,8 @@ class ComposedScopes(object):
     REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.MODERATORS_WRITE, CoreScopes.PROVIDERS_WRITE)
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + PREPRINT_ALL_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
-    FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE + PREPRINT_ALL_WRITE
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + PREPRINT_ALL_READ + GROUP_READ + (CoreScopes.MEETINGS_READ, CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
+    FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE + PREPRINT_ALL_WRITE + GROUP_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\

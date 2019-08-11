@@ -26,8 +26,8 @@ from api.nodes.serializers import (
 from api.base.metrics import MetricsSerializerMixin
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
-from website.exceptions import NodeStateError
 from website.project import signals as project_signals
+from osf.exceptions import NodeStateError
 from osf.models import BaseFileNode, Preprint, PreprintProvider, Node, NodeLicense
 from osf.utils import permissions as osf_permissions
 
@@ -191,12 +191,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
-        all_perms = ['read', 'write', 'admin']
-        user_perms = []
-        for p in all_perms:
-            if obj.has_permission(user, p):
-                user_perms.append(p)
-        return user_perms
+        return obj.get_permissions(user)[::-1]
 
     def get_preprint_doi_url(self, obj):
         doi = None
@@ -370,9 +365,6 @@ class PreprintContributorsCreateSerializer(NodeContributorsCreateSerializer, Pre
     index = ser.IntegerField(required=False, source='_order')
 
     email_preferences = ['preprint', 'false']
-
-    def get_proposed_permissions(self, validated_data):
-        return validated_data.get('permission') or osf_permissions.WRITE
 
 
 class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, PreprintContributorsSerializer):

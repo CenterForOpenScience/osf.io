@@ -2,6 +2,162 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.20.0 (2019-07-29)
+===================
+- Waffle cookies - Override to allow cookies to be set for waffle flags
+- Add ab_testing_home_page_version_b waffle flag for A/B testing of home page
+- APIv2: Allow preprint admins to view preprint request actions
+
+19.19.0 (2019-07-24)
+===================
+- Add periodic task that checks for and sets stuck Crossref DOIs
+- Add script that gathers monthly metrics on the number of registrations and retractions created
+- Chronos: Send license info
+- Chronos: Use sync_manuscript for ChronosSubmissionDetailSerializer
+
+19.18.0 (2019-07-15)
+===================
+- Remove any Notification Subscriptions attached to Registrations
+- Add file counts to registrations
+- Stop locking rows when fetching registration schemas
+- Update AsPredicted schema to the latest version
+- Correctly set registration states when auto-approving embargo termination requests
+- APIv2: Serialize collected_metadata relationship on Collection serializer
+- Fix preprint metrics counts and include source info.
+
+19.17.0 (2019-07-08)
+===================
+- Admin app: paginating nodes and preprints, and adding bulk ham functionality for nodes
+- Testmon - only run tests for code that's changed - except on master/develop merges
+- Fix ampersand displays
+- Prevent clickmashing on Add Contributor modal
+- APIv2: Prevent adding unregistered contributors with blacklisted emails
+- APIv2: Allow OAuth application client secret reset by PATCHing client_secret to null
+- APIv2: Add better parser support for handling application/json content type
+- Fix display of Anonymous VOL citation-related logs
+
+19.16.0 (2019-07-03)
+===================
+- Fangorn rate limiting - spaces out requests when moving large groups of files
+
+19.15.0 (2019-06-27)
+===================
+- Add a management command for measuring data storage usage metrics
+
+19.14.0 (2019-06-26)
+===================
+- Chronos: Limit Submission URL visibility
+- APIv2: Private meetings endpoints optimizations.
+- Modifications to how meetings and submissions are related - instead of using
+tags, using a m2m field.
+
+19.13.0 (2019-06-17)
+===================
+- "Groups-guardian" release.  Switches to django-guardian for permissions on AbstractNodes
+- Switches Preprints to using guardian direct foreign keys for performance improvements
+- APIv2: OSF Groups functionality, allows groups of users to be added to projects
+
+19.12.0 (2019-06-10)
+===================
+- APIv2: View-only Links/Anonymous VOL's for Registrations improvements
+
+19.11.0 (2019-06-06)
+===================
+- APIv2: Private endpoints for meetings backend
+
+19.10.0 (2019-06-04)
+===================
+- Update retired Bitbucket endpoints
+- APIv2: Fix VersionedDateTimeField to handle later versions appropriately
+- Inspect user profile info for spam
+- Update test datacite prefixes
+- Point new help links to zendesk
+- APIv2: Fix CollectedMetaDetail where submission belongs to multiple collections
+- Py3 backwards compatible changes
+- Reduce number of queries for at mentions
+- Remove dead code that was obsolete after partial registrations
+- Better track where users are signing up from
+
+19.9.0 (2019-06-03)
+===================
+- Add EGAP registration (not migrated yet)
+- APIv2: Check if email is verified when deleting
+- Fix casing issue that is preventing CSRF token from getting passed with Request access
+- Chronos: Send supplemental node link and add capability to switch to diff Chronos servers
+
+
+19.8.0 (2019-05-16)
+===================
+- APIv2: Don't throttle safe requests to UserEmailList
+- Modify payload sent to Chronos
+
+19.7.0 (2019-04-22)
+===================
+- Update from jessie to stretch
+- APIv2: Add ability to update user's default storage location
+- APIv2: Allow access to preprint metric data for date ranges
+- Backend support for new registries overview page, including:
+- Modify approval links format for registrations
+- Add article_doi field to registrations
+- APIv2: Make several registration fields editable by admins
+- APIv2: Expose more withdrawn registration fields
+- APIv2: Add node/registration bibliographic contributor list endpoints
+- APIv2: Fix DELETE CollectionLinkedRegistrationsRelationship 500 error
+- APIv2: Fix children count on NodeSerializer
+
+19.6.0 (2019-04-09)
+===================
+- Add support for sending withdrawal request denied emails
+- Bump libreoffice version in unoconv docker service
+
+19.5.0 (2019-04-01)
+===================
+- Display OSF Storage Usage on project overview page
+- APIv2: turn on wb hook tests on travis
+- APIv2: display related counts on user relationship fields
+- Banner for IE users
+- Allow embedding quickfiles in a wiki
+- Migrate old forks whose last_logged date doesn't match the forked date
+
+19.4.0 (2019-03-28)
+===================
+- Chronos backend
+- APIv2: user_passwords type change
+- Preprint withdrawal email template changes
+
+19.3.0 (2019-03-04)
+===================
+- Generate absolute url for confirmation url in claim user email
+- Allow searching by contributor and tags on collections
+- APIv2: Add render links when serializing files and file versions, html links for files
+
+19.2.0 (2019-02-18)
+===================
+- Backend for File Metadata
+- Make embedded wiki images viewable with VOL
+- APIv2: Two factor improvements
+- APIv2: Request deactivation through user settings
+- APIv2: Initiate registration withdrawal
+- APIv2: Handle validation errors on tokens and applications requests
+- APIv2: Handle requesting user guid from files endpoint
+
+19.1.0 (2019-01-30)
+===================
+- Track OSFS file versions
+
+19.0.0 (2019-01-23)
+===================
+- APIv2: Allow doubly confirming new emails and account merges
+- APIv2: Deleting nodes deletes entire hierarchy
+- APIv2: Initiate resending confirmation emails for unconfirmed emails
+- Learn more license link opens in new tab
+- APIv2 - withdrawal date/justification included on children
+- Limit file size uploads
+- Impact: request relevant indices
+- Fix institution settings FAQ link
+- Remove legacy registrations
+- Don't add provider=osf query param when clicking on preprint in search
+
 18.9.0 (2018-12-19)
 ===================
 

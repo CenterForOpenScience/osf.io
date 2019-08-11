@@ -15,10 +15,10 @@ var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
 var atMention = require('js/atMention');
 
-// Cached contributor data, to prevent multiple fetches for @mentions
+// Cached contributor and group member data, to prevent multiple fetches for @mentions
 var __contributorCache = null;
 
-var getContributorList = function(url, contributors, ret) {
+var getContributorAndGroupMemberList = function(url, contributors, ret) {
     contributors = contributors || [];
     ret = ret || $.Deferred();
     if (__contributorCache !== null) {
@@ -30,14 +30,13 @@ var getContributorList = function(url, contributors, ret) {
             {'isCors': true});
         request.done(function(response) {
             var activeContributors = response.data.filter(function(item) {
-                return item.embeds.users.data.attributes.active === true;
+                return item.attributes.active === true;
             });
             contributors = contributors.concat(activeContributors);
             if (response.links.next) {
-                return getContributorList(response.links.next, contributors, ret);
+                return getContributorAndGroupMemberList(response.links.next, contributors, ret);
             }
-            var data = contributors.map(function(item) {
-                var userData = item.embeds.users.data;
+            var data = contributors.map(function(userData) {
                 return {
                     'id': userData.id,
                     'name': userData.attributes.given_name,
@@ -49,7 +48,7 @@ var getContributorList = function(url, contributors, ret) {
             ret.resolve(data);
         });
         request.fail(function(xhr, status, error) {
-            Raven.captureMessage('Error getting contributors', {
+            Raven.captureMessage('Error getting contributors and group members', {
                 extra: {
                     url: url,
                     status: status,
@@ -831,13 +830,13 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
 
 
 function initAtMention(nodeId, selectorOrElem) {
-    var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {
+    var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors_and_group_members/', {
         query: {
             'page[size]': 50,
             'fields[users]': 'given_name,full_name,active',
         }
     });
-    return getContributorList(url)
+    return getContributorAndGroupMemberList(url)
         .then(function(contributors) {
             atMention(selectorOrElem, contributors);
         });

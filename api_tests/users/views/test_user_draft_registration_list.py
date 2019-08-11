@@ -12,7 +12,8 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.django_db
@@ -21,14 +22,14 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     @pytest.fixture()
     def other_admin(self, project_public):
         user = AuthUserFactory()
-        project_public.add_contributor(user, permissions=[permissions.ADMIN], save=True)
+        project_public.add_contributor(user, permissions=permissions.ADMIN, save=True)
         return user
 
     @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):

@@ -4,8 +4,10 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf_tests.factories import (
     NodeFactory,
+    OSFGroupFactory,
     AuthUserFactory,
 )
+from osf.utils.permissions import WRITE, READ
 from website.project.signals import contributor_removed
 from api_tests.utils import disconnected_from_listeners
 
@@ -70,11 +72,11 @@ class TestNodeRelationshipNodeLinks:
 
     @pytest.fixture()
     def make_payload(self, node_admin):
-        def payload(node_ids=None):
+        def payload(node_ids=None, deprecated_type=True):
             node_ids = node_ids or [node_admin._id]
             env_linked_nodes = [
                 {
-                    'type': 'linked_nodes',
+                    'type': 'linked_nodes' if deprecated_type else 'nodes',
                     'id': node_id
                 } for node_id in node_ids]
             return {'data': env_linked_nodes}
@@ -102,14 +104,19 @@ class TestNodeRelationshipNodeLinks:
 
     #   test_get_public_relationship_linked_nodes_logged_in
         res = app.get(url_public, auth=user.auth)
-
         assert res.status_code == 200
         assert len(res.json['data']) == 2
 
     #   test_get_private_relationship_linked_nodes_logged_out
         res = app.get(url_private, expect_errors=True)
-
         assert res.status_code == 401
+
+    #   test_get_private_relationship_linked_nodes_read_group_mem
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_linking_private.add_osf_group(group, READ)
+        res = app.get(url_private, auth=group_mem.auth)
+        assert res.status_code == 200
 
     def test_post_contributing_node(
             self, app, user, node_contrib, node_private,
@@ -141,9 +148,24 @@ class TestNodeRelationshipNodeLinks:
         assert node_public._id in ids
         assert node_private._id in ids
 
+    def test_post_public_node_2_13(
+            self, app, user, node_private, node_public,
+            make_payload, url_private):
+        res = app.post_json_api(
+            '{}?version=2.13'.format(url_private),
+            make_payload([node_public._id], False),
+            auth=user.auth
+        )
+
+        assert res.status_code == 201
+
+        ids = [data['id'] for data in res.json['data']]
+        assert node_public._id in ids
+        assert node_private._id in ids
+
     def test_post_private_node(
             self, app, user, node_private, node_other,
-            make_payload, url_private):
+            node_linking_private, make_payload, url_private):
         res = app.post_json_api(
             url_private,
             make_payload([node_other._id]),
@@ -157,6 +179,26 @@ class TestNodeRelationshipNodeLinks:
         ids = [data['id'] for data in res.json['data']]
         assert node_other._id not in ids
         assert node_private._id in ids
+
+    #   test_group_member_can_post_with_write
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        node_linking_private.add_osf_group(group, READ)
+        res = app.post_json_api(
+            url_private,
+            make_payload([node_other._id]),
+            auth=group_mem.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+
+        node_linking_private.update_osf_group(group, WRITE)
+        node_other.add_osf_group(group, WRITE)
+        res = app.post_json_api(
+            url_private,
+            make_payload([node_other._id]),
+            auth=group_mem.auth, expect_errors=True
+        )
+        assert res.status_code == 201
 
     def test_post_mixed_nodes(
             self, app, user, node_private, node_other,
@@ -343,6 +385,36 @@ class TestNodeRelationshipNodeLinks:
 
         assert res.status_code == 409
 
+    #   test_type_nodes_not_acceptable_below_2_13
+        res = app.post_json_api(
+            url_private,
+            {
+                'data': [{
+                    'type': 'nodes',
+                    'id': node_contrib._id
+                }]
+            },
+            auth=user.auth,
+            expect_errors=True
+        )
+
+        assert res.status_code == 409
+
+    #   test_type_linked_nodes_not_acceptable_as_of_2_13
+        res = app.post_json_api(
+            '{}?version=2.13'.format(url_private),
+            {
+                'data': [{
+                    'type': 'linked_nodes',
+                    'id': node_contrib._id
+                }]
+            },
+            auth=user.auth,
+            expect_errors=True
+        )
+
+        assert res.status_code == 409
+
     #   test_creates_public_linked_node_relationship_logged_out
         res = app.post_json_api(
             url_public, make_payload([node_public._id]),
@@ -460,6 +532,25 @@ class TestNodeLinkedNodes:
 
         for node_id in node_ids:
             assert node_id in nodes_returned
+
+    def test_linked_nodes_returns_everything_2_13(
+            self, app, user, node_ids, url_linked_nodes):
+        res = app.get('{}?version=2.13'.format(url_linked_nodes), auth=user.auth)
+
+        assert res.status_code == 200
+        nodes_returned = [
+            linked_node['id'] for linked_node in res.json['data']
+        ]
+        assert len(nodes_returned) == len(node_ids)
+
+        for node_id in node_ids:
+            assert node_id in nodes_returned
+
+        node_types = [
+            linked_node['type'] for linked_node in res.json['data']
+        ]
+        assert 'nodes' in node_types
+        assert 'linked_nodes' not in node_types
 
     def test_linked_nodes_only_return_viewable_nodes(
             self, app, user, node_one, node_two, node_public, node_ids):

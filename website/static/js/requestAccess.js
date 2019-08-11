@@ -48,7 +48,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
             'POST',
             self.updateUrl,
             {
-                'is_cors': true,
+                'isCors': true,
                 'data': payload,
                 'fields': {
                     xhrFields: {withCredentials: true}
