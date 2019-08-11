@@ -6,20 +6,23 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 
+pytestmark = pytest.mark.django_db
+
 SCHEMA_VERSION = 2
 
 @pytest.fixture()
 def user():
     return AuthUserFactory()
 
-class TestDeprecatedMetaSchemaDetail:
-    @pytest.fixture()
-    def schema(self):
-        return RegistrationSchema.objects.filter(
-            name='Prereg Challenge',
-            schema_version=SCHEMA_VERSION
-        ).first()
+@pytest.fixture()
+def schema():
+    return RegistrationSchema.objects.filter(
+        name='Prereg Challenge',
+        schema_version=SCHEMA_VERSION
+    ).first()
 
+
+class TestDeprecatedMetaSchemaDetail:
     def test_deprecated_metaschemas_routes(self, app, user, schema):
         # test base /metaschemas/ GET with min version
         url = '/{}metaschemas/?version=2.7'.format(API_BASE)
