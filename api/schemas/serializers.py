@@ -33,12 +33,12 @@ class RegistrationSchemaFormBlockSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    help_text = ser.CharField(read_only=True, allow_blank=True)
     answer_id = ser.CharField(max_length=255)
     chunk_id = ser.CharField(max_length=255)
     block_type = ser.CharField(read_only=True)
-    display_text = ser.CharField(allow_blank=True)
-
+    display_text = ser.CharField(read_only=True, allow_blank=True)
+    help_text = ser.CharField(read_only=True, allow_blank=True)
+    example_text = ser.CharField(read_only=True, allow_blank=True)
     required = ser.BooleanField(read_only=True)
     index = ser.IntegerField(required=False, read_only=True, source='_order')
 
@@ -54,6 +54,8 @@ class RegistrationSchemaFormBlockSerializer(JSONAPISerializer):
 
 
 class RegistrationSchemaSerializer(SchemaSerializer):
+    description = ser.CharField(read_only=True, allow_blank=True)
+
     form_blocks = RelationshipField(
         related_view='schemas:registration-schema-form-blocks',
         related_view_kwargs={'schema_id': '<_id>'},

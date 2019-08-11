@@ -52,6 +52,7 @@ class AbstractSchemaManager(models.Manager):
             latest_schemas = latest_schemas.filter(active=True)
         return latest_schemas.order_by('name', '-schema_version').distinct('name')
 
+
 class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
@@ -74,6 +75,7 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
 
 class RegistrationSchema(AbstractSchema):
     config = DateTimeAwareJSONField(blank=True, default=dict)
+    description = models.TextField(null=True, blank=True)
 
     @property
     def _config(self):
@@ -161,6 +163,7 @@ class RegistrationFormBlock(ObjectIDMixin, BaseModel):
 
     schema = models.ForeignKey('RegistrationSchema', related_name='form_blocks', on_delete=models.CASCADE)
     help_text = models.TextField()
+    example_text = models.TextField(null=True)
     answer_id = models.CharField(max_length=255, db_index=True, null=True)
     chunk_id = models.CharField(max_length=24, db_index=True, null=True)
     block_type = models.CharField(max_length=31, db_index=True, choices=FORMBLOCK_TYPES)
