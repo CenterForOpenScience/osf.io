@@ -33,18 +33,13 @@ class RegistrationSchemaFormBlockSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    page = ser.CharField(max_length=255, read_only=True)
-    section = ser.CharField(max_length=255, read_only=True)
     help_text = ser.CharField(read_only=True, allow_blank=True)
-    block_id = ser.CharField(max_length=255)
+    answer_id = ser.CharField(max_length=255)
+    chunk_id = ser.CharField(max_length=255)
     block_type = ser.CharField(read_only=True)
-    block_text = ser.CharField(allow_blank=True)
-    size = ser.CharField(read_only=True, allow_blank=True)
-    choices = ser.ListField(
-        child=ser.CharField(read_only=True, allow_blank=True),
-        default=list(),
-    )
-    required = ser.BooleanField(default=True, read_only=True)
+    display_text = ser.CharField(allow_blank=True)
+
+    required = ser.BooleanField(read_only=True)
     index = ser.IntegerField(required=False, read_only=True, source='_order')
 
     links = LinksField({
@@ -56,6 +51,7 @@ class RegistrationSchemaFormBlockSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'form_blocks'
+
 
 class RegistrationSchemaSerializer(SchemaSerializer):
     form_blocks = RelationshipField(
