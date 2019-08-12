@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from django.core.exceptions import PermissionDenied
+from django.contrib import messages
 
 from osf.models import SpamStatus, PreprintRequest
 from osf.models.preprint import Preprint, PreprintLog, OSFUser
@@ -25,6 +26,7 @@ from website.preprints.tasks import update_preprint_share
 from website.project.views.register import osf_admin_change_status_identifier
 from website import search
 
+from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from admin.base.views import GuidFormView, GuidView
 from admin.nodes.templatetags.node_extras import reverse_preprint
@@ -68,9 +70,13 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs.get('guid')})
 
     def post(self, request, *args, **kwargs):
+        old_provider = self.get_object().provider
         if not request.user.has_perm('osf.change_preprint'):
             raise PermissionsError("This user does not have permission to update this preprint's provider.")
-        return super(PreprintView, self).post(request, *args, **kwargs)
+        response = super(PreprintView, self).post(request, *args, **kwargs)
+        if str(old_provider.id) != self.get_object().provider.id:
+            self.update_subjects_for_provider(request, old_provider, self.object.provider)
+        return response
 
     def get_context_data(self, **kwargs):
         preprint = Preprint.load(self.kwargs.get('guid'))
@@ -80,6 +86,30 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
         kwargs.update({'message': kwargs.get('message')})
         return super(PreprintView, self).get_context_data(**kwargs)
+
+    def update_subjects_for_provider(self, request, old_provider, new_provider):
+        subject_hierarchies = self.object.subject_hierarchy
+        new_subjects = []
+        subject_problems = 0
+        for hierarchy in subject_hierarchies:
+            subject = hierarchy[-1]
+            if old_provider._id == 'osf':
+                bepress_id = subject.id
+            else:
+                bepress_id = subject.bepress_subject_id
+            if new_provider._id == 'osf':
+                new_subject = new_provider.subjects.filter(id=bepress_id)
+            else:
+                new_subject = new_provider.subjects.filter(bepress_subject_id=bepress_id)
+            if not new_subject.exists():
+                subject_problems = subject_problems + 1
+                new_subject = subject
+            else:
+                new_subject = new_subject[0]
+            new_subjects.append(new_subject.hierarchy)
+        self.object.set_subjects(new_subjects, Auth(request.user))
+        if subject_problems:
+            messages.warning(request, 'Unable to find subjects in new provider for {} subject(s)'.format(subject_problems))
 
 
 class PreprintSpamList(PermissionRequiredMixin, ListView):
