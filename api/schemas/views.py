@@ -1,5 +1,5 @@
 import waffle
-from rest_framework import exceptions, generics, permissions as drf_permissions
+from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
@@ -125,9 +125,6 @@ class RegistrationSchemaFormBlocks(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         schema_id = self.kwargs.get('schema_id')
         schema = get_object_or_error(RegistrationSchema, schema_id, self.request)
-        RegistrationSchema.objects.get_latest_versions()
-        if schema.schema_version != RegistrationSchema.objects.get_latest_version(name=schema.name, only_active=False).schema_version:
-            raise exceptions.ValidationError('Registration schema must be active.')
         return schema.form_blocks.all()
 
 
