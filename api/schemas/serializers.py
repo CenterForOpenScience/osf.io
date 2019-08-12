@@ -59,7 +59,6 @@ class RegistrationSchemaSerializer(SchemaSerializer):
     form_blocks = RelationshipField(
         related_view='schemas:registration-schema-form-blocks',
         related_view_kwargs={'schema_id': '<_id>'},
-        always_embed=True,
     )
 
     filterable_fields = ['active']

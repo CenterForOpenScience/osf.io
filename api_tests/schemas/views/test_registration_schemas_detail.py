@@ -86,13 +86,6 @@ class TestRegistrationSchemaDetail:
         res = app.get(url)
         assert res.status_code == 200
 
-        # test_form_blocks_are_always_embedded_on_schema
-        url = '/{}schemas/registrations/{}/'.format(API_BASE, schema._id)
-        res = app.get(url, auth=user.auth)
-        assert res.status_code == 200
-        assert 'form_blocks' in res.json['data']['embeds']
-        assert res.json['data']['embeds']['form_blocks']['links']['meta']['total'] == schema.form_blocks.count()
-
         # test_form_blocks_detail
         form_block_id = schema.form_blocks.first()._id
         url = '/{}schemas/registrations/{}/form_blocks/{}/'.format(API_BASE, schema._id, form_block_id)
