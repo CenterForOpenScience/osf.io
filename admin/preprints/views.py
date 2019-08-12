@@ -74,7 +74,7 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         if not request.user.has_perm('osf.change_preprint'):
             raise PermissionsError("This user does not have permission to update this preprint's provider.")
         response = super(PreprintView, self).post(request, *args, **kwargs)
-        if str(old_provider.id) != self.get_object().provider.id:
+        if self.get_object().provider and str(old_provider.id) != self.get_object().provider.id:
             self.update_subjects_for_provider(request, old_provider, self.object.provider)
         return response
 
