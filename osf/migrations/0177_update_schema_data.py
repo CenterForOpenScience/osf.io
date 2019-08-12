@@ -113,7 +113,7 @@ def get_answer_id(question):
 
 def strip_html(string_with_html):
     """
-    Some original schemas have html in the help text.  Just replacing this with empty strings.
+    Some original schemas have html in the description/help text.  Just replacing this with empty strings.
     """
     stripped_html = re.sub('<.*?>', '', string_with_html)
     return stripped_html
@@ -127,7 +127,7 @@ def find_title_description_help_example(rs, question):
 
     """
     title = question.get('title', '')
-    description = question.get('description', '')
+    description = strip_html(question.get('description', ''))
     help = strip_html(question.get('help', ''))
     example = ''
 
@@ -147,11 +147,13 @@ def find_title_description_help_example(rs, question):
         'use',
         'you',
         'your',
-        'skip']
+        'skip',
+        'enter',
+    ]
 
     if title:
         if schema_name in ['OSF Preregistration', 'Prereg Challenge']:
-            # These two schemas have example text
+            # These two schemas have clear "example" text in the "help" section
             example = help
             help = description
             description = ''
@@ -162,6 +164,7 @@ def find_title_description_help_example(rs, question):
                     description = ''
                     break
     else:
+        # if no title, description text is moved to title.
         title = description
         description = ''
 
@@ -261,8 +264,8 @@ def map_schema_to_formblocksv2(state, schema):
                 state,
                 rs.id,
                 'page-heading',
-                display_text=page.get('title', ''),
-                help_text=page.get('description', '')
+                display_text=strip_html(page.get('title', '')),
+                help_text=strip_html(page.get('description', ''))
             )
             for question in page['questions']:
                 format_question(state, rs, question)
