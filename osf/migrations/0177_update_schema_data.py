@@ -59,11 +59,10 @@ def update_schemaless_registrations(state, schema):
 
 def update_schema_configs(state, schema):
     RegistrationSchema = state.get_model('osf', 'registrationschema')
-    # TODO, factor in AsPredictedSchema, version 3
-    for rs in RegistrationSchema.objects.filter(schema_version=2):
+    for rs in RegistrationSchema.objects.all():
         if rs.schema.get('description', False):
             rs.description = rs.schema['description']
-        rs.save()
+            rs.save()
 
 def unset_schema_configs(state, schema):
     RegistrationSchema = state.get_model('osf', 'registrationschema')
@@ -114,7 +113,7 @@ def get_answer_id(question):
 
 def strip_html(string_with_html):
     """
-    Some original schemas have html in the help text.
+    Some original schemas have html in the help text.  Just replacing this with empty strings.
     """
     stripped_html = re.sub('<.*?>', '', string_with_html)
     return stripped_html
@@ -133,7 +132,22 @@ def find_title_description_help_example(rs, question):
     example = ''
 
     schema_name = rs.schema.get('name', '')
-    help_text_keywords = ['please', 'choose', 'provide', 'format']
+    # Descriptions that contain any of these keywords
+    # are turned into help text instead.
+    help_text_keywords = [
+        'please',
+        'choose',
+        'provide',
+        'format',
+        'describe',
+        'who',
+        'what',
+        'when',
+        'where',
+        'use',
+        'you',
+        'your',
+        'skip']
 
     if title:
         if schema_name in ['OSF Preregistration', 'Prereg Challenge']:
@@ -146,6 +160,7 @@ def find_title_description_help_example(rs, question):
                 if keyword in description.lower():
                     help = description
                     description = ''
+                    break
     else:
         title = description
         description = ''
@@ -235,8 +250,8 @@ def format_question(state, rs, question, sub=False):
 
 def map_schema_to_formblocksv2(state, schema):
     RegistrationSchema = state.get_model('osf', 'registrationschema')
-    # Migrating all schemas, active or not, to form blocks, since registration metadata matching old schemas will still need
-    # formatting
+    # Migrating all schemas, active or not, to form blocks, since registration
+    # metadata matching old schemas will still need to be formatted.
     schemas = RegistrationSchema.objects.all()
     for rs in schemas:
         logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.schema.get('name'), rs.schema_version))
