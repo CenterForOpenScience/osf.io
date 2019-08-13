@@ -593,6 +593,12 @@ def move_file_node_update(file_node, src_provider, dest_provider):
     elif(dest_provider == 's3'):
         from addons.s3.models import S3File
         file_node.__class__ = S3File
+    elif(dest_provider == 'swift'):
+        from addons.swift.models import SwiftFile
+        file_node.__class__ = SwiftFile
+    elif(dest_provider == 'nextcloud'):
+        from addons.nextcloud.models import NextcloudFile
+        file_node.__class__ = NextcloudFile
     elif(dest_provider == 'osfstorage'):
         from addons.osfstorage.models import OsfStorageFile
         file_node.__class__ = OsfStorageFile
