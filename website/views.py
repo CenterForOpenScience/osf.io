@@ -419,10 +419,15 @@ def get_storage_region_list(user, node=False):
     if node:
         default_region = node.osfstorage_region
     else:
-        default_region = user.get_addon('osfstorage').default_region
+        user_settings = user.get_addon('osfstorage')
+        if user_settings is None:
+            user_settings = user.add_addon('osfstorage')
+        default_region = user_settings.default_region
 
-    available_regions = list(Region.objects.order_by('name').values('_id', 'name'))
-    default_region = {'name': default_region.name, '_id': default_region._id}
-    available_regions.insert(0, available_regions.pop(available_regions.index(default_region)))  # default should be at top of list for UI.
-
+    available_regions = [{'name': default_region.name, '_id': default_region._id}]
+    institution = user.affiliated_institutions.first()
+    if institution is not None:
+        region_queryset = Region.objects.filter(_id=institution._id).order_by('name').values('_id', 'name')
+        if region_queryset.count() > 0:
+            available_regions = list(region_queryset)
     return available_regions

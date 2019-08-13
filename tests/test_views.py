@@ -56,6 +56,7 @@ from website.project.views.contributor import (
     send_claim_email,
     send_claim_registered_email,
 )
+from website import views as website_view
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
@@ -98,6 +99,8 @@ from osf_tests.factories import (
     UnregUserFactory,
     RegionFactory
 )
+from osf.models.node import set_project_storage_type
+from addons.osfstorage.models import NodeSettings
 
 @mock_app.route('/errorexc')
 def error_exc():
@@ -4283,6 +4286,22 @@ class TestFileViews(OsfTestCase):
         data = res.json['data']
         assert_equal(len(data), len(expected))
 
+    def test_grid_data_for_icon(self):
+        new_region = RegionFactory()
+        new_region.save()
+        nodeSettings = NodeSettings.objects.get(owner_id=self.project.id)
+        nodeSettings.region = new_region
+        nodeSettings.save()
+        set_project_storage_type(self.project)
+        url = self.project.api_url_for('grid_data')
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, http.OK)
+        expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
+        data = res.json['data']
+        assert_equal(len(data), len(expected))
+        assert_equal(data[0]['children'][0]['iconUrl'], '/static/addons/osfstorage/comicon_custom_storage.png')
+        assert_equal(data[0]['children'][0]['addonFullname'], data[0]['children'][0]['nodeRegion'])
+
 
 class TestTagViews(OsfTestCase):
 
@@ -5354,6 +5373,22 @@ class TestAddonFileViewTimestampFunc(OsfTestCase):
         shutil.rmtree(tmp_dir)
         assert_in('verify_result', result)
         assert_equal(result['verify_result'], 1)
+
+def test_get_storage_region_list_with_default():
+    user = AuthUserFactory()
+    institution = InstitutionFactory()
+    user.affiliated_institutions.add(institution)
+    assert_true(len(website_view.get_storage_region_list(user))==1)
+
+def test_get_storage_region_list_with_own_institution():
+    user = AuthUserFactory()
+    institution = InstitutionFactory()
+    user.affiliated_institutions.add(institution)
+    new_region = RegionFactory()
+    new_region.name = 'China'
+    new_region._id = institution._id
+    new_region.save()
+    assert_equal(website_view.get_storage_region_list(user)[0]['name'], new_region.name)
 
 
 if __name__ == '__main__':

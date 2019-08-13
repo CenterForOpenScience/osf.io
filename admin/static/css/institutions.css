@@ -57,6 +57,22 @@ form p label {
     width: 75% !important;
 }
 
+.row {
+    margin-bottom: 15px;
+}
+
 #id_custom_taxonomy_json {
     width: 100%;
+}
+
+.googledrive-modal-message {
+    font-weight: 600;
+}
+
+.truncated {
+    display: inline-flex;
+    max-width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

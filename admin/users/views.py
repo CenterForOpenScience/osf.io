@@ -6,8 +6,8 @@ from furl import furl
 from datetime import datetime, timedelta
 from django.db.models import Q
 from django.views.defaults import page_not_found
-from django.views.generic import FormView, DeleteView, ListView, TemplateView
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.views.generic import FormView, DeleteView, ListView, TemplateView, View
+from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
@@ -17,12 +17,14 @@ from django.shortcuts import redirect
 from osf.models.user import OSFUser
 from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
+from osf.models import UserQuota
 from framework.auth import get_user
 from framework.auth.utils import impute_names
 from framework.auth.core import generate_verification_key
 
 from website.mailchimp_utils import subscribe_on_confirm
 from website import search
+from website.util import quota
 
 from admin.base.views import GuidView
 from osf.models.admin_log_entry import (
@@ -35,7 +37,8 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 
-from admin.users.serializers import serialize_user
+from admin.rdm.utils import RdmPermissionMixin
+from admin.users.serializers import serialize_user, serialize_simple_node
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
@@ -617,3 +620,71 @@ class UserReindexElastic(UserDeleteView):
             action_flag=REINDEX_ELASTIC
         )
         return redirect(reverse_user(self.kwargs.get('guid')))
+
+
+class BaseUserQuotaView(View):
+    """Base class for UserQuotaView and UserInstitutionQuotaView.
+    """
+
+    def update_quota(self, max_quota, storage_type):
+        try:
+            max_quota = int(max_quota)
+        except (ValueError, TypeError):
+            return
+
+        if max_quota <= 0:
+            max_quota = 1
+
+        UserQuota.objects.update_or_create(
+            user=OSFUser.load(self.kwargs.get('guid')),
+            storage_type=storage_type,
+            defaults={'max_quota': max_quota}
+        )
+
+
+class UserQuotaView(BaseUserQuotaView):
+    """
+    Changes the maximum quota on NII Storage for a user.
+    """
+    permission_required = 'osf.change_osfuser'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        self.update_quota(request.POST.get('maxQuota'), UserQuota.NII_STORAGE)
+        return redirect(reverse_user(self.kwargs.get('guid')))
+
+
+class UserDetailsView(RdmPermissionMixin, UserPassesTestMixin, GuidView):
+    """
+    User screen for intitution managers.
+    """
+    template_name = 'users/user_details.html'
+    context_object_name = 'current_user'
+
+    def test_func(self):
+        return not self.is_super_admin and self.is_admin \
+            and self.request.user.affiliated_institutions.exists()
+
+    def get_object(self, queryset=None):
+        user = OSFUser.load(self.kwargs.get('guid'))
+        max_quota, _ = quota.get_quota_info(user, UserQuota.CUSTOM_STORAGE)
+        return {
+            'username': user.username,
+            'name': user.fullname,
+            'id': user._id,
+            'nodes': map(serialize_simple_node, user.contributor_to),
+            'quota': max_quota
+        }
+
+
+class UserInstitutionQuotaView(RdmPermissionMixin, UserPassesTestMixin, BaseUserQuotaView):
+    """
+    User screen for intitution managers.
+    """
+    def test_func(self):
+        return not self.is_super_admin and self.is_admin \
+            and self.request.user.affiliated_institutions.exists()
+
+    def post(self, request, *args, **kwargs):
+        self.update_quota(request.POST.get('maxQuota'), UserQuota.CUSTOM_STORAGE)
+        return redirect('users:user_details', guid=self.kwargs.get('guid'))

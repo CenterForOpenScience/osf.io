@@ -1,9 +1,13 @@
 """
 Serialize user
 """
+from osf.models import UserQuota
+from website.util import quota
 
 
 def serialize_user(user):
+    max_quota, _ = quota.get_quota_info(user, UserQuota.NII_STORAGE)
+
     return {
         'username': user.username,
         'name': user.fullname,
@@ -18,7 +22,8 @@ def serialize_user(user):
         'osf_link': user.absolute_url,
         'system_tags': user.system_tags,
         'unclaimed': bool(user.unclaimed_records),
-        'requested_deactivation': bool(user.requested_deactivation)
+        'requested_deactivation': bool(user.requested_deactivation),
+        'quota': max_quota
     }
 
 

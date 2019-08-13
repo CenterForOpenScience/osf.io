@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 
+from website.util.quota import update_default_storage
 from addons.osfstorage.models import Region
 from framework import forms, sentry, status
 from framework import auth as framework_auth
@@ -317,6 +318,7 @@ def auth_login(auth):
 
     data = login_and_register_handler(auth, login=True, campaign=campaign, next_url=next_url)
     if data['status_code'] == http.FOUND:
+        update_default_storage(auth.user)
         return redirect(data['next_url'])
 
 

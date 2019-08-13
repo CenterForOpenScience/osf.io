@@ -31,6 +31,9 @@ env:
     - OSF_DB_PORT="54321"
     # Workaround for travis bug: see https://github.com/travis-ci/travis-ci/issues/7940#issuecomment-311411559
     - BOTO_CONFIG=/dev/null
+    # Workaround for travis
+    - ES_GC_OPTS="-XX:+UseG1GC"
+    - ES_HEAP_SIZE="1024m"
   matrix:
     - TEST_BUILD="addons"
     - TEST_BUILD="website"

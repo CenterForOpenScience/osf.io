@@ -20,6 +20,7 @@ from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.util import web_url_for
+from osf.models.institution import Institution
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ OAUTH2 = 2
 
 generate_client_secret = functools.partial(random_string, length=40)
 
-class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
+class ExternalAccountBase(base.ObjectIDMixin, base.BaseModel):
     """An account on an external service.
 
     Note that this object is not and should not be aware of what other objects
@@ -84,6 +85,13 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
         unique_together = [
             ('provider', 'provider_id',)
         ]
+        abstract = True
+
+class ExternalAccount(ExternalAccountBase):
+    pass
+
+class ExternalAccountTemporary(ExternalAccountBase):
+    pass
 
 
 class ExternalProviderMeta(abc.ABCMeta):
@@ -269,8 +277,10 @@ class ExternalProvider(object):
         info = self._default_handle_callback(response)
         # call the hook for subclasses to parse values from the response
         info.update(self.handle_callback(response))
-
-        return self._set_external_account(user, info)
+        if session.data['oauth_states'][self.short_name].get('is_custom', False):
+            return self._set_external_account_temporary(user, info)
+        else:
+            return self._set_external_account(user, info)
 
     def _set_external_account(self, user, info):
 
@@ -308,6 +318,28 @@ class ExternalProvider(object):
             session.save()
 
         return True
+
+    def _set_external_account_temporary(self, user, info):
+        obj, created = ExternalAccountTemporary.objects.update_or_create(
+            _id=Institution.objects.get(pk=int(session.data['oauth_states'][self.short_name]['institution_id']))._id,
+            defaults={
+                'provider_name': self.name,
+                'oauth_key': info['key'],
+                'oauth_secret': info.get('secret', None),
+                'expires_at': info.get('expires_at'),
+                'refresh_token': info.get('refresh_token'),
+                'date_last_refreshed': timezone.now(),
+                'display_name': info.get('display_name'),
+                'profile_url': info.get('profile_url'),
+                'provider': self.short_name,
+                'provider_id': info['provider_id'],
+            },
+        )
+        if self.short_name in session.data.get('oauth_states', {}):
+            del session.data['oauth_states'][self.short_name]
+            session.save()
+
+        return False
 
     def _default_handle_callback(self, data):
         """Parse as much out of the key exchange's response as possible.
@@ -432,6 +464,16 @@ class ExternalProvider(object):
         self.account.expires_at = resp_expiry_fn(token)
         self.account.date_last_refreshed = timezone.now()
         self.account.save()
+        #following imports are essential to avoid exceptions.
+        from osf.utils.external_util import (
+            set_new_access_token, is_custom_googledrive,
+            get_region_id_by_external_id, get_oauth_key_by_external_id
+        )
+        if is_custom_googledrive(self.account.id):
+            set_new_access_token(
+                get_region_id_by_external_id(self.account.id),
+                get_oauth_key_by_external_id(self.account.id)
+            )
         return True
 
     def _needs_refresh(self):

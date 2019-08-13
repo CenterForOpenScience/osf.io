@@ -656,6 +656,10 @@ ${parent.javascript_bottom()}
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
         },
+        max_quota: ${node['max_quota']},
+        used_quota: ${node['used_quota']},
+        threshold: ${node['threshold']},
+
         storageRegions: ${ storage_regions | sjson, n },
         storageFlagIsActive: ${ storage_flag_is_active | sjson, n },
         nodeCategories: ${ node_categories | sjson, n },

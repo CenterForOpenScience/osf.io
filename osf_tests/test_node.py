@@ -20,6 +20,8 @@ from website import language, settings
 from website.project.tasks import on_node_updated, format_registration
 from website.project.views.node import serialize_collections
 from website.views import find_bookmark_collection
+from osf.models.node import set_project_storage_type
+from addons.osfstorage.models import NodeSettings
 
 from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
@@ -64,10 +66,12 @@ from osf_tests.factories import (
     TagFactory,
     CollectionFactory,
     CollectionProviderFactory,
+    RegionFactory,
 )
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive, MockShareResponse
+from osf.models.project_storage_type import ProjectStorageType
 
 pytestmark = pytest.mark.django_db
 
@@ -699,6 +703,30 @@ class TestProject:
 
         assert linked_node in project.nodes_active
         assert deleted_linked_node not in project.nodes_active
+
+    def test_project_storage_type_with_default_region(self, project, auth):
+        projectStorageType = ProjectStorageType(node=project, storage_type=auth.user.get_addon('osfstorage').default_region_id)
+        fetch_newly_created_project = ProjectStorageType.objects.get(node=project)
+        assert fetch_newly_created_project.storage_type == projectStorageType.storage_type
+
+    def test_project_storage_type(self, project, auth):
+        from osf.models.node import set_project_storage_type
+        from addons.osfstorage.models import NodeSettings
+        region_id = NodeSettings.objects.get(owner_id=project.id).region_id
+        set_project_storage_type(project)
+        fetch_newly_created_project = ProjectStorageType.objects.get(node=project)
+        assert fetch_newly_created_project.storage_type == region_id
+
+    def test_project_storage_type_with_custom_region(self, project, auth):
+        new_region = RegionFactory()
+        new_region.save()
+        nodeSettings = NodeSettings.objects.get(owner_id=project.id)
+        nodeSettings.region = new_region
+        nodeSettings.save()
+        set_project_storage_type(project)
+        fetch_newly_created_project = ProjectStorageType.objects.get(node=project)
+        assert fetch_newly_created_project.storage_type == ProjectStorageType.CUSTOM_STORAGE
+
 
 class TestLogging:
 
