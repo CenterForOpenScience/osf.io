@@ -75,25 +75,25 @@ class OSFOrderingFilter(OrderingFilter):
             return []
         sorting_params = []
         for field in query_params.getlist(self.ordering_param):
-            preserve_order = ''
+            ordering_sign = ''
             # If the field is already a source, it will be returned in the ordering list
             if field in ordering:
                 sorting_params.append(field)
                 continue
             # The field may have a '-' before the name for descending order. This needs to be preserved
             if field[0] == '-':
-                preserve_order = '-'
-                field = field[1:]
+                ordering_sign = '-'
+                field = field.lstrip('-')
             if field in serializer_class._declared_fields:
                 # Checking if the field can be sorted on
                 source_field = serializer_class._declared_fields[field]
                 source_field_name = source_field.source
                 # Checking if the original sort param could be used to sort
                 if hasattr(queryset[0], field):
-                    sorting_params.append(preserve_order + field)
+                    sorting_params.append(ordering_sign + field)
                 # Validating the source field name
                 elif hasattr(queryset[0], source_field_name):
-                    sorting_params.append(preserve_order + source_field_name)
+                    sorting_params.append(ordering_sign + source_field_name)
         return sorting_params
 
 
