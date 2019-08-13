@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
 
+import argparse
 import logging
 import sys
 import urllib
@@ -18,9 +19,18 @@ from website.search.search import update_institution
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-ENVS = ['prod', 'stage', 'stage2', 'test']
+ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', ]
+
+# TODO: Store only the Entity IDs in OSF DB and move the URL building process to CAS
 SHIBBOLETH_SP_LOGIN = '{}/Shibboleth.sso/Login?entityID={{}}'.format(settings.CAS_SERVER_URL)
 SHIBBOLETH_SP_LOGOUT = '{}/Shibboleth.sso/Logout?return={{}}'.format(settings.CAS_SERVER_URL)
+
+# Using optional args instead of positional ones to explicitly set them
+parser = argparse.ArgumentParser()
+parser.add_argument('-e', '--env', help='select the server: prod, test, stage, stage2 or stage3')
+group = parser.add_mutually_exclusive_group()
+group.add_argument('-i', '--ids', nargs='+', help='select the institution(s) to add or update')
+group.add_argument('-a', '--all', action='store_true', help='add or update all institutions')
 
 
 def encode_uri_component(val):
@@ -44,11 +54,40 @@ def update_or_create(inst_data):
         return inst, True
 
 
-def main(env):
-    INSTITUTIONS = []
+def main():
 
-    if env == 'prod':
-        INSTITUTIONS = [
+    args = parser.parse_args()
+    server_env = args.env
+    update_ids = args.ids
+    update_all = args.all
+
+    if not server_env or server_env not in ENVS:
+        logger.error('A valid environment must be specified: {}'.format(ENVS))
+        sys.exit(1)
+    institutions = INSTITUTIONS[server_env]
+
+    if not update_all and not update_ids:
+        logger.error('Nothing to update or create. Please either specify a list of institutions '
+                     'using --id or run for all with --all')
+        sys.exit(1)
+    elif update_all:
+        institutions_to_update = institutions
+    else:
+        institutions_to_update = [inst for inst in institutions if inst['_id'] in update_ids]
+        if len(institutions_to_update) < len(update_ids):
+            logger.warning('One or more institutions provided via -i or --ids do not match any '
+                           'existing records, which have been skipped.')
+
+    init_app(routes=False)
+    with transaction.atomic():
+        for inst_data in institutions_to_update:
+            update_or_create(inst_data)
+        for extra_inst in Institution.objects.exclude(_id__in=[x['_id'] for x in institutions]):
+            logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
+
+
+INSTITUTIONS = {
+    'prod': [
             {
                 '_id': 'a2jlab',
                 'name': 'Access to Justice Lab',
@@ -792,9 +831,8 @@ def main(env):
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
-        ]
-    if env == 'stage':
-        INSTITUTIONS = [
+        ],
+    'stage': [
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science [Stage]',
@@ -842,9 +880,8 @@ def main(env):
                 'email_domains': ['yahoo.com'],
                 'delegation_protocol': '',
             },
-        ]
-    if env == 'stage2':
-        INSTITUTIONS = [
+        ],
+    'stage2': [
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science [Stage2]',
@@ -857,9 +894,22 @@ def main(env):
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
             },
-        ]
-    elif env == 'test':
-        INSTITUTIONS = [
+        ],
+    'stage3': [
+            {
+                '_id': 'cos',
+                'name': 'Center For Open Science [Stage3]',
+                'description': 'Center for Open Science [Stage3]',
+                'banner_name': 'cos-banner.png',
+                'logo_name': 'cos-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['staging3-osf.cos.io'],
+                'email_domains': ['cos.io'],
+                'delegation_protocol': '',
+            },
+        ],
+    'test': [
             {
                 '_id': 'a2jlab',
                 'name': 'Access to Justice Lab [Test]',
@@ -1603,19 +1653,10 @@ def main(env):
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
-        ]
-
-    init_app(routes=False)
-    with transaction.atomic():
-        for inst_data in INSTITUTIONS:
-            update_or_create(inst_data)
-        for extra_inst in Institution.objects.exclude(_id__in=[x['_id'] for x in INSTITUTIONS]):
-            logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
+        ],
+}
 
 
 if __name__ == '__main__':
-    env = str(sys.argv[1]).lower() if len(sys.argv) == 2 else None
-    if env not in ENVS:
-        print('An environment must be specified : {}', ENVS)
-        sys.exit(1)
-    main(env)
+
+    main()
