@@ -13,6 +13,9 @@ from osf_tests.factories import (
 from tests.base import AdminTestCase
 
 
+# TestConnection tests are on test_owncloud.py file.
+# The reason it that they share the same implementation.
+
 class TestSaveCredentials(AdminTestCase):
     def setUp(self):
         super(TestSaveCredentials, self).setUp()
