@@ -3,6 +3,7 @@ import httplib
 import json
 import mock
 from nose import tools as nt
+from swiftclient import exceptions as swift_exceptions
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views
@@ -55,7 +56,7 @@ class TestConnection(AdminTestCase):
         request.user = self.user
         return views.test_connection(request)
 
-    def test_swift_settings_input_empty_keys(self):
+    def test_empty_values(self):
         params = {
             'swift_auth_version': '',
             'swift_auth_url': '',
@@ -70,7 +71,7 @@ class TestConnection(AdminTestCase):
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
-    def test_swift_settings_input_empty_swift_user_domain_name_v3(self):
+    def test_empty_user_domain_name(self):
         params = {
             'swift_auth_version': '3',
             'swift_auth_url': 'Non-empty-auth-url',
@@ -87,7 +88,7 @@ class TestConnection(AdminTestCase):
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('The field `user_domain_name` is required when you choose identity V3.', request_post_response.content)
 
-    def test_swift_settings_input_empty_swift_project_domain_name_v3(self):
+    def test_empty_project_domain_name(self):
         params = {
             'swift_auth_version': '3',
             'swift_auth_url': 'Non-empty-auth-url',
@@ -105,7 +106,7 @@ class TestConnection(AdminTestCase):
         nt.assert_in('The field `project_domain_name` is required when you choose identity V3.', request_post_response.content)
 
     @mock.patch('addons.swift.views.utils.get_user_info', return_value=None)
-    def test_swift_settings_invalid_credentials(self, mock_uid):
+    def test_invalid_credentials(self, mock_uid):
         params = {
             'swift_auth_version': '3',
             'swift_auth_url': 'Non-empty-auth-url',
@@ -124,8 +125,10 @@ class TestConnection(AdminTestCase):
                 'Check to make sure that the above credentials are valid, '
                 'and that they have permission to list containers.', request_post_response.content)
 
-    @mock.patch('addons.swift.views.utils.can_list', return_value=False)
-    def test_swift_settings_cant_list_v3(self, mock_can_list):
+    @mock.patch('addons.swift.views.utils.connect_swift')
+    def test_cant_list(self, mock_connect):
+        mock_connect.side_effect = swift_exceptions.ClientException('NG')
+
         params = {
             'swift_auth_version': '3',
             'swift_auth_url': 'Non-empty-auth-url',
@@ -143,7 +146,14 @@ class TestConnection(AdminTestCase):
         nt.assert_in('Unable to list containers.\\n'
                 'Listing containers is required permission.', request_post_response.content)
 
-    def test_swift_settings_can_list_v3(self):
+    @mock.patch('addons.swift.views.utils.connect_swift')
+    def test_invalid_container(self, mock_connect):
+        containers = [
+            {'name': 'Dog'},
+            {'name': 'Pigeon'},
+        ]
+        mock_connect.return_value.get_account.return_value = None, containers
+
         params = {
             'swift_auth_version': '3',
             'swift_auth_url': 'Non-empty-auth-url',
@@ -153,7 +163,32 @@ class TestConnection(AdminTestCase):
             'swift_user_domain_name': 'Non-empty-user_domain_name',
             'swift_project_domain_name': 'Non-empty-project_domain_name',
             'swift_folder': 'Non-empty-folder',
-            'swift_container': 'Non-empty-container',
+            'swift_container': 'Kitty',
+            'provider_short_name': 'swift',
+        }
+        request_post_response = self.view_post(params)
+        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Invalid container name.', request_post_response.content)
+
+    @mock.patch('addons.swift.views.utils.connect_swift')
+    def test_valid_container(self, mock_connect):
+        containers = [
+            {'name': 'Dog'},
+            {'name': 'Kitty'},
+            {'name': 'Pigeon'},
+        ]
+        mock_connect.return_value.get_account.return_value = None, containers
+
+        params = {
+            'swift_auth_version': '3',
+            'swift_auth_url': 'Non-empty-auth-url',
+            'swift_access_key': 'Non-empty-access-key',
+            'swift_secret_key': 'Non-empty-secret-key',
+            'swift_tenant_name': 'Non-empty-tenant_name',
+            'swift_user_domain_name': 'Non-empty-user_domain_name',
+            'swift_project_domain_name': 'Non-empty-project_domain_name',
+            'swift_folder': 'Non-empty-folder',
+            'swift_container': 'Kitty',
             'provider_short_name': 'swift',
         }
         request_post_response = self.view_post(params)

@@ -5,6 +5,7 @@ from boxsdk.exception import BoxAPIException
 from furl import furl
 import httplib
 import requests
+from swiftclient import exceptions as swift_exceptions
 import os
 import owncloud
 
@@ -15,7 +16,7 @@ from addons.owncloud import settings as owncloud_settings
 from addons.nextcloud import settings as nextcloud_settings
 from addons.s3 import utils as s3_utils
 from addons.s3compat import utils as s3compat_utils
-from addons.swift import utils as swift_utils
+from addons.swift import settings as swift_settings, utils as swift_utils
 from addons.swift.provider import SwiftProvider
 from framework.exceptions import HTTPError
 from website import settings as osf_settings
@@ -296,11 +297,20 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
             'and that they have permission to list containers.'
         }, httplib.BAD_REQUEST)
 
-    if not swift_utils.can_list(auth_version, auth_url, access_key, user_domain_name,
-                          secret_key, tenant_name, project_domain_name):
+    try:
+        _, containers = swift_utils.connect_swift(
+            auth_version, auth_url, access_key, user_domain_name, secret_key, tenant_name,
+            timeout=swift_settings.TEST_TIMEOUT
+        ).get_account()
+    except swift_exceptions.ClientException:
         return ({
             'message': 'Unable to list containers.\n'
             'Listing containers is required permission.'
+        }, httplib.BAD_REQUEST)
+
+    if container not in map(lambda c: c['name'], containers):
+        return ({
+            'message': 'Invalid container name.'
         }, httplib.BAD_REQUEST)
 
     provider = SwiftProvider(account=None, auth_version=auth_version,
