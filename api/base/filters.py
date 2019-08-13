@@ -54,7 +54,7 @@ class OSFOrderingFilter(OrderingFilter):
         field_order = self.check_serializer_fields(queryset, request.query_params, view, ordering)
         if field_order:
             ordering = tuple(field_order)
-       elif isinstance(queryset, DjangoQuerySet):
+        elif isinstance(queryset, DjangoQuerySet):
             if queryset.ordered:
                 return queryset
             elif ordering and getattr(queryset.query, 'distinct_fields', None):
@@ -74,7 +74,7 @@ class OSFOrderingFilter(OrderingFilter):
         if not queryset:
             return []
         sorting_params = []
-        for i, field in enumerate(query_params.getlist(self.ordering_param)):
+        for field in query_params.getlist(self.ordering_param):
             preserve_order = ''
             # If the field is already a source, it will be returned in the ordering list
             if field in ordering:
@@ -89,10 +89,10 @@ class OSFOrderingFilter(OrderingFilter):
                 source_field = serializer_class._declared_fields[field]
                 source_field_name = source_field.source
                 # Checking if the original sort param could be used to sort
-                if getattr(queryset[0], field, 'None') != 'None':
+                if hasattr(queryset[0], field):
                     sorting_params.append(preserve_order + field)
                 # Validating the source field name
-                elif getattr(queryset[0], source_field_name, 'None') != 'None':
+                elif hasattr(queryset[0], source_field_name):
                     sorting_params.append(preserve_order + source_field_name)
         return sorting_params
 
