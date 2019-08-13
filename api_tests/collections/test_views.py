@@ -4,6 +4,7 @@ from urlparse import urlparse
 from django.utils.timezone import now
 
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin, SubjectsFilterMixin, SubjectsListMixin, SubjectsRelationshipMixin
 from framework.auth.core import Auth
 from osf_tests.factories import (
@@ -4436,13 +4437,13 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
-    def test_subject_filter_using_id_v_2_15(
+    def test_subject_filter_using_id_v_2_16(
             self, app, user, subject_one, subject_two, resource, resource_two,
             has_subject, project_one, project_two):
 
         expected = set([project_one._id])
         res = app.get(
-            '{}{}&version=2.15'.format(has_subject, subject_one._id),
+            '{}{}&version={}'.format(has_subject, subject_one._id, subjects_as_relationships_version),
             auth=user.auth
         )
         actual = set([obj['id'] for obj in res.json['data']])
@@ -4450,19 +4451,19 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
 
         expected = set([project_two._id])
         res = app.get(
-            '{}{}&version=2.15'.format(has_subject, subject_two._id),
+            '{}{}&version={}'.format(has_subject, subject_two._id, subjects_as_relationships_version),
             auth=user.auth
         )
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
-    def test_subject_filter_using_text_v_2_15(
+    def test_subject_filter_using_text_v_2_16(
             self, app, user, subject_two, resource, resource_two,
             has_subject, project_one, project_two):
         resource_two.subjects.add(subject_two)
         expected = set([project_two._id])
         res = app.get(
-            '{}{}&version=2.15'.format(has_subject, subject_two.text),
+            '{}{}&version={}'.format(has_subject, subject_two.text, subjects_as_relationships_version),
             auth=user.auth
         )
         actual = set([obj['id'] for obj in res.json['data']])
@@ -4644,7 +4645,7 @@ class TestCollectedMetaDetail:
         assert res.json['data']['id'] == cgm.guid._id
 
     #   test_cgm_has_subjects_links_for_later_versions
-        res = app.get(url + '?version=2.15')
+        res = app.get(url + '?version={}'.format(subjects_as_relationships_version))
         related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
         expected_url = '{}subjects/'.format(url)
         assert urlparse(related_url).path == expected_url

@@ -6,6 +6,7 @@ from urlparse import urlparse
 from rest_framework import exceptions
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from osf.utils import permissions
 from osf.models import Registration, NodeLog, NodeLicense
@@ -223,7 +224,7 @@ class TestRegistrationDetail:
         assert 'registrations' not in res.json['data']['relationships']
 
     #   test_registration_has_subjects_links_for_later_versions
-        res = app.get(public_url + '?version=2.15')
+        res = app.get(public_url + '?version={}'.format(subjects_as_relationships_version))
         related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
         expected_url = '{}subjects/'.format(public_url)
         assert urlparse(related_url).path == expected_url

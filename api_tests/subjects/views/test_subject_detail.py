@@ -1,6 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
 from osf_tests.factories import SubjectFactory
 
 
@@ -36,7 +37,7 @@ class TestSubject:
         return '/{}subjects/{}/'.format(API_BASE, subject._id)
 
     def test_get_subject_detail(self, app, url_subject_detail, subject, subject_child_one, subject_child_two):
-        res = app.get(url_subject_detail + '?version=2.15&related_counts=children')
+        res = app.get(url_subject_detail + '?version={}&related_counts=children'.format(subjects_as_relationships_version))
         data = res.json['data']
         assert data['attributes']['text'] == subject.text
         assert 'children' in data['relationships']
