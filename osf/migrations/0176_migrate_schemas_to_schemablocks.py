@@ -68,18 +68,18 @@ def unset_schema_configs(state, schema):
     RegistrationSchema = state.get_model('osf', 'registrationschema')
     RegistrationSchema.objects.update(config=dict())
 
-def unmap_formblocks(state, schema):
-    RegistrationFormBlock = state.get_model('osf', 'registrationformblock')
-    RegistrationFormBlock.objects.all().delete()
+def unmap_schemablocks(state, schema):
+    RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
+    RegistrationSchemaBlock.objects.all().delete()
 
 def noop(*args, **kwargs):
     pass
 
 def create_block(state, schema_id, block_type, display_text='', required=False, help_text='',
-        answer_id='', chunk_id='', example_text=''):
-    RegistrationFormBlock = state.get_model('osf', 'registrationformblock')
+        answer_id=None, chunk_id='', example_text=''):
+    RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
 
-    return RegistrationFormBlock.objects.create(
+    return RegistrationSchemaBlock.objects.create(
         schema_id=schema_id,
         block_type=block_type,
         required=required,
@@ -178,7 +178,7 @@ def format_property(question, property, index):
       reflect its nested nature, to ensure uniqueness
     - For the first nested subquestion, transfer the parent's title, description, and help.
     """
-    property['qid'] = '{}.{}'.format(get_answer_id(question), property.get('id', ''))
+    property['qid'] = '{}.{}'.format(get_answer_id(question) or '', property.get('id', ''))
     if not index:
         title = question.get('title', '')
         description = question.get('description', '')
@@ -251,7 +251,7 @@ def format_question(state, rs, question, sub=False):
         split_options_into_blocks(state, rs, question, chunk_id)
 
 
-def map_schema_to_formblocksv2(state, schema):
+def map_schema_to_schemablocksv2(state, schema):
     RegistrationSchema = state.get_model('osf', 'registrationschema')
     # Migrating all schemas, active or not, to form blocks, since registration
     # metadata matching old schemas will still need to be formatted.
@@ -274,12 +274,12 @@ def map_schema_to_formblocksv2(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0176_alter_form_blocks_v2'),
+        ('osf', '0175_add_schema_block_models'),
     ]
 
     operations = [
         migrations.RunPython(remove_version_1_schemas, noop),
         migrations.RunPython(update_schemaless_registrations, noop),
         migrations.RunPython(update_schema_configs, unset_schema_configs),
-        migrations.RunPython(map_schema_to_formblocksv2, unmap_formblocks)
+        migrations.RunPython(map_schema_to_schemablocksv2, unmap_schemablocks)
     ]

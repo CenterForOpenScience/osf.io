@@ -157,14 +157,15 @@ class FileMetadataSchema(AbstractSchema):
         return api_v2_url(path)
 
 
-class RegistrationFormBlock(ObjectIDMixin, BaseModel):
+class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
     class Meta:
         order_with_respect_to = 'schema'
+        unique_together = ('schema', 'answer_id')
 
-    schema = models.ForeignKey('RegistrationSchema', related_name='form_blocks', on_delete=models.CASCADE)
+    schema = models.ForeignKey('RegistrationSchema', related_name='schema_blocks', on_delete=models.CASCADE)
     help_text = models.TextField()
     example_text = models.TextField(null=True)
-    answer_id = models.CharField(max_length=255, db_index=True, null=True)
+    answer_id = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     chunk_id = models.CharField(max_length=24, db_index=True, null=True)
     block_type = models.CharField(max_length=31, db_index=True, choices=FORMBLOCK_TYPES)
     display_text = models.TextField()
@@ -172,5 +173,9 @@ class RegistrationFormBlock(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '{}form_blocks/{}/'.format(self.schema.absolute_api_v2_url, self._id)
+        path = '{}schema_blocks/{}/'.format(self.schema.absolute_api_v2_url, self._id)
         return api_v2_url(path)
+
+    def save(self, *args, **kwargs):
+        self.answer_id = self.answer_id or None
+        return super(RegistrationSchemaBlock, self).save(*args, **kwargs)

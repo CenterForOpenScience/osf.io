@@ -75,20 +75,20 @@ class TestRegistrationSchemaDetail:
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
-    def test_registration_schema_form_blocks(self, app, user, schema):
-        # test_authenticated_user_can_retrieve_schema_form_blocks
-        url = '/{}schemas/registrations/{}/form_blocks/'.format(API_BASE, schema._id)
+    def test_registration_schema_schema_blocks(self, app, user, schema):
+        # test_authenticated_user_can_retrieve_schema_schema_blocks
+        url = '/{}schemas/registrations/{}/schema_blocks/'.format(API_BASE, schema._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
 
-        # test_unauthenticated_user_can_retrieve_schema_form_blocks
-        url = '/{}schemas/registrations/{}/form_blocks/'.format(API_BASE, schema._id)
+        # test_unauthenticated_user_can_retrieve_schema_schema_blocks
+        url = '/{}schemas/registrations/{}/schema_blocks/'.format(API_BASE, schema._id)
         res = app.get(url)
         assert res.status_code == 200
 
-        # test_form_blocks_detail
-        form_block_id = schema.form_blocks.first()._id
-        url = '/{}schemas/registrations/{}/form_blocks/{}/'.format(API_BASE, schema._id, form_block_id)
+        # test_schema_blocks_detail
+        schema_block_id = schema.schema_blocks.first()._id
+        url = '/{}schemas/registrations/{}/schema_blocks/{}/'.format(API_BASE, schema._id, schema_block_id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == form_block_id
+        assert res.json['data']['id'] == schema_block_id

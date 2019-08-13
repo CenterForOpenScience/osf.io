@@ -3,15 +3,16 @@ from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
+from api.base.pagination import MaxSizePagination
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.base.filters import ListFilterMixin
 
 from osf.features import ENABLE_INACTIVE_SCHEMAS
-from osf.models import RegistrationFormBlock, RegistrationSchema, FileMetadataSchema
+from osf.models import RegistrationSchemaBlock, RegistrationSchema, FileMetadataSchema
 from api.schemas.serializers import (
     RegistrationSchemaSerializer,
-    RegistrationSchemaFormBlockSerializer,
+    RegistrationSchemaBlockSerializer,
     FileMetadataSchemaSerializer,
 )
 
@@ -107,17 +108,19 @@ class FileMetadataSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return get_object_or_error(FileMetadataSchema, schema_id, self.request)
 
 
-class RegistrationSchemaFormBlocks(JSONAPIBaseView, generics.ListAPIView):
+class RegistrationSchemaBlocks(JSONAPIBaseView, generics.ListAPIView):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
+    pagination_class = MaxSizePagination
+
     required_read_scopes = [CoreScopes.SCHEMA_FORM_BLOCKS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = RegistrationSchemaFormBlockSerializer
+    serializer_class = RegistrationSchemaBlockSerializer
     view_category = 'schemas'
     view_name = 'registration-schema-form-blocks'
     ordering = ('_order',)
@@ -125,10 +128,10 @@ class RegistrationSchemaFormBlocks(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         schema_id = self.kwargs.get('schema_id')
         schema = get_object_or_error(RegistrationSchema, schema_id, self.request)
-        return schema.form_blocks.all()
+        return schema.schema_blocks.all()
 
 
-class RegistrationSchemaFormBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+class RegistrationSchemaBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -138,9 +141,9 @@ class RegistrationSchemaFormBlockDetail(JSONAPIBaseView, generics.RetrieveAPIVie
     required_read_scopes = [CoreScopes.SCHEMA_FORM_BLOCKS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = RegistrationSchemaFormBlockSerializer
+    serializer_class = RegistrationSchemaBlockSerializer
     view_category = 'schemas'
     view_name = 'registration-schema-form-block-detail'
 
     def get_object(self):
-        return get_object_or_error(RegistrationFormBlock, self.kwargs.get('form_block_id'), self.request)
+        return get_object_or_error(RegistrationSchemaBlock, self.kwargs.get('schema_block_id'), self.request)

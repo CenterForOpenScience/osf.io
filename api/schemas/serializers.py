@@ -29,18 +29,18 @@ class SchemaSerializer(JSONAPISerializer):
         type_ = 'schemas'
 
 
-class RegistrationSchemaFormBlockSerializer(JSONAPISerializer):
+class RegistrationSchemaBlockSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    answer_id = ser.CharField(max_length=255)
-    chunk_id = ser.CharField(max_length=255)
+    answer_id = ser.CharField(read_only=True)
+    chunk_id = ser.CharField(read_only=True)
     block_type = ser.CharField(read_only=True)
-    display_text = ser.CharField(read_only=True, allow_blank=True)
-    help_text = ser.CharField(read_only=True, allow_blank=True)
-    example_text = ser.CharField(read_only=True, allow_blank=True)
+    display_text = ser.CharField(read_only=True)
+    help_text = ser.CharField(read_only=True)
+    example_text = ser.CharField(read_only=True)
     required = ser.BooleanField(read_only=True)
-    index = ser.IntegerField(required=False, read_only=True, source='_order')
+    index = ser.IntegerField(read_only=True, source='_order')
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -50,13 +50,13 @@ class RegistrationSchemaFormBlockSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'form_blocks'
+        type_ = 'schema_blocks'
 
 
 class RegistrationSchemaSerializer(SchemaSerializer):
     description = ser.CharField(read_only=True, allow_blank=True)
 
-    form_blocks = RelationshipField(
+    schema_blocks = RelationshipField(
         related_view='schemas:registration-schema-form-blocks',
         related_view_kwargs={'schema_id': '<_id>'},
     )
