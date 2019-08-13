@@ -6,6 +6,7 @@ from urlparse import urlparse
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
 from osf.models import NodeLog
@@ -222,7 +223,7 @@ class TestNodeDetail:
         assert urlparse(self_url).path == expected_url
 
     #   test_node_has_subjects_links_for_later_versions
-        res = app.get(url_public + '?version=2.15')
+        res = app.get(url_public + '?version={}'.format(subjects_as_relationships_version))
         related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
         expected_url = '{}subjects/'.format(url_public)
         assert urlparse(related_url).path == expected_url

@@ -6,6 +6,8 @@ from api.base.serializers import JSONAPISerializer, LinksField, ShowIfVersion, R
 from api.subjects.serializers import UpdateSubjectsMixin
 from osf.models import Subject
 
+subjects_as_relationships_version = '2.16'
+
 class TaxonomyField(ser.Field):
     def to_representation(self, subject):
         if not isinstance(subject, Subject):
@@ -112,12 +114,13 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
 
     def expect_subjects_as_relationships(self, request):
         """Determines whether subjects should be serialized as a relationship.
-        Earlier versions serialize subjects as an attribute.
+        Earlier versions serialize subjects as an attribute(before 2.16).
+        Version 2.16 and later serializer subjects as relationships.
 
         :param object request: Request object
         :return bool: Subjects should be serialized as relationships
         """
-        return StrictVersion(getattr(request, 'version', '2.0')) > StrictVersion('2.14')
+        return StrictVersion(getattr(request, 'version', '2.0')) >= StrictVersion(subjects_as_relationships_version)
 
 
 class TaxonomySerializer(JSONAPISerializer):

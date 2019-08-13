@@ -2,6 +2,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
 from osf.models import Preprint, NodeLog
 from osf_tests.factories import (
     AuthUserFactory,
@@ -79,7 +80,7 @@ class SubjectsFilterMixin(object):
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
-    def test_subject_filter_using_id_v_2_15(
+    def test_subject_filter_using_id_v_2_16(
             self, app, user, subject_one, subject_two, resource, resource_two,
             has_subject):
 
@@ -88,7 +89,7 @@ class SubjectsFilterMixin(object):
 
         expected = set([resource._id])
         res = app.get(
-            '{}{}&version=2.15'.format(has_subject, subject_one._id),
+            '{}{}&version={}'.format(has_subject, subject_one._id, subjects_as_relationships_version),
             auth=user.auth
         )
         actual = set([obj['id'] for obj in res.json['data']])
@@ -96,19 +97,19 @@ class SubjectsFilterMixin(object):
 
         expected = set([resource_two._id])
         res = app.get(
-            '{}{}&version=2.15'.format(has_subject, subject_two._id),
+            '{}{}&version={}'.format(has_subject, subject_two._id, subjects_as_relationships_version),
             auth=user.auth
         )
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
-    def test_subject_filter_using_text_v_2_15(
+    def test_subject_filter_using_text_v_2_16(
             self, app, user, subject_two, resource, resource_two,
             has_subject):
         resource_two.subjects.add(subject_two)
         expected = set([resource_two._id])
         res = app.get(
-            '{}{}&version=2.15'.format(has_subject, subject_two.text),
+            '{}{}&version={}'.format(has_subject, subject_two.text, subjects_as_relationships_version),
             auth=user.auth
         )
         actual = set([obj['id'] for obj in res.json['data']])
@@ -295,7 +296,7 @@ class UpdateSubjectsMixin(object):
     def test_set_subjects_as_relationships_perms(self, app, user_admin_contrib, resource, subject, resource_type_plural,
             url, make_resource_payload, user_write_contrib, user_read_contrib, user_non_contrib, write_can_edit):
 
-        url = '{}?version=2.15'.format(url)
+        url = '{}?version={}'.format(url, subjects_as_relationships_version)
         update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
             'subjects': {
                 'data': [
@@ -395,7 +396,7 @@ class UpdateSubjectsMixin(object):
         subject.parent = parent
         subject.save()
 
-        url = '{}?version=2.15'.format(url)
+        url = '{}?version={}'.format(url, subjects_as_relationships_version)
         update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
             'subjects': {
                 'data': [
@@ -424,7 +425,7 @@ class UpdateSubjectsMixin(object):
         subject.save()
 
         # Sent in level three only
-        url = '{}?version=2.15'.format(url)
+        url = '{}?version={}'.format(url, subjects_as_relationships_version)
         update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
             'subjects': {
                 'data': [
