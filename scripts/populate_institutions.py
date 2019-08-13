@@ -568,7 +568,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ou',
                 'name': 'The University of Oklahoma',
-                'description': '<a href="https://www.ou.edu">The University of Oklahoma</a> | <a href="https://www.ou.edu/research-norman">Office of the Vice President for Research</a> | <a href="https://libraries.ou.edu">University Libraries</a>',
+                'description': '<a href="https://www.ou.edu">The University of Oklahoma</a> | <a href="https://libraries.ou.edu">University Libraries</a>',
                 'banner_name': 'ou-banner.png',
                 'logo_name': 'ou-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.ou.edu/idp/shibboleth')),
@@ -1390,7 +1390,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ou',
                 'name': 'The University of Oklahoma [Test]',
-                'description': '<a href="https://www.ou.edu">The University of Oklahoma</a> | <a href="https://www.ou.edu/research-norman">Office of the Vice President for Research</a> | <a href="https://libraries.ou.edu">University Libraries</a>',
+                'description': '<a href="https://www.ou.edu">The University of Oklahoma</a> | <a href="https://libraries.ou.edu">University Libraries</a>',
                 'banner_name': 'ou-banner.png',
                 'logo_name': 'ou-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.ou.edu/idp/shibboleth')),
