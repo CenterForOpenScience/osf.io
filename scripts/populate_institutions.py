@@ -68,15 +68,17 @@ def main():
 
     if not update_all and not update_ids:
         logger.error('Nothing to update or create. Please either specify a list of institutions '
-                     'using --id or run for all with --all')
+                     'using --ids or run for all with --all')
         sys.exit(1)
     elif update_all:
         institutions_to_update = institutions
     else:
         institutions_to_update = [inst for inst in institutions if inst['_id'] in update_ids]
-        if len(institutions_to_update) < len(update_ids):
-            logger.warning('One or more institutions provided via -i or --ids do not match any '
-                           'existing records, which have been skipped.')
+        diff_list = list(set(update_ids) - set([inst['_id'] for inst in institutions_to_update]))
+        if diff_list:
+            logger.error('One or more institution ID(s) provided via -i or --ids do not match any '
+                         'existing records: {}.'.format(diff_list))
+            sys.exit(1)
 
     init_app(routes=False)
     with transaction.atomic():
