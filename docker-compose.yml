@@ -358,16 +358,16 @@ services:
   #######
 
   requirements:
-    image: quay.io/centerforopenscience/osf:develop
+    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
     # Need to allocate tty to be able to call invoke for requirements task
     tty: true
     command:
       - /bin/bash
       - -c
       - invoke requirements --all &&
-        (python -m compileall /usr/local/lib/python2.7 || true) &&
+        (python -m compileall /usr/lib/python2.7 || true) &&
         rm -Rf /python2.7/* &&
-        cp -Rf -p /usr/local/lib/python2.7 /
+        cp -Rf -p /usr/lib/python2.7 /
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
@@ -376,27 +376,27 @@ services:
       - osf_requirements_vol:/python2.7
 
   assets:
-    image: quay.io/centerforopenscience/osf:develop
+    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
     command: invoke assets -dw
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
 
   admin_assets:
-    image: quay.io/centerforopenscience/osf:develop
+    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
     command: invoke admin.assets -dw
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -433,7 +433,7 @@ services:
 #      - osf_node_modules_vol:/code/node_modules
 
   worker:
-    image: quay.io/centerforopenscience/osf:develop
+    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
     command: invoke celery_worker
     restart: unless-stopped
     depends_on:
@@ -448,7 +448,7 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
@@ -457,7 +457,7 @@ services:
     stdin_open: true
 
   admin:
-    image: quay.io/centerforopenscience/osf:develop
+    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
     command: invoke adminserver -h 0.0.0.0
     restart: unless-stopped
     environment:
@@ -473,14 +473,14 @@ services:
     stdin_open: true
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_admin_node_modules_vol:/code/admin/node_modules
 
   api:
-    image: quay.io/centerforopenscience/osf:develop
+    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
     command: invoke apiserver -h 0.0.0.0
     restart: unless-stopped
     ports:
@@ -495,13 +495,13 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
 
   web:
-    image: quay.io/centerforopenscience/osf:develop
+    image: quay.io/centerforopenscience/osf:feature-alpine  # revert to osf:develop after testing
     command: invoke server -h 0.0.0.0
     restart: unless-stopped
     ports:
@@ -517,7 +517,7 @@ services:
       - .docker-compose.sharejs.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_requirements_vol:/usr/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - ember_osf_web_dist_vol:/ember_osf_web
