@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.22.0 (2019-08-14)
+===================
+- APIv2: Editable registrations
+- APIv2.16 treats subjects as relationships instead of attributes
+
 19.21.0 (2019-08-12)
 ===================
 - PageCounter optimization part I: split _id field into four columns, `action`,
