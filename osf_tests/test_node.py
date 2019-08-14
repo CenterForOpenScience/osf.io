@@ -4373,7 +4373,7 @@ class TestAddonCallbacks:
 
     @pytest.fixture(autouse=True)
     def mock_addons(self, node):
-        def mock_get_addon(addon_name, deleted=False):
+        def mock_get_addon(addon_name, is_deleted=False):
             # Overrides AddonModelMixin.get_addon -- without backrefs,
             # no longer guaranteed to return the same set of objects-in-memory
             return self.patched_addons.get(addon_name, None)
