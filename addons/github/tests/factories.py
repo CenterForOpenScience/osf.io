@@ -26,3 +26,25 @@ class GitHubNodeSettingsFactory(DjangoModelFactory):
 
     owner = factory.SubFactory(ProjectFactory)
     user_settings = factory.SubFactory(GitHubUserSettingsFactory)
+
+
+class GoogleDriveAccountFactory(ExternalAccountFactory):
+    provider = 'googledrive'
+    provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
+    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
+    display_name = 'abc'
+
+
+class GoogleDriveUserSettingsFactory(DjangoModelFactory):
+    class Meta:
+        model = UserSettings
+
+    owner = factory.SubFactory(UserFactory)
+
+
+class GoogleDriveNodeSettingsFactory(DjangoModelFactory):
+    class Meta:
+        model = NodeSettings
+
+    owner = factory.SubFactory(ProjectFactory)
+    user_settings = factory.SubFactory(GoogleDriveUserSettingsFactory)

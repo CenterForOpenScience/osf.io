@@ -62,9 +62,9 @@ STATUS_NOT_ACCESSIBLE = [
 FILE_TYPE_DICT = {
     'box': 'addons.box.models.BoxFile',
     'googledrive': 'addons.googledrive.models.GoogleDriveFile',
-    'nextcloud': 'addons.nextcloud.models.NextCloudFile',
+    'nextcloud': 'addons.nextcloud.models.NextcloudFile',
     'osfstorage': 'addons.osfstorage.models.OsfStorageFile',
-    'owncloud': 'addons.owncloud.models.OwnCloudFile',
+    'owncloud': 'addons.owncloud.models.OwncloudFile',
     's3': 'addons.s3.models.S3File',
     's3compat': 'addons.s3compat.models.S3CompatFile',
     'swift': 'addons.swift.models.SwiftFile',
