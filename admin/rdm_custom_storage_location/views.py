@@ -102,7 +102,8 @@ def test_connection(request):
     if provider_short_name == 's3':
         result = utils.test_s3_connection(
             data.get('s3_access_key'),
-            data.get('s3_secret_key')
+            data.get('s3_secret_key'),
+            data.get('s3_bucket'),
         )
     elif provider_short_name == 's3compat':
         result = utils.test_s3compat_connection(

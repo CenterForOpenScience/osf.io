@@ -109,9 +109,9 @@ def transfer_to_external_account(user, institution_id, provider_short_name):
         user.save()
     return account
 
-def test_s3_connection(access_key, secret_key):
+def test_s3_connection(access_key, secret_key, bucket):
     """Verifies new external account credentials and adds to user's list"""
-    if not (access_key and secret_key):
+    if not (access_key and secret_key and bucket):
         return ({
             'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST)
@@ -128,6 +128,12 @@ def test_s3_connection(access_key, secret_key):
             'message': 'Unable to list buckets.\n'
             'Listing buckets is required permission that can be changed via IAM'
         }, httplib.BAD_REQUEST)
+
+    if not s3_utils.bucket_exists(access_key, secret_key, bucket):
+        return ({
+            'message': 'Invalid bucket.'
+        }, httplib.BAD_REQUEST)
+
     s3_response = {
         'id': user_info.id,
         'display_name': user_info.display_name,
