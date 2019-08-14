@@ -28,7 +28,7 @@ from api.base import settings as api_settings
 from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
-from addons.github.tests.factories import GitHubAccountFactory
+from addons.github.tests.factories import GitHubAccountFactory, GoogleDriveAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import NodeLog, Session, RegistrationSchema, QuickFilesNode, RdmFileTimestamptokenVerifyResult, RdmUserKey
@@ -915,6 +915,38 @@ class TestAddonLogsDifferentProvider(OsfTestCase):
         self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
         self.user_addon.save()
 
+        self.user.add_addon('github')
+        self.user_addon = self.user.get_addon('github')
+        self.oauth_settings = GitHubAccountFactory(display_name='john')
+        self.oauth_settings.save()
+        self.user.external_accounts.add(self.oauth_settings)
+        self.user.save()
+        self.node.add_addon('github', self.auth_obj)
+        self.node_addon = self.node.get_addon('github')
+        self.node_addon.user = 'john'
+        self.node_addon.repo = 'youre-my-best-friend'
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth_settings
+        self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
+
+        self.user.add_addon('googledrive')
+        self.user_addon2 = self.user.get_addon('googledrive')
+        self.oauth_settings2 = GoogleDriveAccountFactory(display_name='john')
+        self.oauth_settings2.save()
+        self.user.external_accounts.add(self.oauth_settings2)
+        self.user.save()
+        self.node.add_addon('googledrive', self.auth_obj)
+        self.node_addon2 = self.node.get_addon('googledrive')
+        self.node_addon2.user = 'john'
+        self.node_addon2.repo = 'youre-my-best-friend'
+        self.node_addon2.user_settings = self.user_addon2
+        self.node_addon2.external_account = self.oauth_settings2
+        self.node_addon2.save()
+        self.user_addon2.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon2.save()
+
     def configure_osf_addon(self):
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = self.project.get_addon('osfstorage')
@@ -950,7 +982,7 @@ class TestAddonLogsDifferentProvider(OsfTestCase):
         mock_get.return_value.status_code = 200
         wb_log_url = self.node.api_url_for('create_waterbutler_log')
         src_provider = 'github'
-        dest_provider = 'wiki'
+        dest_provider = 'googledrive'
         # Create file
         filename = 'file_ver1'
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
