@@ -59,6 +59,16 @@ STATUS_NOT_ACCESSIBLE = [
     api_settings.TIME_STAMP_STORAGE_NOT_ACCESSIBLE
 ]
 
+FILE_TYPE_DICT = {
+    'box': 'addons.box.models.BoxFile',
+    'googledrive': 'addons.googledrive.models.GoogleDriveFile',
+    'nextcloud': 'addons.nextcloud.models.NextCloudFile',
+    'osfstorage': 'addons.osfstorage.models.OsfStorageFile',
+    'owncloud': 'addons.owncloud.models.OwnCloudFile',
+    's3': 'addons.s3.models.S3File',
+    's3compat': 'addons.s3compat.models.S3CompatFile',
+    'swift': 'addons.swift.models.SwiftFile',
+}
 
 class OSFAbortableAsyncResult(AbortableAsyncResult):
     """This class is a workaround to a celery bug that throws an AttributeError when it
@@ -584,30 +594,20 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
 
 def move_file_node_update(file_node, src_provider, dest_provider):
     file_node.type = file_node.type.replace(src_provider, dest_provider)
-    if(dest_provider == 'googledrive'):
-        from addons.googledrive.models import GoogleDriveFile
-        file_node.__class__ = GoogleDriveFile
-    elif(dest_provider == 'owncloud'):
-        from addons.owncloud.models import OwncloudFile
-        file_node.__class__ = OwncloudFile
-    elif(dest_provider == 's3'):
-        from addons.s3.models import S3File
-        file_node.__class__ = S3File
-    elif(dest_provider == 'swift'):
-        from addons.swift.models import SwiftFile
-        file_node.__class__ = SwiftFile
-    elif(dest_provider == 'nextcloud'):
-        from addons.nextcloud.models import NextcloudFile
-        file_node.__class__ = NextcloudFile
-    elif(dest_provider == 'osfstorage'):
-        from addons.osfstorage.models import OsfStorageFile
-        file_node.__class__ = OsfStorageFile
-        file_node.type = 'osf.osfstoragefile'
-
+    dest_file_type = dynamic_import(FILE_TYPE_DICT[dest_provider])
+    file_node.__class__ = dest_file_type
+    file_node.type = 'osf.{}file'.format(dest_provider)
     file_node.provider = dest_provider
     file_node._meta.model._provider = dest_provider
     file_node.save()
     return file_node
+
+def dynamic_import(name):
+    components = name.split('.')
+    mod = __import__(components[0])
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
 
 def provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider):
     last_timestamp_result = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
