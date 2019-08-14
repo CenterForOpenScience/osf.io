@@ -68,6 +68,7 @@ FILE_TYPE_DICT = {
     's3': 'addons.s3.models.S3File',
     's3compat': 'addons.s3compat.models.S3CompatFile',
     'swift': 'addons.swift.models.SwiftFile',
+    'github': 'addons.github.models.GithubFile',
 }
 
 class OSFAbortableAsyncResult(AbortableAsyncResult):
@@ -494,6 +495,11 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
         file_node.materialized_path = metadata.get('materialized')
 
         file_node.save()
+        logger.critical("Create or update............................")
+        logger.critical(file_node.id)
+        logger.critical(file_node.type)
+        logger.critical(file_node.provider)
+
         metadata['path'] = file_node._id
     created_at = metadata.get('created_utc')
     modified_at = metadata.get('modified_utc')
@@ -554,6 +560,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         moved_file.provider = dest_provider
         moved_file.save()
     if src_provider != 'osfstorage' and src_path[-1:] == '/':
+        logger.critical("src_provider != 'osfstorage' and src_path[-1:] == '/'")
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
                                                  deleted_on__isnull=True,
@@ -561,6 +568,9 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         for file_node in file_nodes:
             file_node._path = re.sub(r'^' + src_path, dest_path, file_node._path)
             file_node._materialized_path = re.sub(r'^' + src_path, dest_path, file_node._path)
+            logger.critical(file_node.id)
+            logger.critical(file_node.type)
+            logger.critical(file_node.provider)
             file_node.type = move_file_node_update(file_node, src_provider, dest_provider)
             if dest_provider == 'osfstorage':
                 file_node.delete()
@@ -569,6 +579,19 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                 rft.file_id = file_node._id
                 rft.provider = 'osfstorage'
                 rft.save()
+                logger.critical(file_node.id)
+                logger.critical(file_node.type)
+                logger.critical(file_node.provider)
+            if dest_provider == 'box':
+                file_node.delete()
+                rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+                file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
+                rft.file_id = file_node._id
+                rft.provider = 'box'
+                rft.save()
+                logger.critical(file_node.id)
+                logger.critical(file_node.type)
+                logger.critical(file_node.provider)
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
 
     else:
@@ -579,6 +602,9 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         for file_node in file_nodes:
             file_node._path = dest_path
             file_node._materialized_path = dest_path
+            logger.critical(file_node.id)
+            logger.critical(file_node.type)
+            logger.critical(file_node.provider)
             file_node = move_file_node_update(file_node, src_provider, dest_provider)
             if dest_provider == 'osfstorage':
                 file_node.delete()
@@ -587,6 +613,19 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                 rft.file_id = file_node._id
                 rft.provider = 'osfstorage'
                 rft.save()
+                logger.critical(file_node.id)
+                logger.critical(file_node.type)
+                logger.critical(file_node.provider)
+            if dest_provider == 'box':
+                file_node.delete()
+                rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+                file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
+                rft.file_id = file_node._id
+                rft.provider = 'box'
+                rft.save()
+                logger.critical(file_node.id)
+                logger.critical(file_node.type)
+                logger.critical(file_node.provider)
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
     if src_provider == 'osfstorage' and dest_provider != 'osfstorage':
         node = AbstractNode.objects.get(pk=Guid.objects.filter(_id=metadata['node']['_id']).first().object_id)
@@ -600,6 +639,9 @@ def move_file_node_update(file_node, src_provider, dest_provider):
     file_node.provider = dest_provider
     file_node._meta.model._provider = dest_provider
     file_node.save()
+    logger.critical(file_node.id)
+    logger.critical(file_node.type)
+    logger.critical(file_node.provider)
     return file_node
 
 def dynamic_import(name):
