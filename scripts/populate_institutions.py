@@ -54,9 +54,13 @@ def update_or_create(inst_data):
         return inst, True
 
 
-def main():
+def main(default_args=False):
 
-    args = parser.parse_args()
+    if default_args:
+        args = parser.parse_args(['--env', 'test', '--all'])
+    else:
+        args = parser.parse_args()
+
     server_env = args.env
     update_ids = args.ids
     update_all = args.all
@@ -1661,4 +1665,4 @@ INSTITUTIONS = {
 
 if __name__ == '__main__':
 
-    main()
+    main(default_args=False)
