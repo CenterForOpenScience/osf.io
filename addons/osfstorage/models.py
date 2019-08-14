@@ -7,6 +7,7 @@ from django.dispatch import receiver
 from django.db import models, connection
 from django.db.models.signals import post_save
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 from psycopg2._psycopg import AsIs
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
@@ -164,6 +165,7 @@ class OsfStorageFileNode(BaseFileNode):
     def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
         self._materialized_path = self.materialized_path
+        self.deleted = timezone.now()
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
     def update_region_from_latest_version(self, destination_parent):
