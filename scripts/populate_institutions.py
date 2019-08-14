@@ -84,7 +84,6 @@ def main(default_args=False):
                          'existing records: {}.'.format(diff_list))
             sys.exit(1)
 
-    init_app(routes=False)
     with transaction.atomic():
         for inst_data in institutions_to_update:
             update_or_create(inst_data)
@@ -1665,4 +1664,5 @@ INSTITUTIONS = {
 
 if __name__ == '__main__':
 
+    init_app(routes=False)
     main(default_args=False)
