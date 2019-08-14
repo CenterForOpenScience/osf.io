@@ -56,6 +56,7 @@ urlpatterns = [
                 url(r'^requests/', include('api.requests.urls', namespace='requests')),
                 url(r'^scopes/', include('api.scopes.urls', namespace='scopes')),
                 url(r'^search/', include('api.search.urls', namespace='search')),
+                url(r'^subjects/', include('api.subjects.urls', namespace='subjects')),
                 url(r'^subscriptions/', include('api.subscriptions.urls', namespace='subscriptions')),
                 url(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),
                 url(r'^test/', include('api.test.urls', namespace='test')),
