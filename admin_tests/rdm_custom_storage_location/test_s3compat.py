@@ -17,20 +17,6 @@ class TestConnection(AdminTestCase):
 
     def setUp(self):
         super(TestConnection, self).setUp()
-        self.mock_can_list = mock.patch('addons.s3compat.views.utils.can_list')
-        self.mock_can_list.return_value = True
-        self.mock_can_list.start()
-
-        config = {
-            'return_value.id': '12346789',
-            'return_value.display_name': 's3.user',
-        }
-        self.mock_uid = mock.patch('addons.s3compat.views.utils.get_user_info', **config)
-        self.mock_uid.start()
-        self.mock_exists = mock.patch('addons.s3compat.views.utils.bucket_exists')
-        self.mock_exists.return_value = True
-        self.mock_exists.start()
-
         self.institution = InstitutionFactory()
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.add(self.institution)
@@ -47,33 +33,36 @@ class TestConnection(AdminTestCase):
         request.user = self.user
         return views.test_connection(request)
 
-    def test_s3compat_settings_input_empty_keys_with_provider(self):
+    def test_empty_keys_with_provider(self):
         params = {
             's3compat_endpoint_url': '',
             's3compat_access_key': '',
             's3compat_secret_key': '',
+            's3compat_bucket': 'Water bucket',
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
-    def test_s3compat_settings_input_empty_access_key(self):
+    def test_empty_access_key(self):
         params = {
             's3compat_endpoint_url': 's3.compat.co.jp',
             's3compat_access_key': '',
             's3compat_secret_key': 'Non-empty-secret-key',
+            's3compat_bucket': 'Water bucket',
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
-    def test_s3compat_settings_input_empty_secret_key(self):
+    def test_empty_secret_key(self):
         params = {
             's3compat_endpoint_url': 's3.compat.co.jp',
             's3compat_access_key': 'Non-empty-secret-key',
             's3compat_secret_key': '',
+            's3compat_bucket': 'Water bucket',
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
@@ -81,23 +70,46 @@ class TestConnection(AdminTestCase):
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
     @mock.patch('addons.s3compat.views.utils.can_list', return_value=False)
-    def test_user_settings_cant_list(self, mock_can_list):
+    @mock.patch('addons.s3compat.views.utils.get_user_info', return_value=True)
+    def test_user_settings_cant_list(self, mock_get_user_info, mock_can_list):
         params = {
             's3compat_endpoint_url': 's3.compat.co.jp',
             's3compat_access_key': 'Non-empty-secret-key',
             's3compat_secret_key': 'Non-empty-secret-key',
+            's3compat_bucket': 'Water bucket',
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
         nt.assert_in('Unable to list buckets.', request_post_response.content)
 
+    @mock.patch('addons.s3compat.views.utils.bucket_exists', return_value=False)
     @mock.patch('addons.s3compat.views.utils.can_list', return_value=True)
-    def test_user_settings_can_list(self, mock_can_list):
+    @mock.patch('addons.s3compat.views.utils.get_user_info')
+    def test_invalid_bucket(self, mock_get_user_info, mock_can_list, mock_bucket_exists):
         params = {
             's3compat_endpoint_url': 's3.compat.co.jp',
             's3compat_access_key': 'Non-empty-secret-key',
             's3compat_secret_key': 'Non-empty-secret-key',
+            's3compat_bucket': 'Water bucket',
+            'provider_short_name': 's3compat',
+        }
+        request_post_response = self.view_post(params)
+        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_in('Invalid bucket.', request_post_response.content)
+
+    @mock.patch('addons.s3compat.views.utils.bucket_exists', return_value=True)
+    @mock.patch('addons.s3compat.views.utils.can_list', return_value=True)
+    @mock.patch('addons.s3compat.views.utils.get_user_info')
+    def test_success(self, mock_get_user_info, mock_can_list, mock_bucket_exists):
+        mock_get_user_info.return_value.id = '12346789'
+        mock_get_user_info.return_value.display_name = 's3.user'
+
+        params = {
+            's3compat_endpoint_url': 's3.compat.co.jp',
+            's3compat_access_key': 'Non-empty-secret-key',
+            's3compat_secret_key': 'Non-empty-secret-key',
+            's3compat_bucket': 'Water bucket',
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
@@ -105,11 +117,12 @@ class TestConnection(AdminTestCase):
         nt.assert_in('Credentials are valid', request_post_response.content)
 
     @mock.patch('addons.s3compat.views.utils.get_user_info', return_value=None)
-    def test_user_settings_invalid_credentials(self, mock_uid):
+    def test_invalid_credentials(self, mock_uid):
         params = {
             's3compat_endpoint_url': 's3.compat.co.jp',
             's3compat_access_key': 'Non-empty-secret-key',
             's3compat_secret_key': 'Non-empty-secret-key',
+            's3compat_bucket': 'Water bucket',
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)

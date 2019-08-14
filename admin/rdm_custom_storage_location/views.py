@@ -109,7 +109,8 @@ def test_connection(request):
         result = utils.test_s3compat_connection(
             data.get('s3compat_endpoint_url'),
             data.get('s3compat_access_key'),
-            data.get('s3compat_secret_key')
+            data.get('s3compat_secret_key'),
+            data.get('s3compat_bucket'),
         )
     elif provider_short_name == 'owncloud':
         result = utils.test_owncloud_connection(

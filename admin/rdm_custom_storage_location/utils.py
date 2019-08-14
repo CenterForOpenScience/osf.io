@@ -145,9 +145,9 @@ def test_s3_connection(access_key, secret_key, bucket):
         'data': s3_response
     }, httplib.OK)
 
-def test_s3compat_connection(host_url, access_key, secret_key):
+def test_s3compat_connection(host_url, access_key, secret_key, bucket):
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
-    if not (host and access_key and secret_key):
+    if not (host and access_key and secret_key and bucket):
         return ({
             'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST)
@@ -165,6 +165,11 @@ def test_s3compat_connection(host_url, access_key, secret_key):
             'message': 'Unable to list buckets.\n'
             'Listing buckets is required permission that can be changed via IAM'
         }, httplib.BAD_REQUEST
+
+    if not s3compat_utils.bucket_exists(host, access_key, secret_key, bucket):
+        return ({
+            'message': 'Invalid bucket.'
+        }, httplib.BAD_REQUEST)
 
     return ({
         'message': 'Credentials are valid',
