@@ -2,6 +2,31 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.22.0 (2019-08-14)
+===================
+- APIv2: Editable registrations
+- APIv2.16 treats subjects as relationships instead of attributes
+
+19.21.0 (2019-08-12)
+===================
+- PageCounter optimization part I: split _id field into four columns, `action`,
+`file_id`, `resource_id`, and `version`.
+- Adds a management command (migrate_pagecounter_data) to populate these new
+columns in the PageCounter table over time.
+
+19.20.0 (2019-07-29)
+===================
+- Waffle cookies - Override to allow cookies to be set for waffle flags
+- Add ab_testing_home_page_version_b waffle flag for A/B testing of home page
+- APIv2: Allow preprint admins to view preprint request actions
+
+19.19.0 (2019-07-24)
+===================
+- Add periodic task that checks for and sets stuck Crossref DOIs
+- Add script that gathers monthly metrics on the number of registrations and retractions created
+- Chronos: Send license info
+- Chronos: Use sync_manuscript for ChronosSubmissionDetailSerializer
+
 19.18.0 (2019-07-15)
 ===================
 - Remove any Notification Subscriptions attached to Registrations

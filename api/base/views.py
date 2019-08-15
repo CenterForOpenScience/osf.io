@@ -129,9 +129,6 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 with transaction.atomic():
                     ret = view.handle_exception(e).data
 
-            # Allow request to be gc'd
-            ser._context = None
-
             # Cache our final result
             cache[_cache_key] = ret
 
@@ -411,7 +408,7 @@ def root(request, format=None, **kwargs):
     else:
         current_user = None
 
-    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request, name)]
+    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request._request, name)]
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
 
