@@ -653,8 +653,8 @@ def move_file_node_update(file_node, src_provider, dest_provider):
     file_node.type = 'osf.{}file'.format(dest_provider)
     file_node.provider = dest_provider
     file_node._meta.model._provider = dest_provider
-    if src_provider=='box':
-        file_node._path = '/'+file_node.name
+    if src_provider == 'box':
+        file_node._path = '/' + file_node.name
     file_node.save()
     logger.critical(file_node.id)
     logger.critical(file_node.type)
