@@ -252,7 +252,6 @@ class TestOsfstorageFileNode(StorageTestCase):
         child_storage['materialized_path'] = child.materialized_path
         assert_equal(trashed.path, '/' + child._id)
         assert(trashed.is_deleted)
-        assert_equals(trashed.is_deleted, mock_now)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
                                f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted', 'deleted_on', 'deleted_by', 'type', 'modified']]
         for f, value in child_data.items():
