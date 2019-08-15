@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0175_apioauth2personaltoken_scopes_temp'),
+        ('osf', '0179_apioauth2personaltoken_scopes_temp'),
     ]
 
     operations = [

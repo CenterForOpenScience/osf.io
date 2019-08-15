@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0173_ensure_schemas'),
+        ('osf', '0177_pagecounter_index'),
     ]
 
     operations = [

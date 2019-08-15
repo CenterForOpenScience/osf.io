@@ -7,7 +7,7 @@ from api.base.serializers import (
 
 # With this API version, scopes are a M2M field on ApiOAuth2PersonalToken, and
 # serialized as relationship.
-SCOPES_RELATIONSHIP_VERSION = '2.16'
+SCOPES_RELATIONSHIP_VERSION = '2.17'
 
 class ScopeSerializer(JSONAPISerializer):
 

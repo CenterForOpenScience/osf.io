@@ -53,7 +53,7 @@ def migrate_scopes_from_char_to_m2m(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0174_apioauth2scope_is_public'),
+        ('osf', '0178_apioauth2scope_is_public'),
     ]
 
     # AlterField migration added to set null=True because when reverting 0171_finalize_token_scopes_mig,

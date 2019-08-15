@@ -19,7 +19,7 @@ var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
 
-var ScopesRelationshipVersion = 2.16;
+var ScopesRelationshipVersion = 2.17;
 
 
 /*
