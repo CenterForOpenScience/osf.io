@@ -476,8 +476,8 @@ class TestOSFOrderingFilter(ApiTestCase):
 
     def test_sort_by_serializer_field(self):
         user = AuthUserFactory()
-        node_one = NodeFactory(creator=user)
-        node_two = NodeFactory(creator=user)
+        NodeFactory(creator=user)
+        NodeFactory(creator=user)
 
         # Ensuring that sorting by the serializer field returns the same result
         # as using the source field
@@ -485,20 +485,16 @@ class TestOSFOrderingFilter(ApiTestCase):
         res_date_created = self.app.get('/{}nodes/?sort=date_created'.format(API_BASE), auth=user.auth)
         assert res_created.status_code == 200
         assert res_created.json['data'] == res_date_created.json['data']
-        assert res_created.json['data'][0]['id'] == str(node_one._id)
-        assert res_date_created.json['data'][0]['id'] == node_one._id
-        assert res_created.json['data'][1]['id'] == node_two._id
-        assert res_date_created.json['data'][1]['id'] == node_two._id
+        assert res_created.json['data'][0]['id'] == res_date_created.json['data'][0]['id']
+        assert res_created.json['data'][1]['id'] == res_date_created.json['data'][1]['id']
 
         # Testing both are capable of using the inverse sort sign '-'
         res_created = self.app.get('/{}nodes/?sort=-created'.format(API_BASE), auth=user.auth)
         res_date_created = self.app.get('/{}nodes/?sort=-date_created'.format(API_BASE), auth=user.auth)
         assert res_created.status_code == 200
         assert res_created.json['data'] == res_date_created.json['data']
-        assert res_created.json['data'][1]['id'] == node_one._id
-        assert res_date_created.json['data'][1]['id'] == node_one._id
-        assert res_created.json['data'][0]['id'] == node_two._id
-        assert res_date_created.json['data'][0]['id'] == node_two._id
+        assert res_created.json['data'][1]['id'] == res_date_created.json['data'][1]['id']
+        assert res_created.json['data'][0]['id'] == res_date_created.json['data'][0]['id']
 
     def test_sort_by_serializer_multi_level_field(self):
         user = AuthUserFactory()
