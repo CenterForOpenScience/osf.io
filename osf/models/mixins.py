@@ -269,7 +269,7 @@ class AddonModelMixin(models.Model):
             return False
 
         # Reactivate deleted add-on if present
-        addon = self.get_addon(addon_name, deleted=True)
+        addon = self.get_addon(addon_name, is_deleted=True)
         if addon:
             if addon.deleted:
                 addon.undelete(save=True)
