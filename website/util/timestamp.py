@@ -549,6 +549,8 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     verify_data.save()
 
 def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest_path, metadata):
+    from pprint import pprint
+    pprint(metadata)
     src_path = src_path if src_path[0] == '/' else '/' + src_path
     dest_path = dest_path if dest_path[0] == '/' else '/' + dest_path
     target_object_id = Guid.objects.get(_id=project_id,
@@ -586,7 +588,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
             logger.critical(file_node.id)
             logger.critical(file_node.type)
             logger.critical(file_node.provider)
-            file_node.type = move_file_node_update(file_node, src_provider, dest_provider)
+            file_node.type = move_file_node_update(file_node, src_provider, dest_provider, metadata)
             if dest_provider == 'osfstorage':
                 file_node.delete()
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
@@ -620,7 +622,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
             logger.critical(file_node.id)
             logger.critical(file_node.type)
             logger.critical(file_node.provider)
-            file_node = move_file_node_update(file_node, src_provider, dest_provider)
+            file_node = move_file_node_update(file_node, src_provider, dest_provider, metadata)
             if dest_provider == 'osfstorage':
                 file_node.delete()
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
@@ -646,15 +648,16 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         node = AbstractNode.objects.get(pk=Guid.objects.filter(_id=metadata['node']['_id']).first().object_id)
         file_created_or_updated(node, metadata, uid, False)
 
-def move_file_node_update(file_node, src_provider, dest_provider):
+def move_file_node_update(file_node, src_provider, dest_provider, metadata=None):
+    from pprint import pprint
+    pprint(metadata['path'])
     file_node.type = file_node.type.replace(src_provider, dest_provider)
     dest_file_type = dynamic_import(FILE_TYPE_DICT[dest_provider])
     file_node.__class__ = dest_file_type
     file_node.type = 'osf.{}file'.format(dest_provider)
     file_node.provider = dest_provider
     file_node._meta.model._provider = dest_provider
-    if src_provider == 'box':
-        file_node._path = '/' + file_node.name
+    file_node.path = metadata['path']
     file_node.save()
     logger.critical(file_node.id)
     logger.critical(file_node.type)
