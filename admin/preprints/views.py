@@ -90,7 +90,7 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
     def update_subjects_for_provider(self, request, old_provider, new_provider):
         subject_hierarchies = self.object.subject_hierarchy
         new_subjects = []
-        subject_problems = 0
+        subject_problems = []
         for hierarchy in subject_hierarchies:
             subject = hierarchy[-1]
             if old_provider._id == 'osf':
@@ -102,14 +102,16 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
             else:
                 new_subject = new_provider.subjects.filter(bepress_subject_id=bepress_id)
             if not new_subject.exists():
-                subject_problems = subject_problems + 1
+                subject_problems.append(subject.text)
                 new_subject = subject
             else:
                 new_subject = new_subject[0]
             new_subjects.append(new_subject.hierarchy)
         self.object.set_subjects(new_subjects, Auth(request.user))
         if subject_problems:
-            messages.warning(request, 'Unable to find subjects in new provider for {} subject(s)'.format(subject_problems))
+            messages.warning(request, 'Unable to find subjects in new provider for the following subject(s):')
+            for problem in subject_problems:
+                messages.warning(request, problem)
 
 
 class PreprintSpamList(PermissionRequiredMixin, ListView):
