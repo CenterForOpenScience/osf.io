@@ -302,39 +302,53 @@ def get_full_list(uid, pid, node):
     return provider_list
 
 def check_file_timestamp(uid, node, data):
+    logger.critical('1')
     user = OSFUser.objects.get(id=uid)
     cookie = user.get_or_create_cookie()
     tmp_dir = None
     result = None
-
+    logger.critical('2')
     try:
+        logger.critical('3')
         file_node = BaseFileNode.objects.get(_id=data['file_id'])
         tmp_dir = tempfile.mkdtemp()
-
+        logger.critical('4')
         if not os.path.exists(tmp_dir):
+            logger.critical('5')
             os.mkdir(tmp_dir)
+        logger.critical('6')
         download_file_path = waterbutler.download_file(cookie, file_node, tmp_dir)
+        logger.critical('7')
         if download_file_path is None:
             intentional_remove_status = [
                 api_settings.FILE_NOT_EXISTS,
                 api_settings.TIME_STAMP_STORAGE_DISCONNECTED
             ]
+            logger.critical('8')
             file_data = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=data['file_id'])
             if file_data.exists() and \
                     file_data.get().inspection_result_status not in intentional_remove_status:
                 file_data.update(inspection_result_status=api_settings.FILE_NOT_FOUND)
+                logger.critical('9')
             return None
+            logger.critical('10')
         if not userkey_generation_check(user._id):
+            logger.critical('11')
             userkey_generation(user._id)
+            logger.critical('12')
         verify_check = TimeStampTokenVerifyCheck()
+        logger.critical('13')
         result = verify_check.timestamp_check(
             user._id, data, node._id, download_file_path, tmp_dir
         )
+        logger.critical('14')
 
         shutil.rmtree(tmp_dir)
+        logger.critical('15')
         return result
 
     except Exception as err:
+        logger.critical('16')
         if tmp_dir and os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
         logger.exception(err)
@@ -629,7 +643,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
     if src_provider == 'osfstorage' and dest_provider != 'osfstorage':
         node = AbstractNode.objects.get(pk=Guid.objects.filter(_id=metadata['node']['_id']).first().object_id)
-        file_created_or_updated(node, metadata, uid, True)
+        file_created_or_updated(node, metadata, uid, False)
 
 def move_file_node_update(file_node, src_provider, dest_provider):
     file_node.type = file_node.type.replace(src_provider, dest_provider)
@@ -663,8 +677,9 @@ def provider_change_update_timestampverification(uid, file_node, src_provider, d
             'modified': file_node.modified,
             'provider': file_node.provider,
             'size': last_timestamp_result.verify_file_size,
-            'version': 1,
         }
+        if dest_provider == 'osfstorage':
+            file_info['version'] = 1
         res = check_file_timestamp(uid, file_node.target, file_info)
         return res
 
@@ -1025,18 +1040,21 @@ class TimeStampTokenVerifyCheck:
 
     # timestamp token check
     def timestamp_check(self, guid, file_info, project_id, file_name, tmp_dir, verify_result=None):
+        logger.critical('20')
         userid = Guid.objects.get(_id=guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id
-
+        logger.critical('21')
         # get verify result
         if verify_result is None:
+            logger.critical('22')
             verify_result = RdmFileTimestamptokenVerifyResult.objects.filter(
                 file_id=file_info['file_id']).first()
-
+            logger.critical('23')
         ret, baseFileNode, verify_result, verify_result_title = \
             self.timestamp_check_local(file_info, verify_result, project_id, userid)
+        logger.critical('24')
 
         if ret == 0:
-
+            logger.critical('25')
             if not api_settings.USE_UPKI:
                 timestamptoken_file = guid + '.tsr'
                 timestamptoken_file_path = os.path.join(tmp_dir, timestamptoken_file)
