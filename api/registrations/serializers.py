@@ -36,7 +36,9 @@ class RegistrationSerializer(NodeSerializer):
         'is_public',
         'license',
         'license_type',
+        'subjects',
         'withdrawal_justification',
+        'category',
     ]
 
     # Remember to add new RegistrationSerializer fields to this list
@@ -66,7 +68,7 @@ class RegistrationSerializer(NodeSerializer):
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
-    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
+    category = ser.ChoiceField(required=False, choices=category_choices, help_text='Choices: ' + category_choices_string)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
@@ -328,6 +330,16 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True,
     )
 
+    @property
+    def subjects_related_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'registrations:registration-subjects'
+
+    @property
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'registrations:registration-relationships-subjects'
+
     links = LinksField({'html': 'get_absolute_html_url'})
 
     def get_absolute_url(self, obj):
@@ -443,6 +455,9 @@ class RegistrationSerializer(NodeSerializer):
             new_institutions = [{'_id': institution} for institution in institutions_list]
             update_institutions(registration, new_institutions, user)
             registration.save()
+        if 'subjects' in validated_data:
+            subjects = validated_data.pop('subjects', None)
+            self.update_subjects(registration, subjects, auth)
         if 'withdrawal_justification' in validated_data or 'is_pending_retraction' in validated_data:
             self.retract_registration(registration, validated_data, user)
         if 'is_public' in validated_data:

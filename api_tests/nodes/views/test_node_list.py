@@ -4,6 +4,7 @@ from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api.base.utils import default_node_permission_queryset
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
+from api_tests.subjects.mixins import SubjectsFilterMixin
 from framework.auth.core import Auth
 from osf.models import AbstractNode, Node, NodeLog
 from osf.utils.sanitize import strip_html
@@ -1416,6 +1417,20 @@ class TestNodeFiltering:
         res = app.get(url, auth=user_one.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
+
+
+class TestNodeSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def resource(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def resource_two(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
 
 
 @pytest.mark.django_db

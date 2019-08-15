@@ -7,6 +7,7 @@ from urlparse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
+from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from framework.auth.core import Auth
 from osf.models import RegistrationSchema, DraftRegistration
@@ -582,6 +583,20 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_equal(
             errors[0]['detail'],
             "'notafield' is not a valid field for this endpoint.")
+
+
+class TestRegistrationSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def resource(self, user):
+        return RegistrationFactory(creator=user)
+
+    @pytest.fixture()
+    def resource_two(self, user):
+        return RegistrationFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}registrations/'.format(API_BASE)
 
 
 class TestRegistrationCreate(DraftRegistrationTestCase):
