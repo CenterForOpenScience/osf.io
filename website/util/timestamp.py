@@ -318,6 +318,7 @@ def check_file_timestamp(uid, node, data):
             os.mkdir(tmp_dir)
         logger.critical('6')
         download_file_path = waterbutler.download_file(cookie, file_node, tmp_dir)
+        logger.critical(file_node)
         logger.critical('7')
         if download_file_path is None:
             intentional_remove_status = [
@@ -652,6 +653,8 @@ def move_file_node_update(file_node, src_provider, dest_provider):
     file_node.type = 'osf.{}file'.format(dest_provider)
     file_node.provider = dest_provider
     file_node._meta.model._provider = dest_provider
+    if src_provider=='box':
+        file_node._path = '/'+file_node.name
     file_node.save()
     logger.critical(file_node.id)
     logger.critical(file_node.type)
