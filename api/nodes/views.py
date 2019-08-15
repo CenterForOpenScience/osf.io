@@ -2047,6 +2047,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     def perform_destroy(self, link):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
         link.is_deleted = True
+        link.deleted = timezone.now()
         link.save()
         # FIXME: Doesn't work because instance isn't JSON-serializable
         # enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=False, once_per_request=True)

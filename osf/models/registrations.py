@@ -373,6 +373,7 @@ class Registration(AbstractNode):
     def delete_registration_tree(self, save=False):
         logger.debug('Marking registration {} as deleted'.format(self._id))
         self.is_deleted = True
+        self.deleted = timezone.now()
         for draft_registration in DraftRegistration.objects.filter(registered_node=self):
             # Allow draft registration to be submitted
             if draft_registration.approval:

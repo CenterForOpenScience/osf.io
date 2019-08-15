@@ -105,7 +105,7 @@ class TestUserSettingsUpdateTwoFactor:
         assert res.json['data']['attributes']['two_factor_enabled'] is True
         user_one.reload()
         addon = user_one.get_addon('twofactor')
-        assert addon.deleted is False
+        assert addon.deleted is None
         assert addon.is_confirmed is False
         assert res.json['data']['attributes']['secret'] == addon.totp_secret_b32
         assert res.json['data']['attributes']['two_factor_confirmed'] is False
@@ -164,7 +164,7 @@ class TestUserSettingsUpdateTwoFactor:
         assert res.status_code == 200
         user_one.reload()
         addon = user_one.get_addon('twofactor')
-        assert addon.deleted is False
+        assert addon.deleted is None
         assert addon.is_confirmed is True
 
 
