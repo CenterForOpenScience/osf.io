@@ -13,7 +13,7 @@ class AddonNodeLogger(object):
         pass
 
     def _log_params(self):
-        node_settings = self.node.get_addon(self.addon_short_name, deleted=True)
+        node_settings = self.node.get_addon(self.addon_short_name, is_deleted=True)
         return {
             'project': self.node.parent_id,
             'node': self.node._primary_key,
