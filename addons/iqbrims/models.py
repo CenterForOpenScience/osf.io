@@ -19,7 +19,6 @@ from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
 from osf.models import Contributor
 from addons.base import exceptions
-from addons.iqbrims.apps import IQBRIMSAddonConfig
 from addons.iqbrims import settings as drive_settings
 from addons.iqbrims.apps import IQBRIMSAddonConfig
 from addons.iqbrims.client import (IQBRIMSAuthClient,

@@ -1347,8 +1347,8 @@ class TestNodeForwardAddon(
 
 
 class TestNodeIQBRIMSAddon(
-    NodeConfigurableAddonTestSuiteMixin,
-    ApiAddonTestCase):
+        NodeConfigurableAddonTestSuiteMixin,
+        ApiAddonTestCase):
     short_name = 'iqbrims'
     AccountFactory = IQBRIMSAccountFactory
     NodeSettingsFactory = IQBRIMSNodeSettingsFactory
@@ -1396,7 +1396,7 @@ class TestNodeIQBRIMSAddon(
     @mock.patch('addons.iqbrims.client.IQBRIMSClient.about')
     def test_folder_list_GET_expected_behavior(self, mock_about):
         mock_about.return_value = {'rootFolderId': 'FAKEROOTID'}
-        with mock.patch.object(self.node_settings.__class__, 'fetch_access_token', return_value='asdfghjkl') as mock_fetch:
+        with mock.patch.object(self.node_settings.__class__, 'fetch_access_token', return_value='asdfghjkl'):
             super(
                 TestNodeIQBRIMSAddon, self
             ).test_folder_list_GET_expected_behavior()
