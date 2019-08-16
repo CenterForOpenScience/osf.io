@@ -63,7 +63,6 @@ class TestConnection(AdminTestCase):
             'swift_access_key': '',
             'swift_secret_key': '',
             'swift_tenant_name': '',
-            'swift_folder': '',
             'swift_container': '',
             'provider_short_name': 'swift',
         }
@@ -80,7 +79,6 @@ class TestConnection(AdminTestCase):
             'swift_tenant_name': 'Non-empty-tenant_name',
             'swift_user_domain_name': '',
             'swift_project_domain_name': 'Non-empty-project_domain_name',
-            'swift_folder': 'Non-empty-folder',
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         }
@@ -97,7 +95,6 @@ class TestConnection(AdminTestCase):
             'swift_tenant_name': 'Non-empty-tenant_name',
             'swift_user_domain_name': 'Non-empty-user_domain_name',
             'swift_project_domain_name': '',
-            'swift_folder': 'Non-empty-folder',
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         }
@@ -115,7 +112,6 @@ class TestConnection(AdminTestCase):
             'swift_tenant_name': 'Non-empty-tenant_name',
             'swift_user_domain_name': 'Non-empty-user_domain_name',
             'swift_project_domain_name': 'Non-empty-project_domain_name',
-            'swift_folder': 'Non-empty-folder',
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         }
@@ -137,7 +133,6 @@ class TestConnection(AdminTestCase):
             'swift_tenant_name': 'Non-empty-tenant_name',
             'swift_user_domain_name': 'Non-empty-user_domain_name',
             'swift_project_domain_name': 'Non-empty-project_domain_name',
-            'swift_folder': 'Non-empty-folder',
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         }
@@ -162,7 +157,6 @@ class TestConnection(AdminTestCase):
             'swift_tenant_name': 'Non-empty-tenant_name',
             'swift_user_domain_name': 'Non-empty-user_domain_name',
             'swift_project_domain_name': 'Non-empty-project_domain_name',
-            'swift_folder': 'Non-empty-folder',
             'swift_container': 'Kitty',
             'provider_short_name': 'swift',
         }
@@ -187,7 +181,6 @@ class TestConnection(AdminTestCase):
             'swift_tenant_name': 'Non-empty-tenant_name',
             'swift_user_domain_name': 'Non-empty-user_domain_name',
             'swift_project_domain_name': 'Non-empty-project_domain_name',
-            'swift_folder': 'Non-empty-folder',
             'swift_container': 'Kitty',
             'provider_short_name': 'swift',
         }
@@ -263,7 +256,6 @@ class TestSaveCredentials(AdminTestCase):
             'swift_user_domain_name': 'Non-empty-user-domain-name',
             'swift_project_domain_name': 'Non-empty-project-domain-name',
             'swift_auth_url': 'Non-empty-auth-url',
-            'swift_folder': 'Non-empty-folder',
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         })
@@ -296,7 +288,6 @@ class TestSaveCredentials(AdminTestCase):
             'swift_user_domain_name': 'Non-empty-user-domain-name',
             'swift_project_domain_name': 'Non-empty-project-domain-name',
             'swift_auth_url': 'Non-empty-auth-url',
-            'swift_folder': 'Non-empty-folder',
             'swift_container': 'Non-empty-container',
             'provider_short_name': 'swift',
         })

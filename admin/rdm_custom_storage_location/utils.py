@@ -282,9 +282,9 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
     }, httplib.OK)
 
 def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant_name,
-                          user_domain_name, project_domain_name, folder, container):
+                          user_domain_name, project_domain_name, container):
     """Verifies new external account credentials and adds to user's list"""
-    if not (auth_version and auth_url and access_key and secret_key and tenant_name and folder and container):
+    if not (auth_version and auth_url and access_key and secret_key and tenant_name and container):
         return ({
             'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST)
@@ -495,10 +495,10 @@ def save_osfstorage_credentials(institution_id):
 
 def save_swift_credentials(institution_id, storage_name, auth_version, access_key, secret_key,
                            tenant_name, user_domain_name, project_domain_name, auth_url,
-                           folder, container):
+                           container):
 
     test_connection_result = test_swift_connection(auth_version, auth_url, access_key, secret_key,
-        tenant_name, user_domain_name, project_domain_name, folder, container)
+        tenant_name, user_domain_name, project_domain_name, container)
     if test_connection_result[1] != httplib.OK:
         return test_connection_result
 
@@ -516,7 +516,7 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
     wb_settings = {
         'storage': {
             'bucket': '',
-            'folder': folder,
+            'folder': '',
             'container': container,
             'provider': 'swift',
         }

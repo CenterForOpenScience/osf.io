@@ -137,7 +137,6 @@ def test_connection(request):
             data.get('swift_tenant_name'),
             data.get('swift_user_domain_name'),
             data.get('swift_project_domain_name'),
-            data.get('swift_folder'),
             data.get('swift_container'),
         )
     else:
@@ -196,7 +195,6 @@ def save_credentials(request):
             data.get('swift_user_domain_name'),
             data.get('swift_project_domain_name'),
             data.get('swift_auth_url'),
-            data.get('swift_folder'),
             data.get('swift_container'),
         )
     elif provider_short_name == 'osfstorage':
