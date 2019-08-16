@@ -479,6 +479,7 @@ def create_waterbutler_log(payload, **kwargs):
                 raise HTTPError(httplib.BAD_REQUEST)
             metadata['path'] = metadata['path'].lstrip('/')
             node_addon.create_waterbutler_log(auth, action, metadata)
+        from pprint import pprint
         # Create/update timestamp record
         if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
             metadata = payload.get('metadata') or payload.get('destination')
@@ -493,7 +494,9 @@ def create_waterbutler_log(payload, **kwargs):
             src_provider = payload['source']['provider']
             dest_provider = payload['destination']['provider']
             metadata = payload.get('metadata') or payload.get('destination')
-            timestamp.file_node_moved(auth.user.id, node._id, src_provider, dest_provider, src_path, dest_path, metadata)
+            pprint(payload['destination']['path'])
+            src_metadata = payload.get('source', None)
+            timestamp.file_node_moved(auth.user.id, node._id, src_provider, dest_provider, src_path, dest_path, metadata, src_metadata)
         # Update status of deleted timestamp records
         elif action in (NodeLog.FILE_REMOVED):
             src_path = metadata['materialized']
