@@ -82,12 +82,6 @@ TABLES_TO_POPULATE_WITH_MODIFIED = [
     'addons_zotero_nodesettings'
 ]
 
-POPULATE_COLUMNS = [
-    'SET statement_timeout = 10000; UPDATE osf_basefilenode SET deleted = deleted_on WHERE id IN (SELECT id FROM osf_basefilenode WHERE deleted_on IS NOT NULL AND deleted IS NULL LIMIT %s) RETURNING id;',
-    'SET statement_timeout = 10000; UPDATE osf_abstractnode SET deleted= CASE WHEN deleted_date IS NOT NULL THEN deleted_date ELSE last_logged END WHERE id IN (SELECT id FROM osf_abstractnode WHERE is_deleted AND deleted IS NULL LIMIT %s) RETURNING id;',
-    'SET statement_timeout = 10000; UPDATE osf_privatelink PL set deleted = NL.date from osf_nodelog NL, osf_privatelink_nodes pl_n WHERE NL.node_id=pl_n.abstractnode_id AND pl_n.privatelink_id = pl.id and PL.id in (SELECT id FROM osf_privatelink WHERE is_deleted AND deleted IS NULL LIMIT %s) RETURNING PL.id;',
-]
-
 UPDATE_DELETED_WITH_MODIFIED = 'SET statement_timeout = 10000; UPDATE {} SET deleted=modified WHERE id IN (SELECT id FROM {} WHERE is_deleted AND deleted IS NULL LIMIT {}) RETURNING id;'
 
 >>>>>>> Adding migrate script
