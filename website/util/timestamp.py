@@ -588,6 +588,21 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                                                  provider=src_provider,
                                                  deleted_on__isnull=True,
                                                  _path__startswith=src_path).all()
+
+        if len(file_nodes) == 0:
+            if src_provider == 'box':
+                pprint(get_linenumber())
+                rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=dest_path).first()
+                pprint(get_linenumber())
+                new_file_id = BaseFileNode.objects.filter(provider=dest_provider, _path=dest_path).first()._id
+                pprint(get_linenumber())
+                # file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
+                rft.file_id = new_file_id
+                pprint(get_linenumber())
+                # rft.provider = 'box'
+                rft.save()
+                pprint(get_linenumber())
+
         for file_node in file_nodes:
             file_node._path = re.sub(r'^' + src_path, dest_path, file_node._path)
             file_node._materialized_path = re.sub(r'^' + src_path, dest_path, file_node._path)
@@ -627,7 +642,6 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         if len(file_nodes) == 0:
             if src_provider == 'box':
                 pprint(get_linenumber())
-                logger.critical(file_node.id)
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=dest_path).first()
                 pprint(get_linenumber())
                 new_file_id = BaseFileNode.objects.filter(provider=dest_provider, _path=dest_path).first()._id
@@ -638,9 +652,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                 # rft.provider = 'box'
                 rft.save()
                 pprint(get_linenumber())
-                logger.critical(file_node.id)
-                logger.critical(file_node.type)
-                logger.critical(file_node.provider)
+
         pprint(get_linenumber())
         for file_node in file_nodes:
             pprint(get_linenumber())
