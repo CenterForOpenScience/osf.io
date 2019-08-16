@@ -340,7 +340,7 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
     }, httplib.OK)
 
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
-    test_connection_result = test_s3_connection(access_key, secret_key)
+    test_connection_result = test_s3_connection(access_key, secret_key, bucket)
     if test_connection_result[1] != httplib.OK:
         return test_connection_result
 
@@ -369,7 +369,7 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
 def save_s3compat_credentials(institution_id, storage_name, host_url, access_key, secret_key,
                               bucket):
 
-    test_connection_result = test_s3compat_connection(host_url, access_key, secret_key)
+    test_connection_result = test_s3compat_connection(host_url, access_key, secret_key, bucket)
     if test_connection_result[1] != httplib.OK:
         return test_connection_result
 
