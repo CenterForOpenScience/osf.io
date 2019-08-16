@@ -13,7 +13,8 @@ urlpatterns = [
     url(
         r'^users/(?P<user_id>\w+)/nodes/$',
         views.SparseUserNodeList.as_view(),
-        name=views.SparseUserNodeList.view_name),
+        name=views.SparseUserNodeList.view_name,
+    ),
     url(
         r'^nodes/(?P<node_id>\w+)/children/$',
         views.SparseNodeChildrenList.as_view(),
