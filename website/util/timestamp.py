@@ -589,7 +589,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
             logger.critical(file_node.type)
             logger.critical(file_node.provider)
             file_node.type = move_file_node_update(file_node, src_provider, dest_provider, metadata)
-            if dest_provider == 'osfstorage':
+            if dest_provider == 'osfstorage' and src_provider != 'box':
                 file_node.delete()
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
                 file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
@@ -599,13 +599,14 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                 logger.critical(file_node.id)
                 logger.critical(file_node.type)
                 logger.critical(file_node.provider)
-            if dest_provider == 'box':
-                # file_node.delete()
-                # rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+            if src_provider == 'box':
+                logger.critical(file_node.id)
+                rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=dest_path).first()
+                new_file_id = BaseFileNode.objects.filter(provider=dest_provider, _path=dest_path).first()._id
                 # file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
-                # rft.file_id = file_node._id
+                rft.file_id = new_file_id
                 # rft.provider = 'box'
-                # rft.save()
+                rft.save()
                 logger.critical(file_node.id)
                 logger.critical(file_node.type)
                 logger.critical(file_node.provider)
@@ -623,7 +624,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
             logger.critical(file_node.type)
             logger.critical(file_node.provider)
             file_node = move_file_node_update(file_node, src_provider, dest_provider, metadata)
-            if dest_provider == 'osfstorage':
+            if dest_provider == 'osfstorage' and src_provider != 'box':
                 file_node.delete()
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
                 file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
@@ -633,13 +634,14 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                 logger.critical(file_node.id)
                 logger.critical(file_node.type)
                 logger.critical(file_node.provider)
-            if dest_provider == 'box':
-                # file_node.delete()
-                # rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+            if src_provider == 'box':
+                logger.critical(file_node.id)
+                rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=dest_path).first()
+                new_file_id = BaseFileNode.objects.filter(provider=dest_provider, _path=dest_path).first()._id
                 # file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
-                # rft.file_id = file_node._id
+                rft.file_id = new_file_id
                 # rft.provider = 'box'
-                # rft.save()
+                rft.save()
                 logger.critical(file_node.id)
                 logger.critical(file_node.type)
                 logger.critical(file_node.provider)
@@ -659,7 +661,7 @@ def move_file_node_update(file_node, src_provider, dest_provider, metadata=None)
     file_node._meta.model._provider = dest_provider
     path = metadata.get('path', None)
     pprint(path)
-    if path is not None and path is not '' and dest_provider !='osfstorage':
+    if path is not None and path is not '' and dest_provider != 'osfstorage':
         file_node.path = path
     file_node.save()
     logger.critical(file_node.id)
