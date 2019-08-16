@@ -31,6 +31,7 @@ from website.util import waterbutler
 
 from django.contrib.contenttypes.models import ContentType
 from framework.celery_tasks import app as celery_app
+from inspect import currentframe
 
 logger = logging.getLogger(__name__)
 
@@ -551,6 +552,7 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
 def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest_path, metadata):
     from pprint import pprint
     pprint(metadata)
+    pprint(get_linenumber())
     src_path = src_path if src_path[0] == '/' else '/' + src_path
     dest_path = dest_path if dest_path[0] == '/' else '/' + dest_path
     target_object_id = Guid.objects.get(_id=project_id,
@@ -562,9 +564,10 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
     ).exclude(
         inspection_result_status=api_settings.FILE_NOT_EXISTS
     ).all()
+    pprint(get_linenumber())
     for deleted_file in deleted_files:
         file_node_overwitten(project_id, target_object_id, dest_provider, dest_path)
-
+    pprint(get_linenumber())
     moved_files = RdmFileTimestamptokenVerifyResult.objects.filter(
         path__startswith=src_path,
         project_id=project_id,
@@ -572,11 +575,14 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
     ).exclude(
         inspection_result_status__in=STATUS_NOT_ACCESSIBLE
     ).all()
+    pprint(get_linenumber())
     for moved_file in moved_files:
         moved_file.path = moved_file.path.replace(src_path, dest_path, 1)
         moved_file.provider = dest_provider
         moved_file.save()
+        pprint(get_linenumber())
     if src_provider != 'osfstorage' and src_path[-1:] == '/':
+        pprint(get_linenumber())
         logger.critical('src_provider != and src_path[-1:] == ')
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
@@ -613,61 +619,91 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
 
     else:
+        pprint(get_linenumber())
         file_nodes = BaseFileNode.objects.filter(target_object_id=target_object_id,
                                                  provider=src_provider,
                                                  deleted_on__isnull=True,
                                                  _path=src_path).all()
+        pprint(get_linenumber())
         for file_node in file_nodes:
+            pprint(get_linenumber())
             file_node._path = dest_path
             file_node._materialized_path = dest_path
             logger.critical(file_node.id)
             logger.critical(file_node.type)
             logger.critical(file_node.provider)
+            pprint(get_linenumber())
             file_node = move_file_node_update(file_node, src_provider, dest_provider, metadata)
+            pprint(get_linenumber())
             if dest_provider == 'osfstorage' and src_provider != 'box':
+                pprint(get_linenumber())
                 file_node.delete()
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(file_id=file_node._id).first()
+                pprint(get_linenumber())
                 file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
+                pprint(get_linenumber())
                 rft.file_id = file_node._id
                 rft.provider = 'osfstorage'
                 rft.save()
+                pprint(get_linenumber())
                 logger.critical(file_node.id)
                 logger.critical(file_node.type)
                 logger.critical(file_node.provider)
             if src_provider == 'box':
+                pprint(get_linenumber())
                 logger.critical(file_node.id)
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=dest_path).first()
+                pprint(get_linenumber())
                 new_file_id = BaseFileNode.objects.filter(provider=dest_provider, _path=dest_path).first()._id
+                pprint(get_linenumber())
                 # file_node = BaseFileNode.objects.filter(name=file_node.name).order_by('-id').first()
                 rft.file_id = new_file_id
+                pprint(get_linenumber())
                 # rft.provider = 'box'
                 rft.save()
+                pprint(get_linenumber())
                 logger.critical(file_node.id)
                 logger.critical(file_node.type)
                 logger.critical(file_node.provider)
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
     if src_provider == 'osfstorage' and dest_provider != 'osfstorage':
+        pprint(get_linenumber())
         node = AbstractNode.objects.get(pk=Guid.objects.filter(_id=metadata['node']['_id']).first().object_id)
+        pprint(get_linenumber())
         file_created_or_updated(node, metadata, uid, False)
+        pprint(get_linenumber())
 
 def move_file_node_update(file_node, src_provider, dest_provider, metadata=None):
     from pprint import pprint
     pprint(metadata['path'])
+    pprint(get_linenumber())
     file_node.type = file_node.type.replace(src_provider, dest_provider)
+    pprint(get_linenumber())
     dest_file_type = dynamic_import(FILE_TYPE_DICT[dest_provider])
+    pprint(get_linenumber())
     file_node.__class__ = dest_file_type
+    pprint(get_linenumber())
     file_node.type = 'osf.{}file'.format(dest_provider)
+    pprint(get_linenumber())
     file_node.provider = dest_provider
+    pprint(get_linenumber())
     file_node._meta.model._provider = dest_provider
+    pprint(get_linenumber())
     path = metadata.get('path', None)
+    pprint(get_linenumber())
     pprint(path)
+    pprint(get_linenumber())
     if path is not None and path is not '' and dest_provider != 'osfstorage':
         file_node.path = path
     file_node.save()
+    pprint(get_linenumber())
     logger.critical(file_node.id)
     logger.critical(file_node.type)
     logger.critical(file_node.provider)
     return file_node
+def get_linenumber():
+    cf = currentframe()
+    return cf.f_back.f_lineno
 
 def dynamic_import(name):
     components = name.split('.')
