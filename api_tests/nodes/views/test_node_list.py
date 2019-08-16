@@ -400,7 +400,6 @@ class TestNodeFiltering:
     def bookmark_collection(self, user_one):
         return find_bookmark_collection(user_one)
 
-
     @pytest.fixture()
     def sparse_url(self, user):
         return '/{}sparse/nodes/'.format(API_BASE)

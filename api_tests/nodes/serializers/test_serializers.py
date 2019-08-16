@@ -135,7 +135,6 @@ class TestSparseNodeSerializer:
         assert 'sparse' in relationships['children']['links']['related']['href']
 
 
-
 @pytest.mark.django_db
 class TestNodeRegistrationSerializer:
 
@@ -231,4 +230,3 @@ class TestSparseRegistrationSerializer:
         assert 'forked_from' not in relationships
         assert 'sparse' not in relationships['detail']['links']['related']['href']
         assert 'sparse' in relationships['children']['links']['related']['href']
-
