@@ -549,11 +549,14 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     verify_data.upload_file_size = file_info['size']
     verify_data.save()
 
-def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest_path, metadata):
+def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest_path, metadata, src_metadata=None):
     from pprint import pprint
     pprint(src_path)
     pprint(dest_path)
     pprint(metadata)
+    pprint(src_metadata.get('path', None))
+    if src_provider == 'box':
+        src_path = src_metadata.get('path', src_path)
     pprint(get_linenumber())
     src_path = src_path if src_path[0] == '/' else '/' + src_path
     dest_path = dest_path if dest_path[0] == '/' else '/' + dest_path
@@ -641,7 +644,8 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                                                  provider=src_provider,
                                                  deleted_on__isnull=True,
                                                  _path=src_path).all()
-
+        pprint(src_path)
+        pprint(src_provider)
         pprint(get_linenumber())
         for file_node in file_nodes:
             pprint(get_linenumber())
@@ -668,7 +672,7 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
                 logger.critical(file_node.type)
                 logger.critical(file_node.provider)
             provider_change_update_timestampverification(uid, file_node, src_provider, dest_provider)
-        if len(file_nodes) == 0:
+
             if src_provider == 'box':
                 pprint(get_linenumber())
                 rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=dest_path).first()
@@ -699,25 +703,25 @@ def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest
         file_created_or_updated(node, metadata, uid, False)
         pprint(get_linenumber())
 
-    if src_provider == 'box' and dest_provider != 'osfstorage':
-        pprint(get_linenumber())
-        rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=dest_path).first()
-        pprint(get_linenumber())
-        if rft is not None:
-            pprint(rft)
-            pprint(get_linenumber())
-            pprint(dest_provider)
-            pprint(dest_path)
-            new_file = BaseFileNode.objects.filter(provider=dest_provider, _path=dest_path).order_by('-id').first()
-            pprint(get_linenumber())
-            if new_file is not None:
-                pprint(get_linenumber())
-                rft.file_id = new_file._id
-                rft.save()
-                # rft.provider = 'box'
-                #rft.save()
-                pprint(get_linenumber())
-            pprint(get_linenumber())
+    # if src_provider == 'box' and dest_provider != 'osfstorage':
+    #     pprint(get_linenumber())
+    #     rft = RdmFileTimestamptokenVerifyResult.objects.filter(provider=dest_provider, path=dest_path).first()
+    #     pprint(get_linenumber())
+    #     if rft is not None:
+    #         pprint(rft)
+    #         pprint(get_linenumber())
+    #         pprint(dest_provider)
+    #         pprint(dest_path)
+    #         new_file = BaseFileNode.objects.filter(provider=dest_provider, _path=dest_path).order_by('-id').first()
+    #         pprint(get_linenumber())
+    #         if new_file is not None:
+    #             pprint(get_linenumber())
+    #             rft.file_id = new_file._id
+    #             rft.save()
+    #             # rft.provider = 'box'
+    #             #rft.save()
+    #             pprint(get_linenumber())
+    #         pprint(get_linenumber())
 
 def move_file_node_update(file_node, src_provider, dest_provider, metadata=None):
     from pprint import pprint
