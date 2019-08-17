@@ -73,8 +73,8 @@ def oauth_disconnect_following_other(user, other_user_addon):
             user.external_accounts.remove(account)
             user.save()
 
-def copy_node_auth(node, other_node_addon):
-    node_addon = node.get_or_add_addon(IQBRIMSAddonConfig.short_name)
+def copy_node_auth(node, other_node_addon, auth):
+    node_addon = node.get_or_add_addon(IQBRIMSAddonConfig.short_name, auth)
 
     # deauthorize node
     if other_node_addon.external_account is None or other_node_addon.user_settings is None:

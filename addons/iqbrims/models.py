@@ -10,21 +10,26 @@ import string
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
-from django.db.models.signals import post_save, post_delete
+from django.db.models import Subquery
+from django.db.models.signals import post_save, post_delete, m2m_changed
 from django.dispatch import receiver
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.node import Node
+from osf.models.user import OSFUser
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
-from osf.models import Contributor
+from osf.models import Contributor, RdmAddonOption, AbstractNode
+from addons.googledrive.apps import GoogleDriveAddonConfig
+from addons.googledrive.models import NodeSettings as GDNodeSettings
 from addons.base import exceptions
 from addons.iqbrims import settings as drive_settings
 from addons.iqbrims.apps import IQBRIMSAddonConfig
 from addons.iqbrims.client import (IQBRIMSAuthClient,
                                                IQBRIMSClient)
 from addons.iqbrims.serializer import IQBRIMSSerializer
-from addons.iqbrims.utils import to_hgrid, get_folder_title
+from addons.iqbrims.utils import (to_hgrid, get_folder_title, copy_node_auth,
+                                  oauth_disconnect_following_other)
 from website.util import api_v2_url
 from website import settings as ws_settings
 
@@ -303,9 +308,57 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return self.secret
 
 
+@receiver(post_save, sender=Node)
+def add_iqbrims_addon(sender, instance, created, **kwargs):
+    if IQBRIMSAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    inst_ids = instance.affiliated_institutions.values('id')
+    addon_option = RdmAddonOption.objects.filter(
+        provider=IQBRIMSAddonConfig.short_name,
+        institution_id__in=Subquery(inst_ids),
+        management_node__isnull=False,
+        is_allowed=True
+    ).first()
+    if addon_option is None:
+        return
+    if addon_option.organizational_node is not None and \
+            not addon_option.organizational_node.is_contributor(instance.creator):
+        return
+
+    instance.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)
+
+@receiver(m2m_changed, sender=OSFUser.external_accounts.through)
+def follow_googledrive_external_account_to_iqbrims(sender, instance, action, **kwargs):
+    if not action.startswith('post'):
+        return
+    if IQBRIMSAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
+        return
+    if not instance.has_addon(IQBRIMSAddonConfig.short_name):
+        return
+    if not instance.has_addon(GoogleDriveAddonConfig.short_name):
+        return
+
+    oauth_disconnect_following_other(instance, instance.get_addon(GoogleDriveAddonConfig.short_name))
+
+@receiver(post_save, sender=GDNodeSettings)
+def follow_googledrive_node_settings_to_iqbrims(sender, instance, created, **kwargs):
+    if IQBRIMSAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    node = instance.owner
+    is_management_node = RdmAddonOption.objects.filter(
+        provider=IQBRIMSAddonConfig.short_name,
+        management_node=node,
+        is_allowed=True
+    ).exists()
+
+    if is_management_node and node.has_addon(IQBRIMSAddonConfig.short_name):
+        copy_node_auth(node, instance, None)
+
 @receiver(post_save, sender=Contributor)
 @receiver(post_delete, sender=Contributor)
-def change_iqbrims_addon_enabled(sender, instance, **kwargs):
+def change_iqbrims_addon_enabled_for_contrib(sender, instance, **kwargs):
     from osf.models import Node, RdmAddonOption
 
     if IQBRIMSAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
@@ -348,3 +401,37 @@ def update_folder_name(sender, instance, created, **kwargs):
     except exceptions.InvalidAuthError:
         logger.warning('Failed to check description of google drive',
                        exc_info=True)
+
+@receiver(post_save, sender=RdmAddonOption)
+def change_iqbrims_addon_enabled(sender, instance, created, **kwargs):
+    if IQBRIMSAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    if instance.is_allowed and instance.management_node is not None:
+        for node in AbstractNode.find_by_institutions(instance.institution):
+            if instance.organizational_node:
+                if instance.organizational_node.is_contributor(node.creator):
+                    node.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)
+                else:
+                    node.delete_addon(IQBRIMSAddonConfig.short_name, auth=None)
+            else:
+                node.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)
+    else:
+        for node in AbstractNode.find_by_institutions(instance.institution):
+            node.delete_addon(IQBRIMSAddonConfig.short_name, auth=None)
+
+@receiver(post_save, sender=RdmAddonOption)
+def setup_iqbrims_addon_auth_of_management_node(sender, instance, created, **kwargs):
+    if IQBRIMSAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
+        return
+    if GoogleDriveAddonConfig.short_name not in ws_settings.ADDONS_AVAILABLE_DICT:
+        return
+    if instance.management_node is None:
+        return
+    if not (instance.is_allowed and instance.management_node is not None):
+        return
+
+    copy_node_addon = instance.management_node.get_addon(GoogleDriveAddonConfig.short_name)
+    if copy_node_addon is not None:
+        copy_node_auth(instance.management_node, copy_node_addon,
+                       Auth(instance.management_node.creator))

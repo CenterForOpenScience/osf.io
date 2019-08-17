@@ -396,6 +396,8 @@ def _get_management_node(node):
             management_node__isnull=False,
             is_allowed=True
         ).first()
+        if opt is None:
+            raise HTTPError(http.FORBIDDEN)
     except RdmAddonOption.DoesNotExist:
         raise HTTPError(http.FORBIDDEN)
     return opt.management_node
