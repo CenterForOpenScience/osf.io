@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@centerforopenscience/list-of-licenses@1.1.0":
+"@centerforopenscience/list-of-licenses@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@centerforopenscience/list-of-licenses/-/list-of-licenses-1.1.0.tgz#2a4379633409205047e723e21cd818560a29ab45"
   integrity sha512-EGU7gpRXczqC4TAlfKBiLzRaopxxZkL86kwS8/qdZdmRjTpG872z+bRd5E4ZJivxHBLpVpts5nK/bz4MsbdhTA==
