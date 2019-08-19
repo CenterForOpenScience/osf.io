@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+19.23.0 (2019-08-19)
+===================
+- Represents scopes as an m2m field on personal access tokens instead of a CharField
+- APIv2.17 treats scopes as relationships on tokens instead of attributes.  Earlier
+API versions still serialize scopes as attributes.
+
 19.22.0 (2019-08-14)
 ===================
 - APIv2: Editable registrations
