@@ -251,7 +251,7 @@ class TestSaveCredentials(AdminTestCase):
         response = self.view_post({
             'provider_short_name': 'box',
             'storage_name': 'Cardboard Box',
-            'box_folder': 'invalid_folder_id'
+            'box_folder': 'Valid folder'
         })
 
         nt.assert_equals(response.status_code, httplib.OK)

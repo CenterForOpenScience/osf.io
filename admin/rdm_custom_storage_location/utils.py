@@ -21,6 +21,7 @@ from addons.swift.provider import SwiftProvider
 from framework.exceptions import HTTPError
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
+from osf.utils import external_util
 import datetime
 
 
@@ -102,6 +103,8 @@ def transfer_to_external_account(user, institution_id, provider_short_name):
     account.display_name = temp_external_account.display_name
     account.profile_url = temp_external_account.profile_url
     account.save()
+
+    temp_external_account.delete()
 
     # add it to the user's list of ``ExternalAccounts``
     if not user.external_accounts.filter(id=account.id).exists():
@@ -419,7 +422,7 @@ def save_box_credentials(user, storage_name, folder_id):
         }
     }
     update_storage(institution_id, storage_name, wb_credentials, wb_settings)
-    ExternalAccountTemporary.objects.filter(_id=institution_id).delete()
+    external_util.set_region_external_account(institution_id, account)
 
     return ({
         'message': 'OAuth was set successfully'
@@ -433,7 +436,6 @@ def save_googledrive_credentials(user, storage_name, folder_id):
         return test_connection_result
 
     account = transfer_to_external_account(user, institution_id, 'googledrive')
-    ExternalAccountTemporary.objects.filter(_id=institution_id).delete()
     wb_credentials = {
         'storage': {
             'token': account.oauth_key,
@@ -449,6 +451,7 @@ def save_googledrive_credentials(user, storage_name, folder_id):
         }
     }
     update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.set_region_external_account(institution_id, account)
 
     return ({
         'message': 'OAuth was set successfully'

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from django.core.exceptions import PermissionDenied
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import HttpResponse, Http404, JsonResponse
 from django.views.generic import TemplateView, View
