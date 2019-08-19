@@ -483,7 +483,7 @@ class TestExternalUtil(OsfTestCase):
     def test_set_region_external_account(self):
         token = self.region.waterbutler_credentials['storage']['token']
 
-        set_region_external_account(self.institution.id, self.external_account)
+        set_region_external_account(self.institution._id, self.external_account)
         rea = RegionExternalAccount.objects.filter(region=self.region, external_account=self.external_account)
         assert len(rea)==1
 
