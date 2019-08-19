@@ -34,7 +34,7 @@ class TestConnection(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.test_connection(request)
+        return views.TestConnectionView.as_view()(request)
 
     @mock.patch('owncloud.Client')
     def test_success_owncloud(self, mock_client):
@@ -122,7 +122,7 @@ class TestSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.save_credentials(request)
+        return views.SaveCredentialsView.as_view()(request)
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_connection_fail(self, mock_testconnection):

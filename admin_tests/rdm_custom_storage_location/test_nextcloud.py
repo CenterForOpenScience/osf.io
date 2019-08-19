@@ -33,7 +33,7 @@ class TestSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.save_credentials(request)
+        return views.SaveCredentialsView.as_view()(request)
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_connection_fail(self, mock_testconnection):

@@ -31,7 +31,7 @@ class TestConnection(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.test_connection(request)
+        return views.TestConnectionView.as_view()(request)
 
     def test_without_provider(self):
         params = {
@@ -187,7 +187,7 @@ class TestSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.save_credentials(request)
+        return views.SaveCredentialsView.as_view()(request)
 
     def test_provider_missing(self):
         response = self.view_post({

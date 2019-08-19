@@ -45,7 +45,7 @@ class TestFetchToken(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.fetch_temporary_token(request)
+        return views.FetchTemporaryTokenView.as_view()(request)
 
     def test_provider_missing(self):
         response = self.view_post({
@@ -120,7 +120,7 @@ class TestSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.save_credentials(request)
+        return views.SaveCredentialsView.as_view()(request)
 
     def view_post_cancel(self, params):
         request = RequestFactory().post(
@@ -130,7 +130,7 @@ class TestSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.remove_auth_data_temporary(request)
+        return views.RemoveTemporaryAuthData.as_view()(request)
 
     def test_cancel(self):
         response = self.view_post_cancel({

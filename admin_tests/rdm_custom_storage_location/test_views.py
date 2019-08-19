@@ -27,7 +27,7 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         self.user.affiliated_institutions.add(self.institution1)
         self.user.save()
         self.request = RequestFactory().get('/fake_path')
-        self.view = views.InstitutionalStorage()
+        self.view = views.InstitutionalStorageView()
         self.view = setup_user_view(self.view, self.request, user=self.user)
         self.addon_type_dict = [
             'BoxAddonAppConfig',
@@ -73,7 +73,14 @@ class TestIconView(AdminTestCase):
     def setUp(self):
         super(TestIconView, self).setUp()
         self.user = AuthUserFactory()
+        self.institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(self.institution)
         self.request = RequestFactory().get('/fake_path')
+        self.request.user = self.user
+        self.request.user.is_active = True
+        self.request.user.is_registered = True
+        self.request.user.is_superuser = False
+        self.request.user.is_staff = True
         self.view = views.IconView()
         self.view = setup_user_view(self.view, self.request, user=self.user)
 
@@ -108,18 +115,20 @@ class TestPermissionTestConnection(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.test_connection(request)
+        return views.TestConnectionView.as_view()(request)
 
     def test_normal_user(self):
-        with self.assertRaises(PermissionDenied):
-            self.view_post({})
+        response = self.view_post({})
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
 
     def test_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        with self.assertRaises(PermissionDenied):
-            self.view_post({})
+        response = self.view_post({})
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
 
     def test_staff_with_institution(self):
         institution = InstitutionFactory()
@@ -136,8 +145,9 @@ class TestPermissionTestConnection(AdminTestCase):
         self.user.is_superuser = True
         self.user.save()
 
-        with self.assertRaises(PermissionDenied):
-            self.view_post({})
+        response = self.view_post({})
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
 
 
 class TestPermissionSaveCredentials(AdminTestCase):
@@ -153,18 +163,20 @@ class TestPermissionSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.save_credentials(request)
+        return views.SaveCredentialsView.as_view()(request)
 
     def test_normal_user(self):
-        with self.assertRaises(PermissionDenied):
-            self.view_post({})
+        response = self.view_post({})
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
 
     def test_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        with self.assertRaises(PermissionDenied):
-            self.view_post({})
+        response = self.view_post({})
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
 
     def test_staff_with_institution(self):
         institution = InstitutionFactory()
@@ -181,8 +193,9 @@ class TestPermissionSaveCredentials(AdminTestCase):
         self.user.is_superuser = True
         self.user.save()
 
-        with self.assertRaises(PermissionDenied):
-            self.view_post({})
+        response = self.view_post({})
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
 
 
 class TestPermissionFetchTemporaryToken(AdminTestCase):
@@ -198,18 +211,20 @@ class TestPermissionFetchTemporaryToken(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.fetch_temporary_token(request)
+        return views.FetchTemporaryTokenView.as_view()(request)
 
     def test_normal_user(self):
-        with self.assertRaises(PermissionDenied):
-            self.view_post({})
+        response = self.view_post({})
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
 
     def test_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        with self.assertRaises(PermissionDenied):
-            self.view_post({})
+        response = self.view_post({})
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
 
     def test_staff_with_institution(self):
         institution = InstitutionFactory()
@@ -226,5 +241,6 @@ class TestPermissionFetchTemporaryToken(AdminTestCase):
         self.user.is_superuser = True
         self.user.save()
 
-        with self.assertRaises(PermissionDenied):
-            self.view_post({})
+        response = self.view_post({})
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
