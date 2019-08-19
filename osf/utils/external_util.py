@@ -8,12 +8,9 @@ from osf.models.external import ExternalAccount
 def set_region_external_account(institution_id, account):
     institution = Institution.objects.get(_id=institution_id)
     region = Region.objects.get(_id=institution._id)
-    RegionExternalAccount.objects.update_or_create(
+    RegionExternalAccount.objects.create(
         region=region,
-        defaults={
-            'external_account': account,
-            'region': region,
-        },
+        external_account=account,
     )
     set_new_access_token(region.id, get_oauth_key_by_external_id(account.id))
 

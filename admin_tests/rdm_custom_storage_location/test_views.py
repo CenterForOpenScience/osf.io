@@ -1,4 +1,3 @@
-from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory
 from django.http import Http404, HttpResponse
 import json

@@ -21,6 +21,7 @@ from addons.swift.provider import SwiftProvider
 from framework.exceptions import HTTPError
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
+from osf.models.region_external_account import RegionExternalAccount
 from osf.utils import external_util
 import datetime
 
@@ -70,17 +71,25 @@ def get_oauth_info_notification(institution_id, provider_short_name):
         }
 
 def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
-    default_region = Region.objects.first()
-    Region.objects.update_or_create(
-        _id=institution_id,
-        defaults={
-            'name': storage_name,
-            'waterbutler_credentials': wb_credentials,
-            'waterbutler_url': default_region.waterbutler_url,
-            'mfr_url': default_region.mfr_url,
-            'waterbutler_settings': wb_settings
-        }
-    )
+    try:
+        region = Region.objects.get(_id=institution_id)
+    except Region.DoesNotExist:
+        default_region = Region.objects.first()
+        region = Region.objects.create(
+            _id=institution_id,
+            name=storage_name,
+            waterbutler_credentials=wb_credentials,
+            waterbutler_url=default_region.waterbutler_url,
+            mfr_url=default_region.mfr_url,
+            waterbutler_settings=wb_settings,
+        )
+    else:
+        RegionExternalAccount.objects.filter(region=region).delete()
+        region.name = storage_name
+        region.waterbutler_credentials = wb_credentials
+        region.waterbutler_settings = wb_settings
+        region.save()
+    return region
 
 def transfer_to_external_account(user, institution_id, provider_short_name):
     temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()

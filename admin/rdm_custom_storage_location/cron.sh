@@ -1,1 +1,1 @@
-*/30 * * * * curl http://localhost:8001/custom_storage_location/external_acc_update/d610ef95f0b0f5868f13919b8ed64070b9acb9c19b8da9f2c514ed938203ec3e236c9cad4f4146bdf22b4e79cf0d92f6d4f4c996d236c6b0ee79a1336b26afb7 | jq -c .
+*/30 * * * * curl http://localhost:8001/custom_storage_location/external_acc_update/d610ef95f0b0f5868f13919b8ed64070b9acb9c19b8da9f2c514ed938203ec3e236c9cad4f4146bdf22b4e79cf0d92f6d4f4c996d236c6b0ee79a1336b26afb7/ | jq -c .
